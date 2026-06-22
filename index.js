@@ -1,4 +1,3 @@
-
 const express = require('express');
 const axios = require('axios');
 const app = express();
@@ -11,7 +10,62 @@ const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 
 app.get('/', (req, res) => {
-  res.send('Sami Max App est en ligne');
+  res.send(`
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Sami</title>
+<style>
+  body {
+    margin: 0;
+    background: #0a0a0a;
+    color: #d4af37;
+    font-family: Georgia, serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  h1 {
+    font-size: 4rem;
+    margin: 0;
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px rgba(212,175,55,0.4);
+  }
+  p.tagline {
+    color: #d4af37;
+    opacity: 0.8;
+    font-size: 1.1rem;
+    margin-top: 10px;
+    letter-spacing: 2px;
+  }
+  .status {
+    margin-top: 40px;
+    padding: 10px 24px;
+    border: 1px solid #d4af37;
+    border-radius: 30px;
+    font-size: 0.9rem;
+  }
+  .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #d4af37;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+</style>
+</head>
+<body>
+  <h1>SAMI</h1>
+  <p class="tagline">L'AMI NUMERO 1 EN ALGERIE</p>
+  <div class="status"><span class="dot"></span>Systeme en ligne</div>
+</body>
+</html>
+  `);
 });
 
 app.post('/webhook/order', async (req, res) => {
