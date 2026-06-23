@@ -19,7 +19,6 @@ async function envoyerVersAirtable(data) {
   );
 }
 
-// Webhook - Commande créée
 router.post("/orders", async (req, res) => {
   const order = req.body;
   console.log("✅ Nouvelle commande:", order.id);
@@ -33,12 +32,11 @@ router.post("/orders", async (req, res) => {
     });
     console.log("📦 Envoyé vers Airtable !");
   } catch (err) {
-    console.error("❌ Erreur Airtable:", err.message);
+    console.error("❌ Erreur Airtable:", err.response?.data || err.message);
   }
   res.status(200).send("OK");
 });
 
-// Webhook - Commande provisoire créée
 router.post("/draft-orders", async (req, res) => {
   const draftOrder = req.body;
   console.log("📋 Commande provisoire:", draftOrder.id);
@@ -52,13 +50,11 @@ router.post("/draft-orders", async (req, res) => {
     });
     console.log("📦 Envoyé vers Airtable !");
   } catch (err) {
-    console.error("❌ Erreur Airtable:", err.message);
+    console.error("❌ Erreur Airtable:", err.response?.data || err.message);
   }
   res.status(200).send("OK");
-});} catch (err) {
-  console.error("❌ Erreur Airtable:", err.response?.data || err.message);
-}
-
+});
 
 module.exports = router;
+
 
