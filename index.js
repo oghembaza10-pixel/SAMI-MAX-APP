@@ -1,17 +1,16 @@
-const express = require('express');
+const express = require("express");
+const webhook = require("./webhook");
+
 const app = express();
-const Sami = require('./sami');
 
 app.use(express.json());
 
-app.get('/', (req, res) => res.json(Sami.pageDAccueil()));
+app.use("/webhook", webhook);
 
-app.post('/webhook/sav', async (req, res) => {
-    const resultat = await Sami.traiterSAV(req.body);
-    res.status(200).json(resultat);
+app.get("/", (req, res) => {
+  res.send("Samy Online");
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-    console.log(🚀 Système Souverain en ligne sur le port ${PORT});
+app.listen(3000, () => {
+  console.log("Samy démarré");
 });
