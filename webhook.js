@@ -55,7 +55,10 @@ router.post("/draft-orders", async (req, res) => {
     console.error("❌ Erreur Airtable:", err.message);
   }
   res.status(200).send("OK");
-});
+});} catch (err) {
+  console.error("❌ Erreur Airtable:", err.response?.data || err.message);
+}
+
 
 module.exports = router;
 
