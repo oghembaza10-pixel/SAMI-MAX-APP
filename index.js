@@ -155,7 +155,8 @@ router.post("/fulfillments", async (req, res) => {
   } catch (err) {
     console.error("❌ Erreur fulfillment:", err.message);
   }
-});const { demarrerRapportAutomatique } = require("./rapport");
+})const { demarrerRapportAutomatique } = require("./rapport");
+
 
 // Après app.listen(...)
 demarrerRapportAutomatique();
@@ -163,6 +164,7 @@ demarrerRapportAutomatique();
 
 module.exports = router;const path = require("path");
 const { demarrerRapportAutomatique } = require("./rapport");
+
 
 // ── DASHBOARD (marchand)
 app.get("/dashboard", (req, res) => {
