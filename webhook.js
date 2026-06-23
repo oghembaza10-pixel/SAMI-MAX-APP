@@ -7,7 +7,7 @@ const AIRTABLE_BASE_ID = "app1nYEr6fReIt7SW";
 const AIRTABLE_TABLE_ID = "tbl4qlJBAhve1UdPx";
 
 async function envoyerVersAirtable(data) {
-  await axios.post(
+  const response = await axios.post(
     `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`,
     { fields: data },
     {
@@ -17,6 +17,7 @@ async function envoyerVersAirtable(data) {
       }
     }
   );
+  return response.data;
 }
 
 router.post("/orders", async (req, res) => {
@@ -26,13 +27,13 @@ router.post("/orders", async (req, res) => {
     await envoyerVersAirtable({
       "ID Commande": String(order.id || ""),
       "Client": order.email || "Invité",
-      "Total": String(order.total_price || ""),
+      "Total": parseFloat(order.total_price) || 0,
       "Statut": order.financial_status || "",
       "Date": order.created_at || ""
     });
     console.log("📦 Envoyé vers Airtable !");
   } catch (err) {
-    console.error("❌ Erreur Airtable:", err.response?.data || err.message);
+    console.error("❌ Erreur Airtable:", JSON.stringify(err.response?.data) || err.message);
   }
   res.status(200).send("OK");
 });
@@ -44,17 +45,18 @@ router.post("/draft-orders", async (req, res) => {
     await envoyerVersAirtable({
       "ID Commande": String(draftOrder.id || ""),
       "Client": draftOrder.email || "Invité",
-      "Total": String(draftOrder.total_price || ""),
+      "Total": parseFloat(draftOrder.total_price) || 0,
       "Statut": "PROVISOIRE",
       "Date": draftOrder.created_at || ""
     });
     console.log("📦 Envoyé vers Airtable !");
   } catch (err) {
-    console.error("❌ Erreur Airtable:", err.response?.data || err.message);
+    console.error("❌ Erreur Airtable:", JSON.stringify(err.response?.data) || err.message);
   }
   res.status(200).send("OK");
 });
 
 module.exports = router;
+
 
 
