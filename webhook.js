@@ -6,6 +6,26 @@ const AIRTABLE_API_KEY = process.env.APIAIRTABLE;
 const AIRTABLE_BASE_ID = "app1nYEr6fReIt7SW";
 const AIRTABLE_TABLE_ID = "tbl4qlJBAhve1UdPx";
 
+const GRINDAPI_ID_INSTANCE = "7107661372";
+const GRINDAPI_TOKEN = "0b6a7a3b8b04450480db47b8017e528a03b32366096c4598bd";
+const WHATSAPP_NUMERO = "213558426208@c.us";
+
+async function envoyerWhatsApp(message) {
+  try {
+    await axios.post(
+      `https://api.green-api.com/waInstance${GRINDAPI_ID_INSTANCE}/sendMessage/${GRINDAPI_TOKEN}`,
+      {
+        chatId: WHATSAPP_NUMERO,
+        message: message
+      },
+      { headers: { "Content-Type": "application/json" } }
+    );
+    console.log("📱 WhatsApp envoyé !");
+  } catch (err) {
+    console.error("❌ Erreur WhatsApp:", err.response?.data || err.message);
+  }
+}
+
 async function envoyerVersAirtable(data) {
   const response = await axios.post(
     `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`,
@@ -24,7 +44,6 @@ router.post("/orders", async (req, res) => {
   const order = req.body;
   console.log("✅ Nouvelle commande:", order.id);
 
-  // ✅ Récupération nom, adresse, téléphone
   const nom = order.shipping_address?.name
     || order.billing_address?.name
     || (order.customer ? `${order.customer.first_name} ${order.customer.last_name}`.trim() : "")
@@ -58,6 +77,17 @@ router.post("/orders", async (req, res) => {
   } catch (err) {
     console.error("❌ Erreur Airtable:", JSON.stringify(err.response?.data) || err.message);
   }
+
+  await envoyerWhatsApp(
+    `🛒 *Nouvelle Commande !*\n\n` +
+    `👤 Client: ${nom}\n` +
+    `📞 Téléphone: ${telephone || "Non renseigné"}\n` +
+    `📍 Adresse: ${adresse || "Non renseignée"}\n` +
+    `💰 Total: ${order.total_price} ${order.currency}\n` +
+    `📋 Statut: ${order.financial_status}\n` +
+    `🔢 ID: ${order.id}`
+  );
+
   res.status(200).send("OK");
 });
 
@@ -98,11 +128,18 @@ router.post("/draft-orders", async (req, res) => {
   } catch (err) {
     console.error("❌ Erreur Airtable:", JSON.stringify(err.response?.data) || err.message);
   }
+
+  await envoyerWhatsApp(
+    `📋 *Commande Provisoire !*\n\n` +
+    `👤 Client: ${nom}\n` +
+    `📞 Téléphone: ${telephone || "Non renseigné"}\n` +
+    `📍 Adresse: ${adresse || "Non renseignée"}\n` +
+    `💰 Total: ${draftOrder.total_price} ${draftOrder.currency}\n` +
+    `🔢 ID: ${draftOrder.id}`
+  );
+
   res.status(200).send("OK");
 });
 
 module.exports = router;
-
-
-
 
