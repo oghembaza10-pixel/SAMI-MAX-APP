@@ -161,5 +161,107 @@ router.post("/fulfillments", async (req, res) => {
 demarrerRapportAutomatique();
 
 
-module.exports = router;
+module.exports = router;const path = require("path");
+const { demarrerRapportAutomatique } = require("./rapport");
+
+// ── DASHBOARD (marchand)
+app.get("/dashboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "dashboard.html"));
+});
+
+// ── API DASHBOARD DATA
+app.get("/api/dashboard", async (req, res) => {
+  try {
+    const aujourdhui = new Date().toISOString().split("T")[0];
+    const url = `https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID || "app1nYEr6fReIt7SW"}/${process.env.AIRTABLE_TABLE_ID || "tbl4qlJBAhve1UdPx"}`;
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${process.env.APIAIRTABLE}` },
+      params: { filterByFormula: `{Date} = "${aujourdhui}"`, maxRecords: 200 }
+    });
+
+    const records = response.data.records || [];
+    const confirmees = records.filter(r => r.fields["Statut"] === "paid");
+    const provisoires = records.filter(r => r.fields["Statut"] === "PROVISOIRE");
+    const blacklist = records.filter(r => r.fields["Catégorie"] === "BLACKLIST");
+    const vip = records.filter(r => r.fields["Catégorie"] === "VIP");
+    const nouveaux = records.filter(r => r.fields["Catégorie"] === "NOUVEAU");
+    const totalVentes = confirmees.reduce((s, r) => s + (parseFloat(r.fields["Total"]) || 0), 0);
+    const panierMoyen = confirmees.length > 0 ? Math.round(totalVentes / confirmees.length) : 0;
+    const tauxConf = records.length > 0 ? Math.round((confirmees.length / records.length) * 100) : 0;
+
+    // Analyse
+    const positifs = [];
+    const negatifs = [];
+    const conseils = [];
+
+    if (confirmees.length >= 5) positifs.push("✅ Bonne journée de ventes");
+    if (vip.length > 0) positifs.push(`✅ ${vip.length} client(s) VIP`);
+    if (panierMoyen > 3000) positifs.push(`✅ Panier moyen élevé (${panierMoyen} DA)`);
+    if (nouveaux.length > 0) positifs.push(`✅ ${nouveaux.length} nouveau(x) client(s)`);
+
+    if (blacklist.length > 0) { negatifs.push(`⚠️ ${blacklist.length} commande(s) BLACKLIST`); conseils.push("🚫 Vérifier et annuler les commandes blacklist"); }
+    if (provisoires.length > confirmees.length) { negatifs.push("⚠️ Plus de provisoires que confirmées"); conseils.push("📞 Relancer les clients provisoires"); }
+    if (tauxConf < 50 && records.length > 0) { negatifs.push(`⚠️ Taux confirmation faible (${tauxConf}%)`); conseils.push("💬 Envoyer des relances WhatsApp"); }
+
+    res.json({
+      total: records.length,
+      confirmees: confirmees.length,
+      provisoires: provisoires.length,
+      blacklist: blacklist.length,
+      vip: vip.length,
+      nouveaux: nouveaux.length,
+      totalVentes,
+      panierMoyen,
+      positifs,
+      negatifs,
+      conseils,
+      commandes: records.slice(0, 20).map(r => ({
+        id: r.fields["ID Commande"],
+        client: r.fields["Client"],
+        telephone: r.fields["Téléphone"],
+        total: r.fields["Total"],
+        statut: r.fields["Statut"],
+        categorie: r.fields["Catégorie"],
+        heure: r.fields["Date"]
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── CHAT CLIENT
+app.get("/chat", (req, res) => {
+  res.sendFile(path.join(__dirname, "chat.html"));
+});
+
+// ── API CHAT
+app.post("/api/chat", async (req, res) => {
+  const { message } = req.body;
+  const msg = (message || "").toLowerCase();
+
+  let reponse = "";
+
+  if (msg.includes("commande") || msg.includes("suivi") || msg.includes("où")) {
+    reponse = "📦 Pour suivre votre commande, donnez-moi votre numéro de commande (ex: #1234) et je vérifie ça pour vous !";
+  } else if (msg.includes("livraison") || msg.includes("délai") || msg.includes("quand")) {
+    reponse = "🚚 Les livraisons sont effectuées sous <strong>3 à 5 jours ouvrables</strong> après confirmation. Vous recevrez un SMS dès l'expédition !";
+  } else if (msg.includes("retour") || msg.includes("remboursement") || msg.includes("rembours")) {
+    reponse = "↩️ Pour un retour, contactez-nous dans les <strong>7 jours</strong> après réception. Le produit doit être dans son état d'origine. On vous guide !";
+  } else if (msg.includes("humain") || msg.includes("agent") || msg.includes("personne")) {
+    reponse = "👤 Je vous mets en contact avec notre équipe ! Envoyez-nous un message sur WhatsApp au <strong>+213 558 426 208</strong> et on vous répond rapidement.";
+  } else if (msg.includes("bonjour") || msg.includes("salam") || msg.includes("salut") || msg.includes("bonsoir")) {
+    reponse = "Salam ! 👋 Comment puis-je vous aider aujourd'hui ?";
+  } else if (msg.includes("merci")) {
+    reponse = "Avec plaisir ! 😊 N'hésitez pas si vous avez d'autres questions.";
+  } else {
+    reponse = "Je comprends votre demande. Pour vous aider au mieux, pouvez-vous me donner plus de détails ? Ou contactez-nous directement sur WhatsApp au <strong>+213 558 426 208</strong> 📱";
+  }
+
+  res.json({ reponse });
+});
+
+// ── RAPPORT AUTO 20H
+demarrerRapportAutomatique();
+
 
