@@ -98,6 +98,14 @@ router.post("/draft-orders", async (req, res) => {
   }
 
   res.status(200).send("OK");
-});
+});router.post("/orders", async (req, res) => {
+  const order = req.body;
+  console.log("✅ Nouvelle commande:", order.id);
+  
+  // DEBUG - voir le téléphone
+  console.log("📱 Téléphone shipping:", order.shipping_address?.phone);
+  console.log("📱 Téléphone order:", order.phone);
+  console.log("📱 Billing phone:", order.billing_address?.phone);
+
 
 module.exports = router;
