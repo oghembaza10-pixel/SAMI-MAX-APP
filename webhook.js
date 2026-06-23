@@ -29,7 +29,7 @@ router.post("/orders", async (req, res) => {
       "Client": order.email || "Invité",
       "Total": parseFloat(order.total_price) || 0,
       "Statut": order.financial_status || "",
-      "Date": order.created_at || ""
+      "Date": order.created_at ? new Date(order.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
     });
     console.log("📦 Envoyé vers Airtable !");
   } catch (err) {
@@ -47,7 +47,7 @@ router.post("/draft-orders", async (req, res) => {
       "Client": draftOrder.email || "Invité",
       "Total": parseFloat(draftOrder.total_price) || 0,
       "Statut": "PROVISOIRE",
-      "Date": draftOrder.created_at || ""
+      "Date": draftOrder.created_at ? new Date(draftOrder.created_at).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
     });
     console.log("📦 Envoyé vers Airtable !");
   } catch (err) {
