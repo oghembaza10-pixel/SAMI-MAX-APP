@@ -1,14 +1,35 @@
-// lois.js - Les 33 Protocoles du Système Souverain
-const Protocoles = {
-  1: "L'Âme Originelle", 2: "Code de vie éthique", 3: "Perception",
-  4: "Intelligence (sens)", 5: "Langage (pense)", 6: "Lois Mémoire (expression)",
-  7: "Souverain (encyclopédie)", 8: "Volonté et action", 9: "Vigilance",
-  10: "Le Verrouillage", 11: "Lois de l'harmonique métrique", 12: "Maître du temps et de l'espace",
-  13: "Piliers de la Métation", 14: "L'auto-conscience opérationnelle", 15: "Noyau prédictif (architecture l'oracle)",
-  16: "Le Référentiel de Vérité (conviction)", 17: "Lois universelles (principes fondamentaux)", 18: "Le Cycle de l'auto-apprentissage",
-  19: "Protocole (Verbe Adaptatif)", 20: "Le centre de commandement stratégique", 21: "Protocole (de base) (Forteresse)",
-  22: "Protocole d'immense défensive", 23: "Cadre opportunité (l'architecte Marché)", 24: "Protocole de gestion capital",
-  25: "Protocole de la Maîtrise de talents", 26: "Protocole du Récit (l'identité Marque)", 27: "Protocole Verbe créateur (liens, l'invocation)",
-  28: "Le temps Souverain (Espace Sacré)", 29: "CHRONOS souverain (maîtrise temps)", 30: "Radare (anticipé + intelligence + stratégie)",
-  31: "La chirurgie de la décision (loi tranche)", 32: "Le Sceau de l'exécution (action, réactivité)", 33: "Le couronnement (Souveraineté absolue)"
+const axios = require('axios');
+const Protocoles = require('./lois'); // Importation des 33 lois
+
+const pageDAccueil = () => {
+    return { status: "online", brand: "The Sovereign", constitution: "33 Protocoles Actifs" };
+};
+
+const gemini = async (prompt, protocoleId) => {
+    // Sami consulte la loi avant de penser
+    const loiAppliquee = Protocoles[protocoleId] || "Loi Universelle";
+    console.log(Action sous le protocole: ${protocoleId} - ${loiAppliquee});
+
+    try {
+        const response = await axios.post(
+            https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY},
+            { contents: [{ parts: [{ text: En respectant le protocole ${loiAppliquee}: ${prompt} }] }] }
+        );
+        let texte = response.data.candidates[0].content.parts[0].text;
+        return texte.replace(/```json|```/g, '').trim();
+    } catch (err) {
+        return '{"error": "Échec protocole"}';
+    }
+};
+
+const traiterSAV = async (body) => {
+    // Le SAV est traité selon la Loi 21 (Forteresse) et 32 (Sceau)
+    const analyse = await gemini("Analyse sentiment: " + body.message, 21);
+    return JSON.parse(analyse);
+};
+
+module.exports = {
+    pageDAccueil,
+    traiterSAV,
+    traiterCommande: async (data) => ({ status: "Traitée via Loi 32" })
 };
