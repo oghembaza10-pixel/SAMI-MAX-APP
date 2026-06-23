@@ -155,7 +155,11 @@ router.post("/fulfillments", async (req, res) => {
   } catch (err) {
     console.error("❌ Erreur fulfillment:", err.message);
   }
-});
+});const { demarrerRapportAutomatique } = require("./rapport");
+
+// Après app.listen(...)
+demarrerRapportAutomatique();
+
 
 module.exports = router;
 
