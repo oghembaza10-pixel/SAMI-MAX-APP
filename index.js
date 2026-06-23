@@ -153,7 +153,10 @@ router.post("/fulfillments", async (req, res) => {
       );
     }
   } catch (err) {
-    console.error("❌ Erreur fulfillment:", err.message);
+   });
+
+const { demarrerRapportAutomatique } = require("./rapport");
+
   }
 })const { demarrerRapportAutomatique } = require("./rapport");
 
