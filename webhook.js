@@ -1,145 +1,195 @@
-const express = require("express");
-const router = express.Router();
+// ============================================
+// RAPPORT.JS — Rapport analytique journalier SAMI
+// Envoi automatique à 20h00 heure Algérie
+// ============================================
+
 const axios = require("axios");
 
 const AIRTABLE_API_KEY = process.env.APIAIRTABLE;
-const AIRTABLE_BASE_ID = "app1nYEr6fReIt7SW";
-const AIRTABLE_TABLE_ID = "tbl4qlJBAhve1UdPx";
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID || "app1nYEr6fReIt7SW";
+const AIRTABLE_TABLE_ID = process.env.AIRTABLE_TABLE_ID || "tbl4qlJBAhve1UdPx";
 
-const GRINDAPI_ID_INSTANCE = "7107661372";
-const GRINDAPI_TOKEN = "0b6a7a3b8b04450480db47b8017e528a03b32366096c4598bd";
-const WHATSAPP_NUMERO = "213558426208@c.us";
+const GREEN_INSTANCE = process.env.GREEN_API_INSTANCE || "7107661372";
+const GREEN_TOKEN = process.env.GREEN_API_TOKEN || "0b6a7a3b8b04450480db47b8017e528a03b32366096c4598bd";
+const WHATSAPP_MARCHAND = process.env.WHATSAPP_MARCHAND || "213558426208@c.us";
 
+// ─── ENVOYER WHATSAPP ───────────────────────
 async function envoyerWhatsApp(message) {
   try {
     await axios.post(
-      `https://api.green-api.com/waInstance${GRINDAPI_ID_INSTANCE}/sendMessage/${GRINDAPI_TOKEN}`,
-      {
-        chatId: WHATSAPP_NUMERO,
-        message: message
-      },
+      `https://api.green-api.com/waInstance${GREEN_INSTANCE}/sendMessage/${GREEN_TOKEN}`,
+      { chatId: WHATSAPP_MARCHAND, message },
       { headers: { "Content-Type": "application/json" } }
     );
-    console.log("📱 WhatsApp envoyé !");
+    console.log("📱 Rapport WhatsApp envoyé !");
   } catch (err) {
-    console.error("❌ Erreur WhatsApp:", err.response?.data || err.message);
+    console.error("❌ Erreur WhatsApp rapport:", err.response?.data || err.message);
   }
 }
 
-async function envoyerVersAirtable(data) {
-  const response = await axios.post(
-    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`,
-    { fields: data },
-    {
-      headers: {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json"
+// ─── RÉCUPÉRER COMMANDES DU JOUR ────────────
+async function getCommandesDuJour() {
+  try {
+    const aujourdhui = new Date().toISOString().split("T")[0];
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_ID}`;
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` },
+      params: {
+        filterByFormula: `{Date} = "${aujourdhui}"`,
+        maxRecords: 200
       }
-    }
-  );
-  return response.data;
+    });
+    return response.data.records || [];
+  } catch (err) {
+    console.error("❌ Erreur récupération Airtable:", err.message);
+    return [];
+  }
 }
 
-router.post("/orders", async (req, res) => {
-  const order = req.body;
-  console.log("✅ Nouvelle commande:", order.id);
+// ─── GÉNÉRER ET ENVOYER LE RAPPORT ──────────
+async function envoyerRapportSoir() {
+  console.log("📊 Génération rapport soir SAMI...");
 
-  const nom = order.shipping_address?.name
-    || order.billing_address?.name
-    || (order.customer ? `${order.customer.first_name} ${order.customer.last_name}`.trim() : "")
-    || order.email
-    || "Invité";
+  const commandes = await getCommandesDuJour();
+  const date = new Date().toLocaleDateString("fr-DZ");
 
-  const adresse = [
-    order.shipping_address?.address1,
-    order.shipping_address?.city,
-    order.shipping_address?.country
-  ].filter(Boolean).join(", ") || "";
-
-  const telephone = order.shipping_address?.phone
-    || order.billing_address?.phone
-    || order.customer?.phone
-    || "";
-
-  try {
-    await envoyerVersAirtable({
-      "ID Commande": String(order.id || ""),
-      "Client": nom,
-      "Adresse": adresse,
-      "Téléphone": telephone,
-      "Total": parseFloat(order.total_price) || 0,
-      "Statut": order.financial_status || "",
-      "Date": order.created_at
-        ? new Date(order.created_at).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0]
-    });
-    console.log("📦 Envoyé vers Airtable !");
-  } catch (err) {
-    console.error("❌ Erreur Airtable:", JSON.stringify(err.response?.data) || err.message);
+  // ── Aucune commande
+  if (commandes.length === 0) {
+    await envoyerWhatsApp(
+      `📊 *Rapport SAMI — ${date}*\n\n` +
+      `😴 Aucune commande aujourd'hui.\n\n` +
+      `💡 *Conseil SAMI :* Lance une promo flash demain matin pour relancer les ventes !\n\n` +
+      `🌙 Bonne nuit ! — SAMI`
+    );
+    return;
   }
 
-  await envoyerWhatsApp(
-    `🛒 *Nouvelle Commande !*\n\n` +
-    `👤 Client: ${nom}\n` +
-    `📞 Téléphone: ${telephone || "Non renseigné"}\n` +
-    `📍 Adresse: ${adresse || "Non renseignée"}\n` +
-    `💰 Total: ${order.total_price} ${order.currency}\n` +
-    `📋 Statut: ${order.financial_status}\n` +
-    `🔢 ID: ${order.id}`
-  );
+  // ── Calculs généraux
+  const nbTotal = commandes.length;
+  const confirmees = commandes.filter(r => r.fields["Statut"] === "paid");
+  const provisoires = commandes.filter(r => r.fields["Statut"] === "PROVISOIRE");
+  const annulees = commandes.filter(r => r.fields["Statut"] === "refunded" || r.fields["Statut"] === "voided");
 
-  res.status(200).send("OK");
-});
+  const totalVentes = confirmees.reduce((sum, r) => sum + (parseFloat(r.fields["Total"]) || 0), 0);
+  const totalProvisoire = provisoires.reduce((sum, r) => sum + (parseFloat(r.fields["Total"]) || 0), 0);
 
-router.post("/draft-orders", async (req, res) => {
-  const draftOrder = req.body;
-  console.log("📋 Commande provisoire:", draftOrder.id);
+  // ── Panier moyen
+  const panierMoyen = confirmees.length > 0 ? (totalVentes / confirmees.length).toFixed(0) : 0;
 
-  const nom = draftOrder.shipping_address?.name
-    || draftOrder.billing_address?.name
-    || (draftOrder.customer ? `${draftOrder.customer.first_name} ${draftOrder.customer.last_name}`.trim() : "")
-    || draftOrder.email
-    || "Invité";
+  // ── Meilleure commande
+  const meilleureCommande = confirmees.length > 0
+    ? confirmees.reduce((max, r) => (parseFloat(r.fields["Total"]) || 0) > (parseFloat(max.fields["Total"]) || 0) ? r : max, confirmees[0])
+    : null;
 
-  const adresse = [
-    draftOrder.shipping_address?.address1,
-    draftOrder.shipping_address?.city,
-    draftOrder.shipping_address?.country
-  ].filter(Boolean).join(", ") || "";
+  // ── Clients par catégorie
+  const nbVIP = commandes.filter(r => r.fields["Catégorie"] === "VIP").length;
+  const nbBasique = commandes.filter(r => r.fields["Catégorie"] === "BASIQUE").length;
+  const nbBlacklist = commandes.filter(r => r.fields["Catégorie"] === "BLACKLIST").length;
+  const nbNouveaux = commandes.filter(r => r.fields["Catégorie"] === "NOUVEAU").length;
 
-  const telephone = draftOrder.shipping_address?.phone
-    || draftOrder.billing_address?.phone
-    || draftOrder.customer?.phone
-    || "";
+  // ── Taux de conversion (confirmées / total)
+  const tauxConversion = ((confirmees.length / nbTotal) * 100).toFixed(0);
 
-  try {
-    await envoyerVersAirtable({
-      "ID Commande": String(draftOrder.id || ""),
-      "Client": nom,
-      "Adresse": adresse,
-      "Téléphone": telephone,
-      "Total": parseFloat(draftOrder.total_price) || 0,
-      "Statut": "PROVISOIRE",
-      "Date": draftOrder.created_at
-        ? new Date(draftOrder.created_at).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0]
-    });
-    console.log("📦 Envoyé vers Airtable !");
-  } catch (err) {
-    console.error("❌ Erreur Airtable:", JSON.stringify(err.response?.data) || err.message);
+  // ── Analyse : ce qui va bien / ce qui va pas
+  const pointsPositifs = [];
+  const pointsNegatifs = [];
+  const conseils = [];
+
+  if (confirmees.length >= 5) pointsPositifs.push("✅ Bonne journée de ventes !");
+  if (nbVIP > 0) pointsPositifs.push(`✅ ${nbVIP} client(s) VIP ont commandé`);
+  if (panierMoyen > 3000) pointsPositifs.push(`✅ Panier moyen élevé (${panierMoyen} DA)`);
+  if (nbNouveaux > 0) pointsPositifs.push(`✅ ${nbNouveaux} nouveau(x) client(s) aujourd'hui`);
+
+  if (nbBlacklist > 0) {
+    pointsNegatifs.push(`⚠️ ${nbBlacklist} commande(s) BLACKLIST détectée(s)`);
+    conseils.push("🚫 Vérifie et annule les commandes blacklist avant expédition");
+  }
+  if (provisoires.length > confirmees.length) {
+    pointsNegatifs.push("⚠️ Plus de provisoires que de confirmées");
+    conseils.push("📞 Relance les clients provisoires par WhatsApp");
+  }
+  if (parseInt(tauxConversion) < 50) {
+    pointsNegatifs.push(`⚠️ Taux de confirmation faible (${tauxConversion}%)`);
+    conseils.push("💬 Envoie un message de relance aux commandes en attente");
+  }
+  if (annulees.length > 0) {
+    pointsNegatifs.push(`⚠️ ${annulees.length} commande(s) annulée(s)/remboursée(s)`);
+  }
+  if (confirmees.length === 0) {
+    pointsNegatifs.push("❌ Aucune commande confirmée aujourd'hui");
+    conseils.push("🔥 Lance une promo flash ou un code promo demain");
   }
 
-  await envoyerWhatsApp(
-    `📋 *Commande Provisoire !*\n\n` +
-    `👤 Client: ${nom}\n` +
-    `📞 Téléphone: ${telephone || "Non renseigné"}\n` +
-    `📍 Adresse: ${adresse || "Non renseignée"}\n` +
-    `💰 Total: ${draftOrder.total_price} ${draftOrder.currency}\n` +
-    `🔢 ID: ${draftOrder.id}`
-  );
+  // ── Conseil général selon performance
+  if (confirmees.length >= 10) {
+    conseils.push("🚀 Excellente journée ! Pense à réapprovisionner le stock");
+  } else if (confirmees.length >= 5) {
+    conseils.push("📈 Bonne journée ! Continue avec des posts sur les réseaux");
+  } else if (confirmees.length > 0) {
+    conseils.push("💡 Journée moyenne — essaie une offre groupée demain");
+  }
 
-  res.status(200).send("OK");
-});
+  // ── Construction du message
+  const rapport =
+    `📊 *Rapport SAMI — ${date}*\n` +
+    `━━━━━━━━━━━━━━━━━━\n\n` +
 
-module.exports = router;
+    `📦 *COMMANDES DU JOUR*\n` +
+    `Total reçues : ${nbTotal}\n` +
+    `✅ Confirmées : ${confirmees.length}\n` +
+    `⏳ Provisoires : ${provisoires.length}\n` +
+    `❌ Annulées : ${annulees.length}\n` +
+    `📊 Taux confirmation : ${tauxConversion}%\n\n` +
+
+    `━━━━━━━━━━━━━━━━━━\n` +
+    `💰 *CHIFFRE D'AFFAIRES*\n` +
+    `Ventes confirmées : ${totalVentes.toLocaleString()} DA\n` +
+    `En attente : ${totalProvisoire.toLocaleString()} DA\n` +
+    `Panier moyen : ${panierMoyen} DA\n` +
+    (meilleureCommande ? `🏆 Meilleure commande : ${parseFloat(meilleureCommande.fields["Total"]).toLocaleString()} DA\n` : "") +
+
+    `\n━━━━━━━━━━━━━━━━━━\n` +
+    `👥 *CLIENTS*\n` +
+    `⭐ VIP : ${nbVIP}\n` +
+    `👤 Basique : ${nbBasique}\n` +
+    `🆕 Nouveaux : ${nbNouveaux}\n` +
+    `🚫 Blacklist : ${nbBlacklist}\n\n` +
+
+    (pointsPositifs.length > 0
+      ? `━━━━━━━━━━━━━━━━━━\n🟢 *CE QUI VA BIEN*\n${pointsPositifs.join("\n")}\n\n`
+      : "") +
+
+    (pointsNegatifs.length > 0
+      ? `━━━━━━━━━━━━━━━━━━\n🔴 *CE QUI VA PAS*\n${pointsNegatifs.join("\n")}\n\n`
+      : "") +
+
+    (conseils.length > 0
+      ? `━━━━━━━━━━━━━━━━━━\n💡 *CONSEILS SAMI*\n${conseils.join("\n")}\n\n`
+      : "") +
+
+    `━━━━━━━━━━━━━━━━━━\n` +
+    `🌙 Bonne nuit ! — SAMI 🇩🇿`;
+
+  await envoyerWhatsApp(rapport);
+  console.log("✅ Rapport complet envoyé !");
+}
+
+// ─── PLANIFICATEUR 20H ALGÉRIE (UTC+1) ──────
+function demarrerRapportAutomatique() {
+  console.log("⏰ Planificateur rapport 20h activé");
+
+  setInterval(() => {
+    const maintenant = new Date();
+    const heureAlgerie = (maintenant.getUTCHours() + 1) % 24;
+    const minuteAlgerie = maintenant.getUTCMinutes();
+
+    if (heureAlgerie === 20 && minuteAlgerie === 0) {
+      console.log("🕗 20h00 Algérie — Envoi rapport !");
+      envoyerRapportSoir();
+    }
+  }, 60000); // Vérifie chaque minute
+}
+
+module.exports = { demarrerRapportAutomatique, envoyerRapportSoir };
+
 
