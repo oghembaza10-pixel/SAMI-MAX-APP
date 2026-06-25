@@ -470,5 +470,8 @@ app.post('/webhook/stock', (req, res) => {
   var quantite_demandee = req.body.quantite_demandee;
   var boutique = req.headers['x-shopify-shop-domain'] || 'boutique-inconnue';
   console.log('[' + boutique + '] Verification stock pour ' + produit + ' : ' + quantite_demandee + ' unite(s)');
-  res.status(200).json({ produit: produit, disponible: true, boutique: boutique });
+  res.status(200).json({ produit: produit, disponible: true, boutique: boutique });app.listen(PORT, () => {
+  console.log('Sami Max App demarree sur le port ' + PORT);
+});
+
 });
