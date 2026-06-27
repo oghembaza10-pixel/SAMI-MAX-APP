@@ -51,7 +51,108 @@ app.get("/", (req, res) => {
 // ======================================================
 
 app.use("/webhook", webhook);
+// ======================================================
+// CHAT SAMII V1
+// ======================================================
 
+app.post("/api/chat", async (req, res) => {
+
+    try {
+
+        const message = req.body.message;
+
+        if (!message) {
+
+            return res.status(400).json({
+
+                success: false,
+                reply: "Message vide."
+
+            });
+
+        }
+
+        const axios = require("axios");
+
+        const response = await axios.post(
+
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + CONFIG.GEMINI.API_KEY,
+
+            {
+
+                contents: [
+
+                    {
+
+                        parts: [
+
+                            {
+
+                                text:
+`
+Tu es SAMII.
+
+Tu aides uniquement les e-commerçants.
+
+Règles :
+
+- Réponses courtes.
+- Français.
+- Professionnel.
+- Poli.
+- Si quelqu'un demande quand son compte sera activé :
+
+"Votre boutique est actuellement en cours de validation.
+Le délai est de 24 à 48 heures.
+Merci de faire partie des 10 000 partenaires fondateurs de SAMII."
+
+Question :
+
+${message}
+`
+
+                            }
+
+                        ]
+
+                    }
+
+                ]
+
+            }
+
+        );
+
+        const reply =
+            response.data.candidates[0]
+            .content.parts[0]
+            .text;
+
+        res.json({
+
+            success: true,
+            reply
+
+        });
+
+    }
+
+    catch (err) {
+
+        console.log(err.message);
+
+        res.json({
+
+            success: true,
+
+            reply:
+"Bonjour 👋 Je suis SAMII. Je suis actuellement en maintenance. Revenez dans quelques minutes."
+
+        });
+
+    }
+
+});
 // ======================================================
 // START
 // ======================================================
