@@ -3,15 +3,14 @@
 // ======================================================
 
 const express = require("express");
+const axios = require("axios");
 
 const CONFIG = require("./config");
-
 const webhook = require("./routes/webhook");
 
 const app = express();
 
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
 
 // ======================================================
@@ -42,7 +41,131 @@ console.log("🚀 SAMII OS démarre...");
 
 app.get("/", (req, res) => {
 
-    res.send("🚀 SAMII OS V1 fonctionne.");
+    res.send(`
+
+<!DOCTYPE html>
+
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>SAMII</title>
+
+<style>
+
+body{
+
+background:#0b0b0b;
+
+color:white;
+
+font-family:Arial;
+
+text-align:center;
+
+padding:60px;
+
+}
+
+input{
+
+width:320px;
+
+padding:12px;
+
+border-radius:10px;
+
+border:none;
+
+margin-top:20px;
+
+}
+
+button{
+
+padding:12px 22px;
+
+margin-left:10px;
+
+background:#d4af37;
+
+border:none;
+
+border-radius:10px;
+
+cursor:pointer;
+
+font-weight:bold;
+
+}
+
+#rep{
+
+margin-top:30px;
+
+white-space:pre-wrap;
+
+max-width:700px;
+
+margin-left:auto;
+
+margin-right:auto;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🤖 SAMII</h1>
+
+<p>L'IA des e-commerçants algériens.</p>
+
+<input id="msg" placeholder="Pose une question à SAMII">
+
+<button onclick="envoyer()">Envoyer</button>
+
+<div id="rep"></div>
+
+<script>
+
+async function envoyer(){
+
+const r=await fetch("/api/chat",{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+body:JSON.stringify({
+
+message:document.getElementById("msg").value
+
+})
+
+});
+
+const d=await r.json();
+
+document.getElementById("rep").innerHTML=d.reply;
+
+}
+
+</script>
+
+</body>
+
+</html>
+
+`);
 
 });
 
@@ -51,6 +174,7 @@ app.get("/", (req, res) => {
 // ======================================================
 
 app.use("/webhook", webhook);
+
 // ======================================================
 // CHAT SAMII V1
 // ======================================================
@@ -63,16 +187,15 @@ app.post("/api/chat", async (req, res) => {
 
         if (!message) {
 
-            return res.status(400).json({
+            return res.json({
 
-                success: false,
-                reply: "Message vide."
+                success:false,
+
+                reply:"Écris un message."
 
             });
 
         }
-
-        const axios = require("axios");
 
         const response = await axios.post(
 
@@ -80,35 +203,36 @@ app.post("/api/chat", async (req, res) => {
 
             {
 
-                contents: [
+                contents:[
 
                     {
 
-                        parts: [
+                        parts:[
 
                             {
 
-                                text:
-`
+text:`
+
 Tu es SAMII.
 
 Tu aides uniquement les e-commerçants.
 
-Règles :
+Tu réponds en français.
 
-- Réponses courtes.
-- Français.
-- Professionnel.
-- Poli.
-- Si quelqu'un demande quand son compte sera activé :
+Tu es professionnel.
 
-"Votre boutique est actuellement en cours de validation.
+Tu fais des réponses courtes.
+
+Si quelqu'un demande son inscription :
+
+"Votre compte est en cours de validation.
 Le délai est de 24 à 48 heures.
-Merci de faire partie des 10 000 partenaires fondateurs de SAMII."
+Merci de faire partie des 10 000 partenaires fondateurs."
 
 Question :
 
 ${message}
+
 `
 
                             }
@@ -123,42 +247,40 @@ ${message}
 
         );
 
-        const reply =
-            response.data.candidates[0]
-            .content.parts[0]
-            .text;
+        const reply=response.data.candidates[0].content.parts[0].text;
 
         res.json({
 
-            success: true,
+            success:true,
+
             reply
 
         });
 
     }
 
-    catch (err) {
+    catch(err){
 
-        console.log(err.message);
+        console.log(err.response?.data || err.message);
 
         res.json({
 
-            success: true,
+            success:false,
 
-            reply:
-"Bonjour 👋 Je suis SAMII. Je suis actuellement en maintenance. Revenez dans quelques minutes."
+            reply:"SAMII démarre actuellement. Réessaie dans quelques instants."
 
         });
 
     }
 
 });
+
 // ======================================================
 // START
 // ======================================================
 
 app.listen(CONFIG.PORT, () => {
 
-    console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
+console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
 
 });
