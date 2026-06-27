@@ -6,6 +6,8 @@ const express = require("express");
 
 const CONFIG = require("./config");
 
+const webhook = require("./routes/webhook");
+
 const app = express();
 
 app.use(express.json());
@@ -43,6 +45,12 @@ app.get("/", (req, res) => {
     res.send("🚀 SAMII OS V1 fonctionne.");
 
 });
+
+// ======================================================
+// ROUTES
+// ======================================================
+
+app.use("/webhook", webhook);
 
 // ======================================================
 // START
