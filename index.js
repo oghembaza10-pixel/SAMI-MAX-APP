@@ -4,7 +4,11 @@
 
 const express = require("express");
 const axios = require("axios");
+
 const dashboard = require("./routes/dashboard");
+const login = require("./routes/login");
+const register = require("./routes/register");
+
 const CONFIG = require("./config");
 const webhook = require("./routes/webhook");
 
@@ -174,7 +178,11 @@ document.getElementById("rep").innerHTML=d.reply;
 // ======================================================
 
 app.use("/webhook", webhook);
+
 app.use("/dashboard", dashboard);
+app.use("/login", login);
+app.use("/register", register);
+
 // ======================================================
 // CHAT SAMII V1
 // ======================================================
