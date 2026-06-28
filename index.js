@@ -4,7 +4,7 @@
 
 const express = require("express");
 const axios = require("axios");
-
+const dashboard = require("./routes/dashboard");
 const CONFIG = require("./config");
 const webhook = require("./routes/webhook");
 
