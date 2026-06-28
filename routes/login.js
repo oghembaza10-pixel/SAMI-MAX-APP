@@ -13,6 +13,7 @@ res.send(`
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <title>Connexion - SAMII</title>
 
@@ -25,6 +26,7 @@ display:flex;
 justify-content:center;
 align-items:center;
 height:100vh;
+margin:0;
 color:white;
 }
 
@@ -39,6 +41,7 @@ border:1px solid #333;
 h1{
 text-align:center;
 color:#d4af37;
+margin-bottom:25px;
 }
 
 input{
@@ -61,6 +64,10 @@ font-weight:bold;
 cursor:pointer;
 }
 
+button:hover{
+opacity:.9;
+}
+
 p{
 text-align:center;
 margin-top:20px;
@@ -81,17 +88,35 @@ text-decoration:none;
 
 <h1>Connexion</h1>
 
-<input type="email" placeholder="Email">
+<form method="POST" action="/login">
 
-<input type="password" placeholder="Mot de passe">
+<input
+type="email"
+name="email"
+placeholder="Adresse e-mail"
+required>
 
-<button>Se connecter</button>
+<input
+type="password"
+name="password"
+placeholder="Mot de passe"
+required>
+
+<button type="submit">
+Se connecter
+</button>
+
+</form>
 
 <p>
 
 Pas encore de compte ?
 
-<a href="/register">Créer un compte</a>
+<a href="/register">
+
+Créer un compte
+
+</a>
 
 </p>
 
@@ -102,6 +127,22 @@ Pas encore de compte ?
 </html>
 
 `);
+
+});
+
+router.post("/", async (req, res) => {
+
+const { email, password } = req.body;
+
+res.json({
+
+success:true,
+
+message:"Login reçu.",
+
+email
+
+});
 
 });
 
