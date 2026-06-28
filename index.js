@@ -174,7 +174,7 @@ document.getElementById("rep").innerHTML=d.reply;
 // ======================================================
 
 app.use("/webhook", webhook);
-
+app.use("/dashboard", dashboard);
 // ======================================================
 // CHAT SAMII V1
 // ======================================================
