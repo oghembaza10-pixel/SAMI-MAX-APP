@@ -11,7 +11,7 @@ const register = require("./routes/register");
 const profile = require("./routes/profile");
 const CONFIG = require("./config");
 const webhook = require("./routes/webhook");
-
+const academy = require("./routes/academy");
 const app = express();
 
 app.use(express.json());
@@ -176,7 +176,7 @@ document.getElementById("rep").innerHTML=d.reply;
 // ======================================================
 // ROUTES
 // ======================================================
-
+app.use("/academy", academy);
 app.use("/webhook", webhook);
 app.use("/profile", profile);
 app.use("/dashboard", dashboard);
