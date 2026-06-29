@@ -16,7 +16,7 @@ const app = express();
 const community = require("./routes/community");
 const marketplace = require("./routes/marketplace");
 const drivers = require("./routes/drivers");
-const suppliers = require("./routes/suppliers");
+// const suppliers = require("./routes/suppliers");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -189,7 +189,7 @@ app.use("/register", register);
 app.use("/settings", settings);
 app.use("/marketplace", marketplace);
 app.use("/drivers", drivers);
-app.use("/suppliers", suppliers);
+// app.use("/suppliers", suppliers);
 // ======================================================
 // CHAT SAMII V1
 // ======================================================
