@@ -13,7 +13,7 @@ const CONFIG = require("./config");
 const webhook = require("./routes/webhook");
 const academy = require("./routes/academy");
 const app = express();
-
+const community = require("./routes/community");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -176,6 +176,7 @@ document.getElementById("rep").innerHTML=d.reply;
 // ======================================================
 // ROUTES
 // ======================================================
+app.use("/community", community);
 app.use("/academy", academy);
 app.use("/webhook", webhook);
 app.use("/profile", profile);
