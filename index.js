@@ -178,11 +178,11 @@ document.getElementById("rep").innerHTML=d.reply;
 // ======================================================
 
 app.use("/webhook", webhook);
-
+app.use("/profile", profile);
 app.use("/dashboard", dashboard);
 app.use("/login", login);
 app.use("/register", register);
-
+app.use("/settings", settings);
 // ======================================================
 // CHAT SAMII V1
 // ======================================================
