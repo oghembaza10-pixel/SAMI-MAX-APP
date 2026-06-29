@@ -14,6 +14,7 @@ const webhook = require("./routes/webhook");
 const academy = require("./routes/academy");
 const app = express();
 const community = require("./routes/community");
+const marketplace = require("./routes/marketplace");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -184,6 +185,7 @@ app.use("/dashboard", dashboard);
 app.use("/login", login);
 app.use("/register", register);
 app.use("/settings", settings);
+app.use("/marketplace", marketplace);
 // ======================================================
 // CHAT SAMII V1
 // ======================================================
