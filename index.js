@@ -8,7 +8,7 @@ const axios = require("axios");
 const dashboard = require("./routes/dashboard");
 const login = require("./routes/login");
 const register = require("./routes/register");
-
+const profile = require("./routes/profile");
 const CONFIG = require("./config");
 const webhook = require("./routes/webhook");
 
