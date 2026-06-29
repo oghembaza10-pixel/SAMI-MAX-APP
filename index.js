@@ -4,7 +4,7 @@
 
 const express = require("express");
 const axios = require("axios");
-
+const settings = require("./routes/settings");
 const dashboard = require("./routes/dashboard");
 const login = require("./routes/login");
 const register = require("./routes/register");
