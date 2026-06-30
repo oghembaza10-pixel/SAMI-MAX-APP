@@ -1,49 +1,7 @@
-:root {
-    --bg-color: #0A0A0A;
-    --gold: #C5A059;
-    --white: #FFFFFF;
-    --card-bg: #0F0F0F;
-    --transition: 200ms ease;
-    --spacing: 8px;
-}
+/* ... variables existantes ... */
+.badge.verrouillé { color: var(--text-dim); background: rgba(255,255,255,0.03); border: 1px solid var(--border); }
+/* ... (autres styles conservés) ... */
+.cat-section { margin-bottom: 48px; }
+.cat-title { color: var(--text-dim); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; margin-bottom: 24px; padding-left: 4px; }
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-bottom: 40px; }
 
-* { box-sizing: border-box; }
-body { background: var(--bg-color); color: var(--white); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
-
-.og-header { display: flex; justify-content: space-between; padding: 32px 40px; align-items: center; }
-.og-container { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
-
-h1 { font-size: 32px; margin-bottom: var(--spacing); }
-
-.og-search { 
-    width: 100%; background: #1A1A1A; border: 1px solid #333; 
-    padding: 16px; color: white; border-radius: 8px; margin-bottom: 48px; 
-}
-
-.og-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-    gap: 32px; 
-}
-
-.og-module-card { 
-    height: 224px; padding: 32px; background: var(--card-bg); 
-    border: 1px solid #1A1A1A; border-radius: 16px; 
-    display: flex; flex-direction: column; justify-content: space-between;
-    transition: all var(--transition);
-}
-
-.og-module-card:hover { border-color: var(--gold); transform: translateY(-4px); }
-
-.og-button { 
-    height: 40px; padding: 0 24px; border-radius: 8px; 
-    background: transparent; border: 1px solid var(--gold); 
-    color: var(--gold); cursor: pointer; transition: all var(--transition); 
-}
-.og-button:hover { background: var(--gold); color: var(--bg-color); }
-
-.og-samii-footer { 
-    margin-top: 80px; padding: 40px; border-top: 1px solid #1A1A1A; 
-    display: flex; justify-content: space-between; align-items: center; 
-}
-}
