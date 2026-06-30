@@ -592,11 +592,7 @@ body{
 
 .hub-grid{
 
-    display:flex;
-
-    flex-direction:column;
-
-    gap:56px;
+    margin-top:20px;
 
 }
 
