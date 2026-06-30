@@ -2,6 +2,7 @@
 // SAMII OS V1
 // ======================================================
 const hub = require("./routes/hub");
+const path = require("path");
 const express = require("express");
 const axios = require("axios");
 const settings = require("./routes/settings");
@@ -13,6 +14,8 @@ const CONFIG = require("./config");
 const webhook = require("./routes/webhook");
 const academy = require("./routes/academy");
 const app = express();
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 const community = require("./routes/community");
 const marketplace = require("./routes/marketplace");
 const drivers = require("./routes/drivers");
