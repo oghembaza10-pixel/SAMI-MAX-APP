@@ -1,11 +1,234 @@
-<nav class="nav">
-    <a href="#">Tableau de bord</a>
-    <a href="#">Mes QG</a>
-    <a href="#">Activités</a>
-    <a href="#">Connexions</a>
-    <hr>
-    <a href="#" class="active">SAMII</a>
-    <a href="#">Paramètres</a>
-</nav>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>OG • Hub</title>
+
+    <link rel="stylesheet" href="/css/hub-style.css">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+<!-- ========================= -->
+<!-- SIDEBAR -->
+<!-- ========================= -->
+
+<aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-top">
+
+        <div class="logo">
+            <span class="logo-mark"></span>
+            <span class="logo-text">OG</span>
+        </div>
+
+        <div class="user-box">
+            <div class="avatar">👤</div>
+
+            <div class="user-info">
+                <span class="hello">Bonjour</span>
+                <strong>Quartier Général</strong>
+            </div>
+        </div>
+
+    </div>
+
+    <nav class="nav">
+
+        <a href="#">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Tableau de bord</span>
+        </a>
+
+        <a href="#">
+            <i data-lucide="building-2"></i>
+            <span>Mes QG</span>
+        </a>
+
+        <a href="#">
+            <i data-lucide="grid-2x2"></i>
+            <span>Activités</span>
+        </a>
+
+        <a href="#">
+            <i data-lucide="link"></i>
+            <span>Connexions</span>
+        </a>
+
+        <hr>
+
+        <a class="active" href="#">
+            <i data-lucide="brain"></i>
+            <span>SAMII</span>
+        </a>
+
+        <a href="#">
+            <i data-lucide="store"></i>
+            <span>Marketplace</span>
+        </a>
+
+        <a href="#">
+            <i data-lucide="graduation-cap"></i>
+            <span>Academy</span>
+        </a>
+
+        <a href="#">
+            <i data-lucide="users"></i>
+            <span>Community</span>
+        </a>
+
+        <hr>
+
+        <a href="/settings">
+            <i data-lucide="settings"></i>
+            <span>Paramètres</span>
+        </a>
+
+        <a href="/profile">
+            <i data-lucide="user-circle"></i>
+            <span>Profil</span>
+        </a>
+
+    </nav>
+
+</aside>
+
+<!-- ========================= -->
+<!-- MAIN -->
+<!-- ========================= -->
+
+<main class="main">
+
+    <!-- HEADER -->
+
+    <header class="header">
+
+        <div class="header-left">
+
+            <button id="menu-btn" class="menu-btn">
+
+                <i data-lucide="menu"></i>
+
+            </button>
+
+            <div>
+
+                <h1>Bienvenue dans ton QG</h1>
+
+                <p>
+                    Choisis ton activité et lance ton système.
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="header-right">
+
+            <span>FR</span>
+
+            <span>EN</span>
+
+            <span>العربية</span>
+
+            <button class="icon-btn">
+                <i data-lucide="bell"></i>
+            </button>
+
+            <button class="icon-btn">
+                <i data-lucide="user"></i>
+            </button>
+
+        </div>
+
+    </header>
+
+    <!-- RECHERCHE -->
+
+    <section class="search-section">
+
+        <div class="search-box">
+
+            <i data-lucide="search"></i>
+
+            <input
+                id="search"
+                type="text"
+                placeholder="Rechercher un métier..."
+            >
+
+        </div>
+
+    </section>
+
+    <!-- HERO SAMII -->
+
+    <section class="samii-section">
+
+        <div class="samii-card">
+
+            <div class="samii-left">
+
+                <span class="samii-badge">
+                    IA
+                </span>
+
+                <h2>SAMII</h2>
+
+                <p>
+
+                    Intelligence opérationnelle active.
+
+                    Ton bras droit pour tous tes QG.
+
+                </p>
+
+            </div>
+
+            <div class="samii-right">
+
+                <button id="samii-btn" class="gold-btn">
+
+                    Ouvrir SAMII
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- LES METIERS -->
+
+    <section>
+
+        <div id="hub-grid" class="hub-grid">
+
+            <!--
+                Les cartes seront créées automatiquement
+                par public/js/hub.js
+
+                AUCUNE CARTE EN DUR ICI.
+            -->
+
+        </div>
+
+    </section>
+
+</main>
 
 <script src="/js/hub.js"></script>
+
+<script>
+
+lucide.createIcons();
+
+</script>
+
+</body>
+</html>
