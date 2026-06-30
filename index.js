@@ -1,7 +1,7 @@
 // ======================================================
 // SAMII OS V1
 // ======================================================
-
+const hub = require("./routes/hub");
 const express = require("express");
 const axios = require("axios");
 const settings = require("./routes/settings");
@@ -179,6 +179,7 @@ document.getElementById("rep").innerHTML=d.reply;
 // ======================================================
 // ROUTES
 // ======================================================
+app.use("/hub", hub);
 app.use("/community", community);
 app.use("/academy", academy);
 app.use("/webhook", webhook);
