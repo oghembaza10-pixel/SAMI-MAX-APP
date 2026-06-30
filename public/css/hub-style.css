@@ -1,17 +1,1047 @@
-:root {
-    --bg-main: #171717;
-    --bg-sec: #1E1E1E;
-    --bg-card: #242424;
-    --bg-sidebar: #151515;
-    --border: #323232;
-    --gold: #C5A059;
-    --text-main: #F5F5F5;
-    --text-dim: #A3A3A3;
-}
-/* ... variables existantes ... */
-.badge.verrouillé { color: var(--text-dim); background: rgba(255,255,255,0.03); border: 1px solid var(--border); }
-/* ... (autres styles conservés) ... */
-.cat-section { margin-bottom: 48px; }
-.cat-title { color: var(--text-dim); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; margin-bottom: 24px; padding-left: 4px; }
-.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-bottom: 40px; }
+/* =======================================================
+   OG HUB V1
+   Design System
+======================================================= */
 
+:root{
+
+    --bg-main:#171717;
+    --bg-sidebar:#151515;
+    --bg-section:#1E1E1E;
+    --bg-card:#242424;
+
+    --border:#323232;
+
+    --gold:#C5A059;
+
+    --text:#F5F5F5;
+    --text-dim:#A3A3A3;
+
+    --success:#4ade80;
+    --beta:#60a5fa;
+
+    --radius:14px;
+
+    --transition:.25s cubic-bezier(.16,1,.3,1);
+
+}
+
+/* =======================================================
+   RESET
+======================================================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+
+    background:var(--bg-main);
+
+    color:var(--text);
+
+    font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+
+    -webkit-font-smoothing:antialiased;
+
+    display:flex;
+
+}
+
+/* =======================================================
+   SIDEBAR
+======================================================= */
+
+.sidebar{
+
+    width:270px;
+
+    height:100vh;
+
+    position:fixed;
+
+    left:0;
+
+    top:0;
+
+    background:var(--bg-sidebar);
+
+    border-right:1px solid var(--border);
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:space-between;
+
+    padding:34px 26px;
+
+}
+
+.sidebar-top{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:36px;
+
+}
+
+/* =======================================================
+   LOGO
+======================================================= */
+
+.logo{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+}
+
+.logo-mark{
+
+    width:14px;
+
+    height:14px;
+
+    border-radius:50%;
+
+    background:var(--gold);
+
+}
+
+.logo-text{
+
+    font-size:24px;
+
+    font-weight:700;
+
+    letter-spacing:-1px;
+
+}
+
+/* =======================================================
+   USER
+======================================================= */
+
+.user-box{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+}
+
+.avatar{
+
+    width:48px;
+
+    height:48px;
+
+    border-radius:50%;
+
+    background:#2a2a2a;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:20px;
+
+}
+
+.user-info{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.user-info .hello{
+
+    font-size:12px;
+
+    color:var(--text-dim);
+
+}
+
+.user-info strong{
+
+    font-size:15px;
+
+    font-weight:600;
+
+}
+
+/* =======================================================
+   NAV
+======================================================= */
+
+.nav{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:6px;
+
+}
+
+.nav hr{
+
+    border:none;
+
+    height:1px;
+
+    background:var(--border);
+
+    margin:16px 0;
+
+}
+
+.nav a{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    color:var(--text-dim);
+
+    text-decoration:none;
+
+    padding:12px 14px;
+
+    border-radius:10px;
+
+    transition:var(--transition);
+
+}
+
+.nav a:hover{
+
+    background:#222;
+
+    color:white;
+
+}
+
+.nav a.active{
+
+    background:#222;
+
+    color:var(--gold);
+
+}
+
+/* =======================================================
+   MAIN
+======================================================= */
+
+.main{
+
+    margin-left:270px;
+
+    width:100%;
+
+    padding:60px 80px;
+
+    max-width:1600px;
+
+}
+/* =======================================================
+   HEADER
+======================================================= */
+
+.header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:32px;
+
+    margin-bottom:48px;
+
+}
+
+.header-left{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:24px;
+
+}
+
+.header-left h1{
+
+    font-size:36px;
+
+    font-weight:600;
+
+    letter-spacing:-1px;
+
+    margin-bottom:6px;
+
+}
+
+.header-left p{
+
+    color:var(--text-dim);
+
+    font-size:15px;
+
+}
+
+.header-right{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+}
+
+.header-right span{
+
+    color:var(--text-dim);
+
+    font-size:13px;
+
+}
+
+.icon-btn{
+
+    width:42px;
+
+    height:42px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:var(--bg-card);
+
+    color:var(--text);
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.icon-btn:hover{
+
+    background:#2d2d2d;
+
+}
+
+/* =======================================================
+   MENU BUTTON
+======================================================= */
+
+.menu-btn{
+
+    width:46px;
+
+    height:46px;
+
+    border:none;
+
+    border-radius:12px;
+
+    background:var(--bg-card);
+
+    color:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.menu-btn:hover{
+
+    background:#2d2d2d;
+
+}
+
+/* =======================================================
+   SEARCH
+======================================================= */
+
+.search-section{
+
+    margin-bottom:52px;
+
+}
+
+.search-box{
+
+    width:100%;
+
+    max-width:640px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    background:var(--bg-section);
+
+    border:1px solid var(--border);
+
+    border-radius:14px;
+
+    padding:18px 22px;
+
+    transition:var(--transition);
+
+}
+
+.search-box:hover{
+
+    border-color:#444;
+
+}
+
+.search-box:focus-within{
+
+    border-color:var(--gold);
+
+}
+
+.search-box input{
+
+    flex:1;
+
+    background:transparent;
+
+    border:none;
+
+    outline:none;
+
+    color:white;
+
+    font-size:15px;
+
+}
+
+.search-box input::placeholder{
+
+    color:var(--text-dim);
+
+}
+
+/* =======================================================
+   HERO SAMII
+======================================================= */
+
+.samii-section{
+
+    margin-bottom:64px;
+
+}
+
+.samii-card{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:40px;
+
+    padding:42px;
+
+    border-radius:18px;
+
+    background:linear-gradient(
+        180deg,
+        #212121,
+        #1c1c1c
+    );
+
+    border:1px solid rgba(197,160,89,.35);
+
+    box-shadow:
+        0 0 40px rgba(197,160,89,.05);
+
+}
+
+.samii-left{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.samii-left h2{
+
+    font-size:32px;
+
+    font-weight:600;
+
+}
+
+.samii-left p{
+
+    color:var(--text-dim);
+
+    max-width:500px;
+
+    line-height:1.7;
+
+}
+
+.samii-badge{
+
+    width:max-content;
+
+    padding:6px 12px;
+
+    border-radius:999px;
+
+    background:rgba(197,160,89,.12);
+
+    color:var(--gold);
+
+    font-size:11px;
+
+    font-weight:700;
+
+    letter-spacing:.12em;
+
+}
+
+/* =======================================================
+   BUTTONS
+======================================================= */
+
+.gold-btn,
+.og-button{
+
+    padding:14px 22px;
+
+    border-radius:12px;
+
+    border:1px solid var(--gold);
+
+    background:transparent;
+
+    color:var(--gold);
+
+    font-size:14px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:var(--transition);
+
+}
+
+.gold-btn:hover,
+.og-button:hover{
+
+    background:var(--gold);
+
+    color:#171717;
+
+}
+/* =======================================================
+   HUB GRID
+======================================================= */
+
+.hub-grid{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:56px;
+
+}
+
+/* =======================================================
+   CATEGORIES
+======================================================= */
+
+.cat-section{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:26px;
+
+}
+
+.cat-title{
+
+    color:var(--text-dim);
+
+    font-size:12px;
+
+    font-weight:700;
+
+    letter-spacing:.18em;
+
+    text-transform:uppercase;
+
+    padding-left:6px;
+
+}
+
+.cat-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+
+    gap:28px;
+
+}
+
+/* =======================================================
+   CARD
+======================================================= */
+
+.card{
+
+    position:relative;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:space-between;
+
+    gap:18px;
+
+    min-height:250px;
+
+    padding:28px;
+
+    background:var(--bg-card);
+
+    border:1px solid var(--border);
+
+    border-radius:16px;
+
+    transition:all .28s cubic-bezier(.16,1,.3,1);
+
+}
+
+.card:hover{
+
+    transform:translateY(-5px);
+
+    border-color:rgba(197,160,89,.45);
+
+    background:#2a2a2a;
+
+    box-shadow:
+
+        0 20px 40px rgba(0,0,0,.25),
+
+        0 0 25px rgba(197,160,89,.04);
+
+}
+
+/* =======================================================
+   ICON
+======================================================= */
+
+.card svg{
+
+    width:34px;
+
+    height:34px;
+
+    color:var(--gold);
+
+    stroke-width:1.8;
+
+}
+
+/* =======================================================
+   TITLES
+======================================================= */
+
+.card h3{
+
+    font-size:19px;
+
+    font-weight:600;
+
+    letter-spacing:-.02em;
+
+}
+
+.card p{
+
+    color:var(--text-dim);
+
+    font-size:14px;
+
+    line-height:1.7;
+
+}
+
+/* =======================================================
+   BADGES
+======================================================= */
+
+.badge{
+
+    width:max-content;
+
+    padding:5px 10px;
+
+    border-radius:999px;
+
+    font-size:10px;
+
+    font-weight:700;
+
+    text-transform:uppercase;
+
+    letter-spacing:.08em;
+
+}
+
+.badge.disponible{
+
+    color:#4ade80;
+
+    background:rgba(74,222,128,.12);
+
+}
+
+.badge.beta{
+
+    color:#60a5fa;
+
+    background:rgba(96,165,250,.12);
+
+}
+
+.badge.premium{
+
+    color:var(--gold);
+
+    background:rgba(197,160,89,.14);
+
+}
+
+.badge.bientot{
+
+    color:#cfcfcf;
+
+    background:rgba(255,255,255,.05);
+
+}
+
+.badge.verrouille{
+
+    color:#999;
+
+    background:rgba(255,255,255,.03);
+
+}
+
+/* =======================================================
+   FOOTER BUTTON
+======================================================= */
+
+.card-footer{
+
+    margin-top:auto;
+
+}
+
+/* =======================================================
+   RESPONSIVE
+======================================================= */
+
+@media(max-width:1100px){
+
+.main{
+
+padding:40px;
+
+}
+
+}
+
+@media(max-width:900px){
+
+.sidebar{
+
+transform:translateX(-100%);
+
+transition:.3s;
+
+z-index:1000;
+
+}
+
+.sidebar.active{
+
+transform:translateX(0);
+
+}
+
+.main{
+
+margin-left:0;
+
+padding:28px;
+
+}
+
+.header{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+}
+
+.header-right{
+
+width:100%;
+
+justify-content:flex-end;
+
+}
+
+.samii-card{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+}
+
+}
+
+@media(max-width:600px){
+
+.cat-grid{
+
+grid-template-columns:1fr;
+
+}
+
+.card{
+
+min-height:auto;
+
+}
+
+.search-box{
+
+max-width:100%;
+
+}
+
+.header-left h1{
+
+font-size:28px;
+
+}
+
+.samii-left h2{
+
+font-size:26px;
+
+}
+
+}
+/* =====================================================
+   FINITIONS PREMIUM OG
+===================================================== */
+
+/* Scrollbar */
+
+::-webkit-scrollbar{
+width:10px;
+}
+
+::-webkit-scrollbar-track{
+background:#151515;
+}
+
+::-webkit-scrollbar-thumb{
+background:#3a3a3a;
+border-radius:20px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+background:var(--gold);
+}
+
+/* Sélection */
+
+::selection{
+background:rgba(197,160,89,.25);
+color:white;
+}
+
+/* Focus */
+
+button:focus,
+input:focus,
+a:focus{
+outline:none;
+}
+
+/* Animation apparition */
+
+.card{
+animation:fadeCard .45s ease;
+}
+
+@keyframes fadeCard{
+
+from{
+
+opacity:0;
+transform:translateY(20px);
+
+}
+
+to{
+
+opacity:1;
+transform:translateY(0);
+
+}
+
+}
+
+/* Hover bouton */
+
+.og-button{
+
+transition:all .25s ease;
+
+}
+
+.og-button:hover{
+
+transform:translateY(-2px);
+
+}
+
+/* Hero SAMII */
+
+.samii-card::before{
+
+content:"";
+
+position:absolute;
+
+inset:0;
+
+pointer-events:none;
+
+border-radius:18px;
+
+background:linear-gradient(
+90deg,
+transparent,
+rgba(197,160,89,.03),
+transparent
+);
+
+}
+
+/* Logo */
+
+.logo{
+
+user-select:none;
+
+cursor:pointer;
+
+transition:.3s;
+
+}
+
+.logo:hover{
+
+opacity:.9;
+
+transform:scale(1.02);
+
+}
+
+/* Icônes */
+
+svg{
+
+transition:.25s;
+
+}
+
+.card:hover svg{
+
+transform:scale(1.08);
+
+}
+
+/* Texte */
+
+h1,h2,h3{
+
+text-rendering:optimizeLegibility;
+
+}
+
+p{
+
+font-weight:400;
+
+}
+
+/* Fin OG */
