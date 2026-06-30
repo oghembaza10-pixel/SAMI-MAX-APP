@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OG | Centre de Commandement</title>
     <link rel="stylesheet" href="/css/hub-style.css">
 </head>
 <body>
+
     <header class="og-header">
         <div class="og-logo">OG</div>
         <nav class="og-nav">
             <div class="og-lang">FR | EN | العربية</div>
-            <div class="og-actions">🔔 👤</div>
+            <div class="og-actions"><span>🔔</span> <span>👤</span></div>
         </nav>
     </header>
 
@@ -19,22 +23,28 @@
         <input type="text" class="og-search" placeholder="Rechercher mon activité...">
 
         <section class="og-grid" id="module-grid">
-            <!-- Exemple de composant OG-Module-Card -->
+            <!-- Exemple de structure répétée pour les 20 métiers -->
             <article class="og-module-card">
                 <div class="card-icon">
-                    <svg><!-- Lucide Icon --></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="8"></line><line x1="12" y1="1" x2="12" y2="8"></line></svg>
                 </div>
-                <h3>Restaurant</h3>
-                <p>Gestion complète de votre activité.</p>
+                <div class="card-content">
+                    <h3>Restaurant</h3>
+                    <p>Gestion complète de votre activité.</p>
+                </div>
                 <button class="og-button">Ouvrir</button>
             </article>
-            <!-- 19 autres cartes identiques -->
+            <!-- Ajouter les 19 autres articles ici avec leurs SVG Lucide respectifs -->
         </section>
     </main>
 
     <footer class="og-samii-footer">
-        <p><strong>SAMII</strong> — Toujours prêt à t'aider.</p>
+        <div class="samii-text">
+            <h3>SAMII</h3>
+            <p>Toujours prêt à t'aider.</p>
+        </div>
         <button class="og-button">Ouvrir SAMII</button>
     </footer>
+
 </body>
 </html>
