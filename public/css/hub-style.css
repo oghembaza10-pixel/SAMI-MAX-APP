@@ -622,19 +622,13 @@ body {
    HUB GRID
 ======================================================= */
 
-.hub-grid{
-
-    margin-top:20px;
-
-}
-
 .main-grid{
 
     display:grid;
 
-    grid-template-columns:repeat(5,1fr);
+    grid-template-columns:repeat(4,1fr);
 
-    gap:24px;
+    gap:30px;
 
     align-items:stretch;
 
@@ -656,9 +650,9 @@ body {
 
     gap:18px;
 
-    min-height:250px;
+    min-height:270px;
 
-    padding:28px;
+    padding:32px;
 
     background:rgba(9,9,9,.72);
 
