@@ -1,12 +1,12 @@
-<main class="main">
+<main class="hub">
 
-    <!-- ========================= -->
+    <!-- ========================================= -->
     <!-- HEADER -->
-    <!-- ========================= -->
+    <!-- ========================================= -->
 
     <header class="hub-header">
 
-        <div class="hub-title">
+        <div class="hub-heading">
 
             <h1>Bienvenue dans ton QG</h1>
 
@@ -16,22 +16,20 @@
 
         </div>
 
-        <div class="hub-language">
+        <nav class="hub-language">
 
-            <button>FR</button>
-
+            <button class="active">FR</button>
             <button>EN</button>
-
             <button>العربية</button>
 
-        </div>
+        </nav>
 
     </header>
 
 
-    <!-- ========================= -->
+    <!-- ========================================= -->
     <!-- SEARCH -->
-    <!-- ========================= -->
+    <!-- ========================================= -->
 
     <section class="search-section">
 
@@ -50,146 +48,203 @@
     </section>
 
 
-    <!-- ========================= -->
-    <!-- SAMII -->
-    <!-- ========================= -->
+    <!-- ========================================= -->
+    <!-- HUB GRID -->
+    <!-- ========================================= -->
 
-    <section class="samii-section">
+    <section class="hub-masonry">
 
-        <div class="samii-card">
+        <!-- ===== SAMII ===== -->
 
-            <div class="samii-left">
+        <article class="card card-samii">
 
-                <span class="samii-label">
+            <div class="card-content">
+
+                <span class="card-label">
                     IA OPÉRATIONNELLE
                 </span>
 
                 <h2>SAMII</h2>
 
                 <p>
-
-                    Ton copilote intelligent.
-
-                    Connecté à tous tes réseaux.
-
+                    Connectez vos réseaux.
                 </p>
 
                 <div class="samii-network">
 
                     <span>Meta</span>
-
+                    <span>WhatsApp</span>
+                    <span>Shopify</span>
+                    <span>LinkedIn</span>
                     <span>TikTok</span>
 
-                    <span>WhatsApp</span>
-
-                    <span>LinkedIn</span>
-
-                    <span>Shopify</span>
-
                 </div>
 
             </div>
 
-            <div class="samii-right">
+            <div class="card-action">
 
-                <span class="nav-arrow">
+                <button class="go-button">
 
-                    →
+                    GO →
 
-                </span>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- ========================= -->
-    <!-- HUB -->
-    <!-- ========================= -->
-
-    <section class="hub-grid">
-
-        <div class="main-grid">
-
-            <!-- Garage -->
-
-            <div class="card">
-
-                <div class="card-icon">
-
-                    <img src="/icons/garage.svg">
-
-                </div>
-
-                <h3>Garage</h3>
-
-                <span class="nav-arrow">→</span>
+                </button>
 
             </div>
 
+        </article>
 
-            <!-- Immobilier -->
 
-            <div class="card">
+        <!-- ===== MÉTIERS ===== -->
 
-                <div class="card-icon">
+        <article class="card">
 
-                    <img src="/icons/immo.svg">
+            <div class="card-icon">
 
-                </div>
-
-                <h3>Immobilier</h3>
-
-                <span class="nav-arrow">→</span>
+                <img src="/icons/garage.svg" alt="Garage">
 
             </div>
 
+            <h3>Garage</h3>
 
-            <!-- Hôtel -->
+            <span class="nav-arrow">→</span>
 
-            <div class="card">
+        </article>
 
-                <div class="card-icon">
 
-                    <img src="/icons/hotel.svg">
+        <article class="card">
 
-                </div>
+            <div class="card-icon">
 
-                <h3>Hôtel</h3>
-
-                <span class="nav-arrow">→</span>
+                <img src="/icons/immo.svg" alt="Immobilier">
 
             </div>
 
+            <h3>Immobilier</h3>
 
-            <!-- Restaurant -->
+            <span class="nav-arrow">→</span>
 
-            <div class="card">
+        </article>
 
-                <div class="card-icon">
 
-                    <img src="/icons/restaurant.svg">
+        <article class="card">
 
-                </div>
+            <div class="card-icon">
 
-                <h3>Restaurant</h3>
-
-                <span class="nav-arrow">→</span>
+                <img src="/icons/hotel.svg" alt="Hôtel">
 
             </div>
 
-            <!-- Les autres métiers suivent exactement le même modèle -->
+            <h3>Hôtel</h3>
 
-        </div>
+            <span class="nav-arrow">→</span>
+
+        </article>
+
+
+        <article class="card">
+
+            <div class="card-icon">
+
+                <img src="/icons/restaurant.svg" alt="Restaurant">
+
+            </div>
+
+            <h3>Restaurant</h3>
+
+            <span class="nav-arrow">→</span>
+
+        </article>
+
+
+        <article class="card">
+
+            <div class="card-icon">
+
+                <img src="/icons/entreprise.svg" alt="Entreprise">
+
+            </div>
+
+            <h3>Entreprise</h3>
+
+            <span class="nav-arrow">→</span>
+
+        </article>
+
+
+        <article class="card">
+
+            <div class="card-icon">
+
+                <img src="/icons/transport.svg" alt="Transport">
+
+            </div>
+
+            <h3>Transport</h3>
+
+            <span class="nav-arrow">→</span>
+
+        </article>
+
+
+        <article class="card">
+
+            <div class="card-icon">
+
+                <img src="/icons/pharmacie.svg" alt="Pharmacie">
+
+            </div>
+
+            <h3>Pharmacie</h3>
+
+            <span class="nav-arrow">→</span>
+
+        </article>
+
+
+        <article class="card">
+
+            <div class="card-icon">
+
+                <img src="/icons/formation.svg" alt="Formation">
+
+            </div>
+
+            <h3>Formation</h3>
+
+            <span class="nav-arrow">→</span>
+
+        </article>
+
+
+        <!-- ===== PLUS DE MÉTIERS ===== -->
+
+        <article class="card card-more">
+
+            <div class="card-content">
+
+                <h3>+ Plus de métiers</h3>
+
+                <p>
+
+                    Découvrir tous les QG disponibles.
+
+                </p>
+
+            </div>
+
+            <span class="nav-arrow">
+
+                →
+
+            </span>
+
+        </article>
 
     </section>
 
 </main>
 
 <script>
-
-lucide.createIcons();
-
+    lucide.createIcons();
 </script>
