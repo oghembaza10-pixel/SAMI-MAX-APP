@@ -1,406 +1,107 @@
-/* =======================================================
-   OG HUB V1
-   Design System
-======================================================= */
+/* =========================================================
+   OG HUB V2
+   FREEZE FINAL
+=========================================================*/
 
-:root{
-
-    --bg-main:#171717;
-    --bg-sidebar:#151515;
-    --bg-section:#1E1E1E;
-    --bg-card:#242424;
-
-    --border:#323232;
-
-    --gold:#C5A059;
-
-    --text:#F5F5F5;
-    --text-dim:#A3A3A3;
-
-    --success:#4ade80;
-    --beta:#60a5fa;
-
-    --radius:14px;
-
-    --transition:.25s cubic-bezier(.16,1,.3,1);
-
+body{
+    background:#000;
+    color:#F5F5F5;
+    font-family:Inter,sans-serif;
 }
 
-/* =======================================================
-   RESET
-======================================================= */
+/* ==========================
+HEADER
+========================== */
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-html{
-    scroll-behavior:smooth;
-}
-
-body {
-    background: #000000;
-    color: var(--text);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    margin: 0;
-}
-
-/* =======================================================
-   SIDEBAR
-======================================================= */
-
-.sidebar{
-
-    width:250px;
-
-    height:100vh;
-
-    position:fixed;
-
-    left:0;
-
-    top:0;
-
-    padding:38px 24px;
+.hub-header{
 
     display:flex;
-
-    flex-direction:column;
-
-    gap:18px;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(212,175,55,.05),
-            transparent 18%,
-            transparent 82%,
-            rgba(212,175,55,.03)
-        ),
-        rgba(0,0,0,.92);
-
-    backdrop-filter:blur(24px);
-
-    -webkit-backdrop-filter:blur(24px);
-
-    border-right:1px solid rgba(255,255,255,.05);
-
-}
-
-.sidebar-top{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:36px;
-
-}
-/* =======================================================
-   LOGO
-======================================================= */
-
-.logo{
-
-    display:flex;
-
-    align-items:center;
-
-}
-
-.logo-text{
-
-    font-size:26px;
-
-    font-weight:700;
-
-    letter-spacing:-1px;
-
-    color:#D4AF37;
-
-}
-
-
-
-/* =======================================================
-   USER
-======================================================= */
-
-.user-box{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:14px;
-
-}
-
-.avatar{
-
-    width:48px;
-
-    height:48px;
-
-    border-radius:50%;
-
-    background:#2a2a2a;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    font-size:20px;
-
-}
-
-.user-info{
-
-    display:flex;
-
-    flex-direction:column;
-
-}
-
-.user-info .hello{
-
-    font-size:12px;
-
-    color:var(--text-dim);
-
-}
-
-.user-info strong{
-
-    font-size:15px;
-
-    font-weight:600;
-
-}
-
-/* =======================================================
-   NAV
-======================================================= */
-.nav a{
-
-    display:flex;
-
-    align-items:center;
 
     justify-content:space-between;
 
-    gap:14px;
+    align-items:flex-start;
 
-    padding:14px 18px;
-
-    border-radius:14px;
-
-    text-decoration:none;
-
-    color:#9A9A9A;
-
-    font-size:14px;
-
-    font-weight:500;
-
-    transition:all .35s cubic-bezier(.16,1,.3,1);
-
-    border:1px solid transparent;
+    margin-bottom:48px;
 
 }
 
-.nav a:hover{
+.hub-title h1{
 
-    color:#F5F5F5;
-
-    background:rgba(255,255,255,.03);
-
-    border-color:rgba(212,175,55,.08);
-
-    transform:translateX(4px);
-
-}
-
-.nav a.active{
-
-    color:#D4AF37;
-
-    background:rgba(212,175,55,.08);
-
-    border-color:rgba(212,175,55,.18);
-
-    box-shadow:0 0 18px rgba(212,175,55,.05);
-
-}
-
-
-/* =======================================================
-   MAIN
-======================================================= */
-
-.main {
-    margin-left: 270px;
-    width: 100%;
-    padding: 60px 80px;
-    background: #000000;
-}
-/* =======================================================
-   HEADER
-======================================================= */
-
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #000000;
-    margin-bottom: 48px;
-}
-
-.header-left{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:24px;
-
-}
-
-.header-left h1{
-
-    font-size:36px;
+    font-size:40px;
 
     font-weight:600;
 
     letter-spacing:-1px;
 
-    margin-bottom:6px;
+    margin-bottom:8px;
 
 }
 
-.header-left p{
+.hub-title p{
 
-    color:var(--text-dim);
+    color:#8B8B8B;
 
     font-size:15px;
 
 }
 
-.header-right{
+.hub-language{
 
     display:flex;
 
-    align-items:center;
-
-    gap:18px;
+    gap:12px;
 
 }
 
-.header-right span{
+.hub-language button{
 
-    color:var(--text-dim);
-
-    font-size:13px;
-
-}
-
-.icon-btn{
-
-    width:42px;
-
-    height:42px;
+    background:none;
 
     border:none;
 
-    border-radius:12px;
-
-    background:var(--bg-card);
-
-    color:var(--text);
+    color:#777;
 
     cursor:pointer;
 
-    transition:var(--transition);
+    transition:.25s;
 
 }
 
-.icon-btn:hover{
+.hub-language button:hover{
 
-    background:#2d2d2d;
-
-}
-
-/* =======================================================
-   MENU BUTTON
-======================================================= */
-
-.menu-btn{
-
-    width:46px;
-
-    height:46px;
-
-    border:none;
-
-    border-radius:12px;
-
-    background:var(--bg-card);
-
-    color:white;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    cursor:pointer;
-
-    transition:var(--transition);
+    color:#D4AF37;
 
 }
 
-.menu-btn:hover{
-
-    background:#2d2d2d;
-
-}
-
-/* =======================================================
-   SEARCH
-======================================================= */
+/* ==========================
+SEARCH
+========================== */
 
 .search-section{
 
-    margin-bottom:52px;
+    margin-bottom:50px;
 
 }
 
-.search-box {
-    width: 100%;
-    max-width: 640px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: #000000;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 22px;
-}
+.search-box{
 
-.search-box:hover{
+    width:100%;
 
-    border-color:#444;
+    max-width:620px;
 
-}
+    display:flex;
 
-.search-box:focus-within{
+    align-items:center;
 
-    border-color:var(--gold);
+    gap:14px;
+
+    padding:18px 22px;
+
+    background:#090909;
+
+    border:1px solid rgba(255,255,255,.06);
+
+    border-radius:16px;
 
 }
 
@@ -408,7 +109,7 @@ body {
 
     flex:1;
 
-    background:transparent;
+    background:none;
 
     border:none;
 
@@ -422,17 +123,17 @@ body {
 
 .search-box input::placeholder{
 
-    color:var(--text-dim);
+    color:#666;
 
 }
 
-/* =======================================================
-   HERO SAMII
-======================================================= */
+/* ==========================
+SAMII
+========================== */
 
 .samii-section{
 
-    margin-bottom:64px;
+    margin-bottom:60px;
 
 }
 
@@ -444,17 +145,17 @@ body {
 
     align-items:center;
 
-    gap:40px;
+    padding:44px;
 
-    padding:42px;
+    border-radius:26px;
 
-    border-radius:24px;
+    background:rgba(255,255,255,.025);
 
-    background:#090909;
+    border:1px solid rgba(255,255,255,.05);
 
-    border:1px solid rgba(212,175,55,.12);
+    backdrop-filter:blur(18px);
 
-    transition:all .45s cubic-bezier(.16,1,.3,1);
+    transition:.45s cubic-bezier(.16,1,.3,1);
 
 }
 
@@ -462,101 +163,81 @@ body {
 
     transform:translateY(-4px);
 
-    border-color:rgba(212,175,55,.28);
+    border-color:rgba(212,175,55,.18);
 
     box-shadow:
-        0 0 35px rgba(212,175,55,.08),
+
+        0 0 40px rgba(212,175,55,.06),
+
         0 25px 60px rgba(0,0,0,.45);
 
 }
 
-.samii-left{
+.samii-label{
 
-    display:flex;
+    display:inline-flex;
 
-    flex-direction:column;
+    padding:6px 12px;
 
-    gap:12px;
+    border-radius:999px;
+
+    color:#D4AF37;
+
+    background:rgba(212,175,55,.08);
+
+    font-size:11px;
+
+    margin-bottom:18px;
+
+    letter-spacing:.1em;
 
 }
 
 .samii-left h2{
 
-    font-size:32px;
+    font-size:34px;
 
-    font-weight:600;
-
-    color:#D4AF37;
+    margin-bottom:12px;
 
 }
 
 .samii-left p{
 
-    color:#CFCFCF;
+    color:#A8A8A8;
 
     line-height:1.7;
 
-    max-width:500px;
+}
+
+.samii-network{
+
+    display:flex;
+
+    gap:12px;
+
+    margin-top:24px;
+
+    flex-wrap:wrap;
 
 }
 
-.nav-arrow{
+.samii-network span{
 
-    font-size:24px;
+    padding:8px 14px;
 
-    color:#D4AF37;
+    border-radius:999px;
 
-    transition:.35s;
+    background:#111;
 
-}
+    color:#888;
 
-.samii-card:hover .nav-arrow{
-
-    transform:translateX(6px);
+    font-size:12px;
 
 }
 
-
-
-
-/* =======================================================
-   BUTTONS
-======================================================= */
-
-.gold-btn,
-.og-button{
-
-    padding:14px 22px;
-
-    border-radius:12px;
-
-    border:1px solid var(--gold);
-
-    background:transparent;
-
-    color:var(--gold);
-
-    font-size:14px;
-
-    font-weight:600;
-
-    cursor:pointer;
-
-    transition:var(--transition);
-
-}
-
-.gold-btn:hover,
-.og-button:hover{
-
-    background:var(--gold);
-
-    color:#171717;
-
-}
-/* =======================================================
-   HUB GRID
-======================================================= */
+/* ==========================
+GRID
+========================== */
 
 .main-grid{
 
@@ -564,483 +245,130 @@ body {
 
     grid-template-columns:repeat(4,1fr);
 
-    gap:30px;
-
-    align-items:stretch;
+    gap:26px;
 
 }
 
-/* =======================================================
-   CARD
-======================================================= */
+/* ==========================
+CARD
+========================== */
 
 .card{
-
-    position:relative;
 
     display:flex;
 
     flex-direction:column;
 
-    justify-content:space-between;
+    align-items:center;
+
+    justify-content:center;
 
     gap:18px;
 
-    min-height:270px;
-
-    padding:32px;
-
-    background:rgba(9,9,9,.72);
-
-    backdrop-filter:blur(18px);
-
-    -webkit-backdrop-filter:blur(18px);
-
-    border:1px solid rgba(255,255,255,.05);
+    min-height:250px;
 
     border-radius:22px;
 
-    transition:all .45s cubic-bezier(.16,1,.3,1);
+    background:rgba(255,255,255,.02);
 
-    overflow:hidden;
+    border:1px solid rgba(255,255,255,.05);
+
+    backdrop-filter:blur(18px);
+
+    transition:.45s cubic-bezier(.16,1,.3,1);
+
+    cursor:pointer;
 
 }
 
 .card:hover{
 
-    transform:
-        translateY(-12px)
-        scale(1.015);
+    transform:translateY(-8px);
 
-    background:rgba(9,9,9,.92);
+    background:rgba(255,255,255,.04);
 
-    backdrop-filter:blur(26px);
-
-    -webkit-backdrop-filter:blur(26px);
-
-    border-color:rgba(212,175,55,.18);
+    border-color:rgba(212,175,55,.22);
 
     box-shadow:
 
-        0 28px 70px rgba(0,0,0,.65),
+        0 24px 60px rgba(0,0,0,.55),
 
-        0 0 45px rgba(212,175,55,.08);
-
-}
-.card::before{
-
-    content:"";
-
-    position:absolute;
-
-    inset:0;
-
-    border-radius:22px;
-
-    background:
-
-        linear-gradient(
-
-            135deg,
-
-            rgba(255,255,255,.03),
-
-            transparent 45%,
-
-            transparent 60%,
-
-            rgba(212,175,55,.02)
-
-        );
-
-    opacity:0;
-
-    transition:.45s;
-
-    pointer-events:none;
+        0 0 22px rgba(212,175,55,.08);
 
 }
 
-.card:hover::before{
+.card-icon{
 
-    opacity:1;
+    width:64px;
 
-}
-/* =======================================================
-   ICON PREMIUM
-======================================================= */
+    height:64px;
 
-.card svg{
+    display:flex;
 
-    width:28px;
+    justify-content:center;
 
-    height:28px;
-
-    stroke:#C5A059;
-
-    stroke-width:1.6;
-
-    fill:none;
-
-    opacity:.75;
-
-    transition:
-        opacity .25s ease,
-        transform .25s ease,
-        stroke .25s ease;
+    align-items:center;
 
 }
 
-.card:hover svg{
+.card-icon img{
 
-    opacity:1;
+    width:56px;
 
-    stroke:#D4AF37;
+    height:56px;
 
-    transform:translateY(-2px) scale(1.05);
+    object-fit:contain;
+
+    opacity:.92;
+
+    transition:.35s;
 
 }
 
-/* =======================================================
-   TITLES
-======================================================= */
+.card:hover .card-icon img{
+
+    transform:translateY(-2px) scale(1.04);
+
+}
 
 .card h3{
 
-    font-size:19px;
+    font-size:18px;
 
-    font-weight:600;
+    font-weight:500;
 
-    letter-spacing:-.02em;
-
-}
-
-.card p{
-
-    color:var(--text-dim);
-
-    font-size:14px;
-
-    line-height:1.7;
+    transition:.25s;
 
 }
 
-/* =======================================================
-   BADGES
-======================================================= */
+.card:hover h3{
 
-.badge{
-
-    width:max-content;
-
-    padding:5px 10px;
-
-    border-radius:999px;
-
-    font-size:10px;
-
-    font-weight:700;
-
-    text-transform:uppercase;
-
-    letter-spacing:.08em;
+    color:#D4AF37;
 
 }
 
-.badge.disponible{
+/* ==========================
+ARROW
+========================== */
 
-    color:#4ade80;
+.nav-arrow{
 
-    background:rgba(74,222,128,.12);
+    color:#D4AF37;
 
-}
+    font-size:22px;
 
-.badge.beta{
+    opacity:.35;
 
-    color:#60a5fa;
-
-    background:rgba(96,165,250,.12);
-
-}
-
-.badge.premium{
-
-    color:var(--gold);
-
-    background:rgba(197,160,89,.14);
+    transition:.35s;
 
 }
 
-.badge.bientot{
+.card:hover .nav-arrow,
 
-    color:#cfcfcf;
+.samii-card:hover .nav-arrow{
 
-    background:rgba(255,255,255,.05);
+    opacity:1;
 
-}
-
-.badge.verrouille{
-
-    color:#999;
-
-    background:rgba(255,255,255,.03);
+    transform:translateX(8px);
 
 }
-
-/* =======================================================
-   FOOTER BUTTON
-======================================================= */
-
-.card-footer{
-
-    margin-top:auto;
-
-}
-
-/* =======================================================
-   RESPONSIVE
-======================================================= */
-
-@media(max-width:1100px){
-
-.main{
-
-padding:40px;
-
-}
-
-}
-
-@media(max-width:900px){
-
-.sidebar{
-
-transform:translateX(-100%);
-
-transition:.3s;
-
-z-index:1000;
-
-}
-
-.sidebar.active{
-
-transform:translateX(0);
-
-}
-
-.main{
-
-margin-left:0;
-
-padding:28px;
-
-}
-
-.header{
-
-flex-direction:column;
-
-align-items:flex-start;
-
-}
-
-.header-right{
-
-width:100%;
-
-justify-content:flex-end;
-
-}
-
-.samii-card{
-
-flex-direction:column;
-
-align-items:flex-start;
-
-}
-
-}
-
-@media(max-width:600px){
-
-.cat-grid{
-
-grid-template-columns:1fr;
-
-}
-
-.card{
-
-min-height:auto;
-
-}
-
-.search-box{
-
-max-width:100%;
-
-}
-
-.header-left h1{
-
-font-size:28px;
-
-}
-
-.samii-left h2{
-
-font-size:26px;
-
-}
-
-}
-/* =====================================================
-   FINITIONS PREMIUM OG
-===================================================== */
-
-/* Scrollbar */
-
-::-webkit-scrollbar{
-width:10px;
-}
-
-::-webkit-scrollbar-track{
-background:#151515;
-}
-
-::-webkit-scrollbar-thumb{
-background:#3a3a3a;
-border-radius:20px;
-}
-
-::-webkit-scrollbar-thumb:hover{
-background:var(--gold);
-}
-
-/* Sélection */
-
-::selection{
-background:rgba(197,160,89,.25);
-color:white;
-}
-
-/* Focus */
-
-button:focus,
-input:focus,
-a:focus{
-outline:none;
-}
-
-/* Animation apparition */
-
-.card{
-animation:fadeCard .45s ease;
-}
-
-@keyframes fadeCard{
-
-from{
-
-opacity:0;
-transform:translateY(20px);
-
-}
-
-to{
-
-opacity:1;
-transform:translateY(0);
-
-}
-
-}
-
-/* Hover bouton */
-
-.og-button{
-
-transition:all .25s ease;
-
-}
-
-.og-button:hover{
-
-transform:translateY(-2px);
-
-}
-
-/* Hero SAMII */
-
-.samii-card::before{
-
-content:"";
-
-position:absolute;
-
-inset:0;
-
-pointer-events:none;
-
-border-radius:18px;
-
-background:linear-gradient(
-90deg,
-transparent,
-rgba(197,160,89,.03),
-transparent
-);
-
-}
-
-/* Logo */
-
-.logo{
-
-user-select:none;
-
-cursor:pointer;
-
-transition:.3s;
-
-}
-
-.logo:hover{
-
-opacity:.9;
-
-transform:scale(1.02);
-
-}
-
-/* Icônes */
-
-svg{
-
-transition:.25s;
-
-}
-
-.card:hover svg{
-
-transform:scale(1.08);
-
-}
-
-/* Texte */
-
-h1,h2,h3{
-
-text-rendering:optimizeLegibility;
-
-}
-
-p{
-
-font-weight:400;
-
-}
-
-/* Fin OG */
