@@ -434,10 +434,10 @@ body {
     justify-content: space-between;
     gap: 40px;
     padding: 42px;
-    border-radius: 18px;
-    background: #000000;
+    border-radius: 16px;
+    background: #0A0A0A;
     border: 1px solid #1A1A1A;
-    box-shadow: 0 0 40px rgba(197, 160, 89, 0.05);
+    box-shadow: none;
 }
 
     border:1px solid rgba(197,160,89,.35);
