@@ -587,18 +587,37 @@ body {
 }
 
 /* =======================================================
-   ICON
+   ICON PREMIUM
 ======================================================= */
 
 .card svg{
 
-    width:34px;
+    width:28px;
 
-    height:34px;
+    height:28px;
 
-    color:var(--gold);
+    stroke:#C5A059;
 
-    stroke-width:1.8;
+    stroke-width:1.6;
+
+    fill:none;
+
+    opacity:.75;
+
+    transition:
+        opacity .25s ease,
+        transform .25s ease,
+        stroke .25s ease;
+
+}
+
+.card:hover svg{
+
+    opacity:1;
+
+    stroke:#D4AF37;
+
+    transform:translateY(-2px) scale(1.05);
 
 }
 
