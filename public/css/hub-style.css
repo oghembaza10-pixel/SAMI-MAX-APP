@@ -98,7 +98,6 @@ body {
     gap:36px;
 
 }
-
 /* =======================================================
    LOGO
 ======================================================= */
@@ -109,31 +108,21 @@ body {
 
     align-items:center;
 
-    gap:12px;
+}
+
+.logo-text{
+
+    font-size:26px;
+
+    font-weight:700;
+
+    letter-spacing:-1px;
+
+    color:#D4AF37;
 
 }
 
-.logo-mark{
 
-    width:14px;
-
-    height:14px;
-
-    border-radius:50%;
-
-    background:var(--gold);
-
-}
-
-.logo-text {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -1px;
-}
-
-.logo img {
-    margin-right: 4px;
-}
 
 /* =======================================================
    USER
