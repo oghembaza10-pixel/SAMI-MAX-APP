@@ -40,53 +40,28 @@ html{
     scroll-behavior:smooth;
 }
 
-body{
-
-    background:var(--bg-main);
-
-    color:var(--text);
-
-    font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
-
-    -webkit-font-smoothing:antialiased;
-
-    display:flex;
-
+body {
+    background: #000000;
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    margin: 0;
 }
 
 /* =======================================================
    SIDEBAR
 ======================================================= */
 
-.sidebar{
-
-    width:270px;
-
-    height:100vh;
-
-    position:fixed;
-
-    left:0;
-
-    top:0;
-
-    background:var(--bg-sidebar);
-
-    border-right:1px solid var(--border);
-
-    display:flex;
-
-    flex-direction:column;
-
-    justify-content:space-between;
-
-    padding:34px 26px;
-
+.sidebar {
+    width: 270px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: #000000;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 34px 26px;
 }
 
 .sidebar-top{
