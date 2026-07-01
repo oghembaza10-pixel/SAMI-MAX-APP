@@ -383,28 +383,16 @@ body {
 
 }
 
-.search-box{
-
-    width:100%;
-
-    max-width:640px;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:14px;
-
-    background:var(--bg-section);
-
-    border:1px solid var(--border);
-
-    border-radius:14px;
-
-    padding:18px 22px;
-
-    transition:var(--transition);
-
+.search-box {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #000000;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 22px;
 }
 
 .search-box:hover{
