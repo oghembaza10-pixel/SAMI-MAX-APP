@@ -436,19 +436,14 @@ body {
     color:var(--text-dim);
 
 }
-
-
-
 /* =======================================================
-   HERO SAMII
+   HERO SAMII (OS INTEGRATION - FINAL)
 ======================================================= */
 
-.samii-section{
-
-    margin-bottom:64px;
-
+.samii-section {
+    margin-bottom: 64px;
 }
-/* --- SAMII : OS INTEGRATION (FINAL) --- */
+
 .samii-card {
     position: relative;
     display: flex;
@@ -461,8 +456,10 @@ body {
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Effet de lueur dorée au survol */
 .samii-card:hover {
-    border-color: rgba(212, 175, 55, 0.3);
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.08);
     transform: translateY(-4px);
 }
 
@@ -480,16 +477,17 @@ body {
     font-size: 15px;
 }
 
+/* Logos monochromes */
 .integrations {
     display: flex;
     gap: 24px;
     filter: grayscale(1) brightness(2);
     opacity: 0.4;
-    transition: 0.3s;
+    transition: 0.5s;
 }
 
 .samii-card:hover .integrations {
-    opacity: 0.8;
+    opacity: 1; /* Brillance accrue au survol */
 }
 
 .integrations img {
@@ -497,6 +495,7 @@ body {
     width: auto;
 }
 
+/* Flèche minimaliste */
 .nav-arrow {
     width: 28px;
     height: 1px;
@@ -508,6 +507,9 @@ body {
     background: #D4AF37;
     transform: translateX(10px);
 }
+
+
+
 
 
 /* =======================================================
