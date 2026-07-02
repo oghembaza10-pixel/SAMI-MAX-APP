@@ -567,3 +567,54 @@ RESPONSIVE
     }
 
 }
+/* ==========================================
+   LANGUES
+========================================== */
+
+.language-switcher{
+
+    display:flex;
+
+    gap:12px;
+
+    margin-top:25px;
+
+}
+
+.language-switcher button{
+
+    background:#111;
+
+    color:#D4AF37;
+
+    border:1px solid rgba(212,175,55,.25);
+
+    padding:10px 18px;
+
+    border-radius:999px;
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    transition:.25s;
+
+}
+
+.language-switcher button:hover{
+
+    background:#D4AF37;
+
+    color:#000;
+
+    transform:translateY(-2px);
+
+}
+
+.language-switcher button.active{
+
+    background:#D4AF37;
+
+    color:#000;
+
+}
