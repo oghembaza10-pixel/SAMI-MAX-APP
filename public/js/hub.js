@@ -4,7 +4,10 @@ const METIERS = [
     { title: "Entreprise", icon: "briefcase", mod: "entreprise" },
     { title: "E-commerce", icon: "shopping-bag", mod: "ecommerce" },
     { title: "Restaurant", icon: "utensils-crossed", mod: "restaurant" },
-
+{ title: "Livreur", icon: "truck", mod: "livreur" },
+{ title: "Agence de voyage", icon: "plane", mod: "voyage" },
+{ title: "Grossiste", icon: "warehouse", mod: "grossiste" },
+{ title: "Administration", icon: "building", mod: "administration" },
     { title: "Garage", icon: "wrench", mod: "garage" },
     { title: "Immobilier", icon: "building-2", mod: "immobilier" },
     { title: "Hôtel", icon: "hotel", mod: "hotel" },
