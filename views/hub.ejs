@@ -4,7 +4,6 @@
 <head>
 
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>OG • HUB</title>
@@ -32,13 +31,9 @@
         <nav class="menu">
 
             <a href="/hub" class="active">Hub</a>
-
             <a href="/profile">Profil</a>
-
             <a href="/academy">Académie</a>
-
             <a href="/marketplace">Marketplace</a>
-
             <a href="/settings">Paramètres</a>
 
         </nav>
@@ -54,29 +49,38 @@
             <h1>Bienvenue au Centre Commercial des QG</h1>
 
             <p>
+
                 Choisissez votre activité et lancez votre quartier général.
+
             </p>
 
         </header>
 
-        <!-- CARTE SAMII -->
+        <!-- SAMII -->
 
         <section class="samii-card">
 
             <div class="samii-left">
 
                 <span class="badge">
+
                     IA OPÉRATIONNELLE
+
                 </span>
 
                 <h2>SAMII</h2>
 
                 <p>
-                    Connectez tous vos réseaux et pilotez votre activité depuis un seul endroit.
+
+                    Connectez Meta, WhatsApp, Shopify, LinkedIn, TikTok
+                    et pilotez votre activité depuis un seul QG.
+
                 </p>
 
                 <button class="go-button">
+
                     GO →
+
                 </button>
 
             </div>
@@ -84,26 +88,62 @@
             <div class="samii-right">
 
                 <span>Meta</span>
-
                 <span>WhatsApp</span>
-
                 <span>Shopify</span>
-
                 <span>LinkedIn</span>
-
                 <span>TikTok</span>
 
             </div>
 
         </section>
 
-        <!-- HUB -->
+        <!-- LES CARTES SONT GÉNÉRÉES PAR HUB.JS -->
 
-      <section id="hub-grid" class="hub-grid"></section>
+        <section id="hub-grid" class="hub-grid"></section>
+
+        <!-- COMMUNAUTÉ -->
+
+        <section class="community-card">
+
+            <h3>
+
+                Un métier manque ?
+
+            </h3>
+
+            <p>
+
+                Dites-nous quel QG vous souhaitez voir apparaître.
+                Les métiers les plus demandés seront ajoutés
+                progressivement.
+
+            </p>
+
+            <button>
+
+                Proposer un métier
+
+            </button>
+
+        </section>
 
     </main>
 
 </div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<script src="/js/hub.js"></script>
+
+<script>
+
+if(window.lucide){
+
+    lucide.createIcons();
+
+}
+
+</script>
 
 </body>
 
