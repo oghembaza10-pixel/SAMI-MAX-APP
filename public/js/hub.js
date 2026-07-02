@@ -1,39 +1,30 @@
 const METIERS = [
-    { title: "Client", icon: "user", mod: "client" },
-    { title: "Restaurant", icon: "coffee", mod: "restaurant" },
-    { title: "E-commerce", icon: "shopping-bag", mod: "ecommerce" },
-    { title: "Boutique", icon: "store", mod: "boutique" },
-    { title: "Grossiste", icon: "package", mod: "grossiste" },
 
-    { title: "Livreur", icon: "truck", mod: "livreur" },
-    { title: "Hôtel", icon: "hotel", mod: "hotel" },
-    { title: "Salle de sport", icon: "dumbbell", mod: "gym" },
-    { title: "Salle des fêtes", icon: "party-popper", mod: "fetes" },
-    { title: "Garage", icon: "wrench", mod: "garage" },
-
-    { title: "Lavage Auto", icon: "droplets", mod: "lavage" },
-    { title: "Location voitures", icon: "car", mod: "location" },
-    { title: "Immobilier", icon: "building-2", mod: "immo" },
-    { title: "Pharmacie", icon: "pill", mod: "pharmacie" },
-    { title: "Clinique", icon: "heart-pulse", mod: "clinique" },
-
+    { title: "Particulier", icon: "user", mod: "particulier" },
     { title: "Entreprise", icon: "briefcase", mod: "entreprise" },
-    { title: "Ferme", icon: "sprout", mod: "ferme" },
-    { title: "Transport", icon: "truck", mod: "transport" },
-    { title: "Avocat", icon: "scale", mod: "avocat" },
-    { title: "Comptable", icon: "calculator", mod: "comptable" },
+    { title: "E-commerce", icon: "shopping-bag", mod: "ecommerce" },
+    { title: "Restaurant", icon: "utensils-crossed", mod: "restaurant" },
 
-    { title: "Assurance", icon: "shield", mod: "assurance" },
-    { title: "Formation", icon: "graduation-cap", mod: "formation" },
+    { title: "Garage", icon: "wrench", mod: "garage" },
+    { title: "Immobilier", icon: "building-2", mod: "immobilier" },
+    { title: "Hôtel", icon: "hotel", mod: "hotel" },
+    { title: "Location", icon: "car", mod: "location" },
+
     { title: "Marketing", icon: "megaphone", mod: "marketing" },
-    { title: "Studio", icon: "palette", mod: "studio" },
-    { title: "Cabinet", icon: "file-text", mod: "cabinet" },
+    { title: "Comptable", icon: "calculator", mod: "comptable" },
+    { title: "Avocat", icon: "scale", mod: "avocat" },
+    { title: "Salle de sport", icon: "dumbbell", mod: "sport" },
 
-    { title: "Maintenance", icon: "settings", mod: "maintenance" },
-    { title: "Import / Export", icon: "globe", mod: "import" },
-    { title: "Sécurité", icon: "lock", mod: "security" },
-    { title: "Recrutement", icon: "users", mod: "recrutement" },
-    { title: "Événement", icon: "calendar", mod: "event" }
+    { title: "Transport", icon: "truck", mod: "transport" },
+    { title: "Ferme", icon: "sprout", mod: "ferme" },
+    { title: "Formation", icon: "graduation-cap", mod: "formation" },
+    { title: "Pharmacie", icon: "pill", mod: "pharmacie" },
+
+    { title: "Clinique", icon: "heart-pulse", mod: "clinique" },
+    { title: "Studio", icon: "palette", mod: "studio" },
+    { title: "Import / Export", icon: "globe", mod: "import-export" },
+    { title: "Lavage", icon: "droplets", mod: "lavage" }
+
 ];
 
 function renderGrid(filter = "") {
@@ -48,35 +39,22 @@ function renderGrid(filter = "") {
         m.title.toLowerCase().includes(recherche)
     );
 
-    grid.innerHTML = `
-        <div class="main-grid">
+    grid.innerHTML = liste.map(m => `
 
-            ${liste.map(m => `
+        <article class="card"
+            onclick="window.location.href='/qg/${m.mod}'">
 
-                <article class="card" data-module="${m.mod}">
+            <i data-lucide="${m.icon}"></i>
 
-                    <i data-lucide="${m.icon}"></i>
+            <h3>${m.title}</h3>
 
-                    <h3>${m.title}</h3>
+        </article>
 
-                    <button type="button"
-                        onclick="window.location.href='/qg/${m.mod}'">
-
-                        Entrer
-
-                    </button>
-
-                </article>
-
-            `).join("")}
-
-        </div>
-    `;
+    `).join("");
 
     if (window.lucide) {
         lucide.createIcons();
     }
-
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -87,9 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (search) {
 
-        search.addEventListener("input", function () {
+        search.addEventListener("input", e => {
 
-            renderGrid(this.value);
+            renderGrid(e.target.value);
 
         });
 
