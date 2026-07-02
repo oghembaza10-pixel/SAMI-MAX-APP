@@ -1,115 +1,250 @@
+/* ==========================================================
+   OG HUB V2
+========================================================== */
+
+let currentLang = localStorage.getItem("og-language") || "fr";
+
 const METIERS = [
 
-    { title: "Particulier", icon: "user", mod: "particulier" },
-    { title: "Entreprise", icon: "briefcase", mod: "entreprise" },
-    { title: "E-commerce", icon: "shopping-bag", mod: "ecommerce" },
-    { title: "Restaurant", icon: "utensils-crossed", mod: "restaurant" },
-    { title: "Livreur", icon: "truck", mod: "livreur" },
-    { title: "Agence de voyage", icon: "plane", mod: "voyage" },
-    { title: "Grossiste", icon: "warehouse", mod: "grossiste" },
-    { title: "Administration", icon: "building", mod: "administration" },
-
-    { title: "Garage", icon: "wrench", mod: "garage" },
-    { title: "Immobilier", icon: "building-2", mod: "immobilier" },
-    { title: "Hôtel", icon: "hotel", mod: "hotel" },
-    { title: "Location", icon: "car", mod: "location" },
-
-    { title: "Marketing", icon: "megaphone", mod: "marketing" },
-    { title: "Comptable", icon: "calculator", mod: "comptable" },
-    { title: "Avocat", icon: "scale", mod: "avocat" },
-    { title: "Salle de sport", icon: "dumbbell", mod: "sport" },
-
-    { title: "Transport", icon: "truck", mod: "transport" },
-    { title: "Ferme", icon: "sprout", mod: "ferme" },
-    { title: "Formation", icon: "graduation-cap", mod: "formation" },
-    { title: "Pharmacie", icon: "pill", mod: "pharmacie" },
-
-    { title: "Clinique", icon: "heart-pulse", mod: "clinique" },
-    { title: "Studio", icon: "palette", mod: "studio" },
-    { title: "Import / Export", icon: "globe", mod: "import-export" },
-    { title: "Lavage", icon: "droplets", mod: "lavage" }
-
-];
-
-function renderGrid(filter = "") {
-
-    const grid = document.getElementById("hub-grid");
-
-    if (!grid) return;
-
-    const recherche = filter.toLowerCase();
-
-    const liste = METIERS.filter(m =>
-        m.title.toLowerCase().includes(recherche)
-    );
-
-    grid.innerHTML = liste.map(m => `
-
-        <article class="card"
-            onclick="window.location.href='/qg/${m.mod}'">
-
-            <div class="card-icon">
-                <i data-lucide="${m.icon}"></i>
-            </div>
-
-            <h3>${m.title}</h3>
-
-            <div class="card-bottom">
-                <span class="enter">Entrer →</span>
-            </div>
-
-        </article>
-
-    `).join("");
-
-    if (window.lucide) {
-
-        lucide.createIcons({
-            attrs:{
-                "stroke-width":1.8
-            }
-        });
-
+{
+    mod:"particulier",
+    icon:"user",
+    title:{
+        fr:"Particulier",
+        en:"Personal",
+        ar:"فرد"
     }
+},
 
-    document.querySelectorAll(".card").forEach((card,index)=>{
-
-        card.style.opacity="0";
-        card.style.transform="translateY(25px)";
-
-        setTimeout(()=>{
-
-            card.style.transition=".35s ease";
-            card.style.opacity="1";
-            card.style.transform="translateY(0)";
-
-        },index*40);
-
-    });
-
-}
-
-document.addEventListener("DOMContentLoaded",()=>{
-
-    renderGrid();
-
-    const search=document.getElementById("search");
-
-    if(search){
-
-        search.addEventListener("input",e=>{
-
-            renderGrid(e.target.value);
-
-        });
-
+{
+    mod:"entreprise",
+    icon:"briefcase-business",
+    title:{
+        fr:"Entreprise",
+        en:"Business",
+        ar:"شركة"
     }
+},
 
-});
+{
+    mod:"ecommerce",
+    icon:"shopping-cart",
+    title:{
+        fr:"E-commerce",
+        en:"E-commerce",
+        ar:"التجارة الإلكترونية"
+    }
+},
 
-/* ==========================================
-   LANGUES
-========================================== */
+{
+    mod:"restaurant",
+    icon:"utensils-crossed",
+    title:{
+        fr:"Restaurant",
+        en:"Restaurant",
+        ar:"مطعم"
+    }
+},
+
+{
+    mod:"livreur",
+    icon:"bike",
+    title:{
+        fr:"Livreur",
+        en:"Delivery",
+        ar:"توصيل"
+    }
+},
+
+{
+    mod:"voyage",
+    icon:"plane",
+    title:{
+        fr:"Agence de voyage",
+        en:"Travel Agency",
+        ar:"وكالة سفر"
+    }
+},
+
+{
+    mod:"grossiste",
+    icon:"package-open",
+    title:{
+        fr:"Grossiste",
+        en:"Wholesale",
+        ar:"تاجر جملة"
+    }
+},
+
+{
+    mod:"administration",
+    icon:"landmark",
+    title:{
+        fr:"Administration",
+        en:"Administration",
+        ar:"إدارة"
+    }
+},
+
+{
+    mod:"garage",
+    icon:"car-front",
+    title:{
+        fr:"Garage",
+        en:"Garage",
+        ar:"كراج"
+    }
+},
+
+{
+    mod:"immobilier",
+    icon:"building-2",
+    title:{
+        fr:"Immobilier",
+        en:"Real Estate",
+        ar:"عقارات"
+    }
+},
+
+{
+    mod:"hotel",
+    icon:"hotel",
+    title:{
+        fr:"Hôtel",
+        en:"Hotel",
+        ar:"فندق"
+    }
+},
+
+{
+    mod:"location",
+    icon:"key-round",
+    title:{
+        fr:"Location",
+        en:"Rental",
+        ar:"تأجير"
+    }
+},
+
+{
+    mod:"marketing",
+    icon:"megaphone",
+    title:{
+        fr:"Marketing",
+        en:"Marketing",
+        ar:"تسويق"
+    }
+},
+
+{
+    mod:"comptable",
+    icon:"calculator",
+    title:{
+        fr:"Comptable",
+        en:"Accounting",
+        ar:"محاسبة"
+    }
+},
+
+{
+    mod:"avocat",
+    icon:"scale",
+    title:{
+        fr:"Avocat",
+        en:"Lawyer",
+        ar:"محام"
+    }
+},
+
+{
+    mod:"sport",
+    icon:"dumbbell",
+    title:{
+        fr:"Salle de sport",
+        en:"Gym",
+        ar:"نادي رياضي"
+    }
+},
+
+{
+    mod:"transport",
+    icon:"truck",
+    title:{
+        fr:"Transport",
+        en:"Transport",
+        ar:"نقل"
+    }
+},
+
+{
+    mod:"ferme",
+    icon:"tractor",
+    title:{
+        fr:"Ferme",
+        en:"Farm",
+        ar:"مزرعة"
+    }
+},
+
+{
+    mod:"formation",
+    icon:"graduation-cap",
+    title:{
+        fr:"Formation",
+        en:"Training",
+        ar:"تكوين"
+    }
+},
+
+{
+    mod:"pharmacie",
+    icon:"pill",
+    title:{
+        fr:"Pharmacie",
+        en:"Pharmacy",
+        ar:"صيدلية"
+    }
+},
+
+{
+    mod:"clinique",
+    icon:"stethoscope",
+    title:{
+        fr:"Clinique",
+        en:"Clinic",
+        ar:"عيادة"
+    }
+},
+
+{
+    mod:"studio",
+    icon:"palette",
+    title:{
+        fr:"Studio",
+        en:"Studio",
+        ar:"استوديو"
+    }
+},
+
+{
+    mod:"import-export",
+    icon:"ship",
+    title:{
+        fr:"Import / Export",
+        en:"Import / Export",
+        ar:"استيراد وتصدير"
+    }
+},
+
+{
+    mod:"lavage",
+    icon:"sparkles",
+    title:{
+        fr:"Lavage",
+        en:"Car Wash",
+        ar:"غسيل"
+    }
+};
 
 const translations={
 
@@ -129,32 +264,114 @@ subtitle:"اختر نشاطك وابدأ مقرّك الرئيسي."
 }
 
 };
+function renderGrid(filter=""){
 
-const title=document.querySelector(".hero h1");
-const subtitle=document.querySelector(".hero p");
+    const grid=document.getElementById("hub-grid");
 
-document.querySelectorAll(".language-switcher button").forEach(button=>{
+    if(!grid) return;
 
-    button.addEventListener("click",()=>{
+    const recherche=filter.toLowerCase();
 
-        const lang=button.dataset.lang;
+    const liste=METIERS.filter(m=>
+        m.title[currentLang]
+        .toLowerCase()
+        .includes(recherche)
+    );
 
-        document.querySelectorAll(".language-switcher button")
-        .forEach(b=>b.classList.remove("active"));
+    grid.innerHTML=liste.map(m=>`
 
-        button.classList.add("active");
+        <article
+            class="card"
+            onclick="window.location.href='/qg/${m.mod}'">
+
+            <div class="card-icon">
+
+                <i data-lucide="${m.icon}"></i>
+
+            </div>
+
+            <h3>${m.title[currentLang]}</h3>
+
+        </article>
+
+    `).join("");
+
+    if(window.lucide){
+
+        lucide.createIcons({
+            attrs:{
+                "stroke-width":"1.8"
+            }
+        });
+
+    }
+
+    document.querySelectorAll(".card").forEach((card,index)=>{
+
+        card.style.opacity="0";
+        card.style.transform="translateY(25px)";
+
+        setTimeout(()=>{
+
+            card.style.transition=".35s ease";
+            card.style.opacity="1";
+            card.style.transform="translateY(0)";
+
+        },index*35);
+
+    });
+
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+    const title=document.querySelector(".hero h1");
+    const subtitle=document.querySelector(".hero p");
+
+    function updateLanguage(lang){
+
+        currentLang=lang;
 
         title.textContent=translations[lang].title;
         subtitle.textContent=translations[lang].subtitle;
 
+        document.querySelectorAll(".language-switcher button")
+        .forEach(b=>b.classList.remove("active"));
+
+        document.querySelector(
+            `.language-switcher button[data-lang="${lang}"]`
+        )?.classList.add("active");
+
         localStorage.setItem("og-language",lang);
+
+        renderGrid();
+
+    }
+
+    document
+    .querySelectorAll(".language-switcher button")
+    .forEach(button=>{
+
+        button.addEventListener("click",()=>{
+
+            updateLanguage(button.dataset.lang);
+
+        });
 
     });
 
+    const search=document.getElementById("search");
+
+    if(search){
+
+        search.addEventListener("input",e=>{
+
+            renderGrid(e.target.value);
+
+        });
+
+    }
+
+    updateLanguage(currentLang);
+
 });
-
-const savedLang=localStorage.getItem("og-language")||"fr";
-
-document.querySelector(
-`.language-switcher button[data-lang="${savedLang}"]`
-)?.click();
