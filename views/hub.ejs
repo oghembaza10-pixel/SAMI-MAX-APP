@@ -1,82 +1,162 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
+
     <meta charset="UTF-8">
-    <style>
-        /* --- STYLE INTEGRÉ (Pas de risque d'erreur de lien CSS) --- */
-        body { background-color: #0A0A0A !important; color: #ffffff !important; font-family: sans-serif; margin: 0; padding: 40px; }
-        
-        .hub { max-width: 1200px; margin: auto; }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        /* Titre Doré */
-        h1 { color: #C5A059 !important; font-size: 2.5rem; margin-bottom: 10px; }
-        p { color: #888; }
+    <title>OG • HUB</title>
 
-        /* Grille */
-        .hub-masonry {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-            gap: 20px !important;
-            margin-top: 40px !important;
-        }
+    <link rel="stylesheet" href="/css/hub.css">
 
-        /* Carte */
-        .card {
-            background: #111111 !important;
-            border: 1px solid #333333 !important;
-            padding: 25px !important;
-            border-radius: 15px !important;
-            display: flex !important;
-            align-items: center !important;
-            cursor: pointer !important;
-            transition: all 0.4s ease !important;
-            color: #fff !important;
-            text-decoration: none !important;
-        }
-
-        /* Effet de Vol au survol */
-        .card:hover {
-            transform: translateY(-10px) !important;
-            border-color: #C5A059 !important;
-            box-shadow: 0 10px 20px rgba(197, 160, 89, 0.2) !important;
-        }
-
-        /* Samii spécial */
-        .card-samii {
-            grid-column: 1 / -1 !important;
-            border: 2px solid #C5A059 !important;
-            background: #000 !important;
-            display: block !important;
-        }
-        
-        .go-button {
-            background: #C5A059 !important;
-            color: #000 !important;
-            border: none !important;
-            padding: 10px 20px !important;
-            border-radius: 8px !important;
-            font-weight: bold !important;
-            cursor: pointer;
-        }
-    </style>
 </head>
+
 <body>
-    <main class="hub">
-        <h1>Bienvenue dans ton QG</h1>
-        <p>Choisis ton activité et lance ton système.</p>
 
-        <section class="hub-masonry">
-            <article class="card card-samii">
+<div class="app">
+
+    <!-- ===================================== -->
+    <!-- SIDEBAR -->
+    <!-- ===================================== -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <h2>OG</h2>
+
+        </div>
+
+        <nav class="menu">
+
+            <a href="/hub" class="active">Hub</a>
+
+            <a href="/profile">Profil</a>
+
+            <a href="/academy">Académie</a>
+
+            <a href="/marketplace">Marketplace</a>
+
+            <a href="/settings">Paramètres</a>
+
+        </nav>
+
+    </aside>
+
+    <!-- ===================================== -->
+    <!-- CONTENU -->
+    <!-- ===================================== -->
+
+    <main class="content">
+
+        <header class="hero">
+
+            <h1>Bienvenue au Centre Commercial des QG</h1>
+
+            <p>
+                Choisissez votre activité et lancez votre quartier général.
+            </p>
+
+        </header>
+
+        <!-- =============================== -->
+        <!-- SAMII -->
+        <!-- =============================== -->
+
+        <section class="samii-card">
+
+            <div class="samii-left">
+
+                <span class="badge">
+                    IA OPÉRATIONNELLE
+                </span>
+
                 <h2>SAMII</h2>
-                <p>IA Opérationnelle</p>
-                <button class="go-button">GO →</button>
-            </article>
 
-            <article class="card"><h3>Particulier</h3></article>
-            <article class="card"><h3>Entreprise</h3></article>
-            <article class="card"><h3>E-commerce</h3></article>
-            <article class="card"><h3>Restaurant</h3></article>
+                <p>
+
+                    Connectez vos réseaux et pilotez votre activité.
+
+                </p>
+
+                <button>
+
+                    GO →
+
+                </button>
+
+            </div>
+
+            <div class="samii-right">
+
+                <span>Meta</span>
+
+                <span>WhatsApp</span>
+
+                <span>Shopify</span>
+
+                <span>LinkedIn</span>
+
+                <span>TikTok</span>
+
+            </div>
+
         </section>
+
+        <!-- =============================== -->
+        <!-- METIERS -->
+        <!-- =============================== -->
+
+        <section class="cards">
+
+            <div class="card">Particulier</div>
+            <div class="card">Entreprise</div>
+            <div class="card">E-commerce</div>
+            <div class="card">Restaurant</div>
+
+            <div class="card">Garage</div>
+            <div class="card">Immobilier</div>
+            <div class="card">Hôtel</div>
+            <div class="card">Location</div>
+
+            <div class="card">Marketing</div>
+            <div class="card">Comptable</div>
+            <div class="card">Avocat</div>
+            <div class="card">Salle de sport</div>
+
+            <div class="card">Transport</div>
+            <div class="card">Ferme</div>
+            <div class="card">Formation</div>
+            <div class="card">Pharmacie</div>
+
+            <div class="card">Clinique</div>
+            <div class="card">Studio</div>
+            <div class="card">Import / Export</div>
+            <div class="card">Lavage</div>
+
+        </section>
+
+        <!-- =============================== -->
+        <!-- PLUS -->
+        <!-- =============================== -->
+
+        <section class="more-card">
+
+            <h2>+ Plus de métiers</h2>
+
+            <p>
+
+                Découvrez tous les QG disponibles.
+
+            </p>
+
+        </section>
+
     </main>
+
+</div>
+
 </body>
+
 </html>
