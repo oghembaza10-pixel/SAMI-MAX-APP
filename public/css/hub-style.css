@@ -1,6 +1,4 @@
-body { background-color: #000 !important; }
-h1 { color: #D4AF37; }
-.hub { padding: 50px; }
+
 /* Grille pour les cartes */
 .hub-masonry {
     display: grid;
