@@ -1,0 +1,214 @@
+/* ==========================================================
+   OG HUB V3
+   LAYOUT
+========================================================== */
+
+/* ===========================
+   BODY
+=========================== */
+
+html,
+body{
+
+    margin:0;
+    padding:0;
+
+    width:100%;
+    height:100%;
+
+    background:#000;
+
+    color:#F5F5F5;
+
+    font-family:Inter,sans-serif;
+
+    overflow:hidden;
+
+}
+
+
+/* ===========================
+   APP
+=========================== */
+
+.app{
+
+    display:flex;
+
+    width:100vw;
+    height:100vh;
+
+    background:#000;
+
+}
+
+
+/* ===========================
+   SIDEBAR
+=========================== */
+
+.sidebar{
+
+    width:280px;
+
+    min-width:280px;
+
+    height:100vh;
+
+    position:fixed;
+
+    left:0;
+    top:0;
+
+    overflow-y:auto;
+
+    background:#000;
+
+    border-right:1px solid rgba(255,255,255,.05);
+
+    z-index:100;
+
+}
+
+
+/* scrollbar */
+
+.sidebar::-webkit-scrollbar{
+
+    width:6px;
+
+}
+
+.sidebar::-webkit-scrollbar-thumb{
+
+    background:rgba(255,255,255,.08);
+
+    border-radius:20px;
+
+}
+
+
+/* ===========================
+   MAIN
+=========================== */
+
+.main{
+
+    flex:1;
+
+    margin-left:280px;
+
+    overflow-y:auto;
+
+    height:100vh;
+
+}
+
+
+/* ===========================
+   HUB
+=========================== */
+
+.hub{
+
+    max-width:1600px;
+
+    margin:auto;
+
+    padding:
+
+        60px
+
+        70px
+
+        80px;
+
+}
+
+
+/* ===========================
+   ESPACEMENT
+=========================== */
+
+.hub-header{
+
+    margin-bottom:50px;
+
+}
+
+.search-section{
+
+    margin-bottom:45px;
+
+}
+
+.card-samii{
+
+    margin-bottom:10px;
+
+}
+
+
+/* ===========================
+   SECTIONS
+=========================== */
+
+section{
+
+    width:100%;
+
+}
+
+
+/* ===========================
+   RESPONSIVE
+=========================== */
+
+@media(max-width:1400px){
+
+    .hub{
+
+        padding:50px;
+
+    }
+
+}
+
+@media(max-width:1200px){
+
+    .main{
+
+        margin-left:240px;
+
+    }
+
+    .sidebar{
+
+        width:240px;
+        min-width:240px;
+
+    }
+
+}
+
+@media(max-width:900px){
+
+    .main{
+
+        margin-left:0;
+
+    }
+
+    .sidebar{
+
+        transform:translateX(-100%);
+
+    }
+
+    .hub{
+
+        padding:30px;
+
+    }
+
+}
