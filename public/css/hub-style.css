@@ -701,3 +701,57 @@ RESPONSIVE
     0 0 25px rgba(212,175,55,.08);
 
 }
+/* ==========================================
+   CARDS PREMIUM
+========================================== */
+
+.card{
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:linear-gradient(
+        135deg,
+        transparent,
+        rgba(212,175,55,.05),
+        transparent
+    );
+
+    opacity:0;
+
+    transition:.35s;
+
+}
+
+.card:hover::before{
+
+    opacity:1;
+
+}
+
+.card:hover{
+
+    transform:
+    translateY(-6px)
+    scale(1.02);
+
+}
+
+.card h3{
+
+    font-size:18px;
+
+    font-weight:600;
+
+}
