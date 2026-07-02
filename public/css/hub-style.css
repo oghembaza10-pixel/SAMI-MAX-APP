@@ -1,24 +1,163 @@
+/* =========================================
+   QG - DESIGN LUXE MINIMALISTE
+   ========================================= */
 
-/* Grille pour les cartes */
-.hub-masonry {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-    padding: 20px;
-    margin-top: 30px;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-.card {
-    background: #1a1a1a; /* Gris très foncé pour contraster avec le noir */
-    border: 1px solid #333;
-    padding: 20px;
-    border-radius: 12px;
-    color: #fff;
+body {
+    background-color: #0A0A0A; /* Noir Anthracite */
+    color: #ffffff;
+}
+
+.hub {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+/* --- HEADER --- */
+.hub-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 40px;
 }
 
+.hub-heading h1 {
+    color: #C5A059; /* Or The Sovereign */
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.hub-heading p {
+    color: #888;
+    font-size: 1.1rem;
+}
+
+.hub-language button {
+    background: transparent;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: 0.3s;
+}
+
+.hub-language button.active,
+.hub-language button:hover {
+    border-color: #C5A059;
+    color: #C5A059;
+}
+
+/* --- RECHERCHE --- */
+.search-section {
+    margin-bottom: 40px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 16px 20px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1.1rem;
+    outline: none;
+    transition: 0.3s;
+}
+
+.search-box input:focus {
+    border-color: #C5A059;
+}
+
+/* --- GRILLE MASONRY --- */
+.hub-masonry {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+/* --- CARTES MÉTIERS --- */
+.card {
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s, border-color 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    border-color: #555;
+}
+
+.card h3 {
+    margin-left: 16px;
+    flex-grow: 1;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.nav-arrow {
+    color: #555;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.card:hover .nav-arrow {
+    color: #C5A059;
+}
+
+/* --- CARTE SAMII (Mise en avant) --- */
 .card-samii {
-    border: 2px solid #D4AF37; /* Le doré pour ton IA SAMII */
+    grid-column: 1 / -1; /* Prend toute la largeur de l'écran */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(145deg, #111, #0A0A0A);
+    border: 1px solid #C5A059;
+}
+
+.card-samii .card-label {
+    color: #C5A059;
+    font-size: 0.8rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.card-samii h2 {
+    font-size: 2.5rem;
+    margin: 8px 0;
+}
+
+.card-samii p {
+    color: #aaa;
+    margin-bottom: 12px;
+}
+
+.go-button {
+    background: #C5A059;
+    color: #0A0A0A;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: 0.3s;
+}
+
+.go-button:hover {
+    background: #fff;
 }
