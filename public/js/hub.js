@@ -4,10 +4,11 @@ const METIERS = [
     { title: "Entreprise", icon: "briefcase", mod: "entreprise" },
     { title: "E-commerce", icon: "shopping-bag", mod: "ecommerce" },
     { title: "Restaurant", icon: "utensils-crossed", mod: "restaurant" },
-{ title: "Livreur", icon: "truck", mod: "livreur" },
-{ title: "Agence de voyage", icon: "plane", mod: "voyage" },
-{ title: "Grossiste", icon: "warehouse", mod: "grossiste" },
-{ title: "Administration", icon: "building", mod: "administration" },
+    { title: "Livreur", icon: "truck", mod: "livreur" },
+    { title: "Agence de voyage", icon: "plane", mod: "voyage" },
+    { title: "Grossiste", icon: "warehouse", mod: "grossiste" },
+    { title: "Administration", icon: "building", mod: "administration" },
+
     { title: "Garage", icon: "wrench", mod: "garage" },
     { title: "Immobilier", icon: "building-2", mod: "immobilier" },
     { title: "Hôtel", icon: "hotel", mod: "hotel" },
@@ -47,28 +48,56 @@ function renderGrid(filter = "") {
         <article class="card"
             onclick="window.location.href='/qg/${m.mod}'">
 
-            <i data-lucide="${m.icon}"></i>
+            <div class="card-icon">
+                <i data-lucide="${m.icon}"></i>
+            </div>
 
             <h3>${m.title}</h3>
+
+            <div class="card-bottom">
+                <span class="enter">Entrer →</span>
+            </div>
 
         </article>
 
     `).join("");
 
     if (window.lucide) {
-        lucide.createIcons();
+
+        lucide.createIcons({
+            attrs:{
+                "stroke-width":1.8
+            }
+        });
+
     }
+
+    document.querySelectorAll(".card").forEach((card,index)=>{
+
+        card.style.opacity="0";
+        card.style.transform="translateY(25px)";
+
+        setTimeout(()=>{
+
+            card.style.transition=".35s ease";
+            card.style.opacity="1";
+            card.style.transform="translateY(0)";
+
+        },index*40);
+
+    });
+
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded",()=>{
 
     renderGrid();
 
-    const search = document.getElementById("search");
+    const search=document.getElementById("search");
 
-    if (search) {
+    if(search){
 
-        search.addEventListener("input", e => {
+        search.addEventListener("input",e=>{
 
             renderGrid(e.target.value);
 
@@ -77,34 +106,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 });
+
 /* ==========================================
    LANGUES
 ========================================== */
 
-const translations = {
+const translations={
 
 fr:{
-
 title:"Bienvenue au Centre Commercial des QG",
-
 subtitle:"Choisissez votre activité et lancez votre quartier général."
-
 },
 
 en:{
-
 title:"Welcome to the HQ Mall",
-
 subtitle:"Choose your activity and launch your headquarters."
-
 },
 
 ar:{
-
 title:"مرحبًا بك في مركز المقرات",
-
 subtitle:"اختر نشاطك وابدأ مقرّك الرئيسي."
-
 }
 
 };
@@ -114,21 +135,21 @@ const subtitle=document.querySelector(".hero p");
 
 document.querySelectorAll(".language-switcher button").forEach(button=>{
 
-button.addEventListener("click",()=>{
+    button.addEventListener("click",()=>{
 
-const lang=button.dataset.lang;
+        const lang=button.dataset.lang;
 
-document.querySelectorAll(".language-switcher button")
-.forEach(b=>b.classList.remove("active"));
+        document.querySelectorAll(".language-switcher button")
+        .forEach(b=>b.classList.remove("active"));
 
-button.classList.add("active");
+        button.classList.add("active");
 
-title.textContent=translations[lang].title;
-subtitle.textContent=translations[lang].subtitle;
+        title.textContent=translations[lang].title;
+        subtitle.textContent=translations[lang].subtitle;
 
-localStorage.setItem("og-language",lang);
+        localStorage.setItem("og-language",lang);
 
-});
+    });
 
 });
 
