@@ -24,7 +24,9 @@
 
             <h2>OG</h2>
 
-            <span>Centre Commercial des QG</span>
+            <span class="logo-subtitle">
+                Centre Commercial des QG
+            </span>
 
         </div>
 
@@ -34,7 +36,7 @@
 
                 <i data-lucide="layout-grid"></i>
 
-                Hub
+                <span class="menu-hub">Hub</span>
 
             </a>
 
@@ -42,7 +44,7 @@
 
                 <i data-lucide="user"></i>
 
-                Profil
+                <span class="menu-profile">Profil</span>
 
             </a>
 
@@ -50,7 +52,7 @@
 
                 <i data-lucide="graduation-cap"></i>
 
-                Académie
+                <span class="menu-academy">Académie</span>
 
             </a>
 
@@ -58,7 +60,7 @@
 
                 <i data-lucide="store"></i>
 
-                Marketplace
+                <span class="menu-marketplace">Marketplace</span>
 
             </a>
 
@@ -66,7 +68,7 @@
 
                 <i data-lucide="settings"></i>
 
-                Paramètres
+                <span class="menu-settings">Paramètres</span>
 
             </a>
 
@@ -80,21 +82,27 @@
 
         <header class="hero">
 
-            <h1>Bienvenue au Centre Commercial des QG</h1>
+            <h1>
+                Bienvenue au Centre Commercial des QG
+            </h1>
 
             <p>
-
                 Choisissez votre activité et lancez votre quartier général.
-
             </p>
 
             <div class="language-switcher">
 
-                <button data-lang="fr" class="active">FR</button>
+                <button data-lang="fr" class="active">
+                    FR
+                </button>
 
-                <button data-lang="en">EN</button>
+                <button data-lang="en">
+                    EN
+                </button>
 
-                <button data-lang="ar">العربية</button>
+                <button data-lang="ar">
+                    العربية
+                </button>
 
             </div>
 
@@ -107,17 +115,24 @@
             <div class="samii-left">
 
                 <span class="badge">
-
                     IA OPÉRATIONNELLE
-
                 </span>
 
-                <h2>SAMII</h2>
+                <h2 class="samii-title">
+                    SAMII
+                </h2>
 
-                <p>
+                <p class="samii-text">
 
-                    Connectez tous vos outils et pilotez votre activité
-                    depuis un seul QG.
+                    Votre IA opérationnelle.
+
+                    <br><br>
+
+                    Tous vos outils.
+
+                    <br>
+
+                    Un seul QG.
 
                 </p>
 
@@ -131,21 +146,51 @@
 
             <div class="samii-right">
 
-                <span><i data-lucide="message-circle"></i> WhatsApp</span>
+                <span>
+                    <i data-lucide="message-circle"></i>
+                    WhatsApp
+                </span>
 
-                <span><i data-lucide="facebook"></i> Meta</span>
+                <span>
+                    <i data-lucide="messages-square"></i>
+                    Telegram
+                </span>
 
-                <span><i data-lucide="send"></i> Telegram</span>
+                <span>
+                    <i data-lucide="shopping-bag"></i>
+                    Shopify
+                </span>
 
-                <span><i data-lucide="shopping-bag"></i> Shopify</span>
+                <span>
+                    <i data-lucide="briefcase-business"></i>
+                    LinkedIn
+                </span>
 
-                <span><i data-lucide="briefcase"></i> LinkedIn</span>
+                <span>
+                    <i data-lucide="play-circle"></i>
+                    TikTok
+                </span>
 
-                <span><i data-lucide="video"></i> TikTok</span>
+                <span>
+                    <i data-lucide="instagram"></i>
+                    Instagram
+                </span>
+
+                <span>
+                    <i data-lucide="facebook"></i>
+                    Meta
+                </span>
+
+                <span>
+                    <i data-lucide="youtube"></i>
+                    YouTube
+                </span>
 
             </div>
 
         </section>
+        <!-- SAMII -->
+
 
         <!-- HUB -->
 
@@ -158,25 +203,18 @@
             <i data-lucide="lightbulb"></i>
 
             <h3>
-
-                Un métier manque ?
-
+                Votre métier n'existe pas encore ?
             </h3>
 
             <p>
-
-                Dites-nous quel QG vous souhaitez voir apparaître.
-                Les métiers les plus demandés seront ajoutés
-                progressivement par la communauté OG.
-
+                Construisons le plus grand Centre Commercial des QG.
+                Proposez votre métier et il pourra être ajouté
+                dans une prochaine mise à jour de OG.
             </p>
 
             <button>
-
-                <i data-lucide="plus"></i>
-
+                <i data-lucide="plus-circle"></i>
                 Proposer un métier
-
             </button>
 
         </section>
@@ -193,7 +231,11 @@
 
 if(window.lucide){
 
-    lucide.createIcons();
+    lucide.createIcons({
+        attrs:{
+            "stroke-width":1.8
+        }
+    });
 
 }
 
