@@ -5,14 +5,29 @@
     <link rel="stylesheet" href="/css/hub-style.css">
 </head>
 <body>
+
     <main class="hub">
         <header class="hub-header">
-            <h1>Bienvenue</h1>
+            <div class="hub-heading">
+                <h1>Bienvenue dans ton QG</h1>
+                <p>Choisis ton activité et lance ton système.</p>
+            </div>
+            <nav class="hub-language">
+                <button class="active">FR</button>
+                <button>EN</button>
+                <button>العربية</button>
+            </nav>
         </header>
 
         <section class="search-section">
-            <p>Le système est opérationnel.</p>
+            <div class="search-box">
+                <i data-lucide="search"></i>
+                <input id="search" type="text" placeholder="Chercher mon QG...">
+            </div>
         </section>
     </main>
+
+    <script src="https://unpkg.com/lucide"></script>
+    <script>lucide.createIcons();</script>
 </body>
 </html>
