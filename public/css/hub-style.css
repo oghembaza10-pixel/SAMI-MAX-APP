@@ -1,22 +1,7 @@
 /* ==========================================================
    OG HUB V1
-   BASE SOLIDE
+   BASE
 ========================================================== */
-
-:root{
-
-    --bg:#070707;
-    --bg2:#101010;
-
-    --gold:#D4AF37;
-    --gold-soft:rgba(212,175,55,.12);
-
-    --text:#F5F5F5;
-    --grey:#8B8B8B;
-
-    --border:rgba(255,255,255,.06);
-
-}
 
 *{
     margin:0;
@@ -24,414 +9,188 @@
     box-sizing:border-box;
 }
 
+:root{
+
+    --bg:#050505;
+    --panel:#101010;
+    --panel2:#161616;
+
+    --gold:#D4AF37;
+    --gold2:#B89025;
+
+    --text:#F5F5F5;
+    --grey:#8A8A8A;
+
+    --border:rgba(255,255,255,.07);
+
+}
+
 html,
 body{
 
     width:100%;
     min-height:100%;
-    overflow-x:hidden;
 
-    background:
-    radial-gradient(circle at top,#161616 0%,#070707 45%,#000 100%);
+    background:var(--bg);
 
     color:var(--text);
 
-    font-family:Inter,sans-serif;
+    font-family:
+    Inter,
+    Arial,
+    sans-serif;
 
 }
 
-a{
+body{
 
-    color:inherit;
-    text-decoration:none;
+    background:
 
-}
-
-button{
-
-    font-family:inherit;
-
-}
-
-/* ==========================================================
-   HUB
-========================================================== */
-
-.hub{
-
-    width:min(1700px,94%);
-    margin:auto;
-
-    padding:55px 0 80px;
+    radial-gradient(circle at top,
+    #151515 0%,
+    #090909 35%,
+    #050505 100%);
 
 }
 
 /* ==========================================================
-   HEADER
+APP
 ========================================================== */
 
-.hub-header{
+.app{
 
     display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
 
-    gap:30px;
-
-    margin-bottom:45px;
+    min-height:100vh;
 
 }
 
-.hub-heading h1{
+/* ==========================================================
+SIDEBAR
+========================================================== */
 
-    font-size:48px;
+.sidebar{
 
-    font-weight:600;
+    width:250px;
 
-    letter-spacing:-1px;
+    background:#090909;
 
-    margin-bottom:12px;
+    border-right:1px solid var(--border);
+
+    padding:40px 28px;
+
+    position:sticky;
+
+    top:0;
+
+    height:100vh;
 
 }
 
-.hub-heading p{
+.logo{
+
+    margin-bottom:60px;
+
+}
+
+.logo h2{
+
+    font-size:34px;
+
+    color:var(--gold);
+
+    letter-spacing:.15em;
+
+}
+
+.logo span{
+
+    display:block;
+
+    margin-top:8px;
 
     color:var(--grey);
 
-    font-size:16px;
+    font-size:13px;
+
+    line-height:1.6;
 
 }
 
-/* ==========================================================
-   LANGUES
-========================================================== */
-
-.hub-language{
+.menu{
 
     display:flex;
+
+    flex-direction:column;
 
     gap:10px;
 
 }
 
-.hub-language button{
+.menu a{
 
-    background:#111;
+    padding:14px 18px;
 
-    border:1px solid var(--border);
+    border-radius:12px;
 
-    color:#999;
+    color:#C8C8C8;
 
-    padding:10px 18px;
+    text-decoration:none;
 
-    border-radius:999px;
-
-    cursor:pointer;
-
-    transition:.3s;
+    transition:.25s;
 
 }
 
-.hub-language button:hover,
-.hub-language .active{
+.menu a:hover{
 
-    border-color:rgba(212,175,55,.25);
+    background:#141414;
+
+    color:white;
+
+}
+
+.menu .active{
+
+    background:rgba(212,175,55,.10);
 
     color:var(--gold);
 
 }
 
 /* ==========================================================
-   RECHERCHE
+CONTENT
 ========================================================== */
 
-.search-section{
+.content{
+
+    flex:1;
+
+    padding:60px;
+
+}
+
+.hero{
 
     margin-bottom:45px;
 
 }
 
-.search-box{
+.hero h1{
 
-    display:flex;
+    font-size:42px;
 
-    align-items:center;
-
-    width:650px;
-
-    max-width:100%;
-
-    background:#111;
-
-    border:1px solid var(--border);
-
-    border-radius:18px;
-
-    padding:18px 22px;
-
-}
-
-.search-box input{
-
-    flex:1;
-
-    background:none;
-
-    border:none;
-
-    outline:none;
-
-    color:white;
-
-    font-size:15px;
-
-}
-
-.search-box input::placeholder{
-
-    color:#666;
-
-}
-
-/* ==========================================================
-   GRID
-========================================================== */
-
-.hub-masonry{
-
-    display:grid;
-
-    grid-template-columns:repeat(4,1fr);
-
-    gap:24px;
-
-}
-
-/* ==========================================================
-   CARTES
-========================================================== */
-
-.card{
-
-    background:linear-gradient(
-    180deg,
-    #111,
-    #0B0B0B);
-
-    border:1px solid var(--border);
-
-    border-radius:24px;
-
-    padding:28px;
-
-    min-height:190px;
-
-    transition:.35s;
-
-    cursor:pointer;
-
-    position:relative;
-
-    overflow:hidden;
-
-}
-
-.card::before{
-
-    content:"";
-
-    position:absolute;
-
-    inset:0;
-
-    background:
-
-    radial-gradient(circle at top left,
-
-    rgba(212,175,55,.10),
-
-    transparent 65%);
-
-    opacity:0;
-
-    transition:.35s;
-
-}
-
-.card>*{
-
-    position:relative;
-
-    z-index:2;
-
-}
-
-.card:hover{
-
-    transform:translateY(-8px);
-
-    border-color:rgba(212,175,55,.22);
-
-    box-shadow:
-
-    0 18px 45px rgba(0,0,0,.55),
-
-    0 0 20px rgba(212,175,55,.10);
-
-}
-
-.card:hover::before{
-
-    opacity:1;
-
-}
-
-.card h3{
-
-    font-size:20px;
-
-    font-weight:500;
-
-}
-
-/* ==========================================================
-   SAMII
-========================================================== */
-
-.card-samii{
-
-    grid-column:span 2;
-
-    min-height:240px;
-
-    border-color:rgba(212,175,55,.20);
-
-}
-
-.card-label{
-
-    display:inline-block;
-
-    color:var(--gold);
-
-    font-size:12px;
-
-    letter-spacing:.12em;
-
-    margin-bottom:18px;
-
-}
-
-.card-samii h2{
-
-    font-size:40px;
+    font-weight:700;
 
     margin-bottom:12px;
 
 }
 
-.card-samii p{
+.hero p{
 
-    color:#A8A8A8;
+    color:var(--grey);
 
-    margin-bottom:24px;
+    font-size:17px;
 
-}
-
-.go-button{
-
-    background:transparent;
-
-    border:1px solid rgba(212,175,55,.25);
-
-    color:var(--gold);
-
-    padding:14px 34px;
-
-    border-radius:999px;
-
-    cursor:pointer;
-
-    transition:.3s;
-
-}
-
-.go-button:hover{
-
-    background:var(--gold);
-
-    color:#000;
-
-}
-
-/* ==========================================================
-   PLUS DE METIERS
-========================================================== */
-
-.card-more{
-
-    grid-column:span 2;
-
-}
-
-.card-more p{
-
-    margin-top:10px;
-
-    color:#888;
-
-}
-
-/* ==========================================================
-   RESPONSIVE
-========================================================== */
-
-@media(max-width:1200px){
-
-    .hub-masonry{
-
-        grid-template-columns:repeat(3,1fr);
-
-    }
-
-}
-
-@media(max-width:900px){
-
-    .hub-header{
-
-        flex-direction:column;
-
-    }
-
-    .hub-masonry{
-
-        grid-template-columns:repeat(2,1fr);
-
-    }
-
-    .card-samii,
-    .card-more{
-
-        grid-column:span 2;
-
-    }
-
-}
-
-@media(max-width:650px){
-
-    .hub-masonry{
-
-        grid-template-columns:1fr;
-
-    }
-
-    .card-samii,
-    .card-more{
-
-        grid-column:span 1;
-
-    }
+    line-height:1.7;
 
 }
