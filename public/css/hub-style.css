@@ -618,3 +618,86 @@ RESPONSIVE
     color:#000;
 
 }
+/* ==========================================================
+   LOGO OG PREMIUM
+========================================================== */
+
+.logo{
+
+    position:relative;
+
+    padding-bottom:30px;
+
+    border-bottom:1px solid rgba(255,255,255,.06);
+
+}
+
+.logo h2{
+
+    font-size:52px;
+
+    font-weight:800;
+
+    letter-spacing:.18em;
+
+    color:var(--gold);
+
+    text-shadow:
+
+    0 0 15px rgba(212,175,55,.25),
+
+    0 0 35px rgba(212,175,55,.08);
+
+}
+
+.logo span{
+
+    margin-top:12px;
+
+    color:#888;
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+   MENU PREMIUM
+========================================================== */
+
+.menu{
+
+    margin-top:35px;
+
+}
+
+.menu a{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    padding:15px 18px;
+
+    border-radius:14px;
+
+    transition:.25s;
+
+}
+
+.menu a:hover{
+
+    transform:translateX(6px);
+
+}
+
+.menu .active{
+
+    box-shadow:
+
+    inset 0 0 0 1px rgba(212,175,55,.20),
+
+    0 0 25px rgba(212,175,55,.08);
+
+}
