@@ -77,3 +77,63 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 });
+/* ==========================================
+   LANGUES
+========================================== */
+
+const translations = {
+
+fr:{
+
+title:"Bienvenue au Centre Commercial des QG",
+
+subtitle:"Choisissez votre activité et lancez votre quartier général."
+
+},
+
+en:{
+
+title:"Welcome to the HQ Mall",
+
+subtitle:"Choose your activity and launch your headquarters."
+
+},
+
+ar:{
+
+title:"مرحبًا بك في مركز المقرات",
+
+subtitle:"اختر نشاطك وابدأ مقرّك الرئيسي."
+
+}
+
+};
+
+const title=document.querySelector(".hero h1");
+const subtitle=document.querySelector(".hero p");
+
+document.querySelectorAll(".language-switcher button").forEach(button=>{
+
+button.addEventListener("click",()=>{
+
+const lang=button.dataset.lang;
+
+document.querySelectorAll(".language-switcher button")
+.forEach(b=>b.classList.remove("active"));
+
+button.classList.add("active");
+
+title.textContent=translations[lang].title;
+subtitle.textContent=translations[lang].subtitle;
+
+localStorage.setItem("og-language",lang);
+
+});
+
+});
+
+const savedLang=localStorage.getItem("og-language")||"fr";
+
+document.querySelector(
+`.language-switcher button[data-lang="${savedLang}"]`
+)?.click();
