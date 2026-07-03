@@ -23,6 +23,13 @@ const drivers = require("./routes/drivers");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+app.get('/', (req, res) => {
+    res.render('index');
+});
+app.use("/hub", hub);
+app.get('/qg/:metier', (req, res) => {
+    res.render('qg-template', { metier: req.params.metier });
+});
 // ======================================================
 // Vérification
 // ======================================================
@@ -45,144 +52,10 @@ if (!CONFIG.AIRTABLE.BASE_ID) {
 
 console.log("🚀 SAMII OS démarre...");
 
-// ======================================================
-// HOME
-// ======================================================
-
-app.get("/", (req, res) => {
-
-    res.send(`
-
-<!DOCTYPE html>
-
-<html lang="fr">
-
-<head>
-
-<meta charset="UTF-8">
-
-<title>SAMII</title>
-
-<style>
-
-body{
-
-background:#0b0b0b;
-
-color:white;
-
-font-family:Arial;
-
-text-align:center;
-
-padding:60px;
-
-}
-
-input{
-
-width:320px;
-
-padding:12px;
-
-border-radius:10px;
-
-border:none;
-
-margin-top:20px;
-
-}
-
-button{
-
-padding:12px 22px;
-
-margin-left:10px;
-
-background:#d4af37;
-
-border:none;
-
-border-radius:10px;
-
-cursor:pointer;
-
-font-weight:bold;
-
-}
-
-#rep{
-
-margin-top:30px;
-
-white-space:pre-wrap;
-
-max-width:700px;
-
-margin-left:auto;
-
-margin-right:auto;
-
-}
-
-</style>
-
-</head>
-
-<body>
-
-<h1>🤖 SAMII</h1>
-
-<p>L'IA des e-commerçants algériens.</p>
-
-<input id="msg" placeholder="Pose une question à SAMII">
-
-<button onclick="envoyer()">Envoyer</button>
-
-<div id="rep"></div>
-
-<script>
-
-async function envoyer(){
-
-const r=await fetch("/api/chat",{
-
-method:"POST",
-
-headers:{
-
-"Content-Type":"application/json"
-
-},
-
-body:JSON.stringify({
-
-message:document.getElementById("msg").value
-
-})
-
-});
-
-const d=await r.json();
-
-document.getElementById("rep").innerHTML=d.reply;
-
-}
-
-</script>
-
-</body>
-
-</html>
-
-`);
-
-});
 
 // ======================================================
 // ROUTES
 // ======================================================
-app.use("/hub", hub);
 app.use("/community", community);
 app.use("/academy", academy);
 app.use("/webhook", webhook);
