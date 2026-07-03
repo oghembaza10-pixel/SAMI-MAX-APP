@@ -203,8 +203,8 @@ const translations={
 
 fr:{
 
-title:"Bienvenue au Centre Commercial des QG",
-subtitle:"Choisissez votre activité et lancez votre quartier général.",
+title:"Le jeu commence ici.",
+subtitle:"Choisissez votre premier QG.",
 
 samiiBadge:"IA OPÉRATIONNELLE",
 samiiText:"Votre IA opérationnelle.<br><br>Tous vos outils.<br>Un seul QG.",
@@ -227,8 +227,8 @@ logo:"Centre Commercial des QG"
 
 en:{
 
-title:"Welcome to the HQ Mall",
-subtitle:"Choose your activity and launch your headquarters.",
+title:"The game starts here.",
+subtitle:"Choose your first HQ.",
 
 samiiBadge:"OPERATIONAL AI",
 samiiText:"Your operational AI.<br><br>All your tools.<br>One HQ.",
@@ -251,8 +251,8 @@ logo:"HQ Mall"
 
 ar:{
 
-title:"مرحبًا بك في مركز المقرات",
-subtitle:"اختر نشاطك وابدأ مقرّك الرئيسي.",
+title:"اللعبة تبدأ هنا",
+subtitle:"اختر مقرّك الأول.",
 
 samiiBadge:"الذكاء الاصطناعي التشغيلي",
 samiiText:"مساعدك الذكي.<br><br>كل أدواتك.<br>في مقر واحد.",
