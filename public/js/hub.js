@@ -60,15 +60,15 @@ function renderGrid(filter = "") {
 const translations = {
     fr: {
         title:"OG",
-        subtitle:"Le jeu commence ici. Choisissez votre premier QG."
+        subtitle:"Le jeu commence ici.<br>Choisissez votre premier QG."
     },
     en: {
         title:"OG",
-        subtitle:"The game starts here. Choose your first HQ."
+        subtitle:"The game starts here.<br>Choose your first HQ."
     },
     ar: {
         title:"OG",
-        subtitle:"اللعبة تبدأ هنا. اختر مقرّك الأول."
+        subtitle:"اللعبة تبدأ هنا.<br>اختر مقرّك الأول."
     }
 };
 
@@ -80,10 +80,20 @@ function applyLanguage(lang) {
     currentLang = lang;
     const t = translations[lang];
 
-    document.querySelector(".hero h1").textContent = t.title;
-    document.querySelector(".hero p").innerHTML = t.subtitle;
+    const titleEl = document.querySelector(".hero h1");
+    const subEl = document.querySelector(".hero p");
+
+    if (titleEl) titleEl.textContent = t.title;
+    if (subEl) subEl.innerHTML = t.subtitle; // J'utilise innerHTML pour le <br>
 
     renderGrid();
+
+    document.querySelectorAll(".language-switcher button").forEach(btn => {
+        btn.classList.remove("active");
+        if (btn.dataset.lang === lang) {
+            btn.classList.add("active");
+        }
+    });
 
     localStorage.setItem("og-lang", lang);
 }
