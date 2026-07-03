@@ -1,21 +1,78 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
+
     <meta charset="UTF-8">
-    <title>ACCÈS OG</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>OG</title>
+
     <link rel="stylesheet" href="/css/index-style.css">
+
 </head>
+
 <body class="entry-body">
+
+    <div class="language-switcher">
+
+        <button data-lang="fr" class="active">FR</button>
+
+        <button data-lang="en">EN</button>
+
+        <button data-lang="ar">العربية</button>
+
+    </div>
 
     <img
         src="/Gemini_Generated_Image_c7gbzec7gbzec7gb.png"
         class="main-insigne"
-        alt="OG Logo"
-    >
+        alt="OG">
 
-    <a href="/hub" class="btn-rejoindre">
+    <a href="/hub" class="btn-rejoindre" id="joinBtn">
+
         REJOINDRE MON QG
+
     </a>
 
+<script>
+
+const traduction={
+
+fr:{
+join:"REJOINDRE MON QG"
+},
+
+en:{
+join:"JOIN MY HQ"
+},
+
+ar:{
+join:"انضم إلى مقري"
+}
+
+};
+
+document.querySelectorAll(".language-switcher button").forEach(btn=>{
+
+btn.onclick=()=>{
+
+document.querySelectorAll(".language-switcher button")
+.forEach(b=>b.classList.remove("active"));
+
+btn.classList.add("active");
+
+document.documentElement.lang=btn.dataset.lang;
+
+document.getElementById("joinBtn").textContent=
+traduction[btn.dataset.lang].join;
+
+};
+
+});
+
+</script>
+
 </body>
+
 </html>
