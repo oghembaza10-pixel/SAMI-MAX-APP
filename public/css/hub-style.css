@@ -755,50 +755,49 @@ LANGUES
     0 0 25px rgba(212,175,55,.25);
 
 }
-
-/* ==========================================================
-SAMII PREMIUM
-========================================================== */
-
 .samii-card{
 
     display:flex;
 
-    align-items:center;
-
     justify-content:space-between;
 
-    gap:40px;
+    align-items:center;
 
-    padding:34px;
+    gap:24px;
 
-    margin:45px 0;
+    margin-bottom:30px;
 
-    border-radius:30px;
+    padding:22px 28px;
+
+    min-height:150px;
+
+    border-radius:24px;
 
     background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.035),
+            rgba(255,255,255,.015)
+        );
 
-    linear-gradient(
-        145deg,
-        rgba(255,255,255,.04),
-        rgba(255,255,255,.015)
-    );
+    backdrop-filter:blur(18px);
 
-    backdrop-filter:blur(22px);
-
-    border:1px solid rgba(212,175,55,.18);
+    border:1px solid rgba(212,175,55,.14);
 
     box-shadow:
-
-    inset 0 1px 0 rgba(255,255,255,.06),
-
-    0 20px 50px rgba(0,0,0,.45);
+        0 12px 35px rgba(0,0,0,.28);
 
 }
 
 .samii-left{
 
     flex:1;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
 
 }
 
@@ -820,46 +819,38 @@ SAMII PREMIUM
 
 .samii-title{
 
-    margin-top:16px;
+    font-size:30px;
+    font-weight:800;
 
-    font-size:40px;
+    color:#F4D67A;
 
-    color:#FFE28A;
+    margin:0;
 
-    text-shadow:
-    0 0 15px rgba(212,175,55,.25);
+    letter-spacing:.04em;
 
 }
 
 .samii-text{
 
-    margin-top:18px;
+    color:#BEBEBE;
 
-    color:#CFCFCF;
+    font-size:16px;
 
-    line-height:1.9;
+    line-height:1.5;
+
+    margin:0;
 
 }
 
 .go-button{
 
-    margin-top:28px;
+    width:140px;
 
-    height:52px;
-
-    padding:0 34px;
-
-    border:none;
+    height:46px;
 
     border-radius:14px;
 
-    background:#D4AF37;
-
-    color:#111;
-
-    font-weight:700;
-
-    transition:.30s;
+    font-size:15px;
 
 }
 
@@ -874,8 +865,7 @@ SAMII PREMIUM
 
 .samii-right{
 
-    width:360px;
-
+    width:320px;
     display:grid;
 
     grid-template-columns:repeat(2,1fr);
