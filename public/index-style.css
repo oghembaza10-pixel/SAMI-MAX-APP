@@ -28,26 +28,21 @@
 
 .main-insigne{
 
-    width:95vw;
-    max-width:1500px;
+    .main-insigne{
 
-    max-height:82vh;
+    width:100vw;
+
+    max-width:none;
 
     height:auto;
 
-    object-fit:contain;
+    max-height:none;
 
-    filter:
-        drop-shadow(0 0 35px rgba(197,160,89,.35));
+    display:block;
 
-    margin-bottom:30px;
-
-    user-select:none;
-
-    pointer-events:none;
+    filter:drop-shadow(0 0 50px rgba(197,160,89,.6));
 
 }
-
 /* BOUTON */
 
 .btn-rejoindre{
