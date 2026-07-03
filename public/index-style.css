@@ -1,235 +1,46 @@
-/* PORTE D'ENTRÉE OG */
+body { margin: 0; padding: 0; background-color: #000; }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+.hero-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
 }
 
-.entry-body{
-
-    width:100%;
-    min-height:100vh;
-
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-
-    background:#000;
-
-    overflow:hidden;
-
-    font-family:Arial,Helvetica,sans-serif;
-
+.hero-image {
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
-/* IMAGE */
-
-.main-insigne{
-
-    .main-insigne{
-
-    width:100vw;
-
-    max-width:none;
-
-    height:auto;
-
-    max-height:none;
-
-    display:block;
-
-    filter:drop-shadow(0 0 50px rgba(197,160,89,.6));
-
-}
-/* BOUTON */
-
-.btn-rejoindre{
-
-    padding:18px 55px;
-
-    border:2px solid #C5A059;
-
-    color:#C5A059;
-
-    text-decoration:none;
-
-    text-transform:uppercase;
-
-    letter-spacing:4px;
-
-    font-size:18px;
-
-    border-radius:8px;
-
-    transition:.35s;
-
-    background:rgba(0,0,0,.35);
-
-    backdrop-filter:blur(8px);
-
+/* Position du sélecteur de langue */
+.lang-selector {
+    position: absolute;
+    top: 3%;
+    right: 5%;
+    color: #C5A059;
+    font-family: sans-serif;
+    font-size: 14px;
 }
 
-.btn-rejoindre:hover{
-
-    background:#C5A059;
-
-    color:#000;
-
-    box-shadow:
-    0 0 40px rgba(197,160,89,.45);
-
+/* Le bouton cliquable */
+.cta-button {
+    position: absolute;
+    top: 65%; /* Ajuste ce pourcentage si le bouton n'est pas bien placé */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    padding: 15px 40px;
+    background: rgba(197, 160, 89, 0.2); /* Fond doré léger */
+    border: 2px solid #C5A059;
+    color: #C5A059;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 5px;
+    transition: 0.3s;
 }
 
-/* MOBILE */
-
-@media(max-width:768px){
-
-.main-insigne{
-
-    width:98vw;
-
-    max-height:70vh;
-
-}
-
-.btn-rejoindre{
-
-    width:90%;
-
-    max-width:340px;
-
-    text-align:center;
-
-    font-size:16px;
-    .language-switcher{
-
-position:fixed;
-
-top:25px;
-
-right:25px;
-
-display:flex;
-
-gap:10px;
-
-z-index:100;
-
-}
-
-.language-switcher button{
-
-padding:8px 14px;
-
-background:rgba(0,0,0,.45);
-
-border:1px solid #C5A059;
-
-color:#C5A059;
-
-cursor:pointer;
-
-border-radius:8px;
-
-transition:.3s;
-
-}
-
-.language-switcher button:hover{
-
-background:#C5A059;
-
-color:#000;
-
-}
-
-.language-switcher button.active{
-
-background:#C5A059;
-
-color:#000;
-
-}
-
-.entry-quote{
-
-margin-top:18px;
-
-font-size:30px;
-
-font-weight:700;
-
-color:#C5A059;
-
-letter-spacing:2px;
-
-text-shadow:0 0 18px rgba(197,160,89,.35);
-
-}
-
-.entry-sub{
-
-margin-top:10px;
-
-margin-bottom:28px;
-
-font-size:15px;
-
-color:#bdbdbd;
-
-letter-spacing:1px;
-
-}
-
-@media(max-width:768px){
-
-.entry-quote{
-
-font-size:20px;
-
-}
-
-.entry-sub{
-
-font-size:13px;
-
-}
-
-.language-switcher{
-
-top:15px;
-
-right:15px;
-
-}
-
-}
-
-    padding:16px;
-
-}
-
-}
-.entry-center{
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-    padding:20px;
-}
-.entry-body{
-    margin:0;
-    background:#000;
-    overflow:hidden;
-}
-
-.main-insigne{
-    width:80vw;
-    max-width:500px;
-    height:auto;
-    margin-bottom:20px;
+.cta-button:hover {
+    background: #C5A059;
+    color: #000;
 }
