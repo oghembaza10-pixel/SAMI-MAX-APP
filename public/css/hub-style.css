@@ -172,6 +172,31 @@ body::after {
     .content { padding: 15px; }
     .hub-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
- 
+ /* AJUSTEMENTS MOBILE - PRIORITÉ ABSOLUE */
+@media (max-width: 768px) {
+    /* On cache la sidebar complètement pour libérer tout l'écran */
+    .sidebar { display: none !important; }
+    
+    /* Le contenu prend 100% de la largeur */
+    .content { padding: 15px 10px; width: 100%; }
+
+    /* Hero section plus compacte pour ne pas prendre trop de place */
+    .hero { padding: 15px; margin-bottom: 15px; }
+    .hero h1 { font-size: 24px; }
+
+    /* Grille de QG : 2 colonnes bien espacées */
+    .hub-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 10px; 
+    }
+
+    /* Cartes : on réduit un peu le padding pour que ça tienne mieux */
+    .card { padding: 12px; min-height: 80px; }
+    .card h3 { font-size: 11px; } /* Texte un peu plus petit pour éviter les coupures */
+    .card-icon { margin-bottom: 8px; font-size: 20px; }
+
+    /* Sélecteur de langue plus grand pour le pouce */
+    .language-switcher button { padding: 8px 14px; font-size: 13px; }
+}
 
 
