@@ -755,3 +755,224 @@ RESPONSIVE
     font-weight:600;
 
 }
+/* ==========================================================
+   HUB PREMIUM FINAL
+========================================================== */
+
+/* TITRES */
+
+.hero h1,
+.samii-left h2,
+.community-card h3{
+
+    color:#E6C86B;
+
+    text-shadow:0 0 18px rgba(212,175,55,.10);
+
+}
+
+.hero p{
+
+    color:#9c9c9c;
+
+}
+
+/* SAMII */
+
+.samii-card{
+
+    padding:30px;
+
+    gap:30px;
+
+    margin-bottom:38px;
+
+}
+
+.samii-left h2{
+
+    font-size:36px;
+
+}
+
+.samii-left p{
+
+    margin-bottom:22px;
+
+    color:#bcbcbc;
+
+}
+
+.badge{
+
+    font-weight:700;
+
+}
+
+.go-button{
+
+    border-radius:14px;
+
+    box-shadow:0 10px 25px rgba(212,175,55,.18);
+
+}
+
+.go-button:hover{
+
+    box-shadow:0 18px 45px rgba(212,175,55,.30);
+
+}
+
+/* RÉSEAUX */
+
+.samii-right{
+
+    width:360px;
+
+    gap:12px;
+
+}
+
+.samii-right span{
+
+    background:#121212;
+
+    font-weight:600;
+
+    transition:.25s;
+
+}
+
+.samii-right span:hover{
+
+    transform:translateY(-3px) scale(1.04);
+
+}
+
+/* CARTES MÉTIERS */
+
+.card{
+
+    background:linear-gradient(
+        180deg,
+        #171717,
+        #101010
+    );
+
+    border:1px solid rgba(212,175,55,.08);
+
+}
+
+.card i{
+
+    width:42px;
+
+    height:42px;
+
+    color:#E4C35A;
+
+}
+
+.card h3{
+
+    color:#E7C96A;
+
+    font-size:19px;
+
+    font-weight:700;
+
+}
+
+.card:hover{
+
+    border-color:rgba(212,175,55,.35);
+
+    box-shadow:
+        0 20px 45px rgba(0,0,0,.45),
+        0 0 25px rgba(212,175,55,.12);
+
+}
+
+/* COMMUNAUTÉ */
+
+.community-card{
+
+    border-radius:22px;
+
+    border:1px solid rgba(212,175,55,.12);
+
+    padding:35px;
+
+}
+
+.community-card p{
+
+    margin:16px 0 24px;
+
+}
+
+.community-card button{
+
+    width:fit-content;
+
+    background:transparent;
+
+    color:#E7C96A;
+
+    border:1px solid rgba(212,175,55,.20);
+
+    border-radius:12px;
+
+    padding:12px 20px;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+}
+
+.community-card button:hover{
+
+    background:rgba(212,175,55,.08);
+
+}
+
+/* SIDEBAR */
+
+.logo h2{
+
+    filter:drop-shadow(0 0 14px rgba(212,175,55,.20));
+
+}
+
+.menu a{
+
+    font-weight:500;
+
+}
+
+.menu a i{
+
+    color:#D4AF37;
+
+}
+
+.menu a:hover{
+
+    color:#E7C96A;
+
+}
+
+/* LANGUES */
+
+.language-switcher button{
+
+    font-weight:700;
+
+}
+
+.language-switcher button.active{
+
+    box-shadow:0 0 18px rgba(212,175,55,.18);
+
+}
