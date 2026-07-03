@@ -12,7 +12,6 @@ body { margin: 0; padding: 0; background-color: #000; }
     display: block;
 }
 
-/* Position du sélecteur de langue */
 .lang-selector {
     position: absolute;
     top: 3%;
@@ -22,15 +21,15 @@ body { margin: 0; padding: 0; background-color: #000; }
     font-size: 14px;
 }
 
-/* Le bouton cliquable */
+.lang-selector a { color: #C5A059; text-decoration: none; }
+
 .cta-button {
     position: absolute;
-    top: 65%; /* Ajuste ce pourcentage si le bouton n'est pas bien placé */
+    top: 65%;
     left: 50%;
     transform: translate(-50%, -50%);
-    
     padding: 15px 40px;
-    background: rgba(197, 160, 89, 0.2); /* Fond doré léger */
+    background: rgba(197, 160, 89, 0.2);
     border: 2px solid #C5A059;
     color: #C5A059;
     text-decoration: none;
