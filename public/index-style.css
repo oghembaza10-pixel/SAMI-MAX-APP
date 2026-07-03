@@ -221,3 +221,15 @@ right:15px;
     text-align:center;
     padding:20px;
 }
+.entry-body{
+    margin:0;
+    background:#000;
+    overflow:hidden;
+}
+
+.main-insigne{
+    width:80vw;
+    max-width:500px;
+    height:auto;
+    margin-bottom:20px;
+}
