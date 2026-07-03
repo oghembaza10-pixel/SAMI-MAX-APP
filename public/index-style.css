@@ -212,3 +212,12 @@ right:15px;
 }
 
 }
+.entry-center{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    padding:20px;
+}
