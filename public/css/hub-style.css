@@ -981,3 +981,177 @@ RESPONSIVE
     box-shadow:0 0 18px rgba(212,175,55,.18);
 
 }
+/* ==========================================================
+   MOBILE PREMIUM
+========================================================== */
+
+@media (max-width:768px){
+
+    .content{
+        padding:20px;
+    }
+
+    .hero{
+        text-align:center;
+        margin-bottom:30px;
+    }
+
+    .hero h1{
+        font-size:28px;
+        line-height:1.25;
+    }
+
+    .hero p{
+        font-size:15px;
+    }
+
+    .language-switcher{
+        justify-content:center;
+        flex-wrap:wrap;
+    }
+
+    /* SAMII */
+
+    .samii-card{
+
+        flex-direction:column;
+
+        align-items:center;
+
+        text-align:center;
+
+        padding:22px;
+
+        gap:22px;
+
+    }
+
+    .samii-left{
+
+        width:100%;
+
+    }
+
+    .samii-left h2{
+
+        font-size:30px;
+
+    }
+
+    .samii-left p{
+
+        font-size:15px;
+
+    }
+
+    /* Réseaux */
+
+    .samii-right{
+
+        width:100%;
+
+        display:grid;
+
+        grid-template-columns:repeat(4,1fr);
+
+        gap:12px;
+
+        justify-items:center;
+
+    }
+
+    .samii-right span{
+
+        width:58px;
+
+        height:58px;
+
+        display:flex;
+
+        align-items:center;
+
+        justify-content:center;
+
+        padding:0;
+
+        border-radius:16px;
+
+        font-size:0;
+
+    }
+
+    .samii-right i{
+
+        width:24px;
+
+        height:24px;
+
+    }
+
+    /* Cartes métiers */
+
+    .hub-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+        gap:14px;
+
+        margin-top:25px;
+
+    }
+
+    .card{
+
+        min-height:145px;
+
+        padding:20px;
+
+        border-radius:18px;
+
+    }
+
+    .card i{
+
+        width:34px;
+
+        height:34px;
+
+        margin-bottom:16px;
+
+    }
+
+    .card h3{
+
+        font-size:15px;
+
+        margin:0;
+
+    }
+
+    /* Communauté */
+
+    .community-card{
+
+        grid-column:1/-1;
+
+        padding:22px;
+
+        text-align:center;
+
+    }
+
+    .community-card button{
+
+        width:100%;
+
+    }
+
+    /* Sidebar */
+
+    .sidebar{
+
+        display:none;
+
+    }
+
+}
