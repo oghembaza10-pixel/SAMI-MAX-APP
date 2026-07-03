@@ -59,38 +59,119 @@ body::after {
 /* Layout */
 .app { display: flex; min-height: 100vh; }
 
-.sidebar { width: 240px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-right: 1px solid rgba(197, 160, 89, 0.1); }
-.content { flex: 1; padding: 20px; }
+/* SIDEBAR CORRIGÉE (Plus lisible) */
+.sidebar { 
+    width: 240px; 
+    padding: 20px; 
+    background: rgba(20, 20, 20, 0.8); /* Fond plus opaque pour contraster */
+    border-right: 1px solid rgba(197, 160, 89, 0.2); 
+    display: flex;
+    flex-direction: column;
+}
 
-/* Cartes QG */
-.hub-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.logo h2 { font-size: 26px; color: var(--gold); }
+.logo-subtitle { font-size: 12px; color: #999; margin-top: 4px; }
+
+.menu { margin-top: 30px; display: flex; flex-direction: column; gap: 10px; }
+
+.menu a { 
+    color: #ccc; /* Texte plus clair pour la visibilité */
+    text-decoration: none; 
+    font-size: 14px; 
+    padding: 12px 15px; 
+    border-radius: 8px; 
+    transition: 0.3s; 
+    display: block;
+}
+
+.menu a:hover { 
+    background: rgba(197, 160, 89, 0.1); 
+    color: var(--gold); 
+}
+
+.menu a.active { 
+    background: rgba(197, 160, 89, 0.15); 
+    color: var(--gold); 
+    border-left: 2px solid var(--gold);
+}
+
+/* CONTENT */
+.content { flex: 1; padding: 30px; }
+
+/* HERO */
+.hero { padding: 30px; margin-bottom: 30px; border-radius: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(197, 160, 89, 0.2); }
+.hero h1 { color: var(--gold); font-size: 32px; text-shadow: 0 0 10px rgba(197, 160, 89, 0.3); }
+.hero p { font-size: 15px; color: #ddd; margin-top: 10px; line-height: 1.4; }
+
+/* SÉLECTEUR DE LANGUE CORRIGÉ (Forcé visible) */
+.language-switcher {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    position: relative; /* Assure le positionnement */
+    z-index: 10;
+}
+
+.language-switcher button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.language-switcher button:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+.language-switcher button.active {
+    border-color: var(--gold);
+    background: rgba(197, 160, 89, 0.2);
+    color: var(--gold);
+    font-weight: bold;
+}
+
+/* GRID QG */
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
 
 .card {
     background: var(--card-bg);
     border: 1px solid rgba(197, 160, 89, 0.3);
-    border-radius: 14px;
-    padding: 14px;
+    border-radius: 16px;
+    padding: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .card:hover {
     border-color: var(--gold);
-    box-shadow: 0 0 15px var(--gold-glow);
-    transform: translateY(-4px);
+    box-shadow: 0 0 20px var(--gold-glow);
+    transform: translateY(-5px);
 }
 
-.card-icon { color: var(--gold); margin-bottom: 10px; }
-.card h3 { color: #E0C097; text-transform: uppercase; letter-spacing: 0.5px; font-size: 14px; }
+.card-icon { color: var(--gold); margin-bottom: 15px; font-size: 24px; }
+.card h3 { color: #E0C097; text-transform: uppercase; letter-spacing: 1px; font-size: 16px; }
 
-/* Hero Section */
-.hero { padding: 22px; margin-bottom: 20px; border-radius: 18px; background: rgba(197, 160, 89, 0.03); border: 1px solid rgba(197, 160, 89, 0.2); }
-.hero h1 { color: var(--gold); font-size: 28px; text-shadow: 0 0 10px rgba(197, 160, 89, 0.3); }
+/* COMMUNITY CARD */
+.community-card { margin-top: 40px; padding: 25px; border-radius: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); text-align: center; }
+.community-card h3 { font-size: 18px; color: #fff; margin-bottom: 8px; }
+.community-card p { font-size: 14px; color: #aaa; max-width: 500px; margin: 0 auto; }
+.community-card button { margin-top: 15px; padding: 12px 24px; border: none; border-radius: 10px; background: var(--gold); color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.community-card button:hover { background: #d4af37; transform: scale(1.05); }
 
-/* Mobile */
+/* MOBILE */
 @media (max-width: 768px) {
-    .sidebar { display: none; }
-    .hub-grid { grid-template-columns: repeat(2, 1fr); }
+    .sidebar { display: none; } /* Reste caché sur mobile */
+    .content { padding: 15px; }
+    .hub-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
+ 
 
 
