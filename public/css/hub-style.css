@@ -918,4 +918,142 @@
     color:#000;
 
 }
-  
+/* ==========================================================
+   HERO LUXURY V3
+========================================================== */
+
+.hero{
+
+    position:relative;
+
+    overflow:hidden;
+
+    border-radius:36px;
+
+    padding:60px 50px;
+
+    margin-bottom:40px;
+
+    background:
+        radial-gradient(circle at top center,
+        rgba(212,175,55,.14),
+        transparent 45%),
+        linear-gradient(
+        180deg,
+        rgba(255,255,255,.025),
+        rgba(255,255,255,.008));
+
+    border:1px solid rgba(212,175,55,.15);
+
+    backdrop-filter:blur(25px);
+
+    box-shadow:
+        inset 0 1px rgba(255,255,255,.05),
+        0 20px 70px rgba(0,0,0,.45);
+
+}  
+.hero::before{
+
+    content:"";
+
+    position:absolute;
+
+    width:700px;
+    height:700px;
+
+    border-radius:50%;
+
+    background:
+    radial-gradient(
+        rgba(212,175,55,.16),
+        transparent 72%
+    );
+
+    top:-450px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    pointer-events:none;
+
+}
+.hero::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+    linear-gradient(
+        120deg,
+        transparent,
+        rgba(255,255,255,.03),
+        transparent
+    );
+
+    opacity:.5;
+
+    pointer-events:none;
+
+}
+.hero h1{
+
+    font-size:58px;
+
+    line-height:1.05;
+
+    font-weight:800;
+
+    text-align:center;
+
+    margin-bottom:22px;
+
+    background:
+    linear-gradient(
+        180deg,
+        #FFF8D5,
+        #F6D46A,
+        #C58B1A
+    );
+
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+
+    text-shadow:
+        0 0 30px rgba(212,175,55,.20);
+
+}
+.hero p{
+
+    max-width:700px;
+
+    margin:auto;
+
+    text-align:center;
+
+    color:#cfcfcf;
+
+    font-size:20px;
+
+    line-height:1.8;
+
+}
+.language-switcher{
+
+    justify-content:center;
+
+    margin-top:35px;
+
+}
+.language-switcher button{
+
+    background:rgba(255,255,255,.04);
+
+    border:1px solid rgba(212,175,55,.15);
+
+    backdrop-filter:blur(18px);
+
+}
