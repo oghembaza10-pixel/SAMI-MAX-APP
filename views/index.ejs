@@ -1,88 +1,22 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>OG</title>
-
-<link rel="stylesheet" href="/css/index-style.css">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>OG EMPIRE - Porte d'entrée</title>
 </head>
+<body>
 
-<body class="entry-body">
+    <div class="hero-container">
+        <img src="Gemini_Generated_Image_c7gbzec7gbzec7gb.png" alt="OG Empire" class="hero-image">
 
-<div class="language-switcher">
+        <nav class="lang-selector">
+            <a href="?lang=fr">FR</a> | <a href="?lang=en">EN</a> | <a href="?lang=ar">العربية</a>
+        </nav>
 
-<button data-lang="fr" class="active">FR</button>
-<button data-lang="en">EN</button>
-<button data-lang="ar">العربية</button>
-
-</div>
-
-<div class="entry-center">
-
-    <img
-        src="/Gemini_Generated_Image_c7gbzec7gbzec7gb.png"
-        class="main-insigne"
-        alt="OG">
-
-    <p class="entry-quote" id="entryQuote">
-        Du soldat au général.
-    </p>
-
-    <a href="/hub" class="btn-rejoindre" id="joinBtn">
-        REJOINDRE MON QG
-    </a>
-
-</div>
-
-<script>
-
-const traduction = {
-
-fr:{
-join:"REJOINDRE MON QG",
-quote:"Du soldat au général."
-},
-
-en:{
-join:"JOIN MY HQ",
-quote:"From Soldier to General."
-},
-
-ar:{
-join:"انضم إلى مقري",
-quote:"من الجندي إلى الجنرال"
-}
-
-};
-
-document.querySelectorAll(".language-switcher button").forEach(btn=>{
-
-btn.onclick=()=>{
-
-document.querySelectorAll(".language-switcher button")
-.forEach(b=>b.classList.remove("active"));
-
-btn.classList.add("active");
-
-document.documentElement.lang = btn.dataset.lang;
-
-document.getElementById("joinBtn").textContent =
-traduction[btn.dataset.lang].join;
-
-document.getElementById("entryQuote").textContent =
-traduction[btn.dataset.lang].quote;
-
-};
-
-});
-
-</script>
+        <a href="URL_DE_TON_HUB" class="cta-button">REJOINDRE MON QG</a>
+    </div>
 
 </body>
-
 </html>
