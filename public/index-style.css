@@ -1,0 +1,39 @@
+/* public/css/index-style.css */
+
+/* Design spécifique pour la porte d'entrée */
+.entry-body {
+    margin: 0;
+    padding: 0;
+    background: #000000; /* Noir profond */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Helvetica', sans-serif;
+}
+
+.main-insigne {
+    width: 320px;
+    filter: drop-shadow(0 0 50px rgba(197, 160, 89, 0.6));
+    margin-bottom: 60px;
+}
+
+.btn-rejoindre {
+    padding: 20px 60px;
+    border: 2px solid #C5A059; /* Or */
+    color: #C5A059;
+    background: transparent;
+    text-decoration: none;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    transition: all 0.4s ease;
+    border-radius: 2px;
+}
+
+.btn-rejoindre:hover {
+    background: #C5A059;
+    color: #000000;
+    box-shadow: 0 0 40px #C5A059;
+}
