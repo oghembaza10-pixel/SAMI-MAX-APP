@@ -1,724 +1,134 @@
-.card{
+}/* ==========================================================
+   OG HUB V2 • PREMIUM
+========================================================== */
 
-    position:relative;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-    overflow:hidden;
+:root{
 
-    display:flex;
-    flex-direction:column;
-    justify-content:flex-start;
+    --bg:#06070A;
+    --bg2:#0B0E13;
+    --glass:rgba(255,255,255,.045);
 
-    padding:28px;
+    --gold:#D6B25E;
+    --gold-light:#F6D98A;
 
-    min-height:175px;
+    --white:#F8F8F8;
+    --text:#EAEAEA;
+    --grey:#9CA3AF;
 
-    border-radius:24px;
+    --border:rgba(255,255,255,.08);
 
-    cursor:pointer;
+    --shadow:
+        0 20px 60px rgba(0,0,0,.45);
+
+}
+
+html{
+
+    scroll-behavior:smooth;
+
+}
+
+body{
+
+    min-height:100vh;
+
+    color:var(--text);
+
+    font-family:Inter,Arial,sans-serif;
 
     background:
+
+    radial-gradient(circle at 15% 15%,
+    rgba(214,178,94,.12),
+    transparent 35%),
+
+    radial-gradient(circle at 85% 0%,
+    rgba(60,90,255,.08),
+    transparent 35%),
+
     linear-gradient(
         180deg,
-        rgba(255,255,255,.03),
-        rgba(255,255,255,.015)
+        #06070A,
+        #0D1016 45%,
+        #08090D 100%
     );
 
-    backdrop-filter:blur(18px);
+    background-attachment:fixed;
 
-    border:1px solid rgba(212,175,55,.22);
-
-    box-shadow:
-
-        inset 0 1px 0 rgba(255,255,255,.05),
-
-        0 8px 30px rgba(0,0,0,.45);
-
-    transition:.35s;
+    overflow-x:hidden;
 
 }
-.card::before{
 
-    content:"";
-
-    position:absolute;
-
-    inset:0;
-
-    background:
-
-    radial-gradient(
-
-        circle at top,
-
-        rgba(212,175,55,.18),
-
-        transparent 72%
-
-    );
-
-    opacity:0;
-
-    transition:.35s;
-
-}
-.card:hover{
-
-    transform:
-
-    translateY(-8px)
-
-    scale(1.03);
-
-    border-color:#D4AF37;
-
-    box-shadow:
-
-    0 0 35px rgba(212,175,55,.22),
-
-    0 18px 50px rgba(0,0,0,.45);
-
-}
-.card:hover::before{
-
-    opacity:1;
-
-}
-.card-icon{
-
-    width:58px;
-
-    height:58px;
-
-    border-radius:18px;
+.app{
 
     display:flex;
 
-    align-items:center;
-
-    justify-content:center;
-
-    margin-bottom:22px;
-
-    background:
-
-    linear-gradient(
-
-        180deg,
-
-        rgba(255,255,255,.03),
-
-        rgba(255,255,255,.01)
-
-    );
-
-    border:1px solid rgba(212,175,55,.15);
-
-}
-.card-icon i{
-
-    width:30px;
-
-    height:30px;
-
-    color:#FFD86A;
-
-    filter:
-
-    drop-shadow(0 0 8px rgba(212,175,55,.35));
-
-}
-.card h3{
-
-    color:#F6D56A;
-
-    font-size:20px;
-
-    font-weight:700;
-
-    line-height:1.4;
-
-}
-.card::after{
-
-    content:"";
-
-    position:absolute;
-
-    left:0;
-
-    bottom:0;
-
-    width:100%;
-
-    height:2px;
-
-    background:
-
-    linear-gradient(
-
-        90deg,
-
-        transparent,
-
-        #D4AF37,
-
-        transparent
-
-    );
-
-    transform:scaleX(0);
-
-    transition:.35s;
-
-}
-.card:hover::after{
-
-    transform:scaleX(1);
+    min-height:100vh;
 
 }
 /* ==========================================================
-   OG PREMIUM MOBILE V2
+   SIDEBAR V2
 ========================================================== */
 
-@media (max-width:900px){
+.sidebar{
 
-.content{
+    width:280px;
 
-    padding:18px;
+    padding:34px 24px;
 
-}
+    position:sticky;
 
-.hero{
+    top:0;
 
-    text-align:center;
-
-    margin-bottom:24px;
-
-}
-
-.hero h1{
-
-    font-size:34px;
-    line-height:1.15;
-
-}
-
-.hero p{
-
-    font-size:16px;
-    color:#bfbfbf;
-    max-width:340px;
-    margin:auto;
-
-}
-
-.language-switcher{
-
-    justify-content:center;
-    margin-top:18px;
-
-}
-
-/* ---------- SAMII ---------- */
-
-.samii-card{
-
-    display:block;
-
-    padding:24px;
-
-    border-radius:26px;
+    height:100vh;
 
     background:
-    linear-gradient(
-        180deg,
-        rgba(255,215,80,.08),
-        rgba(255,255,255,.02)
-    );
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.04),
+            rgba(255,255,255,.015)
+        );
 
-    border:1px solid rgba(212,175,55,.25);
+    backdrop-filter:blur(28px);
 
-    backdrop-filter:blur(18px);
-
-    box-shadow:
-    0 25px 60px rgba(0,0,0,.55),
-    inset 0 0 35px rgba(212,175,55,.05);
-
-}
-
-.samii-left{
-
-    text-align:center;
-
-}
-
-.badge{
-
-    margin:auto;
-    margin-bottom:18px;
-
-}
-
-.samii-left h2{
-
-    font-size:40px;
-
-    color:#F5D76E;
-
-    text-shadow:
-    0 0 15px rgba(212,175,55,.35);
-
-}
-
-.samii-left p{
-
-    color:#d4d4d4;
-
-    max-width:270px;
-
-    margin:18px auto;
-
-}
-
-.go-button{
-
-    width:100%;
-
-    height:56px;
-
-    border-radius:16px;
-
-    font-size:18px;
+    border-right:1px solid rgba(255,255,255,.08);
 
     box-shadow:
-    0 12px 35px rgba(212,175,55,.28);
+        inset -1px 0 rgba(255,255,255,.03);
 
 }
 
-/* ---------- Réseaux ---------- */
+/* ---------- LOGO ---------- */
 
-.samii-right{
+.logo{
 
-    width:100%;
+    margin-bottom:42px;
 
-    margin-top:28px;
+    padding-bottom:28px;
 
-    display:grid;
-
-    grid-template-columns:repeat(4,1fr);
-
-    gap:12px;
+    border-bottom:1px solid rgba(255,255,255,.06);
 
 }
 
-.samii-right span{
+.logo h2{
 
-    height:64px;
+    font-size:54px;
 
-    display:flex;
+    font-weight:900;
 
-    justify-content:center;
-
-    align-items:center;
-
-    border-radius:18px;
-
-    font-size:0;
-
-    background:rgba(255,255,255,.03);
-
-    border:1px solid rgba(255,255,255,.06);
-
-    transition:.25s;
-
-}
-
-.samii-right span i{
-
-    width:28px;
-
-    height:28px;
-
-}
-
-.samii-right span:hover{
-
-    transform:translateY(-3px) scale(1.05);
-
-}
-
-/* ---------- GRID ---------- */
-
-.hub-grid{
-
-    grid-template-columns:repeat(2,1fr);
-
-    gap:16px;
-
-}
-
-/* ---------- Cards ---------- */
-
-.card{
-
-    min-height:150px;
-
-    padding:20px;
-
-    border-radius:22px;
-
-    background:
-    linear-gradient(
-        180deg,
-        rgba(30,30,30,.95),
-        rgba(14,14,14,.98)
-    );
-
-    border:1px solid rgba(212,175,55,.12);
-
-    backdrop-filter:blur(12px);
-
-    box-shadow:
-    0 10px 30px rgba(0,0,0,.45);
-
-}
-
-.card:hover{
-
-    transform:translateY(-4px);
-
-    border-color:#D4AF37;
-
-    box-shadow:
-    0 0 20px rgba(212,175,55,.25);
-
-}
-
-.card i{
-
-    width:34px;
-
-    height:34px;
-
-    margin-bottom:16px;
-
-    filter:
-    drop-shadow(0 0 8px rgba(212,175,55,.30));
-
-}
-
-.card h3{
-
-    color:#F2D16B;
-
-    font-size:18px;
-
-    line-height:1.3;
-
-}
-
-/* ---------- Community ---------- */
-
-.community-card{
-
-    border-radius:24px;
-
-    padding:24px;
-
-    text-align:center;
-
-}
-
-.community-card button{
-
-    width:100%;
-
-    margin-top:18px;
-
-}
-
-}
-/* ==========================================================
-   MOBILE PREMIUM V2
-========================================================== */
-
-@media (max-width:900px){
-
-.content{
-    padding:16px;
-}
-
-.hero{
-    text-align:center;
-    margin-bottom:22px;
-}
-
-.hero h1{
-    font-size:31px;
-    line-height:1.15;
-    color:#f6d46b;
-}
-
-.hero p{
-    font-size:15px;
-    color:#d6d6d6;
-}
-
-.language-switcher{
-    justify-content:center;
-}
-
-/* ---------- SAMII ---------- */
-
-.samii-card{
-
-    flex-direction:column;
-
-    padding:22px;
-
-    border-radius:28px;
-
-    gap:22px;
-
-    position:relative;
-
-    overflow:hidden;
-
-    background:
-    linear-gradient(
-        145deg,
-        rgba(212,175,55,.14),
-        rgba(18,18,18,.98)
-    );
-
-    backdrop-filter:blur(18px);
-
-    border:1px solid rgba(212,175,55,.30);
-
-    box-shadow:
-    0 0 35px rgba(212,175,55,.14),
-    inset 0 0 40px rgba(255,255,255,.02);
-
-}
-
-.samii-card::before{
-
-    content:"";
-
-    position:absolute;
-
-    width:220px;
-    height:220px;
-
-    border-radius:50%;
-
-    background:radial-gradient(
-        rgba(212,175,55,.18),
-        transparent 70%
-    );
-
-    top:-120px;
-    right:-100px;
-
-}
-
-.samii-left{
-
-    text-align:center;
-
-    width:100%;
-
-}
-
-.samii-left h2{
-
-    font-size:46px;
-
-    color:#f6d46b;
-
-    text-shadow:
-    0 0 18px rgba(212,175,55,.35);
-
-}
-
-.samii-left p{
-
-    font-size:16px;
-
-    color:#efefef;
-
-}
-
-.go-button{
-
-    width:100%;
-
-    max-width:240px;
-
-    height:54px;
-
-    border-radius:16px;
-
-    font-size:18px;
-
-    box-shadow:
-    0 0 28px rgba(212,175,55,.28);
-
-}
-
-/* ---------- RESEAUX ---------- */
-
-.samii-right{
-
-    width:100%;
-
-    display:grid;
-
-    grid-template-columns:repeat(4,1fr);
-
-    gap:14px;
-
-}
-
-.samii-right span{
-
-    aspect-ratio:1;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    border-radius:18px;
-
-    background:rgba(18,18,18,.92);
-
-    border:1px solid rgba(255,255,255,.05);
-
-    font-size:0;
-
-    transition:.30s;
-
-}
-
-.samii-right span i{
-
-    width:30px;
-
-    height:30px;
-
-}
-
-.samii-right span:hover{
-
-    transform:scale(1.08);
-
-    box-shadow:
-    0 0 18px rgba(212,175,55,.18);
-
-}
-
-/* ---------- CARDS ---------- */
-
-.hub-grid{
-
-    grid-template-columns:repeat(2,1fr);
-
-    gap:14px;
-
-}
-
-.card{
-
-    min-height:145px;
-
-    padding:18px;
-
-    border-radius:20px;
-
-    background:
-    linear-gradient(
-        180deg,
-        rgba(28,28,28,.95),
-        rgba(12,12,12,.98)
-    );
-
-    border:1px solid rgba(212,175,55,.16);
-
-    box-shadow:
-    inset 0 1px rgba(255,255,255,.04),
-    0 10px 20px rgba(0,0,0,.35);
-
-}
-
-.card:hover{
-
-    transform:translateY(-5px);
-
-    border-color:#d4af37;
-
-    box-shadow:
-    0 0 22px rgba(212,175,55,.18);
-
-}
-
-.card i{
-
-    width:34px;
-
-    height:34px;
-
-    margin-bottom:14px;
-
-}
-
-.card h3{
-
-    font-size:17px;
-
-    color:#f6d46b;
-
-    line-height:1.3;
-
-}
-
-/* ---------- COMMUNITY ---------- */
-
-.community-card{
-
-    margin-top:20px;
-
-    border-radius:24px;
-
-    padding:22px;
-
-    text-align:center;
-
-}
-
-.community-card button{
-
-    margin-top:18px;
-
-    width:100%;
-
-}
-
-}
-/* ==========================================================
-   OG LUXURY FINAL
-========================================================== */
-
-.hero h1,
-.samii-left h2,
-.card h3{
+    letter-spacing:.18em;
 
     background:linear-gradient(
         180deg,
-        #fff8dc,
-        #f4d46a,
-        #c9991d
+        #FFF8DA,
+        #F2D072,
+        #C89422
     );
 
     -webkit-background-clip:text;
@@ -726,73 +136,29 @@
 
 }
 
-.samii-card,
-.card,
-.community-card{
+.logo span{
 
-    position:relative;
+    display:block;
 
-    overflow:hidden;
+    margin-top:12px;
 
-}
+    color:#9CA3AF;
 
-.samii-card::after,
-.card::after,
-.community-card::after{
+    line-height:1.7;
 
-    content:"";
-
-    position:absolute;
-
-    top:-120%;
-
-    left:-40%;
-
-    width:45%;
-
-    height:320%;
-
-    transform:rotate(25deg);
-
-    background:linear-gradient(
-        transparent,
-        rgba(255,255,255,.08),
-        transparent
-    );
-
-    transition:1.2s;
+    font-size:13px;
 
 }
 
-.samii-card:hover::after,
-.card:hover::after,
-.community-card:hover::after{
+/* ---------- MENU ---------- */
 
-    left:130%;
+.menu{
 
-}
+    display:flex;
 
-.card{
+    flex-direction:column;
 
-    backdrop-filter:blur(16px);
-
-}
-
-.card i{
-
-    filter:
-    drop-shadow(0 0 12px rgba(212,175,55,.40));
-
-    transition:.3s;
-
-}
-
-.card:hover i{
-
-    transform:scale(1.12);
-
-    filter:
-    drop-shadow(0 0 18px rgba(212,175,55,.70));
+    gap:10px;
 
 }
 
@@ -800,9 +166,47 @@
 
     position:relative;
 
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+    padding:16px 18px;
+
+    border-radius:18px;
+
+    text-decoration:none;
+
+    color:#D7D7D7;
+
+    transition:.30s;
+
     overflow:hidden;
 
 }
+
+.menu a i{
+
+    width:22px;
+
+    height:22px;
+
+}
+
+/* Hover */
+
+.menu a:hover{
+
+    background:rgba(255,255,255,.05);
+
+    transform:translateX(6px);
+
+    color:white;
+
+}
+
+/* Barre dorée */
 
 .menu a::before{
 
@@ -812,115 +216,221 @@
 
     left:0;
 
-    top:0;
+    top:12px;
+
+    bottom:12px;
 
     width:4px;
 
-    height:100%;
+    border-radius:999px;
 
-    background:#D4AF37;
+    background:#D6B25E;
 
     transform:scaleY(0);
 
-    transition:.3s;
+    transition:.30s;
 
 }
 
-.menu a:hover::before,
-.menu .active::before{
+.menu a:hover::before{
 
     transform:scaleY(1);
 
 }
 
-.go-button{
+/* Actif */
 
-    background:linear-gradient(
-        135deg,
-        #F6D46B,
-        #D4AF37
-    );
+.menu .active{
 
-}
+    background:
+        linear-gradient(
+            90deg,
+            rgba(214,178,94,.16),
+            rgba(255,255,255,.02)
+        );
 
-.go-button:hover{
+    color:#F6D98A;
 
-    transform:translateY(-3px) scale(1.03);
-
-}
-
-.community-card{
-
-    border:1px solid rgba(212,175,55,.20);
+    border:1px solid rgba(214,178,94,.18);
 
     box-shadow:
-    0 15px 40px rgba(0,0,0,.35);
+        0 12px 28px rgba(214,178,94,.08);
 
 }
 
-.community-card button{
+.menu .active::before{
 
-    background:linear-gradient(
-        135deg,
-        #D4AF37,
-        #E6C35A
-    );
-
-    color:#000;
-
-    border:none;
-
-    border-radius:14px;
-
-    padding:15px 24px;
-
-    font-weight:700;
-
-    cursor:pointer;
-
-    transition:.3s;
-
-}
-
-.community-card button:hover{
-
-    transform:translateY(-3px);
-
-    box-shadow:
-    0 0 20px rgba(212,175,55,.35);
-
-}
-
-::-webkit-scrollbar{
-
-    width:8px;
-
-}
-
-::-webkit-scrollbar-track{
-
-    background:#0d0d0d;
-
-}
-
-::-webkit-scrollbar-thumb{
-
-    background:#D4AF37;
-
-    border-radius:999px;
-
-}
-
-::selection{
-
-    background:#D4AF37;
-
-    color:#000;
+    transform:scaleY(1);
 
 }
 /* ==========================================================
-   HERO LUXURY V3
+SIDEBAR PREMIUM V2
 ========================================================== */
+
+.sidebar{
+
+    width:270px;
+
+    position:sticky;
+    top:0;
+
+    height:100vh;
+
+    padding:28px;
+
+    display:flex;
+    flex-direction:column;
+
+    background:
+    linear-gradient(
+        180deg,
+        rgba(255,255,255,.04),
+        rgba(255,255,255,.015)
+    );
+
+    backdrop-filter:blur(28px);
+
+    border-right:1px solid rgba(255,255,255,.08);
+
+    box-shadow:
+    inset -1px 0 rgba(255,255,255,.04),
+    10px 0 40px rgba(0,0,0,.30);
+
+}
+
+/* ---------- LOGO ---------- */
+
+.logo{
+
+    text-align:center;
+
+    margin-bottom:45px;
+
+    padding-bottom:28px;
+
+    border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.logo h2{
+
+    font-size:60px;
+
+    font-weight:900;
+
+    letter-spacing:.18em;
+
+    color:#F6D56A;
+
+    text-shadow:
+
+        0 0 12px rgba(255,215,90,.35),
+
+        0 0 45px rgba(212,175,55,.12);
+
+}
+
+.logo-subtitle{
+
+    display:block;
+
+    margin-top:12px;
+
+    color:#B8B8B8;
+
+    font-size:13px;
+
+    line-height:1.6;
+
+}
+
+/* ---------- MENU ---------- */
+
+.menu{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.menu a{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:16px 18px;
+
+    border-radius:18px;
+
+    color:#D8D8D8;
+
+    text-decoration:none;
+
+    transition:.30s;
+
+}
+
+.menu a i{
+
+    width:20px;
+    height:20px;
+
+}
+
+.menu a:hover{
+
+    background:
+
+    rgba(255,255,255,.05);
+
+    color:#FFD86A;
+
+    transform:translateX(8px);
+
+}
+
+.menu .active{
+
+    color:#FFD86A;
+
+    background:
+
+    linear-gradient(
+
+        90deg,
+
+        rgba(212,175,55,.18),
+
+        rgba(212,175,55,.05)
+
+    );
+
+    border:1px solid rgba(212,175,55,.18);
+
+    box-shadow:
+
+    0 8px 20px rgba(212,175,55,.10);
+
+}
+/* ==========================================================
+   HERO PREMIUM V3
+========================================================== */
+
+.content{
+
+    flex:1;
+
+    padding:42px;
+
+}
+
+/* ---------- HERO ---------- */
 
 .hero{
 
@@ -928,55 +438,54 @@
 
     overflow:hidden;
 
-    border-radius:36px;
+    border-radius:34px;
 
-    padding:60px 50px;
+    padding:58px 46px;
 
-    margin-bottom:40px;
+    margin-bottom:42px;
 
     background:
-        radial-gradient(circle at top center,
-        rgba(212,175,55,.14),
-        transparent 45%),
         linear-gradient(
-        180deg,
-        rgba(255,255,255,.025),
-        rgba(255,255,255,.008));
+            180deg,
+            rgba(255,255,255,.045),
+            rgba(255,255,255,.015)
+        );
 
-    border:1px solid rgba(212,175,55,.15);
+    backdrop-filter:blur(30px);
 
-    backdrop-filter:blur(25px);
+    border:1px solid rgba(255,255,255,.08);
 
     box-shadow:
-        inset 0 1px rgba(255,255,255,.05),
-        0 20px 70px rgba(0,0,0,.45);
+        0 25px 70px rgba(0,0,0,.35);
 
-}  
+}
+
 .hero::before{
 
     content:"";
 
     position:absolute;
 
-    width:700px;
-    height:700px;
+    width:650px;
+    height:650px;
+
+    left:50%;
+    top:-430px;
+
+    transform:translateX(-50%);
 
     border-radius:50%;
 
     background:
-    radial-gradient(
-        rgba(212,175,55,.16),
-        transparent 72%
-    );
-
-    top:-450px;
-    left:50%;
-
-    transform:translateX(-50%);
+        radial-gradient(
+            rgba(214,178,94,.18),
+            transparent 72%
+        );
 
     pointer-events:none;
 
 }
+
 .hero::after{
 
     content:"";
@@ -986,74 +495,731 @@
     inset:0;
 
     background:
-
-    linear-gradient(
-        120deg,
-        transparent,
-        rgba(255,255,255,.03),
-        transparent
-    );
-
-    opacity:.5;
+        linear-gradient(
+            120deg,
+            transparent,
+            rgba(255,255,255,.03),
+            transparent
+        );
 
     pointer-events:none;
 
 }
+
+/* ---------- TITRE ---------- */
+
 .hero h1{
 
-    font-size:58px;
+    position:relative;
 
-    line-height:1.05;
-
-    font-weight:800;
+    z-index:2;
 
     text-align:center;
 
-    margin-bottom:22px;
+    font-size:56px;
+
+    line-height:1.08;
+
+    font-weight:900;
 
     background:
-    linear-gradient(
-        180deg,
-        #FFF8D5,
-        #F6D46A,
-        #C58B1A
-    );
+        linear-gradient(
+            180deg,
+            #FFF8DA,
+            #F6D56A,
+            #D2A137
+        );
 
     -webkit-background-clip:text;
+
     -webkit-text-fill-color:transparent;
 
-    text-shadow:
-        0 0 30px rgba(212,175,55,.20);
-
 }
+
+/* ---------- TEXTE ---------- */
+
 .hero p{
 
-    max-width:700px;
+    position:relative;
 
-    margin:auto;
+    z-index:2;
+
+    max-width:760px;
+
+    margin:24px auto 0;
 
     text-align:center;
 
-    color:#cfcfcf;
+    color:#C7CBD4;
 
     font-size:20px;
 
     line-height:1.8;
 
 }
+
+/* ---------- LANGUES ---------- */
+
 .language-switcher{
+
+    position:relative;
+
+    z-index:2;
+
+    display:flex;
 
     justify-content:center;
 
-    margin-top:35px;
+    gap:14px;
+
+    margin-top:34px;
 
 }
+
 .language-switcher button{
+
+    min-width:74px;
+
+    height:44px;
+
+    border:none;
+
+    border-radius:999px;
+
+    cursor:pointer;
+
+    color:#EAEAEA;
+
+    background:
+        rgba(255,255,255,.05);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:blur(16px);
+
+    transition:.30s;
+
+}
+
+.language-switcher button:hover{
+
+    transform:translateY(-3px);
+
+    border-color:#D6B25E;
+
+    color:#F6D98A;
+
+}
+
+.language-switcher button.active{
+
+    color:#111;
+
+    font-weight:700;
+
+    background:
+        linear-gradient(
+            135deg,
+            #F6D98A,
+            #D6B25E
+        );
+
+    box-shadow:
+        0 10px 30px rgba(214,178,94,.25);
+
+}
+/* ==========================================================
+HERO
+========================================================== */
+
+.hero{
+
+    margin-bottom:42px;
+
+}
+
+.hero h1{
+
+    font-size:48px;
+
+    font-weight:800;
+
+    line-height:1.15;
+
+    color:#F5E6A7;
+
+    letter-spacing:-1px;
+
+    text-shadow:
+    0 0 18px rgba(212,175,55,.18);
+
+}
+
+.hero p{
+
+    margin-top:18px;
+
+    max-width:760px;
+
+    font-size:18px;
+
+    line-height:1.8;
+
+    color:#BDBDBD;
+
+}
+
+/* ==========================================================
+LANGUES
+========================================================== */
+
+.language-switcher{
+
+    display:flex;
+
+    gap:12px;
+
+    margin-top:30px;
+
+}
+
+.language-switcher button{
+
+    height:44px;
+
+    padding:0 18px;
+
+    border-radius:999px;
+
+    border:1px solid rgba(212,175,55,.18);
+
+    background:rgba(255,255,255,.03);
+
+    color:#F3D26A;
+
+    backdrop-filter:blur(18px);
+
+    transition:.30s;
+
+}
+
+.language-switcher button:hover{
+
+    transform:translateY(-2px);
+
+    background:#D4AF37;
+
+    color:#111;
+
+}
+
+.language-switcher button.active{
+
+    background:#D4AF37;
+
+    color:#111;
+
+    box-shadow:
+    0 0 25px rgba(212,175,55,.25);
+
+}
+
+/* ==========================================================
+SAMII PREMIUM
+========================================================== */
+
+.samii-card{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:40px;
+
+    padding:34px;
+
+    margin:45px 0;
+
+    border-radius:30px;
+
+    background:
+
+    linear-gradient(
+        145deg,
+        rgba(255,255,255,.04),
+        rgba(255,255,255,.015)
+    );
+
+    backdrop-filter:blur(22px);
+
+    border:1px solid rgba(212,175,55,.18);
+
+    box-shadow:
+
+    inset 0 1px 0 rgba(255,255,255,.06),
+
+    0 20px 50px rgba(0,0,0,.45);
+
+}
+
+.samii-left{
+
+    flex:1;
+
+}
+
+.badge{
+
+    padding:8px 18px;
+
+    border-radius:999px;
+
+    background:rgba(212,175,55,.10);
+
+    color:#F7DA74;
+
+    font-size:12px;
+
+    letter-spacing:.18em;
+
+}
+
+.samii-title{
+
+    margin-top:16px;
+
+    font-size:40px;
+
+    color:#FFE28A;
+
+    text-shadow:
+    0 0 15px rgba(212,175,55,.25);
+
+}
+
+.samii-text{
+
+    margin-top:18px;
+
+    color:#CFCFCF;
+
+    line-height:1.9;
+
+}
+
+.go-button{
+
+    margin-top:28px;
+
+    height:52px;
+
+    padding:0 34px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:#D4AF37;
+
+    color:#111;
+
+    font-weight:700;
+
+    transition:.30s;
+
+}
+
+.go-button:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:
+    0 0 25px rgba(212,175,55,.30);
+
+}
+
+.samii-right{
+
+    width:360px;
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:12px;
+
+}
+
+.samii-right span{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:14px;
+
+    border-radius:16px;
+
+    background:rgba(255,255,255,.03);
+
+    border:1px solid rgba(255,255,255,.06);
+
+    backdrop-filter:blur(12px);
+
+    transition:.30s;
+
+}
+
+.samii-right span:hover{
+
+    transform:translateY(-3px);
+
+    border-color:#D4AF37;
+
+    box-shadow:
+    0 0 20px rgba(212,175,55,.18);
+
+}
+
+.samii-right i{
+
+    width:20px;
+
+    height:20px;
+
+}
+/* ==========================================================
+CARDS PREMIUM V2
+========================================================== */
+
+.card{
+
+    position:relative;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+
+    min-height:200px;
+
+    padding:28px;
+
+    overflow:hidden;
+
+    cursor:pointer;
+
+    border-radius:28px;
+
+    background:
+    linear-gradient(
+        180deg,
+        rgba(255,255,255,.07),
+        rgba(255,255,255,.025)
+    );
+
+    backdrop-filter:blur(24px);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08),
+        0 18px 45px rgba(0,0,0,.35);
+
+    transition:
+        transform .35s,
+        box-shadow .35s,
+        border-color .35s;
+
+}
+
+.card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+    radial-gradient(
+        circle at top,
+        rgba(212,175,55,.18),
+        transparent 70%
+    );
+
+    opacity:0;
+
+    transition:.35s;
+
+}
+
+.card:hover{
+
+    transform:
+        translateY(-10px)
+        scale(1.03);
+
+    border-color:rgba(212,175,55,.45);
+
+    box-shadow:
+
+        0 25px 60px rgba(0,0,0,.50),
+
+        0 0 35px rgba(212,175,55,.18);
+
+}
+
+.card:hover::before{
+
+    opacity:1;
+
+}
+
+.card::after{
+
+    content:"";
+
+    position:absolute;
+
+    left:15px;
+    right:15px;
+    bottom:12px;
+
+    height:2px;
+
+    background:
+    linear-gradient(
+        90deg,
+        transparent,
+        #D4AF37,
+        transparent
+    );
+
+    transform:scaleX(0);
+
+    transition:.35s;
+
+}
+
+.card:hover::after{
+
+    transform:scaleX(1);
+
+}
+
+/* ---------- ICONE ---------- */
+
+.card-icon{
+
+    width:62px;
+
+    height:62px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:20px;
+
+    margin-bottom:22px;
+
+    background:
+    linear-gradient(
+        180deg,
+        rgba(255,255,255,.08),
+        rgba(255,255,255,.03)
+    );
+
+    border:1px solid rgba(212,175,55,.22);
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.08);
+
+}
+
+.card-icon i{
+
+    width:32px;
+
+    height:32px;
+
+    color:#FFD86A;
+
+    filter:
+    drop-shadow(0 0 12px rgba(212,175,55,.45));
+
+}
+
+/* ---------- TITRE ---------- */
+
+.card h3{
+
+    font-size:21px;
+
+    font-weight:700;
+
+    color:#F7D977;
+
+    line-height:1.35;
+
+}
+.samii-left{
+
+    flex:1;
+
+    max-width:500px;
+
+}
+
+.badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    padding:8px 18px;
+
+    border-radius:999px;
+
+    background:rgba(212,175,55,.10);
+
+    color:#F7D977;
+
+    font-size:12px;
+
+    letter-spacing:.15em;
+
+    border:1px solid rgba(212,175,55,.18);
+
+    margin-bottom:18px;
+
+}
+
+.samii-title{
+
+    font-size:52px;
+
+    font-weight:800;
+
+    color:#F7D977;
+
+    letter-spacing:.08em;
+
+    margin-bottom:18px;
+
+    text-shadow:
+    0 0 25px rgba(212,175,55,.25);
+
+}
+
+.samii-text{
+
+    font-size:17px;
+
+    line-height:1.9;
+
+    color:#CFCFCF;
+
+    margin-bottom:28px;
+
+}
+
+.go-button{
+
+    background:
+    linear-gradient(
+        135deg,
+        #F7D977,
+        #CFA82D
+    );
+
+    color:#111;
+
+    border:none;
+
+    border-radius:14px;
+
+    padding:15px 34px;
+
+    font-size:15px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:.35s;
+
+    box-shadow:
+    0 12px 30px rgba(212,175,55,.30);
+
+}
+
+.go-button:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:
+    0 18px 40px rgba(212,175,55,.45);
+
+}
+
+.samii-right{
+
+    width:340px;
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:14px;
+
+}
+
+.samii-right span{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:14px;
+
+    border-radius:16px;
 
     background:rgba(255,255,255,.04);
 
-    border:1px solid rgba(212,175,55,.15);
+    border:1px solid rgba(255,255,255,.08);
 
     backdrop-filter:blur(18px);
+
+    transition:.30s;
+
+    font-weight:600;
+
+}
+
+.samii-right span i{
+
+    width:18px;
+
+    height:18px;
+
+}
+
+.samii-right span:hover{
+
+    transform:translateY(-4px);
+
+    border-color:#D4AF37;
+
+    box-shadow:
+    0 10px 25px rgba(212,175,55,.15);
 
 }
