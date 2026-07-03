@@ -419,14 +419,14 @@ SIDEBAR PREMIUM V2
 
 }
 /* ==========================================================
-   HERO PREMIUM V3
+   HERO PREMIUM V4
 ========================================================== */
 
 .content{
 
     flex:1;
 
-    padding:42px;
+    padding:38px;
 
 }
 
@@ -438,25 +438,25 @@ SIDEBAR PREMIUM V2
 
     overflow:hidden;
 
-    border-radius:34px;
+    border-radius:28px;
 
-    padding:58px 46px;
+    padding:34px 36px;
 
-    margin-bottom:42px;
+    margin-bottom:28px;
 
     background:
         linear-gradient(
             180deg,
-            rgba(255,255,255,.045),
+            rgba(255,255,255,.04),
             rgba(255,255,255,.015)
         );
 
-    backdrop-filter:blur(30px);
+    backdrop-filter:blur(24px);
 
-    border:1px solid rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.07);
 
     box-shadow:
-        0 25px 70px rgba(0,0,0,.35);
+        0 18px 45px rgba(0,0,0,.28);
 
 }
 
@@ -466,11 +466,11 @@ SIDEBAR PREMIUM V2
 
     position:absolute;
 
-    width:650px;
-    height:650px;
+    width:520px;
+    height:520px;
 
     left:50%;
-    top:-430px;
+    top:-360px;
 
     transform:translateX(-50%);
 
@@ -478,7 +478,7 @@ SIDEBAR PREMIUM V2
 
     background:
         radial-gradient(
-            rgba(214,178,94,.18),
+            rgba(214,178,94,.14),
             transparent 72%
         );
 
@@ -498,11 +498,43 @@ SIDEBAR PREMIUM V2
         linear-gradient(
             120deg,
             transparent,
-            rgba(255,255,255,.03),
+            rgba(255,255,255,.025),
             transparent
         );
 
     pointer-events:none;
+
+}
+
+.hero h1{
+
+    font-size:36px;
+
+    font-weight:800;
+
+    color:#F4D67A;
+
+    margin-bottom:8px;
+
+    letter-spacing:-.02em;
+
+}
+
+.hero p{
+
+    font-size:16px;
+
+    color:#BDBDBD;
+
+    line-height:1.5;
+
+    max-width:420px;
+
+}
+
+.language-switcher{
+
+    margin-top:22px;
 
 }
 
