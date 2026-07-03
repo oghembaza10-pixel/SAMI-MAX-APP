@@ -2,14 +2,11 @@
 <html lang="fr">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>OG • HUB</title>
 
     <link rel="stylesheet" href="/css/hub-style.css">
-
 </head>
 
 <body>
@@ -17,202 +14,60 @@
 <div class="app">
 
     <!-- SIDEBAR -->
-
     <aside class="sidebar">
 
         <div class="logo">
-
             <h2>OG</h2>
-
-           <span class="logo-subtitle">
-    Du soldat au général.
-</span>
-
+            <span class="logo-subtitle">Du soldat au général</span>
         </div>
 
         <nav class="menu">
-
-            <a href="/hub" class="active">
-
-                <i data-lucide="layout-grid"></i>
-
-                <span class="menu-hub">Hub</span>
-
-            </a>
-
-            <a href="/profile">
-
-                <i data-lucide="user"></i>
-
-                <span class="menu-profile">Profil</span>
-
-            </a>
-
-            <a href="/academy">
-
-                <i data-lucide="graduation-cap"></i>
-
-                <span class="menu-academy">Académie</span>
-
-            </a>
-
-            <a href="/marketplace">
-
-                <i data-lucide="store"></i>
-
-                <span class="menu-marketplace">Marketplace</span>
-
-            </a>
-
-            <a href="/settings">
-
-                <i data-lucide="settings"></i>
-
-                <span class="menu-settings">Paramètres</span>
-
-            </a>
-<a href="/contact">
-
-    <i data-lucide="mail"></i>
-
-    <span class="menu-contact">Nous contacter</span>
-
-</a>
+            <a href="/hub" class="active"><span>Hub</span></a>
+            <a href="/profile"><span>Profil</span></a>
+            <a href="/academy"><span>Académie</span></a>
+            <a href="/marketplace"><span>Marketplace</span></a>
+            <a href="/settings"><span>Paramètres</span></a>
+            <a href="/contact"><span>Contact</span></a>
         </nav>
 
     </aside>
 
     <!-- CONTENU -->
-
     <main class="content">
 
-       <header class="hero">
+        <!-- HERO SIMPLE -->
+        <header class="hero">
 
-    <h1>
-        Le jeu commence ici.
-    </h1>
+            <h1>OG</h1>
 
-    <p>
-        Choisissez votre premier QG.
-    </p>
+            <p>
+                Le jeu commence ici.<br>
+                Choisissez votre premier QG.
+            </p>
 
             <div class="language-switcher">
-
-                <button data-lang="fr" class="active">
-                    FR
-                </button>
-
-                <button data-lang="en">
-                    EN
-                </button>
-
-                <button data-lang="ar">
-                    العربية
-                </button>
-
+                <button data-lang="fr" class="active">FR</button>
+                <button data-lang="en">EN</button>
+                <button data-lang="ar">AR</button>
             </div>
 
         </header>
 
-<section class="samii-card">
-
-    <div class="samii-left">
-
-        <h2 class="samii-title">
-            SAMII
-        </h2>
-
-        <p class="samii-text">
-
-            Tous vos outils.
-
-            <br>
-
-            Un seul cerveau.
-
-        </p>
-
-        <button class="go-button">
-            GO →
-        </button>
-
-    </div>
-
-    <div class="samii-right">
-
-        <!-- tes icônes restent ici, ne change rien -->
-
-        <span>
-            <i data-lucide="message-circle"></i>
-            WhatsApp
-        </span>
-
-        <span>
-            <i data-lucide="messages-square"></i>
-            Telegram
-        </span>
-
-        <span>
-            <i data-lucide="shopping-bag"></i>
-            Shopify
-        </span>
-
-        <span>
-            <i data-lucide="briefcase-business"></i>
-            LinkedIn
-        </span>
-
-        <span>
-            <i data-lucide="play-circle"></i>
-            TikTok
-        </span>
-
-        <span>
-            <i data-lucide="instagram"></i>
-            Instagram
-        </span>
-
-        <span>
-            <i data-lucide="facebook"></i>
-            Meta
-        </span>
-
-        <span>
-            <i data-lucide="youtube"></i>
-            YouTube
-        </span>
-
-    </div>
-
-</section>
-
-           
-        <!-- SAMII -->
-
-
-        <!-- HUB -->
-
+        <!-- QG GRID -->
         <section id="hub-grid" class="hub-grid"></section>
 
-        <!-- COMMUNAUTÉ -->
-
+        <!-- CTA FINAL -->
         <section class="community-card">
 
-            <i data-lucide="lightbulb"></i>
-
-            <h3>
-                Votre métier n'existe pas encore ?
-            </h3>
+            <h3>Votre métier n'existe pas ?</h3>
 
             <p>
-                Construisons le plus grand Centre Commercial des QG.
-                Proposez votre métier et il pourra être ajouté
-                dans une prochaine mise à jour de OG.
+                Construisons ensemble le réseau OG.
+                Proposez un nouveau QG.
             </p>
 
             <button>
-                <i data-lucide="plus-circle"></i>
-                Proposer un métier
+                Proposer un QG
             </button>
 
         </section>
@@ -222,23 +77,7 @@
 </div>
 
 <script src="https://unpkg.com/lucide@latest"></script>
-
 <script src="/js/hub.js"></script>
 
-<script>
-
-if(window.lucide){
-
-    lucide.createIcons({
-        attrs:{
-            "stroke-width":1.8
-        }
-    });
-
-}
-
-</script>
-
 </body>
-
 </html>
