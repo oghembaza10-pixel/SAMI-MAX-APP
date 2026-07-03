@@ -22,49 +22,40 @@
 
 </div>
 
-<img
-src="/Gemini_Generated_Image_c7gbzec7gbzec7gb.png"
-class="main-insigne"
-alt="OG">
+<div class="entry-center">
 
-<p class="entry-quote" id="entryQuote">
+    <img
+        src="/Gemini_Generated_Image_c7gbzec7gbzec7gb.png"
+        class="main-insigne"
+        alt="OG">
 
-Du soldat au général.
+    <p class="entry-quote" id="entryQuote">
+        Du soldat au général.
+    </p>
 
-</p>
+    <a href="/hub" class="btn-rejoindre" id="joinBtn">
+        REJOINDRE MON QG
+    </a>
 
-<p class="entry-sub" id="entrySub">
-
-Le jeu commence ici.
-
-</p>
-
-<a href="/hub" class="btn-rejoindre" id="joinBtn">
-
-REJOINDRE MON QG
-
-</a>
+</div>
 
 <script>
 
-const traduction={
+const traduction = {
 
 fr:{
 join:"REJOINDRE MON QG",
-quote:"Du soldat au général.",
-sub:"Le jeu commence ici."
+quote:"Du soldat au général."
 },
 
 en:{
 join:"JOIN MY HQ",
-quote:"From Soldier to General.",
-sub:"The game starts here."
+quote:"From Soldier to General."
 },
 
 ar:{
 join:"انضم إلى مقري",
-quote:"من الجندي إلى الجنرال",
-sub:"هنا تبدأ اللعبة."
+quote:"من الجندي إلى الجنرال"
 }
 
 };
@@ -78,16 +69,13 @@ document.querySelectorAll(".language-switcher button")
 
 btn.classList.add("active");
 
-document.documentElement.lang=btn.dataset.lang;
+document.documentElement.lang = btn.dataset.lang;
 
-document.getElementById("joinBtn").textContent=
+document.getElementById("joinBtn").textContent =
 traduction[btn.dataset.lang].join;
 
-document.getElementById("entryQuote").textContent=
+document.getElementById("entryQuote").textContent =
 traduction[btn.dataset.lang].quote;
-
-document.getElementById("entrySub").textContent=
-traduction[btn.dataset.lang].sub;
 
 };
 
