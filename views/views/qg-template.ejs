@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OG | <%= metier %></title>
+    <link rel="stylesheet" href="/css/qg-style.css">
+</head>
+<body>
+
+    <div class="qg-wrapper">
+        <header>
+            <img src="/og.png" alt="OG Logo" class="logo">
+            <h1>QG <%= metier.toUpperCase() %></h1>
+            <p class="grade">Niveau I • Soldat</p>
+            <p class="metier-desc">Bienvenue dans le Quartier Général <%= metier %>.</p>
+        </header>
+
+        <main>
+            <section class="card">
+                <h2>Mission du jour</h2>
+                <p>Votre Quartier Général est prêt.<br>Les modules seront débloqués progressivement.</p>
+            </section>
+
+            <section class="card">
+                <h2>Centre de commandement</h2>
+                <ul class="module-list">
+                    <li><a href="/marketplace">◉ Marketplace</a></li>
+                    <li><a href="/academy">◉ Academy</a></li>
+                    <li><a href="/community">◉ Community</a></li>
+                    <li><a href="/dashboard">◉ Dashboard</a></li>
+                    <li><a href="/coffre">◉ Coffre OG</a></li>
+                </ul>
+            </section>
+
+            <section class="card samii-card">
+                <h2>🤖 SAMII – Assistant stratégique</h2>
+                <div class="samii-controls">
+                    <span class="status-toggle">ON / OFF</span>
+                    <a href="/samii" class="btn-samii">Parler à SAMII</a>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <a href="/hub" class="btn-hub">Retour au Hub</a>
+            <p class="signature">OG • Chaque général commence soldat.</p>
+        </footer>
+    </div>
+
+</body>
+</html>
