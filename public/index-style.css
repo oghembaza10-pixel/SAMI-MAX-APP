@@ -222,3 +222,295 @@ transform:translateY(0px);
     margin-bottom:45px;
 
 }
+/* ===========================================================
+   BOUTON PRINCIPAL
+=========================================================== */
+
+.buttons{
+    display:flex;
+    align-items:center;
+    gap:20px;
+}
+
+.btn-gold{
+
+    position:relative;
+
+    overflow:hidden;
+
+    display:inline-flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    min-width:280px;
+
+    height:62px;
+
+    text-decoration:none;
+
+    color:#050505;
+
+    background:linear-gradient(135deg,#F0C651,#C5A059,#8B6A2A);
+
+    border-radius:14px;
+
+    font-weight:700;
+
+    font-size:16px;
+
+    letter-spacing:1px;
+
+    transition:.35s;
+
+    box-shadow:
+    0 10px 30px rgba(197,160,89,.35);
+
+}
+
+.btn-gold::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+
+    left:-120%;
+
+    width:60%;
+
+    height:100%;
+
+    background:
+
+    linear-gradient(
+
+        90deg,
+
+        transparent,
+
+        rgba(255,255,255,.55),
+
+        transparent
+
+    );
+
+    transform:skewX(-25deg);
+
+}
+
+.btn-gold:hover::before{
+
+    animation:shine 1.2s;
+
+}
+
+@keyframes shine{
+
+from{
+
+left:-120%;
+
+}
+
+to{
+
+left:170%;
+
+}
+
+}
+
+.btn-gold:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:
+
+    0 20px 45px rgba(197,160,89,.55);
+
+}
+
+/* ===========================================================
+   SCROLL
+=========================================================== */
+
+.scroll{
+
+    position:absolute;
+
+    bottom:35px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    color:#C5A059;
+
+    font-size:22px;
+
+    animation:bounce 2s infinite;
+
+    opacity:.8;
+
+}
+
+@keyframes bounce{
+
+0%,100%{
+
+transform:translate(-50%,0);
+
+}
+
+50%{
+
+transform:translate(-50%,12px);
+
+}
+
+}
+
+/* ===========================================================
+   PETITES PARTICULES
+=========================================================== */
+
+.hero::before{
+
+content:"";
+
+position:absolute;
+
+inset:0;
+
+pointer-events:none;
+
+background-image:
+
+radial-gradient(circle,#C5A059 1px,transparent 1px);
+
+background-size:80px 80px;
+
+opacity:.05;
+
+}
+
+/* ===========================================================
+   RESPONSIVE
+=========================================================== */
+
+@media(max-width:1100px){
+
+.hero{
+
+flex-direction:column;
+
+text-align:center;
+
+gap:40px;
+
+padding:50px 25px;
+
+}
+
+.hero-content{
+
+max-width:700px;
+
+}
+
+.hero-content h1{
+
+font-size:52px;
+
+}
+
+.hero-content p{
+
+font-size:18px;
+
+}
+
+.hero-image img{
+
+max-width:520px;
+
+}
+
+.buttons{
+
+justify-content:center;
+
+}
+
+}
+
+@media(max-width:768px){
+
+.hero{
+
+padding:30px 20px;
+
+}
+
+.hero-image img{
+
+max-width:100%;
+
+}
+
+.hero-content h1{
+
+font-size:38px;
+
+}
+
+.hero-content p{
+
+font-size:16px;
+
+line-height:1.7;
+
+}
+
+.btn-gold{
+
+width:100%;
+
+min-width:0;
+
+}
+
+.scroll{
+
+display:none;
+
+}
+
+}
+
+@media(max-width:480px){
+
+.hero-content h1{
+
+font-size:32px;
+
+}
+
+.eyebrow{
+
+font-size:11px;
+
+letter-spacing:2px;
+
+}
+
+.hero-content p{
+
+font-size:15px;
+
+}
+
+}
