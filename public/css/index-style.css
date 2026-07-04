@@ -272,3 +272,46 @@ width:100%;
 }
 
 }
+.og-topbar-safe{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px 30px;
+z-index:999;
+background:rgba(0,0,0,.15);
+backdrop-filter:blur(8px);
+}
+
+.og-logo{
+color:#C5A059;
+font-weight:700;
+}
+
+.og-lang span{
+margin:0 6px;
+color:#aaa;
+font-weight:600;
+cursor:pointer;
+}
+
+.og-lang .active{
+color:#C5A059;
+}
+
+.og-enter{
+border:1px solid #C5A059;
+padding:8px 14px;
+color:#C5A059;
+text-decoration:none;
+border-radius:6px;
+transition:.3s;
+}
+
+.og-enter:hover{
+background:#C5A059;
+color:#000;
+}
