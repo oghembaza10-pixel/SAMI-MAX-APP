@@ -1,0 +1,37 @@
+/* ... (Garde tout le CSS précédent) ... */
+
+/* Style spécifique pour la carte SAMII */
+.samii-card {
+    border-style: dashed; /* Différencie visuellement la carte SAMII */
+}
+
+.samii-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.status-toggle {
+    font-size: 0.8rem;
+    color: #C5A059;
+    border: 1px solid #C5A059;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: default;
+}
+
+.btn-samii {
+    color: #000;
+    background-color: #C5A059;
+    padding: 5px 15px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 3px;
+    transition: 0.3s;
+}
+
+.btn-samii:hover {
+    background-color: #fff;
+}
