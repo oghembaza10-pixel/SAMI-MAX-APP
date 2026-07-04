@@ -1,16 +1,33 @@
-/* FORCE LE NOIR ABSOLU ET TUE TOUT AUTRE STYLE */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #000000 !important; color: #FFFFFF !important; font-family: sans-serif !important; }
+:root { --gold: #C5A059; --bg: #000000; --card: #0A0A0A; }
 
-/* CONTENEUR UNIQUE */
-.qg-force { max-width: 500px; margin: 40px auto; padding: 20px; border: 1px solid #C5A059; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
 
-/* TEXTE OR */
-.or { color: #C5A059; }
-h1 { color: #C5A059; text-align: center; text-transform: uppercase; }
-.grade { text-align: center; font-size: 10px; letter-spacing: 2px; margin: 10px 0; }
+body { background: var(--bg) !important; color: #FFF; min-height: 100vh; padding: 20px; display: flex; justify-content: center; }
 
-/* BOUTONS ET LISTES */
-a { color: #FFFFFF; text-decoration: none; display: block; padding: 15px; border: 1px solid #333; margin-top: 10px; }
-a:hover { border-color: #C5A059; color: #C5A059; }
-.samii-btn { background: #C5A059; color: #000; text-align: center; font-weight: bold; }
+.qg-wrapper { width: 100%; max-width: 500px; }
+
+/* TITRES */
+h1 { color: var(--gold); text-align: center; font-size: 1.8rem; text-transform: uppercase; margin-bottom: 5px; }
+.grade { text-align: center; color: #FFF; font-size: 0.7rem; letter-spacing: 3px; margin-bottom: 20px; }
+.metier-desc { text-align: center; color: #666; font-size: 0.8rem; margin-bottom: 30px; }
+
+/* CARTES */
+.card { background: var(--card); border: 1px solid #222; padding: 20px; margin-bottom: 15px; }
+h2 { color: var(--gold); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 15px; }
+
+/* LISTE */
+.module-list { list-style: none; }
+.module-list li { margin-bottom: 10px; }
+.module-list a { 
+    display: block; padding: 15px; border: 1px solid #111; 
+    color: #FFF; text-decoration: none; font-size: 0.9rem; 
+}
+.module-list a:hover { border-color: var(--gold); color: var(--gold); }
+
+/* SAMII */
+.samii-card { border: 1px solid #C5A059; }
+.btn-samii { display: block; background: var(--gold); color: #000; text-align: center; padding: 12px; text-decoration: none; font-weight: bold; margin-top: 15px; }
+
+/* FOOTER */
+.btn-hub { display: block; text-align: center; border: 1px solid var(--gold); color: var(--gold); padding: 15px; text-decoration: none; margin-top: 30px; }
+.signature { text-align: center; color: #333; font-size: 0.6rem; margin-top: 20px; }
