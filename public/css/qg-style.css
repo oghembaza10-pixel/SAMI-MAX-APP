@@ -78,3 +78,7 @@
     transform:translateX(24px);
     background:#000;
 }
+header{
+    text-align:center;
+    margin:40px 0;
+}
