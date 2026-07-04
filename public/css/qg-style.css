@@ -1,12 +1,20 @@
-/* FORCE NOIR TOTAL */
-body { background-color: #000000 !important; color: #ffffff !important; }
+body { background-color: #050505; color: #fff; font-family: sans-serif; margin: 0; padding: 20px; }
+.qg-container { max-width: 600px; margin: auto; }
 
-.qg-wrapper { max-width: 500px; margin: 0 auto; padding: 20px; }
-h1 { color: #C5A059; text-align: center; text-transform: uppercase; }
-.grade { text-align: center; font-size: 0.7rem; color: #fff; margin-bottom: 20px; }
+header { text-align: center; margin-bottom: 30px; }
+h1 { color: #C5A059; font-size: 2rem; margin-top: 10px; }
+.grade { color: #C5A059; font-size: 0.8rem; letter-spacing: 2px; }
 
-.card { background: #0a0a0a; border: 1px solid #332700; padding: 20px; margin-bottom: 15px; }
-h2 { color: #C5A059; font-size: 0.7rem; margin-bottom: 10px; }
+.mission-card { background: #111; border: 1px solid #332700; padding: 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+.command-center { background: #0a0a0a; border: 1px solid #222; padding: 20px; }
+.command-center h2 { color: #C5A059; font-size: 0.9rem; margin-bottom: 15px; }
 
-a { color: #fff; text-decoration: none; display: block; padding: 10px; }
-a:hover { color: #C5A059; }
+nav a { display: block; color: #fff; text-decoration: none; padding: 15px; border-bottom: 1px solid #1a1a1a; }
+nav a span { display: block; font-size: 0.7rem; color: #666; }
+nav a:hover { color: #C5A059; }
+
+.samii-card { border: 1px solid #332700; padding: 20px; margin-top: 20px; background: #0a0a0a; }
+.btn-samii { background: #C5A059; color: #000; padding: 10px 20px; text-decoration: none; display: inline-block; margin-top: 10px; font-weight: bold; }
+
+.btn-hub { display: block; text-align: center; border: 1px solid #C5A059; color: #C5A059; padding: 15px; text-decoration: none; margin-top: 20px; }
+.footer-sig { text-align: center; color: #333; margin-top: 20px; font-size: 0.7rem; }
