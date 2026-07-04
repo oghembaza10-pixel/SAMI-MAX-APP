@@ -1,5 +1,34 @@
-<div class="qg-wrapper">
-    <h1>QG <%= metier.toUpperCase() %></h1>
-    <p class="grade">NIVEAU I • SOLDAT</p>
-    <p class="metier-desc">Bienvenue dans le Quartier Général <%= metier %>.</p>
+<div class="hud-container">
+    <div class="titre-zone">
+        <h1>QG <%= metier.toUpperCase() %></h1>
+        <p class="grade">NIVEAU I • SOLDAT</p>
+        <p class="metier-desc">Bienvenue dans le Quartier Général <%= metier %>.</p>
+    </div>
+
+    <div class="panel">
+        <h2>MISSION DU JOUR</h2>
+        <p>Votre QG est prêt. Les modules seront débloqués progressivement.</p>
+    </div>
+
+    <div class="panel">
+        <h2>CENTRE DE COMMANDEMENT</h2>
+        <ul class="nav-grid">
+            <li><a href="/marketplace"><span>🛒</span> Marketplace</a></li>
+            <li><a href="/academy"><span>🎓</span> Academy</a></li>
+            <li><a href="/community"><span>👥</span> Community</a></li>
+            <li><a href="/dashboard"><span>📊</span> Dashboard</a></li>
+            <li><a href="/coffre"><span>🔒</span> Coffre OG</a></li>
+        </ul>
+    </div>
+
+    <div class="panel samii-unit">
+        <h2>⚡ SAMII – INTERFACE STRATÉGIQUE</h2>
+        <div class="samii-box">
+            <input type="checkbox" id="switch" checked><label for="switch" class="slider"></label>
+            <a href="/samii" class="btn-luxe">PARLER À SAMII</a>
+        </div>
+    </div>
+
+    <a href="/hub" class="btn-exit">RETOUR AU HUB</a>
+    <p class="footer-sig">OG • Chaque général commence soldat.</p>
 </div>
