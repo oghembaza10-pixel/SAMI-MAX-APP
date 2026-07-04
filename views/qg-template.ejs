@@ -1,34 +1,31 @@
-<div class="qg-hud">
-    <div class="titre-zone">
+<div class="qg-full-black">
+    <div class="qg-container">
         <h1>QG <%= metier.toUpperCase() %></h1>
-        <p class="grade">NIVEAU I • SOLDAT</p>
-        <p class="metier-desc">Bienvenue dans le Quartier Général <%= metier %>.</p>
-    </div>
+        <div class="grade-line">NIVEAU I • SOLDAT</div>
+        <div class="desc-line">Bienvenue dans le Quartier Général <%= metier %>.</div>
 
-    <div class="qg-panel">
-        <h2>MISSION DU JOUR</h2>
-        <p>Votre QG est prêt. Les modules seront débloqués progressivement.</p>
-    </div>
-
-    <div class="qg-panel">
-        <h2>CENTRE DE COMMANDEMENT</h2>
-        <ul class="nav-grid">
-            <li><a href="/marketplace"><span>🛒</span> Marketplace <span>›</span></a></li>
-            <li><a href="/academy"><span>🎓</span> Academy <span>›</span></a></li>
-            <li><a href="/community"><span>👥</span> Community <span>›</span></a></li>
-            <li><a href="/dashboard"><span>📊</span> Dashboard <span>›</span></a></li>
-            <li><a href="/coffre"><span>🔒</span> Coffre OG <span>›</span></a></li>
-        </ul>
-    </div>
-
-    <div class="qg-panel samii-unit">
-        <h2>⚡ SAMII – INTERFACE STRATÉGIQUE</h2>
-        <div class="samii-box">
-            <span class="status">ON</span>
-            <a href="/samii" class="btn-luxe">PARLER À SAMII</a>
+        <div class="box">
+            <div class="box-title">MISSION DU JOUR</div>
+            <p>Votre QG est prêt. Les modules seront débloqués progressivement.</p>
         </div>
-    </div>
 
-    <a href="/hub" class="btn-exit">RETOUR AU HUB</a>
-    <p class="footer-sig">OG • Chaque général commence soldat.</p>
+        <div class="box">
+            <div class="box-title">CENTRE DE COMMANDEMENT</div>
+            <div class="grid-list">
+                <a href="/marketplace"><span>🛒</span> Marketplace</a>
+                <a href="/academy"><span>🎓</span> Academy</a>
+                <a href="/community"><span>👥</span> Community</a>
+                <a href="/dashboard"><span>📊</span> Dashboard</a>
+                <a href="/coffre"><span>🔒</span> Coffre OG</a>
+            </div>
+        </div>
+
+        <div class="box samii-box">
+            <div class="box-title">⚡ SAMII – INTERFACE STRATÉGIQUE</div>
+            <a href="/samii" class="samii-btn">PARLER À SAMII</a>
+        </div>
+
+        <a href="/hub" class="hub-btn">RETOUR AU HUB</a>
+        <div class="footer-text">OG • Chaque général commence soldat.</div>
+    </div>
 </div>
