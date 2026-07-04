@@ -1,40 +1,224 @@
-body{
+/* ===========================================================
+   OG EMPIRE - LANDING PAGE
+=========================================================== */
+
+*{
     margin:0;
-    background:#000;
+    padding:0;
+    box-sizing:border-box;
 }
 
-.hero-container{
-    position:relative;
-    width:100%;
+html{
+    scroll-behavior:smooth;
 }
 
-.hero-image{
-    width:100%;
-    display:block;
+body{
+
+    background:#050505;
+    color:white;
+
+    font-family:'Inter',sans-serif;
+
+    overflow-x:hidden;
+    min-height:100vh;
+
 }
 
-.cta-button{
+/* ===========================================================
+   FOND
+=========================================================== */
 
-    position:absolute;
+body::before{
+
+    content:"";
+
+    position:fixed;
+
+    inset:0;
+
+    background:
+    radial-gradient(circle at top,#c5a05925 0%,transparent 45%),
+    radial-gradient(circle at bottom,#c5a05910 0%,transparent 60%);
+
+    pointer-events:none;
+
+    z-index:0;
+
+}
+
+.background-glow{
+
+    position:fixed;
+
+    width:900px;
+
+    height:900px;
 
     left:50%;
 
-    bottom:8%;
+    top:-420px;
 
     transform:translateX(-50%);
 
-    padding:18px 40px;
+    border-radius:50%;
 
-    border:2px solid #C5A059;
+    background:radial-gradient(#c5a05933,transparent 70%);
 
-    color:#C5A059;
+    filter:blur(40px);
 
-    text-decoration:none;
+    animation:glow 7s ease-in-out infinite;
 
-    background:rgba(0,0,0,.45);
+    z-index:0;
 
-    border-radius:8px;
+}
 
-    font-weight:bold;
+@keyframes glow{
+
+0%,100%{
+
+transform:translateX(-50%) scale(1);
+
+opacity:.45;
+
+}
+
+50%{
+
+transform:translateX(-50%) scale(1.15);
+
+opacity:.9;
+
+}
+
+}
+
+/* ===========================================================
+   HERO
+=========================================================== */
+
+.hero{
+
+    position:relative;
+
+    z-index:2;
+
+    width:100%;
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:90px;
+
+    padding:70px;
+
+}
+
+/* ===========================================================
+   IMAGE
+=========================================================== */
+
+.hero-image{
+
+    flex:1;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+.hero-image img{
+
+    width:100%;
+
+    max-width:650px;
+
+    animation:floatImage 7s ease-in-out infinite;
+
+    filter:
+    drop-shadow(0 0 40px rgba(197,160,89,.35));
+
+}
+
+@keyframes floatImage{
+
+0%{
+
+transform:translateY(0px);
+
+}
+
+50%{
+
+transform:translateY(-12px);
+
+}
+
+100%{
+
+transform:translateY(0px);
+
+}
+
+}
+
+/* ===========================================================
+   TEXTE
+=========================================================== */
+
+.hero-content{
+
+    flex:1;
+
+    max-width:600px;
+
+}
+
+.eyebrow{
+
+    color:#c5a059;
+
+    letter-spacing:4px;
+
+    font-size:13px;
+
+    text-transform:uppercase;
+
+    display:block;
+
+    margin-bottom:25px;
+
+}
+
+.hero-content h1{
+
+    font-family:'Cinzel',serif;
+
+    font-size:68px;
+
+    line-height:1.1;
+
+    margin-bottom:30px;
+
+    color:white;
+
+}
+
+.hero-content p{
+
+    color:#bdbdbd;
+
+    font-size:20px;
+
+    line-height:1.8;
+
+    margin-bottom:45px;
 
 }
