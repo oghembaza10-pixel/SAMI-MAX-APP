@@ -2,37 +2,50 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>OG | <%= metier %></title>
+    <title>QG | <%= metier %></title>
     <link rel="stylesheet" href="/css/qg-style.css">
-    
-    <style>
-        body { background-color: #000 !important; color: #fff !important; font-family: sans-serif; }
-        .qg-wrapper { max-width: 500px; margin: 40px auto; padding: 20px; }
-        h1 { color: #C5A059; text-align: center; }
-        .card { border: 1px solid #C5A059; padding: 20px; margin-bottom: 20px; }
-    </style>
 </head>
 <body>
-    <div class="qg-wrapper">
+
+    <div class="qg-container">
         <header>
+            <div class="logo-top">OG</div>
             <h1>QG <%= metier.toUpperCase() %></h1>
             <p class="grade">NIVEAU I • SOLDAT</p>
+            <p class="subtitle">Bienvenue dans votre Quartier Général.<br>Votre empire commence ici.</p>
         </header>
 
-        <div class="card">
-            <h2>MISSION DU JOUR</h2>
-            <p>Votre QG est prêt.</p>
-        </div>
+        <section class="mission-card">
+            <div class="mission-icon">🎯</div>
+            <div class="mission-text">
+                <h2>MISSION DU JOUR</h2>
+                <p>Votre Quartier Général est prêt.<br>Les modules seront débloqués progressivement.</p>
+            </div>
+        </section>
 
-        <div class="card">
+        <section class="command-center">
             <h2>CENTRE DE COMMANDEMENT</h2>
-            <ul>
-                <li><a href="/marketplace" style="color:#fff;">Marketplace</a></li>
-                <li><a href="/academy" style="color:#fff;">Academy</a></li>
-            </ul>
-        </div>
-        
-        <a href="/hub" style="color:#C5A059;">RETOUR AU HUB</a>
+            <nav>
+                <a href="/marketplace">🛒 Marketplace <span>Accédez au marché global ›</span></a>
+                <a href="/academy">🎓 Academy <span>Formez-vous. Progressez. Dominez. ›</span></a>
+                <a href="/community">👥 Community <span>Échangez. Collaborez. Élevez-vous. ›</span></a>
+                <a href="/dashboard">📊 Dashboard <span>Analysez. Pilotez. Prenez le contrôle. ›</span></a>
+                <a href="/coffre">🔒 Coffre OG <span>Protégez vos ressources. ›</span></a>
+            </nav>
+        </section>
+
+        <section class="samii-card">
+            <h2>⚡ SAMII – ASSISTANT STRATÉGIQUE</h2>
+            <p>Votre allié. Votre stratège. Toujours à vos côtés.</p>
+            <div class="samii-actions">
+                <div class="status">STATUT <span>ACTIF ●</span></div>
+                <a href="/samii" class="btn-samii">PARLER À SAMII</a>
+            </div>
+        </section>
+
+        <a href="/hub" class="btn-hub">RETOUR AU HUB</a>
+        <footer class="footer-sig">OG • Chaque général commence soldat.</footer>
     </div>
+
 </body>
 </html>
