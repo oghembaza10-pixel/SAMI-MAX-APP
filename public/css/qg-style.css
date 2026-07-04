@@ -1,29 +1,16 @@
-/* Nettoyage total */
+/* FORCE LE NOIR ABSOLU ET TUE TOUT AUTRE STYLE */
 * { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000000 !important; color: #FFFFFF !important; font-family: sans-serif !important; }
 
-/* Force le fond noir absolu sur tout le document */
-html, body {
-    background-color: #000000 !important;
-    color: #ffffff;
-    font-family: 'Arial', sans-serif;
-}
+/* CONTENEUR UNIQUE */
+.qg-force { max-width: 500px; margin: 40px auto; padding: 20px; border: 1px solid #C5A059; }
 
-.qg-full-black { background-color: #000000; min-height: 100vh; padding: 20px; }
-.qg-container { max-width: 500px; margin: auto; }
+/* TEXTE OR */
+.or { color: #C5A059; }
+h1 { color: #C5A059; text-align: center; text-transform: uppercase; }
+.grade { text-align: center; font-size: 10px; letter-spacing: 2px; margin: 10px 0; }
 
-h1 { color: #C5A059; text-align: center; margin-top: 30px; font-size: 1.8rem; }
-.grade-line { color: #ffffff; text-align: center; font-size: 0.7rem; letter-spacing: 3px; margin: 10px 0; }
-.desc-line { color: #555; text-align: center; font-size: 0.8rem; margin-bottom: 30px; }
-
-.box { border: 1px solid #C5A059; padding: 20px; margin-bottom: 15px; }
-.box-title { color: #C5A059; font-size: 0.7rem; font-weight: bold; margin-bottom: 10px; }
-p { color: #fff; font-size: 0.9rem; }
-
-.grid-list a { display: block; color: #fff; text-decoration: none; padding: 10px; border-bottom: 1px solid #222; }
-.grid-list a:hover { color: #C5A059; }
-
-.samii-box { border-color: #C5A059; }
-.samii-btn { display: block; text-align: center; background: #C5A059; color: #000; padding: 10px; text-decoration: none; font-weight: bold; margin-top: 10px; }
-
-.hub-btn { display: block; text-align: center; border: 1px solid #C5A059; color: #C5A059; padding: 15px; text-decoration: none; margin-top: 20px; }
-.footer-text { text-align: center; color: #333; font-size: 0.6rem; margin-top: 20px; }
+/* BOUTONS ET LISTES */
+a { color: #FFFFFF; text-decoration: none; display: block; padding: 15px; border: 1px solid #333; margin-top: 10px; }
+a:hover { border-color: #C5A059; color: #C5A059; }
+.samii-btn { background: #C5A059; color: #000; text-align: center; font-weight: bold; }
