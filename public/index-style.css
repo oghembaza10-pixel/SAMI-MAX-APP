@@ -1,123 +1,56 @@
-/* ===========================================================
-   OG EMPIRE - LANDING PAGE
-=========================================================== */
-
 *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+margin:0;
+padding:0;
+box-sizing:border-box;
 }
 
 html{
-    scroll-behavior:smooth;
+scroll-behavior:smooth;
 }
 
 body{
 
-    background:#050505;
-    color:white;
-
-    font-family:'Inter',sans-serif;
-
-    overflow-x:hidden;
-    min-height:100vh;
-
-}
-
-/* ===========================================================
-   FOND
-=========================================================== */
-
-body::before{
-
-    content:"";
-
-    position:fixed;
-
-    inset:0;
-
-    background:
-    radial-gradient(circle at top,#c5a05925 0%,transparent 45%),
-    radial-gradient(circle at bottom,#c5a05910 0%,transparent 60%);
-
-    pointer-events:none;
-
-    z-index:0;
+background:#050505;
+color:#fff;
+font-family:'Inter',sans-serif;
+overflow:hidden;
 
 }
 
 .background-glow{
 
-    position:fixed;
+position:fixed;
+inset:0;
+pointer-events:none;
+z-index:1;
 
-    width:900px;
-
-    height:900px;
-
-    left:50%;
-
-    top:-420px;
-
-    transform:translateX(-50%);
-
-    border-radius:50%;
-
-    background:radial-gradient(#c5a05933,transparent 70%);
-
-    filter:blur(40px);
-
-    animation:glow 7s ease-in-out infinite;
-
-    z-index:0;
+background:
+radial-gradient(circle at top,#c5a05925 0%,transparent 45%),
+radial-gradient(circle at bottom,#c5a05915 0%,transparent 60%);
 
 }
 
-@keyframes glow{
-
-0%,100%{
-
-transform:translateX(-50%) scale(1);
-
-opacity:.45;
-
-}
-
-50%{
-
-transform:translateX(-50%) scale(1.15);
-
-opacity:.9;
-
-}
-
-}
-
-/* ===========================================================
-   HERO
-=========================================================== */
 .hero{
 
 position:relative;
 
 width:100%;
-
-min-height:100vh;
+height:100vh;
 
 display:flex;
-
 align-items:center;
 
 padding-left:8%;
 
-overflow:hidden;
-
 background:url("/og.png") center center/cover no-repeat;
 
+overflow:hidden;
+
 }
+
 .hero-overlay{
 
 position:absolute;
-
 inset:0;
 
 background:
@@ -126,206 +59,141 @@ linear-gradient(
 90deg,
 rgba(0,0,0,.88) 0%,
 rgba(0,0,0,.55) 35%,
-rgba(0,0,0,.15) 100%
+rgba(0,0,0,.10) 100%
 );
+
+z-index:2;
 
 }
 
 .hero-content{
 
 position:relative;
+z-index:5;
 
-z-index:10;
+max-width:620px;
 
-max-width:560px;
-
-}
-
-/* ===========================================================
-   TEXTE
-=========================================================== */
-
-.hero-content{
-
-    flex:1;
-
-    max-width:600px;
+animation:fadeUp 1s ease;
 
 }
 
 .eyebrow{
 
-    color:#c5a059;
+display:block;
 
-    letter-spacing:4px;
+margin-bottom:18px;
 
-    font-size:13px;
+color:#D9B45D;
 
-    text-transform:uppercase;
+letter-spacing:4px;
 
-    display:block;
+font-size:13px;
 
-    margin-bottom:25px;
-
-}
-
-.hero-content h1{
-
-    font-family:'Cinzel',serif;
-
-    font-size:68px;
-
-    line-height:1.1;
-
-    margin-bottom:30px;
-
-    color:white;
+font-weight:600;
 
 }
 
-.hero-content p{
+.hero h1{
 
-    color:#bdbdbd;
+font-family:"Cinzel",serif;
 
-    font-size:20px;
+font-size:72px;
 
-    line-height:1.8;
+line-height:1.05;
 
-    margin-bottom:45px;
+margin-bottom:25px;
 
 }
-/* ===========================================================
-   BOUTON PRINCIPAL
-=========================================================== */
+
+.hero p{
+
+font-size:21px;
+
+line-height:1.8;
+
+color:#d5d5d5;
+
+margin-bottom:45px;
+
+}
 
 .buttons{
-    display:flex;
-    align-items:center;
-    gap:20px;
+
+display:flex;
+
 }
 
 .btn-gold{
 
-    position:relative;
+display:inline-flex;
 
-    overflow:hidden;
+justify-content:center;
+align-items:center;
 
-    display:inline-flex;
+padding:20px 45px;
 
-    justify-content:center;
+border-radius:14px;
 
-    align-items:center;
+text-decoration:none;
 
-    min-width:280px;
+font-weight:700;
 
-    height:62px;
+font-size:17px;
 
-    text-decoration:none;
+color:#111;
 
-    color:#050505;
+background:linear-gradient(135deg,#F5D46B,#C5A059,#8B6A2A);
 
-    background:linear-gradient(135deg,#F0C651,#C5A059,#8B6A2A);
+box-shadow:0 15px 40px rgba(197,160,89,.45);
 
-    border-radius:14px;
-
-    font-weight:700;
-
-    font-size:16px;
-
-    letter-spacing:1px;
-
-    transition:.35s;
-
-    box-shadow:
-    0 10px 30px rgba(197,160,89,.35);
-
-}
-
-.btn-gold::before{
-
-    content:"";
-
-    position:absolute;
-
-    top:0;
-
-    left:-120%;
-
-    width:60%;
-
-    height:100%;
-
-    background:
-
-    linear-gradient(
-
-        90deg,
-
-        transparent,
-
-        rgba(255,255,255,.55),
-
-        transparent
-
-    );
-
-    transform:skewX(-25deg);
-
-}
-
-.btn-gold:hover::before{
-
-    animation:shine 1.2s;
-
-}
-
-@keyframes shine{
-
-from{
-
-left:-120%;
-
-}
-
-to{
-
-left:170%;
-
-}
+transition:.35s;
 
 }
 
 .btn-gold:hover{
 
-    transform:translateY(-4px);
+transform:translateY(-4px);
 
-    box-shadow:
-
-    0 20px 45px rgba(197,160,89,.55);
+box-shadow:0 25px 60px rgba(197,160,89,.60);
 
 }
 
-/* ===========================================================
-   SCROLL
-=========================================================== */
-
 .scroll{
 
-    position:absolute;
+position:absolute;
 
-    bottom:35px;
+left:50%;
+bottom:30px;
 
-    left:50%;
+transform:translateX(-50%);
 
-    transform:translateX(-50%);
+font-size:28px;
 
-    color:#C5A059;
+color:#D9B45D;
 
-    font-size:22px;
+animation:bounce 2s infinite;
 
-    animation:bounce 2s infinite;
+z-index:10;
 
-    opacity:.8;
+}
+
+@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:translateY(40px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
 
 }
 
@@ -339,75 +207,39 @@ transform:translate(-50%,0);
 
 50%{
 
-transform:translate(-50%,12px);
+transform:translate(-50%,10px);
 
 }
 
 }
 
-/* ===========================================================
-   PETITES PARTICULES
-=========================================================== */
-
-.hero::before{
-
-content:"";
-
-position:absolute;
-
-inset:0;
-
-pointer-events:none;
-
-background-image:
-
-radial-gradient(circle,#C5A059 1px,transparent 1px);
-
-background-size:80px 80px;
-
-opacity:.05;
-
-}
-
-/* ===========================================================
-   RESPONSIVE
-=========================================================== */
-
-@media(max-width:1100px){
+@media(max-width:900px){
 
 .hero{
 
-flex-direction:column;
+padding:40px;
+
+justify-content:center;
 
 text-align:center;
-
-gap:40px;
-
-padding:50px 25px;
 
 }
 
 .hero-content{
 
-max-width:700px;
+max-width:100%;
 
 }
 
-.hero-content h1{
+.hero h1{
 
-font-size:52px;
+font-size:48px;
 
 }
 
-.hero-content p{
+.hero p{
 
 font-size:18px;
-
-}
-
-.hero-image img{
-
-max-width:520px;
 
 }
 
@@ -419,69 +251,23 @@ justify-content:center;
 
 }
 
-@media(max-width:768px){
+@media(max-width:600px){
 
-.hero{
+.hero h1{
 
-padding:30px 20px;
-
-}
-
-.hero-image img{
-
-max-width:100%;
+font-size:34px;
 
 }
 
-.hero-content h1{
-
-font-size:38px;
-
-}
-
-.hero-content p{
+.hero p{
 
 font-size:16px;
-
-line-height:1.7;
 
 }
 
 .btn-gold{
 
 width:100%;
-
-min-width:0;
-
-}
-
-.scroll{
-
-display:none;
-
-}
-
-}
-
-@media(max-width:480px){
-
-.hero-content h1{
-
-font-size:32px;
-
-}
-
-.eyebrow{
-
-font-size:11px;
-
-letter-spacing:2px;
-
-}
-
-.hero-content p{
-
-font-size:15px;
 
 }
 
