@@ -1,34 +1,41 @@
-body { background: #000; color: #fff; font-family: 'Orbitron', sans-serif; margin: 0; padding: 20px; }
-.hud-container { max-width: 500px; margin: auto; }
-
-.titre-zone { text-align: center; margin: 30px 0; }
-h1 { color: #d4af37; font-size: 2.2rem; text-shadow: 0 0 15px #d4af37; }
-.grade { color: #fff; font-size: 0.7rem; letter-spacing: 4px; }
-.metier-desc { color: #666; font-size: 0.8rem; margin-top: 10px; }
-
-.panel { 
-    background: linear-gradient(145deg, #111, #050505);
-    border: 1px solid #332700;
-    padding: 20px;
-    margin-bottom: 15px;
-    border-radius: 4px;
+/* Force le noir absolu sur tout l'écran */
+html, body { 
+    margin: 0; 
+    padding: 0; 
+    background: #000000 !important; 
+    color: #ffffff; 
+    font-family: sans-serif; 
 }
-h2 { font-size: 0.7rem; color: #d4af37; margin-bottom: 15px; letter-spacing: 2px; }
 
-.nav-grid li a {
-    display: block; padding: 15px; background: #0a0a0a; border: 1px solid #1a1a1a;
-    color: #fff; text-decoration: none; margin-bottom: 8px; transition: 0.3s;
+.qg-hud { max-width: 500px; margin: 0 auto; padding: 20px; }
+
+.titre-zone { text-align: center; margin: 40px 0; }
+h1 { color: #d4af37; font-size: 2rem; letter-spacing: 3px; }
+.grade { font-size: 0.7rem; letter-spacing: 4px; color: #fff; margin-top: 5px; }
+.metier-desc { font-size: 0.8rem; color: #555; margin-top: 10px; }
+
+.qg-panel { 
+    background: #0a0a0a; 
+    border: 1px solid #221a00; 
+    padding: 20px; 
+    margin-bottom: 15px; 
 }
-.nav-grid li a:hover { border-color: #d4af37; color: #d4af37; padding-left: 25px; }
+h2 { font-size: 0.65rem; color: #d4af37; letter-spacing: 2px; margin-bottom: 15px; }
 
-/* SAMII */
-.samii-unit { border: 1px solid #4a37ff; }
+.nav-grid { list-style: none; }
+.nav-grid li a { 
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px; background: #050505; color: #fff; 
+    text-decoration: none; margin-bottom: 8px; border: 1px solid #111;
+}
+.nav-grid li a:hover { border-color: #d4af37; color: #d4af37; }
+
+.samii-unit { border: 1px solid #332d5c; }
 .samii-box { display: flex; justify-content: space-between; align-items: center; }
-.btn-luxe { background: #4a37ff; color: white; padding: 10px; text-decoration: none; font-size: 0.7rem; }
+.btn-luxe { background: #332d5c; color: white; padding: 10px 20px; text-decoration: none; font-size: 0.8rem; }
 
-/* Bouton Retour */
 .btn-exit { 
-    display: block; text-align: center; border: 1px solid #d4af37; color: #d4af37; 
-    padding: 15px; text-decoration: none; font-weight: bold; margin-top: 20px; 
+    display: block; text-align: center; border: 1px solid #d4af37; 
+    color: #d4af37; padding: 15px; text-decoration: none; font-weight: bold; 
 }
 .footer-sig { text-align: center; color: #222; font-size: 0.6rem; margin-top: 20px; }
