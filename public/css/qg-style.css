@@ -1,33 +1,44 @@
-:root { --gold: #C5A059; --bg: #000000; --card: #0A0A0A; }
+/* =======================================================
+   OG - QG STYLE V2 (NETTOYÉ - NOIR & OR UNIQUEMENT)
+======================================================= */
+:root { --bg: #000000; --gold: #C5A059; --text: #aaaaaa; --white: #ffffff; }
 
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-body { background: var(--bg) !important; color: #FFF; min-height: 100vh; padding: 20px; display: flex; justify-content: center; }
+body {
+    min-height: 100vh;
+    background: #000000;
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+}
 
-.qg-wrapper { width: 100%; max-width: 500px; }
+.qg-wrapper { width: min(900px, 92%); margin: auto; padding: 50px 0; }
 
-/* TITRES */
-h1 { color: var(--gold); text-align: center; font-size: 1.8rem; text-transform: uppercase; margin-bottom: 5px; }
-.grade { text-align: center; color: #FFF; font-size: 0.7rem; letter-spacing: 3px; margin-bottom: 20px; }
-.metier-desc { text-align: center; color: #666; font-size: 0.8rem; margin-bottom: 30px; }
+header { text-align: center; margin-bottom: 45px; }
+h1 { font-size: 2.5rem; letter-spacing: 3px; color: var(--gold); }
+.grade { margin-top: 10px; color: var(--gold); font-size: 0.9rem; letter-spacing: 2px; }
+.metier-desc { margin-top: 18px; color: var(--text); font-size: 1rem; }
 
-/* CARTES */
-.card { background: var(--card); border: 1px solid #222; padding: 20px; margin-bottom: 15px; }
-h2 { color: var(--gold); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 15px; }
+.card {
+    background: #0a0a0a;
+    border: 1px solid #332700;
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 24px;
+}
+.card h2 { color: var(--gold); margin-bottom: 18px; font-size: 1.2rem; }
+.card p { color: var(--text); line-height: 1.7; }
 
-/* LISTE */
 .module-list { list-style: none; }
-.module-list li { margin-bottom: 10px; }
-.module-list a { 
-    display: block; padding: 15px; border: 1px solid #111; 
-    color: #FFF; text-decoration: none; font-size: 0.9rem; 
+.module-list li { margin: 14px 0; }
+.module-list a {
+    display: flex; justify-content: space-between; align-items: center;
+    text-decoration: none; color: white; padding: 16px 18px;
+    border-radius: 12px; background: #111111; border: 1px solid #222;
 }
 .module-list a:hover { border-color: var(--gold); color: var(--gold); }
 
-/* SAMII */
-.samii-card { border: 1px solid #C5A059; }
-.btn-samii { display: block; background: var(--gold); color: #000; text-align: center; padding: 12px; text-decoration: none; font-weight: bold; margin-top: 15px; }
+.samii-card { border: 1px solid var(--gold); }
+.btn-samii { background: var(--gold); color: #000; text-decoration: none; padding: 14px 24px; border-radius: 12px; font-weight: bold; display: inline-block; }
 
-/* FOOTER */
-.btn-hub { display: block; text-align: center; border: 1px solid var(--gold); color: var(--gold); padding: 15px; text-decoration: none; margin-top: 30px; }
-.signature { text-align: center; color: #333; font-size: 0.6rem; margin-top: 20px; }
+.btn-hub { display: block; width: 280px; margin: 45px auto; text-align: center; padding: 18px; border-radius: 14px; color: var(--gold); border: 1px solid var(--gold); text-decoration: none; }
