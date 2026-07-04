@@ -360,3 +360,28 @@ color:#000;
     0%,100%{transform:translateX(-50%) scale(1);opacity:.4;}
     50%{transform:translateX(-50%) scale(1.2);opacity:.9;}
 }
+.hero-overlay{
+    position:absolute;
+    inset:0;
+    background:linear-gradient(
+        90deg,
+        rgba(0,0,0,.92),
+        rgba(0,0,0,.6),
+        rgba(0,0,0,.2)
+    );
+    z-index:1;
+}
+
+.hero{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    padding:80px;
+    background:url("/og.png") center/cover no-repeat;
+}
+
+.hero-content{
+    position:relative;
+    z-index:2;
+}
