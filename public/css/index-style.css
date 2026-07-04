@@ -315,3 +315,48 @@ transition:.3s;
 background:#C5A059;
 color:#000;
 }
+/* ================================
+   FIX HERO + ANIMATIONS OG
+================================ */
+
+.hero{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    padding:80px;
+    background:url("/og.png") center/cover no-repeat;
+}
+
+.hero-overlay{
+    position:absolute;
+    inset:0;
+    background:linear-gradient(
+        90deg,
+        rgba(0,0,0,.92),
+        rgba(0,0,0,.6),
+        rgba(0,0,0,.2)
+    );
+}
+
+.hero-content{
+    position:relative;
+    z-index:2;
+    max-width:600px;
+    animation:fadeIn 1.2s ease-out;
+}
+
+@keyframes fadeIn{
+    from{opacity:0;transform:translateY(20px);}
+    to{opacity:1;transform:translateY(0);}
+}
+
+/* glow animation si pas déjà actif */
+.background-glow{
+    animation:glow 6s ease-in-out infinite;
+}
+
+@keyframes glow{
+    0%,100%{transform:translateX(-50%) scale(1);opacity:.4;}
+    50%{transform:translateX(-50%) scale(1.2);opacity:.9;}
+}
