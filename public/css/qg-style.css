@@ -1,44 +1,12 @@
-/* =======================================================
-   OG - QG STYLE V2 (NETTOYÉ - NOIR & OR UNIQUEMENT)
-======================================================= */
-:root { --bg: #000000; --gold: #C5A059; --text: #aaaaaa; --white: #ffffff; }
+/* FORCE NOIR TOTAL */
+body { background-color: #000000 !important; color: #ffffff !important; }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+.qg-wrapper { max-width: 500px; margin: 0 auto; padding: 20px; }
+h1 { color: #C5A059; text-align: center; text-transform: uppercase; }
+.grade { text-align: center; font-size: 0.7rem; color: #fff; margin-bottom: 20px; }
 
-body {
-    min-height: 100vh;
-    background: #000000;
-    color: var(--white);
-    font-family: 'Inter', sans-serif;
-}
+.card { background: #0a0a0a; border: 1px solid #332700; padding: 20px; margin-bottom: 15px; }
+h2 { color: #C5A059; font-size: 0.7rem; margin-bottom: 10px; }
 
-.qg-wrapper { width: min(900px, 92%); margin: auto; padding: 50px 0; }
-
-header { text-align: center; margin-bottom: 45px; }
-h1 { font-size: 2.5rem; letter-spacing: 3px; color: var(--gold); }
-.grade { margin-top: 10px; color: var(--gold); font-size: 0.9rem; letter-spacing: 2px; }
-.metier-desc { margin-top: 18px; color: var(--text); font-size: 1rem; }
-
-.card {
-    background: #0a0a0a;
-    border: 1px solid #332700;
-    border-radius: 18px;
-    padding: 28px;
-    margin-bottom: 24px;
-}
-.card h2 { color: var(--gold); margin-bottom: 18px; font-size: 1.2rem; }
-.card p { color: var(--text); line-height: 1.7; }
-
-.module-list { list-style: none; }
-.module-list li { margin: 14px 0; }
-.module-list a {
-    display: flex; justify-content: space-between; align-items: center;
-    text-decoration: none; color: white; padding: 16px 18px;
-    border-radius: 12px; background: #111111; border: 1px solid #222;
-}
-.module-list a:hover { border-color: var(--gold); color: var(--gold); }
-
-.samii-card { border: 1px solid var(--gold); }
-.btn-samii { background: var(--gold); color: #000; text-decoration: none; padding: 14px 24px; border-radius: 12px; font-weight: bold; display: inline-block; }
-
-.btn-hub { display: block; width: 280px; margin: 45px auto; text-align: center; padding: 18px; border-radius: 14px; color: var(--gold); border: 1px solid var(--gold); text-decoration: none; }
+a { color: #fff; text-decoration: none; display: block; padding: 10px; }
+a:hover { color: #C5A059; }
