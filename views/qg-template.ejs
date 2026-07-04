@@ -1,19 +1,29 @@
-<div class="qg-force">
+<div class="qg-wrapper">
     <h1>QG <%= metier.toUpperCase() %></h1>
     <p class="grade">NIVEAU I • SOLDAT</p>
-    
-    <div class="or">MISSION DU JOUR</div>
-    <p>Votre QG est prêt.</p>
+    <p class="metier-desc">Bienvenue dans le Quartier Général <%= metier %>.</p>
 
-    <div class="or">CENTRE DE COMMANDEMENT</div>
-    <a href="/marketplace">🛒 Marketplace</a>
-    <a href="/academy">🎓 Academy</a>
-    <a href="/community">👥 Community</a>
-    <a href="/dashboard">📊 Dashboard</a>
-    <a href="/coffre">🔒 Coffre OG</a>
+    <div class="card">
+        <h2>MISSION DU JOUR</h2>
+        <p>Votre QG est prêt. Les modules seront débloqués progressivement.</p>
+    </div>
 
-    <div class="or" style="margin-top:20px;">⚡ SAMII</div>
-    <a href="/samii" class="samii-btn">PARLER À SAMII</a>
+    <div class="card">
+        <h2>CENTRE DE COMMANDEMENT</h2>
+        <ul class="module-list">
+            <li><a href="/marketplace">🛒 Marketplace</a></li>
+            <li><a href="/academy">🎓 Academy</a></li>
+            <li><a href="/community">👥 Community</a></li>
+            <li><a href="/dashboard">📊 Dashboard</a></li>
+            <li><a href="/coffre">🔒 Coffre OG</a></li>
+        </ul>
+    </div>
 
-    <a href="/hub">RETOUR AU HUB</a>
+    <div class="card samii-card">
+        <h2>⚡ SAMII – INTERFACE STRATÉGIQUE</h2>
+        <a href="/samii" class="btn-samii">PARLER À SAMII</a>
+    </div>
+
+    <a href="/hub" class="btn-hub">RETOUR AU HUB</a>
+    <p class="signature">OG • Chaque général commence soldat.</p>
 </div>
