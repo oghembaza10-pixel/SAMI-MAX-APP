@@ -1,0 +1,343 @@
+/* =====================================================================
+   OG EMPIRE — DESIGN TOKENS
+   Militaire Luxe · Noir Marbre · Or Impérial · Violet SAMII
+   ===================================================================== */
+
+:root {
+  /* --- Couleurs de base --- */
+  --og-black:          #050505;
+  --og-black-1:        #0A0A0B;
+  --og-black-2:        #101013;
+  --og-black-3:        #16171B;
+  --og-black-card:     #0D0E11;
+  --og-marble:         #12100E;
+  --og-line:           rgba(212, 175, 55, 0.14);
+  --og-line-strong:    rgba(212, 175, 55, 0.35);
+
+  /* --- Or Impérial (5 variantes) --- */
+  --og-gold-50:        #FFF3C4;
+  --og-gold-100:       #F7DC8A;
+  --og-gold:           #D4AF37;   /* couleur signature */
+  --og-gold-soft:      #C5A059;
+  --og-gold-deep:      #9C7A2E;
+  --og-gold-glow:      rgba(212, 175, 55, 0.28);
+  --og-gold-glow-soft: rgba(212, 175, 55, 0.10);
+
+  /* --- Argent Soldat --- */
+  --og-silver:         #DDE0E3;
+  --og-silver-soft:    #A9AEB4;
+  --og-silver-deep:    #6C6F74;
+
+  /* --- SAMII (violet néon) --- */
+  --og-samii:          #8B5CF6;
+  --og-samii-light:    #A78BFA;
+  --og-samii-deep:     #6D28D9;
+  --og-samii-glow:     rgba(139, 92, 246, 0.35);
+
+  /* --- Sémantique --- */
+  --og-success:        #10B981;
+  --og-warning:        #F59E0B;
+  --og-danger:         #EF4444;
+  --og-info:           #38BDF8;
+
+  /* --- Texte --- */
+  --og-text:           #F1E9D6;      /* ivoire lisible */
+  --og-text-strong:    #FFFDF5;
+  --og-text-muted:     #9C9689;
+  --og-text-faint:     #625D53;
+
+  /* --- Gradients signature --- */
+  --grad-gold:         linear-gradient(135deg, #F0C651 0%, #D4AF37 45%, #9C7A2E 100%);
+  --grad-gold-line:    linear-gradient(90deg, transparent 0%, #D4AF37 50%, transparent 100%);
+  --grad-empire:       radial-gradient(ellipse at top, rgba(212,175,55,0.18), transparent 55%),
+                       radial-gradient(ellipse at bottom, rgba(139,92,246,0.06), transparent 60%),
+                       linear-gradient(180deg, #050505 0%, #0A0A0B 100%);
+  --grad-marble:       radial-gradient(1200px 800px at 30% -20%, rgba(212,175,55,0.10), transparent 60%),
+                       radial-gradient(900px 700px at 100% 100%, rgba(139,92,246,0.05), transparent 55%),
+                       linear-gradient(180deg, #050505 0%, #0A0A0B 55%, #050505 100%);
+  --grad-samii:        linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(109,40,217,0.10) 100%);
+  --grad-card:         linear-gradient(180deg, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 100%);
+
+  /* --- Typographie --- */
+  --font-display:      "Cinzel", "Trajan Pro", "Playfair Display", serif;
+  --font-hero:         "Cinzel Decorative", "Cinzel", serif;
+  --font-body:         "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:         "JetBrains Mono", "Fira Code", monospace;
+
+  /* --- Élévations & bordures --- */
+  --shadow-gold:       0 10px 40px rgba(212, 175, 55, 0.15), 0 0 0 1px rgba(212, 175, 55, 0.20) inset;
+  --shadow-gold-hover: 0 18px 55px rgba(212, 175, 55, 0.28), 0 0 0 1px rgba(212, 175, 55, 0.45) inset;
+  --shadow-samii:      0 10px 40px rgba(139, 92, 246, 0.25), 0 0 0 1px rgba(139, 92, 246, 0.35) inset;
+  --shadow-deep:       0 30px 80px rgba(0, 0, 0, 0.55);
+  --border-gold:       1px solid var(--og-line);
+  --border-gold-hover: 1px solid var(--og-line-strong);
+
+  /* --- Radius --- */
+  --r-xs: 6px;  --r-sm: 10px;  --r-md: 14px;
+  --r-lg: 20px; --r-xl: 28px;  --r-2xl: 36px;
+  --r-full: 999px;
+
+  /* --- Spacing (fibonacci-inspired) --- */
+  --s-1: 4px;   --s-2: 8px;   --s-3: 12px;
+  --s-4: 16px;  --s-5: 24px;  --s-6: 32px;
+  --s-7: 48px;  --s-8: 64px;  --s-9: 96px;
+  --s-10: 128px;
+
+  /* --- Transitions --- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* --- Sizing --- */
+  --sidebar-w: 260px;
+  --sidebar-w-collapsed: 76px;
+  --topbar-h: 72px;
+  --content-max: 1440px;
+}
+
+/* =====================================================================
+   RESET & BASE
+   ===================================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--og-text);
+  background: var(--og-black);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+body.rtl { direction: rtl; }
+
+::selection { background: var(--og-gold); color: var(--og-black); }
+
+button, input, select, textarea {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+a { color: inherit; text-decoration: none; }
+
+img, svg { display: block; max-width: 100%; }
+
+/* Scrollbar élégante */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--og-black-1); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--og-gold-deep), var(--og-gold-soft));
+  border-radius: var(--r-full);
+  border: 2px solid var(--og-black-1);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--og-gold); }
+
+/* =====================================================================
+   TEXTES SIGNATURE
+   ===================================================================== */
+.og-eyebrow {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--og-gold);
+  opacity: 0.85;
+}
+
+.og-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--og-text-strong);
+  line-height: 1.05;
+}
+
+.og-title--gold {
+  background: var(--grad-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 40px rgba(212, 175, 55, 0.30);
+}
+
+.og-title--silver {
+  background: linear-gradient(180deg, #F5F7FA 0%, #C0C0C0 55%, #6C6F74 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.og-body { color: var(--og-text-muted); font-size: 15px; line-height: 1.65; }
+
+.og-mono { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.05em; }
+
+/* =====================================================================
+   BOUTONS SIGNATURE
+   ===================================================================== */
+.og-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: transform .3s var(--ease-spring), box-shadow .3s var(--ease-out);
+  overflow: hidden;
+  isolation: isolate;
+  white-space: nowrap;
+}
+.og-btn:active { transform: translateY(1px) scale(.98); }
+
+.og-btn--gold {
+  background: var(--grad-gold);
+  color: #1A1200;
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.35), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.og-btn--gold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform .8s var(--ease-out);
+  pointer-events: none;
+}
+.og-btn--gold:hover { transform: translateY(-2px); box-shadow: 0 18px 45px rgba(212, 175, 55, 0.55), inset 0 1px 0 rgba(255,255,255,0.55); }
+.og-btn--gold:hover::after { transform: translateX(120%); }
+
+.og-btn--ghost {
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid var(--og-line-strong);
+  color: var(--og-gold);
+}
+.og-btn--ghost:hover {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: var(--og-gold);
+  box-shadow: var(--shadow-gold);
+}
+
+.og-btn--samii {
+  background: linear-gradient(135deg, var(--og-samii) 0%, var(--og-samii-deep) 100%);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.og-btn--samii:hover { transform: translateY(-2px); box-shadow: 0 18px 45px rgba(139, 92, 246, 0.55); }
+
+.og-btn--sm { padding: 10px 18px; font-size: 11px; }
+.og-btn--lg { padding: 18px 40px; font-size: 14px; }
+
+/* =====================================================================
+   CADRES / CARTES SIGNATURE (ornements coin par coin)
+   ===================================================================== */
+.og-frame {
+  position: relative;
+  background: var(--grad-card);
+  border: var(--border-gold);
+  border-radius: var(--r-lg);
+  padding: var(--s-5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: border-color .35s var(--ease-out), transform .35s var(--ease-out), box-shadow .35s var(--ease-out);
+}
+.og-frame:hover { border-color: var(--og-line-strong); }
+
+/* Ornements de coin (SVG en pseudo-elements) */
+.og-frame--ornate::before,
+.og-frame--ornate::after {
+  content: "";
+  position: absolute;
+  width: 22px; height: 22px;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.9;
+}
+.og-frame--ornate::before {
+  top: 10px; left: 10px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22' fill='none'><path d='M2 22V6a4 4 0 0 1 4-4h16' stroke='%23D4AF37' stroke-width='1.2'/><circle cx='2' cy='2' r='1.2' fill='%23D4AF37'/></svg>");
+}
+.og-frame--ornate::after {
+  bottom: 10px; right: 10px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22' fill='none'><path d='M20 0v16a4 4 0 0 1-4 4H0' stroke='%23D4AF37' stroke-width='1.2'/><circle cx='20' cy='20' r='1.2' fill='%23D4AF37'/></svg>");
+}
+
+/* Ligne dorée décorative */
+.og-divider {
+  height: 1px;
+  background: var(--grad-gold-line);
+  border: 0;
+  margin: var(--s-5) 0;
+  position: relative;
+}
+.og-divider::before {
+  content: "◆";
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--og-black);
+  padding: 0 10px;
+  color: var(--og-gold);
+  font-size: 8px;
+}
+
+/* =====================================================================
+   BADGES / STATUTS
+   ===================================================================== */
+.og-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.og-badge--gold { color: var(--og-gold); background: rgba(212,175,55,0.10); border-color: rgba(212,175,55,0.35); }
+.og-badge--silver { color: var(--og-silver); background: rgba(221,224,227,0.06); border-color: rgba(221,224,227,0.20); }
+.og-badge--samii { color: var(--og-samii-light); background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.35); }
+.og-badge--live { color: var(--og-success); background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.30); }
+.og-badge--locked { color: var(--og-text-muted); background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+
+.og-badge--live::before {
+  content: "";
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--og-success);
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.25);
+  animation: og-pulse 1.8s ease-in-out infinite;
+}
+
+/* =====================================================================
+   UTILITAIRES
+   ===================================================================== */
+.og-container { max-width: var(--content-max); margin-inline: auto; padding-inline: clamp(20px, 4vw, 48px); }
+.og-flex { display: flex; }
+.og-grid { display: grid; }
+.og-center { display: flex; align-items: center; justify-content: center; }
+.og-hidden { display: none !important; }
+.og-noise {
+  position: absolute; inset: 0; pointer-events: none; opacity: .04; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}

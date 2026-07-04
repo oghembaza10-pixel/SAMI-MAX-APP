@@ -1,0 +1,31 @@
+/* Nettoyage général */
+body { background-color: #050505; color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+.qg-container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+/* Header propre */
+header { text-align: center; margin-bottom: 20px; }
+h1 { color: #C5A059; font-size: 1.8rem; margin: 10px 0; }
+.grade { color: #C5A059; font-size: 0.7rem; letter-spacing: 3px; }
+
+/* Mission Card (Celle qui était empilée) */
+.mission-card { 
+    background: #0a0a0a; border: 1px solid #332700; padding: 20px; 
+    border-radius: 8px; display: flex; align-items: center; gap: 20px; 
+}
+.mission-icon { font-size: 2rem; color: #C5A059; }
+
+/* Centre de commandement (La liste) */
+.command-center { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 8px; }
+.command-center h2 { color: #C5A059; font-size: 0.7rem; margin-bottom: 15px; }
+
+nav { display: flex; flex-direction: column; gap: 10px; }
+nav a { 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 15px; background: #111; color: #fff; text-decoration: none; border-radius: 5px; 
+}
+nav a:hover { border: 1px solid #C5A059; }
+
+/* Samii Card */
+.samii-card { border: 1px solid #332700; padding: 20px; border-radius: 8px; background: #0a0a0a; }
+.samii-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+.btn-samii { background: #C5A059; color: #000; padding: 10px 20px; text-decoration: none; font-weight: bold; border-radius: 5px; }

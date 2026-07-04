@@ -1,0 +1,40 @@
+body{
+    margin:0;
+    background:#000;
+}
+
+.hero-container{
+    position:relative;
+    width:100%;
+}
+
+.hero-image{
+    width:100%;
+    display:block;
+}
+
+.cta-button{
+
+    position:absolute;
+
+    left:50%;
+
+    bottom:8%;
+
+    transform:translateX(-50%);
+
+    padding:18px 40px;
+
+    border:2px solid #C5A059;
+
+    color:#C5A059;
+
+    text-decoration:none;
+
+    background:rgba(0,0,0,.45);
+
+    border-radius:8px;
+
+    font-weight:bold;
+
+}

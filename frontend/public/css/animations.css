@@ -1,0 +1,113 @@
+/* =====================================================================
+   OG EMPIRE — ANIMATIONS
+   ===================================================================== */
+
+/* Pulsation lumineuse (statut LIVE, halos SAMII) */
+@keyframes og-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
+}
+
+/* Rayon or qui traverse (shine sur boutons or CTA) */
+@keyframes og-shine {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+/* Apparition depuis le bas */
+@keyframes og-rise {
+  0% { opacity: 0; transform: translateY(28px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Apparition avec léger scale */
+@keyframes og-bloom {
+  0% { opacity: 0; transform: scale(.94); filter: blur(6px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* Halo doré respirant */
+@keyframes og-glow {
+  0%, 100% { opacity: .45; filter: blur(30px); }
+  50% { opacity: .75; filter: blur(45px); }
+}
+
+/* Rotation lente (aura autour de l'écusson) */
+@keyframes og-rotate-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Étincelles flottantes */
+@keyframes og-float-up {
+  0% { transform: translateY(20vh) scale(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+}
+
+/* Marching (bordure animée sur cadre "opérationnel") */
+@keyframes og-march {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 0; }
+}
+
+/* Ripple SAMII (émission d'ondes) */
+@keyframes og-ripple {
+  0% { transform: scale(1); opacity: .6; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+/* Blinking cursor SAMII */
+@keyframes og-blink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0; }
+}
+
+/* Ember (braises qui s'élèvent - Landing) */
+@keyframes og-ember {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(-80vh) translateX(var(--drift, 20px)); opacity: 0; }
+}
+
+/* Tilt subtil au survol (cartes QG) */
+@keyframes og-tilt {
+  0%, 100% { transform: rotateX(0deg) rotateY(0deg); }
+  50% { transform: rotateX(2deg) rotateY(-2deg); }
+}
+
+/* Compteur (progression) */
+@keyframes og-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Classes utilitaires d'animation */
+.anim-rise { animation: og-rise .9s var(--ease-out) both; }
+.anim-bloom { animation: og-bloom 1.1s var(--ease-out) both; }
+.anim-pulse { animation: og-pulse 1.8s ease-in-out infinite; }
+.anim-glow { animation: og-glow 6s ease-in-out infinite; }
+
+/* Stagger (délais séquentiels) */
+.stagger > * { opacity: 0; animation: og-rise .8s var(--ease-out) both; }
+.stagger > *:nth-child(1) { animation-delay: .05s; }
+.stagger > *:nth-child(2) { animation-delay: .12s; }
+.stagger > *:nth-child(3) { animation-delay: .19s; }
+.stagger > *:nth-child(4) { animation-delay: .26s; }
+.stagger > *:nth-child(5) { animation-delay: .33s; }
+.stagger > *:nth-child(6) { animation-delay: .40s; }
+.stagger > *:nth-child(7) { animation-delay: .47s; }
+.stagger > *:nth-child(8) { animation-delay: .54s; }
+.stagger > *:nth-child(9) { animation-delay: .61s; }
+.stagger > *:nth-child(10) { animation-delay: .68s; }
+.stagger > *:nth-child(n+11) { animation-delay: .75s; }
+
+/* Réduction pour utilisateurs qui préfèrent moins d'animation */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

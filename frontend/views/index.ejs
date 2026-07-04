@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <title>OG · Empire — Du soldat au général</title>
+  <%- include('partials/head') %>
+  <link rel="stylesheet" href="/css/landing.css">
+</head>
+<body class="og-landing">
+
+  <!-- ============ BACKGROUND STAGE ============ -->
+  <div class="stage" aria-hidden="true">
+    <div class="stage__marble"></div>
+    <div class="stage__grid"></div>
+    <div class="stage__vignette"></div>
+    <div class="stage__spotlight"></div>
+    <canvas id="embers"></canvas>
+    <div class="stage__horizon"></div>
+    <div class="og-noise"></div>
+  </div>
+
+  <!-- ============ TOP NAV (minimaliste) ============ -->
+  <nav class="landing-nav">
+    <a href="/" class="landing-nav__brand" aria-label="OG Empire">
+      <svg class="landing-nav__crest" viewBox="0 0 48 48" fill="none">
+        <defs>
+          <linearGradient id="landCrestGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#F0C651"/><stop offset=".5" stop-color="#D4AF37"/><stop offset="1" stop-color="#9C7A2E"/>
+          </linearGradient>
+        </defs>
+        <path d="M24 3 L42 10 V26 C42 34 34 42 24 45 C14 42 6 34 6 26 V10 Z" stroke="url(#landCrestGrad)" stroke-width="1.5" fill="rgba(212,175,55,0.06)"/>
+        <text x="24" y="30" text-anchor="middle" font-family="Cinzel" font-weight="800" font-size="14" fill="url(#landCrestGrad)">OG</text>
+      </svg>
+      <span>OG <em>EMPIRE</em></span>
+    </a>
+
+    <div class="landing-nav__center">
+      <a href="#pillars">Univers</a>
+      <a href="#how">Ascension</a>
+      <a href="#samii">SAMII</a>
+      <a href="#empire">Empire</a>
+    </div>
+
+    <div class="landing-nav__right">
+      <div class="og-lang" data-testid="lang-switcher">
+        <button class="og-lang__btn is-active" data-lang="fr">FR</button>
+        <button class="og-lang__btn" data-lang="en">EN</button>
+        <button class="og-lang__btn" data-lang="ar">العربية</button>
+      </div>
+      <a href="/login" class="og-btn og-btn--ghost og-btn--sm" data-testid="landing-login-btn">Entrer</a>
+    </div>
+  </nav>
+
+  <!-- ============ HERO CINEMATIQUE ============ -->
+  <section class="hero">
+    <div class="hero__inner">
+      <!-- Emblème géant -->
+      <div class="hero__crest anim-bloom" data-testid="hero-crest">
+        <div class="hero__crest-halo"></div>
+        <div class="hero__crest-ring"></div>
+        <div class="hero__crest-ring hero__crest-ring--2"></div>
+        <svg class="hero__crest-svg" viewBox="0 0 400 460" fill="none">
+          <defs>
+            <linearGradient id="heroCrest" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#FFF3C4"/>
+              <stop offset=".35" stop-color="#F0C651"/>
+              <stop offset=".65" stop-color="#D4AF37"/>
+              <stop offset="1" stop-color="#7A5E1E"/>
+            </linearGradient>
+            <linearGradient id="heroCrestDark" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1A1A20"/>
+              <stop offset="1" stop-color="#0A0A0B"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Couronne -->
+          <g transform="translate(200, 68)">
+            <path d="M-52 0 L-38 -28 L-20 -8 L0 -38 L20 -8 L38 -28 L52 0 L52 12 L-52 12 Z" fill="url(#heroCrest)" stroke="url(#heroCrest)" stroke-width="0.5"/>
+            <circle cx="-38" cy="-28" r="4" fill="url(#heroCrest)"/>
+            <circle cx="0" cy="-38" r="5" fill="url(#heroCrest)"/>
+            <circle cx="38" cy="-28" r="4" fill="url(#heroCrest)"/>
+            <rect x="-56" y="10" width="112" height="6" rx="1" fill="url(#heroCrest)"/>
+          </g>
+
+          <!-- Écusson central -->
+          <path d="M200 100 L340 145 V270 C340 335 285 385 200 415 C115 385 60 335 60 270 V145 Z"
+                fill="url(#heroCrestDark)" stroke="url(#heroCrest)" stroke-width="3"/>
+
+          <!-- Sillons du blason -->
+          <path d="M200 100 L200 415" stroke="url(#heroCrest)" stroke-width="1" opacity=".35"/>
+          <path d="M60 200 L340 200" stroke="url(#heroCrest)" stroke-width="1" opacity=".2"/>
+
+          <!-- Lettres OG -->
+          <text x="200" y="278" text-anchor="middle" font-family="Cinzel" font-weight="900" font-size="140" fill="url(#heroCrest)" style="letter-spacing:-4px">OG</text>
+
+          <!-- Étoile inférieure -->
+          <path d="M200 348 L204 358 L215 358 L206 365 L210 376 L200 369 L190 376 L194 365 L185 358 L196 358 Z" fill="url(#heroCrest)"/>
+
+          <!-- Lauriers latéraux (simplifiés) -->
+          <g stroke="url(#heroCrest)" stroke-width="2" fill="none" opacity=".85">
+            <path d="M56 155 Q30 205 46 275 Q30 315 62 355"/>
+            <path d="M46 175 Q28 175 22 195"/>
+            <path d="M46 205 Q28 205 22 225"/>
+            <path d="M46 235 Q28 235 22 255"/>
+            <path d="M50 275 Q32 285 28 305"/>
+            <path d="M56 305 Q40 320 40 340"/>
+          </g>
+          <g stroke="url(#heroCrest)" stroke-width="2" fill="none" opacity=".85">
+            <path d="M344 155 Q370 205 354 275 Q370 315 338 355"/>
+            <path d="M354 175 Q372 175 378 195"/>
+            <path d="M354 205 Q372 205 378 225"/>
+            <path d="M354 235 Q372 235 378 255"/>
+            <path d="M350 275 Q368 285 372 305"/>
+            <path d="M344 305 Q360 320 360 340"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Texte principal -->
+      <div class="hero__text">
+        <span class="og-eyebrow anim-rise" style="animation-delay:.2s">Bienvenue dans l'Empire</span>
+
+        <h1 class="hero__title">
+          <span class="hero__title-line og-title--silver anim-rise" style="animation-delay:.35s">Du Soldat</span>
+          <span class="hero__title-line og-title--gold anim-rise" style="animation-delay:.55s">au Général.</span>
+        </h1>
+
+        <div class="hero__ornament anim-rise" style="animation-delay:.7s">
+          <span class="hero__ornament-line"></span>
+          <span class="hero__ornament-diamond">◆</span>
+          <span class="hero__ornament-line"></span>
+        </div>
+
+        <p class="hero__baseline anim-rise" style="animation-delay:.85s">
+          <span>Apprends.</span>
+          <span>Agis.</span>
+          <span>Domine.</span>
+        </p>
+
+        <p class="hero__desc anim-rise" style="animation-delay:1s">
+          Ta plateforme d'empire. Business, IA, réseau, marketplace, académie —<br class="d-none-mobile">
+          tous les métiers, une seule armure.
+        </p>
+
+        <div class="hero__cta anim-rise" style="animation-delay:1.15s">
+          <a href="/hub" class="og-btn og-btn--gold og-btn--lg" data-testid="hero-join-btn">
+            <span>Rejoindre l'Empire</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <a href="#pillars" class="og-btn og-btn--ghost og-btn--lg" data-testid="hero-discover-btn">
+            Découvrir
+          </a>
+        </div>
+
+        <div class="hero__meta anim-rise" style="animation-delay:1.3s">
+          <div class="hero__meta-item">
+            <span class="og-mono">+50</span>
+            <span>Quartiers Généraux</span>
+          </div>
+          <span class="hero__meta-sep">◆</span>
+          <div class="hero__meta-item">
+            <span class="og-mono">SAMII</span>
+            <span>IA stratégique</span>
+          </div>
+          <span class="hero__meta-sep">◆</span>
+          <div class="hero__meta-item">
+            <span class="og-mono">3 langues</span>
+            <span>FR · EN · العربية</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAMII whisper (bulle discrète en coin) -->
+    <a href="#samii" class="hero__samii-whisper" data-testid="hero-samii-whisper">
+      <span class="hero__samii-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
+      </span>
+      <div>
+        <span class="og-badge og-badge--samii">SAMII</span>
+        <p>"Bienvenue, Général. Je suis là."</p>
+      </div>
+    </a>
+
+    <div class="hero__scroll" aria-hidden="true">
+      <span></span>
+    </div>
+  </section>
+
+  <!-- ============ PILIERS DE L'EMPIRE ============ -->
+  <section class="pillars" id="pillars">
+    <div class="og-container">
+      <div class="pillars__head">
+        <span class="og-eyebrow">Les 7 piliers</span>
+        <h2 class="og-title" style="font-size: clamp(32px, 4vw, 56px)">
+          Un <span class="og-title--gold">système d'exploitation</span><br>
+          pour ton empire.
+        </h2>
+        <p class="og-body" style="max-width: 620px; margin-top: 18px">
+          OG n'est pas un SaaS. C'est un écosystème complet qui réunit tout ce dont un général moderne a besoin.
+        </p>
+      </div>
+
+      <div class="pillars__grid stagger">
+        <article class="pillar">
+          <div class="pillar__ico"><i data-lucide="target"></i></div>
+          <h3>Business</h3>
+          <p>Gère ton QG, tes clients, tes ventes et ta croissance depuis un centre de commandement unifié.</p>
+        </article>
+        <article class="pillar pillar--samii">
+          <div class="pillar__ico"><i data-lucide="bot"></i></div>
+          <h3>SAMII · IA</h3>
+          <p>Ton stratège personnel. Il analyse, automatise et te conseille en temps réel, 24/7.</p>
+        </article>
+        <article class="pillar">
+          <div class="pillar__ico"><i data-lucide="waves"></i></div>
+          <h3>Marketplace</h3>
+          <p>Un flux hybride entre réseau social et boutique. Vidéos, images, produits, services — tout en un.</p>
+        </article>
+        <article class="pillar">
+          <div class="pillar__ico"><i data-lucide="graduation-cap"></i></div>
+          <h3>Academy</h3>
+          <p>Formations, niveaux, badges. Passe du soldat au général grâce à un système de progression réel.</p>
+        </article>
+        <article class="pillar">
+          <div class="pillar__ico"><i data-lucide="users"></i></div>
+          <h3>Community</h3>
+          <p>Chat général, salons métiers, groupes d'entraide, événements, classements — le réseau interne des généraux.</p>
+        </article>
+        <article class="pillar">
+          <div class="pillar__ico"><i data-lucide="vault"></i></div>
+          <h3>Coffre OG</h3>
+          <p>Ton portefeuille numérique. Cartes cadeaux, fidélité, réduction, premium, actifs numériques.</p>
+        </article>
+        <article class="pillar">
+          <div class="pillar__ico"><i data-lucide="crown"></i></div>
+          <h3>Cartes OG</h3>
+          <p>Radar d'opportunités, Temps du Souverain, Forteresse, cartes IA, business, finance, marketing.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMMENT ÇA MARCHE ============ -->
+  <section class="how" id="how">
+    <div class="og-container">
+      <div class="how__head">
+        <span class="og-eyebrow">L'ascension</span>
+        <h2 class="og-title" style="font-size: clamp(32px, 4vw, 56px)">
+          Trois étapes.<br>
+          <span class="og-title--gold">Un empire.</span>
+        </h2>
+      </div>
+
+      <div class="how__timeline">
+        <div class="how__step">
+          <div class="how__step-num">01</div>
+          <div class="how__step-body">
+            <h3>Enrôle-toi</h3>
+            <p>Rejoins l'Empire. Choisis ton premier QG parmi 50+ métiers. Le voyage commence.</p>
+          </div>
+        </div>
+        <div class="how__step">
+          <div class="how__step-num">02</div>
+          <div class="how__step-body">
+            <h3>Active SAMII</h3>
+            <p>Ton stratège IA analyse ton activité, automatise l'essentiel, connecte tes réseaux — Meta, WhatsApp, Instagram, TikTok, Shopify, Google.</p>
+          </div>
+        </div>
+        <div class="how__step">
+          <div class="how__step-num">03</div>
+          <div class="how__step-body">
+            <h3>Domine</h3>
+            <p>Progresse dans l'Academy. Débloque les cartes OG. Étends ton empire à d'autres QG. Deviens Général.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SAMII SECTION ============ -->
+  <section class="samii-band" id="samii">
+    <div class="og-container samii-band__inner">
+      <div class="samii-band__visual">
+        <div class="samii-band__orb">
+          <div class="samii-band__orb-core"></div>
+          <div class="samii-band__orb-ring"></div>
+          <div class="samii-band__orb-ring samii-band__orb-ring--2"></div>
+          <svg class="samii-band__orb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
+          </svg>
+        </div>
+      </div>
+      <div class="samii-band__text">
+        <span class="og-badge og-badge--samii">SAMII · IA STRATÉGIQUE</span>
+        <h2 class="og-title" style="font-size: clamp(32px, 4vw, 52px); margin-top: 16px">
+          Ton stratège.<br>
+          <span style="background: linear-gradient(135deg, #A78BFA, #6D28D9); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Toujours à tes côtés.</span>
+        </h2>
+        <p class="og-body" style="margin-top: 18px; max-width: 500px">
+          SAMII pilote ton empire. Il se connecte à Meta, WhatsApp, Instagram, TikTok, Shopify, Google, Stripe et bien plus. Il analyse, propose, exécute. Discret, mais toujours là.
+        </p>
+        <div class="samii-band__networks">
+          <span title="Meta"><svg viewBox="0 0 24 24" fill="#0866FF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></span>
+          <span title="WhatsApp"><svg viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></span>
+          <span title="Instagram"><svg viewBox="0 0 24 24" fill="url(#insta-grad)"><defs><linearGradient id="insta-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F58529"/><stop offset="50%" stop-color="#DD2A7B"/><stop offset="100%" stop-color="#8134AF"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></span>
+          <span title="TikTok"><svg viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005.8 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1.84-.1z"/></svg></span>
+          <span title="Shopify"><svg viewBox="0 0 24 24" fill="#95BF47"><path d="M15.337 2.706c-.09-.06-.17-.09-.25-.09-.09 0-.16.03-.24.09-.06.06-.15.15-.24.27a4.83 4.83 0 00-.42.66c-.15.28-.28.61-.38.98-.19-.06-.4-.09-.6-.09-.66 0-1.31.35-1.85 1.01-.42.51-.72 1.17-.86 1.99l-.99.3c-.32.09-.34.11-.38.42-.03.24-.9 6.7-.9 6.7l7.03 1.32-.03-14.9c0 .01.9-.63 1.16-.66zm-2.15.6c-.11.03-.24.07-.37.11 0-.13-.03-.28-.05-.42.15.08.29.18.42.31zm-1 .3l-.34.1c.07-.36.17-.68.31-.96l.03.86zm-.83 1.71c-.11.06-.24.11-.36.19v-.06c0-.7-.11-1.29-.28-1.77.42.05.86.66.64 1.64zm5.68-2.61c-.15-.03-.31-.02-.47.03.16 1.02.16 2.75.16 3.36 0 1.5 0 2.98-.16 3.4L11.61 8.51V22l7.66-2.63L15.34 3.7c-.08-.02-.16-.02-.24-.02z"/></svg></span>
+          <span title="Google"><svg viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3.1.6 4.2 1.6l3.1-3.1C17.4 1.5 14.8.5 12 .5 7.4.5 3.4 3.1 1.4 6.9l3.7 2.9C6.1 6.9 8.8 5 12 5z"/><path fill="#4285F4" d="M23.5 12.2c0-.8-.1-1.6-.2-2.4H12v4.5h6.5c-.3 1.5-1.1 2.7-2.3 3.6l3.6 2.8c2.1-1.9 3.7-4.8 3.7-8.5z"/><path fill="#FBBC05" d="M5.1 14.2c-.2-.7-.4-1.4-.4-2.2s.1-1.5.4-2.2L1.4 6.9C.5 8.5 0 10.2 0 12s.5 3.5 1.4 5.1l3.7-2.9z"/><path fill="#34A853" d="M12 23.5c3 0 5.6-1 7.4-2.7l-3.6-2.8c-1 .7-2.3 1.1-3.8 1.1-3.2 0-5.9-2-6.9-4.8l-3.7 2.9C3.4 20.9 7.4 23.5 12 23.5z"/></svg></span>
+          <span title="Stripe"><svg viewBox="0 0 24 24" fill="#635BFF"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z"/></svg></span>
+          <span title="+ Plus" class="samii-band__net-more">+</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EMPIRE CTA (fin) ============ -->
+  <section class="empire" id="empire">
+    <div class="og-container">
+      <div class="empire__frame">
+        <div class="empire__ornaments">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="og-eyebrow">L'empire t'attend</span>
+        <h2 class="og-title" style="font-size: clamp(36px, 5vw, 68px); margin-top: 14px">
+          <span class="og-title--silver">Chaque général</span><br>
+          <span class="og-title--gold">commence soldat.</span>
+        </h2>
+        <p class="og-body" style="margin-top: 20px; max-width: 560px; margin-inline: auto">
+          Choisis ton premier QG. Active SAMII. Progresse. Construis. Domine.
+        </p>
+        <div style="margin-top: 32px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap">
+          <a href="/hub" class="og-btn og-btn--gold og-btn--lg" data-testid="empire-hub-btn">
+            <span>Entrer dans le Hub</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <a href="/register" class="og-btn og-btn--ghost og-btn--lg" data-testid="empire-register-btn">Créer mon compte</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <%- include('partials/footer') %>
+  <%- include('partials/samii-widget') %>
+
+  <script src="/js/landing.js" defer></script>
+  <script>window.addEventListener('load', () => { if (window.lucide) lucide.createIcons(); });</script>
+</body>
+</html>
