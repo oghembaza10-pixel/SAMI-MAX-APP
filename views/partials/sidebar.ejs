@@ -2,6 +2,7 @@
     <a href="/hub" class="og-logo">
         <img src="/og.png" alt="OG">
     </a>
+
     <nav class="og-nav">
         <a href="/hub" class="og-item active" title="Hub">
             <i data-lucide="layout-grid"></i>
@@ -18,9 +19,19 @@
         <a href="/community" class="og-item" title="Community">
             <i data-lucide="users"></i>
         </a>
-        <a href="/settings" class="og-item" title="Paramètres">
-            <i data-lucide="settings"></i>
+        <a href="/arsenal" class="og-item" title="Arsenal">
+            <i data-lucide="sword"></i>
         </a>
     </nav>
-    
+
+    <div class="og-sidebar-divider"></div>
+
+    <!-- Rempli dynamiquement par hub.js : toutes les plateformes connectables -->
+    <div class="og-platforms" id="og-sidebar-platforms"></div>
+
+    <div class="og-sidebar-divider"></div>
+
+    <a href="/settings" class="og-item" title="Paramètres">
+        <i data-lucide="settings"></i>
+    </a>
 </aside>
