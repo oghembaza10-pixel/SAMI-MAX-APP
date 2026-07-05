@@ -1,22 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OG Empire — Capitale Mondiale</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <link rel="stylesheet" href="/css/sidebar.css">
+    <%- include("partials/head") %>
+    <title>OG Empire — Le Hub</title>
     <link rel="stylesheet" href="/css/hub-premium.css">
-
 </head>
-
 <body>
 
 <div class="og-capital">
@@ -25,202 +13,72 @@
 
     <main class="capitol-content">
 
+        <!-- HERO — vivant, aucune statistique -->
         <header class="hero-premium">
-
+            <img src="/img/premium-capitol-bg.jpg" alt="Capitale OG" class="hero-bg-img">
             <div class="hero-overlay"></div>
 
-            <img
-                src="/img/premium-capitol-bg.jpg"
-                alt="Capitale OG"
-                class="hero-bg-img"
-            >
-
             <div class="hero-text-zone">
-
-                <h1>Rejoignez l'écosystème OG.</h1>
-
+                <span class="hero-eyebrow">Bienvenue, Général</span>
+                <h1>Ton empire commence ici.</h1>
+                <p>Choisis ton premier QG et construis ton héritage.</p>
             </div>
-
         </header>
 
-        <section class="holographic-grid">
+        <!-- CHOIX DU MÉTIER -->
+        <div class="section-eyebrow">
+            <i data-lucide="compass"></i>
+            <span>Choisis ton métier</span>
+        </div>
 
-           
-
-            </article>
-<div class="og-capital">
-
-    <%- include("partials/sidebar") %>
-
-    <main class="capitol-content">
-
-        <header class="hero-premium">
-
-            <div class="hero-overlay"></div>
-
-            <img src="/img/premium-capitol-bg.jpg"
-                 class="hero-bg-img"
-                 alt="OG">
-
-            <div class="hero-text-zone">
-
-                <h1>Rejoignez l'écosystème OG</h1>
-
-                <p>
-                    Le Hub est la capitale D'automatisation.
-                    Créez votre Quartier Général et développez votre empire.
-                </p>
-
-            </div>
-
-        </header>
-
-
-        <section class="holographic-grid">
-
-           
-
-                <div class="card-content">
-                    <i data-lucide="briefcase"></i>
-                    <h2>Les Métiers</h2>
-                </div>
-
-                <div class="card-shine"></div>
-
-            </article>
-
-
-            <article class="viable-card primary-action"
-                     onclick="location.href='/creer-qg'">
-
-                <div class="card-content">
-                    <i data-lucide="plus-circle"></i>
-                    <h2>Créer mon QG</h2>
-                </div>
-
-                <div class="card-shine"></div>
-
-            </article>
-
+        <section class="metier-grid" id="metier-grid">
+            <!-- Rempli dynamiquement par hub.js (METIERS) -->
         </section>
 
-    </main>
+        <div class="og-divider"></div>
 
-</div>
-
-<script src="https://unpkg.com/lucide@latest"></script>
-
-<script>
-lucide.createIcons();
-</script>
-
-<script src="/js/sidebar.js"></script>
-<script src="/js/hub.js"></script>
-        <section class="hub-presentation">
-
-            <div class="presentation-box">
-
-                <h2>La capitale de l'écosystème OG</h2>
-
-                <p>
-                    Ici, tous les entrepreneurs se retrouvent.
-                    Découvrez les métiers, échangez avec la communauté,
-                    développez vos compétences et créez votre Quartier Général.
-                </p>
-
-            </div>
-
-        </section>
-
-
-        <section class="hub-features">
-
-            <article class="feature-card">
-
-                <i data-lucide="shield"></i>
-
-                <h3>Votre réputation</h3>
-
-                <p>
-                    SAMII calcule votre score grâce aux avis,
-                    clients et à votre activité.
-                </p>
-
-            </article>
-
-
-            <article class="feature-card">
-
-                <i data-lucide="trending-up"></i>
-
-                <h3>Montez en grade</h3>
-
-                <p>
-                    Soldat, Caporal, Sergent,
-                    Lieutenant, Colonel puis Général.
-                </p>
-
-            </article>
-
-
-            <article class="feature-card">
-
-                <i data-lucide="sparkles"></i>
-
-                <h3>Cartes stratégiques</h3>
-
-                <p>
-                    Boost Marketing,
-                    Radar Opportunités,
-                    Forteresse,
-                    Arsenal,
-                    et bien d'autres.
-                </p>
-
-            </article>
-
-        </section>
-
-
-        <section class="create-qg-banner">
-
-            <div>
-
-                <h2>Votre entreprise mérite son QG.</h2>
-
-                <p>
-                    Le Hub est seulement votre point de départ.
-                </p>
-
-            </div>
-
-            <a href="/creer-qg" class="create-btn">
-
-                Créer mon QG
-
+        <!-- ACCÈS RAPIDES : Marketplace / Academy / Community / Arsenal -->
+        <div class="quick-links">
+            <a class="quick-link" href="/marketplace">
+                <i data-lucide="store"></i> Marketplace
             </a>
+            <a class="quick-link" href="/academy">
+                <i data-lucide="graduation-cap"></i> Academy
+            </a>
+            <a class="quick-link" href="/community">
+                <i data-lucide="users"></i> Community
+            </a>
+            <a class="quick-link" href="/arsenal">
+                <i data-lucide="sword"></i> Arsenal
+            </a>
+        </div>
 
+        <div class="og-divider"></div>
+
+        <!-- ÉCOSYSTÈME CONNECTÉ -->
+        <div class="section-eyebrow">
+            <i data-lucide="link-2"></i>
+            <span>Ton écosystème</span>
+        </div>
+
+        <section class="platform-grid" id="platform-grid">
+            <!-- Rempli dynamiquement par hub.js (PLATFORMS) -->
         </section>
 
+        <%- include("partials/footer") %>
 
     </main>
 
-
-    <div class="samii-orb" id="samii-trigger">
-
-        <i data-lucide="bot"></i>
-
-    </div>
-
 </div>
 
+<%- include("partials/samii-widget") %>
+
 <script src="https://unpkg.com/lucide@latest"></script>
-
 <script>
-lucide.createIcons();
+    // Injecté par le serveur : liste des plateformes déjà connectées pour ce compte.
+    // Ex. côté route : res.render('hub', { connectedPlatforms: ['instagram', 'google'] })
+    window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(typeof connectedPlatforms !== "undefined" ? connectedPlatforms : []) %>;
 </script>
-
-<script src="/js/sidebar.js"></script>
 <script src="/js/hub.js"></script>
 
 </body>
