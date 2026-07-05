@@ -470,3 +470,139 @@ body {
     }
     .metier-grid { grid-template-columns: repeat(2, 1fr); }
 }
+/* ===========================================================
+   LÉO — CHANTIER #1
+   HERO VIVANT
+=========================================================== */
+
+.hero-particles{
+
+position:absolute;
+
+inset:0;
+
+pointer-events:none;
+
+background-image:
+
+radial-gradient(circle,rgba(255,255,255,.35) 1px,transparent 1px),
+
+radial-gradient(circle,rgba(197,160,89,.25) 1px,transparent 1px);
+
+background-size:140px 140px,220px 220px;
+
+animation:heroParticles 35s linear infinite;
+
+opacity:.35;
+
+z-index:2;
+
+}
+
+@keyframes heroParticles{
+
+from{
+
+transform:translateY(0);
+
+}
+
+to{
+
+transform:translateY(-180px);
+
+}
+
+}
+
+.hero-light{
+
+position:absolute;
+
+top:-40%;
+
+left:-15%;
+
+width:70%;
+
+height:180%;
+
+background:radial-gradient(circle,rgba(197,160,89,.16),transparent 70%);
+
+filter:blur(80px);
+
+animation:heroLight 10s ease-in-out infinite alternate;
+
+z-index:2;
+
+pointer-events:none;
+
+}
+
+@keyframes heroLight{
+
+from{
+
+transform:translateX(-5%);
+
+}
+
+to{
+
+transform:translateX(8%);
+
+}
+
+}
+
+.hero-scroll{
+
+position:absolute;
+
+bottom:22px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+font-size:.75rem;
+
+letter-spacing:.25em;
+
+text-transform:uppercase;
+
+color:rgba(255,255,255,.55);
+
+animation:heroArrow 2s infinite;
+
+z-index:5;
+
+}
+
+@keyframes heroArrow{
+
+0%{
+
+transform:translate(-50%,0);
+
+opacity:.4;
+
+}
+
+50%{
+
+transform:translate(-50%,10px);
+
+opacity:1;
+
+}
+
+100%{
+
+transform:translate(-50%,0);
+
+opacity:.4;
+
+}
+
+}
