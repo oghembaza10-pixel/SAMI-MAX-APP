@@ -106,6 +106,56 @@ document.addEventListener("DOMContentLoaded", () => {
             this.classList.add("active");
         });
     });
+
+    // Widget SAMII : ouverture / fermeture
+    const samiiWidget = document.getElementById("samii-widget");
+    const samiiTrigger = document.getElementById("samii-widget-trigger");
+    const samiiClose = document.getElementById("samii-widget-close");
+    const samiiMiniButtons = document.querySelectorAll("#samii-open, .samii-mini");
+
+    function openSamii() { if (samiiWidget) samiiWidget.dataset.open = "true"; }
+    function closeSamii() { if (samiiWidget) samiiWidget.dataset.open = "false"; }
+
+    if (samiiTrigger) samiiTrigger.addEventListener("click", openSamii);
+    if (samiiClose) samiiClose.addEventListener("click", closeSamii);
+    samiiMiniButtons.forEach(btn => btn.addEventListener("click", openSamii));
+
+    // Envoi de message SAMII -> /api/chat (déjà défini côté serveur dans index.js)
+    const samiiForm = document.getElementById("samii-widget-form");
+    if (samiiForm) {
+        samiiForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const input = document.getElementById("samii-widget-input");
+            const feed = document.getElementById("samii-widget-feed");
+            const message = input.value.trim();
+            if (!message) return;
+
+            feed.insertAdjacentHTML("beforeend", `
+                <div class="samii-msg samii-msg--user">
+                    <div class="samii-msg__bubble">${message}</div>
+                </div>
+            `);
+            input.value = "";
+            feed.scrollTop = feed.scrollHeight;
+
+            try {
+                const res = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message }),
+                });
+                const data = await res.json();
+                feed.insertAdjacentHTML("beforeend", `
+                    <div class="samii-msg samii-msg--bot">
+                        <div class="samii-msg__bubble">${data.reply}</div>
+                    </div>
+                `);
+                feed.scrollTop = feed.scrollHeight;
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    }
 });
 
 // ==========================================================================
