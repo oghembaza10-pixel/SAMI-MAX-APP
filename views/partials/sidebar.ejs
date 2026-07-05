@@ -3,35 +3,41 @@
         <img src="/og.png" alt="OG">
     </a>
 
-    <nav class="og-nav">
-        <a href="/hub" class="og-item active" title="Hub">
-            <i data-lucide="layout-grid"></i>
-        </a>
-        <a href="/profile" class="og-item" title="Profil">
-            <i data-lucide="user"></i>
-        </a>
-        <a href="/marketplace" class="og-item" title="Marketplace">
-            <i data-lucide="store"></i>
-        </a>
-        <a href="/academy" class="og-item" title="Academy">
-            <i data-lucide="graduation-cap"></i>
-        </a>
-        <a href="/community" class="og-item" title="Community">
-            <i data-lucide="users"></i>
-        </a>
-        <a href="/arsenal" class="og-item" title="Arsenal">
-            <i data-lucide="sword"></i>
-        </a>
-    </nav>
-
-    <div class="og-sidebar-divider"></div>
-
-    <!-- Rempli dynamiquement par hub.js : toutes les plateformes connectables -->
+    <!-- Réseaux : dans la même barre, au-dessus de la nav principale -->
     <div class="og-platforms" id="og-sidebar-platforms"></div>
 
     <div class="og-sidebar-divider"></div>
 
-    <a href="/settings" class="og-item" title="Paramètres">
-        <i data-lucide="settings"></i>
-    </a>
+    <nav class="og-nav">
+        <a href="/hub" class="og-item active" title="Accueil">
+            <i data-lucide="layout-grid"></i>
+            <span class="og-item__label">Accueil</span>
+        </a>
+        <a href="/marketplace" class="og-item" title="Marketplace">
+            <i data-lucide="store"></i>
+            <span class="og-item__label">Marketplace</span>
+        </a>
+        <a href="/academy" class="og-item" title="Academy">
+            <i data-lucide="graduation-cap"></i>
+            <span class="og-item__label">Academy</span>
+        </a>
+        <a href="/community" class="og-item" title="Community">
+            <i data-lucide="users"></i>
+            <span class="og-item__label">Community</span>
+        </a>
+        <a href="/arsenal" class="og-item" title="Arsenal">
+            <i data-lucide="sword"></i>
+            <span class="og-item__label">Arsenal</span>
+        </a>
+    </nav>
+
+    <!-- Desktop uniquement : accès secondaires (cachés en barre mobile, faute de place) -->
+    <div class="og-sidebar-extra">
+        <a href="/profile" class="og-item" title="Profil">
+            <i data-lucide="user"></i>
+        </a>
+        <a href="/settings" class="og-item" title="Paramètres">
+            <i data-lucide="settings"></i>
+        </a>
+    </div>
 </aside>
