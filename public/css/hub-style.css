@@ -1,301 +1,472 @@
 /* ==========================================================================
-   OG EMPIRE — HUB V2 : CAPITALE MONDIALE (Styles Front-End Premium)
+   OG EMPIRE — HUB V3 : LA VITRINE DE L'EMPIRE
+   Noir mat + or. Vivant, pas de dashboard. Le QG commande, le Hub accueille.
    ========================================================================== */
 
 :root {
     --bg-deep: #050505;
+    --bg-panel: #0b0b0b;
     --gold-og: #C5A059;
-    --gold-hover: #d4af37;
-    --gold-glow: 0 0 35px rgba(197, 160, 89, 0.5);
-    --text-main: #FFFFFF;
-    --text-muted: #888888;
-    --glass: rgba(19, 19, 19, 0.65);
-    --border-gold: 1px solid rgba(197, 160, 89, 0.3);
-    
-    --sidebar-w: 90px;
-    --ease-premium: cubic-bezier(0.23, 1, 0.32, 1);
+    --gold-hover: #E8C27A;
+    --gold-dim: rgba(197, 160, 89, 0.35);
+    --gold-glow: 0 0 40px rgba(197, 160, 89, 0.35);
+    --text-main: #F5F1E8;
+    --text-muted: #86807A;
+    --glass: rgba(15, 15, 15, 0.7);
+    --border-gold: 1px solid rgba(197, 160, 89, 0.22);
+    --border-gold-strong: 1px solid rgba(197, 160, 89, 0.55);
+
+    --font-display: 'Cinzel', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --sidebar-w: 84px;
+    --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    background-color: var(--bg-deep);
+    background: var(--bg-deep);
     color: var(--text-main);
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-body);
     overflow-x: hidden;
-    height: 100vh;
-    width: 100vw;
+    min-height: 100vh;
 }
 
-/* Shell Global */
 .og-capital {
     display: flex;
-    width: 100vw;
-    height: 100vh;
-    position: relative;
+    width: 100%;
+    min-height: 100vh;
 }
 
-/* SIDEBAR MINIMALISTE */
-.capitol-sidebar {
+/* ==========================================================================
+   SIDEBAR — dock façon OS, pas un menu web
+   ========================================================================== */
+
+.og-sidebar {
     width: var(--sidebar-w);
     height: 100vh;
-    background: var(--glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-right: var(--border-gold);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 30px 0;
     position: fixed;
     left: 0;
     top: 0;
-    z-index: 50;
-}
-
-.sidebar-top, .sidebar-bottom {
+    background: var(--bg-panel);
+    border-right: var(--border-gold);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 25px;
+    padding: 24px 0;
+    z-index: 100;
 }
 
-.logo-sm {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--gold-og);
-    margin-bottom: 20px;
+.og-logo {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.nav-item {
-    color: var(--text-muted);
-    transition: all 0.3s var(--ease-premium);
+.og-logo img { width: 100%; height: auto; }
+
+.og-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.og-item {
     position: relative;
-    padding: 10px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    border-radius: 14px;
+    transition: color .35s var(--ease-premium), background .35s var(--ease-premium), transform .35s var(--ease-premium);
 }
 
-.nav-item i {
-    width: 24px;
-    height: 24px;
+.og-item i { width: 21px; height: 21px; }
+
+.og-item:hover {
+    color: var(--gold-hover);
+    transform: translateY(-1px);
 }
 
-.nav-item:hover, .nav-item.active {
+.og-item.active {
     color: var(--gold-og);
-    filter: drop-shadow(0 0 10px var(--gold-og));
+    background: radial-gradient(circle, rgba(197,160,89,0.16) 0%, transparent 75%);
+    animation: og-item-pulse .5s var(--ease-premium);
 }
 
-/* Curseur actif sidebar */
-.nav-item.active::after {
+.og-item.active::before {
     content: '';
     position: absolute;
-    right: -1px;
+    left: -24px;
     top: 50%;
     transform: translateY(-50%);
     width: 3px;
-    height: 20px;
+    height: 22px;
     background: var(--gold-og);
-    border-radius: 3px 0 0 3px;
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 12px var(--gold-og);
 }
 
-.logo-placeholder {
-    width: 35px;
-    height: 35px;
-    background: rgba(255,255,255,0.05);
+@keyframes og-item-pulse {
+    0%   { transform: scale(0.9); }
+    60%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+.og-sidebar-bottom { display: flex; flex-direction: column; align-items: center; }
+
+.samii-mini {
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
+    border: none;
+    background: linear-gradient(145deg, #7d5cff, #5a3fe0);
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(125, 92, 255, 0.35);
+    transition: transform .3s var(--ease-premium);
 }
+.samii-mini i { width: 20px; height: 20px; }
+.samii-mini:hover { transform: scale(1.08) translateY(-3px); }
 
-/* CONTENU PRINCIPAL */
+/* ==========================================================================
+   CONTENU PRINCIPAL
+   ========================================================================== */
+
 .capitol-content {
     margin-left: var(--sidebar-w);
     flex: 1;
-    height: 100vh;
-    position: relative;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
 }
 
-/* Hero Premium */
+/* ---- Hero : vivant, pas de stats ---- */
+
 .hero-premium {
-    width: 100%;
-    height: 60vh; /* Plus grande image */
     position: relative;
+    width: 100%;
+    min-height: 56vh;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-end;
+    overflow: hidden;
 }
 
 .hero-bg-img {
     position: absolute;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* L'image remplit l'espace */
-    z-index: 1;
+    object-fit: cover;
+    transform: scale(1.02);
+    animation: hero-drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes hero-drift {
+    from { transform: scale(1.02) translateY(0); }
+    to   { transform: scale(1.08) translateY(-1.5%); }
 }
 
 .hero-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.2), var(--bg-deep));
+    background:
+        radial-gradient(ellipse at 30% 20%, rgba(197,160,89,0.14), transparent 55%),
+        linear-gradient(to bottom, rgba(5,5,5,0.15) 0%, rgba(5,5,5,0.55) 55%, var(--bg-deep) 100%);
     z-index: 2;
 }
 
 .hero-text-zone {
     position: relative;
     z-index: 3;
-    text-align: center;
+    padding: 0 50px 64px;
+    max-width: 780px;
+}
+
+.hero-eyebrow {
+    font-family: var(--font-mono);
+    letter-spacing: .18em;
+    font-size: .72rem;
+    color: var(--gold-og);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 14px;
 }
 
 .hero-text-zone h1 {
-    font-size: 4rem;
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
     font-weight: 700;
     color: #fff;
-    text-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    letter-spacing: -0.02em;
+    letter-spacing: .01em;
+    text-shadow: 0 6px 30px rgba(0,0,0,0.6);
+    line-height: 1.15;
 }
 
-/* Grille des 5 cartes */
-.holographic-grid {
-    margin-top: -10vh; /* Remonte sur l'image hero */
-    position: relative;
-    z-index: 10;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 30px;
-    padding: 0 50px 50px 50px;
+.hero-text-zone p {
+    margin-top: 16px;
+    font-size: 1.02rem;
+    color: var(--text-muted);
+    max-width: 480px;
+    line-height: 1.6;
 }
 
-/* Style de chaque carte */
-.viable-card {
-    background: #000;
-    border: var(--border-gold);
-    border-radius: 20px;
-    padding: 40px;
-    min-height: 200px;
-    cursor: pointer;
-    transition: all 0.4s var(--ease-premium);
-    position: relative;
-    overflow: hidden;
+/* ---- Section titles ---- */
+
+.section-eyebrow {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: .78rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--gold-og);
+    margin: 0 50px 20px;
+}
+.section-eyebrow i { width: 16px; height: 16px; }
+
+/* ---- Grille métiers : compacte, pas de "grosses cartes" ---- */
+
+.metier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+    padding: 0 50px 8px;
 }
 
-/* Effet de profondeur et verre */
-.viable-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.05), transparent);
-    z-index: 1;
-}
-
-.card-content {
+.metier-card {
     position: relative;
-    z-index: 2;
+    background: var(--bg-panel);
+    border: var(--border-gold);
+    border-radius: 16px;
+    padding: 22px 16px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    text-align: center;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .35s var(--ease-premium), border-color .35s var(--ease-premium), box-shadow .35s var(--ease-premium);
 }
 
-.card-icon {
-    width: 40px;
-    height: 40px;
-    color: var(--gold-og);
-    margin-bottom: 10px;
-    transition: all 0.4s var(--ease-premium);
+.metier-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 16px;
+    padding: 1px;
+    background: conic-gradient(from 0deg, transparent 0%, var(--gold-hover) 8%, transparent 16%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity .4s var(--ease-premium);
+    animation: metier-shine-spin 2.6s linear infinite paused;
 }
 
-.viable-card h2 {
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: #fff;
+.metier-card:hover::before {
+    opacity: 1;
+    animation-play-state: running;
 }
 
-/* Effet de survol lumineux */
-.viable-card:hover {
-    transform: translateY(-10px) scale(1.02);
+@keyframes metier-shine-spin {
+    to { background: conic-gradient(from 360deg, transparent 0%, var(--gold-hover) 8%, transparent 16%); }
+}
+
+.metier-card:hover,
+.metier-card:focus-visible {
+    transform: translateY(-4px);
     border-color: var(--gold-hover);
     box-shadow: var(--gold-glow);
 }
 
-.viable-card:hover .card-icon {
+.metier-card i {
+    width: 26px;
+    height: 26px;
+    color: var(--gold-og);
+    transition: transform .4s var(--ease-premium), color .4s var(--ease-premium), filter .4s var(--ease-premium);
+}
+
+.metier-card:hover i {
+    transform: scale(1.12);
     color: var(--gold-hover);
-    filter: drop-shadow(0 0 15px var(--gold-og));
+    filter: drop-shadow(0 0 10px var(--gold-og));
 }
 
-/* Carte "Créer mon QG" en surbrillance */
-.viable-card.primary-action {
-    border-color: var(--gold-og);
-    background: linear-gradient(145deg, #0a0a0a, #050505);
+.metier-card h3 {
+    font-size: .95rem;
+    font-weight: 600;
+    color: #fff;
 }
 
-.viable-card.primary-action h2 {
+.metier-card span {
+    font-size: .76rem;
+    color: var(--text-muted);
+}
+
+.metier-card.more {
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    gap: 8px;
+    border-style: dashed;
     color: var(--gold-og);
 }
+.metier-card.more h3 { font-size: .88rem; color: var(--gold-og); }
 
-/* Effet de brillance */
-.card-shine {
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(to bottom right, rgba(255,255,255,0), rgba(255,255,255,0.03), rgba(255,255,255,0));
-    transform: rotate(30deg) translateY(-100%);
-    transition: transform 0.6s var(--ease-premium);
-    z-index: 0;
+/* ---- Accès rapides : Marketplace / Academy / Community / Arsenal ---- */
+
+.quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 28px 50px 8px;
 }
 
-.viable-card:hover .card-shine {
-    transform: rotate(30deg) translateY(100%);
+.quick-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: var(--border-gold);
+    background: transparent;
+    color: var(--text-main);
+    text-decoration: none;
+    font-size: .88rem;
+    font-weight: 500;
+    transition: all .3s var(--ease-premium);
 }
 
-/* SAMII — SPHÈRE FLOTTANTE */
-.samii-orb {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    background: #7d5cff; /* Violet OG futur */
-    border-radius: 50%;
+.quick-link i { width: 17px; height: 17px; color: var(--gold-og); }
+
+.quick-link:hover {
+    border-color: var(--gold-hover);
+    background: rgba(197,160,89,0.06);
+    transform: translateY(-2px);
+}
+
+/* ---- Divider ---- */
+
+.og-divider {
+    height: 1px;
+    margin: 36px 50px;
+    background: linear-gradient(to right, transparent, rgba(197,160,89,0.35), transparent);
+}
+
+/* ---- Plateformes : connecté / non connecté ---- */
+
+.platform-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 20px;
+    padding: 0 50px 50px;
+    max-width: 720px;
+}
+
+.platform-logo {
+    width: 100%;
+    aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    background: var(--bg-panel);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
     cursor: pointer;
-    box-shadow: 0 10px 30px rgba(125, 92, 255, 0.4);
-    transition: all 0.3s var(--ease-premium);
-    z-index: 100;
+    transition: all .3s var(--ease-premium);
+    position: relative;
 }
 
-.samii-orb i {
-    width: 28px;
-    height: 28px;
+.platform-logo img {
+    width: 22px;
+    height: 22px;
+    filter: grayscale(1) brightness(0.7);
+    opacity: .45;
+    transition: all .3s var(--ease-premium);
 }
 
-.samii-orb:hover {
-    transform: scale(1.1) translateY(-5px);
-    box-shadow: 0 15px 40px rgba(125, 92, 255, 0.6);
+.platform-logo:hover img {
+    opacity: .8;
+    transform: scale(1.08);
 }
 
-/* RESPONSIVE */
+.platform-logo.connected {
+    border-color: var(--gold-dim);
+    background: rgba(197,160,89,0.05);
+}
+
+.platform-logo.connected img {
+    filter: none;
+    opacity: 1;
+}
+
+.platform-logo.connected::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #3ddc84;
+    box-shadow: 0 0 8px #3ddc84;
+}
+
+.platform-logo:hover {
+    box-shadow: var(--gold-glow);
+    border-color: var(--gold-hover);
+}
+
+/* ==========================================================================
+   RESPONSIVE — mobile first, la sidebar devient une bottom bar
+   ========================================================================== */
+
 @media (max-width: 768px) {
-    :root { --sidebar-w: 0px; } /* Sidebar disparait sur mobile */
-    
-    .capitol-sidebar { display: none; } /* Sidebar masquée */
-    
-    .capitol-content { margin-left: 0; } /* Contenu pleine largeur */
-    
-    .hero-text-zone h1 { font-size:
+    .og-sidebar {
+        width: 100%;
+        height: 64px;
+        flex-direction: row;
+        justify-content: space-around;
+        top: auto;
+        bottom: 0;
+        border-right: none;
+        border-top: var(--border-gold);
+        padding: 0 8px;
+    }
+    .og-logo { display: none; }
+    .og-nav { flex-direction: row; justify-content: space-around; width: 100%; }
+    .og-item.active::before {
+        left: 50%;
+        top: -1px;
+        transform: translateX(-50%);
+        width: 22px;
+        height: 3px;
+        border-radius: 0 0 3px 3px;
+    }
+    .og-sidebar-bottom { position: fixed; bottom: 78px; right: 16px; }
+
+    .capitol-content { margin-left: 0; padding-bottom: 80px; }
+
+    .hero-text-zone, .section-eyebrow, .metier-grid, .quick-links, .og-divider, .platform-grid {
+        padding-left: 20px;
+        padding-right: 20px;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    .metier-grid { grid-template-columns: repeat(2, 1fr); }
+}
