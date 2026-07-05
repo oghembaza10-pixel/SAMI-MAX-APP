@@ -38,4 +38,5 @@ body::before { content: ""; position: fixed; inset: 0; pointer-events: none; bac
 .community-card p { font-size: 1rem; color: var(--og-text-muted); max-width: 600px; margin: 0 auto; }
 .community-card button { margin-top: 25px; padding: 15px 30px; border: none; border-radius: 2px; background: var(--og-gold); color: var(--og-black); font-weight: bold; cursor: pointer; transition: 0.3s; letter-spacing: 0.1em; text-transform: uppercase; }
 .community-card button:hover { background: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.3); }
-
+.hub-hero-visual { margin-bottom: 30px; text-align: center; }
+.dashboard-img { max-width: 90%; border-radius: 16px; opacity: 0.7; box-shadow: 0 0 30px rgba(197, 160, 89, 0.2); }
