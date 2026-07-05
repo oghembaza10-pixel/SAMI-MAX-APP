@@ -19,17 +19,14 @@
 
     <main class="capitol-content">
 
-        <!-- HERO -->
+        <!-- HERO : court sur mobile, les cartes métier restent visibles sans scroller -->
         <header class="hero-premium">
+            <img src="/hero-city.png" alt="Ville futuriste OG" class="hero-bg-img" onerror="this.style.display='none'">
             <div class="hero-grid"></div>
             <div class="hero-glow hero-glow-1"></div>
             <div class="hero-glow hero-glow-2"></div>
             <div class="hero-particles"></div>
             <div class="hero-light"></div>
-<img
-    src="/hero-city.png"
-    alt="Ville futuriste"
-    class="hero-bg-img">
             <div class="hero-overlay"></div>
 
             <div class="hero-text-zone">
@@ -58,16 +55,18 @@
         <section class="metier-grid" id="metier-grid">
             <!-- Rempli dynamiquement par hub.js -->
         </section>
-<section class="hub-banner">
-    <img src="/banner-tech.png" alt="OG Empire" class="hub-banner-img">
 
-    <div class="hub-banner-content">
-        <span>OG EMPIRE</span>
-        <h2>Construisez un empire mondial.</h2>
-        <p>Une seule plateforme. Des possibilités illimitées.</p>
-    </div>
-</section>
-        <div class="og-divider"></div>
+        <!-- BANNIÈRE "TAPIS" — prend tout l'espace restant, vivante (zoom lent + halo) -->
+        <section class="hub-banner" id="hub-banner">
+            <img src="/banner-tech.png" alt="OG Empire" class="hub-banner__img" onerror="this.style.opacity=0">
+            <div class="hub-banner__overlay"></div>
+            <div class="hub-banner__glow"></div>
+            <div class="hub-banner__content">
+                <span class="hero-eyebrow">OG Empire</span>
+                <h2>Construisez un empire mondial.</h2>
+                <p>Une seule plateforme. Des possibilités illimitées.</p>
+            </div>
+        </section>
 
         <!-- FOOTER -->
         <footer class="og-footer">
