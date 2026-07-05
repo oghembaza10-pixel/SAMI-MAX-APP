@@ -610,7 +610,10 @@ opacity:.4;
     position:relative;
     overflow:hidden;
     min-height:100vh;
+    display:flex;
+    align-items:center;
 }
+
 .hero-grid{
     position:absolute;
     inset:0;
