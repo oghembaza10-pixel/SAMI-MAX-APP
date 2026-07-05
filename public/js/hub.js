@@ -80,10 +80,8 @@ function renderPlatformGrid() {
             const alreadyConnected = btn.classList.contains("connected");
             const route = btn.dataset.connectRoute;
             if (alreadyConnected) {
-                // Déjà connecté -> gérer la connexion (déconnecter / voir détails) côté paramètres.
                 window.location.href = "/settings#connexions";
             } else {
-                // Non connecté -> lance le flux de connexion pour ce réseau.
                 window.location.href = route;
             }
         });
@@ -98,7 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
         lucide.createIcons();
     }
 
-    // Etat actif de la sidebar (au cas où le rendu serveur ne le gère pas déjà)
     const navItems = document.querySelectorAll(".og-item");
     navItems.forEach(item => {
         item.addEventListener("click", function () {
@@ -107,7 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Widget SAMII : ouverture / fermeture
     const samiiWidget = document.getElementById("samii-widget");
     const samiiTrigger = document.getElementById("samii-widget-trigger");
     const samiiClose = document.getElementById("samii-widget-close");
@@ -120,7 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (samiiClose) samiiClose.addEventListener("click", closeSamii);
     samiiMiniButtons.forEach(btn => btn.addEventListener("click", openSamii));
 
-    // Envoi de message SAMII -> /api/chat (déjà défini côté serveur dans index.js)
     const samiiForm = document.getElementById("samii-widget-form");
     if (samiiForm) {
         samiiForm.addEventListener("submit", async (e) => {
@@ -129,51 +124,3 @@ document.addEventListener("DOMContentLoaded", () => {
             const feed = document.getElementById("samii-widget-feed");
             const message = input.value.trim();
             if (!message) return;
-
-            feed.insertAdjacentHTML("beforeend", `
-                <div class="samii-msg samii-msg--user">
-                    <div class="samii-msg__bubble">${message}</div>
-                </div>
-            `);
-            input.value = "";
-            feed.scrollTop = feed.scrollHeight;
-
-            try {
-                const res = await fetch("/api/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message }),
-                });
-                const data = await res.json();
-                feed.insertAdjacentHTML("beforeend", `
-                    <div class="samii-msg samii-msg--bot">
-                        <div class="samii-msg__bubble">${data.reply}</div>
-                    </div>
-                `);
-                feed.scrollTop = feed.scrollHeight;
-            } catch (err) {
-                console.error(err);
-            }
-        });
-    }
-});
-
-// ==========================================================================
-// i18n — conservé pour compatibilité avec le futur sélecteur de langue
-// ==========================================================================
-const capitolTranslations = {
-    fr: { eyebrow: "Bienvenue, Général",  hero: "Ton empire commence ici.", sub: "Choisis ton premier QG et construis ton héritage." },
-    en: { eyebrow: "Welcome, General",    hero: "Your empire starts here.", sub: "Choose your first HQ and build your legacy." },
-    ar: { eyebrow: "أهلاً أيها الجنرال",  hero: "إمبراطوريتك تبدأ هنا.",     sub: "اختر مقرك الأول وابنِ إرثك." },
-};
-
-function switchCapitolLang(lang) {
-    const t = capitolTranslations[lang];
-    if (!t) return;
-    const eyebrow = document.querySelector(".hero-eyebrow");
-    const title = document.querySelector(".hero-text-zone h1");
-    const sub = document.querySelector(".hero-text-zone p");
-    if (eyebrow) eyebrow.textContent = t.eyebrow;
-    if (title) title.textContent = t.hero;
-    if (sub) sub.textContent = t.sub;
-}
