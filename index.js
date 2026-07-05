@@ -27,8 +27,22 @@ app.get('/', (req, res) => {
     res.render('index');
 });
 app.use("/hub", hub);
+// Cette route intercepte le clic sur une carte (ex: /qg/ecommerce)
 app.get('/qg/:metier', (req, res) => {
-    res.render('qg-template', { metier: req.params.metier });
+    const metierSlug = req.params.metier;
+    // 1. Trouve le métier dans ton tableau METIERS[]
+    const metierData = METIERS.find(m => m.mod === metierSlug);
+
+    // 2. S'il existe, rend la page 'qg-template.ejs' avec ses données
+    // Si tu as une base de données, tu passeras d'autres infos ici
+    if (metierData) {
+        res.render('qg-template', { 
+            metier: metierData.title[currentLang] 
+        });
+    } else {
+        // Redirige vers le hub si le métier n'existe pas
+        res.redirect('/hub'); 
+    }
 });
 // ======================================================
 // Vérification
