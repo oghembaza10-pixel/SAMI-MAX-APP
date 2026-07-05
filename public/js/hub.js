@@ -124,3 +124,51 @@ document.addEventListener("DOMContentLoaded", () => {
             const feed = document.getElementById("samii-widget-feed");
             const message = input.value.trim();
             if (!message) return;
+
+            feed.insertAdjacentHTML("beforeend", `
+                <div class="samii-msg samii-msg--user">
+                    <div class="samii-msg__bubble">${message}</div>
+                </div>
+            `);
+            input.value = "";
+            feed.scrollTop = feed.scrollHeight;
+
+            try {
+                const res = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message }),
+                });
+                const data = await res.json();
+                feed.insertAdjacentHTML("beforeend", `
+                    <div class="samii-msg samii-msg--bot">
+                        <div class="samii-msg__bubble">${data.reply}</div>
+                    </div>
+                `);
+                feed.scrollTop = feed.scrollHeight;
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    }
+});
+
+// ==========================================================================
+// i18n — conservé pour compatibilité avec le futur sélecteur de langue
+// ==========================================================================
+const capitolTranslations = {
+    fr: { eyebrow: "Bienvenue, Général",  hero: "Ton empire commence ici.", sub: "Choisis ton premier QG et construis ton héritage." },
+    en: { eyebrow: "Welcome, General",    hero: "Your empire starts here.", sub: "Choose your first HQ and build your legacy." },
+    ar: { eyebrow: "أهلاً أيها الجنرال",  hero: "إمبراطوريتك تبدأ هنا.",     sub: "اختر مقرك الأول وابنِ إرثك." },
+};
+
+function switchCapitolLang(lang) {
+    const t = capitolTranslations[lang];
+    if (!t) return;
+    const eyebrow = document.querySelector(".hero-eyebrow");
+    const title = document.querySelector(".hero-text-zone h1");
+    const sub = document.querySelector(".hero-text-zone p");
+    if (eyebrow) eyebrow.textContent = t.eyebrow;
+    if (title) title.textContent = t.hero;
+    if (sub) sub.textContent = t.sub;
+}
