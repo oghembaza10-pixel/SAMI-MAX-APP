@@ -1,8 +1,14 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <%- include("partials/head") %>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OG Empire — Le Hub</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="/css/hub-premium.css">
 </head>
 <body>
@@ -13,7 +19,7 @@
 
     <main class="capitol-content">
 
-        <!-- HERO — vivant, aucune statistique -->
+        <!-- HERO -->
         <header class="hero-premium">
             <img src="/img/premium-capitol-bg.jpg" alt="Capitale OG" class="hero-bg-img">
             <div class="hero-overlay"></div>
@@ -32,12 +38,12 @@
         </div>
 
         <section class="metier-grid" id="metier-grid">
-            <!-- Rempli dynamiquement par hub.js (METIERS) -->
+            <!-- Rempli dynamiquement par hub.js -->
         </section>
 
         <div class="og-divider"></div>
 
-        <!-- ACCÈS RAPIDES : Marketplace / Academy / Community / Arsenal -->
+        <!-- ACCÈS RAPIDES -->
         <div class="quick-links">
             <a class="quick-link" href="/marketplace">
                 <i data-lucide="store"></i> Marketplace
@@ -62,21 +68,75 @@
         </div>
 
         <section class="platform-grid" id="platform-grid">
-            <!-- Rempli dynamiquement par hub.js (PLATFORMS) -->
+            <!-- Rempli dynamiquement par hub.js -->
         </section>
 
-        <%- include("partials/footer") %>
+        <!-- FOOTER (inline) -->
+        <footer class="og-footer">
+            <div class="og-footer__line"></div>
+            <div class="og-footer__inner">
+                <div class="og-footer__brand">
+                    <span class="og-footer__crest">◆</span>
+                    <span class="og-mono">OG · EMPIRE</span>
+                </div>
+                <p class="og-footer__quote">Chaque général commence soldat.</p>
+                <div class="og-footer__meta">
+                    <span class="og-mono">v1.0 · SOLDAT</span>
+                </div>
+            </div>
+        </footer>
 
     </main>
 
 </div>
 
-<%- include("partials/samii-widget") %>
+<!-- SAMII — sphère flottante (inline) -->
+<div class="samii-widget" id="samii-widget" data-open="false">
+    <button class="samii-widget__trigger" id="samii-widget-trigger" aria-label="Ouvrir SAMII">
+        <span class="samii-widget__aura"></span>
+        <span class="samii-widget__aura samii-widget__aura--2"></span>
+        <svg class="samii-widget__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 8V4H8"/>
+            <rect width="16" height="12" x="4" y="8" rx="2"/>
+            <path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
+        </svg>
+    </button>
+    <div class="samii-widget__panel" id="samii-widget-panel" role="dialog" aria-label="Assistant SAMII">
+        <header class="samii-widget__header">
+            <div class="samii-widget__id">
+                <div class="samii-widget__avatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
+                </div>
+                <div>
+                    <p class="samii-widget__name">SAMII</p>
+                    <p class="samii-widget__status"><span class="og-badge og-badge--live">OPÉRATIONNEL</span></p>
+                </div>
+            </div>
+            <div class="samii-widget__actions">
+                <button class="samii-widget__close" id="samii-widget-close" aria-label="Fermer">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </header>
+        <div class="samii-widget__feed" id="samii-widget-feed">
+            <div class="samii-msg samii-msg--bot">
+                <div class="samii-msg__bubble">
+                    Bienvenue, Général. Je suis <b>SAMII</b>, votre stratège.<br>
+                    Comment puis-je vous aider aujourd'hui ?
+                </div>
+            </div>
+        </div>
+        <form class="samii-widget__form" id="samii-widget-form">
+            <input type="text" id="samii-widget-input" placeholder="Parler à SAMII…" autocomplete="off">
+            <button type="submit" aria-label="Envoyer">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg>
+            </button>
+        </form>
+    </div>
+</div>
 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
-    // Injecté par le serveur : liste des plateformes déjà connectées pour ce compte.
-    // Ex. côté route : res.render('hub', { connectedPlatforms: ['instagram', 'google'] })
     window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(typeof connectedPlatforms !== "undefined" ? connectedPlatforms : []) %>;
 </script>
 <script src="/js/hub.js"></script>
