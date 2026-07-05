@@ -20,48 +20,37 @@ const community = require("./routes/community");
 const marketplace = require("./routes/marketplace");
 const drivers = require("./routes/drivers");
 // const suppliers = require("./routes/suppliers");
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+
 app.get('/', (req, res) => {
     res.render('index');
 });
-app.use("/hub", hub);
-// Cette route intercepte le clic sur une carte (ex: /qg/ecommerce)
-app.get('/qg/:metier', (req, res) => {
-    const metierSlug = req.params.metier;
-    // 1. Trouve le métier dans ton tableau METIERS[]
-    const metierData = METIERS.find(m => m.mod === metierSlug);
 
-    // 2. S'il existe, rend la page 'qg-template.ejs' avec ses données
-    // Si tu as une base de données, tu passeras d'autres infos ici
-    if (metierData) {
-        res.render('qg-template', { 
-            metier: metierData.title[currentLang] 
-        });
-    } else {
-        // Redirige vers le hub si le métier n'existe pas
-        res.redirect('/hub'); 
-    }
+app.use("/hub", hub);
+
+// Cette route intercepte le clic sur une carte (ex: /qg/ecommerce)
+// ET C'EST ICI QUE TU DOIS FAIRE ATTENTION :
+// Dans le nouveau hub.ejs, les liens sont formatés comme /qg/votre-metier
+// Ton EJS 'qg-template' doit être prêt à recevoir la variable 'metier'
+app.get('/qg/:metier', (req, res) => {
+    res.render('qg-template', { metier: req.params.metier });
 });
+
 // ======================================================
 // Vérification
 // ======================================================
 
 if (!CONFIG.AIRTABLE.API_KEY) {
-
     console.log("❌ AIRTABLE_API_KEY manquante");
-
 } else {
-
     console.log("✅ Airtable connecté");
-
 }
 
 if (!CONFIG.AIRTABLE.BASE_ID) {
-
     console.log("❌ AIRTABLE_BASE_ID manquant");
-
 }
 
 console.log("🚀 SAMII OS démarre...");
@@ -81,104 +70,62 @@ app.use("/settings", settings);
 app.use("/marketplace", marketplace);
 app.use("/drivers", drivers);
 // app.use("/suppliers", suppliers);
+
 // ======================================================
 // CHAT SAMII V1
 // ======================================================
 
 app.post("/api/chat", async (req, res) => {
-
     try {
-
         const message = req.body.message;
-
         if (!message) {
-
             return res.json({
-
                 success:false,
-
                 reply:"Écris un message."
-
             });
-
         }
 
         const response = await axios.post(
-
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + CONFIG.GEMINI.API_KEY,
-
             {
-
                 contents:[
-
                     {
-
                         parts:[
-
                             {
-
 text:`
-
 Tu es SAMII.
-
 Tu aides uniquement les e-commerçants.
-
 Tu réponds en français.
-
 Tu es professionnel.
-
 Tu fais des réponses courtes.
-
 Si quelqu'un demande son inscription :
-
 "Votre compte est en cours de validation.
 Le délai est de 24 à 48 heures.
 Merci de faire partie des 10 000 partenaires fondateurs."
-
 Question :
-
 ${message}
-
 `
-
                             }
-
                         ]
-
                     }
-
                 ]
-
             }
-
         );
 
         const reply=response.data.candidates[0].content.parts[0].text;
 
         res.json({
-
             success:true,
-
             reply
-
         });
-
     }
-
     catch(err){
-
         console.log(err.response?.data || err.message);
-
         res.json({
-
             success:false,
-
             reply:"SAMII démarre actuellement. Réessaie dans quelques instants."
-
         });
-
     }
-
 });
 
 // ======================================================
@@ -186,7 +133,5 @@ ${message}
 // ======================================================
 
 app.listen(CONFIG.PORT, () => {
-
 console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
-
 });
