@@ -5,22 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QG · OG EMPIRE · Centre de Commandement</title>
 
-    <!-- POLICES : Cinzel pour le luxe, Inter pour le corps -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-    <!-- ICÔNES : Bibliothèque Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- FEUILLE DE STYLE PRINCIPALE -->
     <link rel="stylesheet" href="/css/qg-style.css">
 </head>
-<body class="stagger-in"> <!-- Animation d'entrée globale -->
+<body class="stagger-in"> <div class="og-shell">
 
-    <!-- CONTENEUR GLOBAL (SHELL) : Simule le cockpit -->
-    <div class="og-shell">
-
-        <!-- SIDEBAR : Console de Navigation (Gauche) -->
         <aside class="og-sidebar og-sidebar--nav">
             <div class="sidebar-header">
                 <h1 class="og-gold-text og-h3">OG · EMPIRE</h1>
@@ -41,20 +34,17 @@
             </div>
         </aside>
 
-        <!-- SIDEBAR : Console Sociale (Droite) -->
         <aside class="og-sidebar og-sidebar--social">
             <div class="sidebar-header">
                 <h4 class="og-h5 og-text-muted">RÉSEAUX SOCIAUX</h4>
             </div>
 
-            <!-- Zone Scrollable pour les réseaux -->
             <div class="scroll-area">
                 <div class="network-cluster stagger-children">
                     <a href="#" class="net-link connected"><i data-lucide="twitter"></i> Twitter</a>
                     <a href="#" class="net-link connected"><i data-lucide="linkedin"></i> LinkedIn</a>
                     <a href="#" class="net-link connected"><i data-lucide="disc3"></i> Discord</a>
-                    <!-- Ajoute les autres réseaux ici -->
-                </div>
+                    </div>
             </div>
 
             <div class="sidebar-footer footer-bottom">
@@ -63,61 +53,29 @@
             </div>
         </aside>
 
-        <!-- ZONE PRINCIPALE (COCKPIT) : Cartes & Données -->
         <main class="og-main">
-            <!-- GRILLE D'ANALYSE : Cartes en verre (Top) -->
-            <section class="analysis-grid stagger-children">
-
-                <!-- Carte Chiffre d'Affaires -->
-                <article class="tech-card hover-tilt">
-                    <h3 class="card-title">Chiffre d'Affaires</h3>
-                    <span class="stat-num countup" data-to="125987">125k</span>
-                    <p class="card-sub">CR</p>
-                    <div class="trend-indicator up">+12% vs dernier mois</div>
-                </article>
-
-                <!-- Carte Colis en cours -->
-                <article class="tech-card hover-tilt">
-                    <h3 class="card-title">Colis en cours</h3>
-                    <span class="stat-num countup" data-to="42">42</span>
-                    <p class="card-sub">Livraisons actives</p>
-                    <div class="trend-indicator up">Système OK</div>
-                </article>
-
-                <!-- Carte Arsenal (avec bouton) -->
-                <article class="tech-card arsenal-card hover-tilt" onclick="window.location.href='/arsenal'">
-                    <h3 class="card-title">Mon Arsenal</h3>
-                    <div class="arsenal-icons">
-                        <i data-lucide="shield-check"></i>
-                        <i data-lucide="zap"></i>
-                        <i data-lucide="target"></i>
-                    </div>
-                    <button class="btn-card-action">Gérer mes Cartes</button>
-                </article>
-
+            <section class="analysis-grid-6 stagger-children">
+                <div class="tech-card small hover-tilt">CA Hebdo <span>58k CR</span></div>
+                <div class="tech-card small hover-tilt">Colis Actifs <span>42</span></div>
+                <div class="tech-card small hover-tilt">Trafic Réseau <span>Optimale</span></div>
+                <div class="tech-card small hover-tilt">Alliés Connectés <span>18</span></div>
+                <div class="tech-card small hover-tilt">Opportunités <span>7</span></div>
+                <div class="tech-card small hover-tilt">Santé Système <span>98%</span></div>
             </section>
 
-            <!-- COEUR SAMII : Sphère animée + Contrôles (Centre) -->
             <section class="samii-core stagger-children">
-                <div class="samii-sphere-container">
-                    <!-- Conteneur pour l'animation de la sphère -->
-                    <div class="samii-sphere-glow">
-                        <div class="samii-sphere"></div>
-                    </div>
-                    <!-- Particules flottantes autour -->
-                    <div class="particle-field"></div>
+                <div class="samii-globe-container">
+                    <canvas id="globeCanvas"></canvas> <div class="globe-overlay-glow"></div>
                 </div>
                 <div class="samii-controls">
-                    <div class="status-indicator blinking"></div>
-                    <button class="btn-power on">SAMII · SYSTÈME ACTIF</button>
-                    <p class="og-text-muted og-mono">Analyses en temps réel : ON</p>
+                    <button class="btn-power on">SYSTÈME OPÉRATIONNEL</button>
+                    <div class="status-light blinking"></div>
                 </div>
             </section>
         </main>
 
     </div>
 
-    <!-- SCRIPT PRINCIPAL : Inclut la logique des compteurs et de la sphère -->
     <script src="/js/qg.js"></script>
 </body>
 </html>
