@@ -1,23 +1,11 @@
 /* ==========================================================================
    OG EMPIRE — QG — STYLES (Premium AAA)
+   Version Intégrale : Noir / Or / Bleu Néon
    ========================================================================== */
 
-/* 1. Variables & Reset */
-/* FORCE LE RESET */
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    width: 100%;
-    background-color: #050505 !important; /* Noir profond */
-}
-
-/* Debug visuel : Si tu vois un contour rouge, ton CSS est bien chargé */
-.og-layout {
-    display: flex !important;
-    width: 100vw;
-    height: 100vh;
-}
+/* ----------------------------------------------------------
+   1. Variables & Reset Global
+   ---------------------------------------------------------- */
 :root {
     /* Palette */
     --og-black: #050505;
@@ -31,7 +19,7 @@ html, body {
     --og-text: #FFFFFF;
     --og-text-muted: #999999;
     --og-line: rgba(255, 255, 255, 0.08);
-    --og-line-strong: rgba(240, 198, 81, 0.25); /* Or fort */
+    --og-line-strong: rgba(240, 198, 81, 0.4);
 
     /* Effets */
     --glass-bg: rgba(20, 20, 22, 0.65);
@@ -39,37 +27,40 @@ html, body {
     --glass-blur: blur(25px);
     --shadow-premium: 0 10px 30px rgba(0,0,0,0.5);
     --glow-gold: 0 0 15px rgba(240, 198, 81, 0.3);
+    --glow-samii: 0 0 20px rgba(139, 92, 246, 0.2);
 
     /* Layout */
     --sidebar-w: 280px;
     --sidebar-w-collapsed: 80px;
+    --header-h: 40vh;
 
     /* Animations */
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-    background-color: var(--og-black);
+/* Reset & Base (Basé sur votre début de code) */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background-color: var(--og-black) !important;
     color: var(--og-text);
     font-family: 'Inter', sans-serif;
     font-weight: 300;
     font-size: 14px;
     line-height: 1.5;
     overflow-x: hidden;
-    min-height: 100vh;
     display: flex;
 }
 
 /* Typographie utilitaire */
 .og-mono { font-family: 'JetBrains Mono', monospace; }
-.og-h1 { font-family: 'Cinzel', serif; font-weight: 900; font-size: 32px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 30px; }
+.og-h1 { font-family: 'Cinzel', serif; font-weight: 900; font-size: 32px; text-transform: uppercase; letter-spacing: 0.08em; }
 .og-h2 { font-family: 'Cinzel', serif; font-weight: 700; font-size: 20px; letter-spacing: 0.06em; margin-bottom: 15px; }
 .og-gold-text { color: var(--og-gold); text-shadow: var(--glow-gold); }
-.og-samii-text { color: var(--og-samii-light); }
-.og-subtitle { color: var(--og-text-muted); margin-bottom: 5px; }
+.og-samii-text { color: var(--og-samii-light); text-shadow: var(--glow-samii); }
+.og-subtitle { color: var(--og-text-muted); margin-bottom: 5px; font-weight: 400;}
 .og-highlight { color: var(--og-neon-blue); font-weight: 600; }
 
 /* Badges */
@@ -79,10 +70,19 @@ body {
 
 @keyframes og-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-/* 2. Layout Général */
-.og-layout { display: flex; width: 100%; position: relative; }
+/* ----------------------------------------------------------
+   2. Layout Principal
+   ---------------------------------------------------------- */
+.og-layout {
+    display: flex;
+    width: 100vw;
+    min-height: 100vh;
+    position: relative;
+}
 
-/* 3. Sidebar */
+/* ----------------------------------------------------------
+   3. Sidebar
+   ---------------------------------------------------------- */
 .og-sidebar {
     width: var(--sidebar-w);
     background: var(--og-bg);
@@ -95,7 +95,7 @@ body {
     left: 0;
     top: 0;
     z-index: 100;
-    overflow: hidden;
+    overflow: hidden; /* Cache le texte quand réduite */
 }
 
 .og-sidebar.collapsed { width: var(--sidebar-w-collapsed); }
@@ -119,4 +119,177 @@ body {
 .og-sidebar__brand { display: flex; flex-direction: column; opacity: 1; transition: opacity 0.3s; white-space: nowrap; }
 .og-sidebar.collapsed .og-sidebar__brand { opacity: 0; }
 
-.og-sidebar__name { font-family: '
+.og-sidebar__name { font-family: 'Cinzel', serif; font-weight: 700; color: var(--og-gold); font-size: 14px; letter-spacing: 0.12em; }
+.og-sidebar__tag { font-size: 10px; color: var(--og-text-muted); letter-spacing: 0.1em; margin-top: 2px; }
+
+.og-sidebar__nav {
+    flex: 1;
+    padding: 30px 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    overflow-y: auto;
+}
+.og-sidebar__nav::-webkit-scrollbar { width: 4px; }
+.og-sidebar__nav::-webkit-scrollbar-thumb { background: var(--og-line); border-radius: 2px; }
+
+.og-sidebar__link {
+    display: flex; align-items: center; gap: 15px;
+    padding: 12px 13px;
+    border-radius: 8px;
+    color: var(--og-text-muted);
+    text-decoration: none;
+    transition: all 0.3s var(--ease-out);
+    position: relative;
+}
+
+.og-sidebar__link:hover { background: rgba(255,255,255,0.03); color: var(--og-gold); }
+
+.og-sidebar__link.active {
+    background: linear-gradient(90deg, rgba(240, 198, 81, 0.08), rgba(240, 198, 81, 0.01));
+    color: var(--og-gold);
+    box-shadow: inset 2px 0 0 var(--og-gold);
+}
+
+.og-sidebar__link i { width: 20px; height: 20px; flex-shrink: 0; stroke-width: 1.6;}
+.og-sidebar__link span { transition: opacity 0.3s; white-space: nowrap;}
+.og-sidebar.collapsed .og-sidebar__link span { opacity: 0; }
+
+.og-sidebar__divider { height: 1px; background: var(--og-line); margin: 8px 0; }
+
+/* Lien Spécial SAMII dans la sidebar */
+.og-sidebar__link--samii { color: var(--og-samii); }
+.og-sidebar__link--samii:hover { color: var(--og-samii-light); }
+.og-sidebar__link--samii.active { background: linear-gradient(90deg, rgba(139, 92, 246, 0.08), transparent); color: var(--og-samii-light); box-shadow: inset 2px 0 0 var(--og-samii); }
+
+.og-sidebar__footer { padding: 20px; border-top: var(--glass-border); display: flex; justify-content: flex-end; }
+.og-sidebar__toggle {
+    background: none; border: none; cursor: pointer;
+    color: var(--og-text-muted);
+    transition: color 0.3s, transform 0.4s var(--ease-out);
+    padding: 5px;
+}
+.og-sidebar.collapsed .og-sidebar__toggle i { transform: rotate(180deg); }
+.og-sidebar__toggle:hover { color: var(--og-gold); }
+
+/* ----------------------------------------------------------
+   4. Contenu Principal
+   ---------------------------------------------------------- */
+.og-main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex; flex-direction: column;
+    transition: margin-left 0.4s var(--ease-out);
+    position: relative;
+    background: linear-gradient(135deg, #0a0a0b 0%, #030303 100%);
+}
+
+.og-sidebar.collapsed ~ .og-main { margin-left: var(--sidebar-w-collapsed); }
+
+/* Header Futuriste */
+.og-header {
+    height: var(--header-h);
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--og-bg);
+    overflow: hidden;
+    border-bottom: var(--glass-border);
+    margin-bottom: 40px;
+}
+
+.og-header__bg {
+    position: absolute;
+    inset: 0;
+    /* Placeholder Ville */
+    background: url('https://images.unsplash.com/photo-1519608487953-e999c86e7455?q=80') center/cover no-repeat;
+    filter: brightness(0.4) contrast(1.2);
+    z-index: 1;
+}
+
+.og-header__halo {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60vw; height: 60vw;
+    background: radial-gradient(circle, rgba(240, 198, 81, 0.1) 0%, transparent 70%);
+    z-index: 2;
+    animation: og-glow 6s infinite alternate;
+}
+
+@keyframes og-glow { 0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.9); } 100% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); } }
+
+.og-header__content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 0 20px;
+    animation: og-rise 0.8s var(--ease-out);
+}
+
+@keyframes og-rise { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+
+/* ----------------------------------------------------------
+   5. Dashboard & Cartes Premium
+   ---------------------------------------------------------- */
+.og-dashboard {
+    padding: 0 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+/* Style des Cartes */
+.og-card {
+    background: var(--glass-bg);
+    border: var(--glass-border);
+    backdrop-filter: var(--glass-blur);
+    border-radius: 16px;
+    padding: 25px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
+}
+
+/* Effet de bordure lumineuse au survol sur TOUTES les cartes */
+.og-card::before {
+    content: '';
+    position: absolute; inset: -2px;
+    border-radius: 18px;
+    padding: 1px;
+    background: linear-gradient(135deg, var(--og-gold-dark), transparent, var(--og-gold-dark));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0; /* Invisible par défaut */
+    transition: opacity 0.3s;
+}
+
+.og-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), var(--glow-gold);
+}
+.og-card:hover::before { opacity: 1; } /* Apparition de la bordure or */
+
+.card-icon-top {
+    position: absolute; top: 25px; right: 25px;
+    color: var(--og-text-faint);
+    opacity: 0.5;
+}
+.card-icon-top i { width: 24px; height: 24px; }
+
+.stat-box { margin: 20px 0; }
+.og-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px; font-weight: 700;
+    color: var(--og-text);
+}
+/* La classe 'countup' via JS animera ce nombre */
+
+.trend-up { color: #4ade80; font-weight: 500; font-size: 12px;}
+.trend-down { color: #ef4444; font-weight: 500; font-size: 12px;}
+
+/* Barre de progression */
+.progress-bar-bg { height: 4px; background: var(--og-line); border-radius: 2px; margin-top: 10px; overflow: hidden;}
+.progress-bar-fill {
+    display: block; height: 100%;
+    background: var(--grad-gold); /* Déf
