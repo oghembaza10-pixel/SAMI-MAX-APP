@@ -38,7 +38,9 @@ app.use("/hub", hub);
 app.get('/qg/:metier', (req, res) => {
     res.render('qg-template', { metier: req.params.metier });
 });
-
+app.get('/samii', (req, res) => {
+    res.render('samii');
+});
 // ======================================================
 // Vérification
 // ======================================================
