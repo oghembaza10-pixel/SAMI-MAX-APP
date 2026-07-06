@@ -3,79 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QG · OG EMPIRE · Centre de Commandement</title>
+    <title>QG · <%= metier.toUpperCase() %> · OG Empire</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="/css/qg-style.css">
 </head>
-<body class="stagger-in"> <div class="og-shell">
+<body>
 
-        <aside class="og-sidebar og-sidebar--nav">
-            <div class="sidebar-header">
-                <h1 class="og-gold-text og-h3">OG · EMPIRE</h1>
+<div class="qg-shell">
+
+    <!-- SIDEBAR UNIQUE : nav + modules + SAMII + paramètres -->
+    <aside class="qg-sidebar" id="og-sidebar">
+
+        <div class="qg-sidebar__top">
+            <a href="/hub" class="qg-logo">
+                <img src="/og.png" alt="OG">
+                <span class="qg-logo__text">OG · EMPIRE</span>
+            </a>
+            <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar">
+                <i data-lucide="chevrons-left"></i>
+            </button>
+        </div>
+
+        <nav class="qg-nav">
+            <a href="/hub" class="qg-nav__item">
+                <i data-lucide="layout-grid"></i><span>Hub</span>
+            </a>
+            <a href="/marketplace" class="qg-nav__item">
+                <i data-lucide="store"></i><span>Marketplace</span>
+            </a>
+            <a href="/community" class="qg-nav__item">
+                <i data-lucide="users"></i><span>Community</span>
+            </a>
+            <a href="/academy" class="qg-nav__item">
+                <i data-lucide="graduation-cap"></i><span>Academy</span>
+            </a>
+
+            <div class="qg-nav__divider"></div>
+
+            <a href="/qg/<%= metier %>/affaires" class="qg-nav__item active">
+                <i data-lucide="briefcase"></i><span>Mes affaires</span>
+            </a>
+            <a href="/qg/<%= metier %>/connecter" class="qg-nav__item">
+                <i data-lucide="plug-zap"></i><span>Connecter mes outils</span>
+            </a>
+            <a href="/qg/<%= metier %>/outils" class="qg-nav__item">
+                <i data-lucide="wrench"></i><span>Mes outils</span>
+            </a>
+            <a href="/arsenal" class="qg-nav__item">
+                <i data-lucide="sword"></i><span>Arsenal</span>
+            </a>
+            <a href="/coffre" class="qg-nav__item">
+                <i data-lucide="vault"></i><span>Coffre OG</span>
+            </a>
+
+            <div class="qg-nav__divider"></div>
+
+            <!-- SAMII : module comme les autres, avec statut ON/OFF -->
+            <a href="/samii" class="qg-nav__item qg-nav__item--samii">
+                <i data-lucide="bot"></i><span>SAMII</span>
+                <span class="qg-status-dot qg-status-dot--on" id="samii-status-dot" title="SAMII actif"></span>
+            </a>
+        </nav>
+
+        <div class="qg-sidebar__bottom">
+            <a href="/settings" class="qg-nav__item">
+                <i data-lucide="settings"></i><span>Paramètres</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="qg-main">
+
+        <!-- TOPBAR -->
+        <header class="qg-topbar">
+            <div class="qg-topbar__breadcrumb">
+                <span class="qg-mono">QG</span>
+                <i data-lucide="chevron-right"></i>
+                <span class="qg-topbar__metier"><%= metier.toUpperCase() %></span>
             </div>
-
-            <nav class="sidebar-nav">
-                <a href="/hub" class="active"><i data-lucide="layout-grid"></i> Hub</a>
-                <a href="/marketplace"><i data-lucide="store"></i> Marketplace</a>
-                <a href="/community"><i data-lucide="users"></i> Community</a>
-                <a href="/academy"><i data-lucide="graduation-cap"></i> Academy</a>
-                <a href="/affaires"><i data-lucide="briefcase"></i> Mes Affaires</a>
-                <a href="/tools-connect"><i data-lucide="plug-zap"></i> Connecter mes outils</a>
-                <a href="/tools-mine"><i data-lucide="wrench"></i> Mes outils</a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <button class="btn-sidebar-test">TEST</button>
+            <div class="qg-topbar__actions">
+                <button class="qg-icon-btn" title="Notifications">
+                    <i data-lucide="bell"></i>
+                </button>
             </div>
-        </aside>
+        </header>
 
-        <aside class="og-sidebar og-sidebar--social">
-            <div class="sidebar-header">
-                <h4 class="og-h5 og-text-muted">RÉSEAUX SOCIAUX</h4>
+        <!-- BANDEAU CYBER -->
+        <section class="qg-hero">
+            <div class="qg-hero__grid"></div>
+            <div class="qg-hero__glow qg-hero__glow--gold"></div>
+            <div class="qg-hero__glow qg-hero__glow--cyan"></div>
+            <div class="qg-hero__content">
+                <span class="qg-eyebrow">Centre de commandement</span>
+                <h1>Votre QG <%= metier.toUpperCase() %></h1>
+                <p>Pilotez votre activité, vos outils et vos missions depuis un seul endroit.</p>
             </div>
+        </section>
 
-            <div class="scroll-area">
-                <div class="network-cluster stagger-children">
-                    <a href="#" class="net-link connected"><i data-lucide="twitter"></i> Twitter</a>
-                    <a href="#" class="net-link connected"><i data-lucide="linkedin"></i> LinkedIn</a>
-                    <a href="#" class="net-link connected"><i data-lucide="disc3"></i> Discord</a>
-                    </div>
-            </div>
+        <!-- DASHBOARD -->
+        <div class="qg-section-title">
+            <i data-lucide="activity"></i>
+            <span>Vue d'ensemble</span>
+        </div>
 
-            <div class="sidebar-footer footer-bottom">
-                <a href="/samii" class="net-link og-samii-text"><i data-lucide="bot"></i> SAMII</a>
-                <a href="/settings" class="net-link"><i data-lucide="settings"></i> Paramètres</a>
-            </div>
-        </aside>
+        <section class="qg-dashboard">
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="trending-up"></i></div>
+                <span class="qg-card__value countup" data-to="12480">0</span>
+                <span class="qg-card__label">Revenus (CR)</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="eye"></i></div>
+                <span class="qg-card__value countup" data-to="3820">0</span>
+                <span class="qg-card__label">Visiteurs</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="package"></i></div>
+                <span class="qg-card__value countup" data-to="214">0</span>
+                <span class="qg-card__label">Commandes</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="target"></i></div>
+                <span class="qg-card__value countup" data-to="7">0</span>
+                <span class="qg-card__label">Missions actives</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="bar-chart-3"></i></div>
+                <span class="qg-card__value countup" data-to="68">0</span>
+                <span class="qg-card__label">Progression (%)</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="bell-ring"></i></div>
+                <span class="qg-card__value countup" data-to="3">0</span>
+                <span class="qg-card__label">Alertes</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="grid-3x3"></i></div>
+                <span class="qg-card__value countup" data-to="9">0</span>
+                <span class="qg-card__label">Modules installés</span>
+            </article>
+        </section>
 
-        <main class="og-main">
-            <section class="analysis-grid-6 stagger-children">
-                <div class="tech-card small hover-tilt">CA Hebdo <span>58k CR</span></div>
-                <div class="tech-card small hover-tilt">Colis Actifs <span>42</span></div>
-                <div class="tech-card small hover-tilt">Trafic Réseau <span>Optimale</span></div>
-                <div class="tech-card small hover-tilt">Alliés Connectés <span>18</span></div>
-                <div class="tech-card small hover-tilt">Opportunités <span>7</span></div>
-                <div class="tech-card small hover-tilt">Santé Système <span>98%</span></div>
-            </section>
+        <!-- ARSENAL (aperçu) -->
+        <div class="qg-section-title">
+            <i data-lucide="sword"></i>
+            <span>Arsenal</span>
+        </div>
 
-            <section class="samii-core stagger-children">
-                <div class="samii-globe-container">
-                    <canvas id="globeCanvas"></canvas> <div class="globe-overlay-glow"></div>
-                </div>
-                <div class="samii-controls">
-                    <button class="btn-power on">SYSTÈME OPÉRATIONNEL</button>
-                    <div class="status-light blinking"></div>
-                </div>
-            </section>
-        </main>
+        <section class="qg-arsenal">
+            <article class="qg-arsenal-card">
+                <i data-lucide="megaphone"></i>
+                <h3>Boost Marketing</h3>
+                <span class="qg-badge">Niveau 2</span>
+            </article>
+            <article class="qg-arsenal-card">
+                <i data-lucide="radar"></i>
+                <h3>Radar Opportunités</h3>
+                <span class="qg-badge">Niveau 1</span>
+            </article>
+            <article class="qg-arsenal-card">
+                <i data-lucide="shield"></i>
+                <h3>Forteresse</h3>
+                <span class="qg-badge">Niveau 3</span>
+            </article>
+            <article class="qg-arsenal-card qg-arsenal-card--more">
+                <i data-lucide="plus-circle"></i>
+                <h3>Voir l'Arsenal</h3>
+            </article>
+        </section>
 
-    </div>
+    </main>
 
-    <script src="/js/qg.js"></script>
+</div>
+
+<!-- SAMII — sphère flottante permanente, renvoie vers /samii -->
+<a href="/samii" class="samii-orb" aria-label="Ouvrir SAMII">
+    <span class="samii-orb__aura"></span>
+    <span class="samii-orb__aura samii-orb__aura--2"></span>
+    <i data-lucide="bot"></i>
+</a>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="/js/qg.js"></script>
+
 </body>
 </html>
