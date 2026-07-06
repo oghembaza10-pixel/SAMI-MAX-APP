@@ -1,200 +1,33 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QG • <%= metier %> | OG Empire</title>
 
-    <link rel="stylesheet" href="/css/qg.css">
-    <link rel="stylesheet" href="/css/sidebar.css">
-    <link rel="stylesheet" href="/css/dashboard.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>QG | <%= metier %></title>
 
-    <script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="/css/qg.css">
+
 </head>
 
 <body>
 
-<!-- ================= SIDEBAR ================= -->
+<div class="page">
 
-<aside id="og-sidebar" class="sidebar">
+<h1>OG EMPIRE</h1>
 
-    <div class="sidebar-logo">
-        <h2>OG</h2>
-        <span>EMPIRE</span>
-    </div>
+<h2>QG <%= metier.toUpperCase() %></h2>
 
-    <nav class="sidebar-menu">
+<p>Bienvenue dans votre Quartier Général.</p>
 
-        <a href="/hub">
-            <i data-lucide="home"></i>
-            <span>Hub</span>
-        </a>
-
-        <a href="/dashboard">
-            <i data-lucide="layout-dashboard"></i>
-            <span>Dashboard</span>
-        </a>
-
-        <a href="/marketplace">
-            <i data-lucide="shopping-cart"></i>
-            <span>Marketplace</span>
-        </a>
-
-        <a href="/community">
-            <i data-lucide="users"></i>
-            <span>Community</span>
-        </a>
-
-        <a href="/academy">
-            <i data-lucide="graduation-cap"></i>
-            <span>Academy</span>
-        </a>
-
-        <a href="/samii">
-            <i data-lucide="bot"></i>
-            <span>SAMII IA</span>
-        </a>
-
-        <a href="/arsenal">
-            <i data-lucide="shield"></i>
-            <span>Arsenal</span>
-        </a>
-
-        <a href="/coffre">
-            <i data-lucide="lock"></i>
-            <span>Coffre</span>
-        </a>
-
-        <a href="/analyse">
-            <i data-lucide="brain"></i>
-            <span>Analyse IA</span>
-        </a>
-
-        <a href="/parametres">
-            <i data-lucide="settings"></i>
-            <span>Paramètres</span>
-        </a>
-
-    </nav>
-
-</aside>
-
-<!-- ================= CONTENU ================= -->
-
-<main class="main">
-
-<header class="hero">
-
-    <div>
-
-        <h1>QG <%= metier.toUpperCase() %></h1>
-
-        <p>NIVEAU I • SOLDAT</p>
-
-        <small>Votre Quartier Général est opérationnel.</small>
-
-    </div>
-
-</header>
-
-<section class="cards">
-
-<div class="card">
-
-<h2>Mission</h2>
-
-<p>
-
-Votre empire est prêt.
-
-Les modules seront débloqués progressivement.
-
-</p>
+<button>Tester</button>
 
 </div>
-
-<div class="card">
-
-<h2>Revenus</h2>
-
-<h3>0 Crédits</h3>
-
-<p>Bientôt connecté aux statistiques.</p>
-
-</div>
-
-<div class="card">
-
-<h2>Visiteurs</h2>
-
-<h3>0</h3>
-
-<p>Temps réel.</p>
-
-</div>
-
-<div class="card">
-
-<h2>SAMII</h2>
-
-<p>Votre IA stratégique attend vos ordres.</p>
-
-<a href="/samii" class="btn">
-
-Ouvrir SAMII
-
-</a>
-
-</div>
-
-</section>
-
-<section class="quick-actions">
-
-<h2>Modules</h2>
-
-<div class="modules">
-
-<a href="/marketplace" class="module">
-🛒 Marketplace
-</a>
-
-<a href="/community" class="module">
-👥 Community
-</a>
-
-<a href="/academy" class="module">
-🎓 Academy
-</a>
-
-<a href="/dashboard" class="module">
-📊 Dashboard
-</a>
-
-<a href="/arsenal" class="module">
-🛡 Arsenal
-</a>
-
-<a href="/coffre" class="module">
-🔒 Coffre
-</a>
-
-</div>
-
-</section>
-
-<footer>
-
-OG EMPIRE • Chaque Général commence Soldat.
-
-</footer>
-
-</main>
 
 <script src="/js/qg.js"></script>
 
 </body>
+
 </html>
