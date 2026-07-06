@@ -16,7 +16,7 @@
 
 <div class="qg-shell">
 
-    <!-- Même sidebar que le QG, pour garder la navigation cohérente -->
+    <!-- Même sidebar que le QG -->
     <aside class="qg-sidebar" id="og-sidebar">
 
         <div class="qg-sidebar__top">
@@ -77,9 +77,117 @@
             </div>
         </header>
 
-        <!-- GLOBE : discret, présent, bleu tech + or -->
-        <section class="samii-hero">
-            <div class="samii-globe">
-                <div class="samii-globe__ring samii-globe__ring--1"></div>
-                <div class="samii-globe__ring samii-globe__ring--2"></div>
-                <div class="samii-globe__ring samii-globe__ring--3"></div>
+        <!-- ESPACE TECH : cartes flottantes -->
+        <section class="samii-space">
+            <div class="samii-space__stars"></div>
+
+            <div class="samii-space__intro">
+                <span class="qg-eyebrow">SAMII · OPÉRATIONNEL</span>
+                <h1>Votre centre de vie stratégique.</h1>
+            </div>
+
+            <div class="samii-float-grid">
+                <article class="samii-float-card f-a">
+                    <i data-lucide="megaphone"></i>
+                    <h3>Marketing</h3>
+                    <span>Boost actif</span>
+                </article>
+                <article class="samii-float-card f-b">
+                    <i data-lucide="compass"></i>
+                    <h3>Opportunités</h3>
+                    <span>3 nouvelles</span>
+                </article>
+                <article class="samii-float-card f-c">
+                    <i data-lucide="line-chart"></i>
+                    <h3>Analyse résultats</h3>
+                    <span>+12% ce mois</span>
+                </article>
+                <article class="samii-float-card f-a">
+                    <i data-lucide="sparkles"></i>
+                    <h3>Conseils SAMII</h3>
+                    <span>2 recommandations</span>
+                </article>
+                <article class="samii-float-card f-b">
+                    <i data-lucide="bell-ring"></i>
+                    <h3>Alertes</h3>
+                    <span>1 urgente</span>
+                </article>
+                <article class="samii-float-card f-c">
+                    <i data-lucide="target"></i>
+                    <h3>Missions</h3>
+                    <span>4 en cours</span>
+                </article>
+                <article class="samii-float-card f-a">
+                    <i data-lucide="gauge"></i>
+                    <h3>Performance</h3>
+                    <span>Excellente</span>
+                </article>
+                <article class="samii-float-card f-b">
+                    <i data-lucide="users"></i>
+                    <h3>Clients & CRM</h3>
+                    <span>142 actifs</span>
+                </article>
+                <article class="samii-float-card f-c">
+                    <i data-lucide="trending-up"></i>
+                    <h3>Revenus prévus</h3>
+                    <span>+8% attendu</span>
+                </article>
+                <article class="samii-float-card f-a">
+                    <i data-lucide="radar"></i>
+                    <h3>Radar concurrentiel</h3>
+                    <span>Surveillance active</span>
+                </article>
+                <article class="samii-float-card f-b">
+                    <i data-lucide="zap"></i>
+                    <h3>Automatisations</h3>
+                    <span>5 actives</span>
+                </article>
+                <article class="samii-float-card f-c">
+                    <i data-lucide="network"></i>
+                    <h3>Réseau global</h3>
+                    <span>17 pays</span>
+                </article>
+            </div>
+
+            <!-- Réseaux sociaux : accès direct en un clic -->
+            <div class="samii-networks">
+                <a href="/connect/instagram" class="samii-network" style="--n:#E1306C"><i data-lucide="instagram"></i></a>
+                <a href="/connect/tiktok" class="samii-network" style="--n:#25F4EE"><i data-lucide="music-2"></i></a>
+                <a href="/connect/youtube" class="samii-network" style="--n:#FF0000"><i data-lucide="youtube"></i></a>
+                <a href="/connect/whatsapp" class="samii-network" style="--n:#25D366"><i data-lucide="message-circle"></i></a>
+                <a href="/connect/linkedin" class="samii-network" style="--n:#0A66C2"><i data-lucide="linkedin"></i></a>
+                <a href="/connect/x" class="samii-network" style="--n:#E7E9EA"><i data-lucide="twitter"></i></a>
+                <a href="/connect/discord" class="samii-network" style="--n:#5865F2"><i data-lucide="message-square"></i></a>
+                <a href="/connect/telegram" class="samii-network" style="--n:#229ED9"><i data-lucide="send"></i></a>
+            </div>
+        </section>
+
+        <!-- CHAT -->
+        <section class="samii-chat">
+            <div class="samii-chat__feed" id="samii-page-feed">
+                <div class="samii-msg samii-msg--bot">
+                    <div class="samii-msg__bubble">
+                        Bienvenue, Général. Je suis <b>SAMII</b>. Comment puis-je vous aider aujourd'hui ?
+                    </div>
+                </div>
+            </div>
+
+            <form class="samii-chat__form" id="samii-page-form">
+                <input type="text" id="samii-page-input" placeholder="Parler à SAMII…" autocomplete="off">
+                <button type="submit" aria-label="Envoyer">
+                    <i data-lucide="arrow-up"></i>
+                </button>
+            </form>
+        </section>
+
+    </main>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="/js/qg.js"></script>
+<script src="/js/samii-page.js"></script>
+
+</body>
+</html>
+    
