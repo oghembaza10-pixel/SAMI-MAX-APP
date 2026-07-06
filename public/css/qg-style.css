@@ -42,10 +42,6 @@ body {
 
 .qg-shell { display: flex; min-height: 100vh; width: 100%; overflow-x: hidden; }
 
-/* ==========================================================================
-   SIDEBAR — sobre, claire
-   ========================================================================== */
-
 .qg-sidebar {
     width: var(--sidebar-w);
     min-width: var(--sidebar-w);
@@ -117,14 +113,8 @@ body {
 
 .qg-sidebar__bottom { margin-top: auto; padding-top: 8px; border-top: rgba(255,255,255,0.06) solid 1px; }
 
-/* ==========================================================================
-   CONTENU PRINCIPAL
-   ========================================================================== */
-
 .qg-main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; max-width: 100%; transition: margin-left .3s var(--ease); }
 .qg-sidebar.collapsed ~ .qg-main { margin-left: var(--sidebar-w-collapsed); }
-
-/* ---- Topbar ---- */
 
 .qg-topbar {
     display: flex; align-items: center; justify-content: space-between;
@@ -154,8 +144,6 @@ body {
 }
 .qg-mobile-menu-btn i { width: 16px; height: 16px; }
 
-/* ---- Bandeau : sobre, une seule accroche ---- */
-
 .qg-hero {
     position: relative;
     padding: 34px 36px;
@@ -171,16 +159,12 @@ body {
 .qg-hero__content h1 { font-family: var(--font-display); font-size: clamp(1.35rem, 2.4vw, 1.85rem); color: #fff; font-weight: 700; }
 .qg-hero__content p { margin-top: 8px; color: var(--text-muted); font-size: .9rem; line-height: 1.6; }
 
-/* ---- Titres de section ---- */
-
 .qg-section-title {
     display: flex; align-items: center; gap: 9px;
     font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
     color: var(--text-muted); margin: 30px 36px 16px;
 }
 .qg-section-title i { width: 14px; height: 14px; color: var(--cyan-tech); }
-
-/* ---- Dashboard : cartes en verre, sobres ---- */
 
 .qg-dashboard {
     display: grid;
@@ -194,19 +178,22 @@ body {
     background: var(--bg-glass);
     backdrop-filter: blur(10px);
     border: var(--border-soft);
-    border-radius: 14px;
-    padding: 20px;
-    display: flex; flex-direction: column; gap: 10px;
-    transition: box-shadow .25s var(--ease), border-color .25s var(--ease), transform .25s var(--ease);
+    border-radius: 16px;
+    padding: 22px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: box-shadow .3s var(--ease), border-color .3s var(--ease), transform .3s var(--ease);
 }
-.qg-card--tilt:hover { border-color: rgba(95,212,255,0.35); box-shadow: var(--cyan-glow); transform: translateY(-2px); }
+.qg-card--tilt:hover { border-color: rgba(95,212,255,0.45); box-shadow: 0 0 30px rgba(95,212,255,0.22); transform: translateY(-4px); }
 
-.qg-card__icon { color: var(--text-muted); }
-.qg-card__icon i { width: 17px; height: 17px; }
-.qg-card__value { font-family: var(--font-body); font-size: 1.65rem; font-weight: 700; color: #fff; letter-spacing: -.01em; }
-.qg-card__label { font-size: .76rem; color: var(--text-muted); }
-
-/* ---- Arsenal ---- */
+.qg-card__icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(95, 212, 255, 0.12);
+    color: var(--cyan-tech);
+}
+.qg-card__icon i { width: 18px; height: 18px; }
+.qg-card__value { font-family: var(--font-body); font-size: 1.7rem; font-weight: 700; color: #fff; letter-spacing: -.01em; }
+.qg-card__label { font-size: .78rem; color: var(--text-muted); }
 
 .qg-arsenal {
     display: grid;
@@ -219,14 +206,14 @@ body {
     background: var(--bg-glass);
     backdrop-filter: blur(10px);
     border: var(--border-soft);
-    border-radius: 14px;
-    padding: 22px 18px;
-    display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-    transition: transform .25s var(--ease), border-color .25s var(--ease), box-shadow .25s var(--ease);
+    border-radius: 16px;
+    padding: 24px 20px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+    transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
 }
 .qg-arsenal-card i { width: 20px; height: 20px; color: var(--gold-og); }
-.qg-arsenal-card h3 { font-size: .88rem; color: var(--text-main); font-weight: 600; }
-.qg-arsenal-card:hover { transform: translateY(-2px); border-color: rgba(197,160,89,0.3); box-shadow: var(--gold-glow); }
+.qg-arsenal-card h3 { font-size: .9rem; color: var(--text-main); font-weight: 600; }
+.qg-arsenal-card:hover { transform: translateY(-4px); border-color: rgba(197,160,89,0.4); box-shadow: 0 0 30px rgba(197,160,89,0.2); }
 
 .qg-badge {
     font-family: var(--font-mono); font-size: .65rem; letter-spacing: .04em;
@@ -240,10 +227,6 @@ body {
     border-style: dashed; color: var(--text-muted);
 }
 .qg-arsenal-card--more h3 { color: var(--text-muted); font-weight: 500; }
-
-/* ==========================================================================
-   SAMII — sphère flottante permanente
-   ========================================================================== */
 
 .samii-orb {
     position: fixed; bottom: 26px; right: 26px; z-index: 200;
@@ -261,10 +244,6 @@ body {
 .samii-orb__aura { position: absolute; inset: -5px; border-radius: 50%; border: 1px solid rgba(95,212,255,0.35); animation: samii-orb-pulse 2.6s ease-out infinite; }
 .samii-orb__aura--2 { animation-delay: 1.3s; }
 @keyframes samii-orb-pulse { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(1.6); opacity: 0; } }
-
-/* ==========================================================================
-   RESPONSIVE — mobile prioritaire
-   ========================================================================== */
 
 @media (max-width: 900px) {
     .qg-sidebar { transform: translateX(-100%); box-shadow: 0 0 40px rgba(0,0,0,0.6); }
