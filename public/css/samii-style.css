@@ -5,8 +5,6 @@
 
 .samii-page { display: flex; flex-direction: column; }
 
-/* ---- ESPACE : fond bleu nuit, pas noir plat ---- */
-
 .samii-space {
     position: relative;
     padding: 40px 40px 30px;
@@ -37,8 +35,6 @@
     color: #fff; margin-top: 10px;
 }
 
-/* ---- Cartes flottantes ---- */
-
 .samii-float-grid {
     position: relative; z-index: 2;
     display: grid;
@@ -51,28 +47,25 @@
 .samii-float-card {
     background: rgba(15, 20, 30, 0.55);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(95, 212, 255, 0.2);
+    border: 1px solid rgba(95, 212, 255, 0.18);
     border-radius: 16px;
-    padding: 20px 16px;
-    display: flex; flex-direction: column; gap: 8px;
-    transition: border-color .3s ease, box-shadow .3s ease;
+    padding: 22px 18px;
+    display: flex; flex-direction: column; gap: 12px;
+    transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
 }
 .samii-float-card:hover {
+    transform: translateY(-4px);
     border-color: var(--cyan-tech);
-    box-shadow: 0 0 24px rgba(95,212,255,0.25);
+    box-shadow: 0 0 28px rgba(95,212,255,0.28);
 }
-.samii-float-card i { width: 20px; height: 20px; color: var(--gold-og); }
-.samii-float-card h3 { font-size: .9rem; color: var(--text-main); margin-top: 2px; }
-.samii-float-card span { font-size: .76rem; color: var(--text-muted); }
-
-.samii-float-card.f-a { animation: samii-float-a 7s ease-in-out infinite; }
-.samii-float-card.f-b { animation: samii-float-b 8.5s ease-in-out infinite; }
-.samii-float-card.f-c { animation: samii-float-c 6.5s ease-in-out infinite; }
-@keyframes samii-float-a { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-@keyframes samii-float-b { 0%,100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
-@keyframes samii-float-c { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-
-/* ---- Réseaux sociaux : accès direct ---- */
+.samii-float-card i {
+    width: 36px; height: 36px; padding: 9px; border-radius: 10px;
+    background: rgba(197, 160, 89, 0.12);
+    color: var(--gold-og);
+    box-sizing: border-box;
+}
+.samii-float-card h3 { font-size: .92rem; color: var(--text-main); margin-top: 2px; font-weight: 600; }
+.samii-float-card span { font-size: .78rem; color: var(--text-muted); }
 
 .samii-networks {
     position: relative; z-index: 2;
@@ -95,8 +88,6 @@
     box-shadow: 0 0 16px color-mix(in srgb, var(--n, var(--cyan-tech)) 45%, transparent);
     transform: scale(1.08);
 }
-
-/* ---- Chat ---- */
 
 .samii-chat {
     flex: 1;
@@ -147,8 +138,6 @@
 }
 .samii-chat__form button:hover { background: #8fe6ff; transform: scale(1.05); }
 .samii-chat__form button i { width: 18px; height: 18px; }
-
-/* ---- Responsive ---- */
 
 @media (max-width: 900px) {
     .samii-space { padding: 28px 20px 20px; }
