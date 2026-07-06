@@ -1,183 +1,147 @@
 // ==========================================================================
-// OG EMPIRE — QG MONDIAL : LOGIQUE JAVASCRIPT (Finalisée)
+// OG EMPIRE — QG : Moteur front-end
 // ==========================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ==========================================================================
-    // 1. INITIALISATION GÉNÉRALE
-    // ==========================================================================
-
-    // Initialisation des icônes Lucide
+    // 1. Icônes Lucide
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 
+    // ======================================================================
+    // 2. SIDEBAR : réduire/étendre (PC) ou tiroir (mobile)
+    // ======================================================================
+    const sidebar = document.getElementById('og-sidebar');
+    const toggleBtn = document.getElementById('og-sidebar-collapse');
+    const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
 
-    // ==========================================================================
-    // 2. COMPTEURS ANIMÉS (Digital Counter)
-    // ==========================================================================
-    // Cible les éléments avec la classe .countup
+    if (sidebar && toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            if (isMobile()) {
+                // Sur mobile : la sidebar s'ouvre/se ferme comme un tiroir
+                sidebar.classList.toggle('mobile-open');
+            } else {
+                // Sur PC : la sidebar se réduit à icônes seules
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('ogSidebarCollapsed', sidebar.classList.contains('collapsed') ? 'true' : 'false');
+            }
+        });
+
+        // Restaurer l'état réduit/étendu au chargement (PC uniquement)
+        if (!isMobile() && localStorage.getItem('ogSidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+        }
+
+        // Fermer le tiroir mobile si on clique en dehors de la sidebar
+        document.addEventListener('click', (e) => {
+            if (isMobile() && sidebar.classList.contains('mobile-open')) {
+                if (!sidebar.contains(e.target) && e.target !== toggleBtn && !toggleBtn.contains(e.target)) {
+                    sidebar.classList.remove('mobile-open');
+                }
+            }
+        });
+    }
+
+    // ======================================================================
+    // 3. COMPTEURS ANIMÉS (cartes du dashboard)
+    // ======================================================================
     const countUpEls = document.querySelectorAll('.countup');
 
     if (countUpEls.length > 0) {
         const startCountUp = (el) => {
             const targetStr = el.getAttribute('data-to');
             if (!targetStr) return;
-            const target = parseInt(targetStr.replace(/\s/g, '')); // Nettoie les espaces
+            const target = parseInt(targetStr.replace(/\s/g, ''));
             if (isNaN(target)) return;
 
             let current = 0;
-            const duration = 1500; // Durée en ms
-            const frameRate = 60; // Images par seconde
+            const duration = 1400;
+            const frameRate = 60;
             const totalFrames = (duration / 1000) * frameRate;
             const increment = target / totalFrames;
 
             const updateCount = () => {
                 current += increment;
                 if (current < target) {
-                    // Affiche le chiffre entier (pas de décimales), format français (espace milliers)
                     el.textContent = Math.ceil(current).toLocaleString('fr-FR');
                     requestAnimationFrame(updateCount);
                 } else {
-                    // Affiche le chiffre final exact
                     el.textContent = target.toLocaleString('fr-FR');
                 }
             };
             updateCount();
         };
 
-        // Intersection Observer : Lance l'anim quand la carte est visible à l'écran
-        const observerOptions = { threshold: 0.5 };
         const countObserver = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     startCountUp(entry.target);
-                    observer.unobserve(entry.target); // N'animer qu'une seule fois
+                    observer.unobserve(entry.target);
                 }
             });
-        }, observerOptions);
+        }, { threshold: 0.4 });
 
         countUpEls.forEach(el => countObserver.observe(el));
     }
 
+    // ======================================================================
+    // 4. EFFET TILT SUR LES CARTES DASHBOARD (desktop uniquement)
+    // ======================================================================
+    const tiltCards = document.querySelectorAll('.qg-card--tilt');
 
-    // ==========================================================================
-    // 3. ANIMATION GLOBE 3D (Canvas)
-    // ==========================================================================
-    const globeCanvas = document.getElementById('globeCanvas');
-
-    if (globeCanvas) {
-        const ctx = globeCanvas.getContext('2d');
-        let time = 0;
-        let particles = [];
-
-        // Fonction pour initialiser/redimensionner les particules
-        const initParticles = () => {
-            const width = globeCanvas.clientWidth;
-            const height = globeCanvas.clientHeight;
-            globeCanvas.width = width;
-            globeCanvas.height = height;
-
-            // Crée des particules aléatoires en 3D
-            particles = Array.from({ length: 180 }, () => ({
-                x: (Math.random() - 0.5) * width,
-                y: (Math.random() - 0.5) * height,
-                z: (Math.random() - 0.5) * width,
-                size: Math.random() * 1.5 + 0.5,
-                // Vitesse de rotation individuelle pour plus de vie
-                speed: Math.random() * 0.001 + 0.0005
-            }));
-        };
-
-        // Boucle d'animation du dessin
-        const drawGlobe = () => {
-            const width = globeCanvas.width;
-            const height = globeCanvas.height;
-            const cx = width / 2;
-            const cy = height / 2;
-
-            // Efface le canvas
-            ctx.clearRect(0, 0, width, height);
-
-            particles.forEach(p => {
-                // Rotation Y (principale) et X (légère)
-                const cosY = Math.cos(time * p.speed);
-                const sinY = Math.sin(time * p.speed);
-                const cosX = Math.cos(time * (p.speed * 0.5));
-                const sinX = Math.sin(time * (p.speed * 0.5));
-
-                // Applique les rotations
-                let rx = p.x * cosY - p.z * sinY; // Rotation Y
-                let rz = p.x * sinY + p.z * cosY;
-                let ry = p.y * cosX - rz * sinX; // Rotation X
-                rz = p.y * sinX + rz * cosX;
-
-                // Perspective (Focale)
-                const fov = 250;
-                const scale = fov / (fov + rz + width/3);
-                const px = rx * scale + cx;
-                const py = ry * scale + cy;
-
-                // Alpha (opacité) : les points derrière sont plus sombres
-                const alpha = scale * 0.6 + 0.2;
-
-                // Dessine le point
-                ctx.fillStyle = `rgba(0, 242, 255, ${alpha})`;
-                ctx.beginPath();
-                ctx.arc(px, py, p.size * scale, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            time += 1;
-            requestAnimationFrame(drawGlobe);
-        };
-
-        // Initialisation du canvas
-        initParticles();
-        drawGlobe();
-
-        // Redimensionnement réactif
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(initParticles, 200);
-        });
-    }
-
-
-    // ==========================================================================
-    // 4. EFFET TILT/PARALLAX SUBTIL SUR LES CARTES (6 petites cartes)
-    // ==========================================================================
-    // Cible les cartes avec les classes .tech-card et .small
-    const smallCards = document.querySelectorAll('.tech-card.small');
-
-    // N'active l'effet que sur les grands écrans (desktop)
-    if (smallCards.length > 0 && window.matchMedia('(min-width: 768px)').matches) {
-        smallCards.forEach(card => {
+    if (tiltCards.length > 0 && window.matchMedia('(min-width: 900px)').matches) {
+        tiltCards.forEach(card => {
             card.addEventListener('mousemove', (e) => {
                 const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left; // Position X de la souris dans la carte
-                const y = e.clientY - rect.top;  // Position Y de la souris dans la carte
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
                 const centerX = rect.width / 2;
                 const centerY = rect.height / 2;
 
-                // Calcule l'inclinaison (valeurs divisées pour un effet subtil)
-                const rotateX = (y - centerY) / 25;
-                const rotateY = (centerX - x) / 25;
+                const rotateX = (y - centerY) / 28;
+                const rotateY = (centerX - x) / 28;
 
-                // Applique la transformation CSS
-                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-3px) scale(1.02)`;
-                // Ajoute un léger glow dynamique au survol (si le CSS le permet)
-                card.style.boxShadow = `0 10px 20px rgba(0,0,0,0.4), var(--og-gold-glow)`;
+                card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
             });
 
-            // Réinitialise la carte quand la souris quitte
             card.addEventListener('mouseleave', () => {
                 card.style.transform = '';
-                card.style.boxShadow = '';
             });
         });
+    }
+
+    // ======================================================================
+    // 5. APPARITION PROGRESSIVE (stagger) des cartes au chargement
+    // ======================================================================
+    const staggerGroups = document.querySelectorAll('.qg-dashboard, .qg-arsenal');
+    staggerGroups.forEach(group => {
+        const items = group.children;
+        Array.from(items).forEach((item, index) => {
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(14px)';
+            item.style.transition = `opacity .5s ease ${index * 0.06}s, transform .5s ease ${index * 0.06}s`;
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    });
+
+    // ======================================================================
+    // 6. STATUT SAMII (point vert/gris dans la sidebar)
+    // ======================================================================
+    // Pour l'instant statique (actif par défaut). Quand le vrai statut de
+    // SAMII sera disponible côté serveur, remplace cette valeur par celle-ci :
+    // ex. const samiiActive = <%- JSON.stringify(samiiActive || true) %>;
+    const samiiActive = true;
+    const samiiDot = document.getElementById('samii-status-dot');
+    if (samiiDot) {
+        samiiDot.classList.toggle('qg-status-dot--on', samiiActive);
+        samiiDot.classList.toggle('qg-status-dot--off', !samiiActive);
+        samiiDot.title = samiiActive ? 'SAMII actif' : 'SAMII inactif';
     }
 
 });
