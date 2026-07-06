@@ -14,32 +14,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // ======================================================================
     const sidebar = document.getElementById('og-sidebar');
     const toggleBtn = document.getElementById('og-sidebar-collapse');
+    const mobileMenuBtn = document.getElementById('qg-mobile-menu-btn');
     const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
 
     if (sidebar && toggleBtn) {
         toggleBtn.addEventListener('click', () => {
             if (isMobile()) {
-                // Sur mobile : la sidebar s'ouvre/se ferme comme un tiroir
                 sidebar.classList.toggle('mobile-open');
             } else {
-                // Sur PC : la sidebar se réduit à icônes seules
                 sidebar.classList.toggle('collapsed');
                 localStorage.setItem('ogSidebarCollapsed', sidebar.classList.contains('collapsed') ? 'true' : 'false');
             }
         });
 
-        // Restaurer l'état réduit/étendu au chargement (PC uniquement)
         if (!isMobile() && localStorage.getItem('ogSidebarCollapsed') === 'true') {
             sidebar.classList.add('collapsed');
         }
 
-        // Fermer le tiroir mobile si on clique en dehors de la sidebar
         document.addEventListener('click', (e) => {
             if (isMobile() && sidebar.classList.contains('mobile-open')) {
-                if (!sidebar.contains(e.target) && e.target !== toggleBtn && !toggleBtn.contains(e.target)) {
+                const clickedToggle = e.target === toggleBtn || toggleBtn.contains(e.target)
+                    || e.target === mobileMenuBtn || (mobileMenuBtn && mobileMenuBtn.contains(e.target));
+                if (!sidebar.contains(e.target) && !clickedToggle) {
                     sidebar.classList.remove('mobile-open');
                 }
             }
+        });
+    }
+
+    // Bouton menu toujours visible sur mobile (dans la topbar) : ouvre/ferme le tiroir
+    if (sidebar && mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
         });
     }
 
@@ -133,9 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ======================================================================
     // 6. STATUT SAMII (point vert/gris dans la sidebar)
     // ======================================================================
-    // Pour l'instant statique (actif par défaut). Quand le vrai statut de
-    // SAMII sera disponible côté serveur, remplace cette valeur par celle-ci :
-    // ex. const samiiActive = <%- JSON.stringify(samiiActive || true) %>;
     const samiiActive = true;
     const samiiDot = document.getElementById('samii-status-dot');
     if (samiiDot) {
