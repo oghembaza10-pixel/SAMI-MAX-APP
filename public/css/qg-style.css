@@ -313,7 +313,8 @@ body {
     .qg-sidebar.collapsed .qg-logo__text,
     .qg-sidebar.collapsed .qg-nav__item span { opacity: 1; width: auto; }
 
-    .qg-main, .qg-sidebar.collapsed ~ .qg-main { margin-left: 0; }
+    .qg-main, .qg-sidebar.collapsed ~ .qg-main { margin-left: 0 !important; width: 100%; }
+.qg-shell { overflow-x: hidden; }
 
     .qg-mobile-menu-btn { display: flex; }
     .qg-collapse-btn { display: none; }
