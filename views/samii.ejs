@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAMII · OG Empire</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/qg-style.css">
+    <link rel="stylesheet" href="/css/samii-style.css">
+</head>
+<body>
+
+<div class="qg-shell">
+
+    <!-- Même sidebar que le QG, pour garder la navigation cohérente -->
+    <aside class="qg-sidebar" id="og-sidebar">
+
+        <div class="qg-sidebar__top">
+            <a href="/hub" class="qg-logo">
+                <img src="/og.png" alt="OG">
+                <span class="qg-logo__text">OG · EMPIRE</span>
+            </a>
+            <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar">
+                <i data-lucide="chevrons-left"></i>
+            </button>
+        </div>
+
+        <nav class="qg-nav">
+            <a href="/hub" class="qg-nav__item">
+                <i data-lucide="layout-grid"></i><span>Hub</span>
+            </a>
+            <a href="/marketplace" class="qg-nav__item">
+                <i data-lucide="store"></i><span>Marketplace</span>
+            </a>
+            <a href="/community" class="qg-nav__item">
+                <i data-lucide="users"></i><span>Community</span>
+            </a>
+            <a href="/academy" class="qg-nav__item">
+                <i data-lucide="graduation-cap"></i><span>Academy</span>
+            </a>
+
+            <div class="qg-nav__divider"></div>
+
+            <a href="/arsenal" class="qg-nav__item">
+                <i data-lucide="sword"></i><span>Arsenal</span>
+            </a>
+            <a href="/coffre" class="qg-nav__item">
+                <i data-lucide="vault"></i><span>Coffre OG</span>
+            </a>
+
+            <div class="qg-nav__divider"></div>
+
+            <a href="/samii" class="qg-nav__item qg-nav__item--samii active">
+                <i data-lucide="bot"></i><span>SAMII</span>
+                <span class="qg-status-dot qg-status-dot--on" id="samii-status-dot" title="SAMII actif"></span>
+            </a>
+        </nav>
+
+        <div class="qg-sidebar__bottom">
+            <a href="/settings" class="qg-nav__item">
+                <i data-lucide="settings"></i><span>Paramètres</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="qg-main samii-page">
+
+        <header class="qg-topbar">
+            <div class="qg-topbar__breadcrumb">
+                <span class="qg-mono">SAMII</span>
+                <i data-lucide="chevron-right"></i>
+                <span class="qg-topbar__metier">Stratège IA</span>
+            </div>
+        </header>
+
+        <!-- GLOBE : discret, présent, bleu tech + or -->
+        <section class="samii-hero">
+            <div class="samii-globe">
+                <div class="samii-globe__ring samii-globe__ring--1"></div>
+                <div class="samii-globe__ring samii-globe__ring--2"></div>
+                <div class="samii-globe__ring samii-globe__ring--3"></div>
