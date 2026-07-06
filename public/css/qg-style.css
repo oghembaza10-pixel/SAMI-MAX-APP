@@ -157,6 +157,16 @@ body {
 .qg-icon-btn i { width: 17px; height: 17px; }
 .qg-icon-btn:hover { color: var(--gold-og); border-color: var(--gold-og); }
 
+/* Bouton menu mobile : masqué sur PC, visible seulement en mobile */
+.qg-mobile-menu-btn {
+    display: none;
+    width: 38px; height: 38px; border-radius: 10px;
+    border: var(--border-gold); background: transparent; color: var(--gold-og);
+    align-items: center; justify-content: center; cursor: pointer;
+    flex-shrink: 0; margin-right: 10px;
+}
+.qg-mobile-menu-btn i { width: 18px; height: 18px; }
+
 /* ---- Bandeau cyber ---- */
 
 .qg-hero {
@@ -304,6 +314,9 @@ body {
     .qg-sidebar.collapsed .qg-nav__item span { opacity: 1; width: auto; }
 
     .qg-main, .qg-sidebar.collapsed ~ .qg-main { margin-left: 0; }
+
+    .qg-mobile-menu-btn { display: flex; }
+    .qg-collapse-btn { display: none; }
 
     .qg-topbar, .qg-hero, .qg-section-title, .qg-dashboard, .qg-arsenal {
         padding-left: 20px; padding-right: 20px;
