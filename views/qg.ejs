@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QG · <%= metier.charAt(0).toUpperCase() + metier.slice(1) %> · OG Empire</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link rel="stylesheet" href="/css/qg-style.css">
+</head>
+<body class="stagger">
+
+    <div class="og-layout">
+
+        <aside class="og-sidebar" id="og-sidebar">
+            <div class="og-sidebar__header">
+                <svg class="og-sidebar__crest" viewBox="0 0 48 48">
+                    <path d="M24 1L42 11V25C42 35.5 33.5 44 24 47C14.5 44 6 35.5 6 25V11L24 1Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <text x="24" y="31" font-family="Cinzel" font-size="16" fill="currentColor" text-anchor="middle">OG</text>
+                </svg>
+                <div class="og-sidebar__brand">
+                    <h1 class="og-sidebar__name">OG · EMPIRE</h1>
+                    <p class="og-sidebar__tag og-mono">Command Center</p>
+                </div>
+            </div>
+
+            <nav class="og-sidebar__nav">
+                <a href="/hub" class="og-sidebar__link"><i data-lucide="layout-grid"></i> <span>Hub</span></a>
+                <a href="/marketplace" class="og-sidebar__link"><i data-lucide="store"></i> <span>Marketplace</span></a>
+                <a href="/community" class="og-sidebar__link"><i data-lucide="users"></i> <span>Community</span></a>
+                <a href="/academy" class="og-sidebar__link"><i data-lucide="graduation-cap"></i> <span>Academy</span></a>
+
+                <div class="og-sidebar__divider"></div>
+
+                <a href="/affaires" class="og-sidebar__link"><i data-lucide="briefcase"></i> <span>Analyser mes affaires</span></a>
+                <a href="/outils" class="og-sidebar__link"><i data-lucide="plug-zap"></i> <span>Connecter mes outils</span></a>
+
+                <div class="og-sidebar__divider"></div>
+
+                <a href="/outils-perso" class="og-sidebar__link"><i data-lucide="wrench"></i> <span>Mes outils</span></a>
+                <a href="/samii" class="og-sidebar__link og-sidebar__link--samii"><i data-lucide="bot"></i> <span>SAMII</span></a>
+                <a href="/arsenal" class="og-sidebar__link active"><i data-lucide="target"></i> <span>Arsenal</span></a>
+                <a href="/coffre" class="og-sidebar__link"><i data-lucide="vault"></i> <span>Coffre OG</span></a>
+
+                <div class="og-sidebar__divider"></div>
+
+                <a href="/settings" class="og-sidebar__link"><i data-lucide="settings"></i> <span>Paramètres</span></a>
+            </nav>
+
+            <div class="og-sidebar__footer">
+                <button class="og-sidebar__toggle" id="og-sidebar-toggle" aria-label="Réduire la sidebar">
+                    <i data-lucide="chevrons-left"></i>
+                </button>
+            </div>
+        </aside>
+
+        <main class="og-main">
+            <header class="og-header">
+                <div class="og-header__bg" id="city-background"></div> <div class="og-header__halo"></div> <div class="og-header__content">
+                    <h1 class="og-h1 og-gold-text">QG <%= metier.toUpperCase() %></h1>
+                    <p class="og-subtitle">Bienvenue dans votre centre de commandement, Général.</p>
+                    <span class="og-badge og-badge--live">Système Opérationnel</span>
+                </div>
+            </header>
+
+            <section class="og-dashboard stagger">
+                <article class="og-card og-card--glass premium-border">
+                    <div class="card-icon-top"><i data-lucide="dollar-sign"></i></div>
+                    <h2 class="og-h2">Revenus</h2>
+                    <div class="stat-box">
+                        <span class="og-num countup" data-to="125987" data-suffix=" CR">0 CR</span>
+                    </div>
+                    <p class="trend-up">+15% vs période</p>
+                </article>
+
+                <article class="og-card og-card--glass premium-border">
+                    <div class="card-icon-top"><i data-lucide="eye"></i></div>
+                    <h2 class="og-h2">Visiteurs</h2>
+                    <div class="stat-box">
+                        <span class="og-num countup" data-to="4592">0</span>
+                    </div>
+                    <p>En ligne : <span class="og-highlight">51</span></p>
+                </article>
+
+                <article class="og-card og-card--glass premium-border">
+                    <div class="card-icon-top"><i data-lucide="shopping-cart"></i></div>
+                    <h2 class="og-h2">Commandes</h2>
+                    <div class="stat-box">
+                        <span class="og-num countup" data-to="189">0</span>
+                    </div>
+                    <p>En attente : <span class="og-highlight">3</span></p>
+                </article>
+
+                <article class="og-card og-card--glass premium-border">
+                    <div class="card-icon-top"><i data-lucide="trending-up"></i></div>
+                    <h2 class="og-h2">Progression</h2>
+                    <div class="stat-box">
+                        <span class="og-num countup" data-to="78" data-suffix="%">0%</span>
+                    </div>
+                    <div class="progress-bar-bg"><span class="progress-bar-fill" style="width: 78%;"></span></div>
+                </article>
+            </section>
+
+            <section class="og-samii-section stagger">
+                 <article class="og-card og-card--glass premium-border samii-panel">
+                    <div class="samii-header">
+                        <h2 class="og-h2 og-samii-text"><i data-lucide="bot"></i> SAMII AI</h2>
+                        <span class="og-badge og-badge--live">Analyse en cours</span>
+                    </div>
+                    <div class="samii-body">
+                        <div class="holographic-avatar">
+                            <div class="holo-ring holo-ring--1"></div>
+                            <div class="holo-ring holo-ring--2"></div>
+                            <div class="holo-core"></div>
+                        </div>
+                        <div class="samii-dialog">
+                            <p>Général, une opportunité d'optimisation de 5% sur la chaîne d'approvisionnement <%= metier %> a été identifiée.</p>
+                            <button class="og-btn og-btn-primary">Voir l'analyse</button>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+             <section class="og-arsenal-section stagger">
+                <h2 class="og-h1">Arsenal Tactique</h2>
+                <div class="arsenal-grid">
+                    <article class="og-card arsenal-card hover-tilt">
+                        <i data-lucide="layers3"></i>
+                        <h3>Module IA</h3>
+                        <p>Lv 3</p>
+                        <span class="og-badge">Équipé</span>
+                    </article>
+                     <article class="og-card arsenal-card hover-tilt">
+                        <i data-lucide="zap"></i>
+                        <h3>Boost</h3>
+                        <p>Vitesse x2</p>
+                        <span class="og-badge og-badge-gold">Actif</span>
+                    </article>
+                     <article class="og-card arsenal-card hover-tilt">
+                        <i data-lucide="shield-check"></i>
+                        <h3>Bouclier</h3>
+                        <p>Anti-Espion</p>
+                        <span class="og-badge">Protégé</span>
+                    </article>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="/js/qg.js"></script>
+</body>
+</html>
