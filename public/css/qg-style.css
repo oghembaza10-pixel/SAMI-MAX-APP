@@ -284,3 +284,177 @@
             transform: translateY(-5px) scale(1.01);
             box-shadow: 0 10px 40px rgba(0,0,0,0.5), var(--og-gold-glow);
         }
+<section class="qg-dashboard">
+            <article class="og-card card-revenus">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                    <h3 class="og-h2" style="margin: 0;">Revenus</h3>
+                    <span class="og-badge og-badge--live">Live</span>
+                </div>
+                <div class="card-body">
+                    <div class="stat-value" style="font-size: 3em; font-weight: 900; color: var(--og-gold); text-shadow: var(--og-gold-glow);">
+                        <span class="countup" data-to="125987">125,987</span> <span style="font-size: 0.4em;">Crédits</span>
+                    </div>
+                    <p class="og-text-muted">+15% vs période précédente</p>
+                </div>
+            </article>
+
+            <article class="og-card card-visiteurs">
+                <h3 class="og-h2">Visiteurs</h3>
+                <div class="card-body">
+                    <div class="stat-value" style="font-size: 3em; font-weight: 900;">
+                        <span class="countup" data-to="4592">4,592</span>
+                    </div>
+                    <p class="og-text-muted">Actuellement en ligne : <span style="color: var(--og-neon-blue);">51</span></p>
+                </div>
+            </article>
+
+            <article class="og-card card-missions">
+                <h3 class="og-h2">Missions</h3>
+                <div class="card-body">
+                    <ul style="list-style: none; color: var(--og-text-muted);">
+                        <li style="margin-bottom: 8px;"><i data-lucide="target" style="width: 16px; color: var(--og-gold);"></i> Optimisation Réseau IA</li>
+                        <li style="margin-bottom: 8px;"><i data-lucide="target" style="width: 16px; color: var(--og-gold);"></i> Expansion Marketplace BZH</li>
+                        <li><i data-lucide="target" style="width: 16px; color: var(--og-gold);"></i> Recrutement Soldat (x3)</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="og-card card-samii" style="border-color: var(--og-samii); box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);">
+                <h3 class="og-h2" style="color: var(--og-samii-light); font-family: 'Cinzel';"><i data-lucide="bot" style="margin-right: 10px;"></i> SAMII</h3>
+                <div class="card-body" style="display: flex; align-items: center; gap: 20px;">
+                    <div class="samii-avatar" style="width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle, var(--og-samii-light) 0%, transparent 70%); position: relative; animation: og-pulse 3s infinite;">
+                        <div style="position: absolute; inset: 5px; border-radius: 50%; border: 2px solid var(--og-samii); background: #000;"></div>
+                    </div>
+                    <div style="flex: 1;">
+                        <p>Général, une opportunité commerciale majeure s'ouvre sur le secteur 7G.</p>
+                        <a href="#" class="og-gold-text" style="font-size: 0.9em; text-decoration: none;">Analyser <i data-lucide="chevron-right" style="width: 14px;"></i></a>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="qg-arsenal" style="padding: 0 40px 40px;">
+            <h2 class="og-h1" style="font-size: 1.5em; margin-bottom: 20px;">Arsenal Tactique</h2>
+            <div class="arsenal-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+                <div class="arsenal-item og-card" style="text-align: center; padding: 15px;">
+                    <i data-lucide="zap" style="color: var(--og-neon-blue); width: 32px; height: 32px; margin-bottom: 10px;"></i>
+                    <h4>Boost Vitesse x2</h4>
+                    <p class="og-badge">Actif</p>
+                </div>
+                <div class="arsenal-item og-card" style="text-align: center; padding: 15px;">
+                    <i data-lucide="award" style="color: var(--og-gold); width: 32px; height: 32px; margin-bottom: 10px;"></i>
+                    <h4>Badge Pionnier</h4>
+                    <p class="og-badge">Rare</p>
+                </div>
+                <div class="arsenal-item og-card" style="text-align: center; padding: 15px;">
+                    <i data-lucide="shield-check" style="color: var(--og-samii); width: 32px; height: 32px; margin-bottom: 10px;"></i>
+                    <h4>Bouclier IA Lv3</h4>
+                    <p class="og-badge">Équipé</p>
+                </div>
+                 <div class="arsenal-item og-card" style="text-align: center; padding: 15px;">
+                    <i data-lucide="layers3" style="color: #fff; width: 32px; height: 32px; margin-bottom: 10px;"></i>
+                    <h4>Carte Territoire</h4>
+                    <p class="og-badge">Commune</p>
+                </div>
+            </div>
+        </section>
+
+        <footer class="og-footer" style="margin-top: auto; border-top: var(--glass-border); padding: 20px 40px; font-size: 0.8em; color: var(--og-text-muted); display: flex; justify-content: space-between;">
+            <span>OG·EMPIRE © 2077</span>
+            <span class="og-mono">LICENCE : SOLDAT-ALPHA</span>
+        </footer>
+
+    </main>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 1. Initialisation des icônes Lucide
+        lucide.createIcons();
+
+        // 2. Gestion de la Sidebar Rétractable
+        const sidebar = document.getElementById('og-sidebar');
+        const toggleBtn = document.getElementById('og-sidebar-collapse');
+        const mainContent = document.querySelector('.og-main');
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            // Stocker l'état dans le localStorage pour la persistance
+            if (sidebar.classList.contains('collapsed')) {
+                localStorage.setItem('ogSidebarCollapsed', 'true');
+            } else {
+                localStorage.setItem('ogSidebarCollapsed', 'false');
+            }
+        });
+
+        // Restaurer l'état de la sidebar au chargement
+        if (localStorage.getItem('ogSidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+        }
+
+        // 3. Compteurs Animés (CountUp simulation)
+        const countUpEls = document.querySelectorAll('.countup');
+
+        const startCountUp = (el) => {
+            const target = parseInt(el.getAttribute('data-to'));
+            let current = 0;
+            const increment = target / 50; // Vitesse d'animation
+            const updateCount = () => {
+                current += increment;
+                if (current < target) {
+                    el.textContent = Math.ceil(current).toLocaleString('fr-FR');
+                    requestAnimationFrame(updateCount);
+                } else {
+                    el.textContent = target.toLocaleString('fr-FR');
+                }
+            };
+            updateCount();
+        };
+
+        // Intersection Observer pour déclencher l'animation quand la carte est visible
+        const observerOptions = { threshold: 0.5 };
+        const countObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    startCountUp(entry.target);
+                    observer.unobserve(entry.target); // N'animer qu'une seule fois
+                }
+            });
+        }, observerOptions);
+
+        countUpEls.forEach(el => countObserver.observe(el));
+
+
+        // 4. Effet Tilt/Parallax subtil sur les cartes (optionnel, très premium)
+        const cards = document.querySelectorAll('.og-card');
+
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left; // position souris dans carte
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                const rotateX = (y - centerY) / 20; // Inclinaison
+                const rotateY = (centerX - x) / 20;
+
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px) scale(1.01)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = ''; // Reset transformation
+            });
+        });
+
+        // 5. Apparition progressive des éléments de la grille (Stagger)
+        const dashboardCards = document.querySelectorAll('.qg-dashboard .og-card');
+        dashboardCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.animation = 'og-rise 0.8s var(--ease-out) forwards';
+            card.style.animationDelay = `${index * 0.15}s`;
+        });
+    });
+</script>
+</body>
+</html>
