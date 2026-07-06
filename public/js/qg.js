@@ -1,48 +1,30 @@
-// /public/js/qg.js
+// ==========================================================================
+// OG EMPIRE — QG MONDIAL : LOGIQUE JAVASCRIPT (Finalisée)
+// ==========================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+
     // ==========================================================================
-    // INITIALISATION GÉNÉRALE
+    // 1. INITIALISATION GÉNÉRALE
     // ==========================================================================
 
-    // 1. Initialisation des icônes Lucide (si non fait dans un partial _head)
+    // Initialisation des icônes Lucide
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 
-    // ==========================================================================
-    // GESTION DE LA SIDEBAR RÉTRACTABLE
-    // ==========================================================================
-    const sidebar = document.getElementById('og-sidebar');
-    const toggleBtn = document.getElementById('og-sidebar-collapse');
-
-    if (sidebar && toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            // Stocker l'état dans le localStorage pour la persistance
-            if (sidebar.classList.contains('collapsed')) {
-                localStorage.setItem('ogSidebarCollapsed', 'true');
-            } else {
-                localStorage.setItem('ogSidebarCollapsed', 'false');
-            }
-        });
-
-        // Restaurer l'état de la sidebar au chargement
-        if (localStorage.getItem('ogSidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
-        }
-    }
 
     // ==========================================================================
-    // COMPTEURS ANIMÉS (Simulation CountUp)
+    // 2. COMPTEURS ANIMÉS (Digital Counter)
     // ==========================================================================
+    // Cible les éléments avec la classe .countup
     const countUpEls = document.querySelectorAll('.countup');
 
     if (countUpEls.length > 0) {
         const startCountUp = (el) => {
             const targetStr = el.getAttribute('data-to');
             if (!targetStr) return;
-            const target = parseInt(targetStr.replace(/\s/g, '')); // Nettoyer les espaces
+            const target = parseInt(targetStr.replace(/\s/g, '')); // Nettoie les espaces
             if (isNaN(target)) return;
 
             let current = 0;
@@ -54,17 +36,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const updateCount = () => {
                 current += increment;
                 if (current < target) {
-                    // Formatage français (espace comme séparateur de milliers)
-                    el.textContent = Math.ceil(current).toLocaleString('fr-FR').replace(/\s/g, '&nbsp;');
+                    // Affiche le chiffre entier (pas de décimales), format français (espace milliers)
+                    el.textContent = Math.ceil(current).toLocaleString('fr-FR');
                     requestAnimationFrame(updateCount);
                 } else {
-                    el.textContent = target.toLocaleString('fr-FR').replace(/\s/g, '&nbsp;');
+                    // Affiche le chiffre final exact
+                    el.textContent = target.toLocaleString('fr-FR');
                 }
             };
             updateCount();
         };
 
-        // Intersection Observer pour déclencher l'animation quand l'élément est visible
+        // Intersection Observer : Lance l'anim quand la carte est visible à l'écran
         const observerOptions = { threshold: 0.5 };
         const countObserver = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
@@ -78,43 +61,123 @@ document.addEventListener('DOMContentLoaded', () => {
         countUpEls.forEach(el => countObserver.observe(el));
     }
 
-    // ==========================================================================
-    // EFFET TILT/PARALLAX SUBTIL SUR LES CARTES (Premium UX)
-    // ==========================================================================
-    const cards = document.querySelectorAll('.og-card');
 
-    if (cards.length > 0 && window.matchMedia('(min-width: 768px)').matches) { // Activer seulement sur desktop
-        cards.forEach(card => {
+    // ==========================================================================
+    // 3. ANIMATION GLOBE 3D (Canvas)
+    // ==========================================================================
+    const globeCanvas = document.getElementById('globeCanvas');
+
+    if (globeCanvas) {
+        const ctx = globeCanvas.getContext('2d');
+        let time = 0;
+        let particles = [];
+
+        // Fonction pour initialiser/redimensionner les particules
+        const initParticles = () => {
+            const width = globeCanvas.clientWidth;
+            const height = globeCanvas.clientHeight;
+            globeCanvas.width = width;
+            globeCanvas.height = height;
+
+            // Crée des particules aléatoires en 3D
+            particles = Array.from({ length: 180 }, () => ({
+                x: (Math.random() - 0.5) * width,
+                y: (Math.random() - 0.5) * height,
+                z: (Math.random() - 0.5) * width,
+                size: Math.random() * 1.5 + 0.5,
+                // Vitesse de rotation individuelle pour plus de vie
+                speed: Math.random() * 0.001 + 0.0005
+            }));
+        };
+
+        // Boucle d'animation du dessin
+        const drawGlobe = () => {
+            const width = globeCanvas.width;
+            const height = globeCanvas.height;
+            const cx = width / 2;
+            const cy = height / 2;
+
+            // Efface le canvas
+            ctx.clearRect(0, 0, width, height);
+
+            particles.forEach(p => {
+                // Rotation Y (principale) et X (légère)
+                const cosY = Math.cos(time * p.speed);
+                const sinY = Math.sin(time * p.speed);
+                const cosX = Math.cos(time * (p.speed * 0.5));
+                const sinX = Math.sin(time * (p.speed * 0.5));
+
+                // Applique les rotations
+                let rx = p.x * cosY - p.z * sinY; // Rotation Y
+                let rz = p.x * sinY + p.z * cosY;
+                let ry = p.y * cosX - rz * sinX; // Rotation X
+                rz = p.y * sinX + rz * cosX;
+
+                // Perspective (Focale)
+                const fov = 250;
+                const scale = fov / (fov + rz + width/3);
+                const px = rx * scale + cx;
+                const py = ry * scale + cy;
+
+                // Alpha (opacité) : les points derrière sont plus sombres
+                const alpha = scale * 0.6 + 0.2;
+
+                // Dessine le point
+                ctx.fillStyle = `rgba(0, 242, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(px, py, p.size * scale, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            time += 1;
+            requestAnimationFrame(drawGlobe);
+        };
+
+        // Initialisation du canvas
+        initParticles();
+        drawGlobe();
+
+        // Redimensionnement réactif
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(initParticles, 200);
+        });
+    }
+
+
+    // ==========================================================================
+    // 4. EFFET TILT/PARALLAX SUBTIL SUR LES CARTES (6 petites cartes)
+    // ==========================================================================
+    // Cible les cartes avec les classes .tech-card et .small
+    const smallCards = document.querySelectorAll('.tech-card.small');
+
+    // N'active l'effet que sur les grands écrans (desktop)
+    if (smallCards.length > 0 && window.matchMedia('(min-width: 768px)').matches) {
+        smallCards.forEach(card => {
             card.addEventListener('mousemove', (e) => {
                 const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left; // position souris dans carte
-                const y = e.clientY - rect.top;
+                const x = e.clientX - rect.left; // Position X de la souris dans la carte
+                const y = e.clientY - rect.top;  // Position Y de la souris dans la carte
                 const centerX = rect.width / 2;
                 const centerY = rect.height / 2;
 
-                // Calcul de l'inclinaison (valeurs réduites pour la subtilité)
-                const rotateX = (y - centerY) / 30;
-                const rotateY = (centerX - x) / 30;
+                // Calcule l'inclinaison (valeurs divisées pour un effet subtil)
+                const rotateX = (y - centerY) / 25;
+                const rotateY = (centerX - x) / 25;
 
-                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px) scale(1.01)`;
-                card.style.boxShadow = `0 15px 40px rgba(0,0,0,0.5), 0 0 15px rgba(240, 198, 81, 0.15)`; // Glow dynamique
+                // Applique la transformation CSS
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-3px) scale(1.02)`;
+                // Ajoute un léger glow dynamique au survol (si le CSS le permet)
+                card.style.boxShadow = `0 10px 20px rgba(0,0,0,0.4), var(--og-gold-glow)`;
             });
 
+            // Réinitialise la carte quand la souris quitte
             card.addEventListener('mouseleave', () => {
-                card.style.transform = ''; // Reset transformation
-                card.style.boxShadow = ''; // Reset shadow
+                card.style.transform = '';
+                card.style.boxShadow = '';
             });
         });
     }
 
-    // ==========================================================================
-    // APPARITION PROGRESSIVE DES CARTES (Stagger effect)
-    // ==========================================================================
-    const dashboardGrid = document.querySelector('.qg-dashboard');
-    if (dashboardGrid) {
-        const dashboardCards = dashboardGrid.querySelectorAll('.og-card');
-        dashboardCards.forEach((card, index) => {
-            card.style.opacity = '0';
-            // Assurez-vous d'avoir l'animation 'og-rise' dans votre css/animations.css
-            card.style.animation = 'og-rise 0.8s var(--ease-out) forwards';
-            card.style.animationDelay = `${index * 0.1}s`; // Délai
+});
