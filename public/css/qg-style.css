@@ -3,6 +3,21 @@
    ========================================================================== */
 
 /* 1. Variables & Reset */
+/* FORCE LE RESET */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background-color: #050505 !important; /* Noir profond */
+}
+
+/* Debug visuel : Si tu vois un contour rouge, ton CSS est bien chargé */
+.og-layout {
+    display: flex !important;
+    width: 100vw;
+    height: 100vh;
+}
 :root {
     /* Palette */
     --og-black: #050505;
