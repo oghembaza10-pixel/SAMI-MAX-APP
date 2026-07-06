@@ -1,40 +1,12 @@
-/* Sidebar : Console sombre */
-.og-sidebar {
-    background: rgba(10, 15, 25, 0.95);
-    border-right: 1px solid rgba(0, 242, 255, 0.2);
-}
-
-/* Réseaux Vert Connecté */
-.net-link.connected {
-    color: #00ff88;
-    text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
-}
-
-/* SAMII Sphère (Le cœur) */
-.samii-sphere {
-    width: 200px; height: 200px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #8B5CF6 0%, #00f2ff 50%, transparent 100%);
-    box-shadow: 0 0 50px rgba(0, 242, 255, 0.5);
-    animation: rotateSphere 10s linear infinite;
-}
-
-/* Cartes Tech (Bleu/Or) */
-.tech-card {
-    border: 1px solid rgba(0, 242, 255, 0.3);
-    background: linear-gradient(135deg, rgba(0, 20, 40, 0.8), rgba(0, 0, 0, 0.9));
-    color: var(--og-gold);
-}
 /* =====================================================================
-   OG EMPIRE — QG MONDIAL : STYLE "CENTRE DE COMMANDEMENT"
-   Palette : Noir Profond, Or Métallique, Bleu Technologie
+   OG EMPIRE — QG MONDIAL : STYLE "CENTRE DE COMMANDEMENT" (Finalisé)
    ===================================================================== */
 
-/* 1. Variables & Reset */
+/* --- Variables & Reset --- */
 :root {
     /* Palette */
-    --og-black: #030509; /* Plus sombre, plus spatial */
-    --og-bg: #0a0f1a;    /* Fond console */
+    --og-black: #030509; /* Noir profond spatial */
+    --og-bg: #0a0f1a;    /* Fond console sombre */
     --og-gold: #D4AF37;  /* Or métallique */
     --og-gold-glow: 0 0 15px rgba(212, 175, 55, 0.5);
     --og-blue-neon: #00f2ff; /* Bleu techno vif */
@@ -42,31 +14,32 @@
     --og-green-connect: #00ff88; /* Vert connecté */
     --og-green-glow: 0 0 10px rgba(0, 255, 136, 0.5);
     --og-text: #e0e6ed;
-    --og-line-blue: rgba(0, 242, 255, 0.2);
-
+    --og-line-blue: rgba(0, 242, 255, 0.15);
     /* Layout */
     --sidebar-w: 260px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
+html, body {
     background-color: var(--og-black);
     color: var(--og-text);
-    font-family: 'Inter', sans-serif; /* Assure-toi d'avoir cette police */
-    display: flex;
-    min-height: 100vh;
-    overflow: hidden; /* Empêche le scroll global, la sidebar et le main scrollent indépendamment */
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Empêche le scroll global */
 }
 
-/* 2. Layout Général */
+/* --- Layout Shell --- */
 .og-shell {
     display: flex;
-    width: 100%;
-    position: relative;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
 }
 
-/* 3. Sidebar : Console de Commande */
+/* --- Sidebar (Console de Commande) --- */
 .og-sidebar {
     width: var(--sidebar-w);
     background: linear-gradient(180deg, rgba(10, 15, 25, 0.98) 0%, rgba(5, 8, 15, 0.98) 100%);
@@ -76,9 +49,10 @@ body {
     flex-direction: column;
     padding: 20px;
     z-index: 10;
+    flex-shrink: 0;
 }
 
-/* Cluster Réseaux Sociaux (Le haut de la sidebar) */
+/* Cluster Réseaux Sociaux (Haut) */
 .network-cluster {
     display: flex;
     flex-direction: column;
@@ -89,15 +63,16 @@ body {
 }
 
 .net-link {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 10px;
     color: var(--og-text);
     text-decoration: none;
     font-size: 13px;
-    font-weight: 500;
     padding: 8px 10px;
     border-radius: 4px;
-    transition: background 0.3s, color 0.3s;
+    transition: all 0.3s;
 }
+
+.net-link i { width: 18px; height: 18px; stroke-width: 1.5; }
 
 .net-link.connected {
     color: var(--og-green-connect);
@@ -109,45 +84,64 @@ body {
     color: var(--og-blue-neon);
 }
 
-/* Navigation Standard (Le bas de la sidebar) */
+/* Navigation (Bas) */
 .og-sidebar__nav {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    flex: 1;
-    overflow-y: auto; /* Permet de scroller si le menu est long */
+    overflow-y: auto;
 }
 .og-sidebar__nav::-webkit-scrollbar { width: 4px; }
 .og-sidebar__nav::-webkit-scrollbar-thumb { background: var(--og-line-blue); border-radius: 2px; }
 
 .og-sidebar__nav a {
+    display: flex; align-items: center; gap: 12px;
     color: var(--og-text);
     text-decoration: none;
     padding: 10px 12px;
     border-radius: 4px;
-    transition: all 0.3s var(--ease-out);
+    transition: all 0.3s;
     font-size: 13.5px;
 }
+.og-sidebar__nav a i { width: 20px; height: 20px; stroke-width: 1.6; }
 
 .og-sidebar__nav a:hover {
-    background: rgba(212, 175, 55, 0.08); /* Fond or léger au survol */
+    background: rgba(212, 175, 55, 0.08); /* Fond or au survol */
     color: var(--og-gold);
     text-shadow: var(--og-gold-glow);
 }
 
-/* 4. Zone Principale : Dashboard Tech */
+.og-sidebar__nav a.active {
+    background: rgba(212, 175, 55, 0.15);
+    color: var(--og-gold);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+/* Bouton Test (Sidebar) */
+.btn-sidebar-test {
+    background: transparent;
+    border: 1px solid var(--og-gold);
+    color: var(--og-gold);
+    font-family: 'Cinzel', serif; font-weight: 700; font-size: 11px; letter-spacing: 0.05em;
+    padding: 8px 12px;
+    border-radius: 4px; cursor: pointer; transition: all 0.3s;
+    margin-top: auto; /* Pousse en bas */
+    width: 100%;
+}
+.btn-sidebar-test:hover { background: var(--og-gold); color: var(--og-black); box-shadow: var(--og-gold-glow); }
+
+
+/* --- Main Content (Cockpit) --- */
 .og-main {
-    margin-left: 0; /* Pas de marge, la sidebar est fixe */
     flex: 1;
     display: flex;
     flex-direction: column;
     background: radial-gradient(circle at center, #0d1629 0%, var(--og-bg) 100%);
-    position: relative;
-    overflow-y: auto; /* Le contenu principal scrolle ici */
+    overflow-y: auto; /* Le contenu scrolle ici */
     padding: 40px;
 }
 
-/* Grille d'analyse (Top) */
+/* Grille d'Analyse (Top) */
 .analysis-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -155,7 +149,7 @@ body {
     margin-bottom: 40px;
 }
 
-/* Carte Tech (Style Verre Bleu/Or) */
+/* Carte Tech (Verre Bleu/Or) */
 .tech-card {
     background: rgba(10, 15, 25, 0.6);
     border: 1px solid var(--og-line-blue);
@@ -165,28 +159,40 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 140px;
+    min-height: 150px;
     color: var(--og-gold);
-    font-family: 'Cinzel', serif; /* Pour le côté luxe */
-    font-weight: 700;
+    font-family: 'Cinzel', serif; font-weight: 700;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: all 0.4s;
 }
-
 .tech-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 20px rgba(0, 242, 255, 0.15), var(--og-gold-glow);
-    border-color: rgba(212, 175, 55, 0.3);
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 8px 25px rgba(0, 242, 255, 0.1), var(--og-gold-glow);
+    border-color: rgba(212, 175, 55, 0.4);
 }
 
 .tech-card span {
     display: block;
-    font-family: 'JetBrains Mono', monospace; /* Pour les chiffres */
-    font-size: 36px;
-    color: #fff;
-    margin-top: 10px;
-    text-shadow: var(--og-blue-glow);
+    font-family: 'JetBrains Mono', monospace; font-size: 36px;
+    color: #fff; margin-top: 15px; text-shadow: var(--og-blue-glow);
 }
+
+/* Bouton Voir Détails (Carte) */
+.btn-card-action {
+    background: rgba(0, 242, 255, 0.05);
+    border: 1px solid rgba(0, 242, 255, 0.3);
+    color: var(--og-blue-neon);
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 6px; cursor: pointer; transition: all 0.3s;
+    text-shadow: var(--og-blue-glow);
+    margin-top: 20px;
+    align-self: flex-start;
+}
+.btn-card-action:hover {
+    background: var(--og-blue-neon); color: var(--og-black); box-shadow: 0 0 25px var(--og-blue-neon);
+}
+
 
 /* Cœur SAMII (Centre) */
 .samii-core {
@@ -199,33 +205,36 @@ body {
     background: rgba(0,0,0,0.2);
     border-radius: 12px;
     border: 1px solid rgba(0, 242, 255, 0.05);
+    margin-top: auto;
 }
 
+/* Sphère Animée (Le Cœur) */
 .samii-sphere-container {
-    width: 250px; height: 250px;
+    width: 280px; height: 280px;
     position: relative;
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 30px;
+    perspective: 1000px;
 }
 
-/* Animation de la sphère (Le cœur) */
 .samii-sphere {
     width: 100%; height: 100%;
     border-radius: 50%;
-    /* Gradient complexe pour l'effet holographique */
+    /* Gradient complexe pour effet holographique */
     background: radial-gradient(circle at 30% 30%, #fff 5%, #00f2ff 30%, #8B5CF6 60%, #030509 90%);
-    box-shadow: 0 0 60px rgba(0, 242, 255, 0.6), 0 0 100px rgba(139, 92, 246, 0.3);
-    animation: pulseGlow 4s infinite alternate, rotateSphere 20s linear infinite;
+    box-shadow: 0 0 70px rgba(0, 242, 255, 0.6), 0 0 120px rgba(139, 92, 246, 0.4);
+    animation: pulseGlow 4s infinite alternate, rotateSphere 25s linear infinite;
+    transform-style: preserve-3d;
 }
 
 @keyframes pulseGlow {
-    0% { transform: scale(0.95); box-shadow: 0 0 60px rgba(0, 242, 255, 0.6), 0 0 100px rgba(139, 92, 246, 0.3); }
-    100% { transform: scale(1.05); box-shadow: 0 0 80px rgba(0, 242, 255, 0.8), 0 0 130px rgba(139, 92, 246, 0.5); }
+    0% { transform: scale(0.98) rotateX(5deg); box-shadow: 0 0 70px rgba(0, 242, 255, 0.6), 0 0 120px rgba(139, 92, 246, 0.4); }
+    100% { transform: scale(1.02) rotateX(-5deg); box-shadow: 0 0 100px rgba(0, 242, 255, 0.8), 0 0 150px rgba(139, 92, 246, 0.6); }
 }
 
 @keyframes rotateSphere {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(360deg); }
 }
 
 /* Contrôles SAMII */
@@ -233,7 +242,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 20px;
 }
 
 .btn-power {
@@ -242,79 +251,5 @@ body {
     color: var(--og-blue-neon);
     font-family: 'Cinzel', serif;
     font-weight: 900;
-    font-size: 18px;
-    padding: 12px 30px;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: all 0.3s;
-    text-shadow: var(--og-blue-glow);
-    box-shadow: var(--og-blue-glow);
-}
-
-.btn-power.on:hover {
-    background: var(--og-blue-neon);
-    color: var(--og-black);
-    box-shadow: 0 0 30px var(--og-blue-neon);
-}
-
-/* Le petit voyant d'état */
-.status-light {
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: var(--og-blue-neon);
-    box-shadow: var(--og-blue-glow);
-    animation: blinkingLight 1.5s infinite;
-}
-
-@keyframes blinkingLight {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-}
-/* =====================================================================
-   Derniers Ajouts : Finition des Boutons
-   ===================================================================== */
-
-/* 1. Style du bouton "Test" dans la Sidebar */
-.btn-sidebar-test {
-    background: transparent;
-    border: 1px solid var(--og-gold);
-    color: var(--og-gold);
-    font-family: 'Cinzel', serif;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-top: auto; /* Pousse le bouton en bas de la sidebar si nécessaire */
-    width: 100%;
-}
-
-.btn-sidebar-test:hover {
-    background: var(--og-gold);
-    color: var(--og-black);
-    box-shadow: var(--og-gold-glow);
-}
-
-/* 2. Style du bouton de la Carte "Progression" */
-.btn-card-action {
-    background: rgba(0, 242, 255, 0.05);
-    border: 1px solid rgba(0, 242, 255, 0.3);
-    color: var(--og-blue-neon);
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
-    font-size: 12px;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-    text-shadow: var(--og-blue-glow);
-    margin-top: 15px;
-}
-
-.btn-card-action:hover {
-    background: var(--og-blue-neon);
-    color: var(--og-black);
-    box-shadow: 0 0 20px var(--og-blue-neon);
-}
+    font-size: 20px;
+    letter-spacing: 0
