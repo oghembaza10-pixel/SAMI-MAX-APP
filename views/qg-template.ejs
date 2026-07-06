@@ -1,60 +1,67 @@
-<aside class="og-sidebar">
-    <div class="network-cluster">
-        <a href="#" class="net-link connected">◆ Twitter</a>
-        <a href="#" class="net-link connected">◆ LinkedIn</a>
-        <a href="#" class="net-link connected">◆ Discord</a>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QG · OG · EMPIRE</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link rel="stylesheet" href="/css/qg-style.css">
+</head>
+<body>
+
+    <div class="og-shell">
+
+        <aside class="og-sidebar">
+            <div class="network-cluster">
+                <a href="#" class="net-link connected"><i data-lucide="twitter"></i> ◆ Twitter</a>
+                <a href="#" class="net-link connected"><i data-lucide="linkedin"></i> ◆ LinkedIn</a>
+                <a href="#" class="net-link connected"><i data-lucide="disc3"></i> ◆ Discord</a>
+            </div>
+
+            <nav class="og-sidebar__nav">
+                <a href="/hub" class="active"><i data-lucide="layout-grid"></i> Hub</a>
+                <a href="/academy"><i data-lucide="graduation-cap"></i> Academy</a>
+                <a href="/affaires"><i data-lucide="briefcase"></i> Affaires</a>
+                <a href="/outils"><i data-lucide="plug-zap"></i> Outils</a>
+                <a href="/samii"><i data-lucide="bot"></i> SAMII</a>
+                <a href="/settings"><i data-lucide="settings"></i> Paramètres</a>
+            </nav>
+
+            <button class="btn-sidebar-test">TEST</button>
+        </aside>
+
+        <main class="og-main">
+            <section class="analysis-grid">
+                <article class="tech-card">
+                    Chiffre d'Affaires : <span>125k CR</span>
+                </article>
+                <article class="tech-card">
+                    Colis en cours : <span>42</span>
+                </article>
+                <article class="tech-card">
+                    Analyse Réseaux : <span>Optimale</span>
+                    <button class="btn-card-action">Voir Détails</button>
+                </article>
+            </section>
+
+            <section class="samii-core">
+                <div class="samii-sphere-container">
+                    <div class="samii-sphere"></div> </div>
+                <div class="samii-controls">
+                    <button class="btn-power on">SAMII ACTIVE</button>
+                    <div class="status-light"></div>
+                </div>
+            </section>
+        </main>
+
     </div>
 
-    <nav class="og-sidebar__nav">
-        <a href="/hub">Hub</a>
-        <a href="/academy">Academy</a>
-        </nav>
-</aside>
-
-<main class="og-main">
-    <section class="analysis-grid">
-        <div class="tech-card">Chiffre d'Affaires : <span>125k CR</span></div>
-        <div class="tech-card">Colis en cours : <span>42</span></div>
-        <div class="tech-card">Analyse Réseaux : <span>Optimale</span></div>
-    </section>
-
-    <section class="samii-core">
-        <div class="samii-sphere-container">
-            <div class="samii-sphere"></div> </div>
-        <div class="samii-controls">
-            <button class="btn-power on">SAMII ACTIVE</button>
-            <div class="status-light"></div>
-        </div>
-    </section>
-</main>
-<!-- Exemple d'intégration dans le template -->
-<div class="og-shell">
-
-    <!-- Sidebar : Console de Commande -->
-    <aside class="og-sidebar">
-        <!-- Réseaux Sociaux... -->
-
-        <!-- Navigation -->
-        <nav class="og-sidebar__nav">
-            <a href="/hub">Hub</a>
-            <a href="/academy">Academy</a>
-        </nav>
-
-        <!-- BOUTON TEST (Ajoute cette classe) -->
-        <button class="btn-sidebar-test">TEST</button>
-    </aside>
-
-    <!-- Zone Principale : Dashboard Tech -->
-    <main class="og-main">
-        <!-- Analyse Grid... -->
-
-        <!-- Carte Progression (Ajoute un bouton) -->
-        <div class="tech-card">
-            Progression : <span>78%</span>
-            <button class="btn-card-action">Voir Détails</button>
-        </div>
-
-        <!-- SAMII Core... -->
-    </main>
-
-</div>
+    <script src="/js/qg.js"></script>
+</body>
+</html>
