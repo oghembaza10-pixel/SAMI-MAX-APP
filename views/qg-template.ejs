@@ -13,49 +13,87 @@
 
     <link rel="stylesheet" href="/css/qg-style.css">
 </head>
-<body>
+<body class="stagger-in"> <div class="og-shell">
 
-    <div class="og-shell">
-
-        <aside class="og-sidebar">
-            <div class="network-cluster">
-                <a href="#" class="net-link connected"><i data-lucide="twitter"></i> ◆ Twitter</a>
-                <a href="#" class="net-link connected"><i data-lucide="linkedin"></i> ◆ LinkedIn</a>
-                <a href="#" class="net-link connected"><i data-lucide="disc3"></i> ◆ Discord</a>
+        <aside class="og-sidebar og-sidebar--nav">
+            <div class="og-sidebar-header">
+                <h2 class="og-gold-text og-h3">OG · EMPIRE</h2>
             </div>
 
-            <nav class="og-sidebar__nav">
+            <nav class="og-sidebar__nav og-sidebar__nav--main">
                 <a href="/hub" class="active"><i data-lucide="layout-grid"></i> Hub</a>
+                <a href="/marketplace"><i data-lucide="store"></i> Marketplace</a>
+                <a href="/community"><i data-lucide="users"></i> Community</a>
                 <a href="/academy"><i data-lucide="graduation-cap"></i> Academy</a>
-                <a href="/affaires"><i data-lucide="briefcase"></i> Affaires</a>
-                <a href="/outils"><i data-lucide="plug-zap"></i> Outils</a>
-                <a href="/samii"><i data-lucide="bot"></i> SAMII</a>
-                <a href="/settings"><i data-lucide="settings"></i> Paramètres</a>
+                <a href="/affaires"><i data-lucide="briefcase"></i> Analyser mes affaires</a>
+                <a href="/outils-render"><i data-lucide="plug-zap"></i> Connecter mes outils</a>
+                <a href="/outils-perso"><i data-lucide="wrench"></i> Mes outils</a>
             </nav>
 
-            <button class="btn-sidebar-test">TEST</button>
+            <div class="og-sidebar-footer">
+                 <button class="btn-sidebar-test">TEST</button>
+            </div>
+        </aside>
+
+        <aside class="og-sidebar og-sidebar--social">
+            <div class="og-sidebar-header">
+                <h4 class="og-samii-text og-h5">RÉSEAUX & CONNECTEURS</h4>
+            </div>
+            <div class="og-sidebar-scroll-area">
+                <div class="network-cluster">
+                    <a href="#" class="net-link connected"><i data-lucide="twitter"></i> Twitter</a>
+                    <a href="#" class="net-link connected"><i data-lucide="linkedin"></i> LinkedIn</a>
+                    <a href="#" class="net-link connected"><i data-lucide="disc3"></i> Discord</a>
+                    <a href="#" class="net-link connected"><i data-lucide="github"></i> GitHub</a>
+                    <a href="#" class="net-link connected"><i data-lucide="youtube"></i> YouTube</a>
+                    <a href="#" class="net-link connected"><i data-lucide="twitch"></i> Twitch</a>
+                    <a href="#" class="net-link connected"><i data-lucide="instagram"></i> Instagram</a>
+                    <a href="#" class="net-link connected"><i data-lucide="tiktok"></i> TikTok</a>
+                </div>
+            </div>
+
+            <div class="og-sidebar-footer footer-social">
+                <a href="/samii" class="net-link og-samii-text"><i data-lucide="bot"></i> SAMII</a>
+                <a href="/settings" class="net-link"><i data-lucide="settings"></i> Paramètres</a>
+            </div>
         </aside>
 
         <main class="og-main">
-            <section class="analysis-grid">
-                <article class="tech-card">
-                    Chiffre d'Affaires : <span>125k CR</span>
+            <section class="analysis-grid stagger-children">
+                <article class="tech-card hover-tilt">
+                    <h3 class="card-title">Chiffre d'Affaires</h3>
+                    <span class="stat-num countup" data-to="125987">0</span>
+                    <p class="card-sub">CR</p>
+                    <div class="trend-indicator up">+12% vs mois précédent</div>
                 </article>
-                <article class="tech-card">
-                    Colis en cours : <span>42</span>
+                <article class="tech-card hover-tilt">
+                    <h3 class="card-title">Colis en cours</h3>
+                    <span class="stat-num countup" data-to="42">0</span>
+                    <p class="card-sub">Livraisons actives</p>
+                    <div class="trend-indicator up">Surveillance OK</div>
                 </article>
-                <article class="tech-card">
-                    Analyse Réseaux : <span>Optimale</span>
-                    <button class="btn-card-action">Voir Détails</button>
+                 <article class="tech-card arsenal-card hover-tilt" onclick="window.location.href='/arsenal'">
+                    <h3 class="card-title">Mon Arsenal</h3>
+                    <div class="arsenal-icons">
+                        <i data-lucide="shield-check"></i>
+                        <i data-lucide="zap"></i>
+                        <i data-lucide="target"></i>
+                    </div>
+                    <button class="btn-card-action">Gérer mes Cartes</button>
                 </article>
             </section>
 
             <section class="samii-core">
                 <div class="samii-sphere-container">
-                    <div class="samii-sphere"></div> </div>
-                <div class="samii-controls">
-                    <button class="btn-power on">SAMII ACTIVE</button>
-                    <div class="status-light"></div>
+                    <div class="samii-sphere-pulse">
+                        <div class="samii-sphere"></div>
+                    </div>
+                    <div class="sphere-particles"></div>
+                </div>
+                <div class="samii-controls stagger-children">
+                     <div class="status-light blinking"></div>
+                    <button class="btn-power on">SAMII · SYSTÈME ACTIF</button>
+                     <p class="og-text-muted og-mono">Analyses en temps réel : ON</p>
                 </div>
             </section>
         </main>
