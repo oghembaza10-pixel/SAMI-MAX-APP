@@ -3,76 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QG · OG · EMPIRE</title>
+    <title>QG · OG EMPIRE · Centre de Commandement</title>
 
+    <!-- POLICES : Cinzel pour le luxe, Inter pour le corps -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
+    <!-- ICÔNES : Bibliothèque Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- FEUILLE DE STYLE PRINCIPALE -->
     <link rel="stylesheet" href="/css/qg-style.css">
 </head>
-<body class="stagger-in"> <div class="og-shell">
+<body class="stagger-in"> <!-- Animation d'entrée globale -->
 
+    <!-- CONTENEUR GLOBAL (SHELL) : Simule le cockpit -->
+    <div class="og-shell">
+
+        <!-- SIDEBAR : Console de Navigation (Gauche) -->
         <aside class="og-sidebar og-sidebar--nav">
-            <div class="og-sidebar-header">
-                <h2 class="og-gold-text og-h3">OG · EMPIRE</h2>
+            <div class="sidebar-header">
+                <h1 class="og-gold-text og-h3">OG · EMPIRE</h1>
             </div>
 
-            <nav class="og-sidebar__nav og-sidebar__nav--main">
+            <nav class="sidebar-nav">
                 <a href="/hub" class="active"><i data-lucide="layout-grid"></i> Hub</a>
                 <a href="/marketplace"><i data-lucide="store"></i> Marketplace</a>
                 <a href="/community"><i data-lucide="users"></i> Community</a>
                 <a href="/academy"><i data-lucide="graduation-cap"></i> Academy</a>
-                <a href="/affaires"><i data-lucide="briefcase"></i> Analyser mes affaires</a>
-                <a href="/outils-render"><i data-lucide="plug-zap"></i> Connecter mes outils</a>
-                <a href="/outils-perso"><i data-lucide="wrench"></i> Mes outils</a>
+                <a href="/affaires"><i data-lucide="briefcase"></i> Mes Affaires</a>
+                <a href="/tools-connect"><i data-lucide="plug-zap"></i> Connecter mes outils</a>
+                <a href="/tools-mine"><i data-lucide="wrench"></i> Mes outils</a>
             </nav>
 
-            <div class="og-sidebar-footer">
-                 <button class="btn-sidebar-test">TEST</button>
+            <div class="sidebar-footer">
+                <button class="btn-sidebar-test">TEST</button>
             </div>
         </aside>
 
+        <!-- SIDEBAR : Console Sociale (Droite) -->
         <aside class="og-sidebar og-sidebar--social">
-            <div class="og-sidebar-header">
-                <h4 class="og-samii-text og-h5">RÉSEAUX & CONNECTEURS</h4>
+            <div class="sidebar-header">
+                <h4 class="og-h5 og-text-muted">RÉSEAUX SOCIAUX</h4>
             </div>
-            <div class="og-sidebar-scroll-area">
-                <div class="network-cluster">
+
+            <!-- Zone Scrollable pour les réseaux -->
+            <div class="scroll-area">
+                <div class="network-cluster stagger-children">
                     <a href="#" class="net-link connected"><i data-lucide="twitter"></i> Twitter</a>
                     <a href="#" class="net-link connected"><i data-lucide="linkedin"></i> LinkedIn</a>
                     <a href="#" class="net-link connected"><i data-lucide="disc3"></i> Discord</a>
-                    <a href="#" class="net-link connected"><i data-lucide="github"></i> GitHub</a>
-                    <a href="#" class="net-link connected"><i data-lucide="youtube"></i> YouTube</a>
-                    <a href="#" class="net-link connected"><i data-lucide="twitch"></i> Twitch</a>
-                    <a href="#" class="net-link connected"><i data-lucide="instagram"></i> Instagram</a>
-                    <a href="#" class="net-link connected"><i data-lucide="tiktok"></i> TikTok</a>
+                    <!-- Ajoute les autres réseaux ici -->
                 </div>
             </div>
 
-            <div class="og-sidebar-footer footer-social">
+            <div class="sidebar-footer footer-bottom">
                 <a href="/samii" class="net-link og-samii-text"><i data-lucide="bot"></i> SAMII</a>
                 <a href="/settings" class="net-link"><i data-lucide="settings"></i> Paramètres</a>
             </div>
         </aside>
 
+        <!-- ZONE PRINCIPALE (COCKPIT) : Cartes & Données -->
         <main class="og-main">
+            <!-- GRILLE D'ANALYSE : Cartes en verre (Top) -->
             <section class="analysis-grid stagger-children">
+
+                <!-- Carte Chiffre d'Affaires -->
                 <article class="tech-card hover-tilt">
                     <h3 class="card-title">Chiffre d'Affaires</h3>
-                    <span class="stat-num countup" data-to="125987">0</span>
+                    <span class="stat-num countup" data-to="125987">125k</span>
                     <p class="card-sub">CR</p>
-                    <div class="trend-indicator up">+12% vs mois précédent</div>
+                    <div class="trend-indicator up">+12% vs dernier mois</div>
                 </article>
+
+                <!-- Carte Colis en cours -->
                 <article class="tech-card hover-tilt">
                     <h3 class="card-title">Colis en cours</h3>
-                    <span class="stat-num countup" data-to="42">0</span>
+                    <span class="stat-num countup" data-to="42">42</span>
                     <p class="card-sub">Livraisons actives</p>
-                    <div class="trend-indicator up">Surveillance OK</div>
+                    <div class="trend-indicator up">Système OK</div>
                 </article>
-                 <article class="tech-card arsenal-card hover-tilt" onclick="window.location.href='/arsenal'">
+
+                <!-- Carte Arsenal (avec bouton) -->
+                <article class="tech-card arsenal-card hover-tilt" onclick="window.location.href='/arsenal'">
                     <h3 class="card-title">Mon Arsenal</h3>
                     <div class="arsenal-icons">
                         <i data-lucide="shield-check"></i>
@@ -81,25 +94,30 @@
                     </div>
                     <button class="btn-card-action">Gérer mes Cartes</button>
                 </article>
+
             </section>
 
-            <section class="samii-core">
+            <!-- COEUR SAMII : Sphère animée + Contrôles (Centre) -->
+            <section class="samii-core stagger-children">
                 <div class="samii-sphere-container">
-                    <div class="samii-sphere-pulse">
+                    <!-- Conteneur pour l'animation de la sphère -->
+                    <div class="samii-sphere-glow">
                         <div class="samii-sphere"></div>
                     </div>
-                    <div class="sphere-particles"></div>
+                    <!-- Particules flottantes autour -->
+                    <div class="particle-field"></div>
                 </div>
-                <div class="samii-controls stagger-children">
-                     <div class="status-light blinking"></div>
+                <div class="samii-controls">
+                    <div class="status-indicator blinking"></div>
                     <button class="btn-power on">SAMII · SYSTÈME ACTIF</button>
-                     <p class="og-text-muted og-mono">Analyses en temps réel : ON</p>
+                    <p class="og-text-muted og-mono">Analyses en temps réel : ON</p>
                 </div>
             </section>
         </main>
 
     </div>
 
+    <!-- SCRIPT PRINCIPAL : Inclut la logique des compteurs et de la sphère -->
     <script src="/js/qg.js"></script>
 </body>
 </html>
