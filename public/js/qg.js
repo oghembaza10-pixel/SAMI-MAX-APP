@@ -4,13 +4,13 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 1. Icônes Lucide
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 
     // ======================================================================
-    // 2. SIDEBAR : réduire/étendre (PC) ou tiroir (mobile)
+    // SIDEBAR : réduire/étendre (PC) ou tiroir (mobile) — toujours ouverte
+    // par défaut à chaque chargement, plus de mémorisation qui coince
     // ======================================================================
     const sidebar = document.getElementById('og-sidebar');
     const toggleBtn = document.getElementById('og-sidebar-collapse');
@@ -23,13 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 sidebar.classList.toggle('mobile-open');
             } else {
                 sidebar.classList.toggle('collapsed');
-                localStorage.setItem('ogSidebarCollapsed', sidebar.classList.contains('collapsed') ? 'true' : 'false');
             }
         });
-
-        if (!isMobile() && localStorage.getItem('ogSidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
-        }
 
         document.addEventListener('click', (e) => {
             if (isMobile() && sidebar.classList.contains('mobile-open')) {
@@ -42,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Bouton menu toujours visible sur mobile (dans la topbar) : ouvre/ferme le tiroir
     if (sidebar && mobileMenuBtn) {
         mobileMenuBtn.addEventListener('click', () => {
             sidebar.classList.toggle('mobile-open');
@@ -50,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======================================================================
-    // 3. COMPTEURS ANIMÉS (cartes du dashboard)
+    // COMPTEURS ANIMÉS
     // ======================================================================
     const countUpEls = document.querySelectorAll('.countup');
 
@@ -92,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======================================================================
-    // 4. EFFET TILT SUR LES CARTES DASHBOARD (desktop uniquement)
+    // EFFET TILT SUR LES CARTES DASHBOARD (desktop)
     // ======================================================================
     const tiltCards = document.querySelectorAll('.qg-card--tilt');
 
@@ -118,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======================================================================
-    // 5. APPARITION PROGRESSIVE (stagger) des cartes au chargement
+    // APPARITION PROGRESSIVE
     // ======================================================================
     const staggerGroups = document.querySelectorAll('.qg-dashboard, .qg-arsenal');
     staggerGroups.forEach(group => {
@@ -137,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ======================================================================
-    // 6. STATUT SAMII (point vert/gris dans la sidebar)
+    // STATUT SAMII
     // ======================================================================
     const samiiActive = true;
     const samiiDot = document.getElementById('samii-status-dot');
