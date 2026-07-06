@@ -1,22 +1,26 @@
 /* =====================================================================
-   OG EMPIRE — QG MONDIAL : STYLE "CENTRE DE COMMANDEMENT" (Finalisé)
+   OG EMPIRE — QG : STYLE "CENTRE DE COMMANDEMENT" (Finalisé)
    ===================================================================== */
 
-/* --- Variables & Reset --- */
+/* --- Variables --- */
 :root {
     /* Palette */
-    --og-black: #030509; /* Noir profond spatial */
-    --og-bg: #0a0f1a;    /* Fond console sombre */
-    --og-gold: #D4AF37;  /* Or métallique */
+    --og-black: #030509;
+    --og-bg: #0a0f1a;
+    --og-gold: #D4AF37;
     --og-gold-glow: 0 0 15px rgba(212, 175, 55, 0.5);
-    --og-blue-neon: #00f2ff; /* Bleu techno vif */
+    --og-blue-neon: #00f2ff;
     --og-blue-glow: 0 0 20px rgba(0, 242, 255, 0.7);
     --og-green-connect: #00ff88; /* Vert connecté */
     --og-green-glow: 0 0 10px rgba(0, 255, 136, 0.5);
+    --og-samii: #8B5CF6; /* Violet SAMII */
     --og-text: #e0e6ed;
+    --og-text-muted: #8b9bb4;
     --og-line-blue: rgba(0, 242, 255, 0.15);
+    --og-line-gold: rgba(212, 175, 55, 0.15);
     /* Layout */
-    --sidebar-w: 260px;
+    --sidebar-w-nav: 260px;
+    --sidebar-w-social: 220px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,7 +32,7 @@ html, body {
     font-weight: 300;
     height: 100%;
     width: 100%;
-    overflow: hidden; /* Empêche le scroll global */
+    overflow: hidden;
 }
 
 /* --- Layout Shell --- */
@@ -39,12 +43,10 @@ html, body {
     overflow: hidden;
 }
 
-/* --- Sidebar (Console de Commande) --- */
+/* --- Sidebars (Console) --- */
 .og-sidebar {
-    width: var(--sidebar-w);
     background: linear-gradient(180deg, rgba(10, 15, 25, 0.98) 0%, rgba(5, 8, 15, 0.98) 100%);
-    border-right: 1px solid var(--og-line-blue);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(15px);
     display: flex;
     flex-direction: column;
     padding: 20px;
@@ -52,14 +54,74 @@ html, body {
     flex-shrink: 0;
 }
 
-/* Cluster Réseaux Sociaux (Haut) */
+/* Sidebar Navigation (Gauche) */
+.og-sidebar--nav {
+    width: var(--sidebar-w-nav);
+    border-right: 1px solid var(--og-line-gold);
+}
+
+/* Sidebar Social/Utilitaire (Droite) */
+.og-sidebar--social {
+    width: var(--sidebar-w-social);
+    border-left: 1px solid var(--og-line-blue);
+    background: radial-gradient(circle at bottom right, #0a0f1a 0%, #030509 100%);
+}
+
+/* Headers des Sidebars */
+.og-sidebar-header {
+    padding-bottom: 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 25px;
+}
+.og-gold-text { color: var(--og-gold); text-shadow: var(--og-gold-glow); }
+.og-samii-text { color: var(--og-samii); }
+
+/* Navigation Principale */
+.og-sidebar__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.og-sidebar__nav a {
+    display: flex; align-items: center; gap: 12px;
+    color: var(--og-text);
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: 6px;
+    transition: all 0.3s ease-out;
+    font-size: 13.5px;
+}
+.og-sidebar__nav a i { width: 20px; height: 20px; stroke-width: 1.5; color: var(--og-text-muted); }
+
+.og-sidebar__nav a:hover {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--og-gold);
+}
+.og-sidebar__nav a:hover i { color: var(--og-gold); }
+
+.og-sidebar__nav a.active {
+    background: rgba(212, 175, 55, 0.2);
+    color: var(--og-gold);
+    border: 1px solid var(--og-line-gold);
+    font-weight: 600;
+}
+.og-sidebar__nav a.active i { color: var(--og-gold); }
+
+/* Section Scrollable (Réseaux Sociaux) */
+.og-sidebar-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+.og-sidebar-scroll-area::-webkit-scrollbar { width: 4px; }
+.og-sidebar-scroll-area::-webkit-scrollbar-thumb { background: var(--og-line-blue); border-radius: 2px; }
+
+/* Réseaux Sociaux ( Cluster ) */
 .network-cluster {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(0, 242, 255, 0.1);
-    margin-bottom: 20px;
 }
 
 .net-link {
@@ -67,81 +129,60 @@ html, body {
     color: var(--og-text);
     text-decoration: none;
     font-size: 13px;
-    padding: 8px 10px;
-    border-radius: 4px;
+    padding: 10px 12px;
+    border-radius: 6px;
     transition: all 0.3s;
 }
-
-.net-link i { width: 18px; height: 18px; stroke-width: 1.5; }
+.net-link i { width: 18px; height: 18px; stroke-width: 1.6; color: var(--og-text-muted); }
 
 .net-link.connected {
     color: var(--og-green-connect);
     text-shadow: var(--og-green-glow);
 }
+.net-link.connected i { color: var(--og-green-connect); }
 
 .net-link:hover {
-    background: rgba(0, 242, 255, 0.05);
+    background: rgba(0, 242, 255, 0.1);
     color: var(--og-blue-neon);
 }
+.net-link:hover i { color: var(--og-blue-neon); }
 
-/* Navigation (Bas) */
-.og-sidebar__nav {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    overflow-y: auto;
+/* Footer des Sidebars */
+.og-sidebar-footer {
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: auto;
 }
-.og-sidebar__nav::-webkit-scrollbar { width: 4px; }
-.og-sidebar__nav::-webkit-scrollbar-thumb { background: var(--og-line-blue); border-radius: 2px; }
-
-.og-sidebar__nav a {
-    display: flex; align-items: center; gap: 12px;
-    color: var(--og-text);
-    text-decoration: none;
-    padding: 10px 12px;
-    border-radius: 4px;
-    transition: all 0.3s;
-    font-size: 13.5px;
-}
-.og-sidebar__nav a i { width: 20px; height: 20px; stroke-width: 1.6; }
-
-.og-sidebar__nav a:hover {
-    background: rgba(212, 175, 55, 0.08); /* Fond or au survol */
-    color: var(--og-gold);
-    text-shadow: var(--og-gold-glow);
+/* Footer Social spécifique */
+.footer-social {
+    display: flex; flex-direction: column; gap: 10px;
+    border-top: 1px solid rgba(0, 242, 255, 0.1);
 }
 
-.og-sidebar__nav a.active {
-    background: rgba(212, 175, 55, 0.15);
-    color: var(--og-gold);
-    border: 1px solid rgba(212, 175, 55, 0.3);
-}
-
-/* Bouton Test (Sidebar) */
+/* Bouton Test (Sidebar Nav) */
 .btn-sidebar-test {
     background: transparent;
     border: 1px solid var(--og-gold);
     color: var(--og-gold);
     font-family: 'Cinzel', serif; font-weight: 700; font-size: 11px; letter-spacing: 0.05em;
     padding: 8px 12px;
-    border-radius: 4px; cursor: pointer; transition: all 0.3s;
-    margin-top: auto; /* Pousse en bas */
+    border-radius: 6px; cursor: pointer; transition: all 0.4s;
     width: 100%;
 }
 .btn-sidebar-test:hover { background: var(--og-gold); color: var(--og-black); box-shadow: var(--og-gold-glow); }
 
 
-/* --- Main Content (Cockpit) --- */
+/* --- Zone Principale : Cockpit --- */
 .og-main {
     flex: 1;
     display: flex;
     flex-direction: column;
     background: radial-gradient(circle at center, #0d1629 0%, var(--og-bg) 100%);
-    overflow-y: auto; /* Le contenu scrolle ici */
+    overflow-y: auto;
     padding: 40px;
 }
 
-/* Grille d'Analyse (Top) */
+/* Grille d'analyse (Top) */
 .analysis-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -152,104 +193,13 @@ html, body {
 /* Carte Tech (Verre Bleu/Or) */
 .tech-card {
     background: rgba(10, 15, 25, 0.6);
-    border: 1px solid var(--og-line-blue);
+    border: 1px solid var(--og-line-gold);
     backdrop-filter: blur(15px);
     border-radius: 12px;
     padding: 30px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    min-height: 150px;
+    min-height: 180px;
     color: var(--og-gold);
-    font-family: 'Cinzel', serif; font-weight: 700;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: all 0.4s;
-}
-.tech-card:hover {
-    transform: translateY(-5px) scale(1.01);
-    box-shadow: 0 8px 25px rgba(0, 242, 255, 0.1), var(--og-gold-glow);
-    border-color: rgba(212, 175, 55, 0.4);
-}
-
-.tech-card span {
-    display: block;
-    font-family: 'JetBrains Mono', monospace; font-size: 36px;
-    color: #fff; margin-top: 15px; text-shadow: var(--og-blue-glow);
-}
-
-/* Bouton Voir Détails (Carte) */
-.btn-card-action {
-    background: rgba(0, 242, 255, 0.05);
-    border: 1px solid rgba(0, 242, 255, 0.3);
-    color: var(--og-blue-neon);
-    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12px;
-    padding: 8px 16px;
-    border-radius: 6px; cursor: pointer; transition: all 0.3s;
-    text-shadow: var(--og-blue-glow);
-    margin-top: 20px;
-    align-self: flex-start;
-}
-.btn-card-action:hover {
-    background: var(--og-blue-neon); color: var(--og-black); box-shadow: 0 0 25px var(--og-blue-neon);
-}
-
-
-/* Cœur SAMII (Centre) */
-.samii-core {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex: 1; /* Occupe l'espace restant */
-    padding: 40px;
-    background: rgba(0,0,0,0.2);
-    border-radius: 12px;
-    border: 1px solid rgba(0, 242, 255, 0.05);
-    margin-top: auto;
-}
-
-/* Sphère Animée (Le Cœur) */
-.samii-sphere-container {
-    width: 280px; height: 280px;
-    position: relative;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 30px;
-    perspective: 1000px;
-}
-
-.samii-sphere {
-    width: 100%; height: 100%;
-    border-radius: 50%;
-    /* Gradient complexe pour effet holographique */
-    background: radial-gradient(circle at 30% 30%, #fff 5%, #00f2ff 30%, #8B5CF6 60%, #030509 90%);
-    box-shadow: 0 0 70px rgba(0, 242, 255, 0.6), 0 0 120px rgba(139, 92, 246, 0.4);
-    animation: pulseGlow 4s infinite alternate, rotateSphere 25s linear infinite;
-    transform-style: preserve-3d;
-}
-
-@keyframes pulseGlow {
-    0% { transform: scale(0.98) rotateX(5deg); box-shadow: 0 0 70px rgba(0, 242, 255, 0.6), 0 0 120px rgba(139, 92, 246, 0.4); }
-    100% { transform: scale(1.02) rotateX(-5deg); box-shadow: 0 0 100px rgba(0, 242, 255, 0.8), 0 0 150px rgba(139, 92, 246, 0.6); }
-}
-
-@keyframes rotateSphere {
-    from { transform: rotateY(0deg); }
-    to { transform: rotateY(360deg); }
-}
-
-/* Contrôles SAMII */
-.samii-controls {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-}
-
-.btn-power {
-    background: transparent;
-    border: 2px solid var(--og-blue-neon);
-    color: var(--og-blue-neon);
     font-family: 'Cinzel', serif;
-    font-weight: 900;
-    font-size: 20px;
-    letter-spacing: 0
+    box-shadow: 0 4px 15px rgba(black
