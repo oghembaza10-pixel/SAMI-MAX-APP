@@ -1,32 +1,12 @@
-/**
- * ============================================================
- * OG • Service Registry
- * Registre central des services.
- * ============================================================
- */
+registry.register("google", require("./google"));
+registry.register("gmail", require("./gmail"));
+registry.register("calendar", require("./googleCalendar"));
+registry.register("maps", require("./googleMaps"));
 
-class ServiceRegistry {
+registry.register("paypal", require("./paypal"));
+registry.register("stripe", require("./stripe"));
 
-    constructor() {
-        this.services = new Map();
-    }
-
-    register(name, service) {
-        this.services.set(name, service);
-    }
-
-    get(name) {
-        return this.services.get(name);
-    }
-
-    has(name) {
-        return this.services.has(name);
-    }
-
-    list() {
-        return [...this.services.keys()];
-    }
-
-}
-
-module.exports = new ServiceRegistry();
+registry.register("yalidine", require("./yalidine"));
+registry.register("guepex", require("./guepex"));
+registry.register("zr", require("./zr"));
+registry.register("ems", require("./ems"));
