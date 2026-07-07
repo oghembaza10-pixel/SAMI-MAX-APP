@@ -1,7 +1,6 @@
 /* ==========================================================================
-   OG EMPIRE — QG : CENTRE DE COMMANDEMENT (v6 — clean & pro)
-   Même architecture, design épuré façon Linear/Stripe/Vercel dark mode.
-   Fond bleu-tech discret, verre sobre, hiérarchie claire.
+   OG EMPIRE — QG : CENTRE DE COMMANDEMENT (v7)
+   Sidebar mobile = barre du bas (même système que le Hub, qui fonctionne).
    ========================================================================== */
 
 :root {
@@ -30,6 +29,8 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+html, body { max-width: 100%; overflow-x: hidden; }
+
 body {
     background:
         radial-gradient(ellipse 900px 500px at 10% -5%, rgba(95, 212, 255, 0.07), transparent 60%),
@@ -37,10 +38,9 @@ body {
         var(--bg-deep);
     color: var(--text-main);
     font-family: var(--font-body);
-    overflow-x: hidden;
 }
 
-.qg-shell { display: flex; min-height: 100vh; width: 100%; overflow-x: hidden; }
+.qg-shell { display: flex; min-height: 100vh; width: 100%; max-width: 100vw; overflow-x: hidden; }
 
 .qg-sidebar {
     width: var(--sidebar-w);
@@ -99,9 +99,13 @@ body {
 .qg-nav__item span { transition: opacity .15s var(--ease); }
 .qg-sidebar.collapsed .qg-nav__item span { opacity: 0; width: 0; }
 
-.qg-nav__item:hover { color: var(--text-main); background: rgba(255,255,255,0.04); }
-.qg-nav__item.active { color: var(--text-main); background: rgba(95, 212, 255, 0.08); }
-.qg-nav__item.active i { color: var(--cyan-tech); }
+.qg-nav__item:hover { color: var(--text-main); background: rgba(95,212,255,0.08); }
+.qg-nav__item.active {
+    color: #fff;
+    background: linear-gradient(90deg, rgba(95, 212, 255, 0.16), rgba(95,212,255,0.03));
+    box-shadow: inset 2px 0 0 var(--cyan-tech);
+}
+.qg-nav__item.active i { color: var(--cyan-tech); filter: drop-shadow(0 0 6px rgba(95,212,255,0.6)); }
 
 .qg-nav__divider { height: 1px; margin: 8px 6px; background: rgba(255,255,255,0.06); }
 
@@ -111,10 +115,10 @@ body {
 .qg-status-dot--on { background: var(--green-on); box-shadow: 0 0 6px var(--green-on); }
 .qg-status-dot--off { background: #4a4a4a; }
 
-.qg-sidebar__bottom { margin-top: auto; padding-top: 8px; border-top: rgba(255,255,255,0.06) solid 1px; }
+.qg-sidebar__bottom { margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); }
 
-.qg-main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; max-width: 100%; transition: margin-left .3s var(--ease); }
-.qg-sidebar.collapsed ~ .qg-main { margin-left: var(--sidebar-w-collapsed); }
+.qg-main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; min-height: 100vh; max-width: calc(100% - var(--sidebar-w)); transition: margin-left .3s var(--ease); }
+.qg-sidebar.collapsed ~ .qg-main { margin-left: var(--sidebar-w-collapsed); max-width: calc(100% - var(--sidebar-w-collapsed)); }
 
 .qg-topbar {
     display: flex; align-items: center; justify-content: space-between;
@@ -135,28 +139,16 @@ body {
 .qg-icon-btn i { width: 15px; height: 15px; }
 .qg-icon-btn:hover { color: var(--text-main); border-color: rgba(255,255,255,0.2); }
 
-.qg-mobile-menu-btn {
-    display: none;
-    width: 34px; height: 34px; border-radius: 8px;
-    border: var(--border-soft); background: transparent; color: var(--text-main);
-    align-items: center; justify-content: center; cursor: pointer;
-    flex-shrink: 0; margin-right: 10px;
-}
-.qg-mobile-menu-btn i { width: 16px; height: 16px; }
+.qg-mobile-menu-btn { display: none; }
 
-.qg-hero {
-    position: relative;
-    padding: 34px 36px;
-    border-bottom: var(--border-soft);
-}
+.qg-hero { position: relative; padding: 34px 36px; border-bottom: var(--border-soft); }
 .qg-hero__grid, .qg-hero__glow { display: none; }
-
 .qg-hero__content { max-width: 640px; }
 .qg-eyebrow {
     font-family: var(--font-mono); letter-spacing: .12em; font-size: .68rem;
     color: var(--cyan-tech); text-transform: uppercase; display: block; margin-bottom: 8px;
 }
-.qg-hero__content h1 { font-family: var(--font-display); font-size: clamp(1.35rem, 2.4vw, 1.85rem); color: #fff; font-weight: 700; }
+.qg-hero__content h1 { font-family: var(--font-display); font-size: clamp(1.3rem, 2.4vw, 1.85rem); color: #fff; font-weight: 700; }
 .qg-hero__content p { margin-top: 8px; color: var(--text-muted); font-size: .9rem; line-height: 1.6; }
 
 .qg-section-title {
@@ -168,9 +160,10 @@ body {
 
 .qg-dashboard {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 14px;
     padding: 0 36px;
+    max-width: 1200px;
 }
 
 .qg-card {
@@ -181,6 +174,7 @@ body {
     border-radius: 16px;
     padding: 22px;
     display: flex; flex-direction: column; gap: 12px;
+    min-width: 0;
     transition: box-shadow .3s var(--ease), border-color .3s var(--ease), transform .3s var(--ease);
 }
 .qg-card--tilt:hover { border-color: rgba(95,212,255,0.45); box-shadow: 0 0 30px rgba(95,212,255,0.22); transform: translateY(-4px); }
@@ -209,6 +203,7 @@ body {
     border-radius: 16px;
     padding: 24px 20px;
     display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+    min-width: 0;
     transition: transform .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
 }
 .qg-arsenal-card i { width: 20px; height: 20px; color: var(--gold-og); }
@@ -240,23 +235,36 @@ body {
 }
 .samii-orb i { width: 22px; height: 22px; position: relative; z-index: 2; }
 .samii-orb:hover { transform: scale(1.06); }
-
 .samii-orb__aura { position: absolute; inset: -5px; border-radius: 50%; border: 1px solid rgba(95,212,255,0.35); animation: samii-orb-pulse 2.6s ease-out infinite; }
 .samii-orb__aura--2 { animation-delay: 1.3s; }
 @keyframes samii-orb-pulse { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(1.6); opacity: 0; } }
 
 @media (max-width: 900px) {
-    .qg-sidebar { transform: translateX(-100%); box-shadow: 0 0 40px rgba(0,0,0,0.6); }
-    .qg-sidebar.mobile-open { transform: translateX(0); }
-    .qg-sidebar.collapsed { width: var(--sidebar-w); min-width: var(--sidebar-w); padding: 20px 12px; }
-    .qg-sidebar.collapsed .qg-logo__text,
-    .qg-sidebar.collapsed .qg-nav__item span { opacity: 1; width: auto; }
+    .qg-sidebar {
+        width: 100%; min-width: 0; height: auto;
+        position: fixed; left: 0; top: auto; bottom: 0;
+        flex-direction: row; align-items: center;
+        overflow-x: auto; overflow-y: hidden;
+        border-right: none; border-top: var(--border-soft);
+        padding: 8px 10px;
+        gap: 4px;
+    }
+    .qg-sidebar.collapsed { width: 100%; min-width: 0; padding: 8px 10px; }
 
-    .qg-main, .qg-sidebar.collapsed ~ .qg-main { margin-left: 0 !important; width: 100%; max-width: 100vw; }
-    .qg-shell { overflow-x: hidden; }
+    .qg-sidebar__top { display: none; }
+    .qg-sidebar__bottom { margin-top: 0; padding-top: 0; border-top: none; }
 
-    .qg-mobile-menu-btn { display: flex; }
-    .qg-collapse-btn { display: none; }
+    .qg-nav { flex-direction: row; gap: 4px; flex: none; }
+    .qg-nav__item { flex-direction: column; gap: 2px; padding: 6px 10px; font-size: .62rem; }
+    .qg-nav__item span { opacity: 1 !important; width: auto !important; }
+    .qg-nav__divider { width: 1px; height: 24px; margin: 0 4px; }
+
+    .qg-main, .qg-sidebar.collapsed ~ .qg-main {
+        margin-left: 0 !important;
+        max-width: 100vw !important;
+        width: 100%;
+        padding-bottom: 84px;
+    }
 
     .qg-topbar { padding: 16px 18px; }
     .qg-hero { padding: 24px 18px; }
