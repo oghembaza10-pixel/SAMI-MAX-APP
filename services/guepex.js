@@ -1,0 +1,14 @@
+class GuepexService {
+
+    async createShipment(order){
+
+        return {
+            success:true,
+            order
+        };
+
+    }
+
+}
+
+module.exports = new GuepexService();
