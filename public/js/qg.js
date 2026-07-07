@@ -9,37 +9,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======================================================================
-    // SIDEBAR : réduire/étendre (PC) ou tiroir (mobile) — toujours ouverte
-    // par défaut à chaque chargement, plus de mémorisation qui coince
+    // Mémoriser le dernier QG visité (pour pouvoir y revenir depuis SAMII)
+    // ======================================================================
+    if (window.location.pathname.startsWith('/qg/')) {
+        localStorage.setItem('ogLastQG', window.location.pathname);
+    }
+    const qgBackLink = document.getElementById('qg-back-link');
+    if (qgBackLink) {
+        qgBackLink.href = localStorage.getItem('ogLastQG') || '/hub';
+    }
+
+    // ======================================================================
+    // SIDEBAR : réduire/étendre (PC uniquement — sur mobile la sidebar
+    // est toujours visible en bas, comme le Hub, pas de tiroir à gérer)
     // ======================================================================
     const sidebar = document.getElementById('og-sidebar');
     const toggleBtn = document.getElementById('og-sidebar-collapse');
-    const mobileMenuBtn = document.getElementById('qg-mobile-menu-btn');
     const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
 
     if (sidebar && toggleBtn) {
         toggleBtn.addEventListener('click', () => {
-            if (isMobile()) {
-                sidebar.classList.toggle('mobile-open');
-            } else {
+            if (!isMobile()) {
                 sidebar.classList.toggle('collapsed');
             }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (isMobile() && sidebar.classList.contains('mobile-open')) {
-                const clickedToggle = e.target === toggleBtn || toggleBtn.contains(e.target)
-                    || e.target === mobileMenuBtn || (mobileMenuBtn && mobileMenuBtn.contains(e.target));
-                if (!sidebar.contains(e.target) && !clickedToggle) {
-                    sidebar.classList.remove('mobile-open');
-                }
-            }
-        });
-    }
-
-    if (sidebar && mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('mobile-open');
         });
     }
 
@@ -86,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======================================================================
-    // EFFET TILT SUR LES CARTES DASHBOARD (desktop)
+    // EFFET TILT SUR LES CARTES DASHBOARD (desktop uniquement)
     // ======================================================================
     const tiltCards = document.querySelectorAll('.qg-card--tilt');
 
