@@ -47,3 +47,5 @@ registry.register("openai", require("./openai"));
 registry.register("mistral", require("./mistral"));
 registry.register("nvidia", require("./nvidia"));
 registry.register("ollama", require("./ollama"));
+
+module.exports = registry;
