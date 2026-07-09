@@ -61,6 +61,7 @@ console.log("🚀 SAMII OS démarre...");
 // ======================================================
 // ROUTES
 // ======================================================
+app.use(require("./Itinéraires/auth-meta"));
 app.use("/community", community);
 app.use("/academy", academy);
 app.use("/webhook", webhook);
