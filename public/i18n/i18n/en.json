@@ -1,0 +1,13 @@
+{
+  "topbar": {
+    "enter": "JOIN MY HQ"
+  },
+  "hero": {
+    "eyebrow": "EMPIRE • GLOBAL ECOSYSTEM",
+    "title": "Build your Empire.",
+    "description": "One platform.\nOne identity.\nOne Headquarters.\n\nWork.\nGrow.\nBuild your Empire."
+  },
+  "buttons": {
+    "enter": "ENTER MY HQ"
+  }
+}
