@@ -1,0 +1,13 @@
+{
+  "topbar": {
+    "enter": "REJOINDRE MON QG"
+  },
+  "hero": {
+    "eyebrow": "EMPIRE • ÉCOSYSTÈME MONDIAL",
+    "title": "Construisez votre Empire.",
+    "description": "Une seule plateforme.\nUne seule identité.\nUn seul Quartier Général.\n\nTravaillez.\nDéveloppez-vous.\nCréez votre Empire."
+  },
+  "buttons": {
+    "enter": "ENTRER DANS MON QG"
+  }
+}
