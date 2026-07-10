@@ -1,24 +1,15 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>OG EMPIRE</title>
-
 <link rel="icon" href="/og.png">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
 <link rel="stylesheet" href="/css/index-style.css">
-
 </head>
-
 <body>
 
 <!-- HALO -->
@@ -26,64 +17,38 @@
 
 <!-- TOP BAR -->
 <div class="og-topbar-safe">
-
     <div class="og-logo">
         ◇ OG
     </div>
-
     <div class="og-lang">
-        <span class="active">FR</span>
-        <span>EN</span>
-        <span>AR</span>
+        <span data-lang-btn="fr">FR</span>
+        <span data-lang-btn="en">EN</span>
+        <span data-lang-btn="ar">AR</span>
+        <span data-lang-btn="zh">ZH</span>
     </div>
-
-    <a href="/hub" class="og-enter">
-        REJOINDRE MON QG
-    </a>
-
+    <a href="/hub" class="og-enter" data-i18n="topbar.enter"></a>
 </div>
 
 <!-- HERO -->
 <section class="hero">
-
     <div class="hero-overlay"></div>
-
     <div class="hero-content">
+        <span class="eyebrow" data-i18n="hero.eyebrow"></span>
 
-        <span class="eyebrow">
-            EMPIRE • GLOBAL ECOSYSTEM
-        </span>
+        <h1 data-i18n="hero.title"></h1>
 
-        <h1>
-            Construisez votre Empire.
-        </h1>
-
-        <p>
-            Une seule plateforme.<br>
-            Une seule identité.<br>
-            Un seul Quartier Général.<br><br>
-
-            Travaillez.<br>
-            Développez-vous.<br>
-            Créez votre Empire.
-        </p>
+        <p data-i18n="hero.description"></p>
 
         <div class="buttons">
-
-            <a href="/hub" class="btn-gold">
-                ENTRER DANS MON QG
-            </a>
-
+            <a href="/hub" class="btn-gold" data-i18n="buttons.enter"></a>
         </div>
-
     </div>
-
 </section>
 
 <div class="scroll">
     ▼
 </div>
 
+<script src="/js/i18n.js"></script>
 </body>
-
 </html>
