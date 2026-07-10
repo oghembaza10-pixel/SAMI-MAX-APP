@@ -586,5 +586,7 @@ font-size:15px;
 gap:10px;
 
 }
-
+.hero p{
+    white-space: pre-line;
 }
+
