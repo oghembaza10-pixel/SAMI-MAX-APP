@@ -5,6 +5,7 @@ const hub = require("./routes/hub");
 const path = require("path");
 const express = require("express");
 const axios = require("axios");
+const telegram = require("./routes/telegram");
 const settings = require("./routes/settings");
 const dashboard = require("./routes/dashboard");
 const login = require("./routes/login");
@@ -62,6 +63,7 @@ console.log("🚀 SAMII OS démarre...");
 // ROUTES
 // ======================================================
 app.use(require("./Itinéraires/auth-meta"));
+app.use("/webhook/telegram", telegram);
 app.use("/community", community);
 app.use("/academy", academy);
 app.use("/webhook", webhook);
