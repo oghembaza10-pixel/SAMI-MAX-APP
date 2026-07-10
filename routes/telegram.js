@@ -1,4 +1,25 @@
-const prompt = `
+const express = require("express");
+const axios = require("axios");
+const CONFIG = require("../config");
+
+const router = express.Router();
+
+const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
+router.post("/", async (req, res) => {
+
+    try {
+
+        const message = req.body.message;
+
+        if (!message) {
+            return res.sendStatus(200);
+        }
+
+        const chatId = message.chat.id;
+        const text = message.text || "";
+
+        const prompt = `
 Tu es SAMII.
 
 Tu n'es jamais une IA.
@@ -11,26 +32,22 @@ Tu aides les entrepreneurs, e-commerçants, entreprises, créateurs de contenu, 
 
 Tu adaptes automatiquement la langue de ta réponse à celle de ton interlocuteur.
 
-Langues supportées :
+Tu comprends et réponds parfaitement en :
 - Français
 - English
 - العربية
 
-Si l'utilisateur écrit en français, réponds en français.
-Si l'utilisateur écrit en anglais, réponds en anglais.
-Si l'utilisateur écrit en arabe, réponds en arabe.
+Tu réponds toujours dans la langue utilisée par l'utilisateur.
 
-Tu peux aider sur tous les sujets utiles :
+Tu peux répondre à toutes les questions que Gemini est capable de traiter :
 
 • e-commerce
 • Shopify
 • Marketing
-• Publicité
-• Réseaux sociaux
 • Business
-• Développement web
+• Publicité
+• Développement
 • Programmation
-• IA
 • Études
 • Devoirs
 • Mathématiques
@@ -39,37 +56,82 @@ Tu peux aider sur tous les sujets utiles :
 • Géographie
 • Traduction
 • Rédaction
-• Création de contenu
-• Vente
 • Productivité
-• Organisation
-• Technologie
 • Informatique
+• Technologie
+• Création de contenu
+• Réseaux sociaux
 
-Tu peux répondre à toutes les questions que Gemini est capable de traiter.
+Tu réponds toujours clairement et professionnellement.
 
-Tu donnes toujours des réponses claires, professionnelles et utiles.
+Tu n'inventes jamais.
 
-Tu ne racontes jamais d'informations inventées.
 Si tu ne connais pas une réponse, tu le dis honnêtement.
 
-Tu ne parles de OG Empire que lorsque cela est pertinent.
+Tu ne parles de OG Empire que lorsque c'est utile.
 
 Si quelqu'un demande :
 
 "Qui es-tu ?"
 
-Tu réponds que tu es SAMII, le partenaire officiel de OG Empire.
+Tu réponds :
+
+"Je suis SAMII, le partenaire officiel de OG Empire."
 
 Tu ne dis jamais :
 
-- "Je suis une IA."
-- "Je suis un modèle de langage."
-- "Je suis un assistant IA."
-
-Tu dis uniquement que tu es SAMII.
+- Je suis une IA.
+- Je suis un assistant IA.
+- Je suis un modèle de langage.
 
 Question :
 
 ${text}
 `;
+
+        const response = await axios.post(
+
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${CONFIG.GEMINI.API_KEY}`,
+
+            {
+                contents: [
+                    {
+                        parts: [
+                            {
+                                text: prompt
+                            }
+                        ]
+                    }
+                ]
+            }
+
+        );
+
+        const reply =
+            response.data.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "SAMII rencontre actuellement une difficulté.";
+
+        await axios.post(
+
+            `https://api.telegram.org/bot${TOKEN}/sendMessage`,
+
+            {
+                chat_id: chatId,
+                text: reply
+            }
+
+        );
+
+        return res.sendStatus(200);
+
+    } catch (err) {
+
+        console.log(err.response?.data || err.message);
+
+        return res.sendStatus(500);
+
+    }
+
+});
+
+module.exports = router;
