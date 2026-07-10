@@ -14,6 +14,7 @@ const Language = (function () {
 
     let currentLang = DEFAULT_LANG;
     let dict = {};
+    const listeners = [];
 
     function detectLang() {
         const stored = localStorage.getItem(STORAGE_KEY);
@@ -72,6 +73,7 @@ const Language = (function () {
         updateDirection(lang);
         updateActiveButtons(lang);
         translate();
+        listeners.forEach((cb) => cb(lang, dict));
     }
 
     async function init() {
@@ -83,7 +85,19 @@ const Language = (function () {
         });
     }
 
-    return { init, set, translate };
+    function onChange(callback) {
+        listeners.push(callback);
+    }
+
+    function getDict() {
+        return dict;
+    }
+
+    function getLang() {
+        return currentLang;
+    }
+
+    return { init, set, translate, onChange, getDict, getLang };
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
