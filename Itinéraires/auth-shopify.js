@@ -75,7 +75,7 @@ async function registerWebhooks(shop, accessToken) {
             {
                 webhook: {
                     topic,
-                    address: `${APP_URL}/webhooks/${topic.replace("/", "-")}`,
+                    address: `${APP_URL}/webhook/${topic.replace("/", "-")}`,
                     format: "json",
                 },
             },
