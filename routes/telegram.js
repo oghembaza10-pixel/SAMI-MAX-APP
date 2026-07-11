@@ -19,6 +19,26 @@ router.post("/", async (req, res) => {
         const chatId = message.chat.id;
         const text = message.text || "";
 
+        // ✅ NOUVEAU — Commande /start
+        if (text === "/start") {
+            await axios.post(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+                chat_id: chatId,
+                text: `👋 Bienvenue sur SAMII !\n\n✅ Ton Chat ID est :\n\`${chatId}\`\n\nCopie ce numéro dans ton Hub SAMI pour activer les notifications automatiques.`,
+                parse_mode: "Markdown"
+            });
+            return res.sendStatus(200);
+        }
+
+        // ✅ NOUVEAU — Commande /id (au cas où)
+        if (text === "/id") {
+            await axios.post(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+                chat_id: chatId,
+                text: `🆔 Ton Chat ID : \`${chatId}\``,
+                parse_mode: "Markdown"
+            });
+            return res.sendStatus(200);
+        }
+
         const prompt = `
 Tu es SAMII.
 
@@ -153,3 +173,4 @@ ${text}
 });
 
 module.exports = router;
+
