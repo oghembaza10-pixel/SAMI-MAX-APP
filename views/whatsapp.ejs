@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Connecter WhatsApp — OG Empire</title>
+  <link rel="stylesheet" href="/css/hub-premium.css">
+</head>
+<body>
+<div class="og-capital">
+  <%- include("../partials/sidebar") %>
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+    <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
+
+      <div style="text-align:center;margin-bottom:30px;">
+        <div style="font-size:3rem;">💬</div>
+        <h2 style="color:#fff;margin-top:10px;">Connecter WhatsApp</h2>
+        <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+          Entre ton numéro WhatsApp pour recevoir les notifications commandes
+        </p>
+      </div>
+
+      <form method="POST" action="/connect/whatsapp">
+        <input type="hidden" name="shop" value="<%= shop %>">
+
+        <div style="margin-bottom:16px;">
+          <label style="color:#888;font-size:0.82rem;display:block;margin-bottom:6px;">Numéro WhatsApp</label>
+          <input
+            type="tel"
+            name="whatsapp_phone"
+            value="<%= whatsappPhone %>"
+            placeholder="ex: +213XXXXXXXXX"
+            style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:12px 16px;color:#fff;font-size:0.9rem;outline:none;"
+          >
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+          <span style="color:#888;font-size:0.85rem;">Activer les notifications</span>
+          <label style="position:relative;width:44px;height:24px;">
+            <input type="checkbox" name="whatsapp_actif" value="true" <%= whatsappActif ? "checked" : "" %>
+              style="opacity:0;width:0;height:0;">
+            <span style="position:absolute;inset:0;background:<%= whatsappActif ? '#25d366' : '#333' %>;border-radius:24px;cursor:pointer;"></span>
+          </label>
+        </div>
+
+        <button type="submit"
+          style="width:100%;padding:13px;background:linear-gradient(135deg,#00ff88,#00c853);border:none;border-radius:10px;color:#000;font-weight:700;font-size:0.95rem;cursor:pointer;">
+          💾 Sauvegarder
+        </button>
+      </form>
+
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
+</body>
+</html>
