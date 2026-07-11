@@ -45,9 +45,10 @@ async function saveBoutiqueAirtable(shop, accessToken) {
     await axios.post(url, {
         fields: {
             shop_url: shop,
+            nom_boutique: shop,
             access_token: accessToken,
             scopes: SCOPES,
-            statut: "actif",
+            status: "actif",
             date_connexion: new Date().toISOString().split("T")[0],
             webhooks_actifs: false,
         }
@@ -58,6 +59,7 @@ async function saveBoutiqueAirtable(shop, accessToken) {
         }
     });
 }
+
 
 // — BLOC 2 : Enregistrer les webhooks automatiquement —
 async function registerWebhooks(shop, accessToken) {
