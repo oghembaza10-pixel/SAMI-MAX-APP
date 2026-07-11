@@ -5,6 +5,7 @@ const hub = require("./routes/hub");
 const path = require("path");
 const express = require("express");
 const axios = require("axios");
+const connect = require("./routes/connect");
 const telegram = require("./routes/telegram");
 const settings = require("./routes/settings");
 const dashboard = require("./routes/dashboard");
@@ -31,7 +32,7 @@ app.get('/', (req, res) => {
 });
 
 app.use("/hub", hub);
-
+app.use("/connect", connect);
 // Cette route intercepte le clic sur une carte (ex: /qg/ecommerce)
 // ET C'EST ICI QUE TU DOIS FAIRE ATTENTION :
 // Dans le nouveau hub.ejs, les liens sont formatés comme /qg/votre-metier
