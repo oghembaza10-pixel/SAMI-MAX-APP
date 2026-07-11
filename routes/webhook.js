@@ -4,18 +4,37 @@ const axios = require("axios");
 const telegramService = require("../services/telegramService");
 
 // ── ENV ──────────────────────────────────────────────
-const AIRTABLE_API_KEY   = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID   = process.env.AIRTABLE_BASE_ID;
-const AIRTABLE_TABLE_ID  = process.env.AIRTABLE_TABLE_ID;
+const AIRTABLE_API_KEY  = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID  = process.env.AIRTABLE_BASE_ID;
+const AIRTABLE_TABLE_ID = process.env.AIRTABLE_TABLE_ID; // Table Commandes
+const AIRTABLE_BOUTIQUES_TABLE = "tblFEs0ynJ1fy7xqW";    // Table Boutiques
 
-const WHATSAPP_INSTANCE  = process.env.WHATSAPP_INSTANCE;
-const WHATSAPP_TOKEN     = process.env.WHATSAPP_TOKEN;
-const WHATSAPP_PHONE     = process.env.WHATSAPP_PHONE;
+const WHATSAPP_INSTANCE = process.env.WHATSAPP_INSTANCE;
+const WHATSAPP_TOKEN    = process.env.WHATSAPP_TOKEN;
+const WHATSAPP_PHONE    = process.env.WHATSAPP_PHONE;
 
-// ── HELPERS ──────────────────────────────────────────
+// ── HELPER : Récupère la boutique depuis Airtable ────
+async function getBoutiqueByShop(shopUrl) {
+  try {
+    const res = await axios.get(
+      `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_BOUTIQUES_TABLE}`,
+      {
+        headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` },
+        params: {
+          filterByFormula: `{shop_url} = "${shopUrl}"`,
+          maxRecords: 1,
+        },
+      }
+    );
+    return res.data.records?.[0]?.fields || null;
+  } catch (err) {
+    console.error("❌ Airtable getBoutique:", err.message);
+    return null;
+  }
+}
 
-/** Enregistre la commande dans Airtable */
-async function saveToAirtable(order, extraFields = {}) {
+// ── HELPER : Enregistre commande dans Airtable ───────
+async function saveToAirtable(order) {
   const client  = `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim();
   const phone   = order.shipping_address?.phone || order.customer?.phone || "";
   const address = order.shipping_address
@@ -33,15 +52,15 @@ async function saveToAirtable(order, extraFields = {}) {
         "Total"      : Number(order.total_price || 0),
         "Statut"     : order.financial_status || "pending",
         "Date"       : order.created_at || new Date().toISOString(),
-        ...extraFields,
       },
     },
     { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" } }
   );
+
   return { client, phone, address };
 }
 
-/** Envoie une notif WhatsApp (Green-API) */
+// ── HELPER : Envoie WhatsApp ─────────────────────────
 async function sendWhatsApp(phone, message) {
   if (!phone || !WHATSAPP_INSTANCE || !WHATSAPP_TOKEN) return;
   await axios.post(
@@ -50,43 +69,33 @@ async function sendWhatsApp(phone, message) {
   );
 }
 
-/** Envoie une notif Telegram */
-async function sendTelegram(message) {
-  try {
-    await telegramService.sendMessage(message);
-  } catch (err) {
-    console.error("❌ Telegram:", err.message);
-  }
-}
-
-/** Notifie tous les canaux actifs */
-async function notifyAll(message, phone = null) {
-  const tasks = [];
-  if (phone)                          tasks.push(sendWhatsApp(phone, message).catch(e => console.error("❌ WhatsApp:", e.message)));
-  if (process.env.TELEGRAM_BOT_TOKEN) tasks.push(sendTelegram(message));
-  // 🔜 Google Chat / Meta / autres → ajouter ici
-  await Promise.allSettled(tasks);
-}
-
 // ── WEBHOOK : orders/create ───────────────────────────
 router.post("/orders-create", async (req, res) => {
   res.sendStatus(200);
   try {
     const order = req.body;
+    const shop  = req.headers["x-shopify-shop-domain"];
+
+    const boutique = await getBoutiqueByShop(shop);
     const { client, phone, address } = await saveToAirtable(order);
     console.log("✅ Commande enregistrée dans Airtable");
 
-    const msg =
+    const whatsappMsg =
       `🛒 *Nouvelle commande !*\n` +
       `👤 Client : ${client}\n` +
       `📞 Tél : ${phone}\n` +
       `📍 Adresse : ${address}\n` +
-      `💰 Total : ${order.total_price} $\n` +
+      `💰 Total : ${order.total_price} DZD\n` +
       `📦 Statut : ${order.financial_status}`;
 
-    await notifyAll(msg, phone);
-    console.log("✅ Notifications envoyées");
+    await Promise.allSettled([
+      sendWhatsApp(phone, whatsappMsg).catch(e => console.error("❌ WhatsApp:", e.message)),
+      boutique?.telegram_chat_id && boutique?.telegram_actif
+        ? telegramService.notifyNewOrder(boutique.telegram_chat_id, order)
+        : Promise.resolve(),
+    ]);
 
+    console.log("✅ Notifications envoyées (orders/create)");
   } catch (err) {
     console.error("❌ orders/create:", err.response?.data || err.message);
   }
@@ -97,16 +106,24 @@ router.post("/orders-updated", async (req, res) => {
   res.sendStatus(200);
   try {
     const order = req.body;
+    const shop  = req.headers["x-shopify-shop-domain"];
+    const boutique = await getBoutiqueByShop(shop);
     const phone  = order.shipping_address?.phone || order.customer?.phone || "";
     const client = `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim();
 
-    const msg =
+    const whatsappMsg =
       `🔄 *Commande mise à jour*\n` +
       `👤 ${client} | #${order.order_number}\n` +
       `📦 Statut : ${order.fulfillment_status || order.financial_status}`;
 
-    await notifyAll(msg, phone);
+    await Promise.allSettled([
+      sendWhatsApp(phone, whatsappMsg).catch(e => console.error("❌ WhatsApp:", e.message)),
+      boutique?.telegram_chat_id && boutique?.telegram_actif
+        ? telegramService.send(boutique.telegram_chat_id, whatsappMsg)
+        : Promise.resolve(),
+    ]);
 
+    console.log("✅ Notifications envoyées (orders/updated)");
   } catch (err) {
     console.error("❌ orders/updated:", err.response?.data || err.message);
   }
@@ -117,19 +134,28 @@ router.post("/orders-fulfilled", async (req, res) => {
   res.sendStatus(200);
   try {
     const order = req.body;
+    const shop  = req.headers["x-shopify-shop-domain"];
+    const boutique = await getBoutiqueByShop(shop);
     const phone  = order.shipping_address?.phone || order.customer?.phone || "";
-    const client = `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim();
+
     const tracking = order.fulfillments?.[0]?.tracking_number || "N/A";
     const carrier  = order.fulfillments?.[0]?.tracking_company || "N/A";
+    const client   = `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim();
 
-    const msg =
+    const whatsappMsg =
       `🚚 *Commande expédiée !*\n` +
       `👤 ${client} | #${order.order_number}\n` +
       `📦 Transporteur : ${carrier}\n` +
       `🔍 Tracking : ${tracking}`;
 
-    await notifyAll(msg, phone);
+    await Promise.allSettled([
+      sendWhatsApp(phone, whatsappMsg).catch(e => console.error("❌ WhatsApp:", e.message)),
+      boutique?.telegram_chat_id && boutique?.telegram_actif
+        ? telegramService.notifyOrderFulfilled(boutique.telegram_chat_id, order)
+        : Promise.resolve(),
+    ]);
 
+    console.log("✅ Notifications envoyées (orders/fulfilled)");
   } catch (err) {
     console.error("❌ orders/fulfilled:", err.response?.data || err.message);
   }
@@ -140,35 +166,53 @@ router.post("/orders-cancelled", async (req, res) => {
   res.sendStatus(200);
   try {
     const order = req.body;
+    const shop  = req.headers["x-shopify-shop-domain"];
+    const boutique = await getBoutiqueByShop(shop);
     const phone  = order.shipping_address?.phone || order.customer?.phone || "";
     const client = `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim();
 
-    const msg =
+    const whatsappMsg =
       `❌ *Commande annulée*\n` +
       `👤 ${client} | #${order.order_number}\n` +
       `💬 Raison : ${order.cancel_reason || "Non précisée"}`;
 
-    await notifyAll(msg, phone);
+    await Promise.allSettled([
+      sendWhatsApp(phone, whatsappMsg).catch(e => console.error("❌ WhatsApp:", e.message)),
+      boutique?.telegram_chat_id && boutique?.telegram_actif
+        ? telegramService.notifyOrderCancelled(boutique.telegram_chat_id, order)
+        : Promise.resolve(),
+    ]);
 
+    console.log("✅ Notifications envoyées (orders/cancelled)");
   } catch (err) {
     console.error("❌ orders/cancelled:", err.response?.data || err.message);
   }
 });
 
-// ── WEBHOOK : products/update (stock) ────────────────
+// ── WEBHOOK : products/update (stock faible) ──────────
 router.post("/products-update", async (req, res) => {
   res.sendStatus(200);
   try {
     const product = req.body;
+    const shop    = req.headers["x-shopify-shop-domain"];
+    const boutique = await getBoutiqueByShop(shop);
+
     const lowStock = product.variants?.filter(v => v.inventory_quantity <= 5) || [];
 
-    if (lowStock.length > 0) {
-      const lines = lowStock.map(v => `  • ${v.title} → ${v.inventory_quantity} restants`).join("\n");
-      const msg =
-        `⚠️ *Stock faible — ${product.title}*\n${lines}`;
-      await notifyAll(msg);
+    for (const variant of lowStock) {
+      const whatsappMsg =
+        `⚠️ *Stock faible — ${product.title}*\n` +
+        `• ${variant.title} → ${variant.inventory_quantity} restants`;
+
+      await Promise.allSettled([
+        sendWhatsApp(null, whatsappMsg).catch(e => console.error("❌ WhatsApp:", e.message)),
+        boutique?.telegram_chat_id && boutique?.telegram_actif
+          ? telegramService.notifyLowStock(boutique.telegram_chat_id, product.title, variant.inventory_quantity)
+          : Promise.resolve(),
+      ]);
     }
 
+    console.log("✅ Alertes stock envoyées");
   } catch (err) {
     console.error("❌ products/update:", err.response?.data || err.message);
   }
@@ -179,9 +223,17 @@ router.post("/app-uninstalled", async (req, res) => {
   res.sendStatus(200);
   try {
     const shop = req.headers["x-shopify-shop-domain"] || "inconnu";
-    console.warn(`⚠️ App désinstallée par : ${shop}`);
-    await notifyAll(`🔴 *App désinstallée*\nBoutique : ${shop}`);
-    // 🔜 Marquer comme inactif dans Airtable ici
+    console.warn(`⚠️ App désinstallée : ${shop}`);
+
+    const boutique = await getBoutiqueByShop(shop);
+
+    await Promise.allSettled([
+      boutique?.telegram_chat_id
+        ? telegramService.send(boutique.telegram_chat_id, `🔴 *App désinstallée*\nBoutique : ${shop}`)
+        : Promise.resolve(),
+      // 🔜 Marquer inactif dans Airtable ici
+    ]);
+
   } catch (err) {
     console.error("❌ app/uninstalled:", err.message);
   }
