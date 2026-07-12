@@ -1,75 +1,27 @@
-/**
- * ============================================================
- * OG • Commerce Engine
- * ------------------------------------------------------------
- * Gère toute la logique commerciale.
- * Les API externes seront connectées via les Services.
- * ============================================================
- */
+const airtable=require("../airtable");
 
-class CommerceEngine {
+async function newOrder(event){
 
-    constructor() {
+    const order=event.payload;
 
-        this.name = "Commerce Engine";
-        this.version = "1.0.0";
+    console.log("Nouvelle commande :",order.id);
 
-        this.orders = [];
-        this.products = [];
-        this.customers = [];
+    await airtable.createCommande({
 
-    }
+        id:order.id,
 
-    addProduct(product) {
+        client:order.customer?.first_name,
 
-        this.products.push(product);
+        total:order.total_price,
 
-    }
+        statut:order.financial_status,
 
-    addCustomer(customer) {
+        boutique:order.shop_domain
 
-        this.customers.push(customer);
-
-    }
-
-    createOrder(order) {
-
-        this.orders.push(order);
-
-        return order;
-
-    }
-
-    getOrders() {
-
-        return this.orders;
-
-    }
-
-    getProducts() {
-
-        return this.products;
-
-    }
-
-    getCustomers() {
-
-        return this.customers;
-
-    }
-
-    stats() {
-
-        return {
-
-            products: this.products.length,
-            customers: this.customers.length,
-            orders: this.orders.length
-
-        };
-
-    }
+    });
 
 }
 
-module.exports = new CommerceEngine();
+module.exports={
+    newOrder
+};
