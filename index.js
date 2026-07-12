@@ -65,7 +65,7 @@ console.log("🚀 SAMII OS démarre...");
 // ======================================================
 app.use(require("./Itinéraires/auth-meta"));
 app.use(require("./Itinéraires/auth-shopify"));
-app.use("/webhook/telegram", telegram);
+app.use("/telegram", telegram);
 app.use("/community", community);
 app.use("/academy", academy);
 app.use("/webhook", webhook);
