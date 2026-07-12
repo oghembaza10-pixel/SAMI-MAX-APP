@@ -12,7 +12,8 @@ class CommerceEngine {
 
     // ── HELPER : Boutique ────────────────────────────
     async getBoutique(shop) {
-        return await airtable.findOne("BOUTIQUES", `{shop_url} = "${shop}"`);
+        const records = await airtable.findRecords("TABLE_BOUTIQUES", `{shop_url} = "${shop}"`);
+        return records.length ? records[0] : null;
     }
 
     // ── HELPER : Données client ──────────────────────
@@ -35,7 +36,6 @@ class CommerceEngine {
         const channels = [];
         if (actif && chatId) channels.push("telegram");
         if (recipients.whatsapp) channels.push("whatsapp");
-
         if (!channels.length) return;
 
         return notificationEngine.broadcast({
@@ -43,7 +43,7 @@ class CommerceEngine {
             recipients: {
                 telegram: chatId,
                 whatsapp: recipients.whatsapp || "",
-                email   : recipients.email || "",
+                email   : recipients.email    || "",
             },
             message,
             shop,
@@ -60,24 +60,22 @@ class CommerceEngine {
             console.log(`🛒 Nouvelle commande : ${shop}`);
 
             // 1. Airtable → COMMANDES
-            await airtable.create("COMMANDES", {
-                "ID Commande" : String(order.id || ""),
-                "Client"      : client,
-                "Adresse"     : address,
-                "Téléphone"   : phone,
-                "Total"       : Number(order.total_price || 0),
-                "Statut"      : order.financial_status || "pending",
-                "Date"        : order.created_at || new Date().toISOString(),
+            await airtable.createRecord("Commandes", {
+                "ID Commande"  : String(order.id || ""),
+                "Lien Boutique": shop    || "",
+                "Nom Client"   : client  || "",
+                "Téléphone"    : phone   || "",
+                "Ville"        : order.shipping_address?.city || "",
+                "Statut"       : order.financial_status || "pending",
             });
 
-            // 2. Journal + Logs
-            await airtable.journal("order.created", { orderId: order.id, client, total: order.total_price }, shop);
+            // 2. Log
             await airtable.log("order.created", `Commande #${order.order_number} — ${client}`, shop);
 
-            // 3. Automation → décide de tout
+            // 3. Automation
             await automationEngine.run("order.created", { order, shop, client, phone, address });
 
-            // 4. Notification via helper
+            // 4. Notification
             const message =
                 `🛒 *Nouvelle commande !*\n` +
                 `👤 Client : ${client}\n` +
@@ -104,7 +102,6 @@ class CommerceEngine {
             const shop  = event.shop;
             const { client, phone } = this.getClientData(order);
 
-            await airtable.journal("order.updated", { orderId: order.id }, shop);
             await airtable.log("order.updated", `#${order.order_number} mise à jour`, shop);
             await automationEngine.run("order.updated", { order, shop, client, phone });
 
@@ -130,7 +127,6 @@ class CommerceEngine {
             const shop  = event.shop;
             const { client, phone } = this.getClientData(order);
 
-            await airtable.journal("order.cancelled", { orderId: order.id }, shop);
             await airtable.log("order.cancelled", `#${order.order_number} annulée`, shop);
             await automationEngine.run("order.cancelled", { order, shop, client, phone });
 
@@ -152,13 +148,12 @@ class CommerceEngine {
     // ── COMMANDE EXPÉDIÉE ────────────────────────────
     async orderFulfilled(event) {
         try {
-            const order   = event.payload;
-            const shop    = event.shop;
+            const order    = event.payload;
+            const shop     = event.shop;
             const { client, phone } = this.getClientData(order);
-            const tracking = order.fulfillments?.[0]?.tracking_number || "N/A";
+            const tracking = order.fulfillments?.[0]?.tracking_number  || "N/A";
             const carrier  = order.fulfillments?.[0]?.tracking_company || "N/A";
 
-            await airtable.journal("order.fulfilled", { orderId: order.id }, shop);
             await airtable.log("order.fulfilled", `#${order.order_number} expédiée`, shop);
             await automationEngine.run("order.fulfilled", { order, shop, client, phone, tracking, carrier });
 
@@ -183,12 +178,10 @@ class CommerceEngine {
         try {
             const { product, variant, shop } = event.payload;
 
-            await airtable.journal("stock.low", { product, variant }, shop);
             await airtable.log("stock.low", `Stock faible — ${product}`, shop);
             await automationEngine.run("stock.low", { product, variant, shop });
 
             const message = `⚠️ *Stock faible*\n📦 ${product} : ${variant} restants`;
-
             await this.notifyShop(shop, {}, message);
 
             return { success: true, event: event.type, shop };
@@ -201,5 +194,4 @@ class CommerceEngine {
 }
 
 module.exports = new CommerceEngine();
-
 
