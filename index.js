@@ -16,6 +16,9 @@ const CONFIG = require("./config");
 const webhook = require("./routes/webhook");
 const academy = require("./routes/academy");
 const app = express();
+// ── BOOTSTRAP SAMII OS ────────────────────────────────
+const { registerChannels } = require("./kernel/bootstrap");
+registerChannels();
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 const community = require("./routes/community");
