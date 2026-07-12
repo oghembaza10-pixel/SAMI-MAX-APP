@@ -43,14 +43,21 @@ async function send({ channel, to, message, data = {}, shop = "" }) {
     }
 }
 
-// ── BROADCAST ────────────────────────────────────────
-// Envoie sur plusieurs canaux en même temps
-async function broadcast({ channels, to, message, data = {}, shop = "" }) {
+async function broadcast({ channels, recipients = {}, message, data = {}, shop = "" }) {
     const results = await Promise.allSettled(
-        channels.map(channel => send({ channel, to, message, data, shop }))
+        channels.map(channel =>
+            send({
+                channel,
+                to     : recipients[channel] || "",
+                message,
+                data,
+                shop,
+            })
+        )
     );
     return results;
 }
+
 
 // ── SHORTCUTS ────────────────────────────────────────
 async function telegram(chatId, message, shop = "") {
