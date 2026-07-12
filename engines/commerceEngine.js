@@ -12,8 +12,7 @@ class CommerceEngine {
 
     // ── HELPER : Boutique ────────────────────────────
     async getBoutique(shop) {
-        const records = await airtable.findRecords("TABLE_BOUTIQUES", `{shop_url} = "${shop}"`);
-        return records.length ? records[0] : null;
+        return await airtable.findOne("BOUTIQUES", `{shop_url} = "${shop}"`);
     }
 
     // ── HELPER : Données client ──────────────────────
@@ -60,11 +59,11 @@ class CommerceEngine {
             console.log(`🛒 Nouvelle commande : ${shop}`);
 
             // 1. Airtable → COMMANDES
-            await airtable.createRecord("Commandes", {
+            await airtable.create("COMMANDES", {
                 "ID Commande"  : String(order.id || ""),
-                "Lien Boutique": shop    || "",
-                "Nom Client"   : client  || "",
-                "Téléphone"    : phone   || "",
+                "Lien Boutique": shop   || "",
+                "Nom Client"   : client || "",
+                "Téléphone"    : phone  || "",
                 "Ville"        : order.shipping_address?.city || "",
                 "Statut"       : order.financial_status || "pending",
             });
