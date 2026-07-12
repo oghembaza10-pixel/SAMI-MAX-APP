@@ -6,40 +6,47 @@
  */
 
 const notificationEngine = require("../engines/notificationEngine");
-const telegramService    = require("../services/telegramService");
+const telegram           = require("../services/telegramService");
+const whatsapp           = require("../services/whatsapp");
+const instagram          = require("../services/instagram");
+const facebook           = require("../services/facebook");
+const gmail              = require("../services/gmail");
+const stripe             = require("../services/stripe");
+const paypal             = require("../services/paypal");
+const yalidine           = require("../services/yalidine");
 
-// ── ENREGISTRE LES CANAUX ────────────────────────────
 function registerChannels() {
 
-    // Telegram
     notificationEngine.register("telegram", {
-        send: async ({ to, message }) => {
-            await telegramService.send(to, message);
-        }
+        send: async ({ to, message }) => telegram.send(to, message)
     });
 
-    // WhatsApp — activé quand GrindAPI est prêt
     notificationEngine.register("whatsapp", {
-        send: async ({ to, message }) => {
-            console.log(`📱 WhatsApp → ${to} : ${message}`);
-            // await whatsappService.send(to, message);
-        }
+        send: async ({ to, message }) => whatsapp.send({ to, message })
     });
 
-    // Email — activé quand Gmail est prêt
+    notificationEngine.register("instagram", {
+        send: async ({ to, message }) => instagram.send({ to, message })
+    });
+
+    notificationEngine.register("facebook", {
+        send: async ({ to, message }) => facebook.send({ to, message })
+    });
+
     notificationEngine.register("email", {
-        send: async ({ to, message }) => {
-            console.log(`📧 Email → ${to} : ${message}`);
-            // await gmailService.send(to, message);
-        }
+        send: async ({ to, message }) => gmail.send({ to, message })
     });
 
-    // Meta — activé quand Meta API est prête
-    notificationEngine.register("meta", {
-        send: async ({ to, message }) => {
-            console.log(`📘 Meta → ${to} : ${message}`);
-            // await metaService.send(to, message);
-        }
+    notificationEngine.register("stripe", {
+        send: async ({ to, message }) => stripe.send({ to, message })
+    });
+
+    notificationEngine.register("paypal", {
+        send: async ({ to, message }) => paypal.send({ to, message })
+    });
+
+    notificationEngine.register("yalidine", {
+        send: async ({ to, message }) => yalidine.send({ to, message })
     });
 
     console.log("✅ Tous les canaux enregistrés");
