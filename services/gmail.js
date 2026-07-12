@@ -1,22 +1,24 @@
-/**
- * ============================================================
- * OG • Gmail Service
- * ============================================================
- */
+const axios        = require("axios");
+const CONFIG       = require("../config");
+const orchestrator = require("../brain/orchestrator");
 
-class GmailService {
-
-    async send(to, subject, message) {
-
-        return {
-            success: true,
-            to,
-            subject,
-            message
-        };
-
+async function send({ to, subject, message }) {
+    try {
+        console.log(`📧 Gmail → ${to} : ${subject}`);
+        // Brancher nodemailer ou Gmail API ici
+        return { success: true };
+    } catch (err) {
+        console.error("❌ Gmail send :", err.message);
+        return { success: false, error: err.message };
     }
-
 }
 
-module.exports = new GmailService();
+async function receive(msg) {
+    await orchestrator.process({
+        type   : "email.message",
+        shop   : msg.shop || "",
+        payload: msg,
+    });
+}
+
+module.exports = { send, receive };
