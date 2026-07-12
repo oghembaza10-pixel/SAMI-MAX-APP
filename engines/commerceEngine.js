@@ -1,21 +1,18 @@
 /**
  * ============================================================
  * OG • Commerce Engine
- * Cerveau Commerce de SAMII
  * ============================================================
  */
 
-const airtable       = require("../services/airtable");
-const telegramService = require("../services/telegramService");
+const airtable           = require("../services/airtable");
+const notificationEngine = require("../engines/notificationEngine");
 
 class CommerceEngine {
 
-    // ── HELPER : Récupère la boutique ────────────────
     async getBoutique(shop) {
         return await airtable.findOne("BOUTIQUES", `{shop_url} = "${shop}"`);
     }
 
-    // ── HELPER : Données client depuis commande ──────
     getClientData(order) {
         return {
             client : `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim(),
@@ -35,7 +32,7 @@ class CommerceEngine {
 
             console.log(`🛒 Nouvelle commande : ${shop}`);
 
-            // 1. Airtable → COMMANDES
+            // 1. Airtable
             await airtable.create("COMMANDES", {
                 "ID Commande" : String(order.id || ""),
                 "Client"      : client,
@@ -45,27 +42,33 @@ class CommerceEngine {
                 "Statut"      : order.financial_status || "pending",
                 "Date"        : order.created_at || new Date().toISOString(),
             });
-            console.log("✅ Commande enregistrée dans Airtable");
 
-            // 2. Airtable → JOURNAL
-            await airtable.journal("order.created", {
-                orderId: order.id,
-                client,
-                total: order.total_price,
-            }, shop);
+            // 2. Journal + Logs
+            await airtable.journal("order.created", { orderId: order.id, client, total: order.total_price }, shop);
+            await airtable.log("order.created", `Commande #${order.order_number} — ${client}`, shop);
 
-            // 3. Airtable → LOGS
-            await airtable.log("order.created", `Commande #${order.order_number} - ${client}`, shop);
-
-            // 4. Airtable → NOTIFICATIONS
-            await airtable.notification("commande", `🛒 Nouvelle commande de ${client} — ${order.total_price} DZD`, shop);
-
-            // 5. Telegram
+            // 3. Notification — commerceEngine ne connaît plus Telegram
             const boutique = await this.getBoutique(shop);
-            if (boutique?.fields?.telegram_chat_id && boutique?.fields?.telegram_actif) {
-                await telegramService.notifyNewOrder(boutique.fields.telegram_chat_id, order);
-                console.log("✅ Telegram notifié");
-            }
+            const chatId   = boutique?.fields?.telegram_chat_id;
+            const actif    = boutique?.fields?.telegram_actif;
+
+            const message =
+                `🛒 *Nouvelle commande !*\n` +
+                `👤 Client : ${client}\n` +
+                `📞 Tél : ${phone}\n` +
+                `📍 Adresse : ${address}\n` +
+                `💰 Total : ${order.total_price}\n` +
+                `📦 Statut : ${order.financial_status}`;
+
+            await notificationEngine.broadcast({
+                channels: actif && chatId
+                    ? ["telegram", "whatsapp"]
+                    : ["whatsapp"],
+                to     : chatId,
+                message,
+                data   : order,
+                shop,
+            });
 
             return { success: true, shop, orderId: order.id };
 
@@ -83,14 +86,17 @@ class CommerceEngine {
             const shop  = event.shop;
             const { client } = this.getClientData(order);
 
-            await airtable.journal("order.updated", { orderId: order.id, statut: order.financial_status }, shop);
-            await airtable.log("order.updated", `Commande #${order.order_number} mise à jour`, shop);
+            await airtable.journal("order.updated", { orderId: order.id }, shop);
+            await airtable.log("order.updated", `#${order.order_number} mise à jour`, shop);
+
+            const message =
+                `🔄 *Commande mise à jour*\n` +
+                `👤 ${client} | #${order.order_number}\n` +
+                `📦 ${order.fulfillment_status || order.financial_status}`;
 
             const boutique = await this.getBoutique(shop);
-            if (boutique?.fields?.telegram_chat_id && boutique?.fields?.telegram_actif) {
-                await telegramService.send(boutique.fields.telegram_chat_id,
-                    `🔄 Commande mise à jour\n👤 ${client} | #${order.order_number}\n📦 ${order.fulfillment_status || order.financial_status}`
-                );
+            if (boutique?.fields?.telegram_actif) {
+                await notificationEngine.telegram(boutique.fields.telegram_chat_id, message, shop);
             }
 
             return { success: true };
@@ -108,12 +114,17 @@ class CommerceEngine {
             const { client } = this.getClientData(order);
 
             await airtable.journal("order.cancelled", { orderId: order.id }, shop);
-            await airtable.log("order.cancelled", `Commande #${order.order_number} annulée`, shop);
+            await airtable.log("order.cancelled", `#${order.order_number} annulée`, shop);
             await airtable.notification("annulation", `❌ Commande annulée — ${client}`, shop);
 
+            const message =
+                `❌ *Commande annulée*\n` +
+                `👤 ${client} | #${order.order_number}\n` +
+                `💬 Raison : ${order.cancel_reason || "Non précisée"}`;
+
             const boutique = await this.getBoutique(shop);
-            if (boutique?.fields?.telegram_chat_id && boutique?.fields?.telegram_actif) {
-                await telegramService.notifyOrderCancelled(boutique.fields.telegram_chat_id, order);
+            if (boutique?.fields?.telegram_actif) {
+                await notificationEngine.telegram(boutique.fields.telegram_chat_id, message, shop);
             }
 
             return { success: true };
@@ -126,17 +137,25 @@ class CommerceEngine {
     // ── COMMANDE EXPÉDIÉE ────────────────────────────
     async orderFulfilled(event) {
         try {
-            const order = event.payload;
-            const shop  = event.shop;
+            const order   = event.payload;
+            const shop    = event.shop;
             const { client } = this.getClientData(order);
+            const tracking = order.fulfillments?.[0]?.tracking_number || "N/A";
+            const carrier  = order.fulfillments?.[0]?.tracking_company || "N/A";
 
             await airtable.journal("order.fulfilled", { orderId: order.id }, shop);
-            await airtable.log("order.fulfilled", `Commande #${order.order_number} expédiée`, shop);
-            await airtable.notification("livraison", `🚚 Commande expédiée — ${client}`, shop);
+            await airtable.log("order.fulfilled", `#${order.order_number} expédiée`, shop);
+            await airtable.notification("livraison", `🚚 Expédiée — ${client}`, shop);
+
+            const message =
+                `🚚 *Commande expédiée !*\n` +
+                `👤 ${client} | #${order.order_number}\n` +
+                `📦 Transporteur : ${carrier}\n` +
+                `🔍 Tracking : ${tracking}`;
 
             const boutique = await this.getBoutique(shop);
-            if (boutique?.fields?.telegram_chat_id && boutique?.fields?.telegram_actif) {
-                await telegramService.notifyOrderFulfilled(boutique.fields.telegram_chat_id, order);
+            if (boutique?.fields?.telegram_actif) {
+                await notificationEngine.telegram(boutique.fields.telegram_chat_id, message, shop);
             }
 
             return { success: true };
@@ -153,7 +172,13 @@ class CommerceEngine {
 
             await airtable.journal("stock.low", { product, variant }, shop);
             await airtable.log("stock.low", `Stock faible — ${product}`, shop);
-            await airtable.notification("stock", `⚠️ Stock faible — ${product} : ${variant} restants`, shop);
+
+            const message = `⚠️ *Stock faible*\n📦 ${product} : ${variant} restants`;
+
+            const boutique = await this.getBoutique(shop);
+            if (boutique?.fields?.telegram_actif) {
+                await notificationEngine.telegram(boutique.fields.telegram_chat_id, message, shop);
+            }
 
             return { success: true };
         } catch (err) {
