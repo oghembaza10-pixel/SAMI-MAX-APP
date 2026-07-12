@@ -2,11 +2,11 @@
 // routes/api.js — Chat SAMII
 // ======================================================
 
-const express = require("express");
-const router  = express.Router();
-const axios   = require("axios");
-const CONFIG  = require("../config");
-const SAMII_PROMPT = require("../brain/prompts");
+const express      = require("express");
+const router       = express.Router();
+const axios        = require("axios");
+const CONFIG       = require("../config");
+const SAMII_PROMPT = require("../brain/prompts/index");
 
 router.post("/chat", async (req, res) => {
     try {
@@ -22,7 +22,12 @@ router.post("/chat", async (req, res) => {
                 contents: [{
                     parts: [{
                         text: SAMII_PROMPT(message, {
-                            shop: req.body.shop || "",
+                            shop      : req.body.shop       || "",
+                            client    : req.body.client     || "",
+                            commande  : req.body.commande   || "",
+                            page      : req.body.page       || "",
+                            lang      : req.body.lang       || "",
+                            lastAction: req.body.lastAction || "",
                         })
                     }]
                 }]
@@ -42,3 +47,4 @@ router.post("/chat", async (req, res) => {
 });
 
 module.exports = router;
+
