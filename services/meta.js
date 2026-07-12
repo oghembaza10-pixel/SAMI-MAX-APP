@@ -1,38 +1,30 @@
-/**
- * ============================================================
- * OG • Meta Service
- * ============================================================
- */
+const orchestrator=require("../brain/orchestrator");
 
-class MetaService {
+async function instagram(msg){
 
-    constructor() {
+    await orchestrator.process({
 
-        this.connected = false;
+        type:"instagram.message",
 
-    }
+        payload:msg
 
-    async connect(token) {
-
-        this.connected = true;
-
-        console.log("📘 Meta connecté.");
-
-        return true;
-
-    }
-
-    async publish(post) {
-
-        return {
-
-            success: true,
-            post
-
-        };
-
-    }
+    });
 
 }
 
-module.exports = new MetaService();
+async function messenger(msg){
+
+    await orchestrator.process({
+
+        type:"messenger.message",
+
+        payload:msg
+
+    });
+
+}
+
+module.exports={
+    instagram,
+    messenger
+};
