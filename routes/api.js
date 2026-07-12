@@ -1,12 +1,6 @@
-/**
- * ============================================================
- * OG • API Routes
- * ============================================================
- */
-
-const express       = require("express");
-const router        = express.Router();
-const geminiService = require("../services/geminiService");
+const express = require("express");
+const router  = express.Router();
+const planner = require("../brain/planner");
 
 router.post("/chat", async (req, res) => {
     try {
@@ -17,21 +11,16 @@ router.post("/chat", async (req, res) => {
         }
 
         const context = {
-            user: {
-                lang: req.body.lang || "",
-            },
+            user      : { lang: req.body.lang || "" },
             shop      : req.body.shop       || "",
             client    : req.body.client     || "",
             commande  : req.body.commande   || "",
             page      : req.body.page       || "",
             lastAction: req.body.lastAction || "",
-            session: {
-                timestamp: Date.now(),
-            },
         };
 
-        const reply = await geminiService.chat({ message, context });
-        res.json({ success: true, reply });
+        const result = await planner.plan({ message, context });
+        res.json(result);
 
     } catch (err) {
         console.error("❌ API chat :", err.message);
