@@ -1,27 +1,61 @@
-const airtable=require("../airtable");
+/**
+ * ============================================================
+ * OG • Commerce Engine
+ * Cerveau Commerce de SAMII
+ * ============================================================
+ */
 
-async function newOrder(event){
+const axios = require("axios");
+const telegramService = require("../services/telegramService");
 
-    const order=event.payload;
+class CommerceEngine {
 
-    console.log("Nouvelle commande :",order.id);
+    async newOrder(event) {
 
-    await airtable.createCommande({
+        try {
 
-        id:order.id,
+            const order = event.payload;
+            const shop = event.shop;
 
-        client:order.customer?.first_name,
+            console.log(`🛒 Nouvelle commande : ${shop}`);
 
-        total:order.total_price,
+            // ================================
+            // FUTUR
+            // ================================
+            // Ici SAMII décidera quoi faire :
+            //
+            // ✔ Enregistrer Airtable
+            // ✔ Envoyer Telegram
+            // ✔ Envoyer WhatsApp
+            // ✔ Prévenir Messenger
+            // ✔ Prévenir Instagram
+            // ✔ Créer CRM
+            // ✔ Déclencher IA
+            // ✔ Déclencher Analytics
+            //
+            // Pour l'instant on ne fait rien afin
+            // de ne pas casser le webhook actuel.
+            // ================================
 
-        statut:order.financial_status,
+            return {
+                success: true,
+                shop,
+                orderId: order.id
+            };
 
-        boutique:order.shop_domain
+        } catch (err) {
 
-    });
+            console.error("CommerceEngine :", err.message);
+
+            return {
+                success: false,
+                error: err.message
+            };
+
+        }
+
+    }
 
 }
 
-module.exports={
-    newOrder
-};
+module.exports = new CommerceEngine();
