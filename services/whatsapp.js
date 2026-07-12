@@ -1,23 +1,17 @@
-/**
- * OG • WhatsApp Service
- */
+const orchestrator=require("../brain/orchestrator");
 
-class WhatsAppService {
+async function message(msg){
 
-    async send(to, message) {
+    await orchestrator.process({
 
-        console.log(`📲 WhatsApp -> ${to}`);
+        type:"whatsapp.message",
 
-        return {
+        payload:msg
 
-            success: true,
-            to,
-            message
-
-        };
-
-    }
+    });
 
 }
 
-module.exports = new WhatsAppService();
+module.exports={
+    message
+};
