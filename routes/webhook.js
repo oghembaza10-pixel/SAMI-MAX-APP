@@ -75,7 +75,11 @@ router.post("/orders-create", async (req, res) => {
   try {
     const order = req.body;
     const shop  = req.headers["x-shopify-shop-domain"];
-
+await orchestrator.process({
+    type: "shopify.order.created",
+    shop,
+    payload: order
+});
     const boutique = await getBoutiqueByShop(shop);
     const { client, phone, address } = await saveToAirtable(order);
     console.log("✅ Commande enregistrée dans Airtable");
