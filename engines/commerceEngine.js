@@ -1,18 +1,21 @@
 /**
  * ============================================================
- * OG • Commerce Engine
+ * OG • Commerce Engine v2
  * ============================================================
  */
 
 const airtable           = require("../services/airtable");
 const notificationEngine = require("../engines/notificationEngine");
+const automationEngine   = require("../engines/automationEngine");
 
 class CommerceEngine {
 
+    // ── HELPER : Boutique ────────────────────────────
     async getBoutique(shop) {
         return await airtable.findOne("BOUTIQUES", `{shop_url} = "${shop}"`);
     }
 
+    // ── HELPER : Données client ──────────────────────
     getClientData(order) {
         return {
             client : `${order.customer?.first_name || ""} ${order.customer?.last_name || ""}`.trim(),
@@ -21,6 +24,30 @@ class CommerceEngine {
                 ? `${order.shipping_address.address1}, ${order.shipping_address.city}`
                 : "",
         };
+    }
+
+    // ── HELPER : Notifie la boutique ─────────────────
+    async notifyShop(shop, recipients, message) {
+        const boutique = await this.getBoutique(shop);
+        const chatId   = boutique?.fields?.telegram_chat_id;
+        const actif    = boutique?.fields?.telegram_actif;
+
+        const channels = [];
+        if (actif && chatId) channels.push("telegram");
+        if (recipients.whatsapp) channels.push("whatsapp");
+
+        if (!channels.length) return;
+
+        return notificationEngine.broadcast({
+            channels,
+            recipients: {
+                telegram: chatId,
+                whatsapp: recipients.whatsapp || "",
+                email   : recipients.email || "",
+            },
+            message,
+            shop,
+        });
     }
 
     // ── NOUVELLE COMMANDE ────────────────────────────
@@ -32,7 +59,7 @@ class CommerceEngine {
 
             console.log(`🛒 Nouvelle commande : ${shop}`);
 
-            // 1. Airtable
+            // 1. Airtable → COMMANDES
             await airtable.create("COMMANDES", {
                 "ID Commande" : String(order.id || ""),
                 "Client"      : client,
@@ -47,11 +74,10 @@ class CommerceEngine {
             await airtable.journal("order.created", { orderId: order.id, client, total: order.total_price }, shop);
             await airtable.log("order.created", `Commande #${order.order_number} — ${client}`, shop);
 
-            // 3. Notification — commerceEngine ne connaît plus Telegram
-            const boutique = await this.getBoutique(shop);
-            const chatId   = boutique?.fields?.telegram_chat_id;
-            const actif    = boutique?.fields?.telegram_actif;
+            // 3. Automation → décide de tout
+            await automationEngine.run("order.created", { order, shop, client, phone, address });
 
+            // 4. Notification via helper
             const message =
                 `🛒 *Nouvelle commande !*\n` +
                 `👤 Client : ${client}\n` +
@@ -60,17 +86,9 @@ class CommerceEngine {
                 `💰 Total : ${order.total_price}\n` +
                 `📦 Statut : ${order.financial_status}`;
 
-            await notificationEngine.broadcast({
-                channels: actif && chatId
-                    ? ["telegram", "whatsapp"]
-                    : ["whatsapp"],
-                to     : chatId,
-                message,
-                data   : order,
-                shop,
-            });
+            await this.notifyShop(shop, { whatsapp: phone }, message);
 
-            return { success: true, shop, orderId: order.id };
+            return { success: true, event: event.type, shop, orderId: order.id };
 
         } catch (err) {
             console.error("❌ CommerceEngine.newOrder :", err.message);
@@ -84,22 +102,21 @@ class CommerceEngine {
         try {
             const order = event.payload;
             const shop  = event.shop;
-            const { client } = this.getClientData(order);
+            const { client, phone } = this.getClientData(order);
 
             await airtable.journal("order.updated", { orderId: order.id }, shop);
             await airtable.log("order.updated", `#${order.order_number} mise à jour`, shop);
+            await automationEngine.run("order.updated", { order, shop, client, phone });
 
             const message =
                 `🔄 *Commande mise à jour*\n` +
                 `👤 ${client} | #${order.order_number}\n` +
                 `📦 ${order.fulfillment_status || order.financial_status}`;
 
-            const boutique = await this.getBoutique(shop);
-            if (boutique?.fields?.telegram_actif) {
-                await notificationEngine.telegram(boutique.fields.telegram_chat_id, message, shop);
-            }
+            await this.notifyShop(shop, { whatsapp: phone }, message);
 
-            return { success: true };
+            return { success: true, event: event.type, shop, orderId: order.id };
+
         } catch (err) {
             console.error("❌ CommerceEngine.orderUpdated :", err.message);
             return { success: false, error: err.message };
@@ -111,23 +128,21 @@ class CommerceEngine {
         try {
             const order = event.payload;
             const shop  = event.shop;
-            const { client } = this.getClientData(order);
+            const { client, phone } = this.getClientData(order);
 
             await airtable.journal("order.cancelled", { orderId: order.id }, shop);
             await airtable.log("order.cancelled", `#${order.order_number} annulée`, shop);
-            await airtable.notification("annulation", `❌ Commande annulée — ${client}`, shop);
+            await automationEngine.run("order.cancelled", { order, shop, client, phone });
 
             const message =
                 `❌ *Commande annulée*\n` +
                 `👤 ${client} | #${order.order_number}\n` +
                 `💬 Raison : ${order.cancel_reason || "Non précisée"}`;
 
-            const boutique = await this.getBoutique(shop);
-            if (boutique?.fields?.telegram_actif) {
-                await notificationEngine.telegram(boutique.fields.telegram_chat_id, message, shop);
-            }
+            await this.notifyShop(shop, { whatsapp: phone }, message);
 
-            return { success: true };
+            return { success: true, event: event.type, shop, orderId: order.id };
+
         } catch (err) {
             console.error("❌ CommerceEngine.orderCancelled :", err.message);
             return { success: false, error: err.message };
@@ -139,13 +154,13 @@ class CommerceEngine {
         try {
             const order   = event.payload;
             const shop    = event.shop;
-            const { client } = this.getClientData(order);
+            const { client, phone } = this.getClientData(order);
             const tracking = order.fulfillments?.[0]?.tracking_number || "N/A";
             const carrier  = order.fulfillments?.[0]?.tracking_company || "N/A";
 
             await airtable.journal("order.fulfilled", { orderId: order.id }, shop);
             await airtable.log("order.fulfilled", `#${order.order_number} expédiée`, shop);
-            await airtable.notification("livraison", `🚚 Expédiée — ${client}`, shop);
+            await automationEngine.run("order.fulfilled", { order, shop, client, phone, tracking, carrier });
 
             const message =
                 `🚚 *Commande expédiée !*\n` +
@@ -153,12 +168,10 @@ class CommerceEngine {
                 `📦 Transporteur : ${carrier}\n` +
                 `🔍 Tracking : ${tracking}`;
 
-            const boutique = await this.getBoutique(shop);
-            if (boutique?.fields?.telegram_actif) {
-                await notificationEngine.telegram(boutique.fields.telegram_chat_id, message, shop);
-            }
+            await this.notifyShop(shop, { whatsapp: phone }, message);
 
-            return { success: true };
+            return { success: true, event: event.type, shop, orderId: order.id };
+
         } catch (err) {
             console.error("❌ CommerceEngine.orderFulfilled :", err.message);
             return { success: false, error: err.message };
@@ -172,15 +185,14 @@ class CommerceEngine {
 
             await airtable.journal("stock.low", { product, variant }, shop);
             await airtable.log("stock.low", `Stock faible — ${product}`, shop);
+            await automationEngine.run("stock.low", { product, variant, shop });
 
             const message = `⚠️ *Stock faible*\n📦 ${product} : ${variant} restants`;
 
-            const boutique = await this.getBoutique(shop);
-            if (boutique?.fields?.telegram_actif) {
-                await notificationEngine.telegram(boutique.fields.telegram_chat_id, message, shop);
-            }
+            await this.notifyShop(shop, {}, message);
 
-            return { success: true };
+            return { success: true, event: event.type, shop };
+
         } catch (err) {
             console.error("❌ CommerceEngine.lowStock :", err.message);
             return { success: false, error: err.message };
@@ -189,4 +201,5 @@ class CommerceEngine {
 }
 
 module.exports = new CommerceEngine();
+
 
