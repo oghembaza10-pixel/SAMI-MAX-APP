@@ -1,35 +1,49 @@
 /**
  * ============================================================
- * OG • EMPIRE
- * Bootstrap
- * ------------------------------------------------------------
- * Point d'entrée du système.
- * Charge le Kernel puis initialise progressivement
- * tous les composants de l'application.
+ * OG • Bootstrap
+ * Démarre SAMII OS et enregistre tous les handlers
  * ============================================================
  */
 
-const kernel = require("./kernel");
+const notificationEngine = require("../engines/notificationEngine");
+const telegramService    = require("../services/telegramService");
 
-class Bootstrap {
+// ── ENREGISTRE LES CANAUX ────────────────────────────
+function registerChannels() {
 
-    async start() {
+    // Telegram
+    notificationEngine.register("telegram", {
+        send: async ({ to, message }) => {
+            await telegramService.send(to, message);
+        }
+    });
 
-        console.log("");
-        console.log("══════════════════════════════════════");
-        console.log("🚀 DÉMARRAGE DE OG • EMPIRE");
-        console.log("══════════════════════════════════════");
-        console.log("");
+    // WhatsApp — activé quand GrindAPI est prêt
+    notificationEngine.register("whatsapp", {
+        send: async ({ to, message }) => {
+            console.log(`📱 WhatsApp → ${to} : ${message}`);
+            // await whatsappService.send(to, message);
+        }
+    });
 
-        await kernel.boot();
+    // Email — activé quand Gmail est prêt
+    notificationEngine.register("email", {
+        send: async ({ to, message }) => {
+            console.log(`📧 Email → ${to} : ${message}`);
+            // await gmailService.send(to, message);
+        }
+    });
 
-        console.log("");
-        console.log("🟢 OG est opérationnel.");
-        console.log("");
+    // Meta — activé quand Meta API est prête
+    notificationEngine.register("meta", {
+        send: async ({ to, message }) => {
+            console.log(`📘 Meta → ${to} : ${message}`);
+            // await metaService.send(to, message);
+        }
+    });
 
-        return kernel;
-    }
-
+    console.log("✅ Tous les canaux enregistrés");
 }
 
-module.exports = new Bootstrap();
+module.exports = { registerChannels };
+
