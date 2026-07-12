@@ -1,59 +1,34 @@
-// ======================================================
-// SAMII OS
-// ORCHESTRATOR
-// ======================================================
+const commerceEngine = require("../engines/commerceEngine");
+const crmEngine = require("../engines/crmEngine");
+const notificationEngine = require("../engines/notificationEngine");
 
-const router = require("./router");
-const decision = require("./decision");
-const planner = require("./planner");
-const actions = require("./actions");
+async function process(event) {
 
-class SamiiOrchestrator {
+    console.log("📥 EVENEMENT :", event.type);
 
-    async execute(userMessage, user = {}) {
+    switch(event.type){
 
-        // 1. Préparer toutes les informations
-        const data = await router.prepare(userMessage, user);
+        case "shopify.order.created":
+            return await commerceEngine.newOrder(event);
 
-        // 2. Prendre une décision
-        const choice = decision.decide(data);
+        case "telegram.message":
+            return await crmEngine.telegram(event);
 
-        // 3. Construire un plan
-        const plan = await planner.build({
+        case "whatsapp.message":
+            return await crmEngine.whatsapp(event);
 
-            goal: userMessage
+        case "instagram.message":
+            return await crmEngine.instagram(event);
 
-        }, data);
+        case "messenger.message":
+            return await crmEngine.messenger(event);
 
-        // 4. Exécuter une action si nécessaire
-        let actionResult = null;
-
-        if (choice.executeAction && data.action) {
-
-            actionResult = await actions.execute(
-
-                data.action,
-
-                data.payload || {}
-
-            );
-
-        }
-
-        return {
-
-            router: data,
-
-            decision: choice,
-
-            planner: plan,
-
-            action: actionResult
-
-        };
-
+        default:
+            console.log("Aucun moteur :",event.type);
     }
 
 }
 
-module.exports = new SamiiOrchestrator();
+module.exports={
+    process
+};
