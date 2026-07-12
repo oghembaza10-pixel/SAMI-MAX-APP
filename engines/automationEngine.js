@@ -14,10 +14,9 @@ class AutomationEngine {
         try {
             console.log(`⚙️ Automation trigger : ${trigger}`);
 
-            // Lit les automatisations actives depuis Airtable
             const automations = await airtable.find(
                 "AUTOMATISATIONS",
-                `AND({Trigger} = "${trigger}", {Actif} = TRUE())`
+                `{Trigger} = "${trigger}"`
             );
 
             if (!automations.length) {
@@ -52,16 +51,16 @@ class AutomationEngine {
 
                 case "envoyer_notification":
                     await airtable.notification(
-                        fields["Type"] || "info",
+                        fields["Type"]    || "info",
                         fields["Message"] || "",
-                        data.shop || ""
+                        data.shop         || ""
                     );
                     break;
 
                 case "creer_client":
                     await airtable.create("CLIENTS", {
                         "Nom"      : data.client || "Inconnu",
-                        "Téléphone": data.phone || "",
+                        "Téléphone": data.phone  || "",
                         "Source"   : data.source || "auto",
                         "Date"     : new Date().toISOString(),
                         "Statut"   : "actif",
@@ -78,11 +77,11 @@ class AutomationEngine {
 
                 case "envoyer_facture":
                     await airtable.create("FACTURES", {
-                        "Commande" : String(data.orderId || ""),
-                        "Client"   : data.client || "",
-                        "Total"    : data.total || 0,
-                        "Statut"   : "envoyée",
-                        "Date"     : new Date().toISOString(),
+                        "Commande": String(data.orderId || ""),
+                        "Client"  : data.client || "",
+                        "Total"   : data.total  || 0,
+                        "Statut"  : "envoyée",
+                        "Date"    : new Date().toISOString(),
                     });
                     break;
 
