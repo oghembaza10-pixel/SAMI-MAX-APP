@@ -1,37 +1,17 @@
-/**
- * ============================================================
- * OG • Shopify Service
- * ============================================================
- */
+const orchestrator=require("../brain/orchestrator");
 
-class ShopifyService {
+async function orderCreated(order){
 
-    constructor() {
-        this.connected = false;
-        this.shop = null;
-    }
+    await orchestrator.process({
 
-    async connect(config) {
-        this.shop = config;
-        this.connected = true;
+        type:"shopify.order.created",
 
-        console.log("🛍️ Shopify connecté.");
+        payload:order
 
-        return true;
-    }
-
-    async getProducts() {
-        return [];
-    }
-
-    async getOrders() {
-        return [];
-    }
-
-    async createOrder(order) {
-        return order;
-    }
+    });
 
 }
 
-module.exports = new ShopifyService();
+module.exports={
+    orderCreated
+};
