@@ -43,6 +43,7 @@ async function send({ channel, to, message, data = {}, shop = "" }) {
     }
 }
 
+// ── BROADCAST ────────────────────────────────────────
 async function broadcast({ channels, recipients = {}, message, data = {}, shop = "" }) {
     const results = await Promise.allSettled(
         channels.map(channel =>
@@ -57,6 +58,7 @@ async function broadcast({ channels, recipients = {}, message, data = {}, shop =
     );
     return results;
 }
+
 
 
 // ── SHORTCUTS ────────────────────────────────────────
