@@ -1,15 +1,31 @@
-const commerceEngine = require("../engines/commerceEngine");
-const crmEngine = require("../engines/crmEngine");
+/**
+ * OG • Brain Orchestrator
+ * Cerveau central de SAMII
+ */
+
+const commerceEngine  = require("../engines/commerceEngine");
+const crmEngine       = require("../engines/crmEngine");
 const notificationEngine = require("../engines/notificationEngine");
 
 async function process(event) {
-
     console.log("📥 EVENEMENT :", event.type);
 
-    switch(event.type){
+    switch (event.type) {
 
         case "shopify.order.created":
             return await commerceEngine.newOrder(event);
+
+        case "shopify.order.updated":
+            return await commerceEngine.orderUpdated(event);
+
+        case "shopify.order.cancelled":
+            return await commerceEngine.orderCancelled(event);
+
+        case "shopify.order.fulfilled":
+            return await commerceEngine.orderFulfilled(event);
+
+        case "shopify.stock.low":
+            return await commerceEngine.lowStock(event);
 
         case "telegram.message":
             return await crmEngine.telegram(event);
@@ -24,11 +40,9 @@ async function process(event) {
             return await crmEngine.messenger(event);
 
         default:
-            console.log("Aucun moteur :",event.type);
+            console.log("⚠️ Aucun moteur pour :", event.type);
     }
-
 }
 
-module.exports={
-    process
-};
+module.exports = { process };
+
