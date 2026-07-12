@@ -22,6 +22,7 @@ app.set("views", path.join(__dirname, "views"));
 // ── 4. BOOTSTRAP ──────────────────────────────────────
 const { registerChannels } = require("./kernel/bootstrap");
 registerChannels();
+const scheduler = require("./kernel/scheduler");
 
 // ── 5. ROUTES ─────────────────────────────────────────
 app.use(require("./Itinéraires/auth-meta"));
