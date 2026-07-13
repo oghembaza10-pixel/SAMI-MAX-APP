@@ -7,7 +7,18 @@ const settingsService    = require("../services/settingsService");
 const journalService     = require("../services/journalService");
 const notificationEngine = require("./notificationEngine");
 const sovereignEngine    = require("./sovereignEngine");
-const airtable           = require("../services/airtableService");
+
+// ── TEMPLATES ────────────────────────────────────────────────
+const tShopConnected      = require("../brain/templates/shopConnected");
+const tOrderCreated       = require("../brain/templates/orderCreated");
+const tOrderPaid          = require("../brain/templates/orderPaid");
+const tOrderFulfilled     = require("../brain/templates/orderFulfilled");
+const tOrderDelivered     = require("../brain/templates/orderDelivered");
+const tOrderCancelled     = require("../brain/templates/orderCancelled");
+const tStockLow           = require("../brain/templates/stockLow");
+const tStockEmpty         = require("../brain/templates/stockEmpty");
+const tCarteActivated     = require("../brain/templates/carteActivated");
+const tAbonnementUpgraded = require("../brain/templates/abonnementUpgraded");
 
 // ── TABLE DES AUTOMATISATIONS ────────────────────────────────
 const automations = {
@@ -18,9 +29,9 @@ const automations = {
         (e) => sovereignEngine.initialize(e.shop),
         (e) => journalService.log(e.shop, "✅ Boutique connectée"),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "telegram",
-            message: `👑 Boutique connectée !\n🏪 ${e.shop}\n✅ SAMII est opérationnel.`
+            message: tShopConnected.marchand({ shop: e.shop }),
         }),
     ],
 
@@ -28,9 +39,9 @@ const automations = {
         (e) => settingsService.deactivate(e.shop),
         (e) => journalService.log(e.shop, "❌ Boutique déconnectée"),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "telegram",
-            message: `⚠️ Boutique déconnectée : ${e.shop}`
+            message: `⚠️ Boutique déconnectée : ${e.shop}`,
         }),
     ],
 
@@ -38,15 +49,15 @@ const automations = {
     "order.created": [
         (e) => journalService.log(e.shop, `🛒 Commande créée : ${e.payload.id}`),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "telegram",
-            message: `🛒 Nouvelle commande !\n👤 ${e.payload.customer}\n💰 ${e.payload.total}`
+            message: tOrderCreated.marchand(e.payload),
         }),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "whatsapp",
-            to: e.payload.customer_phone,
-            message: `Bonjour ${e.payload.customer} 👋\n✅ Votre commande a bien été reçue !\n📦 ${e.payload.product}\nNous vous contacterons très bientôt 🙏`
+            to:      e.payload.customer_phone,
+            message: tOrderCreated.client(e.payload),
         }),
     ],
 
@@ -57,49 +68,60 @@ const automations = {
     "order.paid": [
         (e) => journalService.log(e.shop, `💰 Commande payée : ${e.payload.id}`),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "telegram",
-            message: `💰 Paiement reçu !\n👤 ${e.payload.customer}\n💵 ${e.payload.total}`
+            message: tOrderPaid.marchand(e.payload),
+        }),
+        (e) => notificationEngine.send({
+            shop:    e.shop,
+            channel: "whatsapp",
+            to:      e.payload.customer_phone,
+            message: tOrderPaid.client(e.payload),
         }),
     ],
 
     "order.fulfilled": [
         (e) => journalService.log(e.shop, `📦 Commande expédiée : ${e.payload.id}`),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "telegram",
-            message: `📦 Commande expédiée !\n👤 ${e.payload.customer}\n🚚 En route...`
+            message: tOrderFulfilled.marchand(e.payload),
         }),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "whatsapp",
-            to: e.payload.customer_phone,
-            message: `Bonjour ${e.payload.customer} 👋\n🚚 Votre colis est en route !\nSuivi : ${e.payload.tracking || "disponible bientôt"}`
-        }),
-    ],
-
-    "order.cancelled": [
-        (e) => journalService.log(e.shop, `❌ Commande annulée : ${e.payload.id}`),
-        (e) => notificationEngine.send({
-            shop: e.shop,
-            channel: "telegram",
-            message: `❌ Commande annulée : ${e.payload.id}`
-        }),
-        (e) => notificationEngine.send({
-            shop: e.shop,
-            channel: "whatsapp",
-            to: e.payload.customer_phone,
-            message: `Bonjour ${e.payload.customer} 👋\n❌ Votre commande a été annulée.\nContactez-nous pour plus d'informations.`
+            to:      e.payload.customer_phone,
+            message: tOrderFulfilled.client(e.payload),
         }),
     ],
 
     "order.delivered": [
         (e) => journalService.log(e.shop, `✅ Commande livrée : ${e.payload.id}`),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "whatsapp",
-            to: e.payload.customer_phone,
-            message: `Bonjour ${e.payload.customer} 👋\n✅ Votre colis est arrivé !\nMerci de votre confiance 🙏`
+            to:      e.payload.customer_phone,
+            message: tOrderDelivered.client(e.payload),
+        }),
+        (e) => notificationEngine.send({
+            shop:    e.shop,
+            channel: "telegram",
+            message: tOrderDelivered.marchand(e.payload),
+        }),
+    ],
+
+    "order.cancelled": [
+        (e) => journalService.log(e.shop, `❌ Commande annulée : ${e.payload.id}`),
+        (e) => notificationEngine.send({
+            shop:    e.shop,
+            channel: "telegram",
+            message: tOrderCancelled.marchand(e.payload),
+        }),
+        (e) => notificationEngine.send({
+            shop:    e.shop,
+            channel: "whatsapp",
+            to:      e.payload.customer_phone,
+            message: tOrderCancelled.client(e.payload),
         }),
     ],
 
@@ -107,18 +129,18 @@ const automations = {
     "stock.low": [
         (e) => journalService.log(e.shop, `⚠️ Stock bas : ${e.payload.product}`),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "telegram",
-            message: `⚠️ Stock bas !\n📦 ${e.payload.product}\n🔢 Reste : ${e.payload.quantity}`
+            message: tStockLow.marchand(e.payload),
         }),
     ],
 
     "stock.empty": [
         (e) => journalService.log(e.shop, `🚨 Stock épuisé : ${e.payload.product}`),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "telegram",
-            message: `🚨 STOCK ÉPUISÉ !\n📦 ${e.payload.product}\n→ Réapprovisionner immédiatement`
+            message: tStockEmpty.marchand(e.payload),
         }),
     ],
 
@@ -127,9 +149,9 @@ const automations = {
         (e) => sovereignEngine.activate(e.payload.table, e.shop),
         (e) => journalService.log(e.shop, `🃏 Carte activée : ${e.payload.table}`),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "telegram",
-            message: `🃏 Nouvelle carte activée !\n👑 ${e.payload.table}\n✅ Capacité SAMII débloquée`
+            message: tCarteActivated.marchand(e.payload),
         }),
     ],
 
@@ -137,15 +159,15 @@ const automations = {
     "abonnement.upgraded": [
         (e) => journalService.log(e.shop, `⬆️ Abonnement upgradé : ${e.payload.plan}`),
         (e) => notificationEngine.send({
-            shop: e.shop,
+            shop:    e.shop,
             channel: "telegram",
-            message: `⬆️ Abonnement upgradé !\n👑 Plan : ${e.payload.plan}\n✅ Nouvelles capacités débloquées`
+            message: tAbonnementUpgraded.marchand(e.payload),
         }),
     ],
 
     "abonnement.cancelled": [
         (e) => settingsService.downgrade(e.shop),
-        (e) => journalService.log(e.shop, `⬇️ Abonnement annulé`),
+        (e) => journalService.log(e.shop, "⬇️ Abonnement annulé"),
     ],
 
     // ── NOTIFICATION DIRECTE ──────────────────────────────────
@@ -169,7 +191,6 @@ async function run(trigger, event) {
             await action(event);
         } catch (err) {
             console.error(`❌ Action échouée [${trigger}] :`, err.message);
-            // Continue — une action échouée ne bloque pas les suivantes
         }
     }
 }
