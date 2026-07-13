@@ -1,105 +1,81 @@
 /**
- * ============================================================
  * OG • Automation Engine
- * Décide et exécute les automatisations
- * ============================================================
+ * Décideur central — exécute les automatisations
  */
 
-const airtable = require("../services/airtable");
+const settingsService    = require("../services/settingsService");
+const journalService     = require("../services/journalService");
+const notificationEngine = require("./notificationEngine");
+const sovereignEngine    = require("./sovereignEngine");
+const airtable           = require("../services/airtableService");
 
-class AutomationEngine {
+// ── TABLE DES AUTOMATISATIONS ────────────────────────────────
+// Chaque trigger → liste d'actions dans l'ordre
+const automations = {
 
-    // ── EXÉCUTE les automatisations selon le trigger ─
-    async run(trigger, data) {
-        try {
-            console.log(`⚙️ Automation trigger : ${trigger}`);
+    "shop.connected": [
+        (e) => settingsService.createDefault(e.shop),
+        (e) => sovereignEngine.initialize(e.shop),
+        (e) => journalService.log(e.shop, "✅ Boutique connectée"),
+        (e) => notificationEngine.send({
+            shop: e.shop,
+            channel: "telegram",
+            message: `👑 Boutique connectée !\n🏪 ${e.shop}\n✅ SAMII est opérationnel.`
+        }),
+    ],
 
-            const automations = await airtable.find(
-                "AUTOMATISATIONS",
-                `{Trigger} = "${trigger}"`
-            );
+    "shop.uninstalled": [
+        (e) => settingsService.deactivate(e.shop),
+        (e) => journalService.log(e.shop, "❌ Boutique déconnectée"),
+        (e) => notificationEngine.send({
+            shop: e.shop,
+            channel: "telegram",
+            message: `⚠️ Boutique déconnectée : ${e.shop}`
+        }),
+    ],
 
-            if (!automations.length) {
-                console.log(`ℹ️ Aucune automatisation pour : ${trigger}`);
-                return;
-            }
+    "order.created": [
+        (e) => journalService.log(e.shop, `🛒 Commande créée : ${e.payload.id}`),
+        (e) => notificationEngine.send({
+            shop: e.shop,
+            channel: "telegram",
+            message: `🛒 Nouvelle commande !\n👤 ${e.payload.customer}\n💰 ${e.payload.total}`
+        }),
+    ],
 
-            for (const auto of automations) {
-                const action = auto.fields["Action"];
-                console.log(`▶️ Exécution : ${action}`);
-                await this.execute(action, data, auto.fields);
-            }
+    "order.cancelled": [
+        (e) => journalService.log(e.shop, `❌ Commande annulée : ${e.payload.id}`),
+        (e) => notificationEngine.send({
+            shop: e.shop,
+            channel: "telegram",
+            message: `❌ Commande annulée : ${e.payload.id}`
+        }),
+    ],
+};
 
-        } catch (err) {
-            console.error("❌ AutomationEngine.run :", err.message);
-        }
+// ── RUNNER ───────────────────────────────────────────────────
+async function run(trigger, event) {
+    console.log("⚙️ AUTOMATION :", trigger);
+
+    const actions = automations[trigger];
+    if (!actions) {
+        console.log("⚠️ Aucune automation pour :", trigger);
+        return;
     }
 
-    // ── EXÉCUTE une action spécifique ────────────────
-    async execute(action, data, fields) {
+    for (const action of actions) {
         try {
-            switch (action) {
-
-                case "creer_tache":
-                    await airtable.create("JOURNAL", {
-                        "Action"  : "Tâche créée",
-                        "Détails" : fields["Message"] || JSON.stringify(data),
-                        "Boutique": data.shop || "",
-                        "Date"    : new Date().toISOString(),
-                    });
-                    break;
-
-                case "envoyer_notification":
-                    await airtable.notification(
-                        fields["Type"]    || "info",
-                        fields["Message"] || "",
-                        data.shop         || ""
-                    );
-                    break;
-
-                case "creer_client":
-                    await airtable.create("CLIENTS", {
-                        "Nom"      : data.client || "Inconnu",
-                        "Téléphone": data.phone  || "",
-                        "Source"   : data.source || "auto",
-                        "Date"     : new Date().toISOString(),
-                        "Statut"   : "actif",
-                    });
-                    break;
-
-                case "alerte_stock":
-                    await airtable.notification(
-                        "stock",
-                        `⚠️ Stock faible — ${data.product}`,
-                        data.shop || ""
-                    );
-                    break;
-
-                case "envoyer_facture":
-                    await airtable.create("FACTURES", {
-                        "Commande": String(data.orderId || ""),
-                        "Client"  : data.client || "",
-                        "Total"   : data.total  || 0,
-                        "Statut"  : "envoyée",
-                        "Date"    : new Date().toISOString(),
-                    });
-                    break;
-
-                default:
-                    console.log(`⚠️ Action inconnue : ${action}`);
-            }
-
-            await airtable.log(
-                `automation.${action}`,
-                JSON.stringify(data),
-                data.shop || ""
-            );
-
+            await action(event);
         } catch (err) {
-            console.error(`❌ AutomationEngine.execute [${action}] :`, err.message);
+            console.error(`❌ Action échouée [${trigger}] :`, err.message);
+            // Continue — une action échouée ne bloque pas les suivantes
         }
     }
 }
 
-module.exports = new AutomationEngine();
+// ── HANDLERS appelés par Orchestrator ───────────────────────
+async function shopConnected(event)         { return run("shop.connected", event); }
+async function shopUninstalled(event)       { return run("shop.uninstalled", event); }
+async function notificationRequested(event) { return notificationEngine.send(event.payload); }
 
+module.exports = { shopConnected, shopUninstalled, notificationRequested, run };
