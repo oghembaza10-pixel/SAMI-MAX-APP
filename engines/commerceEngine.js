@@ -61,7 +61,7 @@ class CommerceEngine {
             // 1. Airtable → COMMANDES
            await airtable.create("COMMANDES", {
     "Nom Client"    : client || "",
-    "Téléphone"     : Number(phone.replace(/\D/g, "")) || 0,
+    "Téléphone" : phone || "",
     "Produit"       : order.line_items?.[0]?.title || "",
     "Ville"         : order.shipping_address?.city || "",
     "Statut"        : order.financial_status || "pending",
