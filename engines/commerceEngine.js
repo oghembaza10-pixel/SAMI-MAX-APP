@@ -63,7 +63,7 @@ class CommerceEngine {
     "Nom Client"    : client || "",
     "Téléphone" : phone || "",
     "Produit"       : order.line_items?.[0]?.title || "",
-    "Ville"         : order.shipping_address?.city || "",
+               
     "Statut"        : order.financial_status || "pending",
     "Date Commande" : order.created_at || new Date().toISOString(),
 });
