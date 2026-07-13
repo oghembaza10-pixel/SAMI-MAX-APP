@@ -107,10 +107,11 @@ async function remove(table, recordId) {
 // ── LOG ──────────────────────────────────────────────
 async function log(action, details, shop = "") {
     return await create("LOGS", {
-        "Action"  : action,
-        "Détails" : typeof details === "object" ? JSON.stringify(details) : details,
-        "Boutique": shop,
-        "Date"    : new Date().toISOString(),
+        "statut" : action,
+        "Type"   : "Système",
+        "Message": typeof details === "object" ? JSON.stringify(details) : details,
+        "Niveau" : "Moyen",
+        "Source" : shop || "",
     });
 }
 
@@ -127,11 +128,8 @@ async function journal(action, details, shop = "") {
 // ── NOTIFICATION ─────────────────────────────────────
 async function notification(type, message, shop = "") {
     return await create("NOTIFICATIONS", {
-        "Type"    : type,
-        "Message" : message,
-        "Boutique": shop,
-        "Date"    : new Date().toISOString(),
-        "Lu"      : false,
+        "Nom"   : `[${type}] ${message}`,
+        "Statut": "non lu",
     });
 }
 
