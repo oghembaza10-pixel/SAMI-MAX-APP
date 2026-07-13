@@ -38,4 +38,18 @@ async function createDefault(shop) {
     });
 }
 
-async
+async function deactivate(shop) {
+    console.log(`⚙️ Settings désactivés : ${shop}`);
+    await updateBoutique(shop, {
+        status:      "inactif",
+        samii_actif: false,
+        date_desinstall: new Date().toISOString().split("T")[0],
+    });
+}
+
+async function downgrade(shop) {
+    console.log(`⚙️ Downgrade : ${shop}`);
+    await updateBoutique(shop, { plan: "gratuit" });
+}
+
+module.exports = { createDefault, deactivate, downgrade };
