@@ -4,6 +4,8 @@
  * Rôle unique : router les événements
  */
 
+const E = require("./events");
+
 const commerceEngine     = require("../engines/commerceEngine");
 const crmEngine          = require("../engines/crmEngine");
 const automationEngine   = require("../engines/automationEngine");
@@ -11,18 +13,21 @@ const automationEngine   = require("../engines/automationEngine");
 // ── TABLE DE ROUTAGE ────────────────────────────────────────
 const routes = {
 
-    // SHOPIFY ORDERS
-    "shopify.order.created"   : commerceEngine.newOrder,
-    "shopify.order.updated"   : commerceEngine.orderUpdated,
-    "shopify.order.cancelled" : commerceEngine.orderCancelled,
-    "shopify.order.fulfilled" : commerceEngine.orderFulfilled,
-
-    // SHOPIFY STOCK
-    "shopify.stock.low"       : commerceEngine.lowStock,
-
     // SHOPIFY APP
-    "shopify.connected"       : automationEngine.shopConnected,
-    "shopify.uninstalled"     : automationEngine.shopUninstalled,
+    [E.SHOP_CONNECTED]        : automationEngine.shopConnected,
+    [E.SHOP_UNINSTALLED]      : automationEngine.shopUninstalled,
+
+    // SHOPIFY ORDERS
+    [E.ORDER_CREATED]         : commerceEngine.newOrder,
+    [E.ORDER_UPDATED]         : commerceEngine.orderUpdated,
+    [E.ORDER_PAID]            : commerceEngine.orderPaid,
+    [E.ORDER_FULFILLED]       : commerceEngine.orderFulfilled,
+    [E.ORDER_DELIVERED]       : commerceEngine.orderDelivered,
+    [E.ORDER_CANCELLED]       : commerceEngine.orderCancelled,
+
+    // STOCK
+    [E.STOCK_LOW]             : commerceEngine.lowStock,
+    [E.STOCK_EMPTY]           : commerceEngine.stockEmpty,
 
     // CRM MESSAGES ENTRANTS
     "telegram.message"        : crmEngine.telegram,
@@ -32,8 +37,13 @@ const routes = {
     "tiktok.message"          : crmEngine.tiktok,
     "snapchat.message"        : crmEngine.snapchat,
 
-    // NOTIFICATIONS SORTANTES
-    "notification.send"       : automationEngine.notificationRequested,
+    // NOTIFICATIONS
+    [E.NOTIFICATION_SEND]     : automationEngine.notificationRequested,
+
+    // CARTES + ABONNEMENT
+    [E.CARTE_ACTIVATED]       : (e) => automationEngine.run("carte.activated", e),
+    [E.ABONNEMENT_UPGRADED]   : (e) => automationEngine.run("abonnement.upgraded", e),
+    [E.ABONNEMENT_CANCELLED]  : (e) => automationEngine.run("abonnement.cancelled", e),
 };
 
 // ── ROUTER ──────────────────────────────────────────────────
