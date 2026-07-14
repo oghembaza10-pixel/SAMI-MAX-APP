@@ -19,6 +19,13 @@ function register(channel, handler) {
 // ── SEND ─────────────────────────────────────────────
 async function send({ channel, to, message, data = {}, shop = "" }) {
     try {
+        // Auto-detect canal si pas fourni
+        if (!channel && shop) {
+            const boutique = await airtable.getBoutique(shop);
+            channel = boutique?.fields?.canal || "telegram";
+            to = to || boutique?.fields?.chat_id || boutique?.fields?.phone_wa;
+        }
+
         console.log(`📤 Notification → [${channel}] : ${message}`);
 
         // 1. Enregistre dans Airtable
@@ -42,6 +49,7 @@ async function send({ channel, to, message, data = {}, shop = "" }) {
         return { success: false, error: err.message };
     }
 }
+
 
 // ── BROADCAST ────────────────────────────────────────
 async function broadcast({ channels, recipients = {}, message, data = {}, shop = "" }) {
