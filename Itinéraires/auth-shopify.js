@@ -194,11 +194,12 @@ router.get("/auth/shopify/callback", async (req, res) => {
         await registerWebhooks(shop, accessToken);
 
         // BLOC 3 — Notifier l'orchestrateur SAMII
-        await orchestrator.process({
-            type: "shopify.connected",
-            shop,
-            payload: { accessToken, scopes: SCOPES }
-        });
+       await orchestrator.process({
+    type: "shop.connected",      // ← CORRECT
+    shop,
+    payload: { accessToken, scopes: SCOPES }
+});
+
 
         // BLOC 4 — Page succès
         res.send(`
