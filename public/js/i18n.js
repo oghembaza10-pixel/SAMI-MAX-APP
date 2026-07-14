@@ -1,11 +1,6 @@
 // ==========================================================================
 // OG EMPIRE — SYSTÈME I18N (réutilisable sur tout le projet)
 // ==========================================================================
-// Utilisation dans une page :
-//   <script src="/js/i18n.js"></script>
-//   Les éléments à traduire portent : data-i18n="cle.imbriquee"
-//   Les boutons de langue portent : data-lang-btn="fr" / "en" / "ar" / "zh"
-// ==========================================================================
 
 const Language = (function () {
     const SUPPORTED = ["fr", "en", "ar", "zh"];
@@ -19,10 +14,8 @@ const Language = (function () {
     function detectLang() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored && SUPPORTED.includes(stored)) return stored;
-
         const navLang = (navigator.language || navigator.userLanguage || "").slice(0, 2).toLowerCase();
         if (SUPPORTED.includes(navLang)) return navLang;
-
         return DEFAULT_LANG;
     }
 
@@ -50,6 +43,14 @@ const Language = (function () {
                 el.textContent = value;
             }
         });
+
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+            const key = el.getAttribute("data-i18n-placeholder");
+            const value = getNested(dict, key);
+            if (value !== null) {
+                el.setAttribute("placeholder", value);
+            }
+        });
     }
 
     function updateDirection(lang) {
@@ -65,10 +66,8 @@ const Language = (function () {
 
     async function set(lang) {
         if (!SUPPORTED.includes(lang)) lang = DEFAULT_LANG;
-
         dict = await loadDict(lang);
         currentLang = lang;
-
         localStorage.setItem(STORAGE_KEY, lang);
         updateDirection(lang);
         updateActiveButtons(lang);
@@ -79,7 +78,6 @@ const Language = (function () {
     async function init() {
         const lang = detectLang();
         await set(lang);
-
         document.querySelectorAll("[data-lang-btn]").forEach((btn) => {
             btn.addEventListener("click", () => set(btn.getAttribute("data-lang-btn")));
         });
