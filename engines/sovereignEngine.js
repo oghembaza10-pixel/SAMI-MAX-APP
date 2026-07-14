@@ -5,7 +5,7 @@
  */
 
 const axios  = require("axios");
-const CONFIG = require("../services/config");
+const CONFIG = require("../config");
 
 // ── CLIENT AXIOS ─────────────────────────────────────────────
 const http = axios.create({
