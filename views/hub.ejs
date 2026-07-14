@@ -19,7 +19,7 @@
 
     <main class="capitol-content">
 
-        <!-- HERO : court sur mobile, les cartes métier restent visibles sans scroller -->
+        <!-- HERO -->
         <header class="hero-premium">
             <img src="/hero-city.png" alt="Ville futuriste OG" class="hero-bg-img" onerror="this.style.display='none'">
             <div class="hero-grid"></div>
@@ -30,33 +30,33 @@
             <div class="hero-overlay"></div>
 
             <div class="hero-text-zone">
-                <span class="hero-eyebrow">OG Empire</span>
-                <h1>Quel empire voulez-vous construire ?</h1>
-                <p>SAMII vous aide à lancer votre QG et à connecter votre écosystème.</p>
+                <span class="hero-eyebrow" data-i18n="hub.hero.eyebrow">OG Empire</span>
+                <h1 data-i18n="hub.hero.title">Quel empire voulez-vous construire ?</h1>
+                <p data-i18n="hub.hero.subtitle">SAMII vous aide à lancer votre QG et à connecter votre écosystème.</p>
 
                 <div class="hero-search">
                     <i data-lucide="search"></i>
-                    <input type="text" id="hero-search" placeholder="Construisez votre prochain empire...">
+                    <input type="text" id="hero-search" data-i18n-placeholder="hub.hero.searchPlaceholder" placeholder="Construisez votre prochain empire...">
                     <button type="button" class="hero-search__btn">
                         <i data-lucide="arrow-right"></i>
                     </button>
                 </div>
             </div>
 
-            <span class="hero-scroll">Découvrir</span>
+            <span class="hero-scroll">▼</span>
         </header>
 
         <!-- CHOIX DU MÉTIER -->
         <div class="section-eyebrow">
             <i data-lucide="compass"></i>
-            <span>Choisis ton métier</span>
+            <span data-i18n="hub.section.choose">Choisis ton métier</span>
         </div>
 
         <section class="metier-grid" id="metier-grid">
-            <!-- Rempli dynamiquement par hub.js -->
+            <!-- Rempli dynamiquement par hub.js (traduit aussi) -->
         </section>
 
-        <!-- BANNIÈRE "TAPIS" — prend tout l'espace restant, vivante (zoom lent + halo) -->
+        <!-- BANNIÈRE "TAPIS" -->
         <section class="hub-banner" id="hub-banner">
             <img src="/banner-tech.png" alt="OG Empire" class="hub-banner__img" onerror="this.style.opacity=0">
             <div class="hub-banner__overlay"></div>
@@ -76,9 +76,9 @@
                     <span class="og-footer__crest">◆</span>
                     <span class="og-mono">OG · EMPIRE</span>
                 </div>
-                <p class="og-footer__quote">Chaque général commence soldat.</p>
+                <p class="og-footer__quote" data-i18n="hub.footer.quote">Chaque général commence soldat.</p>
                 <div class="og-footer__meta">
-                    <span class="og-mono">v1.0 · SOLDAT</span>
+                    <span class="og-mono" data-i18n="hub.footer.version">v1.0 · SOLDAT</span>
                 </div>
             </div>
         </footer>
@@ -87,7 +87,7 @@
 
 </div>
 
-<!-- SAMII — sphère flottante (unique point d'accès à SAMII) -->
+<!-- SAMII — sphère flottante -->
 <div class="samii-widget" id="samii-widget" data-open="false">
     <button class="samii-widget__trigger" id="samii-widget-trigger" aria-label="Ouvrir SAMII">
         <span class="samii-widget__aura"></span>
@@ -136,6 +136,7 @@
 <script>
     window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(typeof connectedPlatforms !== "undefined" ? connectedPlatforms : []) %>;
 </script>
+<script src="/js/i18n.js"></script>
 <script src="/js/hub.js"></script>
 
 </body>
