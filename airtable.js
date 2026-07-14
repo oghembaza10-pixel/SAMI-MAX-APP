@@ -1,72 +1,74 @@
 // ======================================================
-// SAMII OS - AIRTABLE
+// SAMII OS — AIRTABLE SERVICE
+// Couche unique d'accès aux données
 // ======================================================
 
 const axios  = require("axios");
 const CONFIG = require("./config");
 
-const HEADERS = {
-    Authorization: `Bearer ${CONFIG.AIRTABLE.API_KEY}`,
-    "Content-Type": "application/json"
-};
+// ── CLIENT AXIOS AVEC TIMEOUT ─────────────────────────
+const http = axios.create({
+    timeout: 10000,
+    headers: {
+        Authorization: `Bearer ${CONFIG.AIRTABLE.API_KEY}`,
+        "Content-Type": "application/json"
+    }
+});
 
-// ── NOMS DES TABLES ───────────────────────────────────
+const BASE = `https://api.airtable.com/v0/${CONFIG.AIRTABLE.BASE_ID}`;
+
+// ── NOMS DES TABLES DEPUIS CONFIG ─────────────────────
 const TABLES = {
-    BOUTIQUES      : "TABLE_BOUTIQUES",
-    COMMANDES      : "Commandes",
-    LOGS           : "ID Log",
-    NOTIFICATIONS  : "ID Notifications",
-    AUTOMATISATIONS: "Automatisations",
+    BOUTIQUES      : CONFIG.AIRTABLE.TABLE_BOUTIQUES,
+    COMMANDES      : CONFIG.AIRTABLE.TABLE_COMMANDES,
+    LOGS           : CONFIG.AIRTABLE.TABLE_LOGS,
+    NOTIFICATIONS  : CONFIG.AIRTABLE.TABLE_NOTIFICATIONS,
+    AUTOMATISATIONS: CONFIG.AIRTABLE.TABLE_AUTOMATISATIONS,
 };
 
 // ======================================================
-// Créer un enregistrement
+// CRUD DE BASE
 // ======================================================
+
 async function createRecord(table, fields) {
-    const response = await axios.post(
-        `https://api.airtable.com/v0/${CONFIG.AIRTABLE.BASE_ID}/${encodeURIComponent(table)}`,
-        { fields },
-        { headers: HEADERS }
+    const res = await http.post(
+        `${BASE}/${encodeURIComponent(table)}`,
+        { fields }
     );
-    return response.data;
+    return res.data;
 }
 
-// ======================================================
-// Modifier un enregistrement
-// ======================================================
 async function updateRecord(table, recordId, fields) {
-    const response = await axios.patch(
-        `https://api.airtable.com/v0/${CONFIG.AIRTABLE.BASE_ID}/${encodeURIComponent(table)}/${recordId}`,
-        { fields },
-        { headers: HEADERS }
+    const res = await http.patch(
+        `${BASE}/${encodeURIComponent(table)}/${recordId}`,
+        { fields }
     );
-    return response.data;
+    return res.data;
 }
 
-// ======================================================
-// Lire tous les enregistrements
-// ======================================================
 async function getRecords(table) {
-    const response = await axios.get(
-        `https://api.airtable.com/v0/${CONFIG.AIRTABLE.BASE_ID}/${encodeURIComponent(table)}`,
-        { headers: HEADERS }
+    const res = await http.get(
+        `${BASE}/${encodeURIComponent(table)}`
     );
-    return response.data.records;
+    return res.data.records;
 }
 
-// ======================================================
-// Rechercher avec un filtre
-// ======================================================
 async function findRecords(table, filterFormula) {
-    const response = await axios.get(
-        `https://api.airtable.com/v0/${CONFIG.AIRTABLE.BASE_ID}/${encodeURIComponent(table)}?filterByFormula=${encodeURIComponent(filterFormula)}`,
-        { headers: HEADERS }
+    const res = await http.get(
+        `${BASE}/${encodeURIComponent(table)}?filterByFormula=${encodeURIComponent(filterFormula)}`
     );
-    return response.data.records;
+    return res.data.records;
+}
+
+async function deleteRecord(table, recordId) {
+    const res = await http.delete(
+        `${BASE}/${encodeURIComponent(table)}/${recordId}`
+    );
+    return res.data;
 }
 
 // ======================================================
-// Helpers métier
+// HELPERS MÉTIER
 // ======================================================
 
 async function saveOrder(shop, order) {
@@ -80,7 +82,7 @@ async function saveOrder(shop, order) {
             "Statut"       : order.financial_status || "pending",
         });
     } catch (err) {
-        console.error("❌ Airtable COMMANDES :", err.response?.data || err.message);
+        console.error("❌ Airtable saveOrder :", err.response?.data || err.message);
     }
 }
 
@@ -94,7 +96,7 @@ async function log(type, message, shop = "", niveau = "Moyen") {
             "Statut"        : niveau,
         });
     } catch (err) {
-        console.error("❌ Airtable LOGS :", err.response?.data || err.message);
+        console.error("❌ Airtable log :", err.response?.data || err.message);
     }
 }
 
@@ -106,8 +108,16 @@ async function saveNotification(data = {}) {
             "Status": data.status  || "",
         });
     } catch (err) {
-        console.error("❌ Airtable NOTIFICATIONS :", err.response?.data || err.message);
+        console.error("❌ Airtable saveNotification :", err.response?.data || err.message);
     }
+}
+
+async function notification(channel, message, shop = "") {
+    return await saveNotification({
+        name   : `${channel} → ${shop}`,
+        message: message,
+        status : "envoyé",
+    });
 }
 
 async function findAutomations(trigger) {
@@ -118,7 +128,7 @@ async function findAutomations(trigger) {
         );
         return records.map(r => r.fields);
     } catch (err) {
-        console.error("❌ Airtable AUTOMATISATIONS :", err.response?.data || err.message);
+        console.error("❌ Airtable findAutomations :", err.response?.data || err.message);
         return [];
     }
 }
@@ -131,23 +141,40 @@ async function findShop(shop) {
         );
         return records.length ? records[0].fields : null;
     } catch (err) {
-        console.error("❌ Airtable BOUTIQUES :", err.response?.data || err.message);
+        console.error("❌ Airtable findShop :", err.response?.data || err.message);
+        return null;
+    }
+}
+
+async function getBoutique(shop) {
+    try {
+        const records = await findRecords(
+            TABLES.BOUTIQUES,
+            `{shop_url} = "${shop}"`
+        );
+        return records.length ? records[0] : null;
+    } catch (err) {
+        console.error("❌ Airtable getBoutique :", err.response?.data || err.message);
         return null;
     }
 }
 
 // ======================================================
-// Export
+// EXPORT
 // ======================================================
+
 module.exports = {
     createRecord,
     updateRecord,
     getRecords,
     findRecords,
+    deleteRecord,
     saveOrder,
     log,
     saveNotification,
+    notification,
     findAutomations,
     findShop,
+    getBoutique,
 };
 
