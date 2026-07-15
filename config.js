@@ -6,7 +6,7 @@ module.exports = {
 
     PORT: process.env.PORT || 10000,
 
-    APP_URL: process.env.APP_URL || "https://sami-max-app-1.onrender.com",
+    APP_URL: process.env.APP_URL || ,"https://samii.souverain-store.com"
 
     // ==================================================
     // AIRTABLE
