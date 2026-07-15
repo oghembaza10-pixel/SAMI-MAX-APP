@@ -14,7 +14,7 @@ const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const TABLE_BOUTIQUES = process.env.TABLE_BOUTIQUES;
 
-const APP_URL = "https://sami-max-app-1.onrender.com";
+const APP_URL = "https://samii.souverain-store.com";
 const REDIRECT_URI = `${APP_URL}/auth/shopify/callback`;
 
 const SCOPES = [
