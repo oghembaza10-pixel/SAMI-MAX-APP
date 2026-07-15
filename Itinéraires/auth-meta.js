@@ -22,6 +22,21 @@ const SCOPES = [
     "pages_manage_ads",
 ].join(",");
 
+// ✅ VÉRIFICATION WEBHOOK META
+router.get("/webhook/meta", (req, res) => {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+
+    if (mode === 'subscribe' && token === process.env.META_VERIFY_TOKEN) {
+        console.log("✅ Webhook Meta vérifié");
+        res.status(200).send(challenge);
+    } else {
+        console.log("❌ Webhook Meta — token invalide");
+        res.sendStatus(403);
+    }
+});
+
 router.get("/auth/meta", (req, res) => {
     const authUrl =
         `https://www.facebook.com/${GRAPH_VERSION}/dialog/oauth` +
@@ -80,3 +95,4 @@ router.get("/auth/meta/callback", async (req, res) => {
 });
 
 module.exports = router;
+
