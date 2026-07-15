@@ -11,7 +11,6 @@ const CONFIG  = require("./config");
 const app = express();
 
 // ── 3. MIDDLEWARES ────────────────────────────────────
-// Raw body pour webhooks Shopify (avant express.json)
 app.use("/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -67,11 +66,7 @@ app.get("/test-telegram", async (req, res) => {
 
 // ── 7. SERVEUR ────────────────────────────────────────
 app.listen(CONFIG.PORT, () => {
-
-// ── 7. SERVEUR ────────────────────────────────────────
-app.listen(CONFIG.PORT, () => {
     console.log("✅ Airtable connecté");
     console.log("🚀 SAMII OS démarre...");
     console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
 });
-
