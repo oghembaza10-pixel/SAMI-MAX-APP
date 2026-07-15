@@ -6,7 +6,7 @@
  */
 
 const airtable = require("../services/airtable");
-const telegram = require("../services/telegram");
+const telegram = require("../services/telegramService");
 
 class CRMEngine {
 
