@@ -8,7 +8,7 @@
 const airtable           = require("../services/airtable");
 const notificationEngine = require("../engines/notificationEngine");
 const automationEngine   = require("../engines/automationEngine");
-const telegram           = require("../services/telegram");
+const telegram = require("../services/telegramService");
 
 class CommerceEngine {
 
