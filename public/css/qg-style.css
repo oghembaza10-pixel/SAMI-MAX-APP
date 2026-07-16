@@ -292,3 +292,29 @@ body {
     .qg-dashboard { grid-template-columns: repeat(2, 1fr); }
     .qg-arsenal { grid-template-columns: repeat(2, 1fr); }
 }
+/* TABLE */
+.qg-table-section { overflow-x: auto; margin-bottom: 2rem; }
+.qg-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.qg-table th { background: #111; color: #C5A059; padding: 12px 16px; text-align: left; border-bottom: 1px solid #2b2b2b; }
+.qg-table td { padding: 12px 16px; border-bottom: 1px solid #1a1a1a; color: #e8e4d8; }
+.qg-table tr:hover td { background: #111; }
+.row--vip td { border-left: 3px solid #C5A059; }
+.row--blacklist td { border-left: 3px solid #e55; opacity: .8; }
+
+/* BADGES STATUT */
+.qg-badge--green  { background: #1a3a1a; color: #4caf50; padding: 3px 10px; border-radius: 20px; font-size:.78rem; }
+.qg-badge--yellow { background: #3a3a1a; color: #ffc107; padding: 3px 10px; border-radius: 20px; font-size:.78rem; }
+.qg-badge--red    { background: #3a1a1a; color: #e55;    padding: 3px 10px; border-radius: 20px; font-size:.78rem; }
+.qg-badge--blue   { background: #1a2a3a; color: #42a5f5; padding: 3px 10px; border-radius: 20px; font-size:.78rem; }
+.qg-badge--grey   { background: #222;    color: #888;    padding: 3px 10px; border-radius: 20px; font-size:.78rem; }
+
+/* CLIENTS */
+.qg-client-grid   { display: flex; flex-direction: column; gap: 10px; margin-bottom: 2rem; }
+.qg-client-row    { display: flex; align-items: center; gap: 16px; background: #111; padding: 12px 16px; border-radius: 10px; border: 1px solid #2b2b2b; }
+.qg-client-badge--vip   { background: #3a2a00; color: #C5A059; padding: 2px 8px; border-radius: 12px; font-size:.75rem; }
+.qg-client-badge--black { background: #3a0000; color: #e55;    padding: 2px 8px; border-radius: 12px; font-size:.75rem; }
+
+/* TOAST */
+.qg-toast { position:fixed; bottom:30px; right:30px; background:#1a1a1a; color:#e8e4d8; border:1px solid #C5A059; padding:14px 22px; border-radius:12px; font-size:.9rem; opacity:0; transform:translateY(10px); transition:.3s; z-index:9999; }
+.qg-toast--visible { opacity:1; transform:translateY(0); }
+
