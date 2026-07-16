@@ -51,19 +51,6 @@ if (!CONFIG.AIRTABLE.API_KEY) console.error("❌ AIRTABLE_API_KEY manquante");
 if (!CONFIG.AIRTABLE.BASE_ID) console.error("❌ AIRTABLE_BASE_ID manquant");
 if (!CONFIG.GEMINI.API_KEY)   console.error("❌ GEMINI_API_KEY manquante");
 
-// ── TEST TEMPORAIRE TELEGRAM ──────────────────────────
-app.get("/test-telegram", async (req, res) => {
-    const telegram = require("./services/telegramService");
-    const result = await telegram.sendButtons("8930667710",
-        "🧪 *Test SAMII OS*\nBoutons fonctionnels ?",
-        [[
-            { text: "✅ OUI", callback_data: "test_oui" },
-            { text: "❌ NON", callback_data: "test_non" },
-        ]]
-    );
-    res.json(result);
-});
-
 // ── 7. SERVEUR ────────────────────────────────────────
 app.listen(CONFIG.PORT, () => {
     console.log("✅ Airtable connecté");
