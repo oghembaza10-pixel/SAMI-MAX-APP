@@ -63,17 +63,15 @@ class CommerceEngine {
             console.log(`🛒 Nouvelle commande #${order.order_number} — ${shop}`);
 
             // 1. Airtable → COMMANDES
-            await airtable.create("COMMANDES", {
-                "ID Commande" : String(order.order_number || order.id),
-                "Client"      : client,
-                "Téléphone"   : phone,
-                "Adresse"     : address,
-                "Produits"    : order.line_items?.map(i => i.title).join(", ") || "",
-                "Total"       : order.total_price || "0",
-                "Statut"      : "en attente",
-                "Boutique"    : shop,
-                "Date"        : order.created_at || new Date().toISOString(),
-            });
+           await airtable.create("COMMANDES", {
+    "ID Commande"   : String(order.order_number || order.id),
+    "Nom Client"    : client,
+    "Téléphone"     : phone,
+    "Produit"       : order.line_items?.map(i => i.title).join(", ") || "",
+    "Statut"        : "en attente",
+    "Boutique"      : shop,
+    "Date Commande" : order.created_at || new Date().toISOString(),
+});
 
             // 2. Log
             await airtable.log("order.created", `#${order.order_number} — ${client}`, shop);
