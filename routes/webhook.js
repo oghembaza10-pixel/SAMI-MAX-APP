@@ -1,14 +1,7 @@
-/**
- * ============================================================
- * OG • Webhook Routes — VERSION DÉFINITIVE
- * ============================================================
- */
-
 const express      = require("express");
 const router       = express.Router();
 const orchestrator = require("../brain/orchestrator");
 
-// ── MAP SHOPIFY TOPICS → EVENTS SAMII ─────────────────
 const TOPIC_MAP = {
     "orders/create"    : "order.created",
     "orders/updated"   : "order.updated",
@@ -18,7 +11,6 @@ const TOPIC_MAP = {
     "app/uninstalled"  : "shop.uninstalled",
 };
 
-// ── WEBHOOK UNIVERSEL ─────────────────────────────────
 router.post("/", async (req, res) => {
     res.sendStatus(200);
 
@@ -26,7 +18,6 @@ router.post("/", async (req, res) => {
     const shop  = req.headers["x-shopify-shop-domain"];
 
     console.log(`📥 Webhook reçu : ${topic} — ${shop}`);
-
     if (!topic || !shop) return;
 
     const type = TOPIC_MAP[topic];
@@ -35,11 +26,18 @@ router.post("/", async (req, res) => {
         return;
     }
 
-    await orchestrator.process({
-        type,
-        shop,
-        payload: req.body,
-    });
+    // ── Parse raw body ────────────────────────────────
+    let payload = {};
+    try {
+        const raw = req.body;
+        payload = Buffer.isBuffer(raw) ? JSON.parse(raw.toString()) : raw;
+        console.log(`✅ Payload parsé — order #${payload.order_number}`);
+    } catch(e) {
+        console.error("❌ Parse body :", e.message);
+    }
+
+    await orchestrator.process({ type, shop, payload });
 });
 
 module.exports = router;
+
