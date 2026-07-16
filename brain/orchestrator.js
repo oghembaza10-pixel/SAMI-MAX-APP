@@ -12,21 +12,22 @@ const automationEngine = require("../engines/automationEngine");
 // ── TABLE DE ROUTAGE ────────────────────────────────────────
 const routes = {
 
-    // ── SHOPIFY APP ───────────────────────────────────────
-    [E.SHOP_CONNECTED]        : automationEngine.shopConnected,
-    [E.SHOP_UNINSTALLED]      : automationEngine.shopUninstalled,
+  // ── SHOPIFY ORDERS ────────────────────────────────────
+[E.ORDER_CREATED]   : commerceEngine.newOrder.bind(commerceEngine),
+[E.ORDER_UPDATED]   : commerceEngine.orderUpdated.bind(commerceEngine),
+[E.ORDER_PAID]      : commerceEngine.orderPaid.bind(commerceEngine),
+[E.ORDER_FULFILLED] : commerceEngine.orderFulfilled.bind(commerceEngine),
+[E.ORDER_DELIVERED] : commerceEngine.orderDelivered.bind(commerceEngine),
+[E.ORDER_CANCELLED] : commerceEngine.orderCancelled.bind(commerceEngine),
 
-    // ── SHOPIFY ORDERS ────────────────────────────────────
-    [E.ORDER_CREATED]         : commerceEngine.newOrder,
-    [E.ORDER_UPDATED]         : commerceEngine.orderUpdated,
-    [E.ORDER_PAID]            : commerceEngine.orderPaid,
-    [E.ORDER_FULFILLED]       : commerceEngine.orderFulfilled,
-    [E.ORDER_DELIVERED]       : commerceEngine.orderDelivered,
-    [E.ORDER_CANCELLED]       : commerceEngine.orderCancelled,
+// ── STOCK ─────────────────────────────────────────────
+[E.STOCK_LOW]       : commerceEngine.lowStock.bind(commerceEngine),
+[E.STOCK_EMPTY]     : commerceEngine.stockEmpty.bind(commerceEngine),
 
-    // ── STOCK ─────────────────────────────────────────────
-    [E.STOCK_LOW]             : commerceEngine.lowStock,
-    [E.STOCK_EMPTY]           : commerceEngine.stockEmpty,
+// ── YALIDINE ──────────────────────────────────────────
+"yalidine.status"   : commerceEngine.yalidineStatus.bind(commerceEngine),
+"yalidine.delivered": commerceEngine.yalidineDelivered.bind(commerceEngine),
+"yalidine.returned" : commerceEngine.yalidineReturned.bind(commerceEngine),
 
     // ── TELEGRAM ──────────────────────────────────────────
     "telegram.message"        : crmEngine.telegram,
