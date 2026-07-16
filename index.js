@@ -50,6 +50,11 @@ app.get("/qg/:metier", (req, res) => res.render("qg-template", { metier: req.par
 if (!CONFIG.AIRTABLE.API_KEY) console.error("❌ AIRTABLE_API_KEY manquante");
 if (!CONFIG.AIRTABLE.BASE_ID) console.error("❌ AIRTABLE_BASE_ID manquant");
 if (!CONFIG.GEMINI.API_KEY)   console.error("❌ GEMINI_API_KEY manquante");
+app.get("/test-telegram", async (req, res) => {
+    const telegram = require("./services/telegramService");
+    const result = await telegram.send("8276462482", "👑 SAMII OS — Test direct !");
+    res.json(result);
+});
 
 // ── 7. SERVEUR ────────────────────────────────────────
 app.listen(CONFIG.PORT, () => {
