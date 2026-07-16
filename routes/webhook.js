@@ -1,13 +1,22 @@
 /**
  * ============================================================
  * OG • Webhook Routes — VERSION DÉFINITIVE
- * Une seule URL pour tous les événements Shopify
  * ============================================================
  */
 
 const express      = require("express");
 const router       = express.Router();
 const orchestrator = require("../brain/orchestrator");
+
+// ── MAP SHOPIFY TOPICS → EVENTS SAMII ─────────────────
+const TOPIC_MAP = {
+    "orders/create"    : "order.created",
+    "orders/updated"   : "order.updated",
+    "orders/paid"      : "order.paid",
+    "orders/fulfilled" : "order.fulfilled",
+    "orders/cancelled" : "order.cancelled",
+    "app/uninstalled"  : "shop.uninstalled",
+};
 
 // ── WEBHOOK UNIVERSEL ─────────────────────────────────
 router.post("/", async (req, res) => {
@@ -20,8 +29,14 @@ router.post("/", async (req, res) => {
 
     if (!topic || !shop) return;
 
+    const type = TOPIC_MAP[topic];
+    if (!type) {
+        console.log(`⚠️ Topic ignoré : ${topic}`);
+        return;
+    }
+
     await orchestrator.process({
-        type   : `shopify.${topic.replace("/", ".")}`,
+        type,
         shop,
         payload: req.body,
     });
