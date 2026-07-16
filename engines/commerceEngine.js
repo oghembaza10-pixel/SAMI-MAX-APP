@@ -63,21 +63,21 @@ class CommerceEngine {
             console.log(`🛒 Nouvelle commande #${order.order_number} — ${shop}`);
 
             // 1. Airtable → COMMANDES
-           await airtable.create("COMMANDES", {
-    "ID Commande"   : String(order.order_number || order.id),
-    "Nom Client"    : client,
-    "Téléphone"     : phone,
-    "Produit"       : order.line_items?.map(i => i.title).join(", ") || "",
-    "Statut"        : "en attente",
-    "Boutique"      : shop,
-    "Date Commande" : order.created_at || new Date().toISOString(),
-});
+            await airtable.create("COMMANDES", {
+                "ID Commande"   : String(order.order_number || order.id),
+                "Nom Client"    : client,
+                "Téléphone"     : phone,
+                "Produit"       : order.line_items?.map(i => i.title).join(", ") || "",
+                "Statut"        : "en attente",
+                "Boutique"      : shop,
+                "Date Commande" : order.created_at || new Date().toISOString(),
+            });
 
             // 2. Log
             await airtable.log("order.created", `#${order.order_number} — ${client}`, shop);
 
-            // 3. Automation
-            await automationEngine.run("order.created", { order, shop, client, phone, address });
+            // 3. Automation ✅ CORRIGÉ
+            await automationEngine.run("order.created", { shop, payload: order });
 
             // 4. Notification Telegram — SAMII rapporte
             const message =
@@ -101,7 +101,6 @@ class CommerceEngine {
             return { success: false, error: err.message };
         }
     }
-
     // =========================================================
     // COMMANDE MISE À JOUR
     // =========================================================
@@ -112,7 +111,7 @@ class CommerceEngine {
             const { client, phone } = this.getClientData(order);
 
             await airtable.log("order.updated", `#${order.order_number} mise à jour`, shop);
-            await automationEngine.run("order.updated", { order, shop, client, phone });
+            await automationEngine.run("order.updated", { shop, payload: order }); // ✅ CORRIGÉ
 
             const message =
                 `👑 *SAMII — Commande #${order.order_number} mise à jour*\n\n` +
@@ -140,7 +139,7 @@ class CommerceEngine {
             const { client, phone } = this.getClientData(order);
 
             await airtable.log("order.paid", `#${order.order_number} payée`, shop);
-            await automationEngine.run("order.paid", { order, shop, client, phone });
+            await automationEngine.run("order.paid", { shop, payload: order }); // ✅ CORRIGÉ
 
             const message =
                 `👑 *SAMII — Paiement confirmé #${order.order_number}*\n\n` +
@@ -171,7 +170,7 @@ class CommerceEngine {
             const carrier  = order.fulfillments?.[0]?.tracking_company || "N/A";
 
             await airtable.log("order.fulfilled", `#${order.order_number} expédiée`, shop);
-            await automationEngine.run("order.fulfilled", { order, shop, client, phone, tracking, carrier });
+            await automationEngine.run("order.fulfilled", { shop, payload: order }); // ✅ CORRIGÉ
 
             const message =
                 `👑 *SAMII — Expédition #${order.order_number}*\n\n` +
@@ -228,7 +227,7 @@ class CommerceEngine {
             const { client, phone } = this.getClientData(order);
 
             await airtable.log("order.cancelled", `#${order.order_number} annulée`, shop);
-            await automationEngine.run("order.cancelled", { order, shop, client, phone });
+            await automationEngine.run("order.cancelled", { shop, payload: order }); // ✅ CORRIGÉ
 
             const message =
                 `👑 *SAMII — Commande #${order.order_number} annulée*\n\n` +
@@ -247,7 +246,7 @@ class CommerceEngine {
         }
     }
 
-    // =========================================================
+     // =========================================================
     // STOCK FAIBLE
     // =========================================================
     async lowStock(event) {
@@ -255,7 +254,7 @@ class CommerceEngine {
             const { product, variant, shop } = event.payload;
 
             await airtable.log("stock.low", `Stock faible — ${product} : ${variant}`, shop);
-            await automationEngine.run("stock.low", { product, variant, shop });
+            await automationEngine.run("stock.low", { shop, payload: event.payload }); // ✅ CORRIGÉ
 
             const message =
                 `👑 *SAMII — Alerte Stock*\n\n` +
@@ -298,6 +297,7 @@ class CommerceEngine {
             return { success: false, error: err.message };
         }
     }
+
 
     // =========================================================
     // YALIDINE — STATUT MIS À JOUR
