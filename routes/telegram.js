@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — TELEGRAM WEBHOOK VERSION DÉFINITIVE
+// SAMII OS — TELEGRAM WEBHOOK V2
 // ==========================================================================
 
 const express      = require("express");
@@ -17,23 +17,59 @@ router.post("/", async (req, res) => {
     try {
         const body = req.body;
 
-        // ── CALLBACK QUERY (bouton cliqué) ────────────────────────────────
+        // ── CALLBACK QUERY (bouton OUI/NON) ───────────────────────────────
         if (body.callback_query) {
             const cb     = body.callback_query;
             const chatId = cb.message.chat.id;
-            const data   = cb.data;
+            const data   = cb.data || "";
 
             await axios.post(`${BASE}/answerCallbackQuery`, {
-                callback_query_id : cb.id,
-                text              : "⚙️ SAMII traite..."
+                callback_query_id: cb.id,
+                text             : "⚙️ SAMII traite...",
             });
 
+            // OUI → confirmer
+            if (data.startsWith("confirm_")) {
+                const orderId = data.replace("confirm_", "");
+
+                await orchestrator.process({
+                    type   : "order.confirmed",
+                    shop   : "",
+                    payload: { orderId, chatId },
+                });
+
+                await axios.post(`${BASE}/sendMessage`, {
+                    chat_id   : chatId,
+                    text      : `✅ *Commande confirmée !*\n\nNous préparons votre colis 📦\nVous serez notifié dès l'expédition 🚚\n\nMerci de votre confiance 🙏`,
+                    parse_mode: "Markdown",
+                });
+                return;
+            }
+
+            // NON → annuler
+            if (data.startsWith("cancel_")) {
+                const orderId = data.replace("cancel_", "");
+
+                await orchestrator.process({
+                    type   : "order.cancelled",
+                    shop   : "",
+                    payload: { orderId, chatId },
+                });
+
+                await axios.post(`${BASE}/sendMessage`, {
+                    chat_id   : chatId,
+                    text      : `❌ *Commande annulée.*\n\nSi c'est une erreur ou si vous souhaitez recommander,\nrépondez-nous ici et nous vous aiderons 😊`,
+                    parse_mode: "Markdown",
+                });
+                return;
+            }
+
+            // Autre callback
             await orchestrator.process({
                 type   : "telegram.callback",
                 shop   : "",
-                payload: { chatId, data, cb }
+                payload: { chatId, data, cb },
             });
-
             return;
         }
 
@@ -42,14 +78,17 @@ router.post("/", async (req, res) => {
         if (!message) return;
 
         const chatId = message.chat.id;
-        const text   = message.text || "";
+        const text   = (message.text || "").trim();
 
         // /start
         if (text === "/start") {
             await axios.post(`${BASE}/sendMessage`, {
-                chat_id    : chatId,
-                text       : `👑 *Bienvenue sur SAMII OS !*\n\n✅ Ton Chat ID :\n\`${chatId}\`\n\nCopie ce numéro dans ton Hub pour activer les notifications.`,
-                parse_mode : "Markdown"
+                chat_id   : chatId,
+                text      :
+                    `👑 *Bienvenue sur SAMII OS !*\n\n` +
+                    `✅ Ton Chat ID :\n\`${chatId}\`\n\n` +
+                    `Copie ce numéro dans ton Hub pour activer les notifications.`,
+                parse_mode: "Markdown",
             });
             return;
         }
@@ -57,18 +96,18 @@ router.post("/", async (req, res) => {
         // /id
         if (text === "/id") {
             await axios.post(`${BASE}/sendMessage`, {
-                chat_id    : chatId,
-                text       : `🆔 Ton Chat ID : \`${chatId}\``,
-                parse_mode : "Markdown"
+                chat_id   : chatId,
+                text      : `🆔 Ton Chat ID : \`${chatId}\``,
+                parse_mode: "Markdown",
             });
             return;
         }
 
-        // Tous les autres messages → orchestrator
+        // Autre message → orchestrateur
         await orchestrator.process({
             type   : "telegram.message",
             shop   : "",
-            payload: { chatId, text, message }
+            payload: { chatId, text, message },
         });
 
     } catch (err) {
