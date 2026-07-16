@@ -1,121 +1,136 @@
+// ==========================================================================
+// SAMII OS — REGISTER V2
+// ==========================================================================
+
 const express = require("express");
+const axios   = require("axios");
+const router  = express.Router();
 
-const router = express.Router();
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const TABLE_USERS      = process.env.TABLE_USERS || "UTILISATEURS";
 
+// ── GET /register ─────────────────────────────────────────────
 router.get("/", (req, res) => {
-
-res.send(`
-
-<!DOCTYPE html>
-
+    res.send(`<!DOCTYPE html>
 <html lang="fr">
-
 <head>
-
-<meta charset="UTF-8">
-
-<title>Créer un compte - SAMII</title>
-
-<style>
-
-body{
-background:#0b0b0b;
-font-family:Arial;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-color:white;
-}
-
-.box{
-width:380px;
-background:#181818;
-padding:30px;
-border-radius:12px;
-border:1px solid #333;
-}
-
-h1{
-text-align:center;
-color:#d4af37;
-}
-
-input,select{
-width:100%;
-padding:12px;
-margin-top:12px;
-border:none;
-border-radius:8px;
-box-sizing:border-box;
-}
-
-button{
-width:100%;
-padding:12px;
-margin-top:20px;
-background:#d4af37;
-border:none;
-border-radius:8px;
-font-weight:bold;
-cursor:pointer;
-}
-
-small{
-display:block;
-margin-top:15px;
-text-align:center;
-color:#999;
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Créer un compte — SAMII</title>
+    <style>
+        *{ box-sizing:border-box; margin:0; padding:0; }
+        body{ background:#0b0b0b; font-family:Arial; display:flex; justify-content:center; align-items:center; min-height:100vh; color:white; padding:20px; }
+        .box{ width:100%; max-width:400px; background:#181818; padding:35px; border-radius:14px; border:1px solid #333; }
+        h1{ text-align:center; color:#d4af37; margin-bottom:25px; font-size:1.5rem; }
+        input, select{ width:100%; padding:12px; margin-top:12px; border:1px solid #333; border-radius:8px; background:#111; color:white; font-size:.95rem; }
+        input:focus, select:focus{ outline:none; border-color:#d4af37; }
+        button{ width:100%; padding:13px; margin-top:22px; background:#d4af37; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer; color:#000; }
+        button:hover{ opacity:.9; }
+        .msg{ margin-top:14px; text-align:center; font-size:.88rem; color:#e55; min-height:20px; }
+        .msg.ok{ color:#4caf50; }
+        small{ display:block; margin-top:18px; text-align:center; color:#666; font-size:.8rem; }
+        a{ color:#d4af37; text-decoration:none; }
+    </style>
 </head>
-
 <body>
-
 <div class="box">
-
-<h1>Créer un compte</h1>
-
-<input placeholder="Nom">
-
-<input placeholder="Prénom">
-
-<input type="email" placeholder="Email">
-
-<input placeholder="Téléphone">
-
-<select>
-
-<option>E-commerçant</option>
-
-<option>Livreur (bientôt)</option>
-
-<option>Fournisseur (bientôt)</option>
-
-<option>Client (bientôt)</option>
-
-</select>
-
-<input type="password" placeholder="Mot de passe">
-
-<button>Créer mon compte</button>
-
-<small>
-
-Version Soldat V1
-
-</small>
-
+    <h1>👑 Créer mon compte</h1>
+    <form id="form-register">
+        <input name="nom"      placeholder="Nom"      required>
+        <input name="prenom"   placeholder="Prénom"   required>
+        <input name="email"    type="email" placeholder="Email" required>
+        <input name="telephone" placeholder="Téléphone" required>
+        <select name="metier">
+            <option value="ecommerce">E-commerçant</option>
+            <option value="restaurant">Restaurateur</option>
+            <option value="immobilier">Immobilier</option>
+            <option value="livreur" disabled>Livreur (bientôt)</option>
+            <option value="fournisseur" disabled>Fournisseur (bientôt)</option>
+        </select>
+        <input name="password" type="password" placeholder="Mot de passe" required>
+        <button type="submit">Créer mon compte</button>
+    </form>
+    <div class="msg" id="msg"></div>
+    <small>Déjà un compte ? <a href="/login">Se connecter</a></small>
 </div>
+<script>
+document.getElementById('form-register').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg  = document.getElementById('msg');
+    const data = Object.fromEntries(new FormData(e.target));
+    msg.textContent = '⏳ Création en cours...';
+    msg.className   = 'msg';
 
+    const res  = await fetch('/register', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify(data),
+    });
+    const json = await res.json();
+
+    if (json.success) {
+        msg.textContent = '✅ Compte créé ! SAMII vous préviendra dès l\'activation.';
+        msg.className   = 'msg ok';
+        setTimeout(() => window.location.href = '/login', 2500);
+    } else {
+        msg.textContent = json.error || '❌ Erreur. Réessayez.';
+    }
+});
+</script>
 </body>
+</html>`);
+});
 
-</html>
+// ── POST /register ────────────────────────────────────────────
+router.post("/", async (req, res) => {
+    const { nom, prenom, email, telephone, metier, password } = req.body;
 
-`);
+    if (!nom || !prenom || !email || !telephone || !password) {
+        return res.json({ success: false, error: "Tous les champs sont obligatoires." });
+    }
 
+    try {
+        const headers = {
+            Authorization : `Bearer ${AIRTABLE_API_KEY}`,
+            "Content-Type": "application/json",
+        };
+
+        // Vérifier si email existe déjà
+        const check = await axios.get(
+            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={email}="${email}"`,
+            { headers }
+        );
+        if (check.data.records.length > 0) {
+            return res.json({ success: false, error: "Cet email est déjà utilisé." });
+        }
+
+        // Créer l'utilisateur
+        await axios.post(
+            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}`,
+            { fields: {
+                nom,
+                prenom,
+                email,
+                telephone,
+                metier        : metier || "ecommerce",
+                password_hash : password, // ⚠️ V2 : bcrypt
+                role          : "owner",
+                statut_acces  : "en attente",
+                created_at    : new Date().toISOString(),
+                last_login    : new Date().toISOString(),
+                actif         : false,
+            }},
+            { headers }
+        );
+
+        console.log(`✅ Nouveau compte : ${email}`);
+        res.json({ success: true });
+
+    } catch (err) {
+        console.error("❌ Register :", err.response?.data || err.message);
+        res.json({ success: false, error: "Erreur serveur. Réessayez." });
+    }
 });
 
 module.exports = router;
