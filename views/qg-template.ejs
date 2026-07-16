@@ -8,16 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="/css/qg-style.css">
 </head>
-<body>
+<body data-shop="<%= shop %>">
 
 <div class="qg-shell">
 
-    <!-- SIDEBAR UNIQUE : nav + modules + SAMII + paramètres -->
+    <!-- SIDEBAR -->
     <aside class="qg-sidebar" id="og-sidebar">
-
         <div class="qg-sidebar__top">
             <a href="/hub" class="qg-logo">
                 <img src="/og.png" alt="OG">
@@ -41,9 +39,7 @@
             <a href="/academy" class="qg-nav__item">
                 <i data-lucide="graduation-cap"></i><span>Academy</span>
             </a>
-
             <div class="qg-nav__divider"></div>
-
             <a href="/qg/<%= metier %>/affaires" class="qg-nav__item active">
                 <i data-lucide="briefcase"></i><span>Mes affaires</span>
             </a>
@@ -59,10 +55,7 @@
             <a href="/coffre" class="qg-nav__item">
                 <i data-lucide="vault"></i><span>Coffre OG</span>
             </a>
-
             <div class="qg-nav__divider"></div>
-
-            <!-- SAMII : module comme les autres, avec statut ON/OFF -->
             <a href="/samii" class="qg-nav__item qg-nav__item--samii">
                 <i data-lucide="bot"></i><span>SAMII</span>
                 <span class="qg-status-dot qg-status-dot--on" id="samii-status-dot" title="SAMII actif"></span>
@@ -72,6 +65,9 @@
         <div class="qg-sidebar__bottom">
             <a href="/settings" class="qg-nav__item">
                 <i data-lucide="settings"></i><span>Paramètres</span>
+            </a>
+            <a href="/logout" class="qg-nav__item" style="color:#e55;">
+                <i data-lucide="log-out"></i><span>Déconnexion</span>
             </a>
         </div>
     </aside>
@@ -83,7 +79,7 @@
             <div class="qg-topbar__breadcrumb">
                 <span class="qg-mono">QG</span>
                 <i data-lucide="chevron-right"></i>
-                <span class="qg-topbar__metier"><%= metier.toUpperCase() %></span>
+                <span class="qg-topbar__metier" id="qg-boutique-nom"><%= metier.toUpperCase() %></span>
             </div>
             <div class="qg-topbar__actions">
                 <button class="qg-icon-btn" title="Notifications">
@@ -104,7 +100,7 @@
             </div>
         </section>
 
-        <!-- DASHBOARD -->
+        <!-- ── STATS ─────────────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="activity"></i>
             <span>Vue d'ensemble</span>
@@ -113,42 +109,94 @@
         <section class="qg-dashboard">
             <article class="qg-card qg-card--tilt">
                 <div class="qg-card__icon"><i data-lucide="trending-up"></i></div>
-                <span class="qg-card__value countup" data-to="12480">0</span>
-                <span class="qg-card__label">Revenus (CR)</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="eye"></i></div>
-                <span class="qg-card__value countup" data-to="3820">0</span>
-                <span class="qg-card__label">Visiteurs</span>
+                <span class="qg-card__value" id="stat-revenus">0</span>
+                <span class="qg-card__label">Revenus (DZD)</span>
             </article>
             <article class="qg-card qg-card--tilt">
                 <div class="qg-card__icon"><i data-lucide="package"></i></div>
-                <span class="qg-card__value countup" data-to="214">0</span>
+                <span class="qg-card__value" id="stat-commandes">0</span>
                 <span class="qg-card__label">Commandes</span>
             </article>
             <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="target"></i></div>
-                <span class="qg-card__value countup" data-to="7">0</span>
-                <span class="qg-card__label">Missions actives</span>
+                <div class="qg-card__icon"><i data-lucide="clock"></i></div>
+                <span class="qg-card__value" id="stat-attente">0</span>
+                <span class="qg-card__label">En attente</span>
             </article>
             <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="bar-chart-3"></i></div>
-                <span class="qg-card__value countup" data-to="68">0</span>
-                <span class="qg-card__label">Progression (%)</span>
+                <div class="qg-card__icon"><i data-lucide="check-circle"></i></div>
+                <span class="qg-card__value" id="stat-confirmees">0</span>
+                <span class="qg-card__label">Confirmées</span>
             </article>
             <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="bell-ring"></i></div>
-                <span class="qg-card__value countup" data-to="3">0</span>
-                <span class="qg-card__label">Alertes</span>
+                <div class="qg-card__icon"><i data-lucide="x-circle"></i></div>
+                <span class="qg-card__value" id="stat-annulees">0</span>
+                <span class="qg-card__label">Annulées</span>
             </article>
             <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="grid-3x3"></i></div>
-                <span class="qg-card__value countup" data-to="9">0</span>
-                <span class="qg-card__label">Modules installés</span>
+                <div class="qg-card__icon"><i data-lucide="crown"></i></div>
+                <span class="qg-card__value" id="stat-vip">0</span>
+                <span class="qg-card__label">Clients VIP</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="shield-off"></i></div>
+                <span class="qg-card__value" id="stat-blacklist">0</span>
+                <span class="qg-card__label">Blacklist</span>
             </article>
         </section>
 
-        <!-- ARSENAL (aperçu) -->
+        <!-- ── COMMANDES ─────────────────────────────── -->
+        <div class="qg-section-title">
+            <i data-lucide="shopping-bag"></i>
+            <span>Dernières commandes</span>
+        </div>
+
+        <section class="qg-table-section">
+            <table class="qg-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Client</th>
+                        <th>Téléphone</th>
+                        <th>Produit</th>
+                        <th>Total</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody id="commandes-tbody">
+                    <tr>
+                        <td colspan="6" style="text-align:center;color:#888;padding:20px;">
+                            Chargement...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ── CLIENTS VIP ───────────────────────────── -->
+        <div class="qg-section-title">
+            <i data-lucide="crown"></i>
+            <span>Clients VIP 👑</span>
+        </div>
+
+        <section class="qg-clients-section">
+            <div id="vip-list" class="qg-client-grid">
+                <p style="color:#888;font-size:.85rem;">Chargement...</p>
+            </div>
+        </section>
+
+        <!-- ── BLACKLIST ──────────────────────────────── -->
+        <div class="qg-section-title" style="--accent:#e55;">
+            <i data-lucide="shield-off"></i>
+            <span>Blacklist 🚫</span>
+        </div>
+
+        <section class="qg-clients-section">
+            <div id="black-list" class="qg-client-grid">
+                <p style="color:#888;font-size:.85rem;">Chargement...</p>
+            </div>
+        </section>
+
+        <!-- ── ARSENAL ───────────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="sword"></i>
             <span>Arsenal</span>
@@ -180,10 +228,9 @@
         </section>
 
     </main>
-
 </div>
 
-<!-- SAMII — sphère flottante permanente, renvoie vers /samii -->
+<!-- SAMII orb -->
 <a href="/samii" class="samii-orb" aria-label="Ouvrir SAMII">
     <span class="samii-orb__aura"></span>
     <span class="samii-orb__aura samii-orb__aura--2"></span>
@@ -191,6 +238,7 @@
 </a>
 
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="/socket.io/socket.io.js"></script>
 <script src="/js/qg.js"></script>
 
 </body>
