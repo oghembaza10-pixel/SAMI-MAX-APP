@@ -1,20 +1,21 @@
 // ==========================================================================
-// OG EMPIRE — CONNEXION OAUTH SHOPIFY (multi-boutiques) V2
+// OG EMPIRE — CONNEXION OAUTH SHOPIFY (multi-boutiques) V3
 // ==========================================================================
 
-const express = require("express");
-const axios = require("axios");
-const crypto = require("crypto");
-const router = express.Router();
+const express      = require("express");
+const axios        = require("axios");
+const crypto       = require("crypto");
+const router       = express.Router();
 const orchestrator = require("../brain/orchestrator");
 
-const API_KEY = process.env.SHOPIFY_API_KEY;
-const API_SECRET = process.env.SHOPIFY_API_SECRET;
+const API_KEY          = process.env.SHOPIFY_API_KEY;
+const API_SECRET       = process.env.SHOPIFY_API_SECRET;
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_BOUTIQUES = process.env.TABLE_BOUTIQUES;
+const TABLE_BOUTIQUES  = process.env.TABLE_BOUTIQUES;
+const TABLE_USERS      = process.env.TABLE_USERS || "UTILISATEURS";
 
-const APP_URL = "https://samii.souverain-store.com";
+const APP_URL      = "https://samii.souverain-store.com";
 const REDIRECT_URI = `${APP_URL}/auth/shopify/callback`;
 
 const SCOPES = [
@@ -25,10 +26,9 @@ const SCOPES = [
     "read_customers",
 ].join(",");
 
-// State CSRF temporaire (Map V1 — Redis en V2)
 const stateStore = new Map();
 
-// — HMAC verification —
+// ── HMAC verification ────────────────────────────────────────
 function verifyHmac(query) {
     const { hmac, signature, ...rest } = query;
     if (!hmac) return false;
@@ -43,55 +43,86 @@ function verifyHmac(query) {
     return crypto.timingSafeEqual(Buffer.from(generatedHash), Buffer.from(hmac));
 }
 
-// — BLOC 1 : Upsert boutique dans Airtable (create ou update) —
-async function upsertBoutique(shop, accessToken) {
+// ── BLOC 1 : Upsert boutique → retourne record ───────────────
+async function upsertBoutique(shop, accessToken, shopInfo) {
     const headers = {
-        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        Authorization : `Bearer ${AIRTABLE_API_KEY}`,
         "Content-Type": "application/json",
     };
 
-    // Cherche si boutique existe déjà
     const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}?filterByFormula={shop_url}="${shop}"`;
-    const search = await axios.get(searchUrl, { headers });
-    const record = search.data.records[0];
+    const search    = await axios.get(searchUrl, { headers });
+    const record    = search.data.records[0];
+
+    const fields = {
+        access_token   : accessToken,
+        status         : "actif",
+        date_connexion : new Date().toISOString().split("T")[0],
+        webhooks_actifs: false,
+        nom_boutique   : shopInfo?.name   || shop,
+        email          : shopInfo?.email  || "",
+        devise         : shopInfo?.currency || "",
+        pays           : shopInfo?.country  || "",
+        timezone       : shopInfo?.iana_timezone || "",
+    };
 
     if (record) {
-        // UPDATE — boutique existe déjà
         await axios.patch(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}/${record.id}`,
-            {
-                fields: {
-                    access_token: accessToken,
-                    status: "actif",
-                    date_connexion: new Date().toISOString().split("T")[0],
-                    webhooks_actifs: false,
-                }
-            },
+            { fields },
             { headers }
         );
         console.log(`🔄 Boutique mise à jour : ${shop}`);
+        return { id: record.id, isNew: false };
     } else {
-        // CREATE — nouvelle boutique
-        await axios.post(
+        const created = await axios.post(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}`,
-            {
-                fields: {
-                    shop_url: shop,
-                    nom_boutique: shop,
-                    access_token: accessToken,
-                    scopes: SCOPES,
-                    status: "actif",
-                    date_connexion: new Date().toISOString().split("T")[0],
-                    webhooks_actifs: false,
-                }
-            },
+            { fields: { shop_url: shop, scopes: SCOPES, ...fields }},
             { headers }
         );
         console.log(`✅ Nouvelle boutique créée : ${shop}`);
+        return { id: created.data.id, isNew: true };
     }
 }
 
-// — BLOC 2 : Enregistrer les webhooks automatiquement —
+// ── BLOC 2 : Upsert utilisateur ──────────────────────────────
+async function upsertUser(shop, email) {
+    const headers = {
+        Authorization : `Bearer ${AIRTABLE_API_KEY}`,
+        "Content-Type": "application/json",
+    };
+
+    const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={shop_url}="${shop}"`;
+    const search    = await axios.get(searchUrl, { headers });
+    const record    = search.data.records[0];
+
+    if (record) {
+        await axios.patch(
+            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
+            { fields: { last_login: new Date().toISOString(), actif: true }},
+            { headers }
+        );
+        console.log(`🔄 Utilisateur mis à jour : ${shop}`);
+        return record.id;
+    } else {
+        const created = await axios.post(
+            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}`,
+            { fields: {
+                shop_url  : shop,
+                email     : email || "",
+                role      : "owner",
+                created_at: new Date().toISOString(),
+                last_login: new Date().toISOString(),
+                actif     : true,
+            }},
+            { headers }
+        );
+        console.log(`✅ Utilisateur créé : ${shop}`);
+        return created.data.id;
+    }
+}
+
+// ── BLOC 3 : Enregistrer les webhooks ────────────────────────
 async function registerWebhooks(shop, accessToken) {
     const webhooks = [
         "orders/create",
@@ -105,49 +136,43 @@ async function registerWebhooks(shop, accessToken) {
         try {
             await axios.post(
                 `https://${shop}/admin/api/2024-01/webhooks.json`,
-                {
-                    webhook: {
-                        topic,
-                        address: `${APP_URL}/webhook/${topic.replace("/", "-")}`,
-                        format: "json",
-                    },
-                },
-                {
-                    headers: {
-                        "X-Shopify-Access-Token": accessToken,
-                        "Content-Type": "application/json",
-                    },
-                }
+                { webhook: {
+                    topic,
+                    address: `${APP_URL}/webhook`,
+                    format : "json",
+                }},
+                { headers: {
+                    "X-Shopify-Access-Token": accessToken,
+                    "Content-Type"          : "application/json",
+                }}
             );
             console.log(`✅ Webhook enregistré : ${topic}`);
         } catch (err) {
-            // Webhook déjà existant → pas grave
             console.warn(`⚠️ Webhook ${topic} : ${err.response?.data?.errors || err.message}`);
         }
     }
 
-    // Marquer webhooks_actifs = true dans Airtable
-    const headers = { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" };
+    // Marquer webhooks_actifs = true
+    const headers   = { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" };
     const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}?filterByFormula={shop_url}="${shop}"`;
-    const search = await axios.get(searchUrl, { headers });
-    const recordId = search.data.records[0]?.id;
+    const search    = await axios.get(searchUrl, { headers });
+    const recordId  = search.data.records[0]?.id;
     if (recordId) {
         await axios.patch(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}/${recordId}`,
-            { fields: { webhooks_actifs: true } },
+            { fields: { webhooks_actifs: true }},
             { headers }
         );
     }
 }
 
-// — ROUTE 1 : Lancer l'OAuth —
+// ── ROUTE 1 : Lancer l'OAuth ─────────────────────────────────
 router.get("/auth/shopify", (req, res) => {
     const { shop } = req.query;
     if (!shop || !shop.match(/^[a-zA-Z0-9-]+\.myshopify\.com$/)) {
         return res.status(400).send('Paramètre "shop" manquant ou invalide.');
     }
 
-    // Génère et stocke le state CSRF
     const state = crypto.randomBytes(16).toString("hex");
     stateStore.set(shop, state);
 
@@ -161,67 +186,63 @@ router.get("/auth/shopify", (req, res) => {
     res.redirect(installUrl);
 });
 
-// — ROUTE 2 : Callback OAuth —
+// ── ROUTE 2 : Callback OAuth ─────────────────────────────────
 router.get("/auth/shopify/callback", async (req, res) => {
     const { shop, code, state } = req.query;
 
-    // Validations de base
     if (!shop || !code) return res.status(400).send("Paramètres manquants.");
 
-    // Vérification state CSRF
     const savedState = stateStore.get(shop);
     if (!savedState || state !== savedState) {
         return res.status(403).send("State invalide — tentative CSRF détectée.");
     }
     stateStore.delete(shop);
 
-    // Vérification HMAC
     if (!verifyHmac(req.query)) return res.status(401).send("Signature invalide.");
 
     try {
-        // Récupérer le token
-        const tokenRes = await axios.post(`https://${shop}/admin/oauth/access_token`, {
-            client_id: API_KEY,
+        // Token Shopify
+        const tokenRes    = await axios.post(`https://${shop}/admin/oauth/access_token`, {
+            client_id    : API_KEY,
             client_secret: API_SECRET,
             code,
         });
         const accessToken = tokenRes.data.access_token;
 
-        // BLOC 1 — Upsert Airtable (create ou update)
-        await upsertBoutique(shop, accessToken);
+        // Infos boutique Shopify
+        const shopRes  = await axios.get(`https://${shop}/admin/api/2024-01/shop.json`, {
+            headers: { "X-Shopify-Access-Token": accessToken }
+        });
+        const shopInfo = shopRes.data.shop;
 
-        // BLOC 2 — Enregistrer les webhooks
+        // Upsert boutique + utilisateur
+        const boutique = await upsertBoutique(shop, accessToken, shopInfo);
+        await upsertUser(shop, shopInfo.email);
+
+        // Webhooks
         await registerWebhooks(shop, accessToken);
 
-        // BLOC 3 — Notifier l'orchestrateur SAMII
-       await orchestrator.process({
-    type: "shop.connected",      // ← CORRECT
-    shop,
-    payload: { accessToken, scopes: SCOPES }
-});
+        // Orchestrateur SAMII
+        await orchestrator.process({
+            type   : "shop.connected",
+            shop,
+            payload: { accessToken, scopes: SCOPES },
+        });
 
+        // Session ✅ sans accessToken
+        req.session.loggedIn   = true;
+        req.session.shop       = shop;
+        req.session.boutiqueId = boutique.id;
 
-        // BLOC 4 — Page succès
-        res.send(`
-            <html>
-            <head><meta charset="UTF-8"><title>Connexion réussie</title></head>
-            <body style="background:#050505;color:#e8e4d8;font-family:Arial,sans-serif;padding:40px;text-align:center;">
-                <h1 style="color:#C5A059;">✅ Boutique connectée à SAMII !</h1>
-                <p>Boutique : <strong>${shop}</strong></p>
-                <p style="color:#aaa;">Webhooks activés automatiquement ✅</p>
-                <p style="color:#aaa;">SAMII prend en charge ta boutique 👑</p>
-                <br>
-                <a href="/hub" style="background:#C5A059;color:#000;padding:12px 30px;border-radius:8px;text-decoration:none;font-weight:bold;">
-                    Retour au Hub SAMII
-                </a>
-            </body>
-            </html>
-        `);
+        // Redirect QG
+        res.redirect("/qg/ecommerce");
+
     } catch (err) {
-        console.error("Erreur OAuth:", err.response?.data || err.message);
+        console.error("❌ Erreur OAuth:", err.response?.data || err.message);
         res.status(500).send("Erreur connexion Shopify. Vérifie les logs.");
     }
 });
 
 module.exports = router;
+
 
