@@ -1,14 +1,13 @@
 /**
  * ============================================================
  * OG • Commerce Engine V2 — VERSION DÉFINITIVE
- * Gère commandes, stock, Yalidine
+ * SAMII agit seul et rapporte
  * ============================================================
  */
 
 const airtable           = require("../services/airtable");
 const notificationEngine = require("../engines/notificationEngine");
 const automationEngine   = require("../engines/automationEngine");
-const telegram = require("../services/telegramService");
 
 class CommerceEngine {
 
@@ -28,37 +27,28 @@ class CommerceEngine {
         };
     }
 
-    // ── HELPER : Notifie la boutique (texte simple) ──────────
+    // ── HELPER : Notifie la boutique ─────────────────────────
     async notifyShop(shop, recipients, message) {
         const boutique = await this.getBoutique(shop);
         const chatId   = boutique?.fields?.telegram_chat_id;
         const actif    = boutique?.fields?.telegram_actif;
 
+        const isActif = actif === true || actif === "true" || actif === 1;
         const channels = [];
-        if (actif && chatId) channels.push("telegram");
-        if (recipients.whatsapp) channels.push("whatsapp");
+        if (isActif && chatId) channels.push("telegram");
+        if (recipients?.whatsapp) channels.push("whatsapp");
         if (!channels.length) return;
 
         return notificationEngine.broadcast({
             channels,
             recipients: {
                 telegram : chatId,
-                whatsapp : recipients.whatsapp || "",
-                email    : recipients.email    || "",
+                whatsapp : recipients?.whatsapp || "",
+                email    : recipients?.email    || "",
             },
             message,
             shop,
         });
-    }
-
-    // ── HELPER : Notifie avec boutons Telegram ───────────────
-    async notifyShopButtons(shop, message, buttons) {
-        const boutique = await this.getBoutique(shop);
-        const chatId   = boutique?.fields?.telegram_chat_id;
-        const actif    = boutique?.fields?.telegram_actif;
-
-        if (!actif || !chatId) return;
-        return telegram.sendButtons(chatId, message, buttons);
     }
 
     // =========================================================
@@ -74,15 +64,15 @@ class CommerceEngine {
 
             // 1. Airtable → COMMANDES
             await airtable.create("COMMANDES", {
-                "ID Commande"   : String(order.order_number || order.id),
-                "Client"        : client,
-                "Téléphone"     : phone,
-                "Adresse"       : address,
-                "Produits"      : order.line_items?.map(i => i.title).join(", ") || "",
-                "Total"         : order.total_price || "0",
-                "Statut"        : "en attente",
-                "Boutique"      : shop,
-                "Date"          : order.created_at || new Date().toISOString(),
+                "ID Commande" : String(order.order_number || order.id),
+                "Client"      : client,
+                "Téléphone"   : phone,
+                "Adresse"     : address,
+                "Produits"    : order.line_items?.map(i => i.title).join(", ") || "",
+                "Total"       : order.total_price || "0",
+                "Statut"      : "en attente",
+                "Boutique"    : shop,
+                "Date"        : order.created_at || new Date().toISOString(),
             });
 
             // 2. Log
@@ -91,25 +81,19 @@ class CommerceEngine {
             // 3. Automation
             await automationEngine.run("order.created", { order, shop, client, phone, address });
 
-            // 4. Notification Telegram AVEC BOUTONS
+            // 4. Notification Telegram — SAMII rapporte
             const message =
-                `🛒 *NOUVELLE COMMANDE #${order.order_number}*\n\n` +
+                `👑 *SAMII — Commande #${order.order_number} enregistrée*\n\n` +
+                `✅ J'ai enregistré la commande automatiquement.\n\n` +
                 `👤 *Client :* ${client}\n` +
                 `📞 *Tél :* ${phone}\n` +
                 `📍 *Adresse :* ${address}\n` +
                 `📦 *Produits :* ${order.line_items?.map(i => i.title).join(", ") || ""}\n` +
                 `💰 *Total :* ${order.total_price} DZD\n` +
-                `📊 *Statut :* ${order.financial_status}`;
+                `📊 *Statut :* ${order.financial_status}\n\n` +
+                `_SAMII gère la suite automatiquement._`;
 
-            const buttons = [[
-                { text: "✅ Confirmer", callback_data: `confirm_${order.order_number}` },
-                { text: "❌ Annuler",   callback_data: `cancel_${order.order_number}`  },
-            ],[
-                { text: "🚚 Expédier",  callback_data: `ship_${order.order_number}`    },
-                { text: "📋 Détails",   callback_data: `details_${order.order_number}` },
-            ]];
-
-            await this.notifyShopButtons(shop, message, buttons);
+            await this.notifyShop(shop, { whatsapp: phone }, message);
 
             return { success: true, shop, orderId: order.id };
 
@@ -133,9 +117,10 @@ class CommerceEngine {
             await automationEngine.run("order.updated", { order, shop, client, phone });
 
             const message =
-                `🔄 *Commande mise à jour*\n` +
-                `👤 ${client} | #${order.order_number}\n` +
-                `📦 ${order.fulfillment_status || order.financial_status}`;
+                `👑 *SAMII — Commande #${order.order_number} mise à jour*\n\n` +
+                `👤 *Client :* ${client}\n` +
+                `📦 *Statut :* ${order.fulfillment_status || order.financial_status}\n\n` +
+                `_Mis à jour automatiquement._`;
 
             await this.notifyShop(shop, { whatsapp: phone }, message);
 
@@ -160,9 +145,11 @@ class CommerceEngine {
             await automationEngine.run("order.paid", { order, shop, client, phone });
 
             const message =
-                `💳 *Paiement reçu !*\n` +
-                `👤 ${client} | #${order.order_number}\n` +
-                `💰 ${order.total_price} DZD`;
+                `👑 *SAMII — Paiement confirmé #${order.order_number}*\n\n` +
+                `✅ Paiement reçu et enregistré.\n\n` +
+                `👤 *Client :* ${client}\n` +
+                `💰 *Total :* ${order.total_price} DZD\n\n` +
+                `_SAMII continue le traitement._`;
 
             await this.notifyShop(shop, { whatsapp: phone }, message);
 
@@ -189,10 +176,12 @@ class CommerceEngine {
             await automationEngine.run("order.fulfilled", { order, shop, client, phone, tracking, carrier });
 
             const message =
-                `🚚 *Commande expédiée !*\n` +
-                `👤 ${client} | #${order.order_number}\n` +
-                `📦 Transporteur : ${carrier}\n` +
-                `🔍 Tracking : ${tracking}`;
+                `👑 *SAMII — Expédition #${order.order_number}*\n\n` +
+                `✅ J'ai mis à jour le statut en expédiée.\n\n` +
+                `👤 *Client :* ${client}\n` +
+                `📦 *Transporteur :* ${carrier}\n` +
+                `🔍 *Tracking :* ${tracking}\n\n` +
+                `_Client notifié automatiquement._`;
 
             await this.notifyShop(shop, { whatsapp: phone }, message);
 
@@ -216,9 +205,10 @@ class CommerceEngine {
             await airtable.log("order.delivered", `#${order.order_number} livrée`, shop);
 
             const message =
-                `✅ *Commande livrée !*\n` +
-                `👤 ${client} | #${order.order_number}\n` +
-                `🎉 Livraison confirmée.`;
+                `👑 *SAMII — Livraison confirmée #${order.order_number}*\n\n` +
+                `✅ Colis livré avec succès.\n\n` +
+                `👤 *Client :* ${client}\n\n` +
+                `_Dossier clôturé automatiquement._`;
 
             await this.notifyShop(shop, { whatsapp: phone }, message);
 
@@ -243,9 +233,11 @@ class CommerceEngine {
             await automationEngine.run("order.cancelled", { order, shop, client, phone });
 
             const message =
-                `❌ *Commande annulée*\n` +
-                `👤 ${client} | #${order.order_number}\n` +
-                `💬 Raison : ${order.cancel_reason || "Non précisée"}`;
+                `👑 *SAMII — Commande #${order.order_number} annulée*\n\n` +
+                `❌ Annulation enregistrée automatiquement.\n\n` +
+                `👤 *Client :* ${client}\n` +
+                `💬 *Raison :* ${order.cancel_reason || "Non précisée"}\n\n` +
+                `_Dossier mis à jour._`;
 
             await this.notifyShop(shop, { whatsapp: phone }, message);
 
@@ -268,9 +260,11 @@ class CommerceEngine {
             await automationEngine.run("stock.low", { product, variant, shop });
 
             const message =
-                `⚠️ *Stock faible !*\n` +
-                `📦 ${product}\n` +
-                `🔢 Quantité restante : ${variant}`;
+                `👑 *SAMII — Alerte Stock*\n\n` +
+                `⚠️ Stock faible détecté.\n\n` +
+                `📦 *Produit :* ${product}\n` +
+                `🔢 *Quantité restante :* ${variant}\n\n` +
+                `_Pensez à réapprovisionner._`;
 
             await this.notifyShop(shop, {}, message);
 
@@ -292,9 +286,10 @@ class CommerceEngine {
             await airtable.log("stock.empty", `Stock épuisé — ${product}`, shop);
 
             const message =
-                `🚨 *Stock ÉPUISÉ !*\n` +
-                `📦 ${product}\n` +
-                `⚡ Action requise immédiatement.`;
+                `👑 *SAMII — Stock ÉPUISÉ*\n\n` +
+                `🚨 Rupture de stock détectée.\n\n` +
+                `📦 *Produit :* ${product}\n\n` +
+                `_Action requise immédiatement._`;
 
             await this.notifyShop(shop, {}, message);
 
@@ -316,14 +311,14 @@ class CommerceEngine {
             await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
                 "Statut": status
             });
-
             await airtable.log("yalidine.status", `#${orderId} → ${status}`, shop);
 
             const message =
-                `📦 *Yalidine — Mise à jour*\n` +
-                `🔢 Commande : #${orderId}\n` +
-                `📊 Statut : ${status}\n` +
-                `🔍 Tracking : ${tracking || "N/A"}`;
+                `👑 *SAMII — Yalidine #${orderId}*\n\n` +
+                `✅ Statut mis à jour automatiquement.\n\n` +
+                `📊 *Nouveau statut :* ${status}\n` +
+                `🔍 *Tracking :* ${tracking || "N/A"}\n\n` +
+                `_Airtable synchronisé._`;
 
             await this.notifyShop(shop, {}, message);
 
@@ -345,13 +340,13 @@ class CommerceEngine {
             await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
                 "Statut": "livrée"
             });
-
             await airtable.log("yalidine.delivered", `#${orderId} livrée`, shop);
 
             const message =
-                `✅ *Yalidine — Livraison confirmée !*\n` +
-                `👤 ${client || "Client"} | #${orderId}\n` +
-                `🎉 Colis livré avec succès.`;
+                `👑 *SAMII — Livraison Yalidine #${orderId}*\n\n` +
+                `✅ Colis livré — statut mis à jour.\n\n` +
+                `👤 *Client :* ${client || "Client"}\n\n` +
+                `_Dossier clôturé automatiquement._`;
 
             await this.notifyShop(shop, { whatsapp: phone }, message);
 
@@ -373,13 +368,13 @@ class CommerceEngine {
             await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
                 "Statut": "retournée"
             });
-
             await airtable.log("yalidine.returned", `#${orderId} retournée`, shop);
 
             const message =
-                `🔄 *Yalidine — Colis retourné*\n` +
-                `🔢 Commande : #${orderId}\n` +
-                `💬 Raison : ${reason || "Non précisée"}`;
+                `👑 *SAMII — Retour Yalidine #${orderId}*\n\n` +
+                `🔄 Colis retourné — statut mis à jour.\n\n` +
+                `💬 *Raison :* ${reason || "Non précisée"}\n\n` +
+                `_Airtable synchronisé._`;
 
             await this.notifyShop(shop, {}, message);
 
@@ -393,4 +388,3 @@ class CommerceEngine {
 }
 
 module.exports = new CommerceEngine();
-
