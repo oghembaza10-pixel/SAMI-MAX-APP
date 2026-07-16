@@ -229,13 +229,19 @@ router.get("/auth/shopify/callback", async (req, res) => {
             payload: { accessToken, scopes: SCOPES },
         });
 
-        // Session ✅ sans accessToken
-        req.session.loggedIn   = true;
-        req.session.shop       = shop;
-        req.session.boutiqueId = boutique.id;
+                // Session sécurisée ✅
+        req.session.regenerate((err) => {
+            if (err) {
+                console.error("❌ Session regenerate :", err.message);
+                return res.status(500).send("Erreur session.");
+            }
+            req.session.loggedIn   = true;
+            req.session.shop       = shop;
+            req.session.boutiqueId = boutique.id;
 
-        // Redirect QG
-        res.redirect("/qg/ecommerce");
+            res.redirect("/qg/ecommerce");
+        });
+
 
     } catch (err) {
         console.error("❌ Erreur OAuth:", err.response?.data || err.message);
