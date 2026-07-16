@@ -6,8 +6,8 @@ const axios    = require("axios");
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const TABLE_BOUTIQUES  = process.env.TABLE_BOUTIQUES;
-const TABLE_COMMANDES  = process.env.TABLE_COMMANDES  || "Commandes";
-const TABLE_CLIENTS    = process.env.TABLE_CLIENTS    || "CLIENTS";
+const TABLE_COMMANDES  = process.env.TABLE_COMMANDES || "Commandes";
+const TABLE_CLIENTS    = process.env.TABLE_CLIENTS   || "CLIENTS";
 
 // ── CHAT SAMII ────────────────────────────────────────
 router.post("/chat", async (req, res) => {
@@ -44,14 +44,12 @@ router.get("/qg-data", async (req, res) => {
     };
 
     try {
-        // Boutique
         const boutiqueRes = await axios.get(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}?filterByFormula={shop_url}="${shop}"`,
             { headers }
         );
         const boutique = boutiqueRes.data.records[0]?.fields || {};
 
-        // Commandes
         const commandesRes = await axios.get(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_COMMANDES}` +
             `?filterByFormula={Boutique}="${shop}"` +
@@ -61,7 +59,6 @@ router.get("/qg-data", async (req, res) => {
         );
         const commandes = commandesRes.data.records.map(r => r.fields);
 
-        // Clients
         const clientsRes = await axios.get(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_CLIENTS}` +
             `?filterByFormula={Boutique}="${shop}"` +
@@ -71,7 +68,6 @@ router.get("/qg-data", async (req, res) => {
         );
         const clients = clientsRes.data.records.map(r => r.fields);
 
-        // Stats
         const total_commandes = commandes.length;
         const total_revenus   = commandes.reduce((sum, c) => sum + (parseFloat(c.Total) || 0), 0);
         const en_attente      = commandes.filter(c => c.Statut === "en attente").length;
@@ -108,3 +104,4 @@ router.get("/qg-data", async (req, res) => {
 });
 
 module.exports = router;
+
