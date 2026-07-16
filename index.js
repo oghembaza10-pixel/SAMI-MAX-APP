@@ -5,18 +5,47 @@
 // ── 1. CONFIG ─────────────────────────────────────────
 const path    = require("path");
 const express = require("express");
+const session = require("express-session");
 const CONFIG  = require("./config");
 
 // ── 2. EXPRESS ────────────────────────────────────────
 const app = express();
 
 // ── 3. MIDDLEWARES ────────────────────────────────────
+app.set("trust proxy", 1);
 app.use("/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+// ── SESSION ───────────────────────────────────────────
+app.use(session({
+    secret           : process.env.SESSION_SECRET || "samii-secret-v1",
+    resave           : false,
+    saveUninitialized: false,
+    cookie           : {
+        httpOnly: true,
+        sameSite: "lax",
+        secure  : process.env.NODE_ENV === "production",
+        maxAge  : 7 * 24 * 60 * 60 * 1000,
+    },
+}));
+
+// ── LOCALS GLOBAUX ────────────────────────────────────
+app.use((req, res, next) => {
+    res.locals.shop       = req.session?.shop       || null;
+    res.locals.loggedIn   = !!req.session?.loggedIn;
+    res.locals.boutiqueId = req.session?.boutiqueId || null;
+    next();
+});
+
+// ── AUTH MIDDLEWARE ───────────────────────────────────
+function requireAuth(req, res, next) {
+    if (!req.session?.loggedIn) return res.redirect("/login");
+    next();
+}
 
 // ── 4. BOOTSTRAP ──────────────────────────────────────
 const { registerChannels } = require("./kernel/bootstrap");
@@ -31,9 +60,9 @@ app.use("/webhook",     require("./routes/webhook"));
 app.use("/telegram",    require("./routes/telegram"));
 app.use("/hub",         require("./routes/hub"));
 app.use("/connect",     require("./routes/connect"));
-app.use("/dashboard",   require("./routes/dashboard"));
-app.use("/profile",     require("./routes/profile"));
-app.use("/settings",    require("./routes/settings"));
+app.use("/dashboard",   requireAuth, require("./routes/dashboard"));
+app.use("/profile",     requireAuth, require("./routes/profile"));
+app.use("/settings",    requireAuth, require("./routes/settings"));
 app.use("/academy",     require("./routes/academy"));
 app.use("/community",   require("./routes/community"));
 app.use("/marketplace", require("./routes/marketplace"));
@@ -42,17 +71,31 @@ app.use("/login",       require("./routes/login"));
 app.use("/register",    require("./routes/register"));
 app.use("/api",         require("./routes/api"));
 
+// ── ROUTES DIRECTES ───────────────────────────────────
 app.get("/", (req, res) => res.render("index"));
-app.get("/samii", (req, res) => res.render("samii"));
-app.get("/qg/:metier", (req, res) => res.render("qg-template", { metier: req.params.metier }));
+
+app.get("/samii", requireAuth, (req, res) => res.render("samii", {
+    shop: req.session.shop,
+}));
+
+app.get("/qg/:metier", requireAuth, (req, res) => res.render("qg-template", {
+    metier    : req.params.metier,
+    shop      : req.session.shop,
+    boutiqueId: req.session.boutiqueId,
+}));
+
+app.get("/logout", (req, res) => {
+    req.session.destroy(() => res.redirect("/"));
+});
 
 // ── 6. VÉRIFICATION ENV ───────────────────────────────
 if (!CONFIG.AIRTABLE.API_KEY) console.error("❌ AIRTABLE_API_KEY manquante");
 if (!CONFIG.AIRTABLE.BASE_ID) console.error("❌ AIRTABLE_BASE_ID manquant");
 if (!CONFIG.GEMINI.API_KEY)   console.error("❌ GEMINI_API_KEY manquante");
+
 app.get("/test-telegram", async (req, res) => {
     const telegram = require("./services/telegramService");
-    const result = await telegram.send("8276462482", "👑 SAMII OS — Test direct !");
+    const result   = await telegram.send("8276462482", "👑 SAMII OS — Test direct !");
     res.json(result);
 });
 
@@ -62,3 +105,4 @@ app.listen(CONFIG.PORT, () => {
     console.log("🚀 SAMII OS démarre...");
     console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
 });
+
