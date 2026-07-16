@@ -37,10 +37,6 @@ body {
 
 .og-capital { display: flex; width: 100%; min-height: 100vh; }
 
-/* ==========================================================================
-   SIDEBAR
-   ========================================================================== */
-
 .og-sidebar {
     width: var(--sidebar-w);
     height: 100vh;
@@ -146,13 +142,7 @@ body {
 }
 @keyframes og-dot-pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
 
-/* ==========================================================================
-   CONTENU PRINCIPAL
-   ========================================================================== */
-
 .capitol-content { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
-
-/* ---- HERO ---- */
 
 .hero-premium {
     position: relative;
@@ -243,8 +233,6 @@ body {
     max-width: 460px; line-height: 1.6;
 }
 
-/* ---- Recherche premium ---- */
-
 .hero-search {
     margin-top: 32px;
     display: flex; align-items: center; gap: 12px;
@@ -289,16 +277,12 @@ body {
     50% { transform: translate(-50%, 8px); opacity: 1; }
 }
 
-/* ---- Section titles ---- */
-
 .section-eyebrow {
     display: flex; align-items: center; gap: 10px;
     font-family: var(--font-mono); font-size: .78rem; letter-spacing: .1em; text-transform: uppercase;
     color: var(--gold-og); margin: 40px 60px 20px;
 }
 .section-eyebrow i { width: 16px; height: 16px; }
-
-/* ---- Cartes métiers ---- */
 
 .metier-grid {
     display: grid;
@@ -349,7 +333,6 @@ body {
 .metier-card:hover .metier-card__body h3 { text-shadow: var(--cyan-glow); }
 .metier-card__body span { font-size: .78rem; color: var(--text-muted); }
 
-/* Dégradés "mood" par métier — à remplacer par de vraies photos plus tard */
 .mood-ecommerce   { background: linear-gradient(135deg,#0a1a3a,#164a8a); }
 .mood-restaurant  { background: linear-gradient(135deg,#2a0a0a,#6a1f1f); }
 .mood-immobilier  { background: linear-gradient(135deg,#050b1a,#12335f); }
@@ -370,8 +353,6 @@ body {
 .metier-card.more h3 { font-size: .9rem; color: var(--gold-og); }
 
 .og-divider { height: 1px; margin: 30px 60px; background: linear-gradient(to right, transparent, rgba(197,160,89,0.35), transparent); }
-
-/* ---- Bannière "tapis" : plein écran, sous les métiers, vivante ---- */
 
 .hub-banner {
     position: relative;
@@ -430,10 +411,6 @@ body {
     line-height: 1.7;
 }
 
-/* ==========================================================================
-   FOOTER
-   ========================================================================== */
-
 .og-footer { padding: 40px 60px 28px; }
 .og-footer__line {
     height: 1px; margin-bottom: 24px;
@@ -446,10 +423,6 @@ body {
 .og-footer__brand { display: flex; align-items: center; gap: 8px; color: var(--gold-og); font-weight: 600; }
 .og-mono { font-family: var(--font-mono); font-size: .78rem; letter-spacing: .05em; color: var(--text-muted); }
 .og-footer__quote { color: var(--text-muted); font-size: .85rem; font-style: italic; }
-
-/* ==========================================================================
-   SAMII — sphère flottante
-   ========================================================================== */
 
 .samii-widget { position: fixed; bottom: 28px; right: 28px; z-index: 200; }
 .samii-widget__trigger {
@@ -489,9 +462,30 @@ body {
 .samii-widget__form input:focus { outline: none; border-color: var(--gold-dim); }
 .samii-widget__form button { width: 38px; background: var(--gold-og); border: none; border-radius: 10px; color: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-/* ==========================================================================
-   RESPONSIVE — mobile d'abord : hero court, cartes visibles sans scroller
-   ========================================================================== */
+/* ---- Sélecteur de langue ---- */
+.og-lang-switch {
+    position: relative;
+    z-index: 50;
+    pointer-events: auto;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: .65rem;
+}
+.og-lang-switch span {
+    position: relative;
+    z-index: 51;
+    pointer-events: auto;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: color .2s ease;
+}
+.og-lang-switch span:hover { color: var(--gold-hover); }
+.og-lang-switch span.active { color: var(--gold-og); font-weight: 600; }
 
 @media (max-width: 768px) {
     .og-sidebar {
@@ -525,7 +519,6 @@ body {
 
     .capitol-content { margin-left: 0; padding-bottom: 116px; }
 
-    /* Hero très court : les cartes métier apparaissent sans scroller */
     .hero-premium { min-height: 50vh; }
     .hero-scroll { display: none; }
     .hero-text-zone { padding: 0 20px; }
@@ -538,4 +531,6 @@ body {
 
     .hub-banner { min-height: 46vh; }
     .hub-banner__content { padding: 0 22px; }
+
+    .og-lang-switch { order: 4; margin-top: 4px; }
 }
