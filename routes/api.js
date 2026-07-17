@@ -207,6 +207,14 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         res.status(500).json({ error: "Erreur chargement données." });
     }
 });
+// ── DEBUG SESSION (à supprimer après test) ────────────
+router.get("/debug-session", requireAuth, (req, res) => {
+    res.json({
+        workspaceId: req.session.workspaceId,
+        userId     : req.session.userId,
+        email      : req.session.email,
+    });
+});
 
 module.exports = router;
 
