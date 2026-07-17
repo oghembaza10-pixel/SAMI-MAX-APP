@@ -1,7 +1,3 @@
-// ==========================================================================
-// OG EMPIRE — HUB : Moteur front-end (vitrine premium, pas de dashboard)
-// ==========================================================================
-
 // Liste des métiers (id + icône fixes, le texte vient du dictionnaire i18n)
 const METIERS = [
     { id: "ecommerce",   icon: "shopping-cart",  mood: "mood-ecommerce" },
@@ -38,7 +34,6 @@ const PLATFORMS = [
     { id: "claude",    label: "Claude",    icon: "bot",            color: "#D97757", connectRoute: "/connect/claude" },
 ];
 
-// Traductions de secours si i18n.js n'est pas encore chargé (sécurité)
 const FALLBACK_METIER_TEXT = {
     ecommerce:   { label: "E-commerce",   desc: "Commerce en ligne" },
     restaurant:  { label: "Restaurant",   desc: "Restauration & food" },
@@ -141,18 +136,12 @@ document.addEventListener("DOMContentLoaded", () => {
     renderMetierGrid();
     renderSidebarPlatforms();
 
-    if (typeof lucide !== "undefined") {
-        lucide.createIcons();
-    }
+    if (typeof lucide !== "undefined") lucide.createIcons();
 
-    // Re-rendu des cartes métier quand la langue change
     if (typeof Language !== "undefined" && Language.onChange) {
-        Language.onChange(() => {
-            renderMetierGrid();
-        });
+        Language.onChange(() => renderMetierGrid());
     }
 
-    // Sidebar : état actif au clic
     const navItems = document.querySelectorAll(".og-item");
     navItems.forEach(item => {
         item.addEventListener("click", function () {
@@ -161,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Recherche premium du hero
+    // Recherche hero
     const heroSearch = document.getElementById("hero-search");
     if (heroSearch) {
         heroSearch.addEventListener("keydown", (e) => {
@@ -171,23 +160,23 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Widget SAMII : ouverture / fermeture
-    const samiiWidget = document.getElementById("samii-widget");
+    // Widget SAMII
+    const samiiWidget  = document.getElementById("samii-widget");
     const samiiTrigger = document.getElementById("samii-widget-trigger");
-    const samiiClose = document.getElementById("samii-widget-close");
+    const samiiClose   = document.getElementById("samii-widget-close");
 
-    function openSamii() { if (samiiWidget) samiiWidget.dataset.open = "true"; }
+    function openSamii()  { if (samiiWidget) samiiWidget.dataset.open = "true";  }
     function closeSamii() { if (samiiWidget) samiiWidget.dataset.open = "false"; }
 
     if (samiiTrigger) samiiTrigger.addEventListener("click", openSamii);
-    if (samiiClose) samiiClose.addEventListener("click", closeSamii);
+    if (samiiClose)   samiiClose.addEventListener("click", closeSamii);
 
     const samiiForm = document.getElementById("samii-widget-form");
     if (samiiForm) {
         samiiForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const input = document.getElementById("samii-widget-input");
-            const feed = document.getElementById("samii-widget-feed");
+            const input   = document.getElementById("samii-widget-input");
+            const feed    = document.getElementById("samii-widget-feed");
             const message = input.value.trim();
             if (!message) return;
 
@@ -201,9 +190,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 const res = await fetch("/api/chat", {
-                    method: "POST",
+                    method : "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message }),
+                    body   : JSON.stringify({
+                        message,
+                        workspaceId: window.OG_WORKSPACE_ID || "", // ✅ workspace
+                    }),
                 });
                 const data = await res.json();
                 feed.insertAdjacentHTML("beforeend", `
@@ -218,3 +210,4 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
