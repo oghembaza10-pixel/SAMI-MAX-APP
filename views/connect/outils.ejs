@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecter mes outils — OG Empire</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/qg-style.css">
+</head>
+<body data-shop="<%= shop %>">
+
+<div class="qg-shell">
+
+    <!-- SIDEBAR -->
+    <aside class="qg-sidebar" id="og-sidebar">
+        <div class="qg-sidebar__top">
+            <a href="/hub" class="qg-logo">
+                <img src="/og.png" alt="OG">
+                <span class="qg-logo__text">OG · EMPIRE</span>
+            </a>
+            <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar">
+                <i data-lucide="chevrons-left"></i>
+            </button>
+        </div>
+
+        <nav class="qg-nav">
+            <a href="/hub" class="qg-nav__item">
+                <i data-lucide="layout-grid"></i><span>Hub</span>
+            </a>
+            <a href="/marketplace" class="qg-nav__item">
+                <i data-lucide="store"></i><span>Marketplace</span>
+            </a>
+            <a href="/community" class="qg-nav__item">
+                <i data-lucide="users"></i><span>Community</span>
+            </a>
+            <a href="/academy" class="qg-nav__item">
+                <i data-lucide="graduation-cap"></i><span>Academy</span>
+            </a>
+            <div class="qg-nav__divider"></div>
+            <a href="/qg/<%= metier %>" class="qg-nav__item">
+                <i data-lucide="briefcase"></i><span>Mes affaires</span>
+            </a>
+            <a href="/qg/<%= metier %>/connecter" class="qg-nav__item active">
+                <i data-lucide="plug-zap"></i><span>Connecter mes outils</span>
+            </a>
+            <a href="/qg/<%= metier %>/outils" class="qg-nav__item">
+                <i data-lucide="wrench"></i><span>Mes outils</span>
+            </a>
+            <a href="/arsenal" class="qg-nav__item">
+                <i data-lucide="sword"></i><span>Arsenal</span>
+            </a>
+            <a href="/coffre" class="qg-nav__item">
+                <i data-lucide="vault"></i><span>Coffre OG</span>
+            </a>
+            <div class="qg-nav__divider"></div>
+            <a href="/samii" class="qg-nav__item qg-nav__item--samii">
+                <i data-lucide="bot"></i><span>SAMII</span>
+                <span class="qg-status-dot qg-status-dot--on"></span>
+            </a>
+        </nav>
+
+        <div class="qg-sidebar__bottom">
+            <a href="/settings" class="qg-nav__item">
+                <i data-lucide="settings"></i><span>Paramètres</span>
+            </a>
+            <a href="/logout" class="qg-nav__item" style="color:#e55;">
+                <i data-lucide="log-out"></i><span>Déconnexion</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="qg-main">
+
+        <!-- TOPBAR -->
+        <header class="qg-topbar">
+            <div class="qg-topbar__breadcrumb">
+                <span class="qg-mono">QG</span>
+                <i data-lucide="chevron-right"></i>
+                <span>Connecter mes outils</span>
+            </div>
+        </header>
+
+        <!-- HERO -->
+        <section class="qg-hero">
+            <div class="qg-hero__grid"></div>
+            <div class="qg-hero__glow qg-hero__glow--gold"></div>
+            <div class="qg-hero__glow qg-hero__glow--cyan"></div>
+            <div class="qg-hero__content">
+                <span class="qg-eyebrow">Intégrations</span>
+                <h1>Connecter mes outils</h1>
+                <p>Reliez vos canaux de vente et de communication à SAMII.</p>
+            </div>
+        </section>
+
+        <!-- CARTES OUTILS -->
+        <div class="qg-section-title">
+            <i data-lucide="plug-zap"></i>
+            <span>Mes canaux</span>
+        </div>
+
+        <section class="qg-dashboard">
+
+            <!-- SHOPIFY -->
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="shopping-bag"></i></div>
+                <span class="qg-card__label" style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:6px;">Shopify</span>
+                <% if (shopifyActif) { %>
+                    <span style="background:#00ff8822;color:#00ff88;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">✅ Connecté</span>
+                    <p style="color:#555;font-size:.8rem;margin-top:8px;"><%= shop %></p>
+                <% } else { %>
+                    <span style="background:#ff444422;color:#ff4444;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">❌ Non connecté</span>
+                <% } %>
+                <a href="/connect/shopify?shop=<%= shop %>"
+                   style="display:block;margin-top:14px;padding:10px;background:#1a1a1a;border-radius:8px;color:#fff;text-align:center;text-decoration:none;font-size:.85rem;font-weight:600;">
+                    <%= shopifyActif ? 'Voir les détails' : 'Connecter' %>
+                </a>
+            </article>
+
+            <!-- TELEGRAM -->
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="send"></i></div>
+                <span class="qg-card__label" style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:6px;">Telegram</span>
+                <% if (telegramActif) { %>
+                    <span style="background:#0088cc22;color:#0088cc;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">✅ Connecté</span>
+                    <p style="color:#555;font-size:.8rem;margin-top:8px;">Chat ID : <%= telegramChatId %></p>
+                <% } else { %>
+                    <span style="background:#ff444422;color:#ff4444;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">❌ Non connecté</span>
+                    <p style="color:#555;font-size:.78rem;margin-top:8px;">
+                        Ouvre <a href="https://t.me/SAMII_OGBot" target="_blank" style="color:#0088cc;">@SAMII_OGBot</a> et tape /start
+                    </p>
+                <% } %>
+                <a href="/connect/telegram?shop=<%= shop %>"
+                   style="display:block;margin-top:14px;padding:10px;background:linear-gradient(135deg,#0088cc22,#0088cc44);border:1px solid #0088cc44;border-radius:8px;color:#0088cc;text-align:center;text-decoration:none;font-size:.85rem;font-weight:600;">
+                    <%= telegramActif ? '⚙️ Modifier' : '✈️ Connecter' %>
+                </a>
+            </article>
+
+            <!-- WHATSAPP -->
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="message-circle"></i></div>
+                <span class="qg-card__label" style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:6px;">WhatsApp</span>
+                <% if (whatsappActif) { %>
+                    <span style="background:#25d36622;color:#25d366;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">✅ Connecté</span>
+                    <p style="color:#555;font-size:.8rem;margin-top:8px;"><%= whatsappPhone %></p>
+                <% } else { %>
+                    <span style="background:#ff444422;color:#ff4444;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600;">❌ Non connecté</span>
+                <% } %>
+                <a href="/connect/whatsapp?shop=<%= shop %>"
+                   style="display:block;margin-top:14px;padding:10px;background:linear-gradient(135deg,#25d36622,#25d36644);border:1px solid #25d36644;border-radius:8px;color:#25d366;text-align:center;text-decoration:none;font-size:.85rem;font-weight:600;">
+                    <%= whatsappActif ? '⚙️ Modifier' : '💬 Connecter' %>
+                </a>
+            </article>
+
+        </section>
+
+    </main>
+</div>
+
+<a href="/samii" class="samii-orb" aria-label="Ouvrir SAMII">
+    <span class="samii-orb__aura"></span>
+    <span class="samii-orb__aura samii-orb__aura--2"></span>
+    <i data-lucide="bot"></i>
+</a>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="/js/qg.js"></script>
+</body>
+</html>
