@@ -11,7 +11,7 @@
 
     <link rel="stylesheet" href="/css/hub-premium.css">
 </head>
-<body data-shop="<%= typeof shop !== 'undefined' ? shop : '' %>">
+<body data-workspace="<%= typeof workspaceId !== 'undefined' ? workspaceId : '' %>">
 
 <div class="og-capital">
 
@@ -135,10 +135,11 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
     window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(typeof connectedPlatforms !== "undefined" ? connectedPlatforms : []) %>;
-    window.OG_SHOP = document.body.getAttribute('data-shop') || '';
+    window.OG_WORKSPACE_ID = document.body.getAttribute('data-workspace') || '';
 </script>
 <script src="/js/i18n.js"></script>
 <script src="/js/hub.js"></script>
 
 </body>
 </html>
+
