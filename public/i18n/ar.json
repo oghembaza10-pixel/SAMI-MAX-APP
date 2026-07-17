@@ -1,13 +1,77 @@
 {
-  "topbar": {
-    "enter": "الدخول إلى مقري"
-  },
+  "topbar": { "enter": "انضم إلى مقري" },
   "hero": {
-    "eyebrow": "الإمبراطورية • النظام العالمي",
+    "eyebrow": "إمبراطورية • نظام عالمي",
     "title": "ابنِ إمبراطوريتك.",
     "description": "منصة واحدة.\nهوية واحدة.\nمقر واحد.\n\nاعمل.\nتطوّر.\nابنِ إمبراطوريتك."
   },
-  "buttons": {
-    "enter": "الدخول إلى مقري"
+  "buttons": { "enter": "ادخل إلى مقري" },
+
+  "sidebar": {
+    "hub": "الرئيسية", "marketplace": "المتجر", "academy": "الأكاديمية",
+    "community": "المجتمع", "arsenal": "الترسانة", "settings": "الإعدادات", "profile": "الملف الشخصي"
+  },
+
+  "hub": {
+    "hero": {
+      "eyebrow": "إمبراطورية OG",
+      "title": "أي إمبراطورية ستبني؟",
+      "subtitle": "سامي يساعدك على إطلاق مقرك وربط منظومتك.",
+      "searchPlaceholder": "ابنِ إمبراطوريتك القادمة..."
+    },
+    "section": { "choose": "اختر مجالك" },
+    "metierMore": "المزيد من المجالات",
+    "footer": { "quote": "كل جنرال يبدأ جنديًا.", "version": "الإصدار 1.0 · جندي" },
+    "metiers": {
+      "ecommerce":   { "label": "التجارة الإلكترونية", "desc": "التجارة عبر الإنترنت" },
+      "restaurant":  { "label": "مطعم",                 "desc": "المطاعم والطعام" },
+      "immobilier":  { "label": "عقارات",               "desc": "الممتلكات والأصول" },
+      "livreur":     { "label": "توصيل",                "desc": "الشحن واللوجستيات" },
+      "sante":       { "label": "الصحة",                "desc": "الصحة والعافية" },
+      "finance":     { "label": "المالية",              "desc": "المالية والاستثمار" },
+      "education":   { "label": "التعليم",              "desc": "التدريب والمعرفة" },
+      "technologie": { "label": "التكنولوجيا",          "desc": "التقنية والابتكار" },
+      "agriculture": { "label": "الزراعة",              "desc": "الزراعة والمحاصيل" },
+      "industrie":   { "label": "الصناعة",              "desc": "الإنتاج والمصانع" },
+      "services":    { "label": "الخدمات",              "desc": "الخدمات المهنية" },
+      "tourisme":    { "label": "السياحة",              "desc": "السفر والسياحة" }
+    }
+  },
+
+  "qg": {
+    "topbar": "المقر",
+    "nav": {
+      "hub": "المحور", "marketplace": "المتجر", "community": "المجتمع", "academy": "الأكاديمية",
+      "myBusiness": "أعمالي", "connectTools": "ربط أدواتي", "myTools": "أدواتي",
+      "arsenal": "الترسانة", "vault": "خزنة OG", "samii": "سامي", "settings": "الإعدادات", "backToQG": "مقري"
+    },
+    "hero": { "eyebrow": "مركز القيادة", "titlePrefix": "مقرك", "subtitle": "أدر نشاطك وأدواتك ومهامك من مكان واحد." },
+    "section": { "overview": "نظرة عامة", "arsenal": "الترسانة" },
+    "cards": {
+      "revenue": "الإيرادات (CR)", "visitors": "الزوار", "orders": "الطلبات",
+      "missions": "المهام النشطة", "progress": "التقدم (%)", "alerts": "التنبيهات", "modules": "الوحدات المثبتة"
+    },
+    "arsenal": { "boostMarketing": "تعزيز التسويق", "radar": "رادار الفرص", "fortress": "الحصن", "level": "المستوى", "seeMore": "عرض الترسانة" }
+  },
+
+  "samii": {
+    "topbar": "الاستراتيجي الذكي",
+    "status": "يعمل",
+    "title": "مركز حياتك الاستراتيجي.",
+    "chat": { "welcome": "أهلاً أيها الجنرال. أنا سامي. كيف يمكنني مساعدتك اليوم؟", "placeholder": "تحدث إلى سامي…" },
+    "cards": {
+      "marketing": { "label": "التسويق", "value": "تعزيز نشط" },
+      "opportunites": { "label": "الفرص", "value": "3 جديدة" },
+      "analyse": { "label": "تحليل النتائج", "value": "+12% هذا الشهر" },
+      "conseils": { "label": "نصائح سامي", "value": "توصيتان" },
+      "alertes": { "label": "التنبيهات", "value": "1 عاجل" },
+      "missions": { "label": "المهام", "value": "4 جارية" },
+      "performance": { "label": "الأداء", "value": "ممتاز" },
+      "clients": { "label": "العملاء وإدارة العلاقات", "value": "142 نشط" },
+      "revenus": { "label": "الإيرادات المتوقعة", "value": "+8% متوقع" },
+      "radar": { "label": "رادار المنافسين", "value": "مراقبة نشطة" },
+      "automatisations": { "label": "الأتمتة", "value": "5 نشطة" },
+      "reseau": { "label": "الشبكة العالمية", "value": "17 دولة" }
+    }
   }
 }
