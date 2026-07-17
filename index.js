@@ -40,8 +40,8 @@ app.use(session({
 
 // ── LOCALS ────────────────────────────────────────────
 app.use((req, res, next) => {
-    res.locals.shop        = req.session?.shop        || null;
     res.locals.workspaceId = req.session?.workspaceId || null;
+    res.locals.shop        = req.session?.shop        || null; // connecteur Shopify uniquement
     res.locals.loggedIn    = !!req.session?.loggedIn;
     next();
 });
@@ -79,23 +79,22 @@ app.use("/api",         require("./routes/api"));
 // ── PAGE ACCUEIL ──────────────────────────────────────
 app.get("/", (req, res) => res.render("index"));
 
-// ── QG — centre de commandement utilisateur ───────────
+// ── QG — workspace universel ──────────────────────────
 app.get("/qg/:metier", (req, res) => {
     if (!req.session?.loggedIn) return res.redirect("/login");
 
     res.render("qg-template", {
         metier      : req.params.metier,
         workspaceId : req.session.workspaceId || "",
-        shop        : req.session.shop        || "",
-        boutiqueId  : req.session.boutiqueId  || "",
+        shop        : req.session.shop        || "", // connecteur Shopify
         nom         : req.session.nom         || "",
         attente     : false,
     });
 });
 
 app.get("/qg/:metier/connecter", requireAuth, async (req, res) => {
-    const shop        = req.session.shop        || "";
     const workspaceId = req.session.workspaceId || "";
+    const shop        = req.session.shop        || "";
     const headers     = { Authorization: `Bearer ${process.env.AIRTABLE_API_KEY}` };
 
     let boutique = {};
@@ -139,7 +138,7 @@ io.on("connection", (socket) => {
     socket.on("join", (workspaceId) => {
         if (workspaceId && typeof workspaceId === "string") {
             socket.join(workspaceId);
-            console.log(`👑 Socket room : ${workspaceId}`);
+            console.log(`👑 Socket workspace : ${workspaceId}`);
         }
     });
     socket.on("disconnect", () => {
@@ -165,3 +164,4 @@ server.listen(CONFIG.PORT, () => {
     console.log("🚀 SAMII OS démarre...");
     console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
 });
+
