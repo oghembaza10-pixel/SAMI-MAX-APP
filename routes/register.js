@@ -8,7 +8,7 @@ const router  = express.Router();
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_USERS      = process.env.TABLE_USERS || "UTILISATEURS";
+const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
 
 // ── GET /register ─────────────────────────────────────────────
 router.get("/", (req, res) => {
@@ -37,15 +37,15 @@ router.get("/", (req, res) => {
 <div class="box">
     <h1>👑 Créer mon compte</h1>
     <form id="form-register">
-        <input name="nom"      placeholder="Nom"      required>
-        <input name="prenom"   placeholder="Prénom"   required>
-        <input name="email"    type="email" placeholder="Email" required>
-        <input name="telephone" placeholder="Téléphone" required>
+        <input name="nom"       placeholder="Nom"         required>
+        <input name="prenom"    placeholder="Prénom"      required>
+        <input name="email"     type="email" placeholder="Email" required>
+        <input name="telephone" placeholder="Téléphone"   required>
         <select name="metier">
             <option value="ecommerce">E-commerçant</option>
             <option value="restaurant">Restaurateur</option>
             <option value="immobilier">Immobilier</option>
-            <option value="livreur" disabled>Livreur (bientôt)</option>
+            <option value="livreur"     disabled>Livreur (bientôt)</option>
             <option value="fournisseur" disabled>Fournisseur (bientôt)</option>
         </select>
         <input name="password" type="password" placeholder="Mot de passe" required>
@@ -70,9 +70,9 @@ document.getElementById('form-register').addEventListener('submit', async (e) =>
     const json = await res.json();
 
     if (json.success) {
-        msg.textContent = '✅ Compte créé ! SAMII vous préviendra dès l\'activation.';
+        msg.textContent = '✅ Compte créé ! Connexion en cours...';
         msg.className   = 'msg ok';
-        setTimeout(() => window.location.href = '/login', 2500);
+        setTimeout(() => window.location.href = '/login', 2000);
     } else {
         msg.textContent = json.error || '❌ Erreur. Réessayez.';
     }
@@ -114,12 +114,12 @@ router.post("/", async (req, res) => {
                 email,
                 telephone,
                 metier        : metier || "ecommerce",
-                password_hash : password, // ⚠️ V2 : bcrypt
+                password_hash : password,
                 role          : "owner",
-                statut_acces  : "en attente",
+                statut_acces  : "actif",
                 created_at    : new Date().toISOString(),
-                last_login    : new Date().toISOString(),
-                actif         : false,
+                last_login    : new Date().toISOString().split("T")[0],
+                actif         : true,
             }},
             { headers }
         );
