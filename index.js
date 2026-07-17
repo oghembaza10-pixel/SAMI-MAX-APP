@@ -82,16 +82,21 @@ app.get("/", (req, res) => res.render("index"));
 app.get("/qg/:metier", (req, res) => {
     if (!req.session?.loggedIn) return res.redirect("/login");
 
+    // ✅ Query param prioritaire sur session
+    const shop = req.query.shop || req.session.shop || "";
+
     res.render("qg-template", {
         metier    : req.params.metier,
-        shop      : req.session.shop      || "",
+        shop,
         boutiqueId: req.session.boutiqueId || "",
-        nom       : req.session.nom       || "",
+        nom       : req.session.nom        || "",
         attente   : false,
     });
 });
+
 app.get("/qg/:metier/connecter", requireAuth, async (req, res) => {
-    const shop    = req.session.shop || "";
+    // ✅ Query param prioritaire sur session
+    const shop    = req.query.shop || req.session.shop || "";
     const headers = { Authorization: `Bearer ${process.env.AIRTABLE_API_KEY}` };
 
     let boutique = {};
@@ -118,7 +123,7 @@ app.get("/qg/:metier/connecter", requireAuth, async (req, res) => {
 app.get("/samii", (req, res) => {
     if (!req.session?.loggedIn) return res.redirect("/login");
     res.render("samii", {
-        shop: req.session.shop || "",
+        shop: req.query.shop || req.session.shop || "",
     });
 });
 
@@ -159,4 +164,5 @@ server.listen(CONFIG.PORT, () => {
     console.log("🚀 SAMII OS démarre...");
     console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
 });
+
 
