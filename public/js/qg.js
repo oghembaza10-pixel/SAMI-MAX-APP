@@ -1,7 +1,3 @@
-// ==========================================================================
-// OG EMPIRE — QG : Moteur front-end V2 (données réelles + Socket.IO)
-// ==========================================================================
-
 document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -107,11 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ======================================================================
-    // DONNÉES RÉELLES — /api/qg-data
+    // DONNÉES RÉELLES — /api/qg-data?shop=...
     // ======================================================================
     async function loadQGData() {
         try {
-            const res  = await fetch('/api/qg-data');
+            // ── Récupère le shop depuis le body ──
+            const shop = document.body.getAttribute('data-shop') || '';
+            const res  = await fetch(`/api/qg-data?shop=${encodeURIComponent(shop)}`);
             const data = await res.json();
             if (!data.success) return;
 
@@ -126,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // ── Nom boutique ──
             const nomEl = document.getElementById('qg-boutique-nom');
-            if (nomEl) nomEl.textContent = data.boutique.nom;
+            if (nomEl && data.boutique?.nom) nomEl.textContent = data.boutique.nom;
 
             // ── Livraison temps réel ──
             setCard('stat-livrees',  data.livraison.livrees);
@@ -144,8 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const pct      = Math.min(Math.round((data.mission.commandes / objectif) * 100), 100);
             const pctEl    = document.getElementById('mission-pct');
             const barEl    = document.getElementById('mission-bar');
-            if (pctEl) pctEl.textContent  = pct + '%';
-            if (barEl) barEl.style.width  = pct + '%';
+            if (pctEl) pctEl.textContent = pct + '%';
+            if (barEl) barEl.style.width = pct + '%';
 
             // ── Performance du mois ──
             setCard('perf-revenus-mois',   data.performance.revenus_mois);
@@ -172,9 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startCountUp(el, parseFloat(value) || 0);
     }
 
-    // ======================================================================
-    // TABLEAU COMMANDES
-    // ======================================================================
     function renderCommandes(commandes) {
         const tbody = document.getElementById('commandes-tbody');
         if (!tbody) return;
@@ -190,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${c['Nom Client']   || '—'}</td>
                 <td>${c['Téléphone']    || '—'}</td>
                 <td>${c['Produit']      || '—'}</td>
-                <td>${parseFloat(c['Total'] || 0).toFixed(2)} ${c['Devise'] || 'DZD'}</td>
+                <td>${parseFloat(c['montant'] || c['Total'] || 0).toFixed(2)} ${c['Devise'] || 'DZD'}</td>
                 <td><span class="qg-badge qg-badge--${statutClass(c['Statut'])}">${c['Statut'] || '—'}</span></td>
             </tr>
         `).join('');
