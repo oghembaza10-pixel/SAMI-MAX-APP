@@ -47,24 +47,21 @@ async function saveCommande(e) {
     const p = e.payload;
     try {
         await airtable.create("COMMANDES", {
-            "ID Commande"  : String(p.order_number || p.id || ""),
+            "nom client"   : `${p.customer?.first_name || ""} ${p.customer?.last_name || ""}`.trim() || "Inconnu",
             "Boutique"     : e.shop || "",
-            "Nom Client"   : `${p.customer?.first_name || ""} ${p.customer?.last_name || ""}`.trim() || "Inconnu",
             "Téléphone"    : p.customer?.phone || p.billing_address?.phone || "",
-            "Adresse"      : p.shipping_address
-                                ? `${p.shipping_address.address1 || ""}, ${p.shipping_address.city || ""}`
-                                : "",
+            "ID Commande"  : String(p.order_number || p.id || ""),
             "Produit"      : (p.line_items || []).map(i => i.title).join(", ") || "—",
-            "Total"        : parseFloat(p.total_price || 0),
-            "Devise"       : p.currency || "DZD",
             "Statut"       : "en attente",
             "Date Commande": new Date().toISOString(),
+            "montant"      : parseFloat(p.total_price || 0),
         });
         console.log(`✅ Commande #${p.order_number} sauvegardée dans Airtable`);
     } catch (err) {
         console.error("❌ saveCommande :", err.message);
     }
 }
+
 
 // ── TEMPLATES ─────────────────────────────────────────────────
 const tShopConnected      = require("../brain/templates/shopConnected");
