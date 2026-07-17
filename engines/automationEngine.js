@@ -4,6 +4,7 @@
  */
 
 const axios              = require("axios");
+const airtable           = require("../services/airtable");
 const settingsService    = require("../services/settingsService");
 const journalService     = require("../services/journalService");
 const notificationEngine = require("./notificationEngine");
@@ -21,9 +22,11 @@ async function updateStatutCommande(orderId, statut) {
             "Content-Type": "application/json",
         };
         const search = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_COMMANDES}` +
-            `?filterByFormula={ID Commande}="${orderId}"`,
-            { headers }
+            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_COMMANDES}`,
+            {
+                headers,
+                params: { filterByFormula: `{ID Commande}="${orderId}"` }
+            }
         );
         const record = search.data.records[0];
         if (!record) return console.warn(`⚠️ Commande ${orderId} introuvable`);
@@ -36,6 +39,30 @@ async function updateStatutCommande(orderId, statut) {
         console.log(`✅ Airtable → Commande ${orderId} : ${statut}`);
     } catch (err) {
         console.error("❌ updateStatutCommande :", err.message);
+    }
+}
+
+// ── SAVE COMMANDE ─────────────────────────────────────────────
+async function saveCommande(e) {
+    const p = e.payload;
+    try {
+        await airtable.create("COMMANDES", {
+            "ID Commande"  : String(p.order_number || p.id || ""),
+            "Boutique"     : e.shop || "",
+            "Nom Client"   : `${p.customer?.first_name || ""} ${p.customer?.last_name || ""}`.trim() || "Inconnu",
+            "Téléphone"    : p.customer?.phone || p.billing_address?.phone || "",
+            "Adresse"      : p.shipping_address
+                                ? `${p.shipping_address.address1 || ""}, ${p.shipping_address.city || ""}`
+                                : "",
+            "Produit"      : (p.line_items || []).map(i => i.title).join(", ") || "—",
+            "Total"        : parseFloat(p.total_price || 0),
+            "Devise"       : p.currency || "DZD",
+            "Statut"       : "en attente",
+            "Date Commande": new Date().toISOString(),
+        });
+        console.log(`✅ Commande #${p.order_number} sauvegardée dans Airtable`);
+    } catch (err) {
+        console.error("❌ saveCommande :", err.message);
     }
 }
 
@@ -78,6 +105,7 @@ const automations = {
 
     // ── COMMANDES ─────────────────────────────────────────────
     "order.created": [
+        (e) => saveCommande(e),
         (e) => journalService.log(e.shop, `🛒 Commande créée : ${e.payload.id}`),
         (e) => notificationEngine.send({
             shop   : e.shop,
