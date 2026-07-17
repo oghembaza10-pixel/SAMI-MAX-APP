@@ -1,13 +1,77 @@
 {
-  "topbar": {
-    "enter": "REJOINDRE MON QG"
-  },
+  "topbar": { "enter": "REJOINDRE MON QG" },
   "hero": {
-    "eyebrow": "EMPIRE • GLOBAL ECOSYSTEM",
+    "eyebrow": "EMPIRE • ÉCOSYSTÈME MONDIAL",
     "title": "Construisez votre Empire.",
     "description": "Une seule plateforme.\nUne seule identité.\nUn seul Quartier Général.\n\nTravaillez.\nDéveloppez-vous.\nCréez votre Empire."
   },
-  "buttons": {
-    "enter": "ENTRER DANS MON QG"
+  "buttons": { "enter": "ENTRER DANS MON QG" },
+
+  "sidebar": {
+    "hub": "Accueil", "marketplace": "Marketplace", "academy": "Academy",
+    "community": "Community", "arsenal": "Arsenal", "settings": "Paramètres", "profile": "Profil"
+  },
+
+  "hub": {
+    "hero": {
+      "eyebrow": "OG Empire",
+      "title": "Quel empire voulez-vous construire ?",
+      "subtitle": "SAMII vous aide à lancer votre QG et à connecter votre écosystème.",
+      "searchPlaceholder": "Construisez votre prochain empire..."
+    },
+    "section": { "choose": "Choisis ton métier" },
+    "metierMore": "Plus de métiers",
+    "footer": { "quote": "Chaque général commence soldat.", "version": "v1.0 · SOLDAT" },
+    "metiers": {
+      "ecommerce":   { "label": "E-commerce",   "desc": "Commerce en ligne" },
+      "restaurant":  { "label": "Restaurant",   "desc": "Restauration & food" },
+      "immobilier":  { "label": "Immobilier",   "desc": "Biens & propriétés" },
+      "livreur":     { "label": "Livreur",      "desc": "Livraison & logistique" },
+      "sante":       { "label": "Santé",        "desc": "Santé & bien-être" },
+      "finance":     { "label": "Finance",      "desc": "Finance & invest." },
+      "education":   { "label": "Éducation",    "desc": "Formation & savoir" },
+      "technologie": { "label": "Technologie",  "desc": "Tech & innovation" },
+      "agriculture": { "label": "Agriculture",  "desc": "Culture & agriculture" },
+      "industrie":   { "label": "Industrie",    "desc": "Production & usine" },
+      "services":    { "label": "Services",     "desc": "Services pro" },
+      "tourisme":    { "label": "Tourisme",     "desc": "Voyage & tourisme" }
+    }
+  },
+
+  "qg": {
+    "topbar": "QG",
+    "nav": {
+      "hub": "Hub", "marketplace": "Marketplace", "community": "Community", "academy": "Academy",
+      "myBusiness": "Mes affaires", "connectTools": "Connecter mes outils", "myTools": "Mes outils",
+      "arsenal": "Arsenal", "vault": "Coffre OG", "samii": "SAMII", "settings": "Paramètres", "backToQG": "Mon QG"
+    },
+    "hero": { "eyebrow": "Centre de commandement", "titlePrefix": "Votre QG", "subtitle": "Pilotez votre activité, vos outils et vos missions depuis un seul endroit." },
+    "section": { "overview": "Vue d'ensemble", "arsenal": "Arsenal" },
+    "cards": {
+      "revenue": "Revenus (CR)", "visitors": "Visiteurs", "orders": "Commandes",
+      "missions": "Missions actives", "progress": "Progression (%)", "alerts": "Alertes", "modules": "Modules installés"
+    },
+    "arsenal": { "boostMarketing": "Boost Marketing", "radar": "Radar Opportunités", "fortress": "Forteresse", "level": "Niveau", "seeMore": "Voir l'Arsenal" }
+  },
+
+  "samii": {
+    "topbar": "Stratège IA",
+    "status": "OPÉRATIONNEL",
+    "title": "Votre centre de vie stratégique.",
+    "chat": { "welcome": "Bienvenue, Général. Je suis SAMII. Comment puis-je vous aider aujourd'hui ?", "placeholder": "Parler à SAMII…" },
+    "cards": {
+      "marketing": { "label": "Marketing", "value": "Boost actif" },
+      "opportunites": { "label": "Opportunités", "value": "3 nouvelles" },
+      "analyse": { "label": "Analyse résultats", "value": "+12% ce mois" },
+      "conseils": { "label": "Conseils SAMII", "value": "2 recommandations" },
+      "alertes": { "label": "Alertes", "value": "1 urgente" },
+      "missions": { "label": "Missions", "value": "4 en cours" },
+      "performance": { "label": "Performance", "value": "Excellente" },
+      "clients": { "label": "Clients & CRM", "value": "142 actifs" },
+      "revenus": { "label": "Revenus prévus", "value": "+8% attendu" },
+      "radar": { "label": "Radar concurrentiel", "value": "Surveillance active" },
+      "automatisations": { "label": "Automatisations", "value": "5 actives" },
+      "reseau": { "label": "Réseau global", "value": "17 pays" }
+    }
   }
 }
