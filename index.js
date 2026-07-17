@@ -2,12 +2,13 @@
 // SAMII OS V1 — Point d'entrée
 // ======================================================
 
-const path    = require("path");
-const express = require("express");
-const session = require("express-session");
-const http    = require("http");
-const { Server } = require("socket.io");
-const CONFIG  = require("./config");
+const path        = require("path");
+const express     = require("express");
+const session     = require("express-session");
+const MemoryStore = require("memorystore")(session);
+const http        = require("http");
+const { Server }  = require("socket.io");
+const CONFIG      = require("./config");
 
 const app    = express();
 const server = http.createServer(app);
@@ -30,6 +31,7 @@ app.use(session({
     secret           : process.env.SESSION_SECRET || "samii-secret-v1",
     resave           : false,
     saveUninitialized: false,
+    store            : new MemoryStore({ checkPeriod: 86400000 }), // ✅ session stable
     cookie           : {
         httpOnly: true,
         sameSite: "lax",
@@ -41,7 +43,7 @@ app.use(session({
 // ── LOCALS ────────────────────────────────────────────
 app.use((req, res, next) => {
     res.locals.workspaceId = req.session?.workspaceId || null;
-    res.locals.shop        = req.session?.shop        || null; // connecteur Shopify uniquement
+    res.locals.shop        = req.session?.shop        || null;
     res.locals.loggedIn    = !!req.session?.loggedIn;
     next();
 });
@@ -86,7 +88,7 @@ app.get("/qg/:metier", (req, res) => {
     res.render("qg-template", {
         metier      : req.params.metier,
         workspaceId : req.session.workspaceId || "",
-        shop        : req.session.shop        || "", // connecteur Shopify
+        shop        : req.session.shop        || "",
         nom         : req.session.nom         || "",
         attente     : false,
     });
@@ -164,4 +166,3 @@ server.listen(CONFIG.PORT, () => {
     console.log("🚀 SAMII OS démarre...");
     console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
 });
-
