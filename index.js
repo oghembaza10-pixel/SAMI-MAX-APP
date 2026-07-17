@@ -90,6 +90,29 @@ app.get("/qg/:metier", (req, res) => {
         attente   : false,
     });
 });
+app.get("/qg/:metier/connecter", requireAuth, async (req, res) => {
+    const shop    = req.session.shop || "";
+    const headers = { Authorization: `Bearer ${process.env.AIRTABLE_API_KEY}` };
+
+    let boutique = {};
+    try {
+        const r = await require("axios").get(
+            `https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID}/${process.env.TABLE_BOUTIQUES}`,
+            { headers, params: { filterByFormula: `{shop_url}="${shop}"`, maxRecords: 1 } }
+        );
+        boutique = r.data.records[0]?.fields || {};
+    } catch (e) { console.error("❌ /qg/connecter :", e.message); }
+
+    res.render("connect/outils", {
+        metier        : req.params.metier,
+        shop,
+        shopifyActif  : !!boutique.access_token,
+        telegramActif : !!boutique.telegram_actif,
+        telegramChatId: boutique.telegram_chat_id || "",
+        whatsappActif : !!boutique.whatsapp_actif,
+        whatsappPhone : boutique.whatsapp_phone   || "",
+    });
+});
 
 // ── SAMII — accessible depuis le QG ──────────────────
 app.get("/samii", (req, res) => {
