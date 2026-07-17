@@ -1,13 +1,77 @@
 {
-  "topbar": {
-    "enter": "进入我的总部"
-  },
+  "topbar": { "enter": "加入我的总部" },
   "hero": {
     "eyebrow": "帝国 • 全球生态系统",
     "title": "打造你的帝国。",
-    "description": "一个平台。\n一个身份。\n一个总部。\n\n工作。\n成长。\n建立你的帝国。"
+    "description": "一个平台。\n一个身份。\n一个总部。\n\n工作。\n成长。\n打造你的帝国。"
   },
-  "buttons": {
-    "enter": "进入我的总部"
+  "buttons": { "enter": "进入我的总部" },
+
+  "sidebar": {
+    "hub": "首页", "marketplace": "市场", "academy": "学院",
+    "community": "社区", "arsenal": "军械库", "settings": "设置", "profile": "个人资料"
+  },
+
+  "hub": {
+    "hero": {
+      "eyebrow": "OG帝国",
+      "title": "你将建立怎样的帝国？",
+      "subtitle": "SAMII帮助您启动总部并连接您的生态系统。",
+      "searchPlaceholder": "打造你的下一个帝国..."
+    },
+    "section": { "choose": "选择你的行业" },
+    "metierMore": "更多行业",
+    "footer": { "quote": "每位将军都始于士兵。", "version": "v1.0 · 士兵" },
+    "metiers": {
+      "ecommerce":   { "label": "电子商务", "desc": "在线零售" },
+      "restaurant":  { "label": "餐厅",     "desc": "餐饮" },
+      "immobilier":  { "label": "房地产",   "desc": "物业资产" },
+      "livreur":     { "label": "快递",     "desc": "物流配送" },
+      "sante":       { "label": "健康",     "desc": "健康与养生" },
+      "finance":     { "label": "金融",     "desc": "金融与投资" },
+      "education":   { "label": "教育",     "desc": "培训与知识" },
+      "technologie": { "label": "科技",     "desc": "技术与创新" },
+      "agriculture": { "label": "农业",     "desc": "农作物种植" },
+      "industrie":   { "label": "工业",     "desc": "生产制造" },
+      "services":    { "label": "服务",     "desc": "专业服务" },
+      "tourisme":    { "label": "旅游",     "desc": "旅行观光" }
+    }
+  },
+
+  "qg": {
+    "topbar": "总部",
+    "nav": {
+      "hub": "中心", "marketplace": "市场", "community": "社区", "academy": "学院",
+      "myBusiness": "我的业务", "connectTools": "连接我的工具", "myTools": "我的工具",
+      "arsenal": "军械库", "vault": "OG金库", "samii": "SAMII", "settings": "设置", "backToQG": "我的总部"
+    },
+    "hero": { "eyebrow": "指挥中心", "titlePrefix": "你的总部", "subtitle": "在一个地方管理你的业务、工具和任务。" },
+    "section": { "overview": "概览", "arsenal": "军械库" },
+    "cards": {
+      "revenue": "收入 (CR)", "visitors": "访客", "orders": "订单",
+      "missions": "进行中的任务", "progress": "进度 (%)", "alerts": "警报", "modules": "已安装模块"
+    },
+    "arsenal": { "boostMarketing": "营销加速", "radar": "机会雷达", "fortress": "堡垒", "level": "等级", "seeMore": "查看军械库" }
+  },
+
+  "samii": {
+    "topbar": "AI战略师",
+    "status": "运行中",
+    "title": "你的战略生活中心。",
+    "chat": { "welcome": "欢迎，将军。我是SAMII。今天能帮您什么？", "placeholder": "与SAMII对话…" },
+    "cards": {
+      "marketing": { "label": "营销", "value": "加速中" },
+      "opportunites": { "label": "机会", "value": "3个新机会" },
+      "analyse": { "label": "结果分析", "value": "本月+12%" },
+      "conseils": { "label": "SAMII建议", "value": "2条建议" },
+      "alertes": { "label": "警报", "value": "1条紧急" },
+      "missions": { "label": "任务", "value": "4个进行中" },
+      "performance": { "label": "表现", "value": "优秀" },
+      "clients": { "label": "客户与CRM", "value": "142位活跃" },
+      "revenus": { "label": "预计收入", "value": "预计+8%" },
+      "radar": { "label": "竞争对手雷达", "value": "监控中" },
+      "automatisations": { "label": "自动化", "value": "5个活跃" },
+      "reseau": { "label": "全球网络", "value": "17个国家" }
+    }
   }
 }
