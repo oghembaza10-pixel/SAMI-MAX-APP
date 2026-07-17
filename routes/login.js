@@ -8,11 +8,11 @@ const router  = express.Router();
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_USERS      = process.env.TABLE_USERS || "UTILISATEURS";
+const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
 
 // ── GET /login ────────────────────────────────────────────────
 router.get("/", (req, res) => {
-    if (req.session?.loggedIn) return res.redirect("/qg/ecommerce");
+    if (req.session?.loggedIn) return res.redirect(`/qg/${req.session.metier || "ecommerce"}`);
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -62,7 +62,7 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     const json = await res.json();
 
     if (json.success) {
-        msg.textContent = '✅ Connecté ! Redirection...';
+        msg.textContent = '✅ Connecté ! Redirection vers votre QG...';
         msg.className   = 'msg ok';
         window.location.href = json.redirect || '/qg/ecommerce';
     } else {
@@ -95,28 +95,17 @@ router.post("/", async (req, res) => {
 
         const record = search.data.records[0];
 
-        // Utilisateur introuvable
         if (!record) {
             return res.json({ success: false, error: "Email ou mot de passe incorrect." });
         }
 
         const user = record.fields;
 
-        // Mot de passe incorrect
         if (user.password_hash !== password) {
             return res.json({ success: false, error: "Email ou mot de passe incorrect." });
         }
 
-        // Compte en attente
-        if (user.statut_acces === "en attente") {
-            return res.json({
-                success : false,
-                attente : true,
-                error   : "⏳ Votre compte est en cours d'activation. SAMII vous préviendra dès que votre QG est prêt !",
-            });
-        }
-
-        // Compte suspendu
+        // Seul cas bloquant : compte suspendu
         if (user.statut_acces === "suspendu") {
             return res.json({ success: false, error: "Compte suspendu. Contactez le support." });
         }
@@ -124,7 +113,7 @@ router.post("/", async (req, res) => {
         // Mise à jour last_login
         await axios.patch(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-            { fields: { last_login: new Date().toISOString() }},
+            { fields: { last_login: new Date().toISOString().split("T")[0] }},
             { headers }
         );
 
@@ -133,10 +122,11 @@ router.post("/", async (req, res) => {
             if (err) return res.json({ success: false, error: "Erreur session." });
 
             req.session.loggedIn   = true;
-            req.session.shop       = user.shop_url  || "";
+            req.session.email      = email;
+            req.session.shop       = user.shop_url   || "";
             req.session.boutiqueId = user.boutiqueId || "";
             req.session.userId     = record.id;
-            req.session.metier     = user.metier    || "ecommerce";
+            req.session.metier     = user.metier     || "ecommerce";
             req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
 
             res.json({
@@ -152,4 +142,3 @@ router.post("/", async (req, res) => {
 });
 
 module.exports = router;
-
