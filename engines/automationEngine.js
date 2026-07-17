@@ -102,7 +102,7 @@ const automations = {
 
     // ── COMMANDES ─────────────────────────────────────────────
     "order.created": [
-        (e) => saveCommande(e),
+        
         (e) => journalService.log(e.shop, `🛒 Commande créée : ${e.payload.id}`),
         (e) => notificationEngine.send({
             shop   : e.shop,
