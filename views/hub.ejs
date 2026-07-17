@@ -11,7 +11,7 @@
 
     <link rel="stylesheet" href="/css/hub-premium.css">
 </head>
-<body>
+<body data-shop="<%= typeof shop !== 'undefined' ? shop : '' %>">
 
 <div class="og-capital">
 
@@ -135,6 +135,7 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
     window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(typeof connectedPlatforms !== "undefined" ? connectedPlatforms : []) %>;
+    window.OG_SHOP = document.body.getAttribute('data-shop') || '';
 </script>
 <script src="/js/i18n.js"></script>
 <script src="/js/hub.js"></script>
