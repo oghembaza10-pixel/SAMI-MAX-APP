@@ -37,12 +37,25 @@ const headers = () => ({
     "Content-Type": "application/json",
 });
 
+// ── SANITIZE FIELDS ──────────────────────────────────
+function sanitize(fields) {
+    const result = { ...fields };
+    // Force les champs numériques connus en Number
+    const numericFields = ["montant", "total", "prix", "quantite", "quantity"];
+    for (const key of numericFields) {
+        if (result[key] !== undefined && result[key] !== null && result[key] !== "") {
+            result[key] = parseFloat(result[key]) || 0;
+        }
+    }
+    return result;
+}
+
 // ── CREATE ───────────────────────────────────────────
 async function create(table, fields) {
     try {
         const res = await axios.post(
             `https://api.airtable.com/v0/${BASE}/${TABLES[table] || table}`,
-            { fields },
+            { fields: sanitize(fields) },
             { headers: headers() }
         );
         return res.data;
@@ -80,7 +93,7 @@ async function update(table, recordId, fields) {
     try {
         const res = await axios.patch(
             `https://api.airtable.com/v0/${BASE}/${TABLES[table] || table}/${recordId}`,
-            { fields },
+            { fields: sanitize(fields) },
             { headers: headers() }
         );
         return res.data;
