@@ -1,13 +1,77 @@
 {
-  "topbar": {
-    "enter": "JOIN MY HQ"
-  },
+  "topbar": { "enter": "JOIN MY HQ" },
   "hero": {
     "eyebrow": "EMPIRE • GLOBAL ECOSYSTEM",
     "title": "Build your Empire.",
     "description": "One platform.\nOne identity.\nOne Headquarters.\n\nWork.\nGrow.\nBuild your Empire."
   },
-  "buttons": {
-    "enter": "ENTER MY HQ"
+  "buttons": { "enter": "ENTER MY HQ" },
+
+  "sidebar": {
+    "hub": "Home", "marketplace": "Marketplace", "academy": "Academy",
+    "community": "Community", "arsenal": "Arsenal", "settings": "Settings", "profile": "Profile"
+  },
+
+  "hub": {
+    "hero": {
+      "eyebrow": "OG Empire",
+      "title": "What empire will you build?",
+      "subtitle": "SAMII helps you launch your HQ and connect your ecosystem.",
+      "searchPlaceholder": "Build your next empire..."
+    },
+    "section": { "choose": "Choose your business" },
+    "metierMore": "More businesses",
+    "footer": { "quote": "Every general starts as a soldier.", "version": "v1.0 · SOLDIER" },
+    "metiers": {
+      "ecommerce":   { "label": "E-commerce",   "desc": "Online retail" },
+      "restaurant":  { "label": "Restaurant",   "desc": "Food & dining" },
+      "immobilier":  { "label": "Real Estate",  "desc": "Properties & assets" },
+      "livreur":     { "label": "Delivery",     "desc": "Shipping & logistics" },
+      "sante":       { "label": "Health",       "desc": "Health & wellness" },
+      "finance":     { "label": "Finance",      "desc": "Finance & investing" },
+      "education":   { "label": "Education",    "desc": "Training & knowledge" },
+      "technologie": { "label": "Technology",   "desc": "Tech & innovation" },
+      "agriculture": { "label": "Agriculture",  "desc": "Farming & crops" },
+      "industrie":   { "label": "Industry",     "desc": "Production & factory" },
+      "services":    { "label": "Services",     "desc": "Professional services" },
+      "tourisme":    { "label": "Tourism",      "desc": "Travel & tourism" }
+    }
+  },
+
+  "qg": {
+    "topbar": "HQ",
+    "nav": {
+      "hub": "Hub", "marketplace": "Marketplace", "community": "Community", "academy": "Academy",
+      "myBusiness": "My Business", "connectTools": "Connect my tools", "myTools": "My tools",
+      "arsenal": "Arsenal", "vault": "OG Vault", "samii": "SAMII", "settings": "Settings", "backToQG": "My HQ"
+    },
+    "hero": { "eyebrow": "Command Center", "titlePrefix": "Your HQ", "subtitle": "Manage your business, tools and missions from one place." },
+    "section": { "overview": "Overview", "arsenal": "Arsenal" },
+    "cards": {
+      "revenue": "Revenue (CR)", "visitors": "Visitors", "orders": "Orders",
+      "missions": "Active missions", "progress": "Progress (%)", "alerts": "Alerts", "modules": "Installed modules"
+    },
+    "arsenal": { "boostMarketing": "Marketing Boost", "radar": "Opportunity Radar", "fortress": "Fortress", "level": "Level", "seeMore": "View Arsenal" }
+  },
+
+  "samii": {
+    "topbar": "AI Strategist",
+    "status": "OPERATIONAL",
+    "title": "Your strategic command center.",
+    "chat": { "welcome": "Welcome, General. I'm SAMII. How can I help you today?", "placeholder": "Talk to SAMII…" },
+    "cards": {
+      "marketing": { "label": "Marketing", "value": "Boost active" },
+      "opportunites": { "label": "Opportunities", "value": "3 new" },
+      "analyse": { "label": "Results analysis", "value": "+12% this month" },
+      "conseils": { "label": "SAMII advice", "value": "2 recommendations" },
+      "alertes": { "label": "Alerts", "value": "1 urgent" },
+      "missions": { "label": "Missions", "value": "4 ongoing" },
+      "performance": { "label": "Performance", "value": "Excellent" },
+      "clients": { "label": "Clients & CRM", "value": "142 active" },
+      "revenus": { "label": "Projected revenue", "value": "+8% expected" },
+      "radar": { "label": "Competitor radar", "value": "Active monitoring" },
+      "automatisations": { "label": "Automations", "value": "5 active" },
+      "reseau": { "label": "Global network", "value": "17 countries" }
+    }
   }
 }
