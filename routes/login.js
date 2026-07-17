@@ -105,29 +105,27 @@ router.post("/", async (req, res) => {
             return res.json({ success: false, error: "Email ou mot de passe incorrect." });
         }
 
-        // Seul cas bloquant : compte suspendu
         if (user.statut_acces === "suspendu") {
             return res.json({ success: false, error: "Compte suspendu. Contactez le support." });
         }
 
-        // Mise à jour last_login
+        // ── Mise à jour last_login ────────────────────────
         await axios.patch(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-            { fields: { last_login: new Date().toISOString().split("T")[0] }},
+            { fields: { last_login: new Date().toISOString().split("T")[0] } },
             { headers }
         );
 
-        // Session
+        // ── Session ───────────────────────────────────────
         req.session.regenerate((err) => {
             if (err) return res.json({ success: false, error: "Erreur session." });
 
-            req.session.loggedIn   = true;
-            req.session.email      = email;
-            req.session.shop       = user.shop_url   || "";
-            req.session.boutiqueId = user.boutiqueId || "";
-            req.session.userId     = record.id;
-            req.session.metier     = user.metier     || "ecommerce";
-            req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
+            req.session.loggedIn    = true;
+            req.session.email       = email;
+            req.session.userId      = record.id;
+            req.session.workspaceId = record.id;
+            req.session.metier      = user.metier || "ecommerce";
+            req.session.nom         = `${user.prenom || ""} ${user.nom || ""}`.trim();
 
             res.json({
                 success : true,
@@ -142,3 +140,4 @@ router.post("/", async (req, res) => {
 });
 
 module.exports = router;
+
