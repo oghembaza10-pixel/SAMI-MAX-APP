@@ -40,8 +40,9 @@ app.use(session({
 
 // ── LOCALS ────────────────────────────────────────────
 app.use((req, res, next) => {
-    res.locals.shop     = req.session?.shop    || null;
-    res.locals.loggedIn = !!req.session?.loggedIn;
+    res.locals.shop        = req.session?.shop        || null;
+    res.locals.workspaceId = req.session?.workspaceId || null;
+    res.locals.loggedIn    = !!req.session?.loggedIn;
     next();
 });
 
@@ -78,26 +79,24 @@ app.use("/api",         require("./routes/api"));
 // ── PAGE ACCUEIL ──────────────────────────────────────
 app.get("/", (req, res) => res.render("index"));
 
-// ── QG — accès direct après login ────────────────────
+// ── QG — centre de commandement utilisateur ───────────
 app.get("/qg/:metier", (req, res) => {
     if (!req.session?.loggedIn) return res.redirect("/login");
 
-    // ✅ Query param prioritaire sur session
-    const shop = req.query.shop || req.session.shop || "";
-
     res.render("qg-template", {
-        metier    : req.params.metier,
-        shop,
-        boutiqueId: req.session.boutiqueId || "",
-        nom       : req.session.nom        || "",
-        attente   : false,
+        metier      : req.params.metier,
+        workspaceId : req.session.workspaceId || "",
+        shop        : req.session.shop        || "",
+        boutiqueId  : req.session.boutiqueId  || "",
+        nom         : req.session.nom         || "",
+        attente     : false,
     });
 });
 
 app.get("/qg/:metier/connecter", requireAuth, async (req, res) => {
-    // ✅ Query param prioritaire sur session
-    const shop    = req.query.shop || req.session.shop || "";
-    const headers = { Authorization: `Bearer ${process.env.AIRTABLE_API_KEY}` };
+    const shop        = req.session.shop        || "";
+    const workspaceId = req.session.workspaceId || "";
+    const headers     = { Authorization: `Bearer ${process.env.AIRTABLE_API_KEY}` };
 
     let boutique = {};
     try {
@@ -110,6 +109,7 @@ app.get("/qg/:metier/connecter", requireAuth, async (req, res) => {
 
     res.render("connect/outils", {
         metier        : req.params.metier,
+        workspaceId,
         shop,
         shopifyActif  : !!boutique.access_token,
         telegramActif : !!boutique.telegram_actif,
@@ -119,11 +119,12 @@ app.get("/qg/:metier/connecter", requireAuth, async (req, res) => {
     });
 });
 
-// ── SAMII — accessible depuis le QG ──────────────────
+// ── SAMII — copilote universel ────────────────────────
 app.get("/samii", (req, res) => {
     if (!req.session?.loggedIn) return res.redirect("/login");
     res.render("samii", {
-        shop: req.query.shop || req.session.shop || "",
+        workspaceId : req.session.workspaceId || "",
+        shop        : req.session.shop        || "",
     });
 });
 
@@ -135,10 +136,10 @@ app.get("/logout", (req, res) => {
 // ── SOCKET.IO ─────────────────────────────────────────
 io.on("connection", (socket) => {
     console.log("🔌 Socket connecté :", socket.id);
-    socket.on("join", (shop) => {
-        if (shop && typeof shop === "string") {
-            socket.join(shop);
-            console.log(`👑 Socket room : ${shop}`);
+    socket.on("join", (workspaceId) => {
+        if (workspaceId && typeof workspaceId === "string") {
+            socket.join(workspaceId);
+            console.log(`👑 Socket room : ${workspaceId}`);
         }
     });
     socket.on("disconnect", () => {
@@ -164,5 +165,3 @@ server.listen(CONFIG.PORT, () => {
     console.log("🚀 SAMII OS démarre...");
     console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
 });
-
-
