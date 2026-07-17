@@ -23,6 +23,20 @@ function parseConfig(config) {
     try { return JSON.parse(config || "{}"); } catch { return {}; }
 }
 
+// ── RÉPONSE VIDE SÉCURISÉE ────────────────────────────
+function emptyQgResponse(workspace) {
+    return {
+        success    : true,
+        workspace  : { nom: workspace?.nom || "", metier: workspace?.metier || "" },
+        stats      : { total_commandes: 0, total_revenus: "0.00", en_attente: 0, confirmees: 0, annulees: 0, vip: 0, blacklist: 0 },
+        livraison  : { livrees: 0, en_cours: 0, echecs: 0 },
+        mission    : { date: new Date().toISOString().split("T")[0], commandes: 0, revenus: "0.00" },
+        performance: { revenus_mois: "0.00", commandes_mois: 0, evolution: "—" },
+        commandes  : [],
+        clients    : [],
+    };
+}
+
 // ── AUTH GUARD ────────────────────────────────────────
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.status(401).json({ error: "Non connecté" });
@@ -56,6 +70,9 @@ router.post("/chat", async (req, res) => {
 // ── CONNECTEURS — liste des connecteurs actifs ────────
 router.get("/connecteurs", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
+
+    // ✅ SÉCURITÉ : workspaceId obligatoire
+    if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
 
     try {
         const r = await axios.get(airtable(TABLE_CONNECTEURS), {
@@ -91,6 +108,9 @@ router.get("/connecteurs", requireAuth, async (req, res) => {
 router.get("/qg-data", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
 
+    // ✅ SÉCURITÉ : workspaceId obligatoire
+    if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
+
     try {
         // ── Workspace ──
         const wsRes = await axios.get(airtable(TABLE_WORKSPACES), {
@@ -109,6 +129,9 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         });
         const shopifyConfig = parseConfig(connRes.data.records[0]?.fields?.config);
         const shop          = shopifyConfig.shop_url || "";
+
+        // ✅ SÉCURITÉ : pas de shop = pas de données
+        if (!shop) return res.json(emptyQgResponse(workspace));
 
         // ── Commandes ──
         const commandesRes = await axios.get(airtable(TABLE_COMMANDES), {
@@ -170,30 +193,11 @@ router.get("/qg-data", requireAuth, async (req, res) => {
 
         res.json({
             success  : true,
-            workspace: {
-                nom   : workspace.nom    || "",
-                metier: workspace.metier || "",
-            },
-            stats: {
-                total_commandes,
-                total_revenus : total_revenus.toFixed(2),
-                en_attente,
-                confirmees,
-                annulees,
-                vip,
-                blacklist,
-            },
+            workspace: { nom: workspace.nom || "", metier: workspace.metier || "" },
+            stats    : { total_commandes, total_revenus: total_revenus.toFixed(2), en_attente, confirmees, annulees, vip, blacklist },
             livraison: { livrees, en_cours, echecs },
-            mission: {
-                date      : aujourd,
-                commandes : cmd_aujourd.length,
-                revenus   : rev_aujourd.toFixed(2),
-            },
-            performance: {
-                revenus_mois   : rev_mois.toFixed(2),
-                commandes_mois : cmd_mois.length,
-                evolution,
-            },
+            mission  : { date: aujourd, commandes: cmd_aujourd.length, revenus: rev_aujourd.toFixed(2) },
+            performance: { revenus_mois: rev_mois.toFixed(2), commandes_mois: cmd_mois.length, evolution },
             commandes,
             clients,
         });
@@ -205,3 +209,4 @@ router.get("/qg-data", requireAuth, async (req, res) => {
 });
 
 module.exports = router;
+
