@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QG · <%= metier.toUpperCase() %> · OG Empire</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -40,7 +39,7 @@
                 <i data-lucide="graduation-cap"></i><span>Academy</span>
             </a>
             <div class="qg-nav__divider"></div>
-            <a href="/qg/<%= metier %>/affaires" class="qg-nav__item active">
+            <a href="/qg/<%= metier %>" class="qg-nav__item active">
                 <i data-lucide="briefcase"></i><span>Mes affaires</span>
             </a>
             <a href="/qg/<%= metier %>/connecter" class="qg-nav__item">
@@ -100,7 +99,7 @@
             </div>
         </section>
 
-        <!-- ── STATS ─────────────────────────────────── -->
+        <!-- ── VUE D'ENSEMBLE ────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="activity"></i>
             <span>Vue d'ensemble</span>
@@ -141,6 +140,86 @@
                 <div class="qg-card__icon"><i data-lucide="shield-off"></i></div>
                 <span class="qg-card__value" id="stat-blacklist">0</span>
                 <span class="qg-card__label">Blacklist</span>
+            </article>
+        </section>
+
+        <!-- ── LIVRAISON TEMPS RÉEL ──────────────────── -->
+        <div class="qg-section-title">
+            <i data-lucide="truck"></i>
+            <span>Livraison temps réel 🚚</span>
+        </div>
+
+        <section class="qg-dashboard">
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="package-check"></i></div>
+                <span class="qg-card__value" id="stat-livrees">0</span>
+                <span class="qg-card__label">Livrées</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="truck"></i></div>
+                <span class="qg-card__value" id="stat-en-cours">0</span>
+                <span class="qg-card__label">En cours</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="alert-triangle"></i></div>
+                <span class="qg-card__value" id="stat-echecs">0</span>
+                <span class="qg-card__label">Échecs</span>
+            </article>
+        </section>
+
+        <!-- ── MISSION DU JOUR ───────────────────────── -->
+        <div class="qg-section-title">
+            <i data-lucide="target"></i>
+            <span>Mission du jour 🎯</span>
+        </div>
+
+        <section class="qg-dashboard">
+            <article class="qg-card" style="grid-column:span 3;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <span style="color:#d4af37;font-weight:700;font-size:1rem;">Objectif du jour</span>
+                    <span class="qg-mono" id="mission-date" style="color:#555;font-size:.8rem;"></span>
+                </div>
+                <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:16px;">
+                    <div style="text-align:center;">
+                        <div class="qg-card__value" id="mission-commandes">0</div>
+                        <div class="qg-card__label">Commandes aujourd'hui</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div class="qg-card__value" id="mission-revenus">0</div>
+                        <div class="qg-card__label">Revenus aujourd'hui (DZD)</div>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span style="color:#888;font-size:.82rem;">Progression vers objectif (10 cmd)</span>
+                    <span style="color:#d4af37;font-size:.82rem;" id="mission-pct">0%</span>
+                </div>
+                <div style="background:#1a1a1a;border-radius:8px;height:8px;">
+                    <div id="mission-bar" style="height:8px;border-radius:8px;background:linear-gradient(90deg,#d4af37,#00c6ff);width:0%;transition:width .6s ease;"></div>
+                </div>
+            </article>
+        </section>
+
+        <!-- ── PERFORMANCE DU MOIS ───────────────────── -->
+        <div class="qg-section-title">
+            <i data-lucide="bar-chart-2"></i>
+            <span>Performance du mois 📈</span>
+        </div>
+
+        <section class="qg-dashboard">
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="trending-up"></i></div>
+                <span class="qg-card__value" id="perf-revenus-mois">0</span>
+                <span class="qg-card__label">Revenus ce mois (DZD)</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="package"></i></div>
+                <span class="qg-card__value" id="perf-commandes-mois">0</span>
+                <span class="qg-card__label">Commandes ce mois</span>
+            </article>
+            <article class="qg-card qg-card--tilt">
+                <div class="qg-card__icon"><i data-lucide="activity"></i></div>
+                <span class="qg-card__value" id="perf-evolution">—</span>
+                <span class="qg-card__label">vs mois dernier</span>
             </article>
         </section>
 
