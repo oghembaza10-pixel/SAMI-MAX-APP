@@ -1,14 +1,14 @@
 /**
  * ============================================================
- * OG • Airtable Service
+ * OG • Airtable Service V2
  * Couche unique pour toutes les tables Airtable
  * ============================================================
  */
 
 const axios = require("axios");
 
-const BASE    = process.env.AIRTABLE_BASE_ID;
-const TOKEN   = process.env.AIRTABLE_API_KEY;
+const BASE  = process.env.AIRTABLE_BASE_ID;
+const TOKEN = process.env.AIRTABLE_API_KEY;
 
 const TABLES = {
     BOUTIQUES      : process.env.TABLE_BOUTIQUES,
@@ -29,11 +29,11 @@ const TABLES = {
     DOCUMENTS      : process.env.TABLE_DOCUMENTS,
     MODULES        : process.env.TABLE_MODULES,
     MOTEURS        : process.env.TABLE_MOTEURS,
+    UTILISATEURS   : process.env.TABLE_UTILISATEURS,
 };
 
-
 const headers = () => ({
-    Authorization: `Bearer ${TOKEN}`,
+    Authorization : `Bearer ${TOKEN}`,
     "Content-Type": "application/json",
 });
 
@@ -59,7 +59,7 @@ async function find(table, formula, max = 10) {
             `https://api.airtable.com/v0/${BASE}/${TABLES[table] || table}`,
             {
                 headers: headers(),
-                params: { filterByFormula: formula, maxRecords: max },
+                params : { filterByFormula: formula, maxRecords: max },
             }
         );
         return res.data.records || [];
@@ -104,6 +104,36 @@ async function remove(table, recordId) {
     }
 }
 
+// ── GET BOUTIQUE ─────────────────────────────────────
+async function getBoutique(shop) {
+    return await findOne("BOUTIQUES", `{shop_url}="${shop}"`);
+}
+
+// ── GET COMMANDES ────────────────────────────────────
+async function getCommandes(shop, max = 100) {
+    return await find("COMMANDES", `{Boutique}="${shop}"`, max);
+}
+
+// ── GET CLIENTS ──────────────────────────────────────
+async function getClients(shop, max = 50) {
+    return await find("CLIENTS", `{Boutique}="${shop}"`, max);
+}
+
+// ── GET CLIENT ───────────────────────────────────────
+async function getClient(phone, shop) {
+    return await findOne("CLIENTS", `AND({Téléphone}="${phone}",{Boutique}="${shop}")`);
+}
+
+// ── SAVE COMMANDE ────────────────────────────────────
+async function saveCommande(fields) {
+    return await create("COMMANDES", fields);
+}
+
+// ── SAVE CLIENT ──────────────────────────────────────
+async function saveClient(fields) {
+    return await create("CLIENTS", fields);
+}
+
 // ── LOG ──────────────────────────────────────────────
 async function log(action, details, shop = "") {
     return await create("LOGS", {
@@ -140,6 +170,12 @@ module.exports = {
     findOne,
     update,
     remove,
+    getBoutique,
+    getCommandes,
+    getClients,
+    getClient,
+    saveCommande,
+    saveClient,
     log,
     journal,
     notification,
