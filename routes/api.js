@@ -1,13 +1,33 @@
-const express  = require("express");
-const router   = express.Router();
-const planner  = require("../brain/planner");
-const axios    = require("axios");
+const express = require("express");
+const router  = express.Router();
+const planner = require("../brain/planner");
+const axios   = require("axios");
 
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_BOUTIQUES  = process.env.TABLE_BOUTIQUES;
-const TABLE_COMMANDES  = process.env.TABLE_COMMANDES || "Commandes";
-const TABLE_CLIENTS    = process.env.TABLE_CLIENTS   || "CLIENTS";
+const AIRTABLE_API_KEY  = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID  = process.env.AIRTABLE_BASE_ID;
+const TABLE_WORKSPACES  = process.env.TABLE_WORKSPACES  || "WORKSPACES";
+const TABLE_CONNECTEURS = process.env.TABLE_CONNECTEURS || "CONNECTEURS";
+const TABLE_COMMANDES   = process.env.TABLE_COMMANDES   || "COMMANDES";
+const TABLE_CLIENTS     = process.env.TABLE_CLIENTS     || "CLIENTS";
+
+const airtable = (table) =>
+    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
+
+const headers = () => ({
+    Authorization : `Bearer ${AIRTABLE_API_KEY}`,
+    "Content-Type": "application/json",
+});
+
+// ── HELPER — parse config JSON ────────────────────────
+function parseConfig(config) {
+    try { return JSON.parse(config || "{}"); } catch { return {}; }
+}
+
+// ── AUTH GUARD ────────────────────────────────────────
+function requireAuth(req, res, next) {
+    if (!req.session?.loggedIn) return res.status(401).json({ error: "Non connecté" });
+    next();
+}
 
 // ── CHAT SAMII ────────────────────────────────────────
 router.post("/chat", async (req, res) => {
@@ -16,12 +36,12 @@ router.post("/chat", async (req, res) => {
         if (!message) return res.json({ success: false, reply: "Écris un message." });
 
         const context = {
-            user      : { lang: req.body.lang || "" },
-            shop      : req.body.shop       || "",
-            client    : req.body.client     || "",
-            commande  : req.body.commande   || "",
-            page      : req.body.page       || "",
-            lastAction: req.body.lastAction || "",
+            user        : { lang: req.body.lang || "" },
+            workspaceId : req.session?.workspaceId || req.body.workspaceId || "",
+            client      : req.body.client     || "",
+            commande    : req.body.commande   || "",
+            page        : req.body.page       || "",
+            lastAction  : req.body.lastAction || "",
         };
 
         const result = await planner.build({ goal: message }, context);
@@ -33,62 +53,88 @@ router.post("/chat", async (req, res) => {
     }
 });
 
-// ── QG DATA ───────────────────────────────────────────
-router.get("/qg-data", async (req, res) => {
-    if (!req.session?.loggedIn) return res.status(401).json({ error: "Non connecté" });
-
-    // ✅ Priorité au shop passé en query param, sinon session
-    const shop    = req.query.shop || req.session.shop;
-    const headers = {
-        Authorization : `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-    };
+// ── CONNECTEURS — liste des connecteurs actifs ────────
+router.get("/connecteurs", requireAuth, async (req, res) => {
+    const workspaceId = req.session.workspaceId;
 
     try {
-        // ── Boutique ──
-        const boutiqueRes = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}`,
-            {
-                headers,
-                params: {
-                    filterByFormula: `{shop_url}="${shop}"`,
-                    maxRecords     : 1,
-                }
-            }
-        );
-        const boutique = boutiqueRes.data.records[0]?.fields || {};
+        const r = await axios.get(airtable(TABLE_CONNECTEURS), {
+            headers: headers(),
+            params : {
+                filterByFormula: `{workspace_id}="${workspaceId}"`,
+                maxRecords     : 50,
+            },
+        });
+
+        const connecteurs = {};
+        r.data.records.forEach(rec => {
+            const f      = rec.fields;
+            const type   = (f.type || "").toLowerCase();
+            const config = parseConfig(f.config);
+
+            connecteurs[type] = {
+                actif      : f.actif === true,
+                identifiant: f.identifiant || "",
+                ...config,
+            };
+        });
+
+        res.json({ success: true, connecteurs });
+
+    } catch (err) {
+        console.error("❌ API connecteurs :", err.message);
+        res.status(500).json({ error: "Erreur chargement connecteurs." });
+    }
+});
+
+// ── QG DATA ───────────────────────────────────────────
+router.get("/qg-data", requireAuth, async (req, res) => {
+    const workspaceId = req.session.workspaceId;
+
+    try {
+        // ── Workspace ──
+        const wsRes = await axios.get(airtable(TABLE_WORKSPACES), {
+            headers: headers(),
+            params : { filterByFormula: `{workspace_id}="${workspaceId}"`, maxRecords: 1 },
+        });
+        const workspace = wsRes.data.records[0]?.fields || {};
+
+        // ── Connecteur Shopify — V1 : un seul connecteur Shopify actif par workspace ──
+        const connRes = await axios.get(airtable(TABLE_CONNECTEURS), {
+            headers: headers(),
+            params : {
+                filterByFormula: `AND({workspace_id}="${workspaceId}",{type}="shopify",{actif}=1)`,
+                maxRecords     : 1,
+            },
+        });
+        const shopifyConfig = parseConfig(connRes.data.records[0]?.fields?.config);
+        const shop          = shopifyConfig.shop_url || "";
 
         // ── Commandes ──
-        const commandesRes = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_COMMANDES}`,
-            {
-                headers,
-                params: {
-                    filterByFormula     : `{Boutique}="${shop}"`,
-                    "sort[0][field]"    : "Date Commande",
-                    "sort[0][direction]": "desc",
-                    maxRecords          : 100,
-                }
-            }
-        );
+        const commandesRes = await axios.get(airtable(TABLE_COMMANDES), {
+            headers: headers(),
+            params : {
+                filterByFormula     : `{Boutique}="${shop}"`,
+                "sort[0][field]"    : "Date Commande",
+                "sort[0][direction]": "desc",
+                maxRecords          : 100,
+            },
+        });
         const commandes = commandesRes.data.records.map(r => r.fields);
 
         // ── Clients ──
-        const clientsRes = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_CLIENTS}`,
-            {
-                headers,
-                params: {
-                    filterByFormula     : `{Boutique}="${shop}"`,
-                    "sort[0][field]"    : "Total Dépensé",
-                    "sort[0][direction]": "desc",
-                    maxRecords          : 50,
-                }
-            }
-        );
+        const clientsRes = await axios.get(airtable(TABLE_CLIENTS), {
+            headers: headers(),
+            params : {
+                filterByFormula     : `{Boutique}="${shop}"`,
+                "sort[0][field]"    : "Total Dépensé",
+                "sort[0][direction]": "desc",
+                maxRecords          : 50,
+            },
+        });
         const clients = clientsRes.data.records.map(r => r.fields);
 
-        // ── Helper montant ✅ lit montant ou Total
+        // ── Helper montant ──
         const getMontant = (c) => parseFloat(c.montant || c.Total || 0) || 0;
 
         // ── Stats globales ──
@@ -114,21 +160,19 @@ router.get("/qg-data", async (req, res) => {
         const moisActuel = aujourd.slice(0, 7);
         const moisPrec   = new Date(new Date().setMonth(new Date().getMonth() - 1))
                             .toISOString().slice(0, 7);
-        const cmd_mois   = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisActuel));
-        const cmd_moisP  = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisPrec));
-        const rev_mois   = cmd_mois.reduce((s, c)  => s + getMontant(c), 0);
-        const rev_moisP  = cmd_moisP.reduce((s, c) => s + getMontant(c), 0);
-        const evolution  = rev_moisP > 0
+        const cmd_mois  = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisActuel));
+        const cmd_moisP = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisPrec));
+        const rev_mois  = cmd_mois.reduce((s, c)  => s + getMontant(c), 0);
+        const rev_moisP = cmd_moisP.reduce((s, c) => s + getMontant(c), 0);
+        const evolution = rev_moisP > 0
             ? ((rev_mois - rev_moisP) / rev_moisP * 100).toFixed(1) + "%"
             : "—";
 
         res.json({
-            success : true,
-            boutique: {
-                nom   : boutique.nom_boutique || shop,
-                email : boutique.email        || "",
-                pays  : boutique.pays         || "DZ",
-                devise: boutique.devise       || "DZD",
+            success  : true,
+            workspace: {
+                nom   : workspace.nom    || "",
+                metier: workspace.metier || "",
             },
             stats: {
                 total_commandes,
@@ -139,15 +183,11 @@ router.get("/qg-data", async (req, res) => {
                 vip,
                 blacklist,
             },
-            livraison: {
-                livrees,
-                en_cours,
-                echecs,
-            },
+            livraison: { livrees, en_cours, echecs },
             mission: {
-                date    : aujourd,
-                commandes: cmd_aujourd.length,
-                revenus  : rev_aujourd.toFixed(2),
+                date      : aujourd,
+                commandes : cmd_aujourd.length,
+                revenus   : rev_aujourd.toFixed(2),
             },
             performance: {
                 revenus_mois   : rev_mois.toFixed(2),
