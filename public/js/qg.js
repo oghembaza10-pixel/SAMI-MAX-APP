@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ======================================================================
     // SIDEBAR COLLAPSE
     // ======================================================================
-    const sidebar  = document.getElementById('og-sidebar');
+    const sidebar   = document.getElementById('og-sidebar');
     const toggleBtn = document.getElementById('og-sidebar-collapse');
     const isMobile  = () => window.matchMedia('(max-width: 900px)').matches;
 
@@ -87,8 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ======================================================================
     document.querySelectorAll('.qg-dashboard, .qg-arsenal').forEach(group => {
         Array.from(group.children).forEach((item, i) => {
-            item.style.opacity   = '0';
-            item.style.transform = 'translateY(14px)';
+            item.style.opacity    = '0';
+            item.style.transform  = 'translateY(14px)';
             item.style.transition = `opacity .5s ease ${i * 0.06}s, transform .5s ease ${i * 0.06}s`;
             requestAnimationFrame(() => requestAnimationFrame(() => {
                 item.style.opacity   = '1';
@@ -115,19 +115,50 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (!data.success) return;
 
-            // Stats cartes
-            setCard('stat-revenus',   data.stats.total_revenus);
-            setCard('stat-commandes', data.stats.total_commandes);
-            setCard('stat-attente',   data.stats.en_attente);
-            setCard('stat-confirmees',data.stats.confirmees);
-            setCard('stat-annulees',  data.stats.annulees);
+            // ── Stats globales ──
+            setCard('stat-revenus',    data.stats.total_revenus);
+            setCard('stat-commandes',  data.stats.total_commandes);
+            setCard('stat-attente',    data.stats.en_attente);
+            setCard('stat-confirmees', data.stats.confirmees);
+            setCard('stat-annulees',   data.stats.annulees);
+            setCard('stat-vip',        data.stats.vip);
+            setCard('stat-blacklist',  data.stats.blacklist);
 
-            // Nom boutique
+            // ── Nom boutique ──
             const nomEl = document.getElementById('qg-boutique-nom');
             if (nomEl) nomEl.textContent = data.boutique.nom;
 
-            // Tableau commandes
+            // ── Livraison temps réel ──
+            setCard('stat-livrees',  data.livraison.livrees);
+            setCard('stat-en-cours', data.livraison.en_cours);
+            setCard('stat-echecs',   data.livraison.echecs);
+
+            // ── Mission du jour ──
+            const missionDate = document.getElementById('mission-date');
+            if (missionDate) missionDate.textContent = data.mission.date;
+
+            setCard('mission-commandes', data.mission.commandes);
+            setCard('mission-revenus',   data.mission.revenus);
+
+            const objectif = 10;
+            const pct      = Math.min(Math.round((data.mission.commandes / objectif) * 100), 100);
+            const pctEl    = document.getElementById('mission-pct');
+            const barEl    = document.getElementById('mission-bar');
+            if (pctEl) pctEl.textContent  = pct + '%';
+            if (barEl) barEl.style.width  = pct + '%';
+
+            // ── Performance du mois ──
+            setCard('perf-revenus-mois',   data.performance.revenus_mois);
+            setCard('perf-commandes-mois', data.performance.commandes_mois);
+            const evolEl = document.getElementById('perf-evolution');
+            if (evolEl) evolEl.textContent = data.performance.evolution;
+
+            // ── Tableau commandes ──
             renderCommandes(data.commandes);
+
+            // ── VIP & Blacklist ──
+            renderClients('vip-list',   data.clients.filter(c => c.VIP      === true));
+            renderClients('black-list', data.clients.filter(c => c.Blacklist === true));
 
         } catch (err) {
             console.error('❌ QG data :', err.message);
@@ -149,16 +180,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tbody) return;
 
         if (!commandes || commandes.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;padding:20px;">Aucune commande pour l'instant</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:20px;">Aucune commande pour l'instant</td></tr>`;
             return;
         }
 
-        tbody.innerHTML = commandes.map(c => `
+        tbody.innerHTML = commandes.slice(0, 20).map(c => `
             <tr>
                 <td>#${c['ID Commande'] || '—'}</td>
                 <td>${c['Nom Client']   || '—'}</td>
+                <td>${c['Téléphone']    || '—'}</td>
                 <td>${c['Produit']      || '—'}</td>
-                <td>${c['Total']        || '0'} ${c['Devise'] || 'DZD'}</td>
+                <td>${parseFloat(c['Total'] || 0).toFixed(2)} ${c['Devise'] || 'DZD'}</td>
                 <td><span class="qg-badge qg-badge--${statutClass(c['Statut'])}">${c['Statut'] || '—'}</span></td>
             </tr>
         `).join('');
@@ -171,8 +203,31 @@ document.addEventListener('DOMContentLoaded', () => {
             'annulée'   : 'red',
             'expédiée'  : 'blue',
             'livrée'    : 'green',
+            'en cours'  : 'blue',
+            'échoué'    : 'red',
         };
         return map[statut] || 'grey';
+    }
+
+    // ======================================================================
+    // VIP & BLACKLIST
+    // ======================================================================
+    function renderClients(containerId, clients) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+
+        if (!clients || clients.length === 0) {
+            el.innerHTML = `<p style="color:#888;font-size:.85rem;">Aucun client</p>`;
+            return;
+        }
+
+        el.innerHTML = clients.map(c => `
+            <div class="qg-client-card">
+                <div class="qg-client-card__name">${c['Nom'] || c['Nom Client'] || '—'}</div>
+                <div class="qg-client-card__phone">${c['Téléphone'] || '—'}</div>
+                <div class="qg-client-card__total">${parseFloat(c['Total Dépensé'] || 0).toFixed(0)} DZD</div>
+            </div>
+        `).join('');
     }
 
     // ======================================================================
@@ -183,25 +238,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         socket.on('connect', () => {
             console.log('🔌 Socket.IO connecté');
-            // Rejoindre la room de la boutique
             const shop = document.body.getAttribute('data-shop');
             if (shop) socket.emit('join', shop);
         });
 
-        // Nouvelle commande → mise à jour live
         socket.on('nouvelle-commande', (commande) => {
-            console.log('🛒 Nouvelle commande reçue :', commande);
+            console.log('🛒 Nouvelle commande :', commande);
             afficherNotification(`🛒 Nouvelle commande #${commande.order_number || ''} — ${commande.total_price || ''} DZD`);
-            loadQGData(); // Recharge les stats
-        });
-
-        // Commande confirmée
-        socket.on('commande-confirmee', (data) => {
-            afficherNotification(`✅ Commande #${data.id} confirmée par le client`);
             loadQGData();
         });
 
-        // Commande annulée
+        socket.on('commande-confirmee', (data) => {
+            afficherNotification(`✅ Commande #${data.id} confirmée`);
+            loadQGData();
+        });
+
         socket.on('commande-annulee', (data) => {
             afficherNotification(`❌ Commande #${data.id} annulée`);
             loadQGData();
