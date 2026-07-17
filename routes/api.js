@@ -24,7 +24,7 @@ router.post("/chat", async (req, res) => {
             lastAction: req.body.lastAction || "",
         };
 
-        const result = await planner.plan({ message, context });
+        const result = await planner.build({ goal: message }, context); // ✅ corrigé
         res.json(result);
 
     } catch (err) {
