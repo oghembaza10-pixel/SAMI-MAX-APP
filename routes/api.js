@@ -37,7 +37,8 @@ router.post("/chat", async (req, res) => {
 router.get("/qg-data", async (req, res) => {
     if (!req.session?.loggedIn) return res.status(401).json({ error: "Non connecté" });
 
-    const shop    = req.session.shop;
+    // ✅ Priorité au shop passé en query param, sinon session
+    const shop    = req.query.shop || req.session.shop;
     const headers = {
         Authorization : `Bearer ${AIRTABLE_API_KEY}`,
         "Content-Type": "application/json",
@@ -87,9 +88,12 @@ router.get("/qg-data", async (req, res) => {
         );
         const clients = clientsRes.data.records.map(r => r.fields);
 
+        // ── Helper montant ✅ lit montant ou Total
+        const getMontant = (c) => parseFloat(c.montant || c.Total || 0) || 0;
+
         // ── Stats globales ──
         const total_commandes = commandes.length;
-        const total_revenus   = commandes.reduce((sum, c) => sum + (parseFloat(c.Total) || 0), 0);
+        const total_revenus   = commandes.reduce((sum, c) => sum + getMontant(c), 0);
         const en_attente      = commandes.filter(c => c.Statut === "en attente").length;
         const confirmees      = commandes.filter(c => c.Statut === "confirmée").length;
         const annulees        = commandes.filter(c => c.Statut === "annulée").length;
@@ -102,9 +106,9 @@ router.get("/qg-data", async (req, res) => {
         const echecs   = commandes.filter(c => c.Statut === "échoué").length;
 
         // ── Mission du jour ──
-        const aujourd = new Date().toISOString().split("T")[0];
+        const aujourd     = new Date().toISOString().split("T")[0];
         const cmd_aujourd = commandes.filter(c => (c["Date Commande"] || "").slice(0, 10) === aujourd);
-        const rev_aujourd = cmd_aujourd.reduce((s, c) => s + (parseFloat(c.Total) || 0), 0);
+        const rev_aujourd = cmd_aujourd.reduce((s, c) => s + getMontant(c), 0);
 
         // ── Performance du mois ──
         const moisActuel = aujourd.slice(0, 7);
@@ -112,8 +116,8 @@ router.get("/qg-data", async (req, res) => {
                             .toISOString().slice(0, 7);
         const cmd_mois   = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisActuel));
         const cmd_moisP  = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisPrec));
-        const rev_mois   = cmd_mois.reduce((s, c)  => s + (parseFloat(c.Total) || 0), 0);
-        const rev_moisP  = cmd_moisP.reduce((s, c) => s + (parseFloat(c.Total) || 0), 0);
+        const rev_mois   = cmd_mois.reduce((s, c)  => s + getMontant(c), 0);
+        const rev_moisP  = cmd_moisP.reduce((s, c) => s + getMontant(c), 0);
         const evolution  = rev_moisP > 0
             ? ((rev_mois - rev_moisP) / rev_moisP * 100).toFixed(1) + "%"
             : "—";
@@ -141,13 +145,13 @@ router.get("/qg-data", async (req, res) => {
                 echecs,
             },
             mission: {
-                date         : aujourd,
-                commandes    : cmd_aujourd.length,
-                revenus      : rev_aujourd.toFixed(2),
+                date    : aujourd,
+                commandes: cmd_aujourd.length,
+                revenus  : rev_aujourd.toFixed(2),
             },
             performance: {
-                revenus_mois    : rev_mois.toFixed(2),
-                commandes_mois  : cmd_mois.length,
+                revenus_mois   : rev_mois.toFixed(2),
+                commandes_mois : cmd_mois.length,
                 evolution,
             },
             commandes,
@@ -161,4 +165,3 @@ router.get("/qg-data", async (req, res) => {
 });
 
 module.exports = router;
-
