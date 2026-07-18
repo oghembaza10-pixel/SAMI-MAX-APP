@@ -1,5 +1,5 @@
 // ======================================================
-// SAMII OS — TELEGRAM WEBHOOK V5
+// SAMII OS — TELEGRAM WEBHOOK V6
 // ======================================================
 
 const express      = require("express");
@@ -26,30 +26,30 @@ async function reply(chatId, text) {
         console.error("❌ Telegram reply :", err.response?.data || err.message);
     }
 }
-// ── TROUVE LE SHOP VIA CHAT_ID ────────────────────────
-async function getShopByChatId(chatId) {
+
+// ── TROUVE LE WORKSPACE_ID VIA CHAT_ID ───────────────
+async function getWorkspaceByChatId(chatId) {
     try {
         const record = await airtable.findOne("CONNECTEURS",
             `AND({type}="telegram",{actif}=1,SEARCH("${chatId}",{config}))`
         );
-        if (!record) return "samiioficiel.myshopify.com";
-        const config = JSON.parse((record.fields?.config || "{}").replace(/\\_/g, "_"));
-        return config.shop_url || "samiioficiel.myshopify.com";
-    } catch { return "samiioficiel.myshopify.com"; }
+        if (!record) return "";
+        return record.fields?.workspace_id || "";
+    } catch { return ""; }
 }
 
-// ── TROUVE LE CHAT_ID ADMIN ───────────────────────────
-async function getAdminChatId(shop) {
+// ── TROUVE LE CHAT_ID ADMIN VIA WORKSPACE ────────────
+async function getAdminChatId(workspaceId) {
     try {
+        if (!workspaceId) return null;
         const record = await airtable.findOne("CONNECTEURS",
-            `AND({type}="telegram",{actif}=1)`
+            `AND({type}="telegram",{actif}=1,{workspace_id}="${workspaceId}")`
         );
         if (!record) return null;
         const config = JSON.parse((record.fields?.config || "{}").replace(/\\_/g, "_"));
         return config.chat_id || null;
     } catch { return null; }
 }
-
 
 // ── GÉNÈRE NUMÉRO COMMANDE ────────────────────────────
 function genOrderId() {
@@ -86,9 +86,10 @@ async function handleOrderFlow(chatId, text, name) {
 
     // Étape 4 — créer commande + notifier admin
     if (step === "adresse") {
-        const orderId = genOrderId();
-        const s       = memory.get(chatId);
-        const shop    = await getShopByChatId(chatId);
+        const orderId     = genOrderId();
+        const s           = memory.get(chatId);
+        const workspaceId = await getWorkspaceByChatId(chatId);
+        const adminChatId = await getAdminChatId(workspaceId);
 
         // Créer dans Airtable
         await airtable.create("COMMANDES", {
@@ -98,15 +99,14 @@ async function handleOrderFlow(chatId, text, name) {
             "Adresse"      : text,
             "Produit"      : s.produit   || "",
             "Statut"       : "en attente",
-            "Boutique"     : shop,
+            "Boutique"     : workspaceId,
             "Date Commande": new Date().toISOString(),
             "montant"      : 0,
         });
 
-        await airtable.log("order.created.telegram", `#${orderId} — ${s.name}`, shop);
+        await airtable.log("order.created.telegram", `#${orderId} — ${s.name}`, workspaceId);
 
         // Notification admin avec boutons
-        const adminChatId = await getAdminChatId(shop);
         if (adminChatId) {
             await axios.post(`${BASE}/sendMessage`, {
                 chat_id     : adminChatId,
@@ -118,7 +118,7 @@ async function handleOrderFlow(chatId, text, name) {
                     `📞 *Tél :* ${s.telephone}\n` +
                     `📦 *Produit :* ${s.produit}\n` +
                     `📍 *Adresse :* ${text}\n` +
-                    `🏪 *Boutique :* ${shop}`,
+                    `🏪 *Workspace :* ${workspaceId}`,
                 reply_markup: {
                     inline_keyboard: [[
                         { text: "✅ Confirmer", callback_data: `confirm_${orderId}` },
