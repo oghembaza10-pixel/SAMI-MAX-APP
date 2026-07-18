@@ -18,21 +18,13 @@ const headers = () => ({
     "Content-Type": "application/json",
 });
 
-// ── HELPER — parse config JSON ────────────────────────
 function parseConfig(config) {
     try {
         if (!config) return {};
-        const cleaned = config
-            .replace(/\\_/g, "_")
-            .replace(/\\n/g, "")
-            .replace(/\n/g, "")
-            .replace(/\r/g, "")
-            .trim();
-        return JSON.parse(cleaned);
+        return JSON.parse(config.replace(/\\_/g,"_").replace(/\\n/g,"").replace(/\n/g,"").replace(/\r/g,"").trim());
     } catch { return {}; }
 }
 
-// ── RÉPONSE VIDE SÉCURISÉE ────────────────────────────
 function emptyQgResponse(workspace) {
     return {
         success    : true,
@@ -46,7 +38,6 @@ function emptyQgResponse(workspace) {
     };
 }
 
-// ── AUTH GUARD ────────────────────────────────────────
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.status(401).json({ error: "Non connecté" });
     next();
@@ -57,19 +48,16 @@ router.post("/chat", async (req, res) => {
     try {
         const message = req.body.message;
         if (!message) return res.json({ success: false, reply: "Écris un message." });
-
         const context = {
-            user        : { lang: req.body.lang || "" },
-            workspaceId : req.session?.workspaceId || req.body.workspaceId || "",
-            client      : req.body.client     || "",
-            commande    : req.body.commande   || "",
-            page        : req.body.page       || "",
-            lastAction  : req.body.lastAction || "",
+            user       : { lang: req.body.lang || "" },
+            workspaceId: req.session?.workspaceId || req.body.workspaceId || "",
+            client     : req.body.client    || "",
+            commande   : req.body.commande  || "",
+            page       : req.body.page      || "",
+            lastAction : req.body.lastAction|| "",
         };
-
         const result = await planner.build({ goal: message }, context);
         res.json(result);
-
     } catch (err) {
         console.error("❌ API chat :", err.message);
         res.json({ success: false, reply: "SAMII démarre. Réessaie dans quelques instants." });
@@ -80,30 +68,22 @@ router.post("/chat", async (req, res) => {
 router.get("/connecteurs", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
     if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
-
     try {
         const r = await axios.get(airtable(TABLE_CONNECTEURS), {
             headers: headers(),
-            params : {
-                filterByFormula: `{workspace_id}="${workspaceId}"`,
-                maxRecords     : 50,
-            },
+            params : { filterByFormula: `{workspace_id}="${workspaceId}"`, maxRecords: 50 },
         });
-
         const connecteurs = {};
         r.data.records.forEach(rec => {
-            const f      = rec.fields;
-            const type   = (f.type || "").toLowerCase();
-            const config = parseConfig(f.config);
+            const f    = rec.fields;
+            const type = (f.type || "").toLowerCase();
             connecteurs[type] = {
                 actif      : f.actif === true,
                 identifiant: f.identifiant || "",
-                ...config,
+                ...parseConfig(f.config),
             };
         });
-
         res.json({ success: true, connecteurs });
-
     } catch (err) {
         console.error("❌ API connecteurs :", err.message);
         res.status(500).json({ error: "Erreur chargement connecteurs." });
@@ -116,41 +96,31 @@ router.get("/qg-data", requireAuth, async (req, res) => {
     if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
 
     try {
+        // Workspace info
         const wsRes = await axios.get(airtable(TABLE_WORKSPACES), {
             headers: headers(),
             params : { filterByFormula: `{workspace_id}="${workspaceId}"`, maxRecords: 1 },
         });
         const workspace = wsRes.data.records[0]?.fields || {};
 
-        const connRes = await axios.get(airtable(TABLE_CONNECTEURS), {
-            headers: headers(),
-            params : {
-                filterByFormula: `AND({workspace_id}="${workspaceId}",{type}="shopify",{actif}=1)`,
-                maxRecords     : 1,
-            },
-        });
-
-        const shopifyFields = connRes.data.records[0]?.fields || {};
-        const shopifyConfig = parseConfig(shopifyFields.config);
-        const shop          = shopifyConfig.shop_url || shopifyFields.shop_url || shopifyFields.identifiant || "";
-
-        if (!shop) return res.json(emptyQgResponse(workspace));
-
+        // Commandes filtrées par workspace_id
         const commandesRes = await axios.get(airtable(TABLE_COMMANDES), {
             headers: headers(),
             params : {
-                filterByFormula     : `{Boutique}="${shop}"`,
+                filterByFormula     : `{Boutique}="${workspaceId}"`,
                 "sort[0][field]"    : "Date Commande",
                 "sort[0][direction]": "desc",
                 maxRecords          : 100,
             },
         });
-        const commandes = commandesRes.data.records.map(r => r.fields);
+        const rawCommandes = commandesRes.data.records;
+        const commandes    = rawCommandes.map(r => ({ ...r.fields, airtableId: r.id }));
 
+        // Clients filtrés par workspace_id
         const clientsRes = await axios.get(airtable(TABLE_CLIENTS), {
             headers: headers(),
             params : {
-                filterByFormula     : `{Boutique}="${shop}"`,
+                filterByFormula     : `{Boutique}="${workspaceId}"`,
                 "sort[0][field]"    : "Total Dépensé",
                 "sort[0][direction]": "desc",
                 maxRecords          : 50,
@@ -161,29 +131,27 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         const getMontant = (c) => parseFloat(c.montant || c.Total || 0) || 0;
 
         const total_commandes = commandes.length;
-        const total_revenus   = commandes.reduce((sum, c) => sum + getMontant(c), 0);
+        const total_revenus   = commandes.reduce((s,c) => s + getMontant(c), 0);
         const en_attente      = commandes.filter(c => c.Statut === "en attente").length;
         const confirmees      = commandes.filter(c => c.Statut === "confirmée").length;
         const annulees        = commandes.filter(c => c.Statut === "annulée").length;
         const vip             = clients.filter(c => c.VIP      === true).length;
         const blacklist       = clients.filter(c => c.Blacklist === true).length;
-
-        const livrees  = commandes.filter(c => c.Statut === "livrée").length;
-        const en_cours = commandes.filter(c => c.Statut === "en cours").length;
-        const echecs   = commandes.filter(c => c.Statut === "échoué").length;
+        const livrees         = commandes.filter(c => c.Statut === "livrée").length;
+        const en_cours        = commandes.filter(c => c.Statut === "en cours").length;
+        const echecs          = commandes.filter(c => c.Statut === "échoué").length;
 
         const aujourd     = new Date().toISOString().split("T")[0];
-        const cmd_aujourd = commandes.filter(c => (c["Date Commande"] || "").slice(0, 10) === aujourd);
-        const rev_aujourd = cmd_aujourd.reduce((s, c) => s + getMontant(c), 0);
+        const cmd_aujourd = commandes.filter(c => (c["Date Commande"]||"").slice(0,10) === aujourd);
+        const rev_aujourd = cmd_aujourd.reduce((s,c) => s + getMontant(c), 0);
 
-        const moisActuel = aujourd.slice(0, 7);
-        const moisPrec   = new Date(new Date().setMonth(new Date().getMonth() - 1))
-                            .toISOString().slice(0, 7);
-        const cmd_mois  = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisActuel));
-        const cmd_moisP = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisPrec));
-        const rev_mois  = cmd_mois.reduce((s, c)  => s + getMontant(c), 0);
-        const rev_moisP = cmd_moisP.reduce((s, c) => s + getMontant(c), 0);
-        const evolution = rev_moisP > 0
+        const moisActuel = aujourd.slice(0,7);
+        const moisPrec   = new Date(new Date().setMonth(new Date().getMonth()-1)).toISOString().slice(0,7);
+        const cmd_mois   = commandes.filter(c => (c["Date Commande"]||"").startsWith(moisActuel));
+        const cmd_moisP  = commandes.filter(c => (c["Date Commande"]||"").startsWith(moisPrec));
+        const rev_mois   = cmd_mois.reduce((s,c)  => s + getMontant(c), 0);
+        const rev_moisP  = cmd_moisP.reduce((s,c) => s + getMontant(c), 0);
+        const evolution  = rev_moisP > 0
             ? ((rev_mois - rev_moisP) / rev_moisP * 100).toFixed(1) + "%"
             : "—";
 
@@ -201,6 +169,34 @@ router.get("/qg-data", requireAuth, async (req, res) => {
     } catch (err) {
         console.error("❌ API qg-data :", err.response?.data || err.message);
         res.status(500).json({ error: "Erreur chargement données." });
+    }
+});
+
+// ── CONFIRMER COMMANDE ────────────────────────────────
+router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
+    try {
+        await axios.patch(`${airtable(TABLE_COMMANDES)}/${req.params.id}`,
+            { fields: { "Statut": "confirmée" } },
+            { headers: headers() }
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ Confirmer :", err.message);
+        res.status(500).json({ error: "Erreur confirmation." });
+    }
+});
+
+// ── ANNULER COMMANDE ──────────────────────────────────
+router.post("/commandes/:id/annuler", requireAuth, async (req, res) => {
+    try {
+        await axios.patch(`${airtable(TABLE_COMMANDES)}/${req.params.id}`,
+            { fields: { "Statut": "annulée" } },
+            { headers: headers() }
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ Annuler :", err.message);
+        res.status(500).json({ error: "Erreur annulation." });
     }
 });
 
