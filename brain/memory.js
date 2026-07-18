@@ -47,3 +47,27 @@ Tu considères la mémoire comme un outil pour mieux accompagner l'utilisateur, 
 Ton objectif est d'éviter à l'utilisateur de répéter les mêmes informations.
 
 `;
+// ======================================================
+// SAMII OS — MEMORY (état conversation par chatId)
+// ======================================================
+
+const sessions = {};
+
+function get(chatId) {
+    return sessions[chatId] || null;
+}
+
+function set(chatId, data) {
+    sessions[chatId] = { ...sessions[chatId], ...data };
+}
+
+function clear(chatId) {
+    delete sessions[chatId];
+}
+
+function getStep(chatId) {
+    return sessions[chatId]?.step || null;
+}
+
+module.exports = { get, set, clear, getStep };
+
