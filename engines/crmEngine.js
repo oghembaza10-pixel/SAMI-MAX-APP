@@ -10,48 +10,47 @@ const telegram = require("../services/telegramService");
 
 class CRMEngine {
 
-    // ── HELPER : Trouve ou crée un client ────────────────────
-    async findOrCreateClient(data) {
-        const { name, phone, email, source } = data;
-        const formula = phone
-            ? `{Téléphone} = "${phone}"`
-            : email
-                ? `{Email} = "${email}"`
-                : `{Nom} = "${name}"`;
+  // ── HELPER : Trouve ou crée un client ────────────────────
+async findOrCreateClient(data) {
+    const { name, phone, email, source } = data;
+    const formula = phone
+        ? `{Téléphone} = "${phone}"`
+        : email
+            ? `{Email} = "${email}"`
+            : `{Nom Client} = "${name}"`;
 
-        let client = await airtable.findOne("CLIENTS", formula);
-        if (!client) {
-            client = await airtable.create("CLIENTS", {
-                "Nom"      : name   || "Inconnu",
-                "Téléphone": phone  || "",
-                "Email"    : email  || "",
-                "Source"   : source || "inconnu",
-                "Date"     : new Date().toISOString(),
-                "Statut"   : "actif",
-            });
-            console.log(`✅ Nouveau client : ${name}`);
-        }
-        return client;
-    }
-
-    // ── HELPER : Enregistre conversation ─────────────────────
-    async saveConversation(data) {
-        const { client, message, source, shop, direction = "entrant" } = data;
-        return await airtable.create("CONVERSATIONS", {
-            "Client"   : client    || "Inconnu",
-            "Message"  : message   || "",
-            "Source"   : source    || "inconnu",
-            "Direction": direction,
-            "Boutique" : shop      || "",
-            "Date"     : new Date().toISOString(),
-            "Lu"       : false,
+    let client = await airtable.findOne("CLIENTS", formula);
+    if (!client) {
+        client = await airtable.create("CLIENTS", {
+            "Nom Client": name   || "Inconnu",
+            "Téléphone" : phone  || "",
+            "Email"     : email  || "",
+            "Source"    : source || "inconnu",
+            "Statut"    : "actif",
         });
+        console.log(`✅ Nouveau client : ${name}`);
     }
+    return client;
+}
 
-    // ── HELPER : Répondre sur Telegram ───────────────────────
-    async replyTelegram(chatId, text) {
-        await telegram.send(chatId, text);
-    }
+// ── HELPER : Enregistre conversation ─────────────────────
+async saveConversation(data) {
+    const { client, message, source, shop, direction = "entrant" } = data;
+    return await airtable.create("CONVERSATIONS", {
+        "Client"   : client    || "Inconnu",
+        "Message"  : message   || "",
+        "Source"   : source    || "inconnu",
+        "Direction": direction,
+        "Boutique" : shop      || "",
+        "Lu"       : false,
+    });
+}
+
+// ── HELPER : Répondre sur Telegram ───────────────────────
+async replyTelegram(chatId, text) {
+    await telegram.send(chatId, text);
+}
+
 
     // =========================================================
     // TELEGRAM — MESSAGE
