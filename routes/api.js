@@ -18,9 +18,18 @@ const headers = () => ({
     "Content-Type": "application/json",
 });
 
-// ── HELPER — parse config JSON ────────────────────────
+// ── HELPER — parse config JSON (nettoie les artefacts Airtable) ──
 function parseConfig(config) {
-    try { return JSON.parse(config || "{}"); } catch { return {}; }
+    try {
+        if (!config) return {};
+        const cleaned = config
+            .replace(/\\_/g, "_")   // échappe underscore Airtable
+            .replace(/\\n/g, "")    // sauts de ligne échappés
+            .replace(/\n/g, "")     // sauts de ligne réels
+            .replace(/\r/g, "")     // retours chariot
+            .trim();
+        return JSON.parse(cleaned);
+    } catch { return {}; }
 }
 
 // ── RÉPONSE VIDE SÉCURISÉE ────────────────────────────
@@ -131,9 +140,6 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         const shopifyConfig = parseConfig(shopifyFields.config);
         const shop          = shopifyConfig.shop_url || shopifyFields.shop_url || shopifyFields.identifiant || "";
 
-        // ✅ DEBUG — à supprimer après confirmation
-        console.log("🔍 DEBUG connecteur record :", JSON.stringify(shopifyFields));
-        console.log("🔍 DEBUG shopifyConfig :", JSON.stringify(shopifyConfig));
         console.log("🔍 DEBUG shop :", shop);
 
         if (!shop) return res.json(emptyQgResponse(workspace));
@@ -223,4 +229,3 @@ router.get("/debug-session", requireAuth, (req, res) => {
 });
 
 module.exports = router;
-
