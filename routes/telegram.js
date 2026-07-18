@@ -1,5 +1,5 @@
 // ======================================================
-// SAMII OS — TELEGRAM WEBHOOK V4 (flux commande)
+// SAMII OS — TELEGRAM WEBHOOK V5
 // ======================================================
 
 const express      = require("express");
@@ -39,6 +39,18 @@ async function getShopByChatId(chatId) {
     } catch { return ""; }
 }
 
+// ── TROUVE LE CHAT_ID ADMIN VIA SHOP ─────────────────
+async function getAdminChatId(shop) {
+    try {
+        const record = await airtable.findOne("CONNECTEURS",
+            `AND({type}="telegram",{actif}=1,{shop_url}="${shop}")`
+        );
+        if (!record) return null;
+        const config = JSON.parse((record.fields?.config || "{}").replace(/\\_/g, "_"));
+        return config.chat_id || record.fields?.chat_id || null;
+    } catch { return null; }
+}
+
 // ── GÉNÈRE NUMÉRO COMMANDE ────────────────────────────
 function genOrderId() {
     return `TG-${Date.now().toString().slice(-6)}`;
@@ -49,6 +61,7 @@ async function handleOrderFlow(chatId, text, name) {
     const session = memory.get(chatId) || {};
     const step    = session.step;
 
+    // Étape 1 — demander le produit
     if (!step) {
         memory.set(chatId, { step: "produit", name });
         await reply(chatId,
@@ -57,23 +70,27 @@ async function handleOrderFlow(chatId, text, name) {
         return true;
     }
 
+    // Étape 2 — demander téléphone
     if (step === "produit") {
         memory.set(chatId, { step: "telephone", produit: text });
         await reply(chatId, `📞 Votre *numéro de téléphone* s'il vous plaît ?`);
         return true;
     }
 
+    // Étape 3 — demander adresse
     if (step === "telephone") {
         memory.set(chatId, { step: "adresse", telephone: text });
         await reply(chatId, `📍 Votre *adresse de livraison* ?`);
         return true;
     }
 
+    // Étape 4 — créer commande + notifier admin
     if (step === "adresse") {
         const orderId = genOrderId();
         const s       = memory.get(chatId);
         const shop    = await getShopByChatId(chatId);
 
+        // Créer dans Airtable
         await airtable.create("COMMANDES", {
             "ID Commande"  : orderId,
             "nom client"   : s.name      || "Inconnu",
@@ -87,8 +104,33 @@ async function handleOrderFlow(chatId, text, name) {
         });
 
         await airtable.log("order.created.telegram", `#${orderId} — ${s.name}`, shop);
+
+        // Notification admin avec boutons
+        const adminChatId = await getAdminChatId(shop);
+        if (adminChatId) {
+            await axios.post(`${BASE}/sendMessage`, {
+                chat_id     : adminChatId,
+                parse_mode  : "Markdown",
+                text        :
+                    `🛎️ *Nouvelle commande !*\n\n` +
+                    `🆔 *Numéro :* \`${orderId}\`\n` +
+                    `👤 *Client :* ${s.name}\n` +
+                    `📞 *Tél :* ${s.telephone}\n` +
+                    `📦 *Produit :* ${s.produit}\n` +
+                    `📍 *Adresse :* ${text}\n` +
+                    `🏪 *Boutique :* ${shop}`,
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: "✅ Confirmer", callback_data: `confirm_${orderId}` },
+                        { text: "❌ Annuler",   callback_data: `cancel_${orderId}`  },
+                    ]],
+                },
+            });
+        }
+
         memory.clear(chatId);
 
+        // Confirmation client
         await reply(chatId,
             `✅ *Commande enregistrée !*\n\n` +
             `🆔 *Numéro :* \`${orderId}\`\n` +
@@ -123,7 +165,7 @@ router.post("/", async (req, res) => {
     try {
         const body = req.body;
 
-        // ── CALLBACK QUERY ────────────────────────────────
+        // ── CALLBACK QUERY (boutons) ──────────────────────
         if (body.callback_query) {
             const cb     = body.callback_query;
             const chatId = cb.message.chat.id;
@@ -136,19 +178,35 @@ router.post("/", async (req, res) => {
 
             if (data.startsWith("confirm_")) {
                 const orderId = data.replace("confirm_", "");
-                await orchestrator.process({ type: "order.confirmed", shop: "", payload: { orderId, chatId } });
-                await reply(chatId, `✅ *Commande confirmée !*\n\nNous préparons votre colis 📦\nMerci de votre confiance 🙏`);
+                await orchestrator.process({
+                    type   : "order.confirmed",
+                    shop   : "",
+                    payload: { orderId, chatId },
+                });
+                await reply(chatId,
+                    `✅ *Commande #${orderId} confirmée !*\n\nNous préparons le colis 📦\nMerci de votre confiance 🙏`
+                );
                 return;
             }
 
             if (data.startsWith("cancel_")) {
                 const orderId = data.replace("cancel_", "");
-                await orchestrator.process({ type: "order.cancelled", shop: "", payload: { orderId, chatId } });
-                await reply(chatId, `❌ *Commande annulée.*\n\nSi c'est une erreur, répondez-nous 😊`);
+                await orchestrator.process({
+                    type   : "order.cancelled",
+                    shop   : "",
+                    payload: { orderId, chatId },
+                });
+                await reply(chatId,
+                    `❌ *Commande #${orderId} annulée.*\n\nSi c'est une erreur, répondez-nous 😊`
+                );
                 return;
             }
 
-            await orchestrator.process({ type: "telegram.callback", shop: "", payload: { chatId, data, cb } });
+            await orchestrator.process({
+                type   : "telegram.callback",
+                shop   : "",
+                payload: { chatId, data, cb },
+            });
             return;
         }
 
@@ -215,4 +273,3 @@ router.post("/", async (req, res) => {
 });
 
 module.exports = router;
-
