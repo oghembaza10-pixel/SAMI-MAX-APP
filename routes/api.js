@@ -18,15 +18,15 @@ const headers = () => ({
     "Content-Type": "application/json",
 });
 
-// ── HELPER — parse config JSON (nettoie les artefacts Airtable) ──
+// ── HELPER — parse config JSON ────────────────────────
 function parseConfig(config) {
     try {
         if (!config) return {};
         const cleaned = config
-            .replace(/\\_/g, "_")   // échappe underscore Airtable
-            .replace(/\\n/g, "")    // sauts de ligne échappés
-            .replace(/\n/g, "")     // sauts de ligne réels
-            .replace(/\r/g, "")     // retours chariot
+            .replace(/\\_/g, "_")
+            .replace(/\\n/g, "")
+            .replace(/\n/g, "")
+            .replace(/\r/g, "")
             .trim();
         return JSON.parse(cleaned);
     } catch { return {}; }
@@ -76,10 +76,9 @@ router.post("/chat", async (req, res) => {
     }
 });
 
-// ── CONNECTEURS — liste des connecteurs actifs ────────
+// ── CONNECTEURS ───────────────────────────────────────
 router.get("/connecteurs", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
-
     if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
 
     try {
@@ -96,7 +95,6 @@ router.get("/connecteurs", requireAuth, async (req, res) => {
             const f      = rec.fields;
             const type   = (f.type || "").toLowerCase();
             const config = parseConfig(f.config);
-
             connecteurs[type] = {
                 actif      : f.actif === true,
                 identifiant: f.identifiant || "",
@@ -115,18 +113,15 @@ router.get("/connecteurs", requireAuth, async (req, res) => {
 // ── QG DATA ───────────────────────────────────────────
 router.get("/qg-data", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
-
     if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
 
     try {
-        // ── Workspace ──
         const wsRes = await axios.get(airtable(TABLE_WORKSPACES), {
             headers: headers(),
             params : { filterByFormula: `{workspace_id}="${workspaceId}"`, maxRecords: 1 },
         });
         const workspace = wsRes.data.records[0]?.fields || {};
 
-        // ── Connecteur Shopify ──
         const connRes = await axios.get(airtable(TABLE_CONNECTEURS), {
             headers: headers(),
             params : {
@@ -135,16 +130,12 @@ router.get("/qg-data", requireAuth, async (req, res) => {
             },
         });
 
-        const connRecord    = connRes.data.records[0];
-        const shopifyFields = connRecord?.fields || {};
+        const shopifyFields = connRes.data.records[0]?.fields || {};
         const shopifyConfig = parseConfig(shopifyFields.config);
         const shop          = shopifyConfig.shop_url || shopifyFields.shop_url || shopifyFields.identifiant || "";
 
-        console.log("🔍 DEBUG shop :", shop);
-
         if (!shop) return res.json(emptyQgResponse(workspace));
 
-        // ── Commandes ──
         const commandesRes = await axios.get(airtable(TABLE_COMMANDES), {
             headers: headers(),
             params : {
@@ -156,7 +147,6 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         });
         const commandes = commandesRes.data.records.map(r => r.fields);
 
-        // ── Clients ──
         const clientsRes = await axios.get(airtable(TABLE_CLIENTS), {
             headers: headers(),
             params : {
@@ -168,10 +158,8 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         });
         const clients = clientsRes.data.records.map(r => r.fields);
 
-        // ── Helper montant ──
         const getMontant = (c) => parseFloat(c.montant || c.Total || 0) || 0;
 
-        // ── Stats globales ──
         const total_commandes = commandes.length;
         const total_revenus   = commandes.reduce((sum, c) => sum + getMontant(c), 0);
         const en_attente      = commandes.filter(c => c.Statut === "en attente").length;
@@ -180,17 +168,14 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         const vip             = clients.filter(c => c.VIP      === true).length;
         const blacklist       = clients.filter(c => c.Blacklist === true).length;
 
-        // ── Livraison ──
         const livrees  = commandes.filter(c => c.Statut === "livrée").length;
         const en_cours = commandes.filter(c => c.Statut === "en cours").length;
         const echecs   = commandes.filter(c => c.Statut === "échoué").length;
 
-        // ── Mission du jour ──
         const aujourd     = new Date().toISOString().split("T")[0];
         const cmd_aujourd = commandes.filter(c => (c["Date Commande"] || "").slice(0, 10) === aujourd);
         const rev_aujourd = cmd_aujourd.reduce((s, c) => s + getMontant(c), 0);
 
-        // ── Performance du mois ──
         const moisActuel = aujourd.slice(0, 7);
         const moisPrec   = new Date(new Date().setMonth(new Date().getMonth() - 1))
                             .toISOString().slice(0, 7);
