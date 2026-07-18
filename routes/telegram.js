@@ -26,16 +26,16 @@ async function reply(chatId, text) {
         console.error("❌ Telegram reply :", err.response?.data || err.message);
     }
 }
-// ── TROUVE LE WORKSPACE_ID VIA CHAT_ID ───────────────
+// ── TROUVE LE SHOP VIA CHAT_ID ────────────────────────
 async function getShopByChatId(chatId) {
     try {
         const record = await airtable.findOne("CONNECTEURS",
             `AND({type}="telegram",{actif}=1,SEARCH("${chatId}",{config}))`
         );
-        if (!record) return "";
+        if (!record) return "samiioficiel.myshopify.com";
         const config = JSON.parse((record.fields?.config || "{}").replace(/\\_/g, "_"));
-        return config.shop_url || record.fields?.workspace_id || "";
-    } catch { return ""; }
+        return config.shop_url || "samiioficiel.myshopify.com";
+    } catch { return "samiioficiel.myshopify.com"; }
 }
 
 // ── TROUVE LE CHAT_ID ADMIN ───────────────────────────
