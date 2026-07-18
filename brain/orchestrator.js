@@ -1,4 +1,4 @@
- /**
+/**
  * OG • Brain Orchestrator V2
  * Cerveau central de SAMII — VERSION COMPLÈTE
  */
@@ -12,59 +12,54 @@ const automationEngine = require("../engines/automationEngine");
 // ── TABLE DE ROUTAGE ────────────────────────────────────────
 const routes = {
 
-  // ── SHOPIFY ORDERS ────────────────────────────────────
-[E.ORDER_CREATED]   : commerceEngine.newOrder.bind(commerceEngine),
-[E.ORDER_UPDATED]   : commerceEngine.orderUpdated.bind(commerceEngine),
-[E.ORDER_PAID]      : commerceEngine.orderPaid.bind(commerceEngine),
-[E.ORDER_FULFILLED] : commerceEngine.orderFulfilled.bind(commerceEngine),
-[E.ORDER_DELIVERED] : commerceEngine.orderDelivered.bind(commerceEngine),
-[E.ORDER_CANCELLED] : commerceEngine.orderCancelled.bind(commerceEngine),
+    // ── SHOPIFY ORDERS ────────────────────────────────────
+    [E.ORDER_CREATED]   : commerceEngine.newOrder.bind(commerceEngine),
+    [E.ORDER_UPDATED]   : commerceEngine.orderUpdated.bind(commerceEngine),
+    [E.ORDER_PAID]      : commerceEngine.orderPaid.bind(commerceEngine),
+    [E.ORDER_FULFILLED] : commerceEngine.orderFulfilled.bind(commerceEngine),
+    [E.ORDER_DELIVERED] : commerceEngine.orderDelivered.bind(commerceEngine),
+    [E.ORDER_CANCELLED] : commerceEngine.orderCancelled.bind(commerceEngine),
 
-// ── STOCK ─────────────────────────────────────────────
-[E.STOCK_LOW]       : commerceEngine.lowStock.bind(commerceEngine),
-[E.STOCK_EMPTY]     : commerceEngine.stockEmpty.bind(commerceEngine),
-
-// ── YALIDINE ──────────────────────────────────────────
-"yalidine.status"   : commerceEngine.yalidineStatus.bind(commerceEngine),
-"yalidine.delivered": commerceEngine.yalidineDelivered.bind(commerceEngine),
-"yalidine.returned" : commerceEngine.yalidineReturned.bind(commerceEngine),
-
-    // ── TELEGRAM ──────────────────────────────────────────
-    "telegram.message"        : crmEngine.telegram,
-    "telegram.callback"       : crmEngine.telegramCallback,
-
-    // ── WHATSAPP ──────────────────────────────────────────
-    "whatsapp.message"        : crmEngine.whatsapp,
-    "whatsapp.callback"       : crmEngine.whatsappCallback,
-
-    // ── INSTAGRAM ─────────────────────────────────────────
-    "instagram.message"       : crmEngine.instagram,
-    "instagram.callback"      : crmEngine.instagramCallback,
-
-    // ── MESSENGER ─────────────────────────────────────────
-    "messenger.message"       : crmEngine.messenger,
-    "messenger.callback"      : crmEngine.messengerCallback,
-
-    // ── TIKTOK ────────────────────────────────────────────
-    "tiktok.message"          : crmEngine.tiktok,
-
-    // ── SNAPCHAT ──────────────────────────────────────────
-    "snapchat.message"        : crmEngine.snapchat,
-
-    // ── META WEBHOOK ──────────────────────────────────────
-    "meta.webhook"            : crmEngine.metaWebhook,
-
-    // ── GOOGLE ────────────────────────────────────────────
-    "google.lead"             : crmEngine.googleLead,
-    "google.ads.conversion"   : crmEngine.googleConversion,
+    // ── STOCK ─────────────────────────────────────────────
+    [E.STOCK_LOW]       : commerceEngine.lowStock.bind(commerceEngine),
+    [E.STOCK_EMPTY]     : commerceEngine.stockEmpty.bind(commerceEngine),
 
     // ── YALIDINE ──────────────────────────────────────────
-    "yalidine.status"         : commerceEngine.yalidineStatus,
-    "yalidine.delivered"      : commerceEngine.yalidineDelivered,
-    "yalidine.returned"       : commerceEngine.yalidineReturned,
+    "yalidine.status"   : commerceEngine.yalidineStatus.bind(commerceEngine),
+    "yalidine.delivered": commerceEngine.yalidineDelivered.bind(commerceEngine),
+    "yalidine.returned" : commerceEngine.yalidineReturned.bind(commerceEngine),
+
+    // ── TELEGRAM ──────────────────────────────────────────
+    "telegram.message"        : crmEngine.telegram.bind(crmEngine),
+    "telegram.callback"       : crmEngine.telegramCallback.bind(crmEngine),
+
+    // ── WHATSAPP ──────────────────────────────────────────
+    "whatsapp.message"        : crmEngine.whatsapp.bind(crmEngine),
+    "whatsapp.callback"       : crmEngine.whatsappCallback.bind(crmEngine),
+
+    // ── INSTAGRAM ─────────────────────────────────────────
+    "instagram.message"       : crmEngine.instagram.bind(crmEngine),
+    "instagram.callback"      : crmEngine.instagramCallback.bind(crmEngine),
+
+    // ── MESSENGER ─────────────────────────────────────────
+    "messenger.message"       : crmEngine.messenger.bind(crmEngine),
+    "messenger.callback"      : crmEngine.messengerCallback.bind(crmEngine),
+
+    // ── TIKTOK ────────────────────────────────────────────
+    "tiktok.message"          : crmEngine.tiktok.bind(crmEngine),
+
+    // ── SNAPCHAT ──────────────────────────────────────────
+    "snapchat.message"        : crmEngine.snapchat.bind(crmEngine),
+
+    // ── META WEBHOOK ──────────────────────────────────────
+    "meta.webhook"            : crmEngine.metaWebhook.bind(crmEngine),
+
+    // ── GOOGLE ────────────────────────────────────────────
+    "google.lead"             : crmEngine.googleLead.bind(crmEngine),
+    "google.ads.conversion"   : crmEngine.googleConversion.bind(crmEngine),
 
     // ── NOTIFICATIONS ─────────────────────────────────────
-    [E.NOTIFICATION_SEND]     : automationEngine.notificationRequested,
+    [E.NOTIFICATION_SEND]     : automationEngine.notificationRequested.bind(automationEngine),
 
     // ── CARTES + ABONNEMENTS ──────────────────────────────
     [E.CARTE_ACTIVATED]       : (e) => automationEngine.run("carte.activated", e),
@@ -91,4 +86,3 @@ async function process(event) {
 }
 
 module.exports = { process };
-
