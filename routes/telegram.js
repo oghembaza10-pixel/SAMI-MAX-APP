@@ -1,5 +1,5 @@
 // ======================================================
-// SAMII OS — TELEGRAM WEBHOOK V3
+// SAMII OS — TELEGRAM WEBHOOK V4 (flux commande)
 // ======================================================
 
 const express      = require("express");
@@ -7,11 +7,14 @@ const axios        = require("axios");
 const CONFIG       = require("../config");
 const orchestrator = require("../brain/orchestrator");
 const planner      = require("../brain/planner");
+const memory       = require("../brain/memory");
+const airtable     = require("../services/airtable");
 
 const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
 const BASE   = `https://api.telegram.org/bot${TOKEN}`;
 
+// ── HELPER REPLY ─────────────────────────────────────
 async function reply(chatId, text) {
     try {
         await axios.post(`${BASE}/sendMessage`, {
@@ -24,13 +27,99 @@ async function reply(chatId, text) {
     }
 }
 
+// ── HELPER : Génère numéro commande ──────────────────
+function genOrderId() {
+    return `TG-${Date.now().toString().slice(-6)}`;
+}
+
+// ── FLUX COMMANDE ─────────────────────────────────────
+async function handleOrderFlow(chatId, text, name) {
+    const session = memory.get(chatId) || {};
+    const step    = session.step;
+
+    // Étape 1 — demander le produit
+    if (!step) {
+        memory.set(chatId, { step: "produit", name });
+        await reply(chatId,
+            `🛍️ *Parfait !*\n\nQuel produit souhaitez-vous commander ?\n_(Nom du produit, taille, couleur...)_`
+        );
+        return true;
+    }
+
+    // Étape 2 — demander téléphone
+    if (step === "produit") {
+        memory.set(chatId, { step: "telephone", produit: text });
+        await reply(chatId,
+            `📞 Votre *numéro de téléphone* s'il vous plaît ?`
+        );
+        return true;
+    }
+
+    // Étape 3 — demander adresse
+    if (step === "telephone") {
+        memory.set(chatId, { step: "adresse", telephone: text });
+        await reply(chatId,
+            `📍 Votre *adresse de livraison* ?`
+        );
+        return true;
+    }
+
+    // Étape 4 — confirmer et créer commande
+    if (step === "adresse") {
+        const orderId = genOrderId();
+        const s       = memory.get(chatId);
+
+        await airtable.create("COMMANDES", {
+            "ID Commande"  : orderId,
+            "nom client"   : s.name     || "Inconnu",
+            "Téléphone"    : s.telephone || "",
+            "Adresse"      : text,
+            "Produit"      : s.produit   || "",
+            "Statut"       : "en attente",
+            "Boutique"     : "telegram",
+            "Date Commande": new Date().toISOString(),
+            "montant"      : 0,
+        });
+
+        await airtable.log("order.created.telegram", `#${orderId} — ${s.name}`, "telegram");
+
+        memory.clear(chatId);
+
+        await reply(chatId,
+            `✅ *Commande enregistrée !*\n\n` +
+            `🆔 *Numéro :* \`${orderId}\`\n` +
+            `👤 *Client :* ${s.name}\n` +
+            `📦 *Produit :* ${s.produit}\n` +
+            `📍 *Adresse :* ${text}\n` +
+            `📞 *Tél :* ${s.telephone}\n\n` +
+            `_Notre équipe vous contactera très prochainement. Merci !_ 🙏`
+        );
+        return true;
+    }
+
+    return false;
+}
+
+// ── DÉTECTION INTENTION COMMANDE ──────────────────────
+function isOrderIntent(text) {
+    const t = text.toLowerCase();
+    return t.match(/command|acheter|achat|veux commander|je veux|passer commande|order|طلب|نطلب|نشري/);
+}
+
+// ── DÉTECTION ANNULATION ──────────────────────────────
+function isCancelIntent(text) {
+    const t = text.toLowerCase();
+    return t.match(/annul|cancel|stop|arrêt|لا|waqef/);
+}
+
+// ── WEBHOOK ───────────────────────────────────────────
 router.post("/", async (req, res) => {
     res.sendStatus(200);
 
     try {
         const body = req.body;
 
-        // ── CALLBACK QUERY (bouton OUI/NON) ──────────────────
+        // ── CALLBACK QUERY ────────────────────────────────
         if (body.callback_query) {
             const cb     = body.callback_query;
             const chatId = cb.message.chat.id;
@@ -43,39 +132,23 @@ router.post("/", async (req, res) => {
 
             if (data.startsWith("confirm_")) {
                 const orderId = data.replace("confirm_", "");
-                await orchestrator.process({
-                    type   : "order.confirmed",
-                    shop   : "",
-                    payload: { orderId, chatId },
-                });
-                await reply(chatId,
-                    `✅ *Commande confirmée !*\n\nNous préparons votre colis 📦\nVous serez notifié dès l'expédition 🚚\n\nMerci de votre confiance 🙏`
-                );
+                await orchestrator.process({ type: "order.confirmed", shop: "", payload: { orderId, chatId } });
+                await reply(chatId, `✅ *Commande confirmée !*\n\nNous préparons votre colis 📦\nMerci de votre confiance 🙏`);
                 return;
             }
 
             if (data.startsWith("cancel_")) {
                 const orderId = data.replace("cancel_", "");
-                await orchestrator.process({
-                    type   : "order.cancelled",
-                    shop   : "",
-                    payload: { orderId, chatId },
-                });
-                await reply(chatId,
-                    `❌ *Commande annulée.*\n\nSi c'est une erreur, répondez-nous et nous vous aiderons 😊`
-                );
+                await orchestrator.process({ type: "order.cancelled", shop: "", payload: { orderId, chatId } });
+                await reply(chatId, `❌ *Commande annulée.*\n\nSi c'est une erreur, répondez-nous 😊`);
                 return;
             }
 
-            await orchestrator.process({
-                type   : "telegram.callback",
-                shop   : "",
-                payload: { chatId, data, cb },
-            });
+            await orchestrator.process({ type: "telegram.callback", shop: "", payload: { chatId, data, cb } });
             return;
         }
 
-        // ── MESSAGE TEXTE ─────────────────────────────────────
+        // ── MESSAGE TEXTE ─────────────────────────────────
         const message = body.message;
         if (!message) return;
 
@@ -87,10 +160,11 @@ router.post("/", async (req, res) => {
 
         // /start
         if (text === "/start") {
+            memory.clear(chatId);
             await reply(chatId,
                 `👑 *Bienvenue sur SAMII OS !*\n\n` +
                 `✅ Ton Chat ID :\n\`${chatId}\`\n\n` +
-                `Copie ce numéro dans ton Hub pour activer les notifications.`
+                `Je suis SAMII, votre assistant commercial. Comment puis-je vous aider ?`
             );
             return;
         }
@@ -101,20 +175,34 @@ router.post("/", async (req, res) => {
             return;
         }
 
-        // ── Log dans orchestrateur (CRM) ──────────────────────
+        // Annulation en cours de flux
+        if (isCancelIntent(text) && memory.getStep(chatId)) {
+            memory.clear(chatId);
+            await reply(chatId, `❌ Commande annulée. Comment puis-je vous aider ?`);
+            return;
+        }
+
+        // Flux commande en cours
+        if (memory.getStep(chatId)) {
+            await handleOrderFlow(chatId, text, name);
+            return;
+        }
+
+        // Intention de commander
+        if (isOrderIntent(text)) {
+            await handleOrderFlow(chatId, text, name);
+            return;
+        }
+
+        // ── Log CRM ──────────────────────────────────────
         await orchestrator.process({
             type   : "telegram.message",
             shop   : "",
             payload: { chatId, text, message },
         });
 
-        // ── Réponse Gemini ────────────────────────────────────
-        const geminiReply = await planner.ask(text, {
-            source : "telegram",
-            chatId,
-            name,
-        });
-
+        // ── Réponse Gemini ────────────────────────────────
+        const geminiReply = await planner.ask(text, { source: "telegram", chatId, name });
         await reply(chatId, geminiReply);
 
     } catch (err) {
