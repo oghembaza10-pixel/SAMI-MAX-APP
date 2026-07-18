@@ -71,7 +71,6 @@ router.post("/chat", async (req, res) => {
 router.get("/connecteurs", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
 
-    // ✅ SÉCURITÉ : workspaceId obligatoire
     if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
 
     try {
@@ -108,7 +107,6 @@ router.get("/connecteurs", requireAuth, async (req, res) => {
 router.get("/qg-data", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
 
-    // ✅ SÉCURITÉ : workspaceId obligatoire
     if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
 
     try {
@@ -119,7 +117,7 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         });
         const workspace = wsRes.data.records[0]?.fields || {};
 
-        // ── Connecteur Shopify — V1 : un seul connecteur Shopify actif par workspace ──
+        // ── Connecteur Shopify ──
         const connRes = await axios.get(airtable(TABLE_CONNECTEURS), {
             headers: headers(),
             params : {
@@ -127,10 +125,17 @@ router.get("/qg-data", requireAuth, async (req, res) => {
                 maxRecords     : 1,
             },
         });
-        const shopifyConfig = parseConfig(connRes.data.records[0]?.fields?.config);
-        const shop          = shopifyConfig.shop_url || "";
 
-        // ✅ SÉCURITÉ : pas de shop = pas de données
+        const connRecord    = connRes.data.records[0];
+        const shopifyFields = connRecord?.fields || {};
+        const shopifyConfig = parseConfig(shopifyFields.config);
+        const shop          = shopifyConfig.shop_url || shopifyFields.shop_url || shopifyFields.identifiant || "";
+
+        // ✅ DEBUG — à supprimer après confirmation
+        console.log("🔍 DEBUG connecteur record :", JSON.stringify(shopifyFields));
+        console.log("🔍 DEBUG shopifyConfig :", JSON.stringify(shopifyConfig));
+        console.log("🔍 DEBUG shop :", shop);
+
         if (!shop) return res.json(emptyQgResponse(workspace));
 
         // ── Commandes ──
@@ -192,11 +197,11 @@ router.get("/qg-data", requireAuth, async (req, res) => {
             : "—";
 
         res.json({
-            success  : true,
-            workspace: { nom: workspace.nom || "", metier: workspace.metier || "" },
-            stats    : { total_commandes, total_revenus: total_revenus.toFixed(2), en_attente, confirmees, annulees, vip, blacklist },
-            livraison: { livrees, en_cours, echecs },
-            mission  : { date: aujourd, commandes: cmd_aujourd.length, revenus: rev_aujourd.toFixed(2) },
+            success    : true,
+            workspace  : { nom: workspace.nom || "", metier: workspace.metier || "" },
+            stats      : { total_commandes, total_revenus: total_revenus.toFixed(2), en_attente, confirmees, annulees, vip, blacklist },
+            livraison  : { livrees, en_cours, echecs },
+            mission    : { date: aujourd, commandes: cmd_aujourd.length, revenus: rev_aujourd.toFixed(2) },
             performance: { revenus_mois: rev_mois.toFixed(2), commandes_mois: cmd_mois.length, evolution },
             commandes,
             clients,
@@ -207,7 +212,8 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         res.status(500).json({ error: "Erreur chargement données." });
     }
 });
-// ── DEBUG SESSION (à supprimer après test) ────────────
+
+// ── DEBUG SESSION ─────────────────────────────────────
 router.get("/debug-session", requireAuth, (req, res) => {
     res.json({
         workspaceId: req.session.workspaceId,
