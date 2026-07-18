@@ -317,4 +317,92 @@ body {
 /* TOAST */
 .qg-toast { position:fixed; bottom:30px; right:30px; background:#1a1a1a; color:#e8e4d8; border:1px solid #C5A059; padding:14px 22px; border-radius:12px; font-size:.9rem; opacity:0; transform:translateY(10px); transition:.3s; z-index:9999; }
 .qg-toast--visible { opacity:1; transform:translateY(0); }
+/* ── SIDEBAR SCROLLABLE ─────────────────────── */
+.qg-sidebar {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* ── BARRE GRADE ────────────────────────────── */
+.qg-grade-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 20px;
+    background: rgba(212,175,55,0.06);
+    border-bottom: 1px solid rgba(212,175,55,0.12);
+    font-size: .75rem;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    backdrop-filter: blur(8px);
+}
+.qg-grade-bar__icon { font-size: .95rem; }
+.qg-grade-bar__nom {
+    font-weight: 700;
+    color: #d4af37;
+    letter-spacing: .1em;
+    min-width: 82px;
+    font-size: .72rem;
+}
+.qg-grade-bar__batterie {
+    flex: 1;
+    max-width: 120px;
+    height: 5px;
+    background: #1a1a1a;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.qg-grade-bar__fill {
+    height: 100%;
+    background: linear-gradient(90deg, #d4af37, #00c6ff);
+    border-radius: 4px;
+    transition: width 1s ease;
+}
+.qg-grade-bar__next {
+    color: #444;
+    font-size: .68rem;
+    white-space: nowrap;
+}
+
+/* ── MODULES CANAUX ─────────────────────────── */
+.qg-modules {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 12px 24px;
+    border-bottom: 1px solid #111;
+}
+.qg-module-btn {
+    background: #0d0d0d;
+    border: 1px solid #222;
+    color: #666;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: .75rem;
+    cursor: pointer;
+    transition: all .2s ease;
+    font-family: inherit;
+    white-space: nowrap;
+}
+.qg-module-btn:hover {
+    border-color: #d4af37;
+    color: #d4af37;
+}
+.qg-module-btn.active {
+    background: rgba(212,175,55,0.1);
+    border-color: #d4af37;
+    color: #d4af37;
+    font-weight: 600;
+}
+
+/* ── FLASH EFFET CARTES ─────────────────────── */
+@keyframes cardFlash {
+    0%   { box-shadow: 0 0 0px rgba(212,175,55,0); }
+    40%  { box-shadow: 0 0 18px rgba(212,175,55,0.5); }
+    100% { box-shadow: 0 0 0px rgba(212,175,55,0); }
+}
+.qg-card--flash {
+    animation: cardFlash .6s ease forwards;
+}
 
