@@ -14,7 +14,7 @@ const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
 const BASE   = `https://api.telegram.org/bot${TOKEN}`;
 
-// ── HELPER REPLY ─────────────────────────────────────
+// ── HELPER REPLY ──────────────────────────────────────
 async function reply(chatId, text) {
     try {
         await axios.post(`${BASE}/sendMessage`, {
@@ -27,7 +27,19 @@ async function reply(chatId, text) {
     }
 }
 
-// ── HELPER : Génère numéro commande ──────────────────
+// ── TROUVE LE SHOP VIA CHAT_ID ────────────────────────
+async function getShopByChatId(chatId) {
+    try {
+        const record = await airtable.findOne("CONNECTEURS",
+            `AND({type}="telegram",{actif}=1,SEARCH("${chatId}",{config}))`
+        );
+        if (!record) return "";
+        const config = JSON.parse((record.fields?.config || "{}").replace(/\\_/g, "_"));
+        return config.shop_url || record.fields?.shop_url || "";
+    } catch { return ""; }
+}
+
+// ── GÉNÈRE NUMÉRO COMMANDE ────────────────────────────
 function genOrderId() {
     return `TG-${Date.now().toString().slice(-6)}`;
 }
@@ -37,52 +49,44 @@ async function handleOrderFlow(chatId, text, name) {
     const session = memory.get(chatId) || {};
     const step    = session.step;
 
-    // Étape 1 — demander le produit
     if (!step) {
         memory.set(chatId, { step: "produit", name });
         await reply(chatId,
-            `🛍️ *Parfait !*\n\nQuel produit souhaitez-vous commander ?\n_(Nom du produit, taille, couleur...)_`
+            `🛍️ *Parfait !*\n\nQuel produit souhaitez-vous commander ?\n_(Nom, taille, couleur...)_`
         );
         return true;
     }
 
-    // Étape 2 — demander téléphone
     if (step === "produit") {
         memory.set(chatId, { step: "telephone", produit: text });
-        await reply(chatId,
-            `📞 Votre *numéro de téléphone* s'il vous plaît ?`
-        );
+        await reply(chatId, `📞 Votre *numéro de téléphone* s'il vous plaît ?`);
         return true;
     }
 
-    // Étape 3 — demander adresse
     if (step === "telephone") {
         memory.set(chatId, { step: "adresse", telephone: text });
-        await reply(chatId,
-            `📍 Votre *adresse de livraison* ?`
-        );
+        await reply(chatId, `📍 Votre *adresse de livraison* ?`);
         return true;
     }
 
-    // Étape 4 — confirmer et créer commande
     if (step === "adresse") {
         const orderId = genOrderId();
         const s       = memory.get(chatId);
+        const shop    = await getShopByChatId(chatId);
 
         await airtable.create("COMMANDES", {
             "ID Commande"  : orderId,
-            "nom client"   : s.name     || "Inconnu",
+            "nom client"   : s.name      || "Inconnu",
             "Téléphone"    : s.telephone || "",
             "Adresse"      : text,
             "Produit"      : s.produit   || "",
             "Statut"       : "en attente",
-            "Boutique"     : "telegram",
+            "Boutique"     : shop,
             "Date Commande": new Date().toISOString(),
             "montant"      : 0,
         });
 
-        await airtable.log("order.created.telegram", `#${orderId} — ${s.name}`, "telegram");
-
+        await airtable.log("order.created.telegram", `#${orderId} — ${s.name}`, shop);
         memory.clear(chatId);
 
         await reply(chatId,
@@ -163,7 +167,7 @@ router.post("/", async (req, res) => {
             memory.clear(chatId);
             await reply(chatId,
                 `👑 *Bienvenue sur SAMII OS !*\n\n` +
-                `✅ Ton Chat ID :\n\`${chatId}\`\n\n` +
+                `✅ Chat ID : \`${chatId}\`\n\n` +
                 `Je suis SAMII, votre assistant commercial. Comment puis-je vous aider ?`
             );
             return;
@@ -171,11 +175,11 @@ router.post("/", async (req, res) => {
 
         // /id
         if (text === "/id") {
-            await reply(chatId, `🆔 Ton Chat ID : \`${chatId}\``);
+            await reply(chatId, `🆔 Chat ID : \`${chatId}\``);
             return;
         }
 
-        // Annulation en cours de flux
+        // Annulation flux en cours
         if (isCancelIntent(text) && memory.getStep(chatId)) {
             memory.clear(chatId);
             await reply(chatId, `❌ Commande annulée. Comment puis-je vous aider ?`);
@@ -194,14 +198,14 @@ router.post("/", async (req, res) => {
             return;
         }
 
-        // ── Log CRM ──────────────────────────────────────
+        // Log CRM
         await orchestrator.process({
             type   : "telegram.message",
             shop   : "",
             payload: { chatId, text, message },
         });
 
-        // ── Réponse Gemini ────────────────────────────────
+        // Réponse Gemini
         const geminiReply = await planner.ask(text, { source: "telegram", chatId, name });
         await reply(chatId, geminiReply);
 
