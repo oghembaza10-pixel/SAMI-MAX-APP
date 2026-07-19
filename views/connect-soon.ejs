@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OG Empire — Bientôt disponible</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/hub-premium.css">
+</head>
+<body>
+
+<div class="og-capital">
+
+    <%- include("partials/sidebar") %>
+
+    <main class="capitol-content">
+
+        <header class="hero-premium" style="min-height:220px;">
+            <div class="hero-grid"></div>
+            <div class="hero-glow hero-glow-1"></div>
+            <div class="hero-overlay"></div>
+            <div class="hero-text-zone">
+                <span class="hero-eyebrow">OG Empire</span>
+                <h1>Bientôt disponible</h1>
+                <p>Cette intégration arrive prochainement sur SAMII OS.</p>
+            </div>
+        </header>
+
+        <section class="connect-soon-section">
+
+            <div class="connect-soon-card" style="--tool-color:<%= tool.color %>">
+                <div class="connect-soon-card__icon">
+                    <i data-lucide="<%= tool.icon || 'plug' %>"></i>
+                </div>
+                <h2><%= tool.label %></h2>
+                <p class="connect-soon-card__text">
+                    L'intégration <b><%= tool.label %></b> est en cours de développement.<br>
+                    Elle sera disponible dans une prochaine mise à jour de SAMII OS.
+                </p>
+                <span class="og-badge og-badge--soon">⏳ En développement</span>
+            </div>
+
+            <div class="connect-soon-actions">
+                <a href="/connect/tools" class="connect-btn connect-btn--primary">
+                    ← Retour à mes outils
+                </a>
+                <a href="/qg" class="connect-btn connect-btn--cta">
+                    Continuer vers mon QG →
+                </a>
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    if (typeof lucide !== "undefined") lucide.createIcons();
+</script>
+
+</body>
+</html>
