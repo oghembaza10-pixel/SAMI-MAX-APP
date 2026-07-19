@@ -19,6 +19,13 @@
 
     <main class="capitol-content">
 
+        <!-- MESSAGE ERREUR HUB -->
+        <% if (typeof error !== 'undefined' && error) { %>
+        <div class="hub-error-msg" style="display:block;">
+            <%= error %>
+        </div>
+        <% } %>
+
         <!-- HERO -->
         <header class="hero-premium">
             <img src="/hero-city.png" alt="Ville futuriste OG" class="hero-bg-img" onerror="this.style.display='none'">
@@ -36,7 +43,9 @@
 
                 <div class="hero-search">
                     <i data-lucide="search"></i>
-                    <input type="text" id="hero-search" data-i18n-placeholder="hub.hero.searchPlaceholder" placeholder="Construisez votre prochain empire...">
+                    <input type="text" id="hero-search"
+                           data-i18n-placeholder="hub.hero.searchPlaceholder"
+                           placeholder="Construisez votre prochain empire...">
                     <button type="button" class="hero-search__btn">
                         <i data-lucide="arrow-right"></i>
                     </button>
@@ -46,17 +55,17 @@
             <span class="hero-scroll">▼</span>
         </header>
 
-        <!-- CHOIX DU MÉTIER -->
+        <!-- CHOIX DU MÉTIER / WORKSPACES -->
         <div class="section-eyebrow">
             <i data-lucide="compass"></i>
             <span data-i18n="hub.section.choose">Choisis ton métier</span>
         </div>
 
         <section class="metier-grid" id="metier-grid">
-            <!-- Rempli dynamiquement par hub.js (traduit aussi) -->
+            <!-- Rempli dynamiquement par hub.js -->
         </section>
 
-        <!-- BANNIÈRE "TAPIS" -->
+        <!-- BANNIÈRE -->
         <section class="hub-banner" id="hub-banner">
             <img src="/banner-tech.png" alt="OG Empire" class="hub-banner__img" onerror="this.style.opacity=0">
             <div class="hub-banner__overlay"></div>
@@ -92,7 +101,8 @@
     <button class="samii-widget__trigger" id="samii-widget-trigger" aria-label="Ouvrir SAMII">
         <span class="samii-widget__aura"></span>
         <span class="samii-widget__aura samii-widget__aura--2"></span>
-        <svg class="samii-widget__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="samii-widget__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 8V4H8"/>
             <rect width="16" height="12" x="4" y="8" rx="2"/>
             <path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
@@ -102,16 +112,26 @@
         <header class="samii-widget__header">
             <div class="samii-widget__id">
                 <div class="samii-widget__avatar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2M20 14h2M15 13v2M9 13v2"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 8V4H8"/>
+                        <rect width="16" height="12" x="4" y="8" rx="2"/>
+                        <path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
+                    </svg>
                 </div>
                 <div>
                     <p class="samii-widget__name">SAMII</p>
-                    <p class="samii-widget__status"><span class="og-badge og-badge--live">OPÉRATIONNEL</span></p>
+                    <p class="samii-widget__status">
+                        <span class="og-badge og-badge--live">OPÉRATIONNEL</span>
+                    </p>
                 </div>
             </div>
             <div class="samii-widget__actions">
                 <button class="samii-widget__close" id="samii-widget-close" aria-label="Fermer">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+                         stroke="currentColor" stroke-width="1.8">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
                 </button>
             </div>
         </header>
@@ -124,19 +144,27 @@
             </div>
         </div>
         <form class="samii-widget__form" id="samii-widget-form">
-            <input type="text" id="samii-widget-input" placeholder="Parler à SAMII…" autocomplete="off">
+            <input type="text" id="samii-widget-input"
+                   placeholder="Parler à SAMII…" autocomplete="off">
             <button type="submit" aria-label="Envoyer">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+                     stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>
+                </svg>
             </button>
         </form>
     </div>
 </div>
 
-<script src="https://unpkg.com/lucide@latest"></script>
+<!-- ✅ Données serveur → frontend -->
 <script>
+    window.OG_WORKSPACES          = <%- JSON.stringify(typeof workspaces !== "undefined" ? workspaces : []) %>;
     window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(typeof connectedPlatforms !== "undefined" ? connectedPlatforms : []) %>;
-    window.OG_WORKSPACE_ID = document.body.getAttribute('data-workspace') || '';
+    window.OG_WORKSPACE_ID        = "<%= typeof workspaceId !== 'undefined' ? workspaceId : '' %>";
 </script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="/js/i18n.js"></script>
 <script src="/js/hub.js"></script>
 
