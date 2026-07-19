@@ -32,7 +32,7 @@ router.get("/create", requireAuth, (req, res) => {
 // ── POST /workspace/create ────────────────────────────
 router.post("/create", requireAuth, async (req, res) => {
     try {
-        const { nom, metier, metierCustom, pays, langue } = req.body;
+        const { nom, metier, metierCustom, description, pays, langue } = req.body;
         const email = req.session?.email || "";
 
         // ✅ Validation nom
@@ -74,6 +74,7 @@ router.post("/create", requireAuth, async (req, res) => {
             owner       : email,
             nom         : nom.trim(),
             metier      : metierFinal,
+            description : description?.trim() || "",
             pays        : pays   || "DZ",
             langue      : langue || "fr",
             logo        : "",
