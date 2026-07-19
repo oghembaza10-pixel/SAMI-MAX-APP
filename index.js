@@ -2,13 +2,14 @@
 // SAMII OS V1 — Point d'entrée
 // ======================================================
 
-const path        = require("path");
-const express     = require("express");
-const session     = require("express-session");
-const MemoryStore = require("memorystore")(session);
-const http        = require("http");
-const { Server }  = require("socket.io");
-const CONFIG      = require("./config");
+const path             = require("path");
+const express          = require("express");
+const session          = require("express-session");
+const MemoryStore      = require("memorystore")(session);
+const http             = require("http");
+const { Server }       = require("socket.io");
+const CONFIG           = require("./config");
+const workspaceService = require("./services/workspaceService");
 
 const app    = express();
 const server = http.createServer(app);
@@ -31,7 +32,7 @@ app.use(session({
     secret           : process.env.SESSION_SECRET || "samii-secret-v1",
     resave           : false,
     saveUninitialized: false,
-    store            : new MemoryStore({ checkPeriod: 86400000 }), // ✅ session stable
+    store            : new MemoryStore({ checkPeriod: 86400000 }),
     cookie           : {
         httpOnly: true,
         sameSite: "lax",
@@ -52,6 +53,13 @@ app.use((req, res, next) => {
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
+}
+
+// ── Helper — nettoyer workspace de la session ─────────
+function clearWorkspaceSession(req, callback) {
+    delete req.session.workspaceId;
+    delete req.session.lastWorkspace;
+    req.session.save(callback);
 }
 
 // ── BOOTSTRAP ─────────────────────────────────────────
@@ -81,48 +89,55 @@ app.use("/api",         require("./routes/api"));
 // ── PAGE ACCUEIL ──────────────────────────────────────
 app.get("/", (req, res) => res.render("index"));
 
-// ── QG — workspace universel ──────────────────────────
-app.get("/qg/:metier", (req, res) => {
-    if (!req.session?.loggedIn) return res.redirect("/login");
+// ── QG — route universelle SOLDAT V1 ─────────────────
+app.get("/qg", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session?.workspaceId;
 
-    res.render("qg-template", {
-        metier      : req.params.metier,
-        workspaceId : req.session.workspaceId || "",
-        shop        : req.session.shop        || "",
-        nom         : req.session.nom         || "",
-        attente     : false,
-    });
+        // Pas de workspace en session → hub
+        if (!workspaceId) return res.redirect("/hub");
+
+        // ✅ Airtable = source de vérité
+        const workspace = await workspaceService.getById(workspaceId);
+
+        // ✅ Sécurité 1 — workspace introuvable → nettoyer session
+        if (!workspace) {
+            return clearWorkspaceSession(req, () => res.redirect("/hub"));
+        }
+
+        // ✅ Sécurité 2 — vérifier ownership (session corrompue ou bug)
+        if (workspace.owner !== req.session.email) {
+            return clearWorkspaceSession(req, () => res.redirect("/hub"));
+        }
+
+        res.render("qg-template", {
+            workspaceId : workspace.workspaceId,
+            nom         : workspace.nom,
+            metier      : workspace.metier || "workspace",
+            logo        : workspace.logo   || "",
+            shop        : req.session.shop || "",
+            attente     : false,
+        });
+
+    } catch (err) {
+        console.error("❌ GET /qg :", err);
+        return clearWorkspaceSession(req, () => res.redirect("/hub"));
+    }
 });
 
-app.get("/qg/:metier/connecter", requireAuth, async (req, res) => {
-    const workspaceId = req.session.workspaceId || "";
-    const shop        = req.session.shop        || "";
-    const headers     = { Authorization: `Bearer ${process.env.AIRTABLE_API_KEY}` };
+// ── QG — anciennes routes → redirect temporaire ───────
+// À supprimer quand confirmé qu'aucun lien ne les utilise
+app.get("/qg/:metier", requireAuth, (req, res) => {
+    if (req.session?.workspaceId) return res.redirect("/qg");
+    res.redirect("/hub");
+});
 
-    let boutique = {};
-    try {
-        const r = await require("axios").get(
-            `https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID}/${process.env.TABLE_BOUTIQUES}`,
-            { headers, params: { filterByFormula: `{shop_url}="${shop}"`, maxRecords: 1 } }
-        );
-        boutique = r.data.records[0]?.fields || {};
-    } catch (e) { console.error("❌ /qg/connecter :", e.message); }
-
-    res.render("connect/outils", {
-        metier        : req.params.metier,
-        workspaceId,
-        shop,
-        shopifyActif  : !!boutique.access_token,
-        telegramActif : !!boutique.telegram_actif,
-        telegramChatId: boutique.telegram_chat_id || "",
-        whatsappActif : !!boutique.whatsapp_actif,
-        whatsappPhone : boutique.whatsapp_phone   || "",
-    });
+app.get("/qg/:metier/connecter", requireAuth, (req, res) => {
+    res.redirect("/qg");
 });
 
 // ── SAMII — copilote universel ────────────────────────
-app.get("/samii", (req, res) => {
-    if (!req.session?.loggedIn) return res.redirect("/login");
+app.get("/samii", requireAuth, (req, res) => {
     res.render("samii", {
         workspaceId : req.session.workspaceId || "",
         shop        : req.session.shop        || "",
