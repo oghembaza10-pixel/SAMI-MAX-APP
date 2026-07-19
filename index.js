@@ -11,6 +11,9 @@ const { Server }       = require("socket.io");
 const CONFIG           = require("./config");
 const workspaceService = require("./services/workspaceService");
 
+// ── V2 — décommenter quand workspaceLoader est prêt ──
+// const workspaceLoader = require("./services/workspaceLoader");
+
 const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server);
@@ -78,6 +81,7 @@ app.use("/dashboard",   requireAuth, require("./routes/dashboard"));
 app.use("/profile",     requireAuth, require("./routes/profile"));
 app.use("/settings",    requireAuth, require("./routes/settings"));
 app.use("/hub",         require("./routes/hub"));
+app.use("/workspace",   require("./routes/workspace"));
 app.use("/academy",     require("./routes/academy"));
 app.use("/community",   require("./routes/community"));
 app.use("/marketplace", require("./routes/marketplace"));
@@ -85,32 +89,29 @@ app.use("/drivers",     require("./routes/drivers"));
 app.use("/login",       require("./routes/login"));
 app.use("/register",    require("./routes/register"));
 app.use("/api",         require("./routes/api"));
-// ── Workspace create — page à construire ─────────────
-app.get("/workspace/create", requireAuth, (req, res) => {
-    const metier = req.query.metier || "";
-    res.render("workspace-create", { metier });
-});
 
 // ── PAGE ACCUEIL ──────────────────────────────────────
 app.get("/", (req, res) => res.render("index"));
 
 // ── QG — route universelle SOLDAT V1 ─────────────────
+// ── V2 : remplacer workspaceService.getById()
+//         par workspaceLoader.load() quand prêt ────────
 app.get("/qg", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
 
-        // Pas de workspace en session → hub
         if (!workspaceId) return res.redirect("/hub");
 
-        // ✅ Airtable = source de vérité
+        // V1 — source de vérité directe
         const workspace = await workspaceService.getById(workspaceId);
 
-        // ✅ Sécurité 1 — workspace introuvable → nettoyer session
+        // V2 — décommenter + supprimer les 2 lignes ci-dessus
+        // const workspace = await workspaceLoader.load(workspaceId);
+
         if (!workspace) {
             return clearWorkspaceSession(req, () => res.redirect("/hub"));
         }
 
-        // ✅ Sécurité 2 — vérifier ownership (session corrompue ou bug)
         if (workspace.owner !== req.session.email) {
             return clearWorkspaceSession(req, () => res.redirect("/hub"));
         }
@@ -118,9 +119,14 @@ app.get("/qg", requireAuth, async (req, res) => {
         res.render("qg-template", {
             workspaceId : workspace.workspaceId,
             nom         : workspace.nom,
-            metier      : workspace.metier || "workspace",
-            logo        : workspace.logo   || "",
-            shop        : req.session.shop || "",
+            metier      : workspace.metier      || "workspace",
+            description : workspace.description || "",
+            langue      : workspace.langue      || "fr",
+            pays        : workspace.pays        || "DZ",
+            connecteurs : workspace.connecteurs || [],
+            samii       : workspace.samii       || { mode: "auto" },
+            logo        : workspace.logo        || "",
+            shop        : req.session.shop      || "",
             attente     : false,
         });
 
@@ -131,7 +137,6 @@ app.get("/qg", requireAuth, async (req, res) => {
 });
 
 // ── QG — anciennes routes → redirect temporaire ───────
-// À supprimer quand confirmé qu'aucun lien ne les utilise
 app.get("/qg/:metier", requireAuth, (req, res) => {
     if (req.session?.workspaceId) return res.redirect("/qg");
     res.redirect("/hub");
