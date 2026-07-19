@@ -137,78 +137,99 @@ async function selectWorkspace(btn) {
         selectingWorkspace = false;
     }
 }
-
-// ── Render grille métiers / workspaces ────────────────
-function renderMetierGrid() {
-    const grid = document.getElementById("metier-grid");
-    if (!grid) return;
-
+// ── Render workspaces existants ───────────────────────
+function renderWorkspaces() {
     const workspaces = window.OG_WORKSPACES || [];
+    if (workspaces.length === 0) return;
 
-    // ── Workspaces existants ──────────────────────────
-    if (workspaces.length > 0) {
-        grid.innerHTML = workspaces.map(ws => {
-            const m   = METIERS.find(x => x.id === ws.metier) || { icon: "briefcase", mood: "" };
-            const t   = getMetierText(ws.metier);
-            return `
-                <button class="metier-card" type="button"
-                        data-workspace-id="${escapeHtml(ws.workspaceId)}"
-                        data-metier="${escapeHtml(ws.metier)}">
-                    <div class="metier-card__media ${m.mood}">
-                        <i class="metier-card__watermark" data-lucide="${m.icon}"></i>
-                        <div class="metier-card__shade"></div>
-                    </div>
-                    <div class="metier-card__body">
-                        <i data-lucide="${m.icon}"></i>
-                        <div>
-                            <h3>${escapeHtml(ws.nom || t.label)}</h3>
-                            <span>${escapeHtml(t.desc)}</span>
+    const container = document.getElementById("metier-grid");
+    if (!container) return;
+
+    const section = document.createElement("div");
+    section.className = "hub-section";
+    section.innerHTML = `
+        <div class="section-eyebrow">
+            <i data-lucide="folder-open"></i>
+            <span>Mes Workspaces</span>
+        </div>
+        <div class="hub-workspaces" id="hub-workspaces">
+            ${workspaces.map(ws => {
+                const m = METIERS.find(x => x.id === ws.metier) || { icon: "briefcase", mood: "" };
+                const t = getMetierText(ws.metier);
+                return `
+                    <button class="metier-card" type="button"
+                            data-workspace-id="${escapeHtml(ws.workspaceId)}"
+                            data-metier="${escapeHtml(ws.metier)}">
+                        <div class="metier-card__media ${m.mood}">
+                            <i class="metier-card__watermark" data-lucide="${m.icon}"></i>
+                            <div class="metier-card__shade"></div>
                         </div>
-                    </div>
-                </button>
-            `;
-        }).join("") + `
+                        <div class="metier-card__body">
+                            <i data-lucide="${m.icon}"></i>
+                            <div>
+                                <h3>${escapeHtml(ws.nom || t.label)}</h3>
+                                <span>${escapeHtml(t.desc)}</span>
+                            </div>
+                        </div>
+                    </button>
+                `;
+            }).join("")}
             <a class="metier-card more" href="/workspace/create">
                 <i data-lucide="plus-circle"></i>
                 <h3>Nouveau workspace</h3>
             </a>
-        `;
+        </div>
+    `;
 
-    // ── Aucun workspace → afficher les métiers ────────
-    } else {
-        grid.innerHTML = METIERS.map(m => {
-            const t = getMetierText(m.id);
-            return `
-                <a class="metier-card" href="/workspace/create?metier=${m.id}"
-                   data-metier="${m.id}">
-                    <div class="metier-card__media ${m.mood}">
-                        <i class="metier-card__watermark" data-lucide="${m.icon}"></i>
-                        <div class="metier-card__shade"></div>
-                    </div>
-                    <div class="metier-card__body">
-                        <i data-lucide="${m.icon}"></i>
-                        <div>
-                            <h3>${escapeHtml(t.label)}</h3>
-                            <span>${escapeHtml(t.desc)}</span>
-                        </div>
-                    </div>
-                </a>
-            `;
-        }).join("") + `
-            <a class="metier-card more" href="/metiers">
-                <i data-lucide="plus-circle"></i>
-                <h3>${getMetierMoreText()}</h3>
-            </a>
-        `;
-    }
+    container.before(section);
 
     if (typeof lucide !== "undefined") lucide.createIcons();
 
-    // ── Clic workspace → sélection ────────────────────
-    grid.querySelectorAll(".metier-card[data-workspace-id]").forEach(btn => {
+    section.querySelectorAll(".metier-card[data-workspace-id]").forEach(btn => {
         btn.addEventListener("click", () => selectWorkspace(btn));
     });
 }
+
+// ── Render grille métiers (toujours visible) ──────────
+function renderMetiers() {
+    const grid = document.getElementById("metier-grid");
+    if (!grid) return;
+
+    grid.innerHTML = METIERS.map(m => {
+        const t = getMetierText(m.id);
+        return `
+            <a class="metier-card" href="/workspace/create?metier=${m.id}"
+               data-metier="${m.id}">
+                <div class="metier-card__media ${m.mood}">
+                    <i class="metier-card__watermark" data-lucide="${m.icon}"></i>
+                    <div class="metier-card__shade"></div>
+                </div>
+                <div class="metier-card__body">
+                    <i data-lucide="${m.icon}"></i>
+                    <div>
+                        <h3>${escapeHtml(t.label)}</h3>
+                        <span>${escapeHtml(t.desc)}</span>
+                    </div>
+                </div>
+            </a>
+        `;
+    }).join("") + `
+        <a class="metier-card more" href="/metiers">
+            <i data-lucide="plus-circle"></i>
+            <h3>${getMetierMoreText()}</h3>
+        </a>
+    `;
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
+// ── Render grille complète ────────────────────────────
+function renderMetierGrid() {
+    renderWorkspaces();
+    renderMetiers();
+}
+
+
 
 // ── Render plateformes sidebar ────────────────────────
 function renderSidebarPlatforms() {
