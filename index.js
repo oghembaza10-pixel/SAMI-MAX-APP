@@ -76,7 +76,7 @@ app.use(require("./Itinéraires/auth-shopify"));
 
 app.use("/webhook",     require("./routes/webhook"));
 app.use("/telegram",    require("./routes/telegram"));
-app.use("/connect",     require("./routes/connect"));
+app.use("/connect",     require("./routes/connector"));
 app.use("/dashboard",   requireAuth, require("./routes/dashboard"));
 app.use("/profile",     requireAuth, require("./routes/profile"));
 app.use("/settings",    requireAuth, require("./routes/settings"));
