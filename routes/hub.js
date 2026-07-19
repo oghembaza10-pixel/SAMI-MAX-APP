@@ -1,45 +1,92 @@
-const express = require("express");
-const router  = express.Router();
-const axios   = require("axios");
+// ======================================================
+// SAMII OS — Hub Route
+// ======================================================
+// Le Hub sélectionne le Workspace.
+// Il ne connaît pas Shopify, Telegram, ou tout autre
+// connecteur. Il utilise uniquement workspaceService.
+// ======================================================
 
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_BOUTIQUES  = process.env.TABLE_BOUTIQUES;
+const express          = require("express");
+const router           = express.Router();
+const workspaceService = require("../services/workspaceService");
 
-async function getBoutique(shopUrl) {
-    try {
-        const res = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}`,
-            {
-                headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` },
-                params : { filterByFormula: `{shop_url} = "${shopUrl}"`, maxRecords: 1 },
-            }
-        );
-        return res.data.records?.[0]?.fields || null;
-    } catch {
-        return null;
-    }
+// ── Auth middleware ───────────────────────────────────
+function requireAuth(req, res, next) {
+    if (!req.session?.loggedIn) return res.redirect("/login");
+    next();
 }
 
-router.get("/", async (req, res) => {
-    // ✅ Shop depuis session (login) ou query param
-    const shop = req.session?.shop || req.query.shop || "";
+// ── GET /hub ──────────────────────────────────────────
+router.get("/", requireAuth, async (req, res) => {
+    try {
+        const email      = req.session?.email || "";
+        const workspaces = email
+            ? await workspaceService.getByOwner(email)
+            : [];
 
-    if (!shop) {
-        return res.render("hub", { connectedPlatforms: [], shop: "" });
+        res.render("hub", {
+            workspaces,
+            shop   : req.session?.shop || "",
+            modules: [],
+            error  : null,
+        });
+
+    } catch (err) {
+        console.error("❌ GET /hub :", err.message);
+        res.status(500).render("hub", {
+            workspaces: [],
+            shop      : req.session?.shop || "",
+            modules   : [],
+            error     : "Impossible de charger vos workspaces.",
+        });
     }
+});
 
-    const boutique = await getBoutique(shop);
+// ── POST /hub/select-workspace ────────────────────────
+router.post("/select-workspace", requireAuth, async (req, res) => {
+    try {
+        const { workspaceId } = req.body;
+        const email           = req.session?.email || "";
 
-    const connectedPlatforms = [];
-    if (boutique) {
-        connectedPlatforms.push("shopify");
-        if (boutique.telegram_actif && boutique.telegram_chat_id) connectedPlatforms.push("telegram");
-        if (boutique.whatsapp_actif && boutique.whatsapp_phone)   connectedPlatforms.push("whatsapp");
+        // ✅ Validation stricte
+        if (
+            typeof workspaceId !== "string" ||
+            workspaceId.trim() === ""       ||
+            !email
+        ) {
+            return res.status(400).json({
+                success: false,
+                error  : "Données manquantes.",
+            });
+        }
+
+        const id = workspaceId.trim();
+
+        // ✅ Sécurité — vérifier ownership (1 seule requête Airtable)
+        const isOwner = await workspaceService.belongsToOwner(id, email);
+        if (!isOwner) {
+            return res.status(403).json({
+                success: false,
+                error  : "Accès refusé.",
+            });
+        }
+
+        // ✅ Session légère + lastWorkspace
+        req.session.workspaceId   = id;
+        req.session.lastWorkspace = id;
+
+        // ✅ Session sauvegardée avant redirection
+        req.session.save(() => {
+            res.json({ success: true, redirect: "/qg" });
+        });
+
+    } catch (err) {
+        console.error("❌ POST /hub/select-workspace :", err.message);
+        res.status(500).json({
+            success: false,
+            error  : "Erreur interne.",
+        });
     }
-
-    res.render("hub", { connectedPlatforms, shop });
 });
 
 module.exports = router;
-
