@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OG Empire — Connecter mes outils</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/hub-premium.css">
+</head>
+<body>
+
+<div class="og-capital">
+
+    <%- include("partials/sidebar") %>
+
+    <main class="capitol-content">
+
+        <header class="hero-premium" style="min-height:220px;">
+            <div class="hero-grid"></div>
+            <div class="hero-glow hero-glow-1"></div>
+            <div class="hero-overlay"></div>
+            <div class="hero-text-zone">
+                <span class="hero-eyebrow">OG Empire — <%= nom %></span>
+                <h1>Connecter mes outils</h1>
+                <p>Connectez vos plateformes. SAMII les utilisera automatiquement.</p>
+            </div>
+        </header>
+
+        <section class="connect-tools-section">
+
+            <!-- MESSAGE ERREUR -->
+            <div class="hub-error-msg" id="connect-error" style="display:none;"></div>
+
+            <!-- MESSAGE SUCCÈS -->
+            <div class="connect-success-msg" id="connect-success" style="display:none;"></div>
+
+            <!-- GRILLE OUTILS -->
+            <div class="connect-tools-grid" id="connect-tools-grid">
+
+                <% tools.forEach(tool => {
+                    const connector  = connecteurs.find(c => c.type === tool.id);
+                    const isConnected = connector && connector.actif;
+                %> 
+                <div class="connect-tool-card <%= isConnected ? 'connected' : '' %> <%= !tool.available ? 'soon' : '' %>"
+                     id="card-<%= tool.id %>"
+                     data-tool="<%= tool.id %>"
+                     data-available="<%= tool.available %>"
+                     style="--tool-color:<%= tool.color %>">
+
+                    <div class="connect-tool-card__header">
+                        <div class="connect-tool-card__icon">
+                            <i data-lucide="<%= tool.icon %>"></i>
+                        </div>
+                        <div class="connect-tool-card__info">
+                            <h3><%= tool.label %></h3>
+                            <span class="connect-tool-card__status">
+                                <% if (isConnected) { %>
+                                    <span class="og-badge og-badge--live">✅ Connecté</span>
+                                <% } else if (!tool.available) { %>
+                                    <span class="og-badge og-badge--soon">⏳ Bientôt</span>
+                                <% } else { %>
+                                    <span class="og-badge og-badge--off">🔴 Non connecté</span>
+                                <% } %>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="connect-tool-card__body">
+
+                        <% if (!tool.available) { %>
+                            <p class="connect-tool-card__soon-text">Disponible prochainement</p>
+
+                        <% } else if (tool.id === 'shopify') { %>
+                            <% if (isConnected) { %>
+                                <p class="connect-tool-card__connected-info">
+                                    🟢 <%= connector.config?.shop || 'Boutique connectée' %>
+                                </p>
+                                <button class="connect-btn connect-btn--disconnect"
+                                        data-tool="shopify" data-action="disconnect">
+                                    Déconnecter
+                                </button>
+                            <% } else { %>
+                                <form class="connect-inline-form" data-tool="shopify" data-action="oauth">
+                                    <input type="text" name="shop"
+                                           placeholder="monshop.myshopify.com"
+                                           class="connect-input" autocomplete="off">
+                                    <button type="submit" class="connect-btn connect-btn--primary">
+                                        Connecter Shopify →
+                                    </button>
+                                </form>
+                            <% } %>
+
+                        <% } else if (tool.id === 'facebook' || tool.id === 'instagram') { %>
+                            <% if (isConnected) { %>
+                                <p class="connect-tool-card__connected-info">
+                                    🟢 <%= connector.config?.name || 'Page connectée' %>
+                                </p>
+                                <button class="connect-btn connect-btn--disconnect"
+                                        data-tool="<%= tool.id %>" data-action="disconnect">
+                                    Déconnecter
+                                </button>
+                            <% } else { %>
+                                <button class="connect-btn connect-btn--primary"
+                                        data-tool="<%= tool.id %>" data-action="oauth"
+                                        data-url="/connect/<%= tool.id %>">
+                                    Continuer avec <%= tool.label %> →
+                                </button>
+                            <% } %>
+
+                        <% } else if (tool.id === 'telegram') { %>
+                            <% if (isConnected) { %>
+                                <p class="connect-tool-card__connected-info">
+                                    🟢 Chat ID : <%= connector.config?.chatId || '' %>
+                                </p>
+                                <button class="connect-btn connect-btn--disconnect"
+                                        data-tool="telegram" data-action="disconnect">
+                                    Déconnecter
+                                </button>
+                            <% } else { %>
+                                <form class="connect-inline-form" data-tool="telegram" data-action="save">
+                                    <input type="text" name="chatId"
+                                           placeholder="Votre Chat ID Telegram"
+                                           class="connect-input" autocomplete="off">
+                                    <button type="submit" class="connect-btn connect-btn--primary">
+                                        Connecter Telegram →
+                                    </button>
+                                </form>
+                            <% } %>
+
+                        <% } %>
+
+                    </div>
+                </div>
+                <% }) %>
+
+            </div>
+
+            <!-- CONTINUER VERS QG -->
+            <div class="connect-tools-footer">
+                <p class="connect-tools-footer__hint">
+                    Vous pourrez connecter d'autres outils depuis votre QG à tout moment.
+                </p>
+                <a href="/connect/tools/continue" class="connect-btn connect-btn--cta">
+                    Continuer vers mon QG →
+                </a>
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script>
+    window.OG_WORKSPACE_ID = "<%= workspaceId %>";
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="/js/connect-tools.js"></script>
+
+</body>
+</html>
