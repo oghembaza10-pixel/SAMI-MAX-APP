@@ -2,14 +2,182 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Créer un Workspace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OG Empire — Créer un Workspace</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/hub-premium.css">
 </head>
 <body>
-<div style="padding:60px;text-align:center;">
-    <h1>Créer un Workspace</h1>
-    <p>Métier sélectionné : <b><%= metier || "non défini" %></b></p>
-    <a href="/hub">← Retour au Hub</a>
+
+<div class="og-capital">
+
+    <%- include("partials/sidebar") %>
+
+    <main class="capitol-content">
+
+        <header class="hero-premium" style="min-height:220px;">
+            <div class="hero-grid"></div>
+            <div class="hero-glow hero-glow-1"></div>
+            <div class="hero-overlay"></div>
+            <div class="hero-text-zone">
+                <span class="hero-eyebrow">OG Empire</span>
+                <h1>Créer votre Workspace</h1>
+                <p>Configurez votre QG en quelques secondes.</p>
+            </div>
+        </header>
+
+        <section class="workspace-create-section">
+
+            <% if (typeof error !== 'undefined' && error) { %>
+            <div class="hub-error-msg" style="display:block;margin-bottom:20px;">
+                <%= error %>
+            </div>
+            <% } %>
+
+            <form class="workspace-form" method="POST" action="/workspace/create" id="workspace-form">
+
+                <!-- Nom -->
+                <div class="workspace-form__group">
+                    <label for="ws-nom">Nom du Workspace *</label>
+                    <input
+                        type="text"
+                        id="ws-nom"
+                        name="nom"
+                        placeholder="Ex : OG Store, Mon Restaurant..."
+                        maxlength="80"
+                        required
+                        autocomplete="off"
+                    >
+                </div>
+
+                <!-- Métier -->
+                <div class="workspace-form__group">
+                    <label for="ws-metier">Métier *</label>
+                    <select id="ws-metier" name="metier" required>
+                        <option value="">— Choisir un métier —</option>
+                        <option value="ecommerce"   <%= metier === 'ecommerce'   ? 'selected' : '' %>>E-commerce</option>
+                        <option value="restaurant"  <%= metier === 'restaurant'  ? 'selected' : '' %>>Restaurant</option>
+                        <option value="immobilier"  <%= metier === 'immobilier'  ? 'selected' : '' %>>Immobilier</option>
+                        <option value="livreur"     <%= metier === 'livreur'     ? 'selected' : '' %>>Livreur</option>
+                        <option value="sante"       <%= metier === 'sante'       ? 'selected' : '' %>>Santé</option>
+                        <option value="finance"     <%= metier === 'finance'     ? 'selected' : '' %>>Finance</option>
+                        <option value="education"   <%= metier === 'education'   ? 'selected' : '' %>>Éducation</option>
+                        <option value="technologie" <%= metier === 'technologie' ? 'selected' : '' %>>Technologie</option>
+                        <option value="agriculture" <%= metier === 'agriculture' ? 'selected' : '' %>>Agriculture</option>
+                        <option value="industrie"   <%= metier === 'industrie'   ? 'selected' : '' %>>Industrie</option>
+                        <option value="services"    <%= metier === 'services'    ? 'selected' : '' %>>Services</option>
+                        <option value="tourisme"    <%= metier === 'tourisme'    ? 'selected' : '' %>>Tourisme</option>
+                        <option value="autre"       <%= metier === 'autre'       ? 'selected' : '' %>>Créer un métier personnalisé</option>
+                    </select>
+                </div>
+
+                <!-- Métier custom -->
+                <div class="workspace-form__group" id="ws-metier-custom-group" style="display:none;">
+                    <label for="ws-metier-custom">Nom de votre métier *</label>
+                    <input
+                        type="text"
+                        id="ws-metier-custom"
+                        name="metierCustom"
+                        placeholder="Ex : Avocat, Coiffeur, Dentiste, Garage..."
+                        maxlength="60"
+                        autocomplete="off"
+                    >
+                    <span class="workspace-form__hint">
+                        Exemples : Avocat · Comptable · Plombier · Architecte · Hôtel
+                    </span>
+                </div>
+
+                <!-- Description activité (V1 + prêt V2) -->
+                <div class="workspace-form__group" id="ws-description-group" style="display:none;">
+                    <label for="ws-description">Description de votre activité <span class="workspace-form__optional">(optionnel)</span></label>
+                    <textarea
+                        id="ws-description"
+                        name="description"
+                        placeholder="Ex : Cabinet spécialisé en droit immobilier. Réparation automobile et vente de pneus..."
+                        maxlength="200"
+                        rows="3"
+                    ></textarea>
+                    <span class="workspace-form__hint">
+                        Aide SAMII à mieux comprendre votre activité.
+                    </span>
+                </div>
+
+                <!-- Pays -->
+                <div class="workspace-form__group">
+                    <label for="ws-pays">Pays</label>
+                    <select id="ws-pays" name="pays">
+                        <option value="DZ" selected>Algérie</option>
+                        <option value="MA">Maroc</option>
+                        <option value="TN">Tunisie</option>
+                        <option value="FR">France</option>
+                        <option value="BE">Belgique</option>
+                        <option value="CA">Canada</option>
+                        <option value="SN">Sénégal</option>
+                        <option value="CI">Côte d'Ivoire</option>
+                        <option value="OTHER">Autre</option>
+                    </select>
+                </div>
+
+                <!-- Langue -->
+                <div class="workspace-form__group">
+                    <label for="ws-langue">Langue</label>
+                    <select id="ws-langue" name="langue">
+                        <option value="fr" selected>Français</option>
+                        <option value="ar">Arabe</option>
+                        <option value="en">Anglais</option>
+                    </select>
+                </div>
+
+                <!-- Actions -->
+                <div class="workspace-form__actions">
+                    <a href="/hub" class="workspace-form__cancel">← Retour</a>
+                    <button type="submit" class="workspace-form__submit" id="ws-submit">
+                        Créer mon Workspace →
+                    </button>
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
 </div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    if (typeof lucide !== "undefined") lucide.createIcons();
+
+    const selectMetier   = document.getElementById("ws-metier");
+    const customGroup    = document.getElementById("ws-metier-custom-group");
+    const customInput    = document.getElementById("ws-metier-custom");
+    const descGroup      = document.getElementById("ws-description-group");
+
+    // ── Afficher/masquer les champs custom ────────────
+    function toggleCustomMetier() {
+        const isAutre             = selectMetier.value === "autre";
+        customGroup.style.display = isAutre ? "block" : "none";
+        descGroup.style.display   = isAutre ? "block" : "none";
+        customInput.required      = isAutre;
+    }
+
+    // ✅ Appliquer au chargement (retour après erreur serveur)
+    toggleCustomMetier();
+    selectMetier.addEventListener("change", toggleCustomMetier);
+
+    // ── Validation avant submit ───────────────────────
+    document.getElementById("workspace-form").addEventListener("submit", (e) => {
+        if (selectMetier.value === "autre" && !customInput.value.trim()) {
+            e.preventDefault();
+            customInput.focus();
+            customInput.style.borderColor = "#e53e3e";
+            setTimeout(() => customInput.style.borderColor = "", 3000);
+        }
+    });
+</script>
+
 </body>
 </html>
