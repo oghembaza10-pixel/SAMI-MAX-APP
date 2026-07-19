@@ -139,13 +139,18 @@ async function selectWorkspace(btn) {
 }
 // ── Render workspaces existants ───────────────────────
 function renderWorkspaces() {
+    // ✅ Éviter le doublon
+    const existing = document.getElementById("hub-workspaces-section");
+    if (existing) existing.remove();
+
     const workspaces = window.OG_WORKSPACES || [];
     if (workspaces.length === 0) return;
 
     const container = document.getElementById("metier-grid");
     if (!container) return;
 
-    const section = document.createElement("div");
+    const section     = document.createElement("div");
+    section.id        = "hub-workspaces-section";
     section.className = "hub-section";
     section.innerHTML = `
         <div class="section-eyebrow">
@@ -189,6 +194,7 @@ function renderWorkspaces() {
         btn.addEventListener("click", () => selectWorkspace(btn));
     });
 }
+
 
 // ── Render grille métiers (toujours visible) ──────────
 function renderMetiers() {
