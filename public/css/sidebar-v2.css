@@ -1,11 +1,12 @@
 /* ======================================================
    OG SIDEBAR V2
-   Améliorations premium
+   Premium Overlay
 ======================================================*/
 
 .og-sidebar{
 
     backdrop-filter:blur(18px);
+
     background:
         linear-gradient(
             180deg,
@@ -17,19 +18,10 @@
         inset -1px 0 rgba(255,255,255,.03),
         12px 0 50px rgba(0,0,0,.45);
 
-}
-
-
-/* ==========================
-   Scroll invisible
-==========================*/
-
-.og-sidebar{
-
     overflow-y:auto;
+    overflow-x:hidden;
 
     scrollbar-width:none;
-
     -ms-overflow-style:none;
 
 }
@@ -41,50 +33,30 @@
 }
 
 
-/* ==========================
-   Logo
-==========================*/
+/* ---------- Logo ---------- */
 
 .og-logo{
 
     margin-bottom:26px;
-
-    transition:.35s;
+    transition:.35s ease;
 
 }
 
 .og-logo:hover{
 
-    transform:scale(1.08);
+    transform:scale(1.08) rotate(-2deg);
 
 }
 
 
-/* ==========================
-   Séparateurs
-==========================*/
-
-.og-sidebar-divider{
-
-    width:38px;
-
-    margin:18px auto;
-
-    opacity:.5;
-
-}
-
-
-/* ==========================
-   Navigation
-==========================*/
+/* ---------- Navigation ---------- */
 
 .og-nav{
 
     width:100%;
-
+    display:flex;
+    flex-direction:column;
     align-items:center;
-
     gap:10px;
 
 }
@@ -92,35 +64,47 @@
 .og-item{
 
     width:54px;
-
     height:54px;
 
     border-radius:16px;
 
-    transition:.28s;
+    transition:
+        background .25s,
+        transform .25s,
+        color .25s,
+        box-shadow .25s;
 
 }
 
 .og-item i{
 
     width:22px;
-
     height:22px;
 
 }
 
 .og-item:hover{
 
-    transform:translateY(-3px);
+    background:rgba(255,255,255,.04);
 
-    background:rgba(255,255,255,.03);
+    transform:translateY(-3px);
 
 }
 
 .og-item.active{
 
     box-shadow:
+        0 0 24px rgba(197,160,89,.18);
 
-        0 0 25px rgba(197,160,89,.18);
+}
+
+
+/* ---------- Séparateurs ---------- */
+
+.og-sidebar-divider{
+
+    width:40px;
+    margin:18px auto;
+    opacity:.45;
 
 }
