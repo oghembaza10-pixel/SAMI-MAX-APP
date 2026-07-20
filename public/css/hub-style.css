@@ -1,197 +1,584 @@
-// ==========================================================================
-// OG EMPIRE — HUB : Moteur front-end (vitrine premium, pas de dashboard)
-// ==========================================================================
+/* ==========================================================
+   OG HUB — DESIGN SYSTEM V10 (APPLE / LINEAR / STRIPE STANDARD)
+   ========================================================== */
 
-// Chaque métier a une "mood" (dégradé) en attendant une vraie photo.
-// Pour mettre une vraie image plus tard : ajoute juste `image: "/img/metiers/xxx.jpg"`
-// et hub.js basculera automatiquement dessus (voir renderMetierGrid).
-const METIERS = [
-    { id: "ecommerce",   label: "E-commerce",   desc: "Commerce en ligne",      icon: "shopping-cart",  mood: "mood-ecommerce" },
-    { id: "restaurant",  label: "Restaurant",   desc: "Restauration & food",    icon: "utensils",        mood: "mood-restaurant" },
-    { id: "immobilier",  label: "Immobilier",   desc: "Biens & propriétés",     icon: "building-2",      mood: "mood-immobilier" },
-    { id: "livreur",     label: "Livreur",      desc: "Livraison & logistique", icon: "bike",            mood: "mood-livreur" },
-    { id: "sante",       label: "Santé",        desc: "Santé & bien-être",      icon: "heart-pulse",     mood: "mood-sante" },
-    { id: "finance",     label: "Finance",      desc: "Finance & invest.",      icon: "trending-up",     mood: "mood-finance" },
-    { id: "education",   label: "Éducation",    desc: "Formation & savoir",     icon: "graduation-cap",  mood: "mood-education" },
-    { id: "technologie", label: "Technologie",  desc: "Tech & innovation",      icon: "cpu",             mood: "mood-technologie" },
-    { id: "agriculture", label: "Agriculture",  desc: "Culture & agriculture",  icon: "leaf",            mood: "mood-agriculture" },
-    { id: "industrie",   label: "Industrie",    desc: "Production & usine",     icon: "factory",         mood: "mood-industrie" },
-    { id: "services",    label: "Services",     desc: "Services pro",           icon: "briefcase",       mood: "mood-services" },
-    { id: "tourisme",    label: "Tourisme",     desc: "Voyage & tourisme",      icon: "plane",           mood: "mood-tourisme" },
-];
+:root {
+    --bg-black: #000000;
+    --bg-surface: #060609;
+    --bg-card: rgba(12, 12, 18, 0.75);
+    
+    --gold-og: #C5A059;
+    --gold-hover: #E8C27A;
+    --gold-glow: rgba(197, 160, 89, 0.25);
+    
+    --blue-tech: #00f0ff;
+    --blue-glow: 0 0 30px rgba(0, 240, 255, 0.45);
+    --blue-border: rgba(0, 240, 255, 0.5);
 
-// Plateformes — affichées dans la SIDEBAR (plus dans le contenu principal).
-// "color" = couleur de marque, utilisée uniquement pour l'anneau/glow une fois connecté.
-const PLATFORMS = [
-    { id: "instagram", label: "Instagram", icon: "instagram",      color: "#E1306C", connectRoute: "/connect/instagram" },
-    { id: "tiktok",    label: "TikTok",    icon: "music-2",        color: "#25F4EE", connectRoute: "/connect/tiktok" },
-    { id: "facebook",  label: "Facebook",  icon: "facebook",       color: "#1877F2", connectRoute: "/connect/facebook" },
-    { id: "whatsapp",  label: "WhatsApp",  icon: "message-circle", color: "#25D366", connectRoute: "/connect/whatsapp" },
-    { id: "youtube",   label: "YouTube",   icon: "youtube",        color: "#FF0000", connectRoute: "/connect/youtube" },
-    { id: "linkedin",  label: "LinkedIn",  icon: "linkedin",       color: "#0A66C2", connectRoute: "/connect/linkedin" },
-    { id: "x",         label: "X",         icon: "twitter",        color: "#E7E9EA", connectRoute: "/connect/x" },
-    { id: "pinterest", label: "Pinterest", icon: "image",          color: "#E60023", connectRoute: "/connect/pinterest" },
-    { id: "shopify",   label: "Shopify",   icon: "shopping-bag",   color: "#95BF47", connectRoute: "/connect/shopify" },
-    { id: "discord",   label: "Discord",   icon: "message-square", color: "#5865F2", connectRoute: "/connect/discord" },
-    { id: "telegram",  label: "Telegram",  icon: "send",           color: "#229ED9", connectRoute: "/connect/telegram" },
-    { id: "stripe",    label: "Stripe",    icon: "credit-card",    color: "#635BFF", connectRoute: "/connect/stripe" },
-    { id: "paypal",    label: "PayPal",    icon: "wallet",         color: "#00457C", connectRoute: "/connect/paypal" },
-    { id: "google",    label: "Google",    icon: "chrome",         color: "#4285F4", connectRoute: "/connect/google" },
-    { id: "notion",    label: "Notion",    icon: "file-text",      color: "#EDEDED", connectRoute: "/connect/notion" },
-    { id: "openai",    label: "OpenAI",    icon: "sparkles",       color: "#10A37F", connectRoute: "/connect/openai" },
-    { id: "claude",    label: "Claude",    icon: "bot",            color: "#D97757", connectRoute: "/connect/claude" },
-];
+    --text-main: #F4F1EA;
+    --text-muted: #827E78;
+    
+    --border-subtle: 1px solid rgba(197, 160, 89, 0.18);
+    --border-hover: 1px solid rgba(0, 240, 255, 0.45);
 
-function renderMetierGrid() {
-    const grid = document.getElementById("metier-grid");
-    if (!grid) return;
+    --font-display: 'Cinzel', serif;
+    --font-body: 'Inter', sans-serif;
 
-    grid.innerHTML = METIERS.map(m => `
-        <a class="metier-card" href="/qg/${m.id}" data-metier="${m.id}">
-            <div class="metier-card__media ${m.mood}">
-                <i class="metier-card__watermark" data-lucide="${m.icon}"></i>
-                <div class="metier-card__shade"></div>
-            </div>
-            <div class="metier-card__body">
-                <i data-lucide="${m.icon}"></i>
-                <div>
-                    <h3>${m.label}</h3>
-                    <span>${m.desc}</span>
-                </div>
-            </div>
-        </a>
-    `).join("") + `
-        <a class="metier-card more" href="/metiers">
-            <i data-lucide="plus-circle"></i>
-            <h3>Plus de métiers</h3>
-        </a>
-    `;
+    --sidebar-width: 82px;
+    --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-function renderSidebarPlatforms() {
-    const wrap = document.getElementById("og-sidebar-platforms");
-    if (!wrap) return;
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-    const connected = window.OG_CONNECTED_PLATFORMS || [];
-
-    wrap.innerHTML = PLATFORMS.map(p => {
-        const isConnected = connected.includes(p.id);
-        return `
-            <button
-                class="og-platform${isConnected ? " connected" : ""}"
-                type="button"
-                style="--brand-color:${p.color}"
-                data-platform="${p.id}"
-                data-connect-route="${p.connectRoute}"
-                title="${p.label}${isConnected ? " — connecté" : " — cliquer pour connecter"}"
-                aria-label="${p.label}"
-            >
-                <i data-lucide="${p.icon}"></i>
-                ${isConnected ? '<span class="og-platform__dot"></span>' : ""}
-            </button>
-        `;
-    }).join("");
-
-    wrap.querySelectorAll(".og-platform").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const alreadyConnected = btn.classList.contains("connected");
-            window.location.href = alreadyConnected ? "/settings#connexions" : btn.dataset.connectRoute;
-        });
-    });
+body, html, .og-capital, .og-main-content {
+    background-color: var(--bg-black) !important;
+    color: var(--text-main);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    min-height: 100vh;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    renderMetierGrid();
-    renderSidebarPlatforms();
+.og-capital {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
 
-    if (typeof lucide !== "undefined") {
-        lucide.createIcons();
-    }
+/* ==========================================================
+   SIDEBAR MINIMALISTE & ULTRA-FLUIDE (STYLE LINEAR)
+   ========================================================== */
+.og-sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0; left: 0;
+    background: linear-gradient(180deg, #040406 0%, #000000 100%);
+    border-right: var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 0;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+}
 
-    // Sidebar : état actif au clic
-    const navItems = document.querySelectorAll(".og-item");
-    navItems.forEach(item => {
-        item.addEventListener("click", function () {
-            navItems.forEach(i => i.classList.remove("active"));
-            this.classList.add("active");
-        });
-    });
+.sidebar-top { margin-bottom: 30px; }
 
-    // Recherche premium du hero
-    const heroSearch = document.getElementById("hero-search");
-    if (heroSearch) {
-        heroSearch.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && heroSearch.value.trim()) {
-                window.location.href = "/metiers?q=" + encodeURIComponent(heroSearch.value.trim());
-            }
-        });
-    }
+.brand-sigil-link {
+    width: 44px; height: 44px;
+    background: rgba(197, 160, 89, 0.08);
+    border: var(--border-subtle);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    text-decoration: none;
+    transition: all 0.3s var(--ease-smooth);
+}
 
-    // Widget SAMII : ouverture / fermeture
-    const samiiWidget = document.getElementById("samii-widget");
-    const samiiTrigger = document.getElementById("samii-widget-trigger");
-    const samiiClose = document.getElementById("samii-widget-close");
+.brand-sigil-link:hover {
+    border-color: var(--blue-tech);
+    box-shadow: var(--blue-glow);
+    transform: scale(1.05);
+}
 
-    function openSamii() { if (samiiWidget) samiiWidget.dataset.open = "true"; }
-    function closeSamii() { if (samiiWidget) samiiWidget.dataset.open = "false"; }
+.sigil-letter {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--gold-og);
+    letter-spacing: 0.05em;
+}
 
-    if (samiiTrigger) samiiTrigger.addEventListener("click", openSamii);
-    if (samiiClose) samiiClose.addEventListener("click", closeSamii);
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
 
-    // Envoi de message SAMII -> /api/chat (déjà défini côté serveur dans index.js)
-    const samiiForm = document.getElementById("samii-widget-form");
-    if (samiiForm) {
-        samiiForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const input = document.getElementById("samii-widget-input");
-            const feed = document.getElementById("samii-widget-feed");
-            const message = input.value.trim();
-            if (!message) return;
+.sidebar-item {
+    width: 58px; height: 50px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.25s var(--ease-smooth);
+    position: relative;
+}
 
-            feed.insertAdjacentHTML("beforeend", `
-                <div class="samii-msg samii-msg--user">
-                    <div class="samii-msg__bubble">${message}</div>
-                </div>
-            `);
-            input.value = "";
-            feed.scrollTop = feed.scrollHeight;
+.sidebar-item i { width: 18px; height: 18px; margin-bottom: 2px; }
+.sidebar-item span { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 
-            try {
-                const res = await fetch("/api/chat", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message }),
-                });
-                const data = await res.json();
-                feed.insertAdjacentHTML("beforeend", `
-                    <div class="samii-msg samii-msg--bot">
-                        <div class="samii-msg__bubble">${data.reply}</div>
-                    </div>
-                `);
-                feed.scrollTop = feed.scrollHeight;
-            } catch (err) {
-                console.error(err);
-            }
-        });
-    }
-});
+.sidebar-item:hover {
+    color: var(--gold-hover);
+    background: rgba(197, 160, 89, 0.08);
+}
 
-// ==========================================================================
-// i18n — conservé pour compatibilité avec le futur sélecteur de langue
-// ==========================================================================
-const capitolTranslations = {
-    fr: { eyebrow: "OG Empire", hero: "Quel empire voulez-vous construire ?", sub: "SAMII vous aide à lancer votre QG et à connecter votre écosystème." },
-    en: { eyebrow: "OG Empire", hero: "What empire will you build?",          sub: "SAMII helps you launch your HQ and connect your ecosystem." },
-    ar: { eyebrow: "OG Empire", hero: "أي إمبراطورية ستبني؟",                  sub: "سامي يساعدك على إطلاق مقرك وربط منظومتك." },
-};
+.sidebar-item.active {
+    color: #000;
+    background: linear-gradient(135deg, var(--gold-og), #9d7d3d);
+    box-shadow: 0 0 20px rgba(197, 160, 89, 0.35);
+}
 
-function switchCapitolLang(lang) {
-    const t = capitolTranslations[lang];
-    if (!t) return;
-    const eyebrow = document.querySelector(".hero-eyebrow");
-    const title = document.querySelector(".hero-text-zone h1");
-    const sub = document.querySelector(".hero-text-zone p");
-    if (eyebrow) eyebrow.textContent = t.eyebrow;
-    if (title) title.textContent = t.hero;
-    if (sub) sub.textContent = t.sub;
+.sidebar-bottom {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 10px;
+}
+
+.tech-pulse-node {
+    width: 10px; height: 10px;
+    background: var(--blue-tech);
+    border-radius: 50%;
+    box-shadow: var(--blue-glow);
+    animation: bluePulse 2.5s infinite ease-in-out;
+}
+
+@keyframes bluePulse {
+    0%, 100% { transform: scale(0.85); opacity: 0.4; }
+    50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 20px var(--blue-tech); }
+}
+
+/* ==========================================================
+   CONTENU PRINCIPAL
+   ========================================================== */
+.og-main-content {
+    margin-left: var(--sidebar-width);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ==========================================================
+   HERO : VILLE FUTURISTE IMMERSIVE
+   ========================================================== */
+.og-hero {
+    position: relative;
+    min-height: 85vh;
+    display: flex;
+    align-items: center;
+    padding: 80px 70px;
+    overflow: hidden;
+}
+
+.hero-city-viewport {
+    position: absolute; inset: 0; z-index: 0;
+    background: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
+    animation: heroCinematicZoom 30s infinite alternate ease-in-out;
+    filter: brightness(0.6) contrast(1.15);
+}
+
+@keyframes heroCinematicZoom {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.07); }
+}
+
+.hero-tech-grid {
+    position: absolute; inset: 0; z-index: 1;
+    background-image: 
+        linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.4;
+}
+
+.hero-ambient-glow {
+    position: absolute; width: 500px; height: 500px; border-radius: 50%;
+    filter: blur(130px); pointer-events: none; z-index: 1; opacity: 0.25;
+}
+.glow-gold { background: var(--gold-og); top: -100px; left: -100px; }
+.glow-blue { background: var(--blue-tech); bottom: -100px; right: -100px; opacity: 0.2; }
+
+.hero-inner {
+    position: relative; z-index: 3;
+    max-width: 780px;
+}
+
+.hero-tag {
+    font-size: 0.8rem; font-weight: 700; color: var(--gold-og);
+    letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 18px;
+    text-shadow: 0 0 15px rgba(197, 160, 89, 0.4);
+}
+
+.og-hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 5.5vw, 4.5rem);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    text-shadow: 0 4px 30px rgba(0,0,0,0.8);
+}
+
+.og-hero p {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    margin-bottom: 35px;
+    max-width: 540px;
+    line-height: 1.5;
+}
+
+/* Barre de recherche Hero */
+.hero-search-wrapper { max-width: 520px; margin-bottom: 25px; }
+
+.hero-search-trigger {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%;
+    background: rgba(10, 10, 15, 0.8);
+    backdrop-filter: blur(25px);
+    border: var(--border-subtle);
+    border-radius: 14px;
+    padding: 16px 20px;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.3s var(--ease-smooth);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+}
+
+.hero-search-trigger:hover {
+    border-color: var(--blue-tech);
+    box-shadow: var(--blue-glow);
+    transform: translateY(-2px);
+}
+
+.hero-search-trigger i { color: var(--gold-og); width: 20px; height: 20px; }
+.hero-search-trigger span { font-size: 0.95rem; font-weight: 500; text-align: left; flex: 1; margin-left: 12px; color: var(--text-muted); }
+.hero-search-trigger kbd {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; color: var(--text-muted);
+}
+
+.active-workspace-pill {
+    display: flex; align-items: center; gap: 10px; margin-top: 15px;
+}
+.active-workspace-pill span { font-size: 0.82rem; color: var(--text-muted); }
+.pill-btn {
+    background: rgba(197, 160, 89, 0.1);
+    border: 1px solid rgba(197, 160, 89, 0.3);
+    color: var(--gold-hover);
+    padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.85rem;
+    cursor: pointer; transition: all 0.25s ease;
+}
+.pill-btn:hover { background: rgba(197, 160, 89, 0.22); box-shadow: 0 0 15px rgba(197,160,89,0.3); }
+
+/* ==========================================================
+   SECTION MÉTIERS : CARTES ULTRA PREMIUM (HOVER BLEU TECH + DORÉ)
+   ========================================================== */
+.og-metiers-section {
+    padding: 70px;
+}
+
+.section-header { margin-bottom: 40px; }
+.section-header h2 {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    color: #fff;
+    margin-bottom: 8px;
+}
+.section-header p { color: var(--text-muted); font-size: 1rem; }
+
+.metier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.og-card {
+    position: relative;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: var(--border-subtle);
+    border-radius: 20px;
+    padding: 32px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s var(--ease-smooth);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 180px;
+}
+
+/* Effet de lueur interne au survol */
+.card-glow-border {
+    position: absolute; inset: 0; border-radius: 20px;
+    background: radial-gradient(circle at top right, rgba(0, 240, 255, 0.2), transparent 70%);
+    opacity: 0; transition: opacity 0.4s ease; pointer-events: none;
+}
+
+.og-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--blue-tech);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8), var(--blue-glow);
+}
+
+.og-card:hover .card-glow-border { opacity: 1; }
+
+.card-icon-box {
+    width: 48px; height: 48px;
+    background: rgba(197, 160, 89, 0.08);
+    border: 1px solid rgba(197, 160, 89, 0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold-og);
+    margin-bottom: 24px;
+    transition: all 0.3s var(--ease-smooth);
+}
+
+.og-card:hover .card-icon-box {
+    background: rgba(0, 240, 255, 0.12);
+    border-color: var(--blue-tech);
+    color: var(--blue-tech);
+    box-shadow: var(--blue-glow);
+    transform: scale(1.1) rotate(5deg);
+}
+
+.card-icon-box i { width: 22px; height: 22px; }
+
+.card-content h3 {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.card-content p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+}
+
+.card-arrow {
+    position: absolute; bottom: 25px; right: 25px;
+    color: var(--text-muted); opacity: 0; transform: translateX(-10px);
+    transition: all 0.3s var(--ease-smooth);
+}
+
+.og-card:hover .card-arrow {
+    opacity: 1; transform: translateX(0); color: var(--blue-tech);
+}
+.card-arrow i { width: 20px; height: 20px; }
+
+/* ==========================================================
+   FOOTER EMPIRE MONDIAL (GLOBE FUTURISTE EN BAS)
+   ========================================================== */
+.og-empire-footer {
+    position: relative;
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 70px;
+    margin-top: auto;
+    overflow: hidden;
+    text-align: center;
+}
+
+.globe-viewport {
+    position: absolute; inset: 0; z-index: 0;
+    background: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat;
+    animation: globeFloat 25s infinite alternate ease-in-out;
+    filter: brightness(0.5) contrast(1.2);
+}
+
+@keyframes globeFloat {
+    0% { transform: scale(1) translateY(0); }
+    100% { transform: scale(1.06) translateY(-15px); }
+}
+
+.globe-overlay-gradient {
+    position: absolute; inset: 0; z-index: 1;
+    background: 
+        linear-gradient(0deg, #000000 0%, rgba(0,0,0,0.65) 60%, rgba(0,0,0,0.9) 100%),
+        radial-gradient(circle at center, rgba(0,240,255,0.1), transparent 70%);
+}
+
+.empire-content {
+    position: relative; z-index: 3;
+    max-width: 750px;
+    display: flex; flex-direction: column; align-items: center;
+}
+
+.empire-badge {
+    font-size: 0.75rem; font-weight: 700; color: var(--blue-tech);
+    letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 16px;
+    text-shadow: var(--blue-glow);
+}
+
+.og-empire-footer h2 {
+    font-family: var(--font-display);
+    font-size: clamp(2.2rem, 4vw, 3.2rem);
+    color: #fff;
+    margin-bottom: 14px;
+}
+
+.og-empire-footer p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-bottom: 45px;
+    max-width: 500px;
+}
+
+.empire-footer-bottom {
+    width: 100%;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 25px;
+    font-size: 0.82rem; color: var(--text-muted);
+}
+
+.system-status-indicator {
+    display: flex; align-items: center; gap: 8px;
+}
+.status-dot {
+    width: 8px; height: 8px; background: var(--blue-tech);
+    border-radius: 50%; box-shadow: var(--blue-glow);
+}
+
+/* ==========================================================
+   MODALE COMMANDE INTERACTIVE
+   ========================================================== */
+.og-modal {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.og-modal.active { opacity: 1; pointer-events: auto; }
+
+.modal-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(15px);
+}
+
+.modal-container {
+    position: relative; z-index: 2;
+    width: 100%; max-width: 580px;
+    background: #09090e;
+    border: 1px solid rgba(197, 160, 89, 0.35);
+    border-radius: 22px;
+    padding: 36px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.9), 0 0 40px rgba(197, 160, 89, 0.15);
+    transform: scale(0.95) translateY(15px);
+    transition: transform 0.35s var(--ease-smooth);
+}
+
+.og-modal.active .modal-container { transform: scale(1) translateY(0); }
+
+.modal-close {
+    position: absolute; top: 22px; right: 22px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-muted); width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s ease;
+}
+.modal-close:hover { background: var(--gold-og); color: #000; border-color: var(--gold-og); }
+
+.modal-step { display: none; }
+.modal-step.active { display: block; }
+
+.modal-step h2 {
+    font-family: var(--font-display); font-size: 1.7rem; color: #fff; margin-bottom: 6px;
+}
+.modal-step > p { color: var(--text-muted); font-size: 0.92rem; margin-bottom: 24px; }
+
+.modal-search-box { position: relative; margin-bottom: 22px; }
+.modal-search-box i {
+    position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+    color: var(--gold-og); width: 18px; height: 18px;
+}
+.modal-search-box input, .modal-text-input, .input-group input {
+    width: 100%;
+    background: rgba(14, 14, 20, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px 16px 14px 48px;
+    color: #fff; font-size: 0.95rem; outline: none;
+    transition: all 0.3s ease;
+}
+.modal-text-input, .input-group input { padding-left: 16px; }
+.modal-search-box input:focus, .modal-text-input:focus, .input-group input:focus {
+    border-color: var(--blue-tech);
+    box-shadow: var(--blue-glow);
+}
+
+.modal-actions-list { display: flex; flex-direction: column; gap: 10px; }
+.action-row {
+    display: flex; align-items: center; gap: 14px;
+    width: 100%;
+    background: rgba(18, 18, 25, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px; padding: 14px 18px;
+    color: #fff; text-align: left; cursor: pointer;
+    transition: all 0.3s ease;
+}
+.action-row:hover {
+    background: rgba(0, 240, 255, 0.08);
+    border-color: var(--blue-tech);
+    transform: translateX(4px);
+}
+.action-row i { color: var(--gold-og); width: 22px; height: 22px; flex-shrink: 0; }
+.action-row strong { display: block; font-size: 0.95rem; margin-bottom: 2px; }
+.action-row span { font-size: 0.78rem; color: var(--text-muted); }
+
+.samii-agent-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.samii-avatar-dot {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--gold-og), #8e6e33);
+    color: #000; font-weight: 800; font-family: var(--font-display); font-size: 0.9rem;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 15px rgba(197,160,89,0.4);
+}
+.samii-agent-head h3 { font-family: var(--font-display); font-size: 1.05rem; color: #fff; }
+.samii-agent-head p { font-size: 0.8rem; color: var(--text-muted); }
+
+.input-group { margin-bottom: 14px; }
+.input-group label {
+    display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted);
+    margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.og-primary-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--gold-og), #a3813d);
+    color: #000; font-weight: 700; border: none; border-radius: 12px;
+    padding: 14px; font-size: 0.95rem; cursor: pointer; margin-top: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px rgba(197, 160, 89, 0.3);
+}
+.og-primary-btn:hover {
+    background: linear-gradient(135deg, var(--gold-hover), var(--gold-og));
+    box-shadow: 0 8px 25px rgba(197, 160, 89, 0.5);
+    transform: translateY(-2px);
+}
+
+.samii-advice-box {
+    background: rgba(0, 240, 255, 0.05);
+    border-left: 3px solid var(--blue-tech);
+    padding: 14px 18px; border-radius: 0 10px 10px 0;
+    margin-bottom: 20px; font-size: 0.9rem; color: #d4f8fb;
+}
+
+/* ==========================================================
+   RESPONSIVE MOBILE
+   ========================================================== */
+@media (max-width: 768px) {
+    .og-sidebar { width: 100vw; height: 64px; flex-direction: row; bottom: 0; top: auto; padding: 0 10px; border-right: none; border-top: var(--border-subtle); }
+    .sidebar-top { display: none; }
+    .sidebar-nav { flex-direction: row; justify-content: space-around; width: 100%; gap: 0; }
+    .sidebar-item { width: 44px; height: 44px; }
+    .sidebar-bottom { display: none; }
+    .og-main-content { margin-left: 0; margin-bottom: 64px; }
+    .og-hero { padding: 40px 20px; min-height: 60vh; }
+    .og-metiers-section { padding: 40px 20px; }
+    .metier-grid { grid-template-columns: 1fr; }
+    .og-empire-footer { padding: 50px 20px; min-height: 40vh; }
+    .modal-container { padding: 24px; margin: 15px; width: auto; }
 }
