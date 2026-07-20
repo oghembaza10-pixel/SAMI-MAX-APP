@@ -1,54 +1,67 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OG EMPIRE</title>
-<link rel="icon" href="/og.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/index-style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OG EMPIRE</title>
+    <link rel="icon" href="/og.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/index-style.css">
+
+    <!-- SÉCURITÉ ANTI-FLASH BLANC : Noir absolu immédiat -->
+    <style>
+        html, body {
+            background-color: #000000 !important;
+            color: #F4F1EA;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+    </style>
 </head>
 <body>
 
-<!-- HALO -->
-<div class="background-glow"></div>
+    <!-- HALO LUMINEUX -->
+    <div class="background-glow"></div>
 
-<!-- TOP BAR -->
-<div class="og-topbar-safe">
-    <div class="og-logo">
-        ◇ OG
-    </div>
-    <div class="og-lang">
-        <span data-lang-btn="fr">FR</span>
-        <span data-lang-btn="en">EN</span>
-        <span data-lang-btn="ar">AR</span>
-        <span data-lang-btn="zh">ZH</span>
-    </div>
-    <a href="/hub" class="og-enter" data-i18n="topbar.enter"></a>
-</div>
-
-<!-- HERO -->
-<section class="hero">
-    <div class="hero-overlay"></div>
-    <div class="hero-content">
-        <span class="eyebrow" data-i18n="hero.eyebrow"></span>
-
-        <h1 data-i18n="hero.title"></h1>
-
-        <p data-i18n="hero.description"></p>
-
-        <div class="buttons">
-            <a href="/hub" class="btn-gold" data-i18n="buttons.enter"></a>
+    <!-- TOP BAR -->
+    <header class="og-topbar-safe">
+        <div class="og-logo">
+            ◇ OG
         </div>
+        <div class="og-lang">
+            <span data-lang-btn="fr">FR</span>
+            <span data-lang-btn="en">EN</span>
+            <span data-lang-btn="ar">AR</span>
+            <span data-lang-btn="zh">ZH</span>
+        </div>
+        <a href="/hub" class="og-enter" data-i18n="topbar.enter">Entrer dans le Hub</a>
+    </header>
+
+    <!-- HERO CINÉMATOGRAPHIQUE -->
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <span class="eyebrow" data-i18n="hero.eyebrow">OG GLOBAL INFRASTRUCTURE</span>
+
+            <h1 data-i18n="hero.title">Bâtissez votre empire.</h1>
+
+            <p data-i18n="hero.description">Pilotez vos départements, strukturez vos organisations et étendez votre souveraineté technologique.</p>
+
+            <div class="buttons">
+                <a href="/hub" class="btn-gold" data-i18n="buttons.enter">Accéder au QG</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="scroll">
+        ▼
     </div>
-</section>
 
-<div class="scroll">
-    ▼
-</div>
-
-<script src="/js/i18n.js"></script>
+    <script src="/js/i18n.js"></script>
 </body>
 </html>
