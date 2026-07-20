@@ -1,0 +1,126 @@
+/* ======================================================
+   OG SIDEBAR V2
+   Améliorations premium
+======================================================*/
+
+.og-sidebar{
+
+    backdrop-filter:blur(18px);
+    background:
+        linear-gradient(
+            180deg,
+            rgba(10,10,12,.98),
+            rgba(5,5,6,.98)
+        );
+
+    box-shadow:
+        inset -1px 0 rgba(255,255,255,.03),
+        12px 0 50px rgba(0,0,0,.45);
+
+}
+
+
+/* ==========================
+   Scroll invisible
+==========================*/
+
+.og-sidebar{
+
+    overflow-y:auto;
+
+    scrollbar-width:none;
+
+    -ms-overflow-style:none;
+
+}
+
+.og-sidebar::-webkit-scrollbar{
+
+    display:none;
+
+}
+
+
+/* ==========================
+   Logo
+==========================*/
+
+.og-logo{
+
+    margin-bottom:26px;
+
+    transition:.35s;
+
+}
+
+.og-logo:hover{
+
+    transform:scale(1.08);
+
+}
+
+
+/* ==========================
+   Séparateurs
+==========================*/
+
+.og-sidebar-divider{
+
+    width:38px;
+
+    margin:18px auto;
+
+    opacity:.5;
+
+}
+
+
+/* ==========================
+   Navigation
+==========================*/
+
+.og-nav{
+
+    width:100%;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+.og-item{
+
+    width:54px;
+
+    height:54px;
+
+    border-radius:16px;
+
+    transition:.28s;
+
+}
+
+.og-item i{
+
+    width:22px;
+
+    height:22px;
+
+}
+
+.og-item:hover{
+
+    transform:translateY(-3px);
+
+    background:rgba(255,255,255,.03);
+
+}
+
+.og-item.active{
+
+    box-shadow:
+
+        0 0 25px rgba(197,160,89,.18);
+
+}
