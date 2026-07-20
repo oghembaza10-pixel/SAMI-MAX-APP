@@ -6,8 +6,8 @@
 // connecteur. Il utilise uniquement workspaceService.
 // ======================================================
 
-const express          = require("express");
-const router           = express.Router();
+const express = require("express");
+const router = express.Router();
 const workspaceService = require("../services/workspaceService");
 
 // ── Auth middleware ───────────────────────────────────
@@ -19,25 +19,27 @@ function requireAuth(req, res, next) {
 // ── GET /hub ──────────────────────────────────────────
 router.get("/", requireAuth, async (req, res) => {
     try {
-        const email      = req.session?.email || "";
+        const email = req.session?.email || "";
+
         const workspaces = email
             ? await workspaceService.getByOwner(email)
             : [];
 
         res.render("hub", {
             workspaces,
-            shop   : req.session?.shop || "",
+            workspaceId: req.session?.workspaceId || "",
             modules: [],
-            error  : null,
+            error: null,
         });
 
     } catch (err) {
         console.error("❌ GET /hub :", err.message);
+
         res.status(500).render("hub", {
             workspaces: [],
-            shop      : req.session?.shop || "",
-            modules   : [],
-            error     : "Impossible de charger vos workspaces.",
+            workspaceId: req.session?.workspaceId || "",
+            modules: [],
+            error: "Impossible de charger vos workspaces.",
         });
     }
 });
@@ -46,45 +48,48 @@ router.get("/", requireAuth, async (req, res) => {
 router.post("/select-workspace", requireAuth, async (req, res) => {
     try {
         const { workspaceId } = req.body;
-        const email           = req.session?.email || "";
+        const email = req.session?.email || "";
 
-        // ✅ Validation stricte
         if (
             typeof workspaceId !== "string" ||
-            workspaceId.trim() === ""       ||
+            workspaceId.trim() === "" ||
             !email
         ) {
             return res.status(400).json({
                 success: false,
-                error  : "Données manquantes.",
+                error: "Données manquantes.",
             });
         }
 
         const id = workspaceId.trim();
 
-        // ✅ Sécurité — vérifier ownership (1 seule requête Airtable)
+        // Vérifie que le workspace appartient bien à l'utilisateur
         const isOwner = await workspaceService.belongsToOwner(id, email);
+
         if (!isOwner) {
             return res.status(403).json({
                 success: false,
-                error  : "Accès refusé.",
+                error: "Accès refusé.",
             });
         }
 
-        // ✅ Session légère + lastWorkspace
-        req.session.workspaceId   = id;
+        // Sauvegarde du workspace dans la session
+        req.session.workspaceId = id;
         req.session.lastWorkspace = id;
 
-        // ✅ Session sauvegardée avant redirection
         req.session.save(() => {
-            res.json({ success: true, redirect: "/qg" });
+            res.json({
+                success: true,
+                redirect: "/qg",
+            });
         });
 
     } catch (err) {
         console.error("❌ POST /hub/select-workspace :", err.message);
+
         res.status(500).json({
             success: false,
-            error  : "Erreur interne.",
+            error: "Erreur interne.",
         });
     }
 });
