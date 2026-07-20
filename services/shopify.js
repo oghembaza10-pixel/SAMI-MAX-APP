@@ -1,38 +1,87 @@
-const axios        = require("axios");
+const axios = require("axios");
 const orchestrator = require("../brain/orchestrator");
 
-async function getOrders(shop, token) {
+const SHOPIFY_API_VERSION = "2026-07";
+
+// ─────────────────────────────────────────────
+// Récupérer les commandes
+// ─────────────────────────────────────────────
+async function getOrders(shop, accessToken) {
     try {
-        const res = await axios.get(
-            `https://${shop}/admin/api/2024-01/orders.json`,
-            { headers: { "X-Shopify-Access-Token": token } }
+        const { data } = await axios.get(
+            `https://${shop}/admin/api/${SHOPIFY_API_VERSION}/orders.json`,
+            {
+                headers: {
+                    "X-Shopify-Access-Token": accessToken,
+                },
+            }
         );
-        return { success: true, orders: res.data.orders };
+
+        return {
+            success: true,
+            orders: data.orders || [],
+        };
+
     } catch (err) {
-        console.error("❌ Shopify getOrders :", err.message);
-        return { success: false, error: err.message };
+        console.error("❌ Shopify getOrders :", err.response?.data || err.message);
+
+        return {
+            success: false,
+            error: err.message,
+        };
     }
 }
 
-async function getProducts(shop, token) {
+// ─────────────────────────────────────────────
+// Récupérer les produits
+// ─────────────────────────────────────────────
+async function getProducts(shop, accessToken) {
     try {
-        const res = await axios.get(
-            `https://${shop}/admin/api/2024-01/products.json`,
-            { headers: { "X-Shopify-Access-Token": token } }
+        const { data } = await axios.get(
+            `https://${shop}/admin/api/${SHOPIFY_API_VERSION}/products.json`,
+            {
+                headers: {
+                    "X-Shopify-Access-Token": accessToken,
+                },
+            }
         );
-        return { success: true, products: res.data.products };
+
+        return {
+            success: true,
+            products: data.products || [],
+        };
+
     } catch (err) {
-        console.error("❌ Shopify getProducts :", err.message);
-        return { success: false, error: err.message };
+        console.error("❌ Shopify getProducts :", err.response?.data || err.message);
+
+        return {
+            success: false,
+            error: err.message,
+        };
     }
 }
 
+// ─────────────────────────────────────────────
+// Réception d'un événement Shopify
+// ─────────────────────────────────────────────
 async function receive(event) {
-    await orchestrator.process({
-        type   : `shopify.${event.type}`,
-        shop   : event.shop || "",
-        payload: event.payload,
-    });
+    try {
+        await orchestrator.process({
+            type: `shopify.${event.type}`,
+            shop: event.shop || "",
+            payload: event.payload || {},
+        });
+
+        return true;
+
+    } catch (err) {
+        console.error("❌ Shopify receive :", err.message);
+        return false;
+    }
 }
 
-module.exports = { getOrders, getProducts, receive };
+module.exports = {
+    getOrders,
+    getProducts,
+    receive,
+};
