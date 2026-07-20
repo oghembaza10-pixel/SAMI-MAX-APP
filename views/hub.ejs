@@ -13,7 +13,9 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+<!-- CSS -->
 <link rel="stylesheet" href="/css/hub-premium.css">
+<link rel="stylesheet" href="/css/sidebar-v2.css">
 
 </head>
 
@@ -25,7 +27,6 @@
 
 <main class="capitol-content">
 
-
 <% if(error){ %>
 
 <div class="hub-error">
@@ -36,12 +37,8 @@
 
 <% } %>
 
-
-
 <!-- ========================================================= -->
-
 <!-- HERO -->
-
 <!-- ========================================================= -->
 
 <header class="hero-premium">
@@ -54,13 +51,11 @@
 
 <div class="hero-content">
 
-
 <div class="hero-logo">
 
 OG
 
 </div>
-
 
 <h1>
 
@@ -68,21 +63,15 @@ Tout commence ici.
 
 </h1>
 
-
 <p>
 
 Choisissez votre métier ou créez votre QG avec l'aide de SAMII.
 
 </p>
 
-
-
 <!-- ========================================================= -->
-
 <!-- BARRE DE RECHERCHE -->
-
 <!-- ========================================================= -->
-
 
 <div class="hub-search">
 
@@ -102,14 +91,9 @@ Quel est votre métier ?
 
 </div>
 
-
-
 <!-- ========================================================= -->
-
 <!-- SI L'UTILISATEUR A DÉJÀ DES QG -->
-
 <!-- ========================================================= -->
-
 
 <% if(hasWorkspace){ %>
 
@@ -126,9 +110,7 @@ Dernier QG utilisé
 <% if(workspace.id===lastWorkspace){ %>
 
 <button
-
 class="last-workspace-button"
-
 data-workspace="<%= workspace.id %>">
 
 <%= workspace.name %>
@@ -146,15 +128,9 @@ data-workspace="<%= workspace.id %>">
 </div>
 
 </header>
-
-
-
 <!-- ========================================================= -->
-
 <!-- LISTE DES MÉTIERS -->
-
 <!-- ========================================================= -->
-
 
 <section class="hub-metiers">
 
@@ -174,16 +150,12 @@ Ou utilisez la recherche si votre métier n'existe pas encore.
 
 </div>
 
-
-
-<div class="metier-grid">
+<div class="metier-grid" id="metier-grid">
 
 <% metiers.forEach(function(metier){ %>
 
 <div
-
 class="metier-card"
-
 data-metier="<%= metier %>">
 
 <div class="metier-icon">
@@ -348,57 +320,33 @@ Créer un QG
 
                 <div class="form-group">
 
-                    <label>
+                    <label>Votre métier</label>
 
-                        Votre métier
-
-                    </label>
-
-                    <input
-                        id="workspaceMetier"
-                        type="text">
+                    <input id="workspaceMetier" type="text">
 
                 </div>
 
                 <div class="form-group">
 
-                    <label>
+                    <label>Nom</label>
 
-                        Nom
-
-                    </label>
-
-                    <input
-                        id="workspaceNom"
-                        type="text">
+                    <input id="workspaceNom" type="text">
 
                 </div>
 
                 <div class="form-group">
 
-                    <label>
+                    <label>Prénom</label>
 
-                        Prénom
-
-                    </label>
-
-                    <input
-                        id="workspacePrenom"
-                        type="text">
+                    <input id="workspacePrenom" type="text">
 
                 </div>
 
                 <div class="form-group">
 
-                    <label>
+                    <label>Nom de votre entreprise</label>
 
-                        Nom de votre entreprise
-
-                    </label>
-
-                    <input
-                        id="workspaceEntreprise"
-                        type="text">
+                    <input id="workspaceEntreprise" type="text">
 
                 </div>
 
@@ -413,7 +361,6 @@ Créer un QG
             </form>
 
         </div>
-
         <!-- ========================================================= -->
         <!-- ETAPE 3 -->
         <!-- ========================================================= -->
@@ -572,15 +519,10 @@ Créer un QG
 <script>
 
 window.OG_WORKSPACES = <%- JSON.stringify(workspaces || []) %>;
-
 window.OG_WORKSPACE_ID = "<%= workspaceId || '' %>";
-
 window.OG_ACTIONS = <%- JSON.stringify(actions || []) %>;
-
 window.OG_METIERS = <%- JSON.stringify(metiers || []) %>;
-
 window.OG_HAS_WORKSPACE = <%= hasWorkspace ? "true" : "false" %>;
-
 window.OG_LAST_WORKSPACE = "<%= lastWorkspace || '' %>";
 
 </script>
@@ -591,19 +533,13 @@ window.OG_LAST_WORKSPACE = "<%= lastWorkspace || '' %>";
 
 <script src="https://unpkg.com/lucide@latest"></script>
 
-<script>
-
-lucide.createIcons();
-
-</script>
-
 <!-- ========================================================= -->
 <!-- JS -->
 <!-- ========================================================= -->
 
 <script src="/js/i18n.js"></script>
-
 <script src="/js/hub.js"></script>
+
 
 </body>
 
