@@ -853,3 +853,460 @@
     font-size:1rem;
 
 }
+/* ===========================================================
+   HUB BANNER PREMIUM
+===========================================================*/
+
+.hub-banner{
+
+    position:relative;
+
+    overflow:hidden;
+
+    min-height:70vh;
+
+    display:flex;
+
+    align-items:center;
+
+    background:
+    linear-gradient(135deg,#050505,#000);
+
+}
+
+.hub-banner__img{
+
+    position:absolute;
+
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    object-fit:cover;
+
+    opacity:.35;
+
+    transform:scale(1.05);
+
+    animation:bannerZoom 22s ease-in-out infinite alternate;
+
+}
+
+@keyframes bannerZoom{
+
+    from{
+
+        transform:scale(1.05);
+
+    }
+
+    to{
+
+        transform:scale(1.15);
+
+    }
+
+}
+
+.hub-banner__overlay{
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+    linear-gradient(
+    90deg,
+    rgba(0,0,0,.92),
+    rgba(0,0,0,.55),
+    rgba(0,0,0,.88)
+    );
+
+}
+
+.hub-banner__glow{
+
+    position:absolute;
+
+    width:700px;
+
+    height:700px;
+
+    border-radius:50%;
+
+    background:#5FD4FF;
+
+    filter:blur(170px);
+
+    opacity:.15;
+
+    right:-180px;
+
+    top:-150px;
+
+    animation:bannerGlow 12s ease-in-out infinite;
+
+}
+
+@keyframes bannerGlow{
+
+    50%{
+
+        transform:scale(1.12);
+
+    }
+
+}
+
+.hub-banner__content{
+
+    position:relative;
+
+    z-index:5;
+
+    max-width:620px;
+
+    padding-left:80px;
+
+}
+
+.hub-banner__content h2{
+
+    font-family:var(--font-display);
+
+    font-size:clamp(2rem,4vw,3.4rem);
+
+    line-height:1.15;
+
+    color:white;
+
+    margin-bottom:18px;
+
+}
+
+.hub-banner__content p{
+
+    color:#BEB7AF;
+
+    line-height:1.8;
+
+    font-size:1rem;
+
+}
+/* ===========================================================
+   FOOTER PREMIUM
+===========================================================*/
+
+.og-footer{
+
+    padding:60px 80px 40px;
+
+}
+
+.og-footer__line{
+
+    height:1px;
+
+    background:linear-gradient(
+    90deg,
+    transparent,
+    rgba(197,160,89,.45),
+    transparent
+    );
+
+    margin-bottom:35px;
+
+}
+
+.og-footer__inner{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    flex-wrap:wrap;
+
+    gap:20px;
+
+}
+
+.og-footer__brand{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    color:#C5A059;
+
+    font-weight:700;
+
+}
+
+.og-footer__quote{
+
+    color:#8E8E8E;
+
+    font-style:italic;
+
+}
+
+.og-mono{
+
+    font-family:var(--font-mono);
+
+    color:#777;
+
+}
+
+/* ===========================================================
+   SAMII AI
+===========================================================*/
+
+.samii-widget{
+
+    position:fixed;
+
+    right:28px;
+
+    bottom:28px;
+
+    z-index:999;
+
+}
+
+.samii-widget__trigger{
+
+    width:64px;
+
+    height:64px;
+
+    border:none;
+
+    border-radius:50%;
+
+    cursor:pointer;
+
+    color:white;
+
+    background:linear-gradient(
+    135deg,
+    #6C63FF,
+    #8B5CFF
+    );
+
+    box-shadow:
+    0 15px 45px rgba(108,99,255,.45);
+
+    transition:.4s;
+
+}
+
+.samii-widget__trigger:hover{
+
+    transform:
+    translateY(-5px)
+    scale(1.08);
+
+}
+
+.samii-widget__panel{
+
+    position:absolute;
+
+    right:0;
+
+    bottom:82px;
+
+    width:340px;
+
+    max-height:460px;
+
+    display:none;
+
+    overflow:hidden;
+
+    border-radius:20px;
+
+    background:#0B0B0B;
+
+    border:1px solid rgba(197,160,89,.18);
+
+}
+
+.samii-widget[data-open="true"] .samii-widget__panel{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.samii-widget__feed{
+
+    flex:1;
+
+    overflow-y:auto;
+
+    padding:18px;
+
+}
+
+.samii-widget__form{
+
+    display:flex;
+
+    gap:8px;
+
+    padding:14px;
+
+    border-top:1px solid rgba(255,255,255,.06);
+
+}
+
+.samii-widget__form input{
+
+    flex:1;
+
+    border:none;
+
+    outline:none;
+
+    border-radius:12px;
+
+    padding:12px;
+
+    background:#111;
+
+    color:white;
+
+}
+
+.samii-widget__form button{
+
+    width:44px;
+
+    border:none;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    background:#C5A059;
+
+    color:black;
+
+}
+
+/* ===========================================================
+   RESPONSIVE PREMIUM
+===========================================================*/
+
+@media(max-width:768px){
+
+.hero-text-zone{
+
+padding:0 24px;
+
+}
+
+.hero-text-zone h1{
+
+font-size:2.3rem;
+
+}
+
+.hero-search{
+
+margin-top:24px;
+
+}
+
+.metier-grid{
+
+grid-template-columns:repeat(2,1fr);
+
+gap:14px;
+
+padding:0 18px;
+
+}
+
+.section-eyebrow{
+
+margin:24px 18px;
+
+}
+
+.hub-banner{
+
+min-height:50vh;
+
+}
+
+.hub-banner__content{
+
+padding:0 24px;
+
+}
+
+.og-footer{
+
+padding:35px 24px;
+
+}
+
+.samii-widget{
+
+right:18px;
+
+bottom:18px;
+
+}
+
+.samii-widget__panel{
+
+width:92vw;
+
+right:-6px;
+
+}
+
+}
+
+@media(max-width:520px){
+
+.metier-grid{
+
+grid-template-columns:1fr;
+
+}
+
+.hero-search{
+
+flex-direction:column;
+
+align-items:stretch;
+
+}
+
+.hero-search__btn{
+
+width:100%;
+
+height:48px;
+
+}
+
+.hero-text-zone h1{
+
+font-size:2rem;
+
+}
+
+}
