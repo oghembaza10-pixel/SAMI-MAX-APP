@@ -40,21 +40,43 @@ body {
 .og-sidebar {
     width: var(--sidebar-w);
     height: 100vh;
+
     position: fixed;
-    left: 0; top: 0;
-    background: var(--bg-panel);
-    border-right: var(--border-gold);
+    left: 0;
+    top: 0;
+
     display: flex;
     flex-direction: column;
+
+    background: var(--bg-panel);
+    border-right: var(--border-gold);
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
     align-items: center;
     padding: 22px 0 14px;
     z-index: 100;
 }
 
+.og-sidebar::-webkit-scrollbar {
+    display: none;
+}
+
 .og-logo { width: 40px; height: 40px; margin-bottom: 22px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .og-logo img { width: 100%; height: auto; }
 
-.og-nav { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.og-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px 0;
+    flex-shrink: 0;
+}
 
 .og-item {
     position: relative;
@@ -93,15 +115,11 @@ body {
 .og-platforms {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    overflow-y: auto;
-    flex: 1;
+    gap: 8px;
+    padding-bottom: 20px;
+    flex-shrink: 0;
     min-height: 0;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(197,160,89,0.3) transparent;
 }
-.og-platforms::-webkit-scrollbar { width: 3px; }
-.og-platforms::-webkit-scrollbar-thumb { background: rgba(197,160,89,0.3); border-radius: 3px; }
 
 .og-platform {
     position: relative;
