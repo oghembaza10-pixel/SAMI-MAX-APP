@@ -1,155 +1,100 @@
-/**
- * ============================================================================
- * THE SOVEREIGN — HUB LOGIC & SAMII MODAL CONTROLLER
- * ============================================================================
- */
-
 document.addEventListener('DOMContentLoaded', () => {
-
-    // =========================================================================
-    // INITIALISATION DES ICONES LUCIDE
-    // =========================================================================
+    // Initialisation des icônes Lucide
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 
-    // =========================================================================
-    // RÉCÉPITION DES DONNÉES GLOBALES DU SERVEUR
-    // =========================================================================
-    const workspaces = window.OG_WORKSPACES || [];
-    const currentWorkspaceId = window.OG_WORKSPACE_ID || '';
-    const hasWorkspace = window.OG_HAS_WORKSPACE || false;
-    const lastWorkspaceId = window.OG_LAST_WORKSPACE || '';
+    // Gestion de la modale
+    const modal = document.getElementById('ogModal');
+    const openTrigger = document.getElementById('openModalTrigger');
+    const closeTrigger = document.getElementById('closeModal');
+    
+    const stepHome = document.getElementById('stepHome');
+    const stepCreate = document.getElementById('stepCreate');
 
-    // =========================================================================
-    // GESTION DE LA MODALE DU HUB (OUVERTURE / FERMETURE)
-    // =========================================================================
-    const hubModal = document.getElementById('hubModal');
-    const hubSearchButton = document.getElementById('hubSearchButton');
-    const closeHubModal = document.getElementById('closeHubModal');
+    const createQGBtn = document.getElementById('createQG');
+    const metierInput = document.getElementById('metierInput');
+    const workspaceMetier = document.getElementById('workspaceMetier');
+    const createWorkspaceForm = document.getElementById('createWorkspaceForm');
 
     function openModal() {
-        if (hubModal) {
-            hubModal.classList.add('active');
-            showStep('hubStepHome');
-        }
+        if (modal) modal.classList.add('active');
+        if (metierInput) metierInput.focus();
     }
 
     function closeModal() {
-        if (hubModal) {
-            hubModal.classList.remove('active');
-        }
+        if (modal) modal.classList.remove('active');
+        setTimeout(() => {
+            if (stepHome) stepHome.classList.add('active');
+            if (stepCreate) stepCreate.classList.remove('active');
+        }, 200);
     }
 
-    if (hubSearchButton) {
-        hubSearchButton.addEventListener('click', openModal);
-    }
-
-    if (closeHubModal) {
-        closeHubModal.addEventListener('click', closeModal);
-    }
-
-    if (hubModal) {
-        const backdrop = hubModal.querySelector('.hub-modal-backdrop');
-        if (backdrop) {
-            backdrop.addEventListener('click', closeModal);
-        }
-    }
-
-    // =========================================================================
-    // NAVIGATION ENTRE LES ÉTAPES DE LA MODALE
-    // =========================================================================
-    function showStep(stepId) {
-        const steps = hubModal.querySelectorAll('.hub-step');
-        steps.forEach(step => {
-            step.classList.remove('active');
-        });
-
-        const targetStep = document.getElementById(stepId);
-        if (targetStep) {
-            targetStep.classList.add('active');
-        }
-    }
-
-    // Boutons d'action principaux dans l'étape d'accueil
-    const btnCreateQG = document.getElementById('createQG');
-    const btnInviteCollab = document.getElementById('inviteCollaborator');
-    const btnSearchWorkspace = document.getElementById('searchWorkspace');
-
-    if (btnCreateQG) {
-        btnCreateQG.addEventListener('click', () => {
-            showStep('hubStepCreate');
+    if (openTrigger) openTrigger.addEventListener('click', openModal);
+    if (closeTrigger) closeModalTrigger?.addEventListener('click', closeModal);
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
         });
     }
 
-    if (btnInviteCollab) {
-        btnInviteCollab.addEventListener('click', () => {
-            showStep('hubStepCollaborator');
-        });
-    }
-
-    if (btnSearchWorkspace) {
-        btnSearchWorkspace.addEventListener('click', () => {
-            showStep('hubStepWorkspace');
-        });
-    }
-
-    // =========================================================================
-    // GESTION DU DERNIER QG UTILISÉ
-    // =========================================================================
-    const lastWorkspaceButton = document.querySelector('.last-workspace-button');
-    if (lastWorkspaceButton) {
-        lastWorkspaceButton.addEventListener('click', (e) => {
-            const targetId = e.currentTarget.getAttribute('data-workspace');
-            if (targetId) {
-                window.location.href = `/workspace/${targetId}`;
-            }
-        });
-    }
-
-    // =========================================================================
-    // SÉLECTION DES CARTES MÉTIERS (GRILLE)
-    // =========================================================================
-    const metierCards = document.querySelectorAll('.metier-card');
-    metierCards.forEach(card => {
-        card.addEventListener('click', () => {
-            const metierName = card.getAttribute('data-metier');
+    // Raccourci clavier ⌘K / Ctrl+K
+    document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
             openModal();
-            showStep('hubStepCreate');
-            
-            const metierInput = document.getElementById('workspaceMetier');
-            if (metierInput && metierName) {
-                metierInput.value = metierName;
+        }
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    // Clic sur les cartes métiers de la grille principale
+    document.querySelectorAll('.metier-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const metier = card.getAttribute('data-metier');
+            openModal();
+            if (metierInput) metierInput.value = metier;
+            if (workspaceMetier) workspaceMetier.value = metier;
+            if (stepHome) stepHome.classList.remove('active');
+            if (stepCreate) stepCreate.classList.add('active');
+        });
+    });
+
+    // Bouton de création depuis la modale
+    if (createQGBtn) {
+        createQGBtn.addEventListener('click', () => {
+            const val = metierInput ? metierInput.value.trim() : '';
+            if (workspaceMetier) workspaceMetier.value = val;
+            if (stepHome) stepHome.classList.remove('active');
+            if (stepCreate) stepCreate.classList.add('active');
+        });
+    }
+
+    // Gestion du bouton de redirection d'espace actif
+    document.querySelectorAll('.workspace-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            const wsId = pill.getAttribute('data-workspace');
+            if (wsId) {
+                window.location.href = `/workspace/${wsId}`;
             }
         });
     });
 
-    // =========================================================================
-    // SOUMISSION DU FORMULAIRE DE CRÉATION DE QG AVEC SAMII
-    // =========================================================================
-    const createWorkspaceForm = document.getElementById('createWorkspaceForm');
+    // Soumission du formulaire de création d'espace
     if (createWorkspaceForm) {
         createWorkspaceForm.addEventListener('submit', (e) => {
             e.preventDefault();
-
-            const metier = document.getElementById('workspaceMetier')?.value || '';
-            const nom = document.getElementById('workspaceNom')?.value || '';
-            const prenom = document.getElementById('workspacePrenom')?.value || '';
-            const entreprise = document.getElementById('workspaceEntreprise')?.value || '';
-
-            // Simulation ou appel de transition vers l'étape de conseils SAMII
-            showStep('hubStepAdvice');
-
-            const samiiAdviceContainer = document.getElementById('samiiAdvice');
-            if (samiiAdviceContainer) {
-                samiiAdviceContainer.innerHTML = `
-                    <div style="padding: 15px 0; color: #a1a1aa; font-size: 14px; line-height: 1.6;">
-                        <p style="color: #f4f4f5; margin-bottom: 8px;"><strong>Analysé par SAMII :</strong></p>
-                        <p>Votre structure pour <strong>${entreprise || 'votre entité'}</strong> axée sur le métier de <strong>${metier || 'général'}</strong> a été configurée avec succès.</p>
-                    </div>
-                `;
-            }
+            const formData = {
+                metier: document.getElementById('workspaceMetier')?.value,
+                nom: document.getElementById('workspaceNom')?.value,
+                prenom: document.getElementById('workspacePrenom')?.value,
+                entreprise: document.getElementById('workspaceEntreprise')?.value
+            };
+            
+            // Simulation de transmission ou appel API backend
+            console.log('Déploiement de l’infrastructure OG :', formData);
+            // Tu peux router vers ton endpoint Make/n8n ou route Express ici
         });
     }
-
 });
