@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OG — Hub Central</title>
+<title data-i18n="hub_title">OG — Hub Central</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
 <div class="og-capital">
 
 <!-- ========================================================= -->
-<!-- SIDEBAR LINER / APPLE STYLE -->
+<!-- SIDEBAR MINIMALISTE & ULTRA-FLUIDE (STYLE LINEAR) -->
 <!-- ========================================================= -->
 <aside class="og-sidebar">
     <div class="sidebar-top">
@@ -30,31 +30,31 @@
     <nav class="sidebar-nav">
         <a href="/hub" class="sidebar-item active" title="Hub Central">
             <i data-lucide="command"></i>
-            <span>Hub</span>
+            <span data-i18n="nav_hub">Hub</span>
         </a>
         <a href="/marketplace" class="sidebar-item" title="Marketplace">
             <i data-lucide="shopping-bag"></i>
-            <span>Market</span>
+            <span data-i18n="nav_market">Market</span>
         </a>
         <a href="/community" class="sidebar-item" title="Community">
             <i data-lucide="users"></i>
-            <span>Community</span>
+            <span data-i18n="nav_community">Community</span>
         </a>
         <a href="/academy" class="sidebar-item" title="Academy">
             <i data-lucide="graduation-cap"></i>
-            <span>Academy</span>
+            <span data-i18n="nav_academy">Academy</span>
         </a>
         <a href="/networks" class="sidebar-item" title="Réseaux">
             <i data-lucide="share-2"></i>
-            <span>Réseaux</span>
+            <span data-i18n="nav_networks">Réseaux</span>
         </a>
         <a href="/workspaces" class="sidebar-item" title="Mes QG">
             <i data-lucide="layers"></i>
-            <span>QG</span>
+            <span data-i18n="nav_qg">QG</span>
         </a>
         <a href="/settings" class="sidebar-item" title="Paramètres">
             <i data-lucide="sliders"></i>
-            <span>Config</span>
+            <span data-i18n="nav_config">Config</span>
         </a>
     </nav>
 
@@ -82,22 +82,22 @@
     <div class="hero-ambient-glow glow-blue"></div>
 
     <div class="hero-inner">
-        <div class="hero-tag">INFRASTRUCTURE MONDIALE</div>
-        <h1>Tout commence ici.</h1>
-        <p>Sélectionnez votre secteur ou pilotez votre empire technologique avec l'assistance de SAMII.</p>
+        <div class="hero-tag" data-i18n="hero_tag">INFRASTRUCTURE MONDIALE</div>
+        <h1 data-i18n="hero_title">Tout commence ici.</h1>
+        <p data-i18n="hero_subtitle">Sélectionnez votre secteur ou pilotez votre empire technologique avec l'assistance de SAMII.</p>
 
         <!-- Barre de recherche interactive -->
         <div class="hero-search-wrapper">
             <button id="hubSearchButton" class="hero-search-trigger">
                 <i data-lucide="search"></i>
-                <span>Quel est votre métier ? Je configure votre QG...</span>
+                <span data-i18n="hero_search_placeholder">Quel est votre métier ? Je configure votre QG...</span>
                 <kbd>⌘K</kbd>
             </button>
         </div>
 
         <% if(hasWorkspace){ %>
         <div class="active-workspace-pill">
-            <span>Dernier QG actif :</span>
+            <span data-i18n="last_workspace_label">Dernier QG actif :</span>
             <% workspaces.forEach(function(workspace){ %>
                 <% if(workspace.id === lastWorkspace){ %>
                 <button class="pill-btn" data-workspace="<%= workspace.id %>">
@@ -115,8 +115,8 @@
 <!-- ========================================================= -->
 <section class="og-metiers-section">
     <div class="section-header">
-        <h2>Secteurs d'activité</h2>
-        <p>Déployez un écosystème sur-mesure instantanément.</p>
+        <h2 data-i18n="sectors_title">Secteurs d'activité</h2>
+        <p data-i18n="sectors_subtitle">Déployez un écosystème sur-mesure instantanément.</p>
     </div>
 
     <div class="metier-grid" id="metier-grid">
@@ -128,7 +128,7 @@
                     <i data-lucide="cpu"></i>
                 </div>
                 <h3><%= metier %></h3>
-                <p>Initialiser l'infrastructure</p>
+                <p data-i18n="card_action_init">Initialiser l'infrastructure</p>
             </div>
             <div class="card-arrow">
                 <i data-lucide="arrow-right"></i>
@@ -146,14 +146,14 @@
     <div class="globe-overlay-gradient"></div>
 
     <div class="empire-content">
-        <div class="empire-badge">GLOBAL NETWORK</div>
-        <h2>Bâtir l'Empire OG à l'échelle mondiale.</h2>
-        <p>Connectivité universelle, automatisation sans limites, souveraineté numérique.</p>
+        <div class="empire-badge" data-i18n="footer_badge">GLOBAL NETWORK</div>
+        <h2 data-i18n="footer_title">Bâtir l'Empire OG à l'échelle mondiale.</h2>
+        <p data-i18n="footer_subtitle">Connectivité universelle, automatisation sans limites, souveraineté numérique.</p>
         <div class="empire-footer-bottom">
-            <span>© 2026 OG Corporation. Tous droits réservés.</span>
+            <span data-i18n="footer_copyright">© 2026 OG Corporation. Tous droits réservés.</span>
             <div class="system-status-indicator">
                 <span class="status-dot"></span>
-                <span>Systems Operational</span>
+                <span data-i18n="footer_status">Systems Operational</span>
             </div>
         </div>
     </div>
@@ -175,34 +175,34 @@
 
         <!-- Étape Accueil -->
         <div id="hubStepHome" class="modal-step active">
-            <h2>Command Center</h2>
-            <p>Quel secteur souhaitez-vous structurer ?</p>
+            <h2 data-i18n="modal_home_title">Command Center</h2>
+            <p data-i18n="modal_home_subtitle">Quel secteur souhaitez-vous structurer ?</p>
             
             <div class="modal-search-box">
                 <i data-lucide="search"></i>
-                <input id="metierInput" type="text" placeholder="Ex : Technologie, E-commerce, Conseil, Luxe...">
+                <input id="metierInput" type="text" placeholder="Ex : Technologie, E-commerce, Conseil, Luxe..." data-i18n-placeholder="modal_input_placeholder">
             </div>
 
             <div class="modal-actions-list">
                 <button class="action-row" id="createQG">
                     <i data-lucide="plus-circle"></i>
                     <div>
-                        <strong>Créer un nouveau QG</strong>
-                        <span>Générer une architecture métier avec SAMII</span>
+                        <strong data-i18n="modal_action_create_title">Créer un nouveau QG</strong>
+                        <span data-i18n="modal_action_create_sub">Générer une architecture métier avec SAMII</span>
                     </div>
                 </button>
                 <button class="action-row" id="inviteCollaborator">
                     <i data-lucide="user-plus"></i>
                     <div>
-                        <strong>Ajouter un collaborateur</strong>
-                        <span>Inviter un partenaire dans votre réseau</span>
+                        <strong data-i18n="modal_action_collab_title">Ajouter un collaborateur</strong>
+                        <span data-i18n="modal_action_collab_sub">Inviter un partenaire dans votre réseau</span>
                     </div>
                 </button>
                 <button class="action-row" id="searchWorkspace">
                     <i data-lucide="layers"></i>
                     <div>
-                        <strong>Rechercher un QG existant</strong>
-                        <span>Accéder à un espace de travail actif</span>
+                        <strong data-i18n="modal_action_search_title">Rechercher un QG existant</strong>
+                        <span data-i18n="modal_action_search_sub">Accéder à un espace de travail actif</span>
                     </div>
                 </button>
             </div>
@@ -213,47 +213,47 @@
             <div class="samii-agent-head">
                 <div class="samii-avatar-dot">OG</div>
                 <div>
-                    <h3>SAMII Intelligence</h3>
-                    <p>Initialisation du QG en cours...</p>
+                    <h3 data-i18n="samii_title">SAMII Intelligence</h3>
+                    <p data-i18n="samii_init_sub">Initialisation du QG en cours...</p>
                 </div>
             </div>
             <form id="createWorkspaceForm" class="modal-form">
                 <div class="input-group">
-                    <label>Secteur / Métier</label>
+                    <label data-i18n="form_label_sector">Secteur / Métier</label>
                     <input id="workspaceMetier" type="text" required>
                 </div>
                 <div class="input-row">
                     <div class="input-group">
-                        <label>Nom</label>
+                        <label data-i18n="form_label_name">Nom</label>
                         <input id="workspaceNom" type="text" required>
                     </div>
                     <div class="input-group">
-                        <label>Prénom</label>
+                        <label data-i18n="form_label_firstname">Prénom</label>
                         <input id="workspacePrenom" type="text" required>
                     </div>
                 </div>
                 <div class="input-group">
-                    <label>Nom de l'entreprise</label>
+                    <label data-i18n="form_label_company">Nom de l'entreprise</label>
                     <input id="workspaceEntreprise" type="text" required>
                 </div>
-                <button type="submit" class="og-primary-btn">Déployer l'infrastructure</button>
+                <button type="submit" class="og-primary-btn" data-i18n="form_btn_deploy">Déployer l'infrastructure</button>
             </form>
         </div>
 
         <!-- Étape Collaborateur -->
         <div id="hubStepCollaborator" class="modal-step">
-            <h2>Collaborateurs</h2>
-            <p>Rechercher un membre par e-mail ou identifiant.</p>
+            <h2 data-i18n="collab_step_title">Collaborateurs</h2>
+            <p data-i18n="collab_step_sub">Rechercher un membre par e-mail ou identifiant.</p>
             <input type="text" class="modal-text-input" placeholder="nom@domaine.com">
-            <button class="og-primary-btn">Envoyer l'invitation</button>
+            <button class="og-primary-btn" data-i18n="collab_btn_invite">Envoyer l'invitation</button>
         </div>
 
         <!-- Étape Recherche QG -->
         <div id="hubStepWorkspace" class="modal-step">
-            <h2>Recherche QG</h2>
-            <p>Entrez le nom de l'espace à cibler.</p>
+            <h2 data-i18n="search_step_title">Recherche QG</h2>
+            <p data-i18n="search_step_sub">Entrez le nom de l'espace à cibler.</p>
             <input type="text" class="modal-text-input" placeholder="Nom de l'entreprise">
-            <button class="og-primary-btn">Rechercher</button>
+            <button class="og-primary-btn" data-i18n="search_btn_action">Rechercher</button>
         </div>
 
         <!-- Étape Conseils SAMII -->
@@ -261,12 +261,12 @@
             <div class="samii-agent-head">
                 <div class="samii-avatar-dot">OG</div>
                 <div>
-                    <h3>QG Opérationnel</h3>
-                    <p>Recommandations stratégiques</p>
+                    <h3 data-i18n="advice_step_title">QG Opérationnel</h3>
+                    <p data-i18n="advice_step_sub">Recommandations stratégiques</p>
                 </div>
             </div>
             <div id="samiiAdvice" class="samii-advice-box"></div>
-            <button class="og-primary-btn">Accéder au QG</button>
+            <button class="og-primary-btn" data-i18n="advice_btn_access">Accéder au QG</button>
         </div>
     </div>
 </div>
