@@ -1,173 +1,610 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OG Empire — Le Hub</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="/css/hub-premium.css">
+<title>OG</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/hub-premium.css">
+
 </head>
-<body data-workspace="<%= typeof workspaceId !== 'undefined' ? workspaceId : '' %>">
+
+<body data-workspace="<%= workspaceId || '' %>">
 
 <div class="og-capital">
 
-    <%- include("partials/sidebar") %>
+<%- include("partials/sidebar") %>
 
-    <main class="capitol-content">
+<main class="capitol-content">
 
-        <!-- MESSAGE ERREUR HUB -->
-        <% if (typeof error !== 'undefined' && error) { %>
-        <div class="hub-error-msg" style="display:block;">
-            <%= error %>
-        </div>
-        <% } %>
 
-        <!-- HERO -->
-        <header class="hero-premium">
-            <img src="/hero-city.png" alt="Ville futuriste OG" class="hero-bg-img" onerror="this.style.display='none'">
-            <div class="hero-grid"></div>
-            <div class="hero-glow hero-glow-1"></div>
-            <div class="hero-glow hero-glow-2"></div>
-            <div class="hero-particles"></div>
-            <div class="hero-light"></div>
-            <div class="hero-overlay"></div>
+<% if(error){ %>
 
-            <div class="hero-text-zone">
-                <span class="hero-eyebrow" data-i18n="hub.hero.eyebrow">OG Empire</span>
-                <h1 data-i18n="hub.hero.title">Quel empire voulez-vous construire ?</h1>
-                <p data-i18n="hub.hero.subtitle">SAMII vous aide à lancer votre QG et à connecter votre écosystème.</p>
+<div class="hub-error">
 
-                <div class="hero-search">
-                    <i data-lucide="search"></i>
-                    <input type="text" id="hero-search"
-                           data-i18n-placeholder="hub.hero.searchPlaceholder"
-                           placeholder="Construisez votre prochain empire...">
-                    <button type="button" class="hero-search__btn">
-                        <i data-lucide="arrow-right"></i>
-                    </button>
-                </div>
-            </div>
-
-            <span class="hero-scroll">▼</span>
-        </header>
-
-        <!-- CHOIX DU MÉTIER / WORKSPACES -->
-        <div class="section-eyebrow">
-            <i data-lucide="compass"></i>
-            <span data-i18n="hub.section.choose">Choisis ton métier</span>
-        </div>
-
-        <section class="metier-grid" id="metier-grid">
-            <!-- Rempli dynamiquement par hub.js -->
-        </section>
-
-        <!-- BANNIÈRE -->
-        <section class="hub-banner" id="hub-banner">
-            <img src="/banner-tech.png" alt="OG Empire" class="hub-banner__img" onerror="this.style.opacity=0">
-            <div class="hub-banner__overlay"></div>
-            <div class="hub-banner__glow"></div>
-            <div class="hub-banner__content">
-                <span class="hero-eyebrow">OG Empire</span>
-                <h2>Construisez un empire mondial.</h2>
-                <p>Une seule plateforme. Des possibilités illimitées.</p>
-            </div>
-        </section>
-
-        <!-- FOOTER -->
-        <footer class="og-footer">
-            <div class="og-footer__line"></div>
-            <div class="og-footer__inner">
-                <div class="og-footer__brand">
-                    <span class="og-footer__crest">◆</span>
-                    <span class="og-mono">OG · EMPIRE</span>
-                </div>
-                <p class="og-footer__quote" data-i18n="hub.footer.quote">Chaque général commence soldat.</p>
-                <div class="og-footer__meta">
-                    <span class="og-mono" data-i18n="hub.footer.version">v1.0 · SOLDAT</span>
-                </div>
-            </div>
-        </footer>
-
-    </main>
+<%= error %>
 
 </div>
 
-<!-- SAMII — sphère flottante -->
-<div class="samii-widget" id="samii-widget" data-open="false">
-    <button class="samii-widget__trigger" id="samii-widget-trigger" aria-label="Ouvrir SAMII">
-        <span class="samii-widget__aura"></span>
-        <span class="samii-widget__aura samii-widget__aura--2"></span>
-        <svg class="samii-widget__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 8V4H8"/>
-            <rect width="16" height="12" x="4" y="8" rx="2"/>
-            <path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
-        </svg>
-    </button>
-    <div class="samii-widget__panel" id="samii-widget-panel" role="dialog" aria-label="Assistant SAMII">
-        <header class="samii-widget__header">
-            <div class="samii-widget__id">
-                <div class="samii-widget__avatar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 8V4H8"/>
-                        <rect width="16" height="12" x="4" y="8" rx="2"/>
-                        <path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="samii-widget__name">SAMII</p>
-                    <p class="samii-widget__status">
-                        <span class="og-badge og-badge--live">OPÉRATIONNEL</span>
-                    </p>
-                </div>
+<% } %>
+
+
+
+<!-- ========================================================= -->
+
+<!-- HERO -->
+
+<!-- ========================================================= -->
+
+<header class="hero-premium">
+
+<div class="hero-overlay"></div>
+
+<div class="hero-glow hero-glow-left"></div>
+
+<div class="hero-glow hero-glow-right"></div>
+
+<div class="hero-content">
+
+
+<div class="hero-logo">
+
+OG
+
+</div>
+
+
+<h1>
+
+Tout commence ici.
+
+</h1>
+
+
+<p>
+
+Choisissez votre métier ou créez votre QG avec l'aide de SAMII.
+
+</p>
+
+
+
+<!-- ========================================================= -->
+
+<!-- BARRE DE RECHERCHE -->
+
+<!-- ========================================================= -->
+
+
+<div class="hub-search">
+
+<button id="hubSearchButton" class="hub-search-button">
+
+<i data-lucide="search"></i>
+
+<span>
+
+Je vais créer votre QG.
+
+Quel est votre métier ?
+
+</span>
+
+</button>
+
+</div>
+
+
+
+<!-- ========================================================= -->
+
+<!-- SI L'UTILISATEUR A DÉJÀ DES QG -->
+
+<!-- ========================================================= -->
+
+
+<% if(hasWorkspace){ %>
+
+<div class="last-workspace">
+
+<p>
+
+Dernier QG utilisé
+
+</p>
+
+<% workspaces.forEach(function(workspace){ %>
+
+<% if(workspace.id===lastWorkspace){ %>
+
+<button
+
+class="last-workspace-button"
+
+data-workspace="<%= workspace.id %>">
+
+<%= workspace.name %>
+
+</button>
+
+<% } %>
+
+<% }) %>
+
+</div>
+
+<% } %>
+
+</div>
+
+</header>
+
+
+
+<!-- ========================================================= -->
+
+<!-- LISTE DES MÉTIERS -->
+
+<!-- ========================================================= -->
+
+
+<section class="hub-metiers">
+
+<div class="section-title">
+
+<h2>
+
+Choisissez votre métier
+
+</h2>
+
+<p>
+
+Ou utilisez la recherche si votre métier n'existe pas encore.
+
+</p>
+
+</div>
+
+
+
+<div class="metier-grid">
+
+<% metiers.forEach(function(metier){ %>
+
+<div
+
+class="metier-card"
+
+data-metier="<%= metier %>">
+
+<div class="metier-icon">
+
+<i data-lucide="briefcase-business"></i>
+
+</div>
+
+<h3>
+
+<%= metier %>
+
+</h3>
+
+<p>
+
+Créer un QG
+
+</p>
+
+</div>
+
+<% }) %>
+
+</div>
+
+</section>
+<!-- ========================================================= -->
+<!-- HUB SEARCH MODAL -->
+<!-- ========================================================= -->
+
+<div id="hubModal" class="hub-modal">
+
+    <div class="hub-modal-backdrop"></div>
+
+    <div class="hub-modal-content">
+
+        <button class="hub-modal-close" id="closeHubModal">
+
+            <i data-lucide="x"></i>
+
+        </button>
+
+        <!-- ========================================================= -->
+        <!-- ETAPE 1 -->
+        <!-- ========================================================= -->
+
+        <div id="hubStepHome" class="hub-step active">
+
+            <h2>
+
+                Je vais créer votre QG.
+
+            </h2>
+
+            <p>
+
+                Quel est votre métier ?
+
+            </p>
+
+            <div class="hub-search-input">
+
+                <i data-lucide="search"></i>
+
+                <input
+                    id="metierInput"
+                    type="text"
+                    placeholder="Ex : Avocat, Boulanger, Restaurant, Architecte...">
+
             </div>
-            <div class="samii-widget__actions">
-                <button class="samii-widget__close" id="samii-widget-close" aria-label="Fermer">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
-                         stroke="currentColor" stroke-width="1.8">
-                        <path d="M18 6 6 18M6 6l12 12"/>
-                    </svg>
+
+            <div class="hub-actions">
+
+                <button class="hub-action-card" id="createQG">
+
+                    <i data-lucide="plus-circle"></i>
+
+                    <div>
+
+                        <strong>Créer mon QG</strong>
+
+                        <span>Créer un nouveau métier avec SAMII.</span>
+
+                    </div>
+
                 </button>
+
+                <button class="hub-action-card" id="inviteCollaborator">
+
+                    <i data-lucide="users"></i>
+
+                    <div>
+
+                        <strong>Ajouter un collaborateur</strong>
+
+                        <span>Inviter une personne dans votre entreprise.</span>
+
+                    </div>
+
+                </button>
+
+                <button class="hub-action-card" id="searchWorkspace">
+
+                    <i data-lucide="building-2"></i>
+
+                    <div>
+
+                        <strong>Rechercher un QG</strong>
+
+                        <span>Retrouver une entreprise existante.</span>
+
+                    </div>
+
+                </button>
+
             </div>
-        </header>
-        <div class="samii-widget__feed" id="samii-widget-feed">
-            <div class="samii-msg samii-msg--bot">
-                <div class="samii-msg__bubble">
-                    Bienvenue, Général. Je suis <b>SAMII</b>, votre stratège.<br>
-                    Comment puis-je vous aider aujourd'hui ?
-                </div>
-            </div>
+
         </div>
-        <form class="samii-widget__form" id="samii-widget-form">
-            <input type="text" id="samii-widget-input"
-                   placeholder="Parler à SAMII…" autocomplete="off">
-            <button type="submit" aria-label="Envoyer">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
-                     stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>
-                </svg>
+
+        <!-- ========================================================= -->
+        <!-- ETAPE 2 -->
+        <!-- ========================================================= -->
+
+        <div id="hubStepCreate" class="hub-step">
+
+            <div class="samii-header">
+
+                <div class="samii-avatar">
+
+                    S
+
+                </div>
+
+                <div>
+
+                    <h3>
+
+                        SAMII
+
+                    </h3>
+
+                    <p>
+
+                        Créons votre entreprise.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="samii-message">
+
+                Je vais créer votre QG.
+
+                Commençons par votre métier.
+
+            </div>
+
+            <form id="createWorkspaceForm">
+
+                <div class="form-group">
+
+                    <label>
+
+                        Votre métier
+
+                    </label>
+
+                    <input
+                        id="workspaceMetier"
+                        type="text">
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+
+                        Nom
+
+                    </label>
+
+                    <input
+                        id="workspaceNom"
+                        type="text">
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+
+                        Prénom
+
+                    </label>
+
+                    <input
+                        id="workspacePrenom"
+                        type="text">
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+
+                        Nom de votre entreprise
+
+                    </label>
+
+                    <input
+                        id="workspaceEntreprise"
+                        type="text">
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="primaryButton">
+
+                    Continuer
+
+                </button>
+
+            </form>
+
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- ETAPE 3 -->
+        <!-- ========================================================= -->
+
+        <div id="hubStepCollaborator" class="hub-step">
+
+            <h2>
+
+                Ajouter un collaborateur
+
+            </h2>
+
+            <p>
+
+                Recherchez un collaborateur déjà inscrit sur OG.
+
+            </p>
+
+            <input
+                type="text"
+                placeholder="Nom ou e-mail">
+
+            <button class="primaryButton">
+
+                Rechercher
+
             </button>
-        </form>
+
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- ETAPE 4 -->
+        <!-- ========================================================= -->
+
+        <div id="hubStepWorkspace" class="hub-step">
+
+            <h2>
+
+                Rechercher un QG
+
+            </h2>
+
+            <p>
+
+                Restaurant Bella, Cabinet Martin, OG Design...
+
+            </p>
+
+            <input
+                type="text"
+                placeholder="Nom du QG">
+
+            <button class="primaryButton">
+
+                Rechercher
+
+            </button>
+
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- CONSEILS SAMII -->
+        <!-- ========================================================= -->
+
+        <div id="hubStepAdvice" class="hub-step">
+
+            <div class="samii-header">
+
+                <div class="samii-avatar">
+
+                    S
+
+                </div>
+
+                <div>
+
+                    <h3>
+
+                        Votre QG est prêt.
+
+                    </h3>
+
+                    <p>
+
+                        Quelques recommandations.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div id="samiiAdvice">
+
+                <!-- rempli automatiquement par hub.js -->
+
+            </div>
+
+            <button class="primaryButton">
+
+                Entrer dans mon QG
+
+            </button>
+
+        </div>
+
     </div>
+
+</div>
+<!-- ========================================================= -->
+<!-- FOOTER -->
+<!-- ========================================================= -->
+
+<footer class="og-footer">
+
+    <div class="og-footer-line"></div>
+
+    <div class="og-footer-brand">
+
+        <h2>OG</h2>
+
+        <p>
+
+            Tout commence ici.
+
+        </p>
+
+    </div>
+
+    <div class="og-footer-bottom">
+
+        <span>
+
+            © 2026 OG
+
+        </span>
+
+        <span>
+
+            Conçu avec ambition.
+
+        </span>
+
+    </div>
+
+</footer>
+
+</main>
+
 </div>
 
-<!-- ✅ Données serveur → frontend -->
+<!-- ========================================================= -->
+<!-- DONNÉES SERVEUR -->
+<!-- ========================================================= -->
+
 <script>
-    window.OG_WORKSPACES          = <%- JSON.stringify(typeof workspaces !== "undefined" ? workspaces : []) %>;
-    window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(typeof connectedPlatforms !== "undefined" ? connectedPlatforms : []) %>;
-    window.OG_WORKSPACE_ID        = "<%= typeof workspaceId !== 'undefined' ? workspaceId : '' %>";
+
+window.OG_WORKSPACES = <%- JSON.stringify(workspaces || []) %>;
+
+window.OG_WORKSPACE_ID = "<%= workspaceId || '' %>";
+
+window.OG_ACTIONS = <%- JSON.stringify(actions || []) %>;
+
+window.OG_METIERS = <%- JSON.stringify(metiers || []) %>;
+
+window.OG_HAS_WORKSPACE = <%= hasWorkspace ? "true" : "false" %>;
+
+window.OG_LAST_WORKSPACE = "<%= lastWorkspace || '' %>";
+
 </script>
 
+<!-- ========================================================= -->
+<!-- LIBS -->
+<!-- ========================================================= -->
+
 <script src="https://unpkg.com/lucide@latest"></script>
+
+<script>
+
+lucide.createIcons();
+
+</script>
+
+<!-- ========================================================= -->
+<!-- JS -->
+<!-- ========================================================= -->
+
 <script src="/js/i18n.js"></script>
+
 <script src="/js/hub.js"></script>
 
 </body>
-</html>
 
+</html>
