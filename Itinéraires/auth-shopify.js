@@ -21,9 +21,21 @@ const REDIRECT_URI = `${APP_URL}/auth/shopify/callback`;
 const SCOPES = [
     "read_products",
     "write_products",
+
     "read_orders",
     "write_orders",
+
     "read_customers",
+    "write_customers",
+
+    "read_inventory",
+    "write_inventory",
+
+    "read_shipping",
+    "write_shipping",
+
+    "read_fulfillments",
+    "write_fulfillments",
 ].join(",");
 
 const stateStore = new Map();
@@ -125,17 +137,35 @@ async function upsertUser(shop, email) {
 // ── BLOC 3 : Enregistrer les webhooks ────────────────────────
 async function registerWebhooks(shop, accessToken) {
     const webhooks = [
-        "orders/create",
-        "orders/updated",
-        "orders/paid",
-        "products/update",
-        "app/uninstalled",
-    ];
+
+"orders/create",
+
+"orders/updated",
+
+"orders/paid",
+
+"orders/fulfilled",
+
+"orders/cancelled",
+
+"customers/create",
+
+"customers/update",
+
+"products/update",
+
+"inventory_levels/update",
+
+"fulfillments/create",
+
+"app/uninstalled"
+
+];
 
     for (const topic of webhooks) {
         try {
             await axios.post(
-                `https://${shop}/admin/api/2024-01/webhooks.json`,
+                `https://${shop}/admin/api/2026-07/webhooks.json`,
                 { webhook: {
                     topic,
                     address: `${APP_URL}/webhook`,
@@ -210,7 +240,7 @@ router.get("/auth/shopify/callback", async (req, res) => {
         const accessToken = tokenRes.data.access_token;
 
         // Infos boutique Shopify
-        const shopRes  = await axios.get(`https://${shop}/admin/api/2024-01/shop.json`, {
+        const shopRes  = await axios.get(`https://${shop}/admin/api/2026-07/shop.json`, {
             headers: { "X-Shopify-Access-Token": accessToken }
         });
         const shopInfo = shopRes.data.shop;
@@ -229,19 +259,27 @@ router.get("/auth/shopify/callback", async (req, res) => {
             payload: { accessToken, scopes: SCOPES },
         });
 
-                // Session sécurisée ✅
+               // Session sécurisée ✅
         req.session.regenerate((err) => {
             if (err) {
                 console.error("❌ Session regenerate :", err.message);
                 return res.status(500).send("Erreur session.");
             }
-            req.session.loggedIn   = true;
-            req.session.shop       = shop;
+
+            req.session.loggedIn = true;
+            req.session.shop = shop;
             req.session.boutiqueId = boutique.id;
+            req.session.workspaceId = boutique.id;
 
-            res.redirect("/qg/ecommerce");
+            req.session.save((err) => {
+                if (err) {
+                    console.error("❌ Session save :", err.message);
+                    return res.status(500).send("Erreur session.");
+                }
+
+                return res.redirect("/qg");
+            });
         });
-
 
     } catch (err) {
         console.error("❌ Erreur OAuth:", err.response?.data || err.message);
@@ -250,5 +288,4 @@ router.get("/auth/shopify/callback", async (req, res) => {
 });
 
 module.exports = router;
-
 
