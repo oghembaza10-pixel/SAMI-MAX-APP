@@ -530,3 +530,326 @@
     }
 
 }
+/* ==========================================================
+   PARTIE 2 — METIER CARDS PREMIUM
+========================================================== */
+
+.metier-card{
+
+    position:relative;
+
+    display:flex;
+    flex-direction:column;
+
+    overflow:hidden;
+
+    border-radius:22px;
+
+    background:
+    linear-gradient(180deg,#111114 0%,#090909 100%);
+
+    border:1px solid rgba(197,160,89,.15);
+
+    text-decoration:none;
+
+    color:inherit;
+
+    transition:
+    transform .55s cubic-bezier(.22,1,.36,1),
+    box-shadow .55s cubic-bezier(.22,1,.36,1),
+    border-color .55s;
+
+    isolation:isolate;
+
+}
+
+/* reflet */
+
+.metier-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:-200%;
+
+    background:
+
+    linear-gradient(
+        120deg,
+        transparent 35%,
+        rgba(255,255,255,.10) 50%,
+        transparent 65%
+    );
+
+    transform:rotate(25deg);
+
+    transition:1s;
+
+    opacity:0;
+
+    z-index:3;
+
+}
+
+/* halo */
+
+.metier-card::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+    radial-gradient(circle at top,
+    rgba(95,212,255,.10),
+    transparent 65%);
+
+    opacity:0;
+
+    transition:.5s;
+
+    z-index:0;
+
+}
+
+.metier-card:hover{
+
+    transform:
+    translateY(-10px)
+    scale(1.02);
+
+    border-color:#5FD4FF;
+
+    box-shadow:
+
+    0 25px 70px rgba(0,0,0,.45),
+
+    0 0 25px rgba(95,212,255,.20);
+
+}
+
+.metier-card:hover::before{
+
+    left:220%;
+
+    opacity:1;
+
+}
+
+.metier-card:hover::after{
+
+    opacity:1;
+
+}
+
+/* ================================ */
+
+.metier-card__media{
+
+    position:relative;
+
+    overflow:hidden;
+
+    aspect-ratio:16/10;
+
+}
+
+.metier-card__media::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+    linear-gradient(
+
+    to top,
+
+    rgba(0,0,0,.85),
+
+    transparent 55%
+
+    );
+
+}
+
+/* ================================ */
+
+.metier-card__watermark{
+
+    width:72px;
+
+    height:72px;
+
+    color:rgba(255,255,255,.12);
+
+    transition:.6s;
+
+}
+
+.metier-card:hover .metier-card__watermark{
+
+    transform:
+
+    rotate(-8deg)
+
+    scale(1.18);
+
+    color:#5FD4FF;
+
+}
+
+/* ================================ */
+
+.metier-card__body{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:14px;
+
+    padding:20px;
+
+    position:relative;
+
+    z-index:5;
+
+}
+
+.metier-card__body i{
+
+    width:24px;
+
+    height:24px;
+
+    color:#C5A059;
+
+    transition:.4s;
+
+}
+
+.metier-card:hover .metier-card__body i{
+
+    transform:scale(1.15);
+
+    color:#FFD98A;
+
+}
+
+.metier-card__body h3{
+
+    font-size:1rem;
+
+    color:#5FD4FF;
+
+    font-weight:700;
+
+    margin-bottom:4px;
+
+    transition:.35s;
+
+}
+
+.metier-card:hover h3{
+
+    text-shadow:
+
+    0 0 18px rgba(95,212,255,.45);
+
+}
+
+.metier-card__body span{
+
+    font-size:.78rem;
+
+    color:#8B8B8B;
+
+}
+
+/* ================================ */
+
+/* ligne lumineuse */
+
+.metier-card .premium-line{
+
+    position:absolute;
+
+    left:0;
+
+    bottom:0;
+
+    width:0;
+
+    height:2px;
+
+    background:
+
+    linear-gradient(
+
+    90deg,
+
+    #C5A059,
+
+    #5FD4FF
+
+    );
+
+    transition:.55s;
+
+}
+
+.metier-card:hover .premium-line{
+
+    width:100%;
+
+}
+
+/* ================================ */
+
+.metier-card.more{
+
+    justify-content:center;
+
+    align-items:center;
+
+    min-height:250px;
+
+    border-style:dashed;
+
+    border-color:rgba(197,160,89,.35);
+
+    background:
+
+    linear-gradient(
+
+    180deg,
+
+    #0E0E0E,
+
+    #070707
+
+    );
+
+}
+
+.metier-card.more:hover{
+
+    border-color:#C5A059;
+
+}
+
+.metier-card.more h3{
+
+    color:#C5A059;
+
+    font-size:1rem;
+
+}
