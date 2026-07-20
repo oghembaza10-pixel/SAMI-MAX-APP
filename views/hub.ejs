@@ -77,7 +77,7 @@
             <div id="samii-widget-feed" class="samii-widget__feed">
                 <div class="samii-msg samii-msg--bot">
                     <div class="samii-msg__bubble">
-                        À vos ordres, Général. Comment puis-je vous assister dans le pilotage ?
+                         Comment puis-je vous assister dans le pilotage ?
                     </div>
                 </div>
             </div>
@@ -89,9 +89,8 @@
     </div>
 
     <!-- Données injectées pour le JS -->
-    <script>
+   <script>
         window.OG_WORKSPACES = <%- JSON.stringify(workspaces || []) %>;
-        window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(connectedPlatforms || []) %>;
         window.OG_WORKSPACE_ID = "<%= workspaceId || '' %>";
     </script>
 
