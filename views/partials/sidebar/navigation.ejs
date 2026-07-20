@@ -1,0 +1,149 @@
+<nav class="og-sidebar-nav">
+
+    <!-- ================= HUB ================= -->
+
+    <a
+        href="/hub"
+        class="sidebar-item <%= currentPage === 'hub' ? 'active' : '' %>">
+
+        <i data-lucide="layout-grid"></i>
+
+        <span data-i18n="sidebar.hub">
+
+            Hub
+
+        </span>
+
+    </a>
+
+    <!-- ================= QG ================= -->
+
+    <a
+        href="/qg"
+        class="sidebar-item <%= currentPage === 'qg' ? 'active' : '' %>">
+
+        <i data-lucide="building-2"></i>
+
+        <span data-i18n="sidebar.qg">
+
+            QG
+
+        </span>
+
+        <% if(workspaceId){ %>
+
+            <span class="sidebar-live-dot"></span>
+
+        <% } %>
+
+    </a>
+
+    <!-- ================= DASHBOARD ================= -->
+
+    <a
+        href="/dashboard"
+        class="sidebar-item <%= currentPage === 'dashboard' ? 'active' : '' %>">
+
+        <i data-lucide="bar-chart-3"></i>
+
+        <span data-i18n="sidebar.dashboard">
+
+            Dashboard
+
+        </span>
+
+    </a>
+
+    <!-- ================= DOCUMENTS ================= -->
+
+    <a
+        href="/documents"
+        class="sidebar-item <%= currentPage === 'documents' ? 'active' : '' %>">
+
+        <i data-lucide="folder"></i>
+
+        <span data-i18n="sidebar.documents">
+
+            Documents
+
+        </span>
+
+    </a>
+
+    <!-- ================= MESSAGES ================= -->
+
+    <a
+        href="/messages"
+        class="sidebar-item <%= currentPage === 'messages' ? 'active' : '' %>">
+
+        <i data-lucide="message-circle"></i>
+
+        <span data-i18n="sidebar.messages">
+
+            Messages
+
+        </span>
+
+    </a>
+
+    <!-- ================= UNIVERS OG ================= -->
+
+    <div class="sidebar-title">
+
+        <span data-i18n="sidebar.universe">
+
+            Univers OG
+
+        </span>
+
+    </div>
+
+    <!-- ================= MARKETPLACE ================= -->
+
+    <a
+        href="/marketplace"
+        class="sidebar-item <%= currentPage === 'marketplace' ? 'active' : '' %>">
+
+        <i data-lucide="shopping-bag"></i>
+
+        <span data-i18n="sidebar.marketplace">
+
+            Marketplace
+
+        </span>
+
+    </a>
+
+    <!-- ================= ACADEMY ================= -->
+
+    <a
+        href="/academy"
+        class="sidebar-item <%= currentPage === 'academy' ? 'active' : '' %>">
+
+        <i data-lucide="graduation-cap"></i>
+
+        <span data-i18n="sidebar.academy">
+
+            Academy
+
+        </span>
+
+    </a>
+
+    <!-- ================= COMMUNITY ================= -->
+
+    <a
+        href="/community"
+        class="sidebar-item <%= currentPage === 'community' ? 'active' : '' %>">
+
+        <i data-lucide="users"></i>
+
+        <span data-i18n="sidebar.community">
+
+            Community
+
+        </span>
+
+    </a>
+
+</nav>
