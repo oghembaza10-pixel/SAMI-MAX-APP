@@ -4,41 +4,40 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     }
 
-    // Gestion de la modale
-    const modal = document.getElementById('ogModal');
-    const openTrigger = document.getElementById('openModalTrigger');
-    const closeTrigger = document.getElementById('closeModal');
+    const modal = document.getElementById('commandModal');
+    const openTrigger = document.getElementById('openCommandModal');
+    const closeTrigger = document.getElementById('closeCommandModal');
     
-    const stepHome = document.getElementById('stepHome');
-    const stepCreate = document.getElementById('stepCreate');
+    const panelHome = document.getElementById('panelHome');
+    const panelCreate = document.getElementById('panelCreate');
 
-    const createQGBtn = document.getElementById('createQG');
-    const metierInput = document.getElementById('metierInput');
-    const workspaceMetier = document.getElementById('workspaceMetier');
-    const createWorkspaceForm = document.getElementById('createWorkspaceForm');
+    const triggerCreateQG = document.getElementById('triggerCreateQG');
+    const globalSearchInput = document.getElementById('globalSearchInput');
+    const deploySector = document.getElementById('deploySector');
+    const deploymentForm = document.getElementById('deploymentForm');
 
     function openModal() {
         if (modal) modal.classList.add('active');
-        if (metierInput) metierInput.focus();
+        if (globalSearchInput) globalSearchInput.focus();
     }
 
     function closeModal() {
         if (modal) modal.classList.remove('active');
         setTimeout(() => {
-            if (stepHome) stepHome.classList.add('active');
-            if (stepCreate) stepCreate.classList.remove('active');
-        }, 200);
+            if (panelHome) panelHome.classList.add('active');
+            if (panelCreate) panelCreate.classList.remove('active');
+        }, 300);
     }
 
     if (openTrigger) openTrigger.addEventListener('click', openModal);
-    if (closeTrigger) closeModalTrigger?.addEventListener('click', closeModal);
+    if (closeTrigger) closeTrigger.addEventListener('click', closeModal);
     if (modal) {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeModal();
         });
     }
 
-    // Raccourci clavier ⌘K / Ctrl+K
+    // Raccourci clavier ⌘K ou Ctrl+K
     document.addEventListener('keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
             e.preventDefault();
@@ -49,30 +48,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Clic sur les cartes métiers de la grille principale
-    document.querySelectorAll('.metier-card').forEach(card => {
+    // Clic sur les départements de l'empire
+    document.querySelectorAll('.department-card').forEach(card => {
         card.addEventListener('click', () => {
             const metier = card.getAttribute('data-metier');
             openModal();
-            if (metierInput) metierInput.value = metier;
-            if (workspaceMetier) workspaceMetier.value = metier;
-            if (stepHome) stepHome.classList.remove('active');
-            if (stepCreate) stepCreate.classList.add('active');
+            if (globalSearchInput) globalSearchInput.value = metier;
+            if (deploySector) deploySector.value = metier;
+            if (panelHome) panelHome.classList.remove('active');
+            if (panelCreate) panelCreate.classList.add('active');
         });
     });
 
-    // Bouton de création depuis la modale
-    if (createQGBtn) {
-        createQGBtn.addEventListener('click', () => {
-            const val = metierInput ? metierInput.value.trim() : '';
-            if (workspaceMetier) workspaceMetier.value = val;
-            if (stepHome) stepHome.classList.remove('active');
-            if (stepCreate) stepCreate.classList.add('active');
+    // Bouton de création QG depuis la modale
+    if (triggerCreateQG) {
+        triggerCreateQG.addEventListener('click', () => {
+            const val = globalSearchInput ? globalSearchInput.value.trim() : '';
+            if (deploySector) deploySector.value = val;
+            if (panelHome) panelHome.classList.remove('active');
+            if (panelCreate) panelCreate.classList.add('active');
         });
     }
 
-    // Gestion du bouton de redirection d'espace actif
-    document.querySelectorAll('.workspace-pill').forEach(pill => {
+    // Basculement vers un QG existant via les pilules
+    document.querySelectorAll('.cluster-pill').forEach(pill => {
         pill.addEventListener('click', () => {
             const wsId = pill.getAttribute('data-workspace');
             if (wsId) {
@@ -81,20 +80,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Soumission du formulaire de création d'espace
-    if (createWorkspaceForm) {
-        createWorkspaceForm.addEventListener('submit', (e) => {
+    // Soumission du formulaire d'infrastructure
+    if (deploymentForm) {
+        deploymentForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const formData = {
-                metier: document.getElementById('workspaceMetier')?.value,
-                nom: document.getElementById('workspaceNom')?.value,
-                prenom: document.getElementById('workspacePrenom')?.value,
-                entreprise: document.getElementById('workspaceEntreprise')?.value
+            const payload = {
+                secteur: document.getElementById('deploySector')?.value,
+                nom: document.getElementById('deployName')?.value,
+                prenom: document.getElementById('deployFirstname')?.value,
+                entreprise: document.getElementById('deployCompany')?.value
             };
-            
-            // Simulation de transmission ou appel API backend
-            console.log('Déploiement de l’infrastructure OG :', formData);
-            // Tu peux router vers ton endpoint Make/n8n ou route Express ici
+            console.log('Déploiement de l’Empire OG initié :', payload);
+            // Connexion aux routes backend / routage souverain
         });
     }
 });
