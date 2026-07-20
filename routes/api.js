@@ -2,14 +2,14 @@
 // SAMII OS — API V3
 // ======================================================
 
-const express = require("express");
-const router  = express.Router();
-const planner = require("../brain/planner");
-const axios   = require("axios");
+const express          = require("express");
+const router           = express.Router();
+const planner          = require("../brain/planner");
+const axios            = require("axios");
+const workspaceService = require("../services/workspaceService");
 
 const AIRTABLE_API_KEY  = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID  = process.env.AIRTABLE_BASE_ID;
-const TABLE_WORKSPACES  = process.env.TABLE_WORKSPACES  || "WORKSPACES";
 const TABLE_CONNECTEURS = process.env.TABLE_CONNECTEURS || "CONNECTEURS";
 const TABLE_COMMANDES   = process.env.TABLE_COMMANDES   || "COMMANDES";
 const TABLE_CLIENTS     = process.env.TABLE_CLIENTS     || "CLIENTS";
@@ -57,6 +57,18 @@ function getMontant(c) {
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.status(401).json({ error: "Non connecté" });
     next();
+}
+
+// ── Vérifier qu'une commande appartient au workspace ──
+async function verifyCommande(commandeId, workspaceId) {
+    const verification = await axios.get(airtable(TABLE_COMMANDES), {
+        headers: headers(),
+        params : {
+            filterByFormula: `AND(RECORD_ID()="${commandeId}",{workspace_id}="${workspaceId}")`,
+            maxRecords     : 1,
+        },
+    });
+    return verification.data.records.length > 0;
 }
 
 // ── CHAT SAMII ────────────────────────────────────────
@@ -122,17 +134,11 @@ router.get("/qg-data", requireAuth, async (req, res) => {
     if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
 
     try {
-        // Workspace info
-        const wsRes = await axios.get(airtable(TABLE_WORKSPACES), {
-            headers: headers(),
-            params : {
-                filterByFormula: `{workspace_id}="${workspaceId}"`,
-                maxRecords     : 1,
-            },
-        });
-        const workspace = wsRes.data.records[0]?.fields || {};
+        // ✅ workspaceService — source de vérité unique
+        const workspace = await workspaceService.getById(workspaceId);
+        if (!workspace) return res.status(404).json({ error: "Workspace introuvable." });
 
-        // Commandes — filtrées par workspace_id
+        // Commandes
         const commandesRes = await axios.get(airtable(TABLE_COMMANDES), {
             headers: headers(),
             params : {
@@ -147,7 +153,7 @@ router.get("/qg-data", requireAuth, async (req, res) => {
             airtableId: r.id,
         }));
 
-        // Clients — filtrés par workspace_id
+        // Clients
         const clientsRes = await axios.get(airtable(TABLE_CLIENTS), {
             headers: headers(),
             params : {
@@ -165,8 +171,8 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         const en_attente      = commandes.filter(c => c.Statut === "en attente").length;
         const confirmees      = commandes.filter(c => c.Statut === "confirmée").length;
         const annulees        = commandes.filter(c => c.Statut === "annulée").length;
-        const vip             = clients.filter(c => c.VIP       === true).length;
-        const blacklist       = clients.filter(c => c.Blacklist  === true).length;
+        const vip             = clients.filter(c => c.VIP      === true).length;
+        const blacklist       = clients.filter(c => c.Blacklist === true).length;
 
         // Livraison
         const livrees  = commandes.filter(c => c.Statut === "livrée").length;
@@ -210,12 +216,17 @@ router.get("/qg-data", requireAuth, async (req, res) => {
 // ── CONFIRMER COMMANDE ────────────────────────────────
 router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
     try {
+        // ✅ Vérifier ownership
+        const ok = await verifyCommande(req.params.id, req.session.workspaceId);
+        if (!ok) return res.status(403).json({ error: "Commande introuvable." });
+
         await axios.patch(
             `${airtable(TABLE_COMMANDES)}/${req.params.id}`,
             { fields: { "Statut": "confirmée" } },
             { headers: headers() }
         );
         res.json({ success: true });
+
     } catch (err) {
         console.error("❌ Confirmer :", err.message);
         res.status(500).json({ error: "Erreur confirmation." });
@@ -225,12 +236,17 @@ router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
 // ── ANNULER COMMANDE ──────────────────────────────────
 router.post("/commandes/:id/annuler", requireAuth, async (req, res) => {
     try {
+        // ✅ Vérifier ownership
+        const ok = await verifyCommande(req.params.id, req.session.workspaceId);
+        if (!ok) return res.status(403).json({ error: "Commande introuvable." });
+
         await axios.patch(
             `${airtable(TABLE_COMMANDES)}/${req.params.id}`,
             { fields: { "Statut": "annulée" } },
             { headers: headers() }
         );
         res.json({ success: true });
+
     } catch (err) {
         console.error("❌ Annuler :", err.message);
         res.status(500).json({ error: "Erreur annulation." });
