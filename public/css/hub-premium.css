@@ -1,5 +1,5 @@
 /* ==========================================================
-   OG HUB — DESIGN SYSTEM (ÉLÉGANT, MINIMALISTE, PRO)
+   OG HUB — DESIGN SYSTEM (CORRECTION DÉCALAGE / SIDEBAR)
    ========================================================== */
 
 :root {
@@ -24,7 +24,6 @@
     --font-body: 'Inter', sans-serif;
 
     --sidebar-width: 80px;
-    --sidebar-width-collapsed: 0px;
     --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -35,29 +34,32 @@ body, html {
     color: var(--text-main);
     font-family: var(--font-body);
     min-height: 100vh;
+    width: 100%;
     overflow-x: hidden;
 }
 
 .og-layout {
     display: flex;
-    min-height: 100vh;
     width: 100%;
+    min-height: 100vh;
+    position: relative;
 }
 
-/* ================= SIDEBAR ================= */
+/* ================= SIDEBAR STABLE ================= */
 .og-sidebar {
     width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
     height: 100vh;
     position: fixed;
-    top: 0; left: 0;
-    background: linear-gradient(180deg, #040406 0%, #000000 100%);
+    top: 0; 
+    left: 0;
+    background: #020204;
     border-right: var(--border-subtle);
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 20px 0;
     z-index: 100;
-    transition: width 0.3s var(--ease-smooth);
 }
 
 .sidebar-brand { margin-bottom: 30px; }
@@ -119,14 +121,16 @@ body, html {
 }
 .sidebar-toggle:hover { color: var(--gold-og); }
 
-/* ================= MAIN CONTENT ================= */
+/* ================= MAIN CONTENT (SANS BLANC) ================= */
 .og-main {
     margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     padding: 60px;
+    background-color: var(--bg-base);
 }
 
 .og-error-banner {
@@ -250,7 +254,7 @@ body, html {
 .metier-card:hover .card-arrow { opacity: 1; transform: translateX(0); color: var(--blue-tech); }
 .card-arrow i { width: 18px; height: 18px; }
 
-/* ================= MODALE ================= -->
+/* ================= MODALE ================= */
 .og-modal-backdrop {
     position: fixed; inset: 0; z-index: 1000;
     background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
@@ -346,13 +350,13 @@ body, html {
     box-shadow: 0 5px 15px rgba(197, 160, 89, 0.4);
 }
 
-/* RESPONSIVE */
+/* RESPONSIVE MOBILE */
 @media (max-width: 768px) {
     .og-sidebar { width: 100vw; height: 60px; flex-direction: row; bottom: 0; top: auto; padding: 0 10px; border-right: none; border-top: var(--border-subtle); }
     .sidebar-brand, .sidebar-footer { display: none; }
     .sidebar-nav { flex-direction: row; justify-content: space-around; width: 100%; gap: 0; }
     .nav-item { width: 40px; height: 40px; }
-    .og-main { margin-left: 0; margin-bottom: 60px; padding: 30px 20px; }
+    .og-main { margin-left: 0; width: 100%; margin-bottom: 60px; padding: 30px 20px; }
     .metiers-grid { grid-template-columns: 1fr; }
     .og-modal-container { padding: 24px; margin: 15px; width: auto; }
 }
