@@ -3,91 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="hub_title">OG — Hub Central</title>
+    <title data-i18n="hub_title">OG — Command Center</title>
     
-    <!-- Fonts -->
+    <!-- Polices Cinématographiques & Modernes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- CSS Dédié -->
     <link rel="stylesheet" href="/css/hub.css">
 </head>
 <body data-workspace="<%= workspaceId || '' %>">
 
-    <div class="og-layout">
+    <div class="og-empire-layout">
 
-        <!-- ================= SIDEBAR ================= -->
+        <!-- ========================================================= -->
+        <!-- SIDEBAR FUTURISTE DE PILOTAGE -->
+        <!-- ========================================================= -->
         <aside class="og-sidebar" id="ogSidebar">
-            <div class="sidebar-brand">
-                <a href="/hub" class="brand-logo">OG</a>
+            <div class="sidebar-sigil">
+                <a href="/hub" class="sigil-link" title="OG Command">
+                    <span class="sigil-text">OG</span>
+                    <span class="sigil-glow-ring"></span>
+                </a>
             </div>
 
             <nav class="sidebar-nav">
-                <a href="/hub" class="nav-item active" title="Hub">
+                <a href="/hub" class="nav-node active" title="Hub Central">
                     <i data-lucide="command"></i>
                     <span data-i18n="nav_hub">Hub</span>
                 </a>
-                <a href="/marketplace" class="nav-item" title="Marketplace">
-                    <i data-lucide="shopping-bag"></i>
-                    <span data-i18n="nav_market">Market</span>
+                <a href="/marketplace" class="nav-node" title="Marketplace">
+                    <i data-lucide="cpu"></i>
+                    <span data-i18n="nav_market">Assets</span>
                 </a>
-                <a href="/community" class="nav-item" title="Community">
-                    <i data-lucide="users"></i>
-                    <span data-i18n="nav_community">Community</span>
+                <a href="/community" class="nav-node" title="Community">
+                    <i data-lucide="globe"></i>
+                    <span data-i18n="nav_community">Niveau</span>
                 </a>
-                <a href="/academy" class="nav-item" title="Academy">
-                    <i data-lucide="graduation-cap"></i>
+                <a href="/academy" class="nav-node" title="Academy">
+                    <i data-lucide="shield"></i>
                     <span data-i18n="nav_academy">Academy</span>
                 </a>
-                <a href="/networks" class="nav-item" title="Réseaux">
+                <a href="/networks" class="nav-node" title="Réseaux">
                     <i data-lucide="share-2"></i>
                     <span data-i18n="nav_networks">Réseaux</span>
                 </a>
-                <a href="/workspaces" class="nav-item" title="Mes QG">
+                <a href="/workspaces" class="nav-node" title="Mes QG">
                     <i data-lucide="layers"></i>
-                    <span data-i18n="nav_qg">Mes QG</span>
+                    <span data-i18n="nav_qg">QG</span>
                 </a>
-                <a href="/settings" class="nav-item" title="Paramètres">
+                <a href="/settings" class="nav-node" title="Paramètres">
                     <i data-lucide="sliders"></i>
                     <span data-i18n="nav_config">Config</span>
                 </a>
             </nav>
 
-            <div class="sidebar-footer">
-                <button class="sidebar-toggle" id="sidebarToggle" title="Réduire">
-                    <i data-lucide="chevron-left"></i>
-                </button>
+            <div class="sidebar-status-node">
+                <div class="status-pulse" title="SAMII Core Online"></div>
             </div>
         </aside>
 
-        <!-- ================= MAIN CONTENT ================= -->
-        <main class="og-main">
-            
+        <!-- ========================================================= -->
+        <!-- CONTENU CENTRAL DE L'EMPIRE -->
+        <!-- ========================================================= -->
+        <main class="og-main-viewport">
+
             <% if(error){ %>
-            <div class="og-error-banner"><%= error %></div>
+            <div class="og-system-alert"><%= error %></div>
             <% } %>
 
-            <!-- HERO SECTION -->
-            <header class="og-hero">
-                <div class="hero-content">
-                    <span class="hero-badge">OG INFRASTRUCTURE</span>
-                    <h1 data-i18n="hero_title">Pilotez votre activité.</h1>
-                    <p data-i18n="hero_subtitle">Sélectionnez votre secteur ou configurez votre site et vos espaces avec SAMII.</p>
+            <!-- ================= HERO CINÉMATOGRAPHIQUE ================= -->
+            <header class="og-hero-section">
+                <!-- Arrière-plan Ville Futuriste & Hologrammes -->
+                <div class="hero-city-bg"></div>
+                <div class="hero-tech-grid"></div>
+                <div class="ambient-glow-gold"></div>
+                <div class="ambient-glow-blue"></div>
 
-                    <!-- Barre de recherche / Déclencheur modal -->
-                    <div class="hero-search-bar" id="openModalTrigger">
-                        <i data-lucide="search"></i>
-                        <span data-i18n="hero_search_placeholder">Quel est votre métier ? Je configure votre espace...</span>
+                <div class="hero-content-wrapper">
+                    <div class="hero-badge-tag">
+                        <span class="tag-dot"></span>
+                        <span data-i18n="hero_tag">OG GLOBAL INFRASTRUCTURE</span>
+                    </div>
+                    
+                    <h1 data-i18n="hero_title">Bâtissez votre empire.</h1>
+                    <p data-i18n="hero_subtitle">Pilotez vos départements, strukturez vos organisations et étendez votre souveraineté avec SAMII.</p>
+
+                    <!-- Barre de Recherche Stratégique (Interface IA) -->
+                    <div class="hero-search-trigger" id="openCommandModal">
+                        <div class="search-icon-box">
+                            <i data-lucide="terminal"></i>
+                        </div>
+                        <span data-i18n="hero_search_placeholder">Interroger SAMII ou configurer un département...</span>
                         <kbd>⌘K</kbd>
                     </div>
 
                     <% if(hasWorkspace){ %>
-                    <div class="active-workspace-indicator">
-                        <span data-i18n="last_workspace_label">Dernier espace actif :</span>
+                    <div class="active-workspace-cluster">
+                        <span data-i18n="last_workspace_label">Dernier QG actif :</span>
                         <% workspaces.forEach(function(workspace){ %>
                             <% if(workspace.id === lastWorkspace){ %>
-                            <button class="workspace-pill" data-workspace="<%= workspace.id %>">
+                            <button class="cluster-pill" data-workspace="<%= workspace.id %>">
                                 <%= workspace.name %>
                             </button>
                             <% } %>
@@ -97,106 +114,137 @@
                 </div>
             </header>
 
-            <!-- SECTEURS / MÉTIERS -->
-            <section class="og-section">
-                <div class="section-header">
-                    <h2 data-i18n="sectors_title">Secteurs d'activité</h2>
-                    <p data-i18n="sectors_subtitle">Déployez une structure sur-mesure instantanément.</p>
+            <!-- ================= DÉPARTEMENTS STRATÉGIQUES ================= -->
+            <section class="og-departments-section">
+                <div class="section-title-wrapper">
+                    <h2 data-i18n="sectors_title">Départements de l'Empire</h2>
+                    <p data-i18n="sectors_subtitle">Sélectionnez ou initialisez un pilier organisationnel sur-mesure.</p>
                 </div>
 
-                <div class="metiers-grid">
+                <div class="departments-grid">
                     <% metiers.forEach(function(metier){ %>
-                    <div class="metier-card" data-metier="<%= metier %>">
-                        <div class="card-glow"></div>
-                        <div class="card-inner">
-                            <div class="card-icon">
-                                <i data-lucide="briefcase"></i>
+                    <div class="department-card" data-metier="<%= metier %>">
+                        <div class="card-hologram-glow"></div>
+                        <div class="card-shine-sweep"></div>
+                        
+                        <div class="card-inner-content">
+                            <div class="dept-icon-box">
+                                <i data-lucide="hexagon"></i>
                             </div>
                             <h3><%= metier %></h3>
-                            <p data-i18n="card_action_init">Créer votre site ou boutique</p>
+                            <p data-i18n="card_action_init">Déployer l'infrastructure</p>
                         </div>
-                        <div class="card-arrow">
-                            <i data-lucide="arrow-right"></i>
+                        
+                        <div class="dept-action-arrow">
+                            <i data-lucide="arrow-up-right"></i>
                         </div>
                     </div>
                     <% }) %>
                 </div>
             </section>
 
+            <!-- ================= FOOTER / RÉSEAU MONDIAL ================= -->
+            <footer class="og-empire-footer">
+                <div class="globe-viewport-bg"></div>
+                <div class="globe-gradient-mask"></div>
+
+                <div class="footer-content-inner">
+                    <div class="footer-core-badge" data-i18n="footer_badge">SOCIÉTÉ SOUVERAINE MONDIALE</div>
+                    <h2 data-i18n="footer_title">Expansion planétaire sans limites.</h2>
+                    <p data-i18n="footer_subtitle">Connectivité universelle, autonomie structurelle et excellence opérationnelle.</p>
+                    
+                    <div class="footer-meta-bar">
+                        <span data-i18n="footer_copyright">© 2026 OG Corporation. Tous droits réservés.</span>
+                        <div class="system-status-indicator">
+                            <span class="live-dot"></span>
+                            <span data-i18n="footer_status">SAMII Core Operational</span>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
         </main>
     </div>
 
-    <!-- ================= MODALE INTERACTIVE ================= -->
-    <div class="og-modal-backdrop" id="ogModal">
-        <div class="og-modal-container">
-            <button class="modal-close" id="closeModal">
+    <!-- ========================================================= -->
+    <!-- MODALE COMMANDE INTERACTIVE (SAMII STRATÈGE) -->
+    <!-- ========================================================= -->
+    <div class="og-modal-backdrop" id="commandModal">
+        <div class="og-modal-window">
+            <button class="modal-close-btn" id="closeCommandModal">
                 <i data-lucide="x"></i>
             </button>
 
-            <!-- Étape 1 : Accueil Modale -->
-            <div class="modal-step active" id="stepHome">
-                <h2 data-i18n="modal_home_title">Command Center</h2>
-                <p data-i18n="modal_home_subtitle">Quel est votre métier ou votre activité ?</p>
-                
-                <div class="modal-input-wrapper">
-                    <i data-lucide="search"></i>
-                    <input type="text" id="metierInput" placeholder="Ex : Agence, Restauration, Service, Mode..." data-i18n-placeholder="modal_input_placeholder">
+            <!-- Étape Accueil Command Center -->
+            <div class="modal-panel active" id="panelHome">
+                <div class="samii-assistant-header">
+                    <div class="samii-avatar-sigil">OG</div>
+                    <div>
+                        <h3 data-i18n="modal_home_title">SAMII Command Center</h3>
+                        <p data-i18n="modal_home_subtitle">Quel département ou structure souhaitez-vous activer ?</p>
+                    </div>
                 </div>
 
-                <div class="modal-actions">
-                    <button class="modal-action-btn" id="createQG">
+                <div class="modal-search-input-box">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="globalSearchInput" placeholder="Ex : Holding, Cabinet, Technologie, Structure, Fonds..." data-i18n-placeholder="modal_input_placeholder">
+                </div>
+
+                <div class="modal-options-list">
+                    <button class="option-row-card" id="triggerCreateQG">
                         <i data-lucide="plus-circle"></i>
                         <div>
-                            <strong data-i18n="modal_action_create_title">Créer un nouvel espace</strong>
-                            <span data-i18n="modal_action_create_sub">Générer l'architecture avec SAMII</span>
+                            <strong data-i18n="modal_action_create_title">Créer un nouveau QG</strong>
+                            <span data-i18n="modal_action_create_sub">Générer une architecture avec SAMII</span>
                         </div>
                     </button>
-                    <button class="modal-action-btn" id="inviteCollaborator">
+                    <button class="option-row-card" id="triggerCollaborator">
                         <i data-lucide="user-plus"></i>
                         <div>
-                            <strong data-i18n="modal_action_collab_title">Ajouter un collaborateur</strong>
-                            <span data-i18n="modal_action_collab_sub">Inviter un partenaire</span>
+                            <strong data-i18n="modal_action_collab_title">Ajouter un partenaire</strong>
+                            <span data-i18n="modal_action_collab_sub">Intégrer une ressource au réseau</span>
                         </div>
                     </button>
-                    <button class="modal-action-btn" id="searchWorkspace">
+                    <button class="option-row-card" id="triggerSearchWorkspace">
                         <i data-lucide="layers"></i>
                         <div>
-                            <strong data-i18n="modal_action_search_title">Rechercher un espace</strong>
-                            <span data-i18n="modal_action_search_sub">Accéder à une structure existante</span>
+                            <strong data-i18n="modal_action_search_title">Rechercher un QG existant</strong>
+                            <span data-i18n="modal_action_search_sub">Accéder à un espace souverain actif</span>
                         </div>
                     </button>
                 </div>
             </div>
 
-            <!-- Étape 2 : Formulaire de Création -->
-            <div class="modal-step" id="stepCreate">
-                <div class="samii-header">
-                    <div class="samii-avatar">OG</div>
+            <!-- Étape Formulaire de Déploiement QG -->
+            <div class="modal-panel" id="panelCreate">
+                <div class="samii-assistant-header">
+                    <div class="samii-avatar-sigil">OG</div>
                     <div>
                         <h3 data-i18n="samii_title">SAMII Intelligence</h3>
-                        <p data-i18n="samii_init_sub">Configuration de votre site/boutique en cours</p>
+                        <p data-i18n="samii_init_sub">Initialisation de l'infrastructure en cours...</p>
                     </div>
                 </div>
-                <form id="createWorkspaceForm" class="modal-form">
-                    <div class="form-group">
-                        <label data-i18n="form_label_sector">Activité / Métier</label>
-                        <input type="text" id="workspaceMetier" required>
+                
+                <form id="deploymentForm" class="modal-deploy-form">
+                    <div class="form-group-item">
+                        <label data-i18n="form_label_sector">Département / Secteur</label>
+                        <input type="text" id="deploySector" required>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
+                    <div class="form-row-dual">
+                        <div class="form-group-item">
                             <label data-i18n="form_label_name">Nom</label>
-                            <input type="text" id="workspaceNom" required>
+                            <input type="text" id="deployName" required>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group-item">
                             <label data-i18n="form_label_firstname">Prénom</label>
-                            <input type="text" id="workspacePrenom" required>
+                            <input type="text" id="deployFirstname" required>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="form_label_company">Nom de votre entreprise / site</label>
-                        <input type="text" id="workspaceEntreprise" required>
+                    <div class="form-group-item">
+                        <label data-i18n="form_label_company">Nom de l'entité / structure</label>
+                        <input type="text" id="deployCompany" required>
                     </div>
-                    <button type="submit" class="og-btn-primary" data-i18n="form_btn_deploy">Générer l'espace</button>
+                    <button type="submit" class="og-primary-action-btn" data-i18n="form_btn_deploy">Déployer l'infrastructure</button>
                 </form>
             </div>
         </div>
@@ -208,9 +256,10 @@
         window.OG_WORKSPACE_ID = "<%= workspaceId || '' %>";
     </script>
 
-    <!-- Scripts -->
+    <!-- Scripts de pilotage -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/js/i18n.js"></script>
     <script src="/js/hub.js"></script>
+
 </body>
 </html>
