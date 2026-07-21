@@ -78,7 +78,7 @@ function renderMetierGrid() {
     grid.innerHTML = METIERS.map(m => {
         const t = getMetierText(m.id);
         return `
-        <a class="metier-card" href="/qg/${m.id}" data-metier="${m.id}">
+       <a class="metier-card" href="/inscription?metier=${m.id}" data-metier="${m.id}">
             <div class="metier-card__media ${m.mood}">
                 <i class="metier-card__watermark" data-lucide="${m.icon}"></i>
                 <div class="metier-card__shade"></div>
