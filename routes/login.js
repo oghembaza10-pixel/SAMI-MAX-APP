@@ -1,10 +1,15 @@
 // ==========================================================================
-// SAMII OS — LOGIN V2
+// SAMII OS — LOGIN V3
+// ==========================================================================
+// Correction : workspaceId venait à tort de l'ID utilisateur (table
+// UTILISATEURS). Maintenant on va chercher le vrai workspace de la personne
+// via workspaceService, source de vérité unique (voir workspaceService.js).
 // ==========================================================================
 
 const express = require("express");
 const axios   = require("axios");
 const router  = express.Router();
+const workspaceService = require("../services/workspaceService");
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
@@ -12,7 +17,7 @@ const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
 
 // ── GET /login ────────────────────────────────────────────────
 router.get("/", (req, res) => {
-    if (req.session?.loggedIn) return res.redirect(`/qg/${req.session.metier || "ecommerce"}`);
+    if (req.session?.loggedIn) return res.redirect("/hub");
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -62,9 +67,9 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     const json = await res.json();
 
     if (json.success) {
-        msg.textContent = '✅ Connecté ! Redirection vers votre QG...';
+        msg.textContent = '✅ Connecté ! Redirection...';
         msg.className   = 'msg ok';
-        window.location.href = json.redirect || '/qg/ecommerce';
+        window.location.href = json.redirect || '/hub';
     } else {
         msg.textContent = json.error || '❌ Erreur. Réessayez.';
     }
@@ -109,27 +114,34 @@ router.post("/", async (req, res) => {
             return res.json({ success: false, error: "Compte suspendu. Contactez le support." });
         }
 
-        // ── Mise à jour last_login ────────────────────────
         await axios.patch(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
             { fields: { last_login: new Date().toISOString().split("T")[0] } },
             { headers }
         );
 
-        // ── Session ───────────────────────────────────────
+        // ── ✅ Aller chercher le VRAI workspace de la personne ─
+        const workspaces = await workspaceService.getByOwner(email);
+        const workspace  = workspaces[0] || null;
+
         req.session.regenerate((err) => {
             if (err) return res.json({ success: false, error: "Erreur session." });
 
             req.session.loggedIn    = true;
             req.session.email       = email;
             req.session.userId      = record.id;
-            req.session.workspaceId = record.id;
-            req.session.metier      = user.metier || "ecommerce";
             req.session.nom         = `${user.prenom || ""} ${user.nom || ""}`.trim();
+
+            if (workspace) {
+                req.session.workspaceId = workspace.workspaceId;
+                req.session.metier      = workspace.metier;
+            } else {
+                req.session.workspaceId = null;
+            }
 
             res.json({
                 success : true,
-                redirect: `/qg/${user.metier || "ecommerce"}`,
+                redirect: workspace ? "/qg" : "/hub",
             });
         });
 
@@ -140,4 +152,3 @@ router.post("/", async (req, res) => {
 });
 
 module.exports = router;
-
