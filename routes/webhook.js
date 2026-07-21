@@ -7,16 +7,10 @@ const router        = express.Router();
 const orchestrator  = require("../brain/orchestrator");
 const socketService = require("../services/socketService");
 
-const TOPIC_MAP = {
-    "orders/create"    : "order.created",
-    "orders/updated"   : "order.updated",
-    "orders/paid"      : "order.paid",
-    "orders/fulfilled" : "order.fulfilled",
-    "orders/cancelled" : "order.cancelled",
-    "app/uninstalled"  : "shop.uninstalled",
-};
-
 router.post("/", async (req, res) => {
+
+    console.log("🔥 WEBHOOK :", req.headers["x-shopify-topic"]);
+
     // Répondre immédiatement à Shopify
     res.sendStatus(200);
 
