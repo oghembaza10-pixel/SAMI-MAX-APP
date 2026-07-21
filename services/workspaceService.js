@@ -22,6 +22,16 @@ function escapeFormula(value = "") {
         .replace(/"/g, '\\"');
 }
 
+function parseSamiiConfig(raw) {
+    if (!raw) return { mode: "auto" };
+    if (typeof raw === "object") return raw;
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return { mode: "auto" };
+    }
+}
+
 function mapRecord(r) {
     const f = r.fields;
     return {
@@ -34,6 +44,8 @@ function mapRecord(r) {
         langue      : f.langue       || "fr",
         devise      : f.devise       || "DZD",
         pays        : f.pays         || "",
+        description : f.description  || "",
+        samii       : parseSamiiConfig(f.samii),
         timezone    : f.timezone     || "Africa/Algiers",
         statut      : f.statut       || "actif",
         actif       : f.statut       === "actif",
