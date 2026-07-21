@@ -65,7 +65,7 @@ async function getByOwner(email) {
         });
         return res.data.records.map(mapRecord);
     } catch (err) {
-        console.error("❌ workspaceService.getByOwner :", err.message);
+        console.error("❌ workspaceService.getByOwner :", err.response?.data || err.message);
         return [];
     }
 }
@@ -82,7 +82,7 @@ async function getById(workspaceId) {
         const record = res.data.records[0];
         return record ? mapRecord(record) : null;
     } catch (err) {
-        console.error("❌ workspaceService.getById :", err.message);
+        console.error("❌ workspaceService.getById :", err.response?.data || err.message);
         return null;
     }
 }
@@ -101,7 +101,7 @@ async function getActiveWorkspace(email) {
         const w = mapRecord(record);
         return { workspaceId: w.workspaceId, nom: w.nom, metier: w.metier };
     } catch (err) {
-        console.error("❌ workspaceService.getActiveWorkspace :", err.message);
+        console.error("❌ workspaceService.getActiveWorkspace :", err.response?.data || err.message);
         return null;
     }
 }
@@ -118,7 +118,7 @@ async function getByMetier(email, metier) {
         const record = res.data.records[0];
         return record ? mapRecord(record) : null;
     } catch (err) {
-        console.error("❌ workspaceService.getByMetier :", err.message);
+        console.error("❌ workspaceService.getByMetier :", err.response?.data || err.message);
         return null;
     }
 }
@@ -139,7 +139,7 @@ async function belongsToOwner(workspaceId, owner) {
         });
         return res.data.records.length > 0;
     } catch (err) {
-        console.error("❌ workspaceService.belongsToOwner :", err.message);
+        console.error("❌ workspaceService.belongsToOwner :", err.response?.data || err.message);
         return false;
     }
 }
@@ -162,12 +162,13 @@ async function create({ workspaceId, owner, nom, metier, logo = "", pays = "", d
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                 },
+                typecast: true,
             },
             { headers: { ...headers(), "Content-Type": "application/json" } }
         );
         return mapRecord(res.data);
     } catch (err) {
-        console.error("❌ workspaceService.create :", err.message);
+        console.error("❌ workspaceService.create :", JSON.stringify(err.response?.data) || err.message);
         return null;
     }
 }
@@ -176,12 +177,12 @@ async function update(recordId, fields) {
     try {
         const res = await axios.patch(
             `${url()}/${recordId}`,
-            { fields: { ...fields, updated_at: new Date().toISOString() } },
+            { fields: { ...fields, updated_at: new Date().toISOString() }, typecast: true },
             { headers: { ...headers(), "Content-Type": "application/json" } }
         );
         return mapRecord(res.data);
     } catch (err) {
-        console.error("❌ workspaceService.update :", err.message);
+        console.error("❌ workspaceService.update :", err.response?.data || err.message);
         return null;
     }
 }
@@ -191,7 +192,7 @@ async function remove(recordId) {
         await axios.delete(`${url()}/${recordId}`, { headers: headers() });
         return true;
     } catch (err) {
-        console.error("❌ workspaceService.delete :", err.message);
+        console.error("❌ workspaceService.delete :", err.response?.data || err.message);
         return false;
     }
 }
