@@ -16,14 +16,12 @@ const TABLE_WORKSPACES = process.env.TABLE_WORKSPACES || "WORKSPACES";
 const url     = () => `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_WORKSPACES}`;
 const headers = () => ({ Authorization: `Bearer ${AIRTABLE_API_KEY}` });
 
-// ── Helper — échapper les valeurs dans les formules ──
 function escapeFormula(value = "") {
     return String(value)
         .replace(/\\/g, "\\\\")
         .replace(/"/g, '\\"');
 }
 
-// ── Mapper un record Airtable ─────────────────────────
 function mapRecord(r) {
     const f = r.fields;
     return {
@@ -35,6 +33,7 @@ function mapRecord(r) {
         logo        : f.logo         || "",
         langue      : f.langue       || "fr",
         devise      : f.devise       || "DZD",
+        pays        : f.pays         || "",
         timezone    : f.timezone     || "Africa/Algiers",
         statut      : f.statut       || "actif",
         actif       : f.statut       === "actif",
@@ -43,7 +42,6 @@ function mapRecord(r) {
     };
 }
 
-// ── Tous les workspaces d'un owner ───────────────────
 async function getByOwner(email) {
     try {
         const res = await axios.get(url(), {
@@ -60,7 +58,6 @@ async function getByOwner(email) {
     }
 }
 
-// ── Un workspace par workspaceId ─────────────────────
 async function getById(workspaceId) {
     try {
         const res = await axios.get(url(), {
@@ -78,8 +75,6 @@ async function getById(workspaceId) {
     }
 }
 
-// ── Workspace actif d'un owner ────────────────────────
-// Disponible mais non appelé en V1 (session suffit)
 async function getActiveWorkspace(email) {
     try {
         const res = await axios.get(url(), {
@@ -99,7 +94,6 @@ async function getActiveWorkspace(email) {
     }
 }
 
-// ── Workspace par métier ──────────────────────────────
 async function getByMetier(email, metier) {
     try {
         const res = await axios.get(url(), {
@@ -117,13 +111,11 @@ async function getByMetier(email, metier) {
     }
 }
 
-// ── Vérifier si un workspace existe ──────────────────
 async function exists(workspaceId) {
     const workspace = await getById(workspaceId);
     return workspace !== null;
 }
 
-// ── ✅ Sécurité — vérifier ownership (1 seule requête)
 async function belongsToOwner(workspaceId, owner) {
     try {
         const res = await axios.get(url(), {
@@ -140,8 +132,7 @@ async function belongsToOwner(workspaceId, owner) {
     }
 }
 
-// ── Créer un workspace ───────────────────────────────
-async function create({ workspaceId, owner, nom, metier, logo = "" }) {
+async function create({ workspaceId, owner, nom, metier, logo = "", pays = "", devise = "", langue = "fr" }) {
     try {
         const res = await axios.post(
             url(),
@@ -152,6 +143,9 @@ async function create({ workspaceId, owner, nom, metier, logo = "" }) {
                     nom,
                     metier,
                     logo,
+                    pays,
+                    devise,
+                    langue,
                     statut    : "actif",
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
@@ -166,7 +160,6 @@ async function create({ workspaceId, owner, nom, metier, logo = "" }) {
     }
 }
 
-// ── Mettre à jour un workspace ───────────────────────
 async function update(recordId, fields) {
     try {
         const res = await axios.patch(
@@ -181,7 +174,6 @@ async function update(recordId, fields) {
     }
 }
 
-// ── Supprimer un workspace ───────────────────────────
 async function remove(recordId) {
     try {
         await axios.delete(`${url()}/${recordId}`, { headers: headers() });
