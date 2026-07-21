@@ -89,7 +89,7 @@ app.use("/drivers",     require("./routes/drivers"));
 app.use("/login",       require("./routes/login"));
 app.use("/register",    require("./routes/register"));
 app.use("/api",         require("./routes/api"));
-
+app.use("/inscription", require("./routes/inscription"));
 // ── PAGE ACCUEIL ──────────────────────────────────────
 app.get("/", (req, res) => res.render("index"));
 
