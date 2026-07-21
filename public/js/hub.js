@@ -2,26 +2,21 @@
 // OG EMPIRE — HUB : Moteur front-end (vitrine premium, pas de dashboard)
 // ==========================================================================
 
-// Chaque métier a une "mood" (dégradé) en attendant une vraie photo.
-// Pour mettre une vraie image plus tard : ajoute juste `image: "/img/metiers/xxx.jpg"`
-// et hub.js basculera automatiquement dessus (voir renderMetierGrid).
 const METIERS = [
-    { id: "ecommerce",   label: "E-commerce",   desc: "Commerce en ligne",      icon: "shopping-cart",  mood: "mood-ecommerce" },
-    { id: "restaurant",  label: "Restaurant",   desc: "Restauration & food",    icon: "utensils",        mood: "mood-restaurant" },
-    { id: "immobilier",  label: "Immobilier",   desc: "Biens & propriétés",     icon: "building-2",      mood: "mood-immobilier" },
-    { id: "livreur",     label: "Livreur",      desc: "Livraison & logistique", icon: "bike",            mood: "mood-livreur" },
-    { id: "sante",       label: "Santé",        desc: "Santé & bien-être",      icon: "heart-pulse",     mood: "mood-sante" },
-    { id: "finance",     label: "Finance",      desc: "Finance & invest.",      icon: "trending-up",     mood: "mood-finance" },
-    { id: "education",   label: "Éducation",    desc: "Formation & savoir",     icon: "graduation-cap",  mood: "mood-education" },
-    { id: "technologie", label: "Technologie",  desc: "Tech & innovation",      icon: "cpu",             mood: "mood-technologie" },
-    { id: "agriculture", label: "Agriculture",  desc: "Culture & agriculture",  icon: "leaf",            mood: "mood-agriculture" },
-    { id: "industrie",   label: "Industrie",    desc: "Production & usine",     icon: "factory",         mood: "mood-industrie" },
-    { id: "services",    label: "Services",     desc: "Services pro",           icon: "briefcase",       mood: "mood-services" },
-    { id: "tourisme",    label: "Tourisme",     desc: "Voyage & tourisme",      icon: "plane",           mood: "mood-tourisme" },
+    { id: "ecommerce",   icon: "shopping-cart",  mood: "mood-ecommerce" },
+    { id: "restaurant",  icon: "utensils",        mood: "mood-restaurant" },
+    { id: "immobilier",  icon: "building-2",      mood: "mood-immobilier" },
+    { id: "livreur",     icon: "bike",            mood: "mood-livreur" },
+    { id: "sante",       icon: "heart-pulse",     mood: "mood-sante" },
+    { id: "finance",     icon: "trending-up",     mood: "mood-finance" },
+    { id: "education",   icon: "graduation-cap",  mood: "mood-education" },
+    { id: "technologie", icon: "cpu",             mood: "mood-technologie" },
+    { id: "agriculture", icon: "leaf",            mood: "mood-agriculture" },
+    { id: "industrie",   icon: "factory",         mood: "mood-industrie" },
+    { id: "services",    icon: "briefcase",       mood: "mood-services" },
+    { id: "tourisme",    icon: "plane",           mood: "mood-tourisme" },
 ];
 
-// Plateformes — affichées dans la SIDEBAR (plus dans le contenu principal).
-// "color" = couleur de marque, utilisée uniquement pour l'anneau/glow une fois connecté.
 const PLATFORMS = [
     { id: "instagram", label: "Instagram", icon: "instagram",      color: "#E1306C", connectRoute: "/connect/instagram" },
     { id: "tiktok",    label: "TikTok",    icon: "music-2",        color: "#25F4EE", connectRoute: "/connect/tiktok" },
@@ -42,11 +37,47 @@ const PLATFORMS = [
     { id: "claude",    label: "Claude",    icon: "bot",            color: "#D97757", connectRoute: "/connect/claude" },
 ];
 
+// Traductions de secours si i18n.js n'est pas encore chargé
+const FALLBACK_METIER_TEXT = {
+    ecommerce:   { label: "E-commerce",   desc: "Commerce en ligne" },
+    restaurant:  { label: "Restaurant",   desc: "Restauration & food" },
+    immobilier:  { label: "Immobilier",   desc: "Biens & propriétés" },
+    livreur:     { label: "Livreur",      desc: "Livraison & logistique" },
+    sante:       { label: "Santé",        desc: "Santé & bien-être" },
+    finance:     { label: "Finance",      desc: "Finance & invest." },
+    education:   { label: "Éducation",    desc: "Formation & savoir" },
+    technologie: { label: "Technologie",  desc: "Tech & innovation" },
+    agriculture: { label: "Agriculture",  desc: "Culture & agriculture" },
+    industrie:   { label: "Industrie",    desc: "Production & usine" },
+    services:    { label: "Services",     desc: "Services pro" },
+    tourisme:    { label: "Tourisme",     desc: "Voyage & tourisme" },
+};
+
+function getMetierText(id) {
+    if (typeof Language !== "undefined" && Language.getDict) {
+        const dict = Language.getDict();
+        if (dict && dict.hub && dict.hub.metiers && dict.hub.metiers[id]) {
+            return dict.hub.metiers[id];
+        }
+    }
+    return FALLBACK_METIER_TEXT[id] || { label: id, desc: "" };
+}
+
+function getMetierMoreText() {
+    if (typeof Language !== "undefined" && Language.getDict) {
+        const dict = Language.getDict();
+        if (dict && dict.hub && dict.hub.metierMore) return dict.hub.metierMore;
+    }
+    return "Plus de métiers";
+}
+
 function renderMetierGrid() {
     const grid = document.getElementById("metier-grid");
     if (!grid) return;
 
-    grid.innerHTML = METIERS.map(m => `
+    grid.innerHTML = METIERS.map(m => {
+        const t = getMetierText(m.id);
+        return `
         <a class="metier-card" href="/qg/${m.id}" data-metier="${m.id}">
             <div class="metier-card__media ${m.mood}">
                 <i class="metier-card__watermark" data-lucide="${m.icon}"></i>
@@ -55,17 +86,20 @@ function renderMetierGrid() {
             <div class="metier-card__body">
                 <i data-lucide="${m.icon}"></i>
                 <div>
-                    <h3>${m.label}</h3>
-                    <span>${m.desc}</span>
+                    <h3>${t.label}</h3>
+                    <span>${t.desc}</span>
                 </div>
             </div>
         </a>
-    `).join("") + `
+    `;
+    }).join("") + `
         <a class="metier-card more" href="/metiers">
             <i data-lucide="plus-circle"></i>
-            <h3>Plus de métiers</h3>
+            <h3>${getMetierMoreText()}</h3>
         </a>
     `;
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 function renderSidebarPlatforms() {
@@ -98,14 +132,98 @@ function renderSidebarPlatforms() {
             window.location.href = alreadyConnected ? "/settings#connexions" : btn.dataset.connectRoute;
         });
     });
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+
+// ── Toast simple pour "bientôt disponible" ──────────────────────────
+function showHubToast(message) {
+    let toast = document.getElementById("hub-toast");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "hub-toast";
+        toast.className = "hub-toast";
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add("hub-toast--visible");
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove("hub-toast--visible"), 2800);
+}
+
+// ── Panneau de recherche : 3 options ─────────────────────────────────
+function initSearchPanel() {
+    const wrap = document.querySelector(".hero-search-wrap");
+    const input = document.getElementById("hero-search");
+    const panel = document.getElementById("hero-search-panel");
+    if (!wrap || !input || !panel) return;
+
+    function openPanel() { wrap.classList.add("open"); }
+    function closePanel() { wrap.classList.remove("open"); }
+
+    input.addEventListener("focus", openPanel);
+    input.addEventListener("input", openPanel);
+
+    // Ferme le panneau si on clique en dehors
+    document.addEventListener("click", (e) => {
+        if (!wrap.contains(e.target)) closePanel();
+    });
+
+    panel.querySelectorAll(".hero-search__option").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const action = btn.dataset.action;
+            const query = input.value.trim();
+
+            if (action === "create") {
+                const url = query
+                    ? `/inscription?metier=${encodeURIComponent(query)}`
+                    : `/inscription`;
+                window.location.href = url;
+            } else if (action === "invite") {
+                showHubToast("Inviter un collaborateur — bientôt disponible");
+                closePanel();
+            } else if (action === "find") {
+                showHubToast("Chercher un QG — bientôt disponible");
+                closePanel();
+            }
+        });
+    });
+
+    const searchBtn = document.getElementById("hero-search-btn");
+    if (searchBtn) {
+        searchBtn.addEventListener("click", () => {
+            const query = input.value.trim();
+            window.location.href = query
+                ? `/inscription?metier=${encodeURIComponent(query)}`
+                : `/inscription`;
+        });
+    }
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            const query = input.value.trim();
+            window.location.href = query
+                ? `/inscription?metier=${encodeURIComponent(query)}`
+                : `/inscription`;
+        }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     renderMetierGrid();
     renderSidebarPlatforms();
+    initSearchPanel();
 
     if (typeof lucide !== "undefined") {
         lucide.createIcons();
+    }
+
+    // Re-rendu des cartes métier quand la langue change
+    if (typeof Language !== "undefined" && Language.onChange) {
+        Language.onChange(() => {
+            renderMetierGrid();
+        });
     }
 
     // Sidebar : état actif au clic
@@ -116,16 +234,6 @@ document.addEventListener("DOMContentLoaded", () => {
             this.classList.add("active");
         });
     });
-
-    // Recherche premium du hero
-    const heroSearch = document.getElementById("hero-search");
-    if (heroSearch) {
-        heroSearch.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && heroSearch.value.trim()) {
-                window.location.href = "/metiers?q=" + encodeURIComponent(heroSearch.value.trim());
-            }
-        });
-    }
 
     // Widget SAMII : ouverture / fermeture
     const samiiWidget = document.getElementById("samii-widget");
@@ -138,7 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (samiiTrigger) samiiTrigger.addEventListener("click", openSamii);
     if (samiiClose) samiiClose.addEventListener("click", closeSamii);
 
-    // Envoi de message SAMII -> /api/chat (déjà défini côté serveur dans index.js)
     const samiiForm = document.getElementById("samii-widget-form");
     if (samiiForm) {
         samiiForm.addEventListener("submit", async (e) => {
@@ -175,23 +282,3 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
-
-// ==========================================================================
-// i18n — conservé pour compatibilité avec le futur sélecteur de langue
-// ==========================================================================
-const capitolTranslations = {
-    fr: { eyebrow: "OG Empire", hero: "Quel empire voulez-vous construire ?", sub: "SAMII vous aide à lancer votre QG et à connecter votre écosystème." },
-    en: { eyebrow: "OG Empire", hero: "What empire will you build?",          sub: "SAMII helps you launch your HQ and connect your ecosystem." },
-    ar: { eyebrow: "OG Empire", hero: "أي إمبراطورية ستبني؟",                  sub: "سامي يساعدك على إطلاق مقرك وربط منظومتك." },
-};
-
-function switchCapitolLang(lang) {
-    const t = capitolTranslations[lang];
-    if (!t) return;
-    const eyebrow = document.querySelector(".hero-eyebrow");
-    const title = document.querySelector(".hero-text-zone h1");
-    const sub = document.querySelector(".hero-text-zone p");
-    if (eyebrow) eyebrow.textContent = t.eyebrow;
-    if (title) title.textContent = t.hero;
-    if (sub) sub.textContent = t.sub;
-}
