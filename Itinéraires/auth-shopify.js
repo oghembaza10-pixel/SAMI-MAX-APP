@@ -1,5 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — CONNEXION OAUTH SHOPIFY (multi-boutiques) V3
+// OG EMPIRE — CONNEXION OAUTH SHOPIFY (multi-boutiques) V3.1
 // ==========================================================================
 
 const express      = require("express");
@@ -21,19 +21,14 @@ const REDIRECT_URI = `${APP_URL}/auth/shopify/callback`;
 const SCOPES = [
     "read_products",
     "write_products",
-
     "read_orders",
     "write_orders",
-
     "read_customers",
     "write_customers",
-
     "read_inventory",
     "write_inventory",
-
     "read_shipping",
     "write_shipping",
-
     "read_fulfillments",
     "write_fulfillments",
 ].join(",");
@@ -71,8 +66,8 @@ async function upsertBoutique(shop, accessToken, shopInfo) {
         status         : "actif",
         date_connexion : new Date().toISOString().split("T")[0],
         webhooks_actifs: false,
-        nom_boutique   : shopInfo?.name   || shop,
-        email          : shopInfo?.email  || "",
+        nom_boutique   : shopInfo?.name    || shop,
+        email          : shopInfo?.email   || "",
         devise         : shopInfo?.currency || "",
         pays           : shopInfo?.country  || "",
         timezone       : shopInfo?.iana_timezone || "",
@@ -137,52 +132,46 @@ async function upsertUser(shop, email) {
 // ── BLOC 3 : Enregistrer les webhooks ────────────────────────
 async function registerWebhooks(shop, accessToken) {
     const webhooks = [
-
-"orders/create",
-
-"orders/updated",
-
-"orders/paid",
-
-"orders/fulfilled",
-
-"orders/cancelled",
-
-"customers/create",
-
-"customers/update",
-
-"products/update",
-
-"inventory_levels/update",
-
-"fulfillments/create",
-
-"app/uninstalled"
-
-];
+        "orders/create",
+        "orders/updated",
+        "orders/paid",
+        "orders/fulfilled",
+        "orders/cancelled",
+        "customers/create",
+        "customers/update",
+        "products/update",
+        "inventory_levels/update",
+        "fulfillments/create",
+        "app/uninstalled"
+    ];
 
     for (const topic of webhooks) {
         try {
             await axios.post(
                 `https://${shop}/admin/api/2026-07/webhooks.json`,
-                { webhook: {
-                    topic,
-                    address: `${APP_URL}/webhook`,
-                    format : "json",
-                }},
-                { headers: {
-                    "X-Shopify-Access-Token": accessToken,
-                    "Content-Type"          : "application/json",
-                }}
+                {
+                    webhook: {
+                        topic,
+                        address: `${APP_URL}/webhook`,
+                        format: "json",
+                    },
+                },
+                {
+                    headers: {
+                        "X-Shopify-Access-Token": accessToken,
+                        "Content-Type": "application/json",
+                    },
+                }
             );
+
             console.log(`✅ Webhook enregistré : ${topic}`);
+
         } catch (err) {
-            console.warn(`⚠️ Webhook ${topic} : ${err.response?.data?.errors || err.message}`);
+            console.warn(`⚠️ Webhook ${topic} :`, err.response?.data || err.message);
         }
     }
 
-    // Marquer webhooks_actifs = true
+    // Marquer webhooks_actifs = true sans récursion
     const headers   = { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" };
     const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}?filterByFormula={shop_url}="${shop}"`;
     const search    = await axios.get(searchUrl, { headers });
@@ -233,8 +222,8 @@ router.get("/auth/shopify/callback", async (req, res) => {
     try {
         // Token Shopify
         const tokenRes    = await axios.post(`https://${shop}/admin/oauth/access_token`, {
-            client_id    : API_KEY,
-            client_secret: API_SECRET,
+            client_id     : API_KEY,
+            client_secret : API_SECRET,
             code,
         });
         const accessToken = tokenRes.data.access_token;
@@ -245,11 +234,9 @@ router.get("/auth/shopify/callback", async (req, res) => {
         });
         const shopInfo = shopRes.data.shop;
 
-        // Upsert boutique + utilisateur
+        // Upsert boutique + utilisateur + webhooks séquentiels sécurisés
         const boutique = await upsertBoutique(shop, accessToken, shopInfo);
         await upsertUser(shop, shopInfo.email);
-
-        // Webhooks
         await registerWebhooks(shop, accessToken);
 
         // Orchestrateur SAMII
@@ -259,7 +246,7 @@ router.get("/auth/shopify/callback", async (req, res) => {
             payload: { accessToken, scopes: SCOPES },
         });
 
-               // Session sécurisée ✅
+        // Session sécurisée ✅
         req.session.regenerate((err) => {
             if (err) {
                 console.error("❌ Session regenerate :", err.message);
@@ -288,4 +275,3 @@ router.get("/auth/shopify/callback", async (req, res) => {
 });
 
 module.exports = router;
-
