@@ -88,8 +88,9 @@ app.use("/marketplace", require("./routes/marketplace"));
 app.use("/drivers",     require("./routes/drivers"));
 app.use("/login",       require("./routes/login"));
 app.use("/register",    require("./routes/register"));
+app.use("/inscription", requireAuth, require("./routes/inscription"));
 app.use("/api",         require("./routes/api"));
-app.use("/inscription", require("./routes/inscription"));
+
 // ── PAGE ACCUEIL ──────────────────────────────────────
 app.get("/", (req, res) => res.render("index"));
 
