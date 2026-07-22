@@ -7,6 +7,26 @@ const router        = express.Router();
 const orchestrator  = require("../brain/orchestrator");
 const socketService = require("../services/socketService");
 
+// ── Correspondance des topics Shopify → événements SAMII ──
+const TOPIC_MAP = {
+    "orders/create": "orders.create",
+    "orders/updated": "orders.updated",
+    "orders/paid": "orders.paid",
+    "orders/fulfilled": "orders.fulfilled",
+    "orders/cancelled": "orders.cancelled",
+
+    "customers/create": "customers.create",
+    "customers/update": "customers.update",
+
+    "products/update": "products.update",
+
+    "inventory_levels/update": "inventory.updated",
+
+    "fulfillments/create": "fulfillments.create",
+
+    "app/uninstalled": "app.uninstalled",
+};
+
 router.post("/", async (req, res) => {
 
     console.log("🔥 WEBHOOK :", req.headers["x-shopify-topic"]);
@@ -25,6 +45,7 @@ router.post("/", async (req, res) => {
         return;
     }
 
+    // ── Le reste de ton code ne change pas ──
     // ── Parse body ────────────────────────────────────
     let payload = {};
     try {
