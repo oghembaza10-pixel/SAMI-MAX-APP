@@ -183,29 +183,34 @@ async function upsertUser(shop, email) {
     const record    = search.data.records[0];
 
     if (record) {
-        await axios.patch(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-            { fields: { derniere_connexion : new Date().toISOString(), actif: true }},
-            { headers }
-        );
-        console.log(`🔄 Utilisateur mis à jour : ${shop}`);
-        return record.id;
-    } else {
-        const created = await axios.post(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}`,
-            {fields: {
-    shop_url: shop,
-    email: email || "",
-    role: "owner",
-    created_at: new Date().toISOString(),
-    derniere_connexion: new Date().toISOString(),
-    actif: true,
-} },
-            { headers }
-        );
-        console.log(`✅ Utilisateur créé : ${shop}`);
-        return created.data.id;
-    }
+    await axios.patch(
+        `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
+        {
+            fields: {
+                derniere_connexion: new Date().toISOString().split("T")[0],
+                actif: true,
+            },
+        },
+        { headers }
+    );
+    console.log(`🔄 Utilisateur mis à jour : ${shop}`);
+    return record.id;
+} else {
+    const created = await axios.post(
+        `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}`,
+        {
+            fields: {
+                shop_url: shop,
+                email: email || "",
+                role: "owner",
+                derniere_connexion: new Date().toISOString().split("T")[0],
+                actif: true,
+            },
+        },
+        { headers }
+    );
+    console.log(`✅ Utilisateur créé : ${shop}`);
+    return created.data.id;
 }
 
 // ── BLOC 3 : Enregistrer les webhooks ────────────────────────
