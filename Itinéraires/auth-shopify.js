@@ -6,21 +6,22 @@
 // Seul l'échange de token + le rafraîchissement changent — le reste de
 // l'architecture (orchestrateur, Airtable, webhooks, sessions) est identique.
 // ==========================================================================
+const express = require("express");
+const axios = require("axios");
+const crypto = require("crypto");
+const router = express.Router();
 
-const express      = require("express");
-const axios        = require("axios");
-const crypto       = require("crypto");
-const router       = express.Router();
 const orchestrator = require("../brain/orchestrator");
+const E = require("../brain/events");
 
-const API_KEY          = process.env.SHOPIFY_API_KEY;
-const API_SECRET       = process.env.SHOPIFY_API_SECRET;
+const API_KEY = process.env.SHOPIFY_API_KEY;
+const API_SECRET = process.env.SHOPIFY_API_SECRET;
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_BOUTIQUES  = process.env.TABLE_BOUTIQUES;
-const TABLE_USERS      = process.env.TABLE_USERS || "UTILISATEURS";
+const TABLE_BOUTIQUES = process.env.TABLE_BOUTIQUES;
+const TABLE_USERS = process.env.TABLE_USERS || "UTILISATEURS";
 
-const APP_URL      = "https://samii.souverain-store.com";
+const APP_URL = "https://samii.souverain-store.com";
 const REDIRECT_URI = `${APP_URL}/auth/shopify/callback`;
 
 const SCOPES = [
@@ -322,11 +323,16 @@ router.get("/auth/shopify/callback", async (req, res) => {
         await registerWebhooks(shop, tokenData.access_token);
 
         // Orchestrateur SAMII — inchangé
-        await orchestrator.process({
-            type   : "shop.connected",
-            shop,
-            payload: { accessToken: tokenData.access_token, scopes: SCOPES },
-        });
+       const E = require("../brain/events");
+
+await orchestrator.process({
+    type: E.SHOP_CONNECTED,
+    shop,
+    payload: {
+        accessToken: tokenData.access_token,
+        scopes: SCOPES,
+    },
+});
 
         // Session sécurisée — inchangée
         req.session.regenerate((err) => {
