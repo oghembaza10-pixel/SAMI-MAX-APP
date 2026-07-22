@@ -322,9 +322,7 @@ router.get("/auth/shopify/callback", async (req, res) => {
         await upsertUser(shop, shopInfo.email);
         await registerWebhooks(shop, tokenData.access_token);
 
-        // Orchestrateur SAMII — inchangé
-       const E = require("../brain/events");
-
+       // ── Notification au cerveau SAMII ───────────────────────────
 await orchestrator.process({
     type: E.SHOP_CONNECTED,
     shop,
