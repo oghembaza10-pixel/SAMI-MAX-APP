@@ -3,16 +3,19 @@
  * Cerveau central de SAMII — VERSION COMPLÈTE
  */
 
-const E = require("./events");
-
-const commerceEngine   = require("../engines/commerceEngine");
-const crmEngine        = require("../engines/crmEngine");
-const automationEngine = require("../engines/automationEngine");
-
-// ── TABLE DE ROUTAGE ────────────────────────────────────────
 const routes = {
 
-    // ── SHOPIFY ORDERS ────────────────────────────────────
+    // ── SHOPIFY APP ─────────────────────────────────────
+    [E.SHOP_CONNECTED]: (e) => {
+        console.log(`✅ Boutique connectée : ${e.shop}`);
+    },
+
+    [E.SHOP_UNINSTALLED]: (e) => {
+        console.log(`🗑️ Boutique désinstallée : ${e.shop}`);
+        // TODO : désactiver la boutique dans Airtable
+    },
+
+    // ── SHOPIFY ORDERS ──────────────────────────────────
     [E.ORDER_CREATED]   : commerceEngine.newOrder.bind(commerceEngine),
     [E.ORDER_UPDATED]   : commerceEngine.orderUpdated.bind(commerceEngine),
     [E.ORDER_PAID]      : commerceEngine.orderPaid.bind(commerceEngine),
