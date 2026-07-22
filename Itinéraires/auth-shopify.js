@@ -173,44 +173,48 @@ async function upsertBoutique(shop, tokenData, shopInfo) {
         return { id: created.data.id, isNew: true };
     }
 }
-
 // ── BLOC 2 : Upsert utilisateur ──────────────────────────────
 async function upsertUser(shop, email) {
     const headers = airtableHeaders();
 
     const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={shop_url}="${shop}"`;
-    const search    = await axios.get(searchUrl, { headers });
-    const record    = search.data.records[0];
+    const search = await axios.get(searchUrl, { headers });
+    const record = search.data.records[0];
 
     if (record) {
-    await axios.patch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-        {
-            fields: {
-                derniere_connexion: new Date().toISOString().split("T")[0],
-                actif: true,
+        await axios.patch(
+            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
+            {
+                fields: {
+                    derniere_connexion: new Date().toISOString().split("T")[0],
+                    actif: true,
+                },
             },
-        },
-        { headers }
-    );
-    console.log(`🔄 Utilisateur mis à jour : ${shop}`);
-    return record.id;
-} else {
-    const created = await axios.post(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}`,
-        {
-            fields: {
-                shop_url: shop,
-                email: email || "",
-                role: "owner",
-                derniere_connexion: new Date().toISOString().split("T")[0],
-                actif: true,
+            { headers }
+        );
+
+        console.log(`🔄 Utilisateur mis à jour : ${shop}`);
+        return record.id;
+
+    } else {
+
+        const created = await axios.post(
+            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}`,
+            {
+                fields: {
+                    shop_url: shop,
+                    email: email || "",
+                    role: "owner",
+                    derniere_connexion: new Date().toISOString().split("T")[0],
+                    actif: true,
+                },
             },
-        },
-        { headers }
-    );
-    console.log(`✅ Utilisateur créé : ${shop}`);
-    return created.data.id;
+            { headers }
+        );
+
+        console.log(`✅ Utilisateur créé : ${shop}`);
+        return created.data.id;
+    }
 }
 
 // ── BLOC 3 : Enregistrer les webhooks ────────────────────────
