@@ -185,7 +185,7 @@ async function upsertUser(shop, email) {
     if (record) {
         await axios.patch(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-            { fields: { last_login: new Date().toISOString(), actif: true }},
+            { fields: { derniere_connexion : new Date().toISOString(), actif: true }},
             { headers }
         );
         console.log(`🔄 Utilisateur mis à jour : ${shop}`);
@@ -193,14 +193,14 @@ async function upsertUser(shop, email) {
     } else {
         const created = await axios.post(
             `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}`,
-            { fields: {
-                shop_url  : shop,
-                email     : email || "",
-                role      : "owner",
-                created_at: new Date().toISOString(),
-                last_login: new Date().toISOString(),
-                actif     : true,
-            }},
+            {fields: {
+    shop_url: shop,
+    email: email || "",
+    role: "owner",
+    created_at: new Date().toISOString(),
+    derniere_connexion: new Date().toISOString(),
+    actif: true,
+} },
             { headers }
         );
         console.log(`✅ Utilisateur créé : ${shop}`);
