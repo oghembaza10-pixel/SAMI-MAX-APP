@@ -6,6 +6,7 @@ const express       = require("express");
 const router        = express.Router();
 const orchestrator  = require("../brain/orchestrator");
 const socketService = require("../services/socketService");
+const { verifyWebhookHmac } = require("../utils/shopifyHmac");
 
 // ── Correspondance des topics Shopify → événements SAMII ──
 const TOPIC_MAP = {
@@ -29,6 +30,11 @@ const TOPIC_MAP = {
 
 router.post("/", async (req, res) => {
 
+    // ── Vérification de la signature Shopify ──
+    if (!verifyWebhookHmac(req)) {
+        return res.status(401).send("Signature invalide.");
+    }
+
     console.log("🔥 WEBHOOK :", req.headers["x-shopify-topic"]);
 
     // Répondre immédiatement à Shopify
@@ -45,7 +51,6 @@ router.post("/", async (req, res) => {
         return;
     }
 
-    // ── Le reste de ton code ne change pas ──
     // ── Parse body ────────────────────────────────────
     let payload = {};
     try {
