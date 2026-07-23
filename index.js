@@ -72,6 +72,7 @@ require("./kernel/scheduler");
 
 // ── ROUTES APP ────────────────────────────────────────
 app.use(require("./Itinéraires/auth-meta"));
+app.use("/ads", requireAuth, require("./routes/ads"));
 app.use(require("./Itinéraires/auth-shopify"));
 app.use("/webhook", require("./routes/webhook-compliance"));
 app.use("/webhook",     require("./routes/webhook"));
