@@ -91,7 +91,7 @@ app.use("/login",       require("./routes/login"));
 app.use("/register",    require("./routes/register"));
 app.use("/inscription", requireAuth, require("./routes/inscription"));
 app.use("/api",         require("./routes/api"));
-
+app.use("/samii", requireAuth, require("./routes/samii-mode"));
 // ── PAGE ACCUEIL ──────────────────────────────────────
 app.get("/", (req, res) => res.render("index"));
 
