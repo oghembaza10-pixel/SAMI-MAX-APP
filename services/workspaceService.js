@@ -177,7 +177,7 @@ async function update(recordId, fields) {
     try {
         const res = await axios.patch(
             `${url()}/${recordId}`,
-            { fields: { ...fields, updated_at: new Date().toISOString() }, typecast: true },
+           { fields, typecast: true },
             { headers: { ...headers(), "Content-Type": "application/json" } }
         );
         return mapRecord(res.data);
