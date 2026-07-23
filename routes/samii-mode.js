@@ -102,7 +102,12 @@ document.getElementById('form-mode').addEventListener('submit', async (e) => {
         body   : JSON.stringify({ mode }),
     });
     const json = await res.json();
-    msg.textContent = json.success ? '✅ Mode mis à jour.' : '❌ Erreur.';
+   if (json.success) {
+    msg.textContent = '✅ Mode mis à jour ! Redirection...';
+    setTimeout(() => window.location.reload(), 900);
+} else {
+    msg.textContent = '❌ Erreur.';
+} 
 });
 </script>
 </body>
