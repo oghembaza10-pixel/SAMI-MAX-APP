@@ -12,12 +12,7 @@ const workspaceService = require("../services/workspaceService");
 
 // TODO : adapte le nom exact si ton NotificationEngine expose une autre
 // signature — je me base sur ce qu'on a vu dans tes logs.
-let notificationEngine = null;
-try {
-    notificationEngine = require("../kernel/notificationEngine");
-} catch {
-    console.warn("⚠️ NotificationEngine non trouvé à ce chemin — notifications désactivées pour /ads.");
-}
+const notificationEngine = require("../engines/notificationEngine");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -206,18 +201,20 @@ router.post("/create", requireAuth, async (req, res) => {
 
         const creative = await meta.createAdCreative({ imageUrl, message, headline, link });
         const ad       = await meta.createAd(adSet.id, creative.id, `${name} - Pub`);
-
-        if (notificationEngine) {
-            try {
-                await notificationEngine.send({
-                    workspaceId,
-                    channel: "telegram",
-                    message: `✅ Ta campagne "${name}" est prête !\n\nElle est en pause, va la valider dans ton Ads Manager Meta pour la lancer.`,
-                });
-            } catch (notifErr) {
-                console.warn("⚠️ Notification pub non envoyée :", notifErr.message);
-            }
-        }
+if (req.session.shop) {
+    try {
+        await notificationEngine.send({
+            shop   : req.session.shop,
+            channel: "telegram",
+            message: `✅ Ta campagne "${name}" est prête !\n\nElle est en pause, va la valider dans ton Ads Manager Meta pour la lancer.`,
+        });
+    } catch (notifErr) {
+        console.warn("⚠️ Notification pub non envoyée :", notifErr.message);
+    }
+} else {
+    console.log("ℹ️ Pas de boutique Shopify liée à ce compte — notification pub ignorée.");
+}
+       
 
         res.json({ success: true, campaignId: campaign.id, adId: ad.id });
 
