@@ -4,7 +4,7 @@
 // V2 : habillage premium (même style que le QG), + notification au
 // commerçant dès que la campagne est créée.
 // ==========================================================================
-
+const { canActAutonomously } = require("./samii-mode");
 const express = require("express");
 const router   = express.Router();
 const meta      = require("../services/meta");
@@ -199,21 +199,35 @@ router.post("/create", requireAuth, async (req, res) => {
             startTime       : new Date().toISOString(),
         });
 
-        const creative = await meta.createAdCreative({ imageUrl, message, headline, link });
+       const creative = await meta.createAdCreative({ imageUrl, message, headline, link });
         const ad       = await meta.createAd(adSet.id, creative.id, `${name} - Pub`);
-if (req.session.shop) {
-    try {
-        await notificationEngine.send({
-            shop   : req.session.shop,
-            channel: "telegram",
-            message: `✅ Ta campagne "${name}" est prête !\n\nElle est en pause, va la valider dans ton Ads Manager Meta pour la lancer.`,
-        });
-    } catch (notifErr) {
-        console.warn("⚠️ Notification pub non envoyée :", notifErr.message);
-    }
-} else {
-    console.log("ℹ️ Pas de boutique Shopify liée à ce compte — notification pub ignorée.");
-}
+
+        const mode = workspace?.samii?.mode || "copilote";
+        const wasActivated = canActAutonomously(mode);
+
+        if (wasActivated) {
+            await meta.setStatus(ad.id, "ACTIVE");
+            await meta.setStatus(adSet.id, "ACTIVE");
+            await meta.setStatus(campaign.id, "ACTIVE");
+        }
+
+        const statusMessage = wasActivated
+            ? `✅ Ta campagne "${name}" est en ligne ! SAMII l'a lancée automatiquement (mode ${mode}).`
+            : `✅ Ta campagne "${name}" est prête !\n\nElle est en pause, va la valider dans ton Ads Manager Meta pour la lancer.`;
+
+        if (req.session.shop) {
+            try {
+                await notificationEngine.send({
+                    shop   : req.session.shop,
+                    channel: "telegram",
+                    message: statusMessage,
+                });
+            } catch (notifErr) {
+                console.warn("⚠️ Notification pub non envoyée :", notifErr.message);
+            }
+        } else {
+            console.log("ℹ️ Pas de boutique Shopify liée à ce compte — notification pub ignorée.");
+        }
        
 
         res.json({ success: true, campaignId: campaign.id, adId: ad.id });
