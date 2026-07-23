@@ -102,9 +102,9 @@ document.getElementById('form-mode').addEventListener('submit', async (e) => {
         body   : JSON.stringify({ mode }),
     });
     const json = await res.json();
-   if (json.success) {
-    msg.textContent = '✅ Mode mis à jour ! Redirection...';
-    setTimeout(() => window.location.reload(), 900);
+  if (json.success) {
+    msg.textContent = '✅ Mode mis à jour ! Retour à SAMII...';
+    setTimeout(() => window.location.href = '/samii', 900);
 } else {
     msg.textContent = '❌ Erreur.';
 } 
