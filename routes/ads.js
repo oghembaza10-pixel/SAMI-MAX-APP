@@ -75,7 +75,12 @@ document.getElementById('form-settings').addEventListener('submit', async (e) =>
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
     });
     const json = await res.json();
-    msg.textContent = json.success ? '✅ Identifiants enregistrés.' : (json.error || '❌ Erreur.');
+   if (json.success) {
+    msg.textContent = '✅ Enregistré ! Direction la création de pub...';
+    setTimeout(() => window.location.href = '/ads/create', 900);
+} else {
+    msg.textContent = json.error || '❌ Erreur.';
+}
 });
 </script>
 </body>
