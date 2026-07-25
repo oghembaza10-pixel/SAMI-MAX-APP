@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="/css/qg-style.css">
 </head>
 <body data-shop="<%= shop %>">
-
 <!-- BARRE GRADE MILITAIRE -->
 <div class="qg-grade-bar">
     <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
@@ -20,9 +19,7 @@
     </div>
     <span class="qg-grade-bar__next" id="grade-next">→ CAPORAL</span>
 </div>
-
 <div class="qg-shell">
-
     <!-- SIDEBAR -->
     <aside class="qg-sidebar" id="og-sidebar">
         <div class="qg-sidebar__top">
@@ -48,7 +45,7 @@
                 <i data-lucide="graduation-cap"></i><span data-i18n="qg.nav.academy">Academy</span>
             </a>
             <div class="qg-nav__divider"></div>
-            <a href="/qg/<%= metier %>" class="qg-nav__item active">
+            <a href="/qg" class="qg-nav__item active">
                 <i data-lucide="briefcase"></i><span data-i18n="qg.nav.myBusiness">Mes affaires</span>
             </a>
             <a href="/qg/<%= metier %>/connecter" class="qg-nav__item">
@@ -84,7 +81,6 @@
             </div>
         </div>
     </aside>
-
     <main class="qg-main">
         <!-- TOPBAR -->
         <header class="qg-topbar">
@@ -99,7 +95,6 @@
                 </button>
             </div>
         </header>
-
         <!-- BANDEAU CYBER -->
         <section class="qg-hero">
             <div class="qg-hero__grid"></div>
@@ -111,12 +106,10 @@
                 <p data-i18n="qg.hero.subtitle">Pilotez votre activité, vos outils et vos missions depuis un seul endroit.</p>
             </div>
         </section>
-
         <!-- MODULES CANAUX -->
         <div class="qg-modules" id="qg-modules">
             <button class="qg-module-btn active" data-canal="">📊 <span data-i18n="qg.modules.all">Tout</span></button>
         </div>
-
         <!-- ── VUE D'ENSEMBLE ────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="activity"></i>
@@ -126,7 +119,7 @@
             <article class="qg-card qg-card--tilt">
                 <div class="qg-card__icon"><i data-lucide="trending-up"></i></div>
                 <span class="qg-card__value" id="stat-revenus">0</span>
-                <span class="qg-card__label" data-i18n="qg.cards2.revenue">Revenus (DZD)</span>
+                <span class="qg-card__label">Revenus (<%= devise %>)</span>
             </article>
             <article class="qg-card qg-card--tilt">
                 <div class="qg-card__icon"><i data-lucide="package"></i></div>
@@ -159,7 +152,6 @@
                 <span class="qg-card__label" data-i18n="qg.cards2.blacklist">Blacklist</span>
             </article>
         </section>
-
         <!-- ── LIVRAISON TEMPS RÉEL ──────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="truck"></i>
@@ -182,7 +174,6 @@
                 <span class="qg-card__label" data-i18n="qg.delivery.failed">Échecs</span>
             </article>
         </section>
-
         <!-- ── MISSION DU JOUR ───────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="target"></i>
@@ -201,7 +192,7 @@
                     </div>
                     <div style="text-align:center;">
                         <div class="qg-card__value" id="mission-revenus">0</div>
-                        <div class="qg-card__label" data-i18n="qg.mission.revenueToday">Revenus aujourd'hui (DZD)</div>
+                        <div class="qg-card__label">Revenus aujourd'hui (<%= devise %>)</div>
                     </div>
                 </div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
@@ -213,7 +204,6 @@
                 </div>
             </article>
         </section>
-
         <!-- ── PERFORMANCE DU MOIS ───────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="bar-chart-2"></i>
@@ -223,7 +213,7 @@
             <article class="qg-card qg-card--tilt">
                 <div class="qg-card__icon"><i data-lucide="trending-up"></i></div>
                 <span class="qg-card__value" id="perf-revenus-mois">0</span>
-                <span class="qg-card__label" data-i18n="qg.performance.revenueMonth">Revenus ce mois (DZD)</span>
+                <span class="qg-card__label">Revenus ce mois (<%= devise %>)</span>
             </article>
             <article class="qg-card qg-card--tilt">
                 <div class="qg-card__icon"><i data-lucide="package"></i></div>
@@ -236,7 +226,6 @@
                 <span class="qg-card__label" data-i18n="qg.performance.vsLastMonth">vs mois dernier</span>
             </article>
         </section>
-
         <!-- ── COMMANDES ─────────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="shopping-bag"></i>
@@ -263,7 +252,6 @@
                 </tbody>
             </table>
         </section>
-
         <!-- ── CLIENTS VIP ───────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="crown"></i>
@@ -274,7 +262,6 @@
                 <p style="color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
             </div>
         </section>
-
         <!-- ── BLACKLIST ──────────────────────────────── -->
         <div class="qg-section-title" style="--accent:#e55;">
             <i data-lucide="shield-off"></i>
@@ -285,7 +272,6 @@
                 <p style="color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
             </div>
         </section>
-
         <!-- ── ARSENAL ───────────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="sword"></i>
@@ -315,22 +301,17 @@
                 <h3 data-i18n="qg.arsenal.seeMore">Voir l'Arsenal</h3>
             </article>
         </section>
-
     </main>
-
 </div>
-
 <!-- SAMII orb -->
 <a href="/samii" class="samii-orb" aria-label="Ouvrir SAMII">
     <span class="samii-orb__aura"></span>
     <span class="samii-orb__aura samii-orb__aura--2"></span>
     <i data-lucide="bot"></i>
 </a>
-
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/i18n.js"></script>
 <script src="/js/qg.js"></script>
-
 </body>
 </html>
