@@ -405,4 +405,26 @@ body {
 .qg-card--flash {
     animation: cardFlash .6s ease forwards;
 }
-
+.og-lang-switch {
+    position: relative;
+    z-index: 50;
+    pointer-events: auto;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: .65rem;
+}
+.og-lang-switch span {
+    position: relative;
+    z-index: 51;
+    pointer-events: auto;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: color .2s ease;
+}
+.og-lang-switch span:hover { color: var(--cyan-tech); }
+.og-lang-switch span.active { color: var(--cyan-tech); font-weight: 600; }
