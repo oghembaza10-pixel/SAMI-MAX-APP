@@ -162,8 +162,7 @@ async function create({ workspaceId, owner, nom, metier, logo = "", pays = "", d
                     devise,
                     langue,
                     statut    : "actif",
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
+                    
                 },
                 typecast: true,
             },
