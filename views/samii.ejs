@@ -4,21 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAMII · OG Empire</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="/css/qg-style.css">
     <link rel="stylesheet" href="/css/samii-style.css">
 </head>
 <body>
-
 <div class="qg-shell">
-
-    <!-- Même sidebar que le QG -->
     <aside class="qg-sidebar" id="og-sidebar">
-
         <div class="qg-sidebar__top">
             <a href="/hub" class="qg-logo">
                 <img src="/og.png" alt="OG">
@@ -28,136 +22,126 @@
                 <i data-lucide="chevrons-left"></i>
             </button>
         </div>
-
         <nav class="qg-nav">
             <a href="/hub" class="qg-nav__item">
-                <i data-lucide="layout-grid"></i><span>Hub</span>
+                <i data-lucide="layout-grid"></i><span data-i18n="qg.nav.hub">Hub</span>
             </a>
-
-            <!-- Retour au dernier QG visité : rempli automatiquement par qg.js -->
             <a href="/hub" class="qg-nav__item" id="qg-back-link">
-                <i data-lucide="layout-dashboard"></i><span>Mon QG</span>
+                <i data-lucide="layout-dashboard"></i><span data-i18n="qg.nav.backToQG">Mon QG</span>
             </a>
-
             <a href="/marketplace" class="qg-nav__item">
-                <i data-lucide="store"></i><span>Marketplace</span>
+                <i data-lucide="store"></i><span data-i18n="qg.nav.marketplace">Marketplace</span>
             </a>
             <a href="/community" class="qg-nav__item">
-                <i data-lucide="users"></i><span>Community</span>
+                <i data-lucide="users"></i><span data-i18n="qg.nav.community">Community</span>
             </a>
             <a href="/academy" class="qg-nav__item">
-                <i data-lucide="graduation-cap"></i><span>Academy</span>
+                <i data-lucide="graduation-cap"></i><span data-i18n="qg.nav.academy">Academy</span>
             </a>
-
             <div class="qg-nav__divider"></div>
-
             <a href="/arsenal" class="qg-nav__item">
-                <i data-lucide="sword"></i><span>Arsenal</span>
+                <i data-lucide="sword"></i><span data-i18n="qg.nav.arsenal">Arsenal</span>
             </a>
             <a href="/coffre" class="qg-nav__item">
-                <i data-lucide="vault"></i><span>Coffre OG</span>
+                <i data-lucide="vault"></i><span data-i18n="qg.nav.vault">Coffre OG</span>
             </a>
-
             <div class="qg-nav__divider"></div>
-
             <a href="/samii" class="qg-nav__item qg-nav__item--samii active">
-                <i data-lucide="bot"></i><span>SAMII</span>
+                <i data-lucide="bot"></i><span data-i18n="qg.nav.samii">SAMII</span>
                 <span class="qg-status-dot qg-status-dot--on" id="samii-status-dot" title="SAMII actif"></span>
             </a>
         </nav>
-
         <div class="qg-sidebar__bottom">
             <a href="/settings" class="qg-nav__item">
-                <i data-lucide="settings"></i><span>Paramètres</span>
+                <i data-lucide="settings"></i><span data-i18n="qg.nav.settings">Paramètres</span>
             </a>
+            <div class="og-lang-switch">
+                <span data-lang-btn="fr">FR</span>
+                <span data-lang-btn="en">EN</span>
+                <span data-lang-btn="ar">AR</span>
+                <span data-lang-btn="zh">ZH</span>
+            </div>
         </div>
     </aside>
-
     <main class="qg-main samii-page">
-
         <header class="qg-topbar">
             <div class="qg-topbar__breadcrumb">
                 <span class="qg-mono">SAMII</span>
                 <i data-lucide="chevron-right"></i>
-                <span class="qg-topbar__metier">Stratège IA</span>
+                <span class="qg-topbar__metier" data-i18n="samii.topbar">Stratège IA</span>
             </div>
         </header>
-
-        <!-- ESPACE TECH : cartes flottantes -->
         <section class="samii-space">
             <div class="samii-space__stars"></div>
-
             <div class="samii-space__intro">
-                <span class="qg-eyebrow">SAMII · OPÉRATIONNEL</span>
-                <h1>Votre centre de vie stratégique.</h1>
+                <span class="qg-eyebrow" data-i18n="samii.status">SAMII · OPÉRATIONNEL</span>
+                <h1 data-i18n="samii.title">Votre centre de vie stratégique.</h1>
             </div>
-     <a href="/samii/mode" class="samii-mode-link">
-    <i data-lucide="sliders-horizontal"></i> Changer le mode de SAMII
-</a>
+            <a href="/samii/mode" class="samii-mode-link">
+                <i data-lucide="sliders-horizontal"></i> Changer le mode de SAMII
+            </a>
             <div class="samii-float-grid">
                 <article class="samii-float-card f-a">
                     <i data-lucide="megaphone"></i>
-                    <h3>Marketing</h3>
-                    <span>Boost actif</span>
+                    <h3 data-i18n="samii.cards.marketing.label">Marketing</h3>
+                    <span data-i18n="samii.cards.marketing.value">Boost actif</span>
                 </article>
                 <article class="samii-float-card f-b">
                     <i data-lucide="compass"></i>
-                    <h3>Opportunités</h3>
-                    <span>3 nouvelles</span>
+                    <h3 data-i18n="samii.cards.opportunites.label">Opportunités</h3>
+                    <span data-i18n="samii.cards.opportunites.value">3 nouvelles</span>
                 </article>
                 <article class="samii-float-card f-c">
                     <i data-lucide="line-chart"></i>
-                    <h3>Analyse résultats</h3>
-                    <span>+12% ce mois</span>
+                    <h3 data-i18n="samii.cards.analyse.label">Analyse résultats</h3>
+                    <span data-i18n="samii.cards.analyse.value">+12% ce mois</span>
                 </article>
                 <article class="samii-float-card f-a">
                     <i data-lucide="sparkles"></i>
-                    <h3>Conseils SAMII</h3>
-                    <span>2 recommandations</span>
+                    <h3 data-i18n="samii.cards.conseils.label">Conseils SAMII</h3>
+                    <span data-i18n="samii.cards.conseils.value">2 recommandations</span>
                 </article>
                 <article class="samii-float-card f-b">
                     <i data-lucide="bell-ring"></i>
-                    <h3>Alertes</h3>
-                    <span>1 urgente</span>
+                    <h3 data-i18n="samii.cards.alertes.label">Alertes</h3>
+                    <span data-i18n="samii.cards.alertes.value">1 urgente</span>
                 </article>
                 <article class="samii-float-card f-c">
                     <i data-lucide="target"></i>
-                    <h3>Missions</h3>
-                    <span>4 en cours</span>
+                    <h3 data-i18n="samii.cards.missions.label">Missions</h3>
+                    <span data-i18n="samii.cards.missions.value">4 en cours</span>
                 </article>
                 <article class="samii-float-card f-a">
                     <i data-lucide="gauge"></i>
-                    <h3>Performance</h3>
-                    <span>Excellente</span>
+                    <h3 data-i18n="samii.cards.performance.label">Performance</h3>
+                    <span data-i18n="samii.cards.performance.value">Excellente</span>
                 </article>
                 <article class="samii-float-card f-b">
                     <i data-lucide="users"></i>
-                    <h3>Clients & CRM</h3>
-                    <span>142 actifs</span>
+                    <h3 data-i18n="samii.cards.clients.label">Clients & CRM</h3>
+                    <span data-i18n="samii.cards.clients.value">142 actifs</span>
                 </article>
                 <article class="samii-float-card f-c">
                     <i data-lucide="trending-up"></i>
-                    <h3>Revenus prévus</h3>
-                    <span>+8% attendu</span>
+                    <h3 data-i18n="samii.cards.revenus.label">Revenus prévus</h3>
+                    <span data-i18n="samii.cards.revenus.value">+8% attendu</span>
                 </article>
                 <article class="samii-float-card f-a">
                     <i data-lucide="radar"></i>
-                    <h3>Radar concurrentiel</h3>
-                    <span>Surveillance active</span>
+                    <h3 data-i18n="samii.cards.radar.label">Radar concurrentiel</h3>
+                    <span data-i18n="samii.cards.radar.value">Surveillance active</span>
                 </article>
                 <article class="samii-float-card f-b">
                     <i data-lucide="zap"></i>
-                    <h3>Automatisations</h3>
-                    <span>5 actives</span>
+                    <h3 data-i18n="samii.cards.automatisations.label">Automatisations</h3>
+                    <span data-i18n="samii.cards.automatisations.value">5 actives</span>
                 </article>
                 <article class="samii-float-card f-c">
                     <i data-lucide="network"></i>
-                    <h3>Réseau global</h3>
-                    <span>17 pays</span>
+                    <h3 data-i18n="samii.cards.reseau.label">Réseau global</h3>
+                    <span data-i18n="samii.cards.reseau.value">17 pays</span>
                 </article>
             </div>
-
-            <!-- Réseaux sociaux : accès direct en un clic -->
             <div class="samii-networks">
                 <a href="/connect/instagram" class="samii-network" style="--n:#E1306C"><i data-lucide="instagram"></i></a>
                 <a href="/connect/tiktok" class="samii-network" style="--n:#25F4EE"><i data-lucide="music-2"></i></a>
@@ -169,32 +153,26 @@
                 <a href="/connect/telegram" class="samii-network" style="--n:#229ED9"><i data-lucide="send"></i></a>
             </div>
         </section>
-
-        <!-- CHAT -->
         <section class="samii-chat">
             <div class="samii-chat__feed" id="samii-page-feed">
                 <div class="samii-msg samii-msg--bot">
-                    <div class="samii-msg__bubble">
+                    <div class="samii-msg__bubble" data-i18n="samii.chat.welcome">
                         Bienvenue, Général. Je suis <b>SAMII</b>. Comment puis-je vous aider aujourd'hui ?
                     </div>
                 </div>
             </div>
-
             <form class="samii-chat__form" id="samii-page-form">
-                <input type="text" id="samii-page-input" placeholder="Parler à SAMII…" autocomplete="off">
+                <input type="text" id="samii-page-input" data-i18n-placeholder="samii.chat.placeholder" placeholder="Parler à SAMII…" autocomplete="off">
                 <button type="submit" aria-label="Envoyer">
                     <i data-lucide="arrow-up"></i>
                 </button>
             </form>
         </section>
-
     </main>
-
 </div>
-
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="/js/i18n.js"></script>
 <script src="/js/qg.js"></script>
 <script src="/js/samii-page.js"></script>
-
 </body>
 </html>
