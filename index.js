@@ -11,9 +11,6 @@ const { Server }       = require("socket.io");
 const CONFIG           = require("./config");
 const workspaceService = require("./services/workspaceService");
 
-// ── V2 — décommenter quand workspaceLoader est prêt ──
-// const workspaceLoader = require("./services/workspaceLoader");
-
 const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server);
@@ -44,7 +41,7 @@ app.use(session({
     },
 }));
 
-// ── LOCALS ────────────────────────────────────────────
+// ── LOCALS (disponibles dans toutes les vues EJS) ─────
 app.use((req, res, next) => {
     res.locals.workspaceId = req.session?.workspaceId || null;
     res.locals.shop        = req.session?.shop        || null;
@@ -58,62 +55,78 @@ function requireAuth(req, res, next) {
     next();
 }
 
-// ── Helper — nettoyer workspace de la session ─────────
 function clearWorkspaceSession(req, callback) {
     delete req.session.workspaceId;
     delete req.session.lastWorkspace;
     req.session.save(callback);
 }
 
-// ── BOOTSTRAP ─────────────────────────────────────────
+// ── BOOTSTRAP MOTEURS ─────────────────────────────────
 const { registerChannels } = require("./kernel/bootstrap");
 registerChannels();
 require("./kernel/scheduler");
 
-// ── ROUTES APP ────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// ROUTES — OAuth externes (Meta, Shopify)
+// ══════════════════════════════════════════════════════
 app.use(require("./Itinéraires/auth-meta"));
-app.use("/ads", requireAuth, require("./routes/ads"));
 app.use(require("./Itinéraires/auth-shopify"));
+
+// ══════════════════════════════════════════════════════
+// ROUTES — Webhooks entrants
+// ══════════════════════════════════════════════════════
 app.use("/webhook", require("./routes/webhook-compliance"));
-app.use("/webhook",     require("./routes/webhook"));
-app.use("/telegram",    require("./routes/telegram"));
-app.use("/connect",     require("./routes/connector"));
-app.use("/dashboard",   requireAuth, require("./routes/dashboard"));
-app.use("/profile",     requireAuth, require("./routes/profile"));
-app.use("/settings",    requireAuth, require("./routes/settings"));
-app.use("/hub",         require("./routes/hub"));
-app.use("/workspace",   require("./routes/workspace"));
+app.use("/webhook", require("./routes/webhook"));
+app.use("/telegram", require("./routes/telegram"));
+
+// ══════════════════════════════════════════════════════
+// ROUTES — Authentification / compte
+// ══════════════════════════════════════════════════════
+app.use("/login",    require("./routes/login"));
+app.use("/register", require("./routes/register"));
+
+// ══════════════════════════════════════════════════════
+// ROUTES — Plateforme (protégées par requireAuth)
+// ══════════════════════════════════════════════════════
+app.use("/hub",       require("./routes/hub"));
+app.use("/workspace", require("./routes/workspace"));
+app.use("/dashboard", requireAuth, require("./routes/dashboard"));
+app.use("/profile",   requireAuth, require("./routes/profile"));
+app.use("/settings",  requireAuth, require("./routes/settings"));
+app.use("/ads",       requireAuth, require("./routes/ads"));
+app.use("/samii",     requireAuth, require("./routes/samii-mode"));
+app.use("/connect",   require("./routes/connector"));
+
+// ══════════════════════════════════════════════════════
+// ROUTES — Vitrine (public)
+// ══════════════════════════════════════════════════════
 app.use("/academy",     require("./routes/academy"));
 app.use("/community",   require("./routes/community"));
 app.use("/marketplace", require("./routes/marketplace"));
 app.use("/drivers",     require("./routes/drivers"));
-app.use("/login",       require("./routes/login"));
-app.use("/register",    require("./routes/register"));
-app.use("/inscription", requireAuth, require("./routes/inscription"));
 app.use("/api",         require("./routes/api"));
-app.use("/samii", requireAuth, require("./routes/samii-mode"));
+
+// Ancienne route "/inscription" → tout redirigé vers le vrai système
+// unique (routes/workspace.js), pour ne pas avoir 2 chemins différents.
+app.get("/inscription", requireAuth, (req, res) => {
+    const metier = req.query.metier || "";
+    res.redirect(`/workspace/create${metier ? `?metier=${metier}` : ""}`);
+});
+
 // ── PAGE ACCUEIL ──────────────────────────────────────
 app.get("/", (req, res) => res.render("index"));
 
 // ── QG — route universelle SOLDAT V1 ─────────────────
-// ── V2 : remplacer workspaceService.getById()
-//         par workspaceLoader.load() quand prêt ────────
 app.get("/qg", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
-
         if (!workspaceId) return res.redirect("/hub");
 
-        // V1 — source de vérité directe
         const workspace = await workspaceService.getById(workspaceId);
-
-        // V2 — décommenter + supprimer les 2 lignes ci-dessus
-        // const workspace = await workspaceLoader.load(workspaceId);
 
         if (!workspace) {
             return clearWorkspaceSession(req, () => res.redirect("/hub"));
         }
-
         if (workspace.owner !== req.session.email) {
             return clearWorkspaceSession(req, () => res.redirect("/hub"));
         }
@@ -125,6 +138,7 @@ app.get("/qg", requireAuth, async (req, res) => {
             description : workspace.description || "",
             langue      : workspace.langue      || "fr",
             pays        : workspace.pays        || "DZ",
+            devise      : workspace.devise      || "DZD",
             connecteurs : workspace.connecteurs || [],
             samii       : workspace.samii       || { mode: "auto" },
             logo        : workspace.logo        || "",
@@ -138,12 +152,12 @@ app.get("/qg", requireAuth, async (req, res) => {
     }
 });
 
-// ── QG — anciennes routes → redirect temporaire ───────
+// Ancien lien "/qg/:metier" (avant qu'on ait un vrai système de
+// workspace) → redirige simplement vers le vrai QG.
 app.get("/qg/:metier", requireAuth, (req, res) => {
     if (req.session?.workspaceId) return res.redirect("/qg");
     res.redirect("/hub");
 });
-
 app.get("/qg/:metier/connecter", requireAuth, (req, res) => {
     res.redirect("/qg");
 });
