@@ -6,12 +6,10 @@
     "description": "منصة واحدة.\nهوية واحدة.\nمقر واحد.\n\nاعمل.\nتطوّر.\nابنِ إمبراطوريتك."
   },
   "buttons": { "enter": "ادخل إلى مقري" },
-
   "sidebar": {
     "hub": "الرئيسية", "marketplace": "المتجر", "academy": "الأكاديمية",
     "community": "المجتمع", "arsenal": "الترسانة", "settings": "الإعدادات", "profile": "الملف الشخصي"
   },
-
   "hub": {
     "hero": {
       "eyebrow": "إمبراطورية OG",
@@ -37,23 +35,35 @@
       "tourisme":    { "label": "السياحة",              "desc": "السفر والسياحة" }
     }
   },
-
   "qg": {
     "topbar": "المقر",
     "nav": {
       "hub": "المحور", "marketplace": "المتجر", "community": "المجتمع", "academy": "الأكاديمية",
       "myBusiness": "أعمالي", "connectTools": "ربط أدواتي", "myTools": "أدواتي",
-      "arsenal": "الترسانة", "vault": "خزنة OG", "samii": "سامي", "settings": "الإعدادات", "backToQG": "مقري"
+      "arsenal": "الترسانة", "vault": "خزنة OG", "samii": "سامي", "settings": "الإعدادات", "backToQG": "مقري",
+      "logout": "تسجيل الخروج"
     },
     "hero": { "eyebrow": "مركز القيادة", "titlePrefix": "مقرك", "subtitle": "أدر نشاطك وأدواتك ومهامك من مكان واحد." },
-    "section": { "overview": "نظرة عامة", "arsenal": "الترسانة" },
-    "cards": {
-      "revenue": "الإيرادات (CR)", "visitors": "الزوار", "orders": "الطلبات",
-      "missions": "المهام النشطة", "progress": "التقدم (%)", "alerts": "التنبيهات", "modules": "الوحدات المثبتة"
+    "section": {
+      "overview": "نظرة عامة", "arsenal": "الترسانة", "delivery": "التوصيل الفوري 🚚",
+      "missionToday": "مهمة اليوم 🎯", "performance": "أداء الشهر 📈",
+      "recentOrders": "أحدث الطلبات", "vipClients": "عملاء VIP 👑", "blacklist": "القائمة السوداء 🚫"
     },
+    "cards2": {
+      "revenue": "الإيرادات", "orders": "الطلبات", "pending": "قيد الانتظار", "confirmed": "مؤكدة",
+      "cancelled": "ملغاة", "vip": "عملاء VIP", "blacklist": "القائمة السوداء"
+    },
+    "delivery": { "delivered": "تم التوصيل", "inProgress": "قيد التوصيل", "failed": "فشل" },
+    "mission": {
+      "objective": "هدف اليوم", "ordersToday": "طلبات اليوم",
+      "revenueToday": "إيرادات اليوم", "progressLabel": "التقدم نحو الهدف (10 طلبات)"
+    },
+    "performance": { "revenueMonth": "إيرادات هذا الشهر", "ordersMonth": "طلبات هذا الشهر", "vsLastMonth": "مقارنة بالشهر الماضي" },
+    "table": { "client": "العميل", "phone": "الهاتف", "product": "المنتج", "total": "المجموع", "status": "الحالة" },
+    "loading": "جاري التحميل...",
+    "modules": { "all": "الكل" },
     "arsenal": { "boostMarketing": "تعزيز التسويق", "radar": "رادار الفرص", "fortress": "الحصن", "level": "المستوى", "seeMore": "عرض الترسانة" }
   },
-
   "samii": {
     "topbar": "الاستراتيجي الذكي",
     "status": "يعمل",
@@ -69,15 +79,14 @@
       "performance": { "label": "الأداء", "value": "ممتاز" },
       "clients": { "label": "العملاء وإدارة العلاقات", "value": "142 نشط" },
       "revenus": { "label": "الإيرادات المتوقعة", "value": "+8% متوقع" },
-        "radar": { "label": "رادار المنافسين", "value": "مراقبة نشطة" },
-        "automatisations": { "label": "الأتمتة", "value": "5 نشطة" },
-        "reseau": { "label": "الشبكة العالمية", "value": "17 دولة" }
-      }
+      "radar": { "label": "رادار المنافسين", "value": "مراقبة نشطة" },
+      "automatisations": { "label": "الأتمتة", "value": "5 نشطة" },
+      "reseau": { "label": "الشبكة العالمية", "value": "17 دولة" }
     }
   },
-  "arsenal": { "title": "الترسانة", "subtitle": "33 قوة، كل واحدة مرتبطة بقانون من قوانين سامي.", "available": "متاح", "soon": "قريباً" }
-}
-"ads": {
-  "settings": { "title": "ربط إعلانات ميتا", "subtitle": "هذه البيانات خاصة بهذا المساحة.", "accessToken": "رمز الوصول", "adAccountId": "معرف الحساب الإعلاني", "pageId": "معرف الصفحة", "save": "حفظ" },
-  "create": { "back": "← العودة إلى المقر", "eyebrow": "الترسانة · تعزيز التسويق", "title": "إطلاق إعلان", "connectedAccount": "الحساب الإعلاني المتصل:", "campaignName": "اسم الحملة", "objective": "الهدف", "objectiveTraffic": "الزيارات", "objectiveEngagement": "التفاعل", "objectiveSales": "المبيعات", "dailyBudget": "الميزانية اليومية (سنتات)", "headline": "عنوان الإعلان", "message": "الرسالة", "imageUrl": "رابط الصورة", "link": "رابط متجرك/منتجك", "submit": "إنشاء الحملة", "note": "ℹ️ حسب وضع سامي الحالي، يمكن إنشاء الحملة متوقفة أو تفعيلها مباشرة." }
+  "arsenal": { "title": "الترسانة", "subtitle": "33 قوة، كل واحدة مرتبطة بقانون من قوانين سامي.", "available": "متاح", "soon": "قريباً" },
+  "ads": {
+    "settings": { "title": "ربط إعلانات ميتا", "subtitle": "هذه البيانات خاصة بهذا المساحة.", "accessToken": "رمز الوصول", "adAccountId": "معرف الحساب الإعلاني", "pageId": "معرف الصفحة", "save": "حفظ" },
+    "create": { "back": "← العودة إلى المقر", "eyebrow": "الترسانة · تعزيز التسويق", "title": "إطلاق إعلان", "connectedAccount": "الحساب الإعلاني المتصل:", "campaignName": "اسم الحملة", "objective": "الهدف", "objectiveTraffic": "الزيارات", "objectiveEngagement": "التفاعل", "objectiveSales": "المبيعات", "dailyBudget": "الميزانية اليومية (سنتات)", "headline": "عنوان الإعلان", "message": "الرسالة", "imageUrl": "رابط الصورة", "link": "رابط متجرك/منتجك", "submit": "إنشاء الحملة", "note": "حسب وضع سامي الحالي، يمكن إنشاء الحملة متوقفة أو تفعيلها مباشرة." }
+  }
 }
