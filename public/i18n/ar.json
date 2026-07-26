@@ -69,9 +69,11 @@
       "performance": { "label": "الأداء", "value": "ممتاز" },
       "clients": { "label": "العملاء وإدارة العلاقات", "value": "142 نشط" },
       "revenus": { "label": "الإيرادات المتوقعة", "value": "+8% متوقع" },
-      "radar": { "label": "رادار المنافسين", "value": "مراقبة نشطة" },
-      "automatisations": { "label": "الأتمتة", "value": "5 نشطة" },
-      "reseau": { "label": "الشبكة العالمية", "value": "17 دولة" }
+        "radar": { "label": "رادار المنافسين", "value": "مراقبة نشطة" },
+        "automatisations": { "label": "الأتمتة", "value": "5 نشطة" },
+        "reseau": { "label": "الشبكة العالمية", "value": "17 دولة" }
+      }
     }
-  }
+  },
+  "arsenal": { "title": "الترسانة", "subtitle": "33 قوة، كل واحدة مرتبطة بقانون من قوانين سامي.", "available": "متاح", "soon": "قريباً" }
 }
