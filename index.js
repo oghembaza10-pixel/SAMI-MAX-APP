@@ -20,10 +20,18 @@ socketService.init(io);
 
 // ── MIDDLEWARES ───────────────────────────────────────
 app.set("trust proxy", 1);
+
+// Webhook Stripe (body brut pour la vérification de signature)
+app.use("/billing/webhook", express.raw({ type: "application/json" }));
+
+// Webhooks (Shopify, conformité, etc.)
 app.use("/webhook", express.raw({ type: "application/json" }));
+
+// Middlewares globaux
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
@@ -34,17 +42,17 @@ app.use(session({
     saveUninitialized: false,
     store            : new MemoryStore({ checkPeriod: 86400000 }),
     cookie           : {
-        httpOnly: true,
-        sameSite: "lax",
-        secure  : process.env.NODE_ENV === "production",
-        maxAge  : 7 * 24 * 60 * 60 * 1000,
+        httpOnly : true,
+        sameSite : "lax",
+        secure   : process.env.NODE_ENV === "production",
+        maxAge   : 7 * 24 * 60 * 60 * 1000,
     },
 }));
 
 // ── LOCALS (disponibles dans toutes les vues EJS) ─────
 app.use((req, res, next) => {
     res.locals.workspaceId = req.session?.workspaceId || null;
-    res.locals.shop        = req.session?.shop        || null;
+    res.locals.shop        = req.session?.shop || null;
     res.locals.loggedIn    = !!req.session?.loggedIn;
     next();
 });
@@ -82,6 +90,7 @@ app.use("/telegram", require("./routes/telegram"));
 // ══════════════════════════════════════════════════════
 // ROUTES — Authentification / compte
 // ══════════════════════════════════════════════════════
+app.use("/billing", require("./routes/billing"));
 app.use("/login",    require("./routes/login"));
 app.use("/register", require("./routes/register"));
 
