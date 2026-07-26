@@ -1,7 +1,3 @@
-// ==========================================================================
-// SAMII OS — ROUTES : PUB META (multi-comptes, par workspace)
-// ==========================================================================
-
 const express = require("express");
 const router   = express.Router();
 const meta      = require("../services/meta");
@@ -22,9 +18,6 @@ async function getWorkspaceOrRedirect(req, res) {
     return workspace;
 }
 
-// ══════════════════════════════════════════════════════════════
-// GET/POST /ads/settings — connecter le compte pub Meta du workspace
-// ══════════════════════════════════════════════════════════════
 router.get("/settings", requireAuth, async (req, res) => {
     const workspace = await getWorkspaceOrRedirect(req, res);
     if (!workspace) return;
@@ -50,21 +43,22 @@ router.get("/settings", requireAuth, async (req, res) => {
 </head>
 <body>
 <div class="shell">
-    <h1>🔗 Connecter Meta Ads</h1>
-    <p class="sub">Ces identifiants sont propres à ce workspace — chaque boutique peut avoir son propre compte publicitaire Meta.</p>
+    <h1>🔗 <span data-i18n="ads.settings.title">Connecter Meta Ads</span></h1>
+    <p class="sub" data-i18n="ads.settings.subtitle">Ces identifiants sont propres à ce workspace.</p>
     <div class="card">
         <form id="form-settings">
-            <label>Access Token</label>
+            <label data-i18n="ads.settings.accessToken">Access Token</label>
             <input name="metaAccessToken" value="${workspace.metaAccessToken || ""}" placeholder="EAAS..." required>
-            <label>Ad Account ID</label>
+            <label data-i18n="ads.settings.adAccountId">Ad Account ID</label>
             <input name="metaAdAccountId" value="${workspace.metaAdAccountId || ""}" placeholder="act_123456789" required>
-            <label>Page ID</label>
+            <label data-i18n="ads.settings.pageId">Page ID</label>
             <input name="metaPageId" value="${workspace.metaPageId || ""}" placeholder="110461700..." required>
-            <button type="submit">Enregistrer</button>
+            <button type="submit" data-i18n="ads.settings.save">Enregistrer</button>
         </form>
         <div class="msg" id="msg"></div>
     </div>
 </div>
+<script src="/js/i18n.js"></script>
 <script>
 document.getElementById('form-settings').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -75,12 +69,12 @@ document.getElementById('form-settings').addEventListener('submit', async (e) =>
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
     });
     const json = await res.json();
-   if (json.success) {
-    msg.textContent = '✅ Enregistré ! Direction la création de pub...';
-    setTimeout(() => window.location.href = '/ads/create', 900);
-} else {
-    msg.textContent = json.error || '❌ Erreur.';
-}
+    if (json.success) {
+        msg.textContent = '✅ Enregistré ! Direction la création de pub...';
+        setTimeout(() => window.location.href = '/ads/create', 900);
+    } else {
+        msg.textContent = json.error || '❌ Erreur.';
+    }
 });
 </script>
 </body>
@@ -106,10 +100,6 @@ router.post("/settings", requireAuth, async (req, res) => {
         res.json({ success: false, error: "Erreur serveur." });
     }
 });
-
-// ══════════════════════════════════════════════════════════════
-// GET/POST /ads/create — lancer une pub avec les creds du workspace
-// ══════════════════════════════════════════════════════════════
 router.get("/create", requireAuth, async (req, res) => {
     const workspace = await getWorkspaceOrRedirect(req, res);
     if (!workspace) return;
@@ -149,35 +139,36 @@ router.get("/create", requireAuth, async (req, res) => {
 </head>
 <body>
 <div class="ads-shell">
-    <a href="/qg" class="ads-back">← Retour au QG</a>
+    <a href="/qg" class="ads-back" data-i18n="ads.create.back">← Retour au QG</a>
     <div class="ads-hero">
-        <span class="qg-eyebrow">Arsenal · Boost Marketing</span>
-        <h1>🎯 Lancer une publicité</h1>
-        <p>Compte pub connecté : ${workspace.metaAdAccountId}</p>
+        <span class="qg-eyebrow" data-i18n="ads.create.eyebrow">Arsenal · Boost Marketing</span>
+        <h1>🎯 <span data-i18n="ads.create.title">Lancer une publicité</span></h1>
+        <p><span data-i18n="ads.create.connectedAccount">Compte pub connecté :</span> ${workspace.metaAdAccountId}</p>
     </div>
     <div class="ads-card">
         <form id="form-ads">
-            <div class="ads-field"><label>Nom de la campagne</label><input name="name" placeholder="Ex : Promo été 2026" required></div>
+            <div class="ads-field"><label data-i18n="ads.create.campaignName">Nom de la campagne</label><input name="name" placeholder="Ex : Promo été 2026" required></div>
             <div class="ads-row">
-                <div class="ads-field"><label>Objectif</label>
+                <div class="ads-field"><label data-i18n="ads.create.objective">Objectif</label>
                     <select name="objective">
-                        <option value="OUTCOME_TRAFFIC">Trafic</option>
-                        <option value="OUTCOME_ENGAGEMENT">Engagement</option>
-                        <option value="OUTCOME_SALES">Ventes</option>
+                        <option value="OUTCOME_TRAFFIC" data-i18n="ads.create.objectiveTraffic">Trafic</option>
+                        <option value="OUTCOME_ENGAGEMENT" data-i18n="ads.create.objectiveEngagement">Engagement</option>
+                        <option value="OUTCOME_SALES" data-i18n="ads.create.objectiveSales">Ventes</option>
                     </select>
                 </div>
-                <div class="ads-field"><label>Budget journalier (centimes)</label><input name="dailyBudgetCents" type="number" min="100" placeholder="500" required></div>
+                <div class="ads-field"><label data-i18n="ads.create.dailyBudget">Budget journalier (centimes)</label><input name="dailyBudgetCents" type="number" min="100" placeholder="500" required></div>
             </div>
-            <div class="ads-field"><label>Titre de l'annonce</label><input name="headline" placeholder="Ex : -20% sur toute la collection" required></div>
-            <div class="ads-field"><label>Message</label><textarea name="message" required></textarea></div>
-            <div class="ads-field"><label>URL de l'image</label><input name="imageUrl" type="url" required></div>
-            <div class="ads-field"><label>Lien vers ta boutique/produit</label><input name="link" type="url" required></div>
-            <button type="submit" class="ads-submit">Créer la campagne</button>
+            <div class="ads-field"><label data-i18n="ads.create.headline">Titre de l'annonce</label><input name="headline" placeholder="Ex : -20% sur toute la collection" required></div>
+            <div class="ads-field"><label data-i18n="ads.create.message">Message</label><textarea name="message" required></textarea></div>
+            <div class="ads-field"><label data-i18n="ads.create.imageUrl">URL de l'image</label><input name="imageUrl" type="url" required></div>
+            <div class="ads-field"><label data-i18n="ads.create.link">Lien vers ta boutique/produit</label><input name="link" type="url" required></div>
+            <button type="submit" class="ads-submit" data-i18n="ads.create.submit">Créer la campagne</button>
         </form>
         <div class="ads-msg" id="msg"></div>
     </div>
-    <div class="ads-note">ℹ️ Selon ton mode SAMII actuel, la campagne peut être créée en pause (à valider toi-même) ou activée directement.</div>
+    <div class="ads-note" data-i18n="ads.create.note">ℹ️ Selon ton mode SAMII actuel, la campagne peut être créée en pause ou activée directement.</div>
 </div>
+<script src="/js/i18n.js"></script>
 <script>
 document.getElementById('form-ads').addEventListener('submit', async (e) => {
     e.preventDefault();
