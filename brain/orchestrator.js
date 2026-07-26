@@ -29,6 +29,8 @@ const routes = {
     [E.ORDER_FULFILLED] : commerceEngine.orderFulfilled.bind(commerceEngine),
     [E.ORDER_DELIVERED] : commerceEngine.orderDelivered.bind(commerceEngine),
     [E.ORDER_CANCELLED] : commerceEngine.orderCancelled.bind(commerceEngine),
+    "order.confirmed" : commerceEngine.confirmTelegramOrder.bind(commerceEngine),
+    "order.cancelled.telegram" : commerceEngine.cancelTelegramOrder.bind(commerceEngine),
 
     // ── STOCK ───────────────────────────────────────────
     [E.STOCK_LOW]       : commerceEngine.lowStock.bind(commerceEngine),
