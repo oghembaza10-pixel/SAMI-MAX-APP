@@ -1,10 +1,3 @@
-/**
- * ============================================================
- * OG • Airtable Service V2
- * Couche unique pour toutes les tables Airtable
- * ============================================================
- */
-
 const axios = require("axios");
 
 const BASE  = process.env.AIRTABLE_BASE_ID;
@@ -40,7 +33,6 @@ const headers = () => ({
 // ── SANITIZE FIELDS ──────────────────────────────────
 function sanitize(fields) {
     const result = { ...fields };
-    // Force les champs numériques connus en Number
     const numericFields = ["montant", "total", "prix", "quantite", "quantity"];
     for (const key of numericFields) {
         if (result[key] !== undefined && result[key] !== null && result[key] !== "") {
@@ -99,6 +91,21 @@ async function update(table, recordId, fields) {
         return res.data;
     } catch (err) {
         console.error(`❌ Airtable update [${table}]:`, err.response?.data || err.message);
+        return null;
+    }
+}
+
+// ── UPDATE WHERE (trouve par formule, puis met à jour) ──
+async function updateWhere(table, formula, fields) {
+    try {
+        const record = await findOne(table, formula);
+        if (!record) {
+            console.warn(`⚠️ Airtable updateWhere [${table}] : aucun enregistrement trouvé pour "${formula}"`);
+            return null;
+        }
+        return await update(table, record.id, fields);
+    } catch (err) {
+        console.error(`❌ Airtable updateWhere [${table}]:`, err.message);
         return null;
     }
 }
@@ -182,6 +189,7 @@ module.exports = {
     find,
     findOne,
     update,
+    updateWhere,
     remove,
     getBoutique,
     getCommandes,
