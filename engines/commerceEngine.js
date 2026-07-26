@@ -195,6 +195,9 @@ class CommerceEngine {
     // =========================================================
     // COMMANDE LIVRÉE
     // =========================================================
+   // =========================================================
+    // COMMANDE LIVRÉE
+    // =========================================================
     async orderDelivered(event) {
         try {
             const order = event.payload;
@@ -210,6 +213,28 @@ class CommerceEngine {
                 `_Dossier clôturé automatiquement._`;
 
             await this.notifyShop(shop, { whatsapp: phone }, message);
+
+            // ── ✅ SENTINELLE AVIS : demande d'avis automatique au client ──
+            if (phone) {
+                try {
+                    const reviewMessage =
+                        `Bonjour ${client} 👋\n\n` +
+                        `Votre commande #${order.order_number} a bien été livrée !\n\n` +
+                        `Votre avis compte énormément pour nous. Pourriez-vous prendre 30 secondes pour nous laisser un retour ?\n\n` +
+                        `Merci de votre confiance 🙏`;
+
+                    await notificationEngine.send({
+                        channel: "whatsapp",
+                        to: phone,
+                        message: reviewMessage,
+                        shop,
+                    });
+
+                    await airtable.log("sentinelle.avis.envoyee", `#${order.order_number} — ${client}`, shop);
+                } catch (avisErr) {
+                    console.warn("⚠️ Sentinelle Avis non envoyée :", avisErr.message);
+                }
+            }
 
             return { success: true, shop, orderId: order.id };
 
