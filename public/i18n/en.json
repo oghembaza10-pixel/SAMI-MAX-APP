@@ -77,3 +77,7 @@
   },
   "arsenal": { "title": "The Arsenal", "subtitle": "33 powers, each rooted in a SAMII law.", "available": "Available", "soon": "Coming soon" }
 }
+"ads": {
+  "settings": { "title": "Connect Meta Ads", "subtitle": "These credentials are specific to this workspace.", "accessToken": "Access Token", "adAccountId": "Ad Account ID", "pageId": "Page ID", "save": "Save" },
+  "create": { "back": "← Back to HQ", "eyebrow": "Arsenal · Boost Marketing", "title": "Launch an ad", "connectedAccount": "Connected ad account:", "campaignName": "Campaign name", "objective": "Objective", "objectiveTraffic": "Traffic", "objectiveEngagement": "Engagement", "objectiveSales": "Sales", "dailyBudget": "Daily budget (cents)", "headline": "Ad headline", "message": "Message", "imageUrl": "Image URL", "link": "Link to your shop/product", "submit": "Create campaign", "note": "ℹ️ Depending on your current SAMII mode, the campaign may be created paused or activated directly." }
+}
