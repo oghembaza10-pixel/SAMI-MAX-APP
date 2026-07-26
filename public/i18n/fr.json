@@ -6,12 +6,10 @@
     "description": "Une seule plateforme.\nUne seule identité.\nUn seul Quartier Général.\n\nTravaillez.\nDéveloppez-vous.\nCréez votre Empire."
   },
   "buttons": { "enter": "ENTRER DANS MON QG" },
-
   "sidebar": {
     "hub": "Accueil", "marketplace": "Marketplace", "academy": "Academy",
     "community": "Community", "arsenal": "Arsenal", "settings": "Paramètres", "profile": "Profil"
   },
-
   "hub": {
     "hero": {
       "eyebrow": "OG Empire",
@@ -37,23 +35,35 @@
       "tourisme":    { "label": "Tourisme",     "desc": "Voyage & tourisme" }
     }
   },
-
   "qg": {
     "topbar": "QG",
     "nav": {
       "hub": "Hub", "marketplace": "Marketplace", "community": "Community", "academy": "Academy",
       "myBusiness": "Mes affaires", "connectTools": "Connecter mes outils", "myTools": "Mes outils",
-      "arsenal": "Arsenal", "vault": "Coffre OG", "samii": "SAMII", "settings": "Paramètres", "backToQG": "Mon QG"
+      "arsenal": "Arsenal", "vault": "Coffre OG", "samii": "SAMII", "settings": "Paramètres", "backToQG": "Mon QG",
+      "logout": "Déconnexion"
     },
     "hero": { "eyebrow": "Centre de commandement", "titlePrefix": "Votre QG", "subtitle": "Pilotez votre activité, vos outils et vos missions depuis un seul endroit." },
-    "section": { "overview": "Vue d'ensemble", "arsenal": "Arsenal" },
-    "cards": {
-      "revenue": "Revenus (CR)", "visitors": "Visiteurs", "orders": "Commandes",
-      "missions": "Missions actives", "progress": "Progression (%)", "alerts": "Alertes", "modules": "Modules installés"
+    "section": {
+      "overview": "Vue d'ensemble", "arsenal": "Arsenal", "delivery": "Livraison temps réel 🚚",
+      "missionToday": "Mission du jour 🎯", "performance": "Performance du mois 📈",
+      "recentOrders": "Dernières commandes", "vipClients": "Clients VIP 👑", "blacklist": "Blacklist 🚫"
     },
+    "cards2": {
+      "revenue": "Revenus", "orders": "Commandes", "pending": "En attente", "confirmed": "Confirmées",
+      "cancelled": "Annulées", "vip": "Clients VIP", "blacklist": "Blacklist"
+    },
+    "delivery": { "delivered": "Livrées", "inProgress": "En cours", "failed": "Échecs" },
+    "mission": {
+      "objective": "Objectif du jour", "ordersToday": "Commandes aujourd'hui",
+      "revenueToday": "Revenus aujourd'hui", "progressLabel": "Progression vers objectif (10 cmd)"
+    },
+    "performance": { "revenueMonth": "Revenus ce mois", "ordersMonth": "Commandes ce mois", "vsLastMonth": "vs mois dernier" },
+    "table": { "client": "Client", "phone": "Téléphone", "product": "Produit", "total": "Total", "status": "Statut" },
+    "loading": "Chargement...",
+    "modules": { "all": "Tout" },
     "arsenal": { "boostMarketing": "Boost Marketing", "radar": "Radar Opportunités", "fortress": "Forteresse", "level": "Niveau", "seeMore": "Voir l'Arsenal" }
   },
-
   "samii": {
     "topbar": "Stratège IA",
     "status": "OPÉRATIONNEL",
@@ -71,13 +81,12 @@
       "revenus": { "label": "Revenus prévus", "value": "+8% attendu" },
       "radar": { "label": "Radar concurrentiel", "value": "Surveillance active" },
       "automatisations": { "label": "Automatisations", "value": "5 actives" },
-        "reseau": { "label": "Réseau global", "value": "17 pays" }
-      }
+      "reseau": { "label": "Réseau global", "value": "17 pays" }
     }
   },
-  "arsenal": { "title": "L'Arsenal", "subtitle": "33 pouvoirs, chacun ancré dans une loi de SAMII.", "available": "Disponible", "soon": "Bientôt disponible" }
-}
-"ads": {
-  "settings": { "title": "Connecter Meta Ads", "subtitle": "Ces identifiants sont propres à ce workspace.", "accessToken": "Access Token", "adAccountId": "Ad Account ID", "pageId": "Page ID", "save": "Enregistrer" },
-  "create": { "back": "← Retour au QG", "eyebrow": "Arsenal · Boost Marketing", "title": "Lancer une publicité", "connectedAccount": "Compte pub connecté :", "campaignName": "Nom de la campagne", "objective": "Objectif", "objectiveTraffic": "Trafic", "objectiveEngagement": "Engagement", "objectiveSales": "Ventes", "dailyBudget": "Budget journalier (centimes)", "headline": "Titre de l'annonce", "message": "Message", "imageUrl": "URL de l'image", "link": "Lien vers ta boutique/produit", "submit": "Créer la campagne", "note": "ℹ️ Selon ton mode SAMII actuel, la campagne peut être créée en pause ou activée directement." }
+  "arsenal": { "title": "L'Arsenal", "subtitle": "33 pouvoirs, chacun ancré dans une loi de SAMII.", "available": "Disponible", "soon": "Bientôt disponible" },
+  "ads": {
+    "settings": { "title": "Connecter Meta Ads", "subtitle": "Ces identifiants sont propres à ce workspace.", "accessToken": "Access Token", "adAccountId": "Ad Account ID", "pageId": "Page ID", "save": "Enregistrer" },
+    "create": { "back": "← Retour au QG", "eyebrow": "Arsenal · Boost Marketing", "title": "Lancer une publicité", "connectedAccount": "Compte pub connecté :", "campaignName": "Nom de la campagne", "objective": "Objectif", "objectiveTraffic": "Trafic", "objectiveEngagement": "Engagement", "objectiveSales": "Ventes", "dailyBudget": "Budget journalier (centimes)", "headline": "Titre de l'annonce", "message": "Message", "imageUrl": "URL de l'image", "link": "Lien vers ta boutique/produit", "submit": "Créer la campagne", "note": "Selon ton mode SAMII actuel, la campagne peut être créée en pause ou activée directement." }
+  }
 }
