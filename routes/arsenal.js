@@ -1,7 +1,3 @@
-// ==========================================================================
-// SAMII OS — L'ARSENAL COMPLET (33 cartes, reliées aux 33 lois SAMII)
-// ==========================================================================
-
 const express = require("express");
 const router   = express.Router();
 
@@ -75,7 +71,7 @@ router.get("/", requireAuth, (req, res) => {
     <style>
         .ars33-shell { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
         .ars33-shell h1 { font-family: var(--font-display); color: #fff; font-size: 1.8rem; margin-bottom: 6px; }
-        .ars33-shell p.sub { color: var(--text-muted); font-size: .88rem; margin-bottom: 30px; }
+        .ars33-shell p.sub { color: var(--text-muted); font-size: .88rem; margin-bottom: 20px; }
         .ars33-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
         .ars33-card {
             position: relative; background: var(--bg-glass); backdrop-filter: blur(10px);
@@ -91,10 +87,20 @@ router.get("/", requireAuth, (req, res) => {
         .ars33-card p { color: var(--text-muted); font-size: .74rem; line-height: 1.4; flex: 1; }
         .ars33-badge { font-family: var(--font-mono); font-size: .6rem; padding: 2px 8px; border-radius: 20px; background: rgba(255,255,255,0.06); color: var(--text-muted); align-self: flex-start; }
         .ars33-badge--on { background: rgba(61,220,132,0.12); color: #3ddc84; }
+        .og-lang-switch { display: flex; justify-content: flex-start; gap: 10px; margin-bottom: 24px; font-family: var(--font-mono); font-size: .72rem; }
+        .og-lang-switch span { cursor: pointer; color: var(--text-muted); padding: 4px 8px; border-radius: 4px; transition: color .2s ease; }
+        .og-lang-switch span:hover { color: var(--cyan-tech); }
+        .og-lang-switch span.active { color: var(--cyan-tech); font-weight: 600; }
     </style>
 </head>
 <body>
 <div class="ars33-shell">
+    <div class="og-lang-switch">
+        <span data-lang-btn="fr">FR</span>
+        <span data-lang-btn="en">EN</span>
+        <span data-lang-btn="ar">AR</span>
+        <span data-lang-btn="zh">ZH</span>
+    </div>
     <h1>⚔️ <span data-i18n="arsenal.title">L'Arsenal</span></h1>
     <p class="sub" data-i18n="arsenal.subtitle">33 pouvoirs, chacun ancré dans une loi de SAMII. Débloqués progressivement.</p>
     <div class="ars33-grid">${cardsHtml}</div>
