@@ -132,17 +132,15 @@ router.get("/connecteurs", requireAuth, async (req, res) => {
 router.get("/qg-data", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
     if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
-
     try {
         // ✅ workspaceService — source de vérité unique
         const workspace = await workspaceService.getById(workspaceId);
         if (!workspace) return res.status(404).json({ error: "Workspace introuvable." });
-
         // Commandes
         const commandesRes = await axios.get(airtable(TABLE_COMMANDES), {
             headers: headers(),
             params : {
-                filterByFormula     : `{workspace_id}="${workspaceId}"`,
+                filterByFormula     : `{Boutique}="${workspaceId}"`,
                 "sort[0][field]"    : "Date Commande",
                 "sort[0][direction]": "desc",
                 maxRecords          : 100,
