@@ -252,6 +252,33 @@ router.post("/commandes/:id/annuler", requireAuth, async (req, res) => {
         res.status(500).json({ error: "Erreur annulation." });
     }
 });
+// ── FEEDBACK CLIENT ───────────────────────────────────
+router.post("/feedback", requireAuth, async (req, res) => {
+    try {
+        const { text } = req.body;
+        if (!text || !text.trim()) return res.json({ success: false, error: "Message vide." });
+
+        const workspaceId = req.session.workspaceId;
+
+        await axios.post(
+            airtable(process.env.TABLE_JOURNAL || "JOURNAL"),
+            {
+                fields: {
+                    type        : "feedback",
+                    message     : text.trim(),
+                    workspace_id: workspaceId || "",
+                },
+                typecast: true,
+            },
+            { headers: headers() }
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /api/feedback :", err.response?.data || err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
 
 // ── DEBUG SESSION ─────────────────────────────────────
 router.get("/debug-session", requireAuth, (req, res) => {
