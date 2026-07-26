@@ -4,7 +4,7 @@
  * SAMII agit seul et rapporte
  * ============================================================
  */
-
+const socketService = require("../services/socketService");
 const airtable           = require("../services/airtable");
 const notificationEngine = require("../engines/notificationEngine");
 const automationEngine   = require("../engines/automationEngine");
@@ -92,8 +92,8 @@ class CommerceEngine {
                 `💰 *Total :* ${order.total_price} DZD\n` +
                 `📊 *Statut :* ${order.financial_status}\n\n` +
                 `_SAMII gère la suite automatiquement._`;
-
-            await this.notifyShop(shop, { whatsapp: phone }, message);
+             await this.notifyShop(shop, { whatsapp: phone }, message);
+            socketService.emitToShop(shop, "nouvelle-commande", { id: order.order_number });
 
             return { success: true, shop, orderId: order.id };
 
@@ -103,6 +103,7 @@ class CommerceEngine {
             return { success: false, error: err.message };
         }
     }
+            
     // =========================================================
     // COMMANDE MISE À JOUR
     // =========================================================
@@ -192,9 +193,6 @@ class CommerceEngine {
         }
     }
 
-    // =========================================================
-    // COMMANDE LIVRÉE
-    // =========================================================
    // =========================================================
     // COMMANDE LIVRÉE
     // =========================================================
@@ -263,7 +261,8 @@ class CommerceEngine {
                 `💬 *Raison :* ${order.cancel_reason || "Non précisée"}\n\n` +
                 `_Dossier mis à jour._`;
 
-            await this.notifyShop(shop, { whatsapp: phone }, message);
+          await this.notifyShop(shop, { whatsapp: phone }, message);
+            socketService.emitToShop(shop, "commande-annulee", { id: order.order_number });
 
             return { success: true, shop, orderId: order.id };
 
