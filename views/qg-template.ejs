@@ -272,7 +272,7 @@
                 <p style="color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
             </div>
         </section>
-        <!-- ── ARSENAL ───────────────────────────────── -->
+       <!-- ── ARSENAL ───────────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="sword"></i>
             <span data-i18n="qg.section.arsenal">Arsenal</span>
@@ -301,17 +301,49 @@
                 <h3 data-i18n="qg.arsenal.seeMore">Voir l'Arsenal</h3>
             </article>
         </section>
+
+        <!-- ── AIDEZ-NOUS À VOUS AIDER ──────────────────── -->
+        <div class="qg-section-title" style="margin-top:20px;">
+            <i data-lucide="lightbulb"></i>
+            <span>Aidez-nous à vous aider</span>
+        </div>
+        <section class="qg-dashboard">
+            <article class="qg-card" style="grid-column:span 3;">
+                <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:12px;">
+                    Une idée, un souci, quelque chose à améliorer ? Dites-le à SAMII.
+                </p>
+                <textarea id="feedback-text" placeholder="Votre suggestion..." style="width:100%;min-height:80px;padding:10px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:white;"></textarea>
+                <button id="feedback-submit" style="margin-top:10px;padding:10px 16px;background:var(--gold-og);border:none;border-radius:8px;font-weight:700;cursor:pointer;">Envoyer</button>
+                <span id="feedback-msg" style="display:block;margin-top:8px;font-size:.8rem;color:#3ddc84;"></span>
+            </article>
+        </section>
+
     </main>
 </div>
+
 <!-- SAMII orb -->
 <a href="/samii" class="samii-orb" aria-label="Ouvrir SAMII">
     <span class="samii-orb__aura"></span>
     <span class="samii-orb__aura samii-orb__aura--2"></span>
     <i data-lucide="bot"></i>
 </a>
+
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/i18n.js"></script>
 <script src="/js/qg.js"></script>
+<script>
+document.getElementById("feedback-submit")?.addEventListener("click", async () => {
+    const text = document.getElementById("feedback-text").value.trim();
+    if (!text) return;
+    const res = await fetch("/api/feedback", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+    });
+    const json = await res.json();
+    document.getElementById("feedback-msg").textContent = json.success ? "✅ Merci, c'est transmis !" : "❌ Erreur.";
+    if (json.success) document.getElementById("feedback-text").value = "";
+});
+</script>
 </body>
 </html>
