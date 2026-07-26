@@ -175,19 +175,20 @@ router.post("/", async (req, res) => {
                 callback_query_id: cb.id,
                 text             : "⚙️ SAMII traite...",
             });
-
-            if (data.startsWith("confirm_")) {
-                const orderId = data.replace("confirm_", "");
+           if (data.startsWith("cancel_")) {
+                const orderId = data.replace("cancel_", "");
                 await orchestrator.process({
-                    type   : "order.confirmed",
+                    type   : "order.cancelled.telegram",
                     shop   : "",
                     payload: { orderId, chatId },
                 });
                 await reply(chatId,
-                    `✅ *Commande #${orderId} confirmée !*\n\nNous préparons le colis 📦\nMerci de votre confiance 🙏`
+                    `❌ *Commande #${orderId} annulée.*\n\nSi c'est une erreur, répondez-nous 😊`
                 );
                 return;
-            }
+            } 
+            
+            
 
             if (data.startsWith("cancel_")) {
                 const orderId = data.replace("cancel_", "");
