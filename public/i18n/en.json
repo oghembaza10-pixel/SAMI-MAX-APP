@@ -6,12 +6,10 @@
     "description": "One platform.\nOne identity.\nOne Headquarters.\n\nWork.\nGrow.\nBuild your Empire."
   },
   "buttons": { "enter": "ENTER MY HQ" },
-
   "sidebar": {
     "hub": "Home", "marketplace": "Marketplace", "academy": "Academy",
     "community": "Community", "arsenal": "Arsenal", "settings": "Settings", "profile": "Profile"
   },
-
   "hub": {
     "hero": {
       "eyebrow": "OG Empire",
@@ -37,23 +35,35 @@
       "tourisme":    { "label": "Tourism",      "desc": "Travel & tourism" }
     }
   },
-
   "qg": {
     "topbar": "HQ",
     "nav": {
       "hub": "Hub", "marketplace": "Marketplace", "community": "Community", "academy": "Academy",
       "myBusiness": "My Business", "connectTools": "Connect my tools", "myTools": "My tools",
-      "arsenal": "Arsenal", "vault": "OG Vault", "samii": "SAMII", "settings": "Settings", "backToQG": "My HQ"
+      "arsenal": "Arsenal", "vault": "OG Vault", "samii": "SAMII", "settings": "Settings", "backToQG": "My HQ",
+      "logout": "Log out"
     },
     "hero": { "eyebrow": "Command Center", "titlePrefix": "Your HQ", "subtitle": "Manage your business, tools and missions from one place." },
-    "section": { "overview": "Overview", "arsenal": "Arsenal" },
-    "cards": {
-      "revenue": "Revenue (CR)", "visitors": "Visitors", "orders": "Orders",
-      "missions": "Active missions", "progress": "Progress (%)", "alerts": "Alerts", "modules": "Installed modules"
+    "section": {
+      "overview": "Overview", "arsenal": "Arsenal", "delivery": "Live Delivery 🚚",
+      "missionToday": "Today's Mission 🎯", "performance": "Monthly Performance 📈",
+      "recentOrders": "Recent Orders", "vipClients": "VIP Clients 👑", "blacklist": "Blacklist 🚫"
     },
+    "cards2": {
+      "revenue": "Revenue", "orders": "Orders", "pending": "Pending", "confirmed": "Confirmed",
+      "cancelled": "Cancelled", "vip": "VIP Clients", "blacklist": "Blacklist"
+    },
+    "delivery": { "delivered": "Delivered", "inProgress": "In Progress", "failed": "Failed" },
+    "mission": {
+      "objective": "Today's Goal", "ordersToday": "Orders Today",
+      "revenueToday": "Revenue Today", "progressLabel": "Progress toward goal (10 orders)"
+    },
+    "performance": { "revenueMonth": "Revenue this month", "ordersMonth": "Orders this month", "vsLastMonth": "vs last month" },
+    "table": { "client": "Client", "phone": "Phone", "product": "Product", "total": "Total", "status": "Status" },
+    "loading": "Loading...",
+    "modules": { "all": "All" },
     "arsenal": { "boostMarketing": "Marketing Boost", "radar": "Opportunity Radar", "fortress": "Fortress", "level": "Level", "seeMore": "View Arsenal" }
   },
-
   "samii": {
     "topbar": "AI Strategist",
     "status": "OPERATIONAL",
@@ -70,14 +80,13 @@
       "clients": { "label": "Clients & CRM", "value": "142 active" },
       "revenus": { "label": "Projected revenue", "value": "+8% expected" },
       "radar": { "label": "Competitor radar", "value": "Active monitoring" },
-     "automatisations": { "label": "Automations", "value": "5 active" },
-        "reseau": { "label": "Global network", "value": "17 countries" }
-      }
+      "automatisations": { "label": "Automations", "value": "5 active" },
+      "reseau": { "label": "Global network", "value": "17 countries" }
     }
   },
-  "arsenal": { "title": "The Arsenal", "subtitle": "33 powers, each rooted in a SAMII law.", "available": "Available", "soon": "Coming soon" }
-}
-"ads": {
-  "settings": { "title": "Connect Meta Ads", "subtitle": "These credentials are specific to this workspace.", "accessToken": "Access Token", "adAccountId": "Ad Account ID", "pageId": "Page ID", "save": "Save" },
-  "create": { "back": "← Back to HQ", "eyebrow": "Arsenal · Boost Marketing", "title": "Launch an ad", "connectedAccount": "Connected ad account:", "campaignName": "Campaign name", "objective": "Objective", "objectiveTraffic": "Traffic", "objectiveEngagement": "Engagement", "objectiveSales": "Sales", "dailyBudget": "Daily budget (cents)", "headline": "Ad headline", "message": "Message", "imageUrl": "Image URL", "link": "Link to your shop/product", "submit": "Create campaign", "note": "ℹ️ Depending on your current SAMII mode, the campaign may be created paused or activated directly." }
+  "arsenal": { "title": "The Arsenal", "subtitle": "33 powers, each rooted in a SAMII law.", "available": "Available", "soon": "Coming soon" },
+  "ads": {
+    "settings": { "title": "Connect Meta Ads", "subtitle": "These credentials are specific to this workspace.", "accessToken": "Access Token", "adAccountId": "Ad Account ID", "pageId": "Page ID", "save": "Save" },
+    "create": { "back": "← Back to HQ", "eyebrow": "Arsenal · Boost Marketing", "title": "Launch an ad", "connectedAccount": "Connected ad account:", "campaignName": "Campaign name", "objective": "Objective", "objectiveTraffic": "Traffic", "objectiveEngagement": "Engagement", "objectiveSales": "Sales", "dailyBudget": "Daily budget (cents)", "headline": "Ad headline", "message": "Message", "imageUrl": "Image URL", "link": "Link to your shop/product", "submit": "Create campaign", "note": "Depending on your current SAMII mode, the campaign may be created paused or activated directly." }
+  }
 }
