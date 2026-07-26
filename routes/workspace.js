@@ -184,6 +184,17 @@ router.post("/create", requireAuth, async (req, res) => {
         req.session.workspaceId   = workspace.workspaceId;
         req.session.metier        = workspace.metier;
         req.session.lastWorkspace = workspace.workspaceId;
+        // ── Email de bienvenue (ne bloque jamais la création si ça échoue) ──
+try {
+    const notificationEngine = require("../engines/notificationEngine");
+    await notificationEngine.send({
+        channel: "email",
+        to: email,
+        message: `Bienvenue dans OG Empire, Général !\n\nVotre QG "${workspace.nom}" est prêt. SAMII est déjà à votre poste pour vous accompagner.\n\nAllez jeter un œil : https://samii.souverain-store.com/qg\n\nÀ votre conquête 👑`,
+    });
+} catch (mailErr) {
+    console.warn("⚠️ Email de bienvenue non envoyé :", mailErr.message);
+}
 
         req.session.save((err) => {
             if (err) return res.json({ success: false, error: "Erreur de session." });
