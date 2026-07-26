@@ -70,8 +70,10 @@
       "clients": { "label": "客户与CRM", "value": "142位活跃" },
       "revenus": { "label": "预计收入", "value": "预计+8%" },
       "radar": { "label": "竞争对手雷达", "value": "监控中" },
-      "automatisations": { "label": "自动化", "value": "5个活跃" },
-      "reseau": { "label": "全球网络", "value": "17个国家" }
+    "automatisations": { "label": "自动化", "value": "5个活跃" },
+        "reseau": { "label": "全球网络", "value": "17个国家" }
+      }
     }
-  }
+  },
+  "arsenal": { "title": "军械库", "subtitle": "33种力量，每一种都源自SAMII的一条法则。", "available": "可用", "soon": "即将推出" }
 }
