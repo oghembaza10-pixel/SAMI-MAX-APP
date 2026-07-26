@@ -77,3 +77,7 @@
   },
   "arsenal": { "title": "L'Arsenal", "subtitle": "33 pouvoirs, chacun ancré dans une loi de SAMII.", "available": "Disponible", "soon": "Bientôt disponible" }
 }
+"ads": {
+  "settings": { "title": "Connecter Meta Ads", "subtitle": "Ces identifiants sont propres à ce workspace.", "accessToken": "Access Token", "adAccountId": "Ad Account ID", "pageId": "Page ID", "save": "Enregistrer" },
+  "create": { "back": "← Retour au QG", "eyebrow": "Arsenal · Boost Marketing", "title": "Lancer une publicité", "connectedAccount": "Compte pub connecté :", "campaignName": "Nom de la campagne", "objective": "Objectif", "objectiveTraffic": "Trafic", "objectiveEngagement": "Engagement", "objectiveSales": "Ventes", "dailyBudget": "Budget journalier (centimes)", "headline": "Titre de l'annonce", "message": "Message", "imageUrl": "URL de l'image", "link": "Lien vers ta boutique/produit", "submit": "Créer la campagne", "note": "ℹ️ Selon ton mode SAMII actuel, la campagne peut être créée en pause ou activée directement." }
+}
