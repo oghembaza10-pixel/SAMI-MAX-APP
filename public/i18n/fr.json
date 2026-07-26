@@ -71,7 +71,9 @@
       "revenus": { "label": "Revenus prévus", "value": "+8% attendu" },
       "radar": { "label": "Radar concurrentiel", "value": "Surveillance active" },
       "automatisations": { "label": "Automatisations", "value": "5 actives" },
-      "reseau": { "label": "Réseau global", "value": "17 pays" }
+        "reseau": { "label": "Réseau global", "value": "17 pays" }
+      }
     }
-  }
+  },
+  "arsenal": { "title": "L'Arsenal", "subtitle": "33 pouvoirs, chacun ancré dans une loi de SAMII.", "available": "Disponible", "soon": "Bientôt disponible" }
 }
