@@ -91,18 +91,18 @@ async function handleOrderFlow(chatId, text, name) {
         const workspaceId = await getWorkspaceByChatId(chatId);
         const adminChatId = await getAdminChatId(workspaceId);
 
-        // Créer dans Airtable
-        await airtable.create("COMMANDES", {
-            "ID Commande"  : orderId,
-            "nom client"   : s.name      || "Inconnu",
-            "Téléphone"    : s.telephone || "",
-            "Adresse"      : text,
-            "Produit"      : s.produit   || "",
-            "Statut"       : "en attente",
-            "Boutique"     : workspaceId,
-            "Date Commande": new Date().toISOString(),
-            "montant"      : 0,
-        });
+       await airtable.create("COMMANDES", {
+    "ID Commande"  : orderId,
+    "nom client"   : s.name      || "Inconnu",
+    "Téléphone"    : s.telephone || "",
+    "Adresse"      : text,
+    "Produit"      : s.produit   || "",
+    "Statut"       : "en attente",
+    "Boutique"     : workspaceId,
+    "Source"       : "telegram",
+    "Date Commande": new Date().toISOString(),
+    "montant"      : 0,
+});
 
         await airtable.log("order.created.telegram", `#${orderId} — ${s.name}`, workspaceId);
 
