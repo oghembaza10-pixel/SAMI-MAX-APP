@@ -34,7 +34,8 @@ router.get("/", requireAuth, async (req, res) => {
     const workspace = await workspaceService.getById(req.session.workspaceId);
     if (!workspace) return res.redirect("/hub");
 
-    const coffre = workspace.coffre || { forteresse: {}, boost: {} };
+    console.log("🔍 DEBUG coffre reçu :", JSON.stringify(workspace.coffre));
+const coffre = workspace.coffre || { forteresse: {}, boost: {} };
 
     const cardsHtml = Object.entries(ITEMS).map(([key, item]) => {
         const state = coffre[key] || { charges: 0, activeUntil: null };
