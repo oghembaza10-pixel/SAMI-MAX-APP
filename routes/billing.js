@@ -149,7 +149,7 @@ router.get("/success", requireAuth, (req, res) => {
     </body></html>`);
 });
 
-router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+router.post("/webhook", async (req, res) => {
     if (!stripe) return res.status(500).send("Stripe non configuré.");
 
     let event;
