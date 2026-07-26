@@ -67,14 +67,27 @@ router.get("/", requireAuth, (req, res) => {
             </ul>
             <button class="bill-btn bill-btn--free" disabled>Plan actuel</button>
         </div>
+       <div class="bill-card">
+            <h2>🌑 Découverte</h2>
+            <div class="bill-price">Gratuit</div>
+            <ul>
+                <li>10 confirmations/jour</li>
+                <li>Mode Ombre + Copilote (SAMII propose, tu valides)</li>
+                <li>10 messages stratégie SAMII/mois</li>
+                <li>Suivi de colis basique</li>
+            </ul>
+            <button class="bill-btn bill-btn--free" disabled>Plan actuel</button>
+        </div>
         <div class="bill-card">
             <h2>🚀 Actif</h2>
             <div class="bill-price">9,99$ <span>/mois</span></div>
             <ul>
                 <li>100 confirmations/jour</li>
-                <li>WhatsApp + Telegram + Shopify</li>
-                <li>+ Mode Stratège débloqué</li>
-                <li>Messages illimités</li>
+                <li>WhatsApp + Telegram + Shopify connectés</li>
+                <li>Mode Stratège débloqué (SAMII agit dans tes limites)</li>
+                <li>Pubs Meta illimitées, créées par SAMII</li>
+                <li>1 Forteresse offerte chaque mois</li>
+                <li>Messages SAMII illimités</li>
             </ul>
             <button class="bill-btn" data-plan="standard">S'abonner</button>
         </div>
@@ -83,8 +96,9 @@ router.get("/", requireAuth, (req, res) => {
             <div class="bill-price">29,99$ <span>/mois</span></div>
             <ul>
                 <li>1000 confirmations/jour</li>
-                <li>Tout le plan Actif +</li>
-                <li>Modes Autonome et Souverain</li>
+                <li>Tout le plan Actif, en illimité</li>
+                <li>Modes Autonome + Souverain (SAMII active seul tes pubs)</li>
+                <li>2 Forteresse + 1 Boost offerts chaque mois</li>
                 <li>Support prioritaire</li>
             </ul>
             <button class="bill-btn" data-plan="pro">S'abonner</button>
