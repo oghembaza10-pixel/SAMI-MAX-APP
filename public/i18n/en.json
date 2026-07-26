@@ -70,8 +70,10 @@
       "clients": { "label": "Clients & CRM", "value": "142 active" },
       "revenus": { "label": "Projected revenue", "value": "+8% expected" },
       "radar": { "label": "Competitor radar", "value": "Active monitoring" },
-      "automatisations": { "label": "Automations", "value": "5 active" },
-      "reseau": { "label": "Global network", "value": "17 countries" }
+     "automatisations": { "label": "Automations", "value": "5 active" },
+        "reseau": { "label": "Global network", "value": "17 countries" }
+      }
     }
-  }
+  },
+  "arsenal": { "title": "The Arsenal", "subtitle": "33 powers, each rooted in a SAMII law.", "available": "Available", "soon": "Coming soon" }
 }
