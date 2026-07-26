@@ -77,3 +77,7 @@
   },
   "arsenal": { "title": "الترسانة", "subtitle": "33 قوة، كل واحدة مرتبطة بقانون من قوانين سامي.", "available": "متاح", "soon": "قريباً" }
 }
+"ads": {
+  "settings": { "title": "ربط إعلانات ميتا", "subtitle": "هذه البيانات خاصة بهذا المساحة.", "accessToken": "رمز الوصول", "adAccountId": "معرف الحساب الإعلاني", "pageId": "معرف الصفحة", "save": "حفظ" },
+  "create": { "back": "← العودة إلى المقر", "eyebrow": "الترسانة · تعزيز التسويق", "title": "إطلاق إعلان", "connectedAccount": "الحساب الإعلاني المتصل:", "campaignName": "اسم الحملة", "objective": "الهدف", "objectiveTraffic": "الزيارات", "objectiveEngagement": "التفاعل", "objectiveSales": "المبيعات", "dailyBudget": "الميزانية اليومية (سنتات)", "headline": "عنوان الإعلان", "message": "الرسالة", "imageUrl": "رابط الصورة", "link": "رابط متجرك/منتجك", "submit": "إنشاء الحملة", "note": "ℹ️ حسب وضع سامي الحالي، يمكن إنشاء الحملة متوقفة أو تفعيلها مباشرة." }
+}
