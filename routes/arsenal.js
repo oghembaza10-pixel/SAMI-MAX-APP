@@ -59,7 +59,7 @@ router.get("/", requireAuth, (req, res) => {
             <div class="ars33-icon"><i data-lucide="${c.icon}"></i></div>
             <h3>${c.name}</h3>
             <p>${c.desc}</p>
-            <span class="ars33-badge ${c.available ? "ars33-badge--on" : ""}">
+            <span class="ars33-badge ars33-badge-item ${c.available ? "ars33-badge--on" : ""}" data-available="${c.available}">
                 ${c.available ? "Disponible" : "Bientôt disponible"}
             </span>
         ${closeTag}`;
@@ -95,12 +95,30 @@ router.get("/", requireAuth, (req, res) => {
 </head>
 <body>
 <div class="ars33-shell">
-    <h1>⚔️ L'Arsenal</h1>
-    <p class="sub">33 pouvoirs, chacun ancré dans une loi de SAMII. Débloqués progressivement.</p>
+    <h1>⚔️ <span data-i18n="arsenal.title">L'Arsenal</span></h1>
+    <p class="sub" data-i18n="arsenal.subtitle">33 pouvoirs, chacun ancré dans une loi de SAMII. Débloqués progressivement.</p>
     <div class="ars33-grid">${cardsHtml}</div>
 </div>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script>if (typeof lucide !== "undefined") lucide.createIcons();</script>
+<script src="/js/i18n.js"></script>
+<script>
+    if (typeof lucide !== "undefined") lucide.createIcons();
+
+    function updateArsenalBadges(dict) {
+        const onText  = dict?.arsenal?.available || "Disponible";
+        const offText = dict?.arsenal?.soon || "Bientôt disponible";
+        document.querySelectorAll(".ars33-badge-item").forEach(badge => {
+            const isAvailable = badge.getAttribute("data-available") === "true";
+            badge.textContent = isAvailable ? onText : offText;
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (typeof Language !== "undefined" && Language.onChange) {
+            Language.onChange((lang, dict) => updateArsenalBadges(dict));
+        }
+    });
+</script>
 </body>
 </html>`);
 });
