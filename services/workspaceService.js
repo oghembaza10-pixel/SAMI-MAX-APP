@@ -32,28 +32,43 @@ function parseSamiiConfig(raw) {
     }
 }
 
+function parseCoffreConfig(raw) {
+    const defaultCoffre = {
+        forteresse: { charges: 0, activeUntil: null },
+        boost: { charges: 0, activeUntil: null },
+    };
+    if (!raw) return defaultCoffre;
+    if (typeof raw === "object") return raw;
+    try {
+        return { ...defaultCoffre, ...JSON.parse(raw) };
+    } catch {
+        return defaultCoffre;
+    }
+}
+
 function mapRecord(r) {
     const f = r.fields;
     return {
         workspaceId : f.workspace_id || "",
-        recordId    : r.id,
-        owner       : f.owner        || "",
-        nom         : f.nom          || "",
-        metier      : f.metier       || "",
-        logo        : f.logo         || "",
-        langue      : f.langue       || "fr",
-        devise      : f.devise       || "DZD",
-        pays        : f.pays         || "",
-       description : f.description  || "",
+recordId    : r.id,
+owner       : f.owner        || "",
+nom         : f.nom          || "",
+metier      : f.metier       || "",
+logo        : f.logo         || "",
+langue      : f.langue       || "fr",
+devise      : f.devise       || "DZD",
+pays        : f.pays         || "",
+description : f.description  || "",
 samii       : parseSamiiConfig(f.samii),
+coffre      : parseCoffreConfig(f.coffre),
 metaAccessToken : f.meta_access_token  || "",
 metaAdAccountId : f.meta_ad_account_id || "",
 metaPageId      : f.meta_page_id       || "",
 timezone    : f.timezone     || "Africa/Algiers",
-        statut      : f.statut       || "actif",
-        actif       : f.statut       === "actif",
-        created_at  : f.created_at   || "",
-        updated_at  : f.updated_at   || "",
+statut      : f.statut       || "actif",
+actif       : f.statut       === "actif",
+created_at  : f.created_at   || "",
+updated_at  : f.updated_at   || "",
     };
 }
 
