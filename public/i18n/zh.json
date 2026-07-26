@@ -77,3 +77,7 @@
   },
   "arsenal": { "title": "军械库", "subtitle": "33种力量，每一种都源自SAMII的一条法则。", "available": "可用", "soon": "即将推出" }
 }
+"ads": {
+  "settings": { "title": "连接Meta广告", "subtitle": "这些凭证专属于此工作区。", "accessToken": "访问令牌", "adAccountId": "广告账户ID", "pageId": "主页ID", "save": "保存" },
+  "create": { "back": "← 返回总部", "eyebrow": "军械库 · 营销加速", "title": "发布广告", "connectedAccount": "已连接广告账户：", "campaignName": "广告系列名称", "objective": "目标", "objectiveTraffic": "流量", "objectiveEngagement": "互动", "objectiveSales": "销售", "dailyBudget": "每日预算（分）", "headline": "广告标题", "message": "文案", "imageUrl": "图片链接", "link": "商店/产品链接", "submit": "创建广告系列", "note": "ℹ️ 根据当前SAMII模式，广告系列可能创建为暂停状态或直接激活。" }
+}
