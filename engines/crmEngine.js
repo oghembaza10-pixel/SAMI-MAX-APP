@@ -48,9 +48,9 @@ async saveConversation(data) {
 
 // ── HELPER : Répondre sur Telegram ───────────────────────
 async replyTelegram(chatId, text) {
+    const telegram = require("../services/telegramService");
     await telegram.send(chatId, text);
 }
-
 
     // =========================================================
     // TELEGRAM — MESSAGE
@@ -82,7 +82,7 @@ async replyTelegram(chatId, text) {
             const shop = event.shop || "";
 
             console.log(`🔘 Telegram callback : ${data}`);
-
+            const telegram = require("../services/telegramService");
             const [action, orderId] = data.split("_");
 
             // ── CONFIRMER ────────────────────────────────────
