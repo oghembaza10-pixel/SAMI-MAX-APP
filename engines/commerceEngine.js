@@ -271,7 +271,40 @@ class CommerceEngine {
             return { success: false, error: err.message };
         }
     }
+    
+// =========================================================
+    // TELEGRAM — CONFIRMATION (canal indépendant, pas Shopify)
+    // =========================================================
+    async confirmTelegramOrder(event) {
+        try {
+            const { orderId } = event.payload;
+            await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
+                "Statut": "confirmée"
+            });
+            await airtable.log("order.confirmed.telegram", `#${orderId} confirmée via Telegram`, "");
+            return { success: true, orderId };
+        } catch (err) {
+            console.error("❌ CommerceEngine.confirmTelegramOrder :", err.message);
+            return { success: false, error: err.message };
+        }
+    }
 
+    // =========================================================
+    // TELEGRAM — ANNULATION (canal indépendant, pas Shopify)
+    // =========================================================
+    async cancelTelegramOrder(event) {
+        try {
+            const { orderId } = event.payload;
+            await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
+                "Statut": "annulée"
+            });
+            await airtable.log("order.cancelled.telegram", `#${orderId} annulée via Telegram`, "");
+            return { success: true, orderId };
+        } catch (err) {
+            console.error("❌ CommerceEngine.cancelTelegramOrder :", err.message);
+            return { success: false, error: err.message };
+        }
+    }
      // =========================================================
     // STOCK FAIBLE
     // =========================================================
