@@ -260,13 +260,12 @@ router.post("/feedback", requireAuth, async (req, res) => {
 
         const workspaceId = req.session.workspaceId;
 
-        await axios.post(
+       await axios.post(
             airtable(process.env.TABLE_JOURNAL || "JOURNAL"),
             {
                 fields: {
-                    type        : "feedback",
-                    message     : text.trim(),
-                    workspace_id: workspaceId || "",
+                    type   : "feedback",
+                    message: text.trim(),
                 },
                 typecast: true,
             },
