@@ -78,7 +78,7 @@ function renderMetierGrid() {
     grid.innerHTML = METIERS.map(m => {
         const t = getMetierText(m.id);
         return `
-       <a class="metier-card" href="/workspace/create?metier=${m.id}" data-metier="${m.id}">
+      <a class="metier-card" href="/register?metier=${m.id}" data-metier="${m.id}">
             <div class="metier-card__media ${m.mood}">
                 <i class="metier-card__watermark" data-lucide="${m.icon}"></i>
                 <div class="metier-card__shade"></div>
@@ -98,14 +98,11 @@ function renderMetierGrid() {
             <h3>${getMetierMoreText()}</h3>
         </a>
     `;
-
     if (typeof lucide !== "undefined") lucide.createIcons();
 }
-
 function renderSidebarPlatforms() {
     const wrap = document.getElementById("og-sidebar-platforms");
     if (!wrap) return;
-
     const connected = window.OG_CONNECTED_PLATFORMS || [];
 
     wrap.innerHTML = PLATFORMS.map(p => {
