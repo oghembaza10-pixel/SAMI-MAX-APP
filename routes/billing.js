@@ -62,16 +62,6 @@ router.get("/", requireAuth, (req, res) => {
             <div class="bill-price">Gratuit</div>
             <ul>
                 <li>10 confirmations/jour</li>
-                <li>Modes Ombre + Copilote</li>
-                <li>10 messages stratégie/mois</li>
-            </ul>
-            <button class="bill-btn bill-btn--free" disabled>Plan actuel</button>
-        </div>
-       <div class="bill-card">
-            <h2>🌑 Découverte</h2>
-            <div class="bill-price">Gratuit</div>
-            <ul>
-                <li>10 confirmations/jour</li>
                 <li>Mode Ombre + Copilote (SAMII propose, tu valides)</li>
                 <li>10 messages stratégie SAMII/mois</li>
                 <li>Suivi de colis basique</li>
@@ -104,6 +94,7 @@ router.get("/", requireAuth, (req, res) => {
             <button class="bill-btn" data-plan="pro">S'abonner</button>
         </div>
     </div>
+    
 </div>
 <script>
 document.querySelectorAll(".bill-btn[data-plan]").forEach(btn => {
