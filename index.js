@@ -100,6 +100,7 @@ app.use("/register", require("./routes/register"));
 app.use("/hub",       require("./routes/hub"));
 app.use("/workspace", require("./routes/workspace"));
 app.use("/dashboard", requireAuth, require("./routes/dashboard"));
+app.use(requireAuth, require("./routes/tools"));
 app.use("/profile",   requireAuth, require("./routes/profile"));
 app.use("/settings",  requireAuth, require("./routes/settings"));
 app.use("/ads",       requireAuth, require("./routes/ads"));
