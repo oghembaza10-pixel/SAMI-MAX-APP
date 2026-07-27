@@ -27,7 +27,14 @@ const PAYS_DEVISE = {
     autre: { label: "Autre", devise: "" },
 };
 
-router.get("/create", requireAuth, (req, res) => {
+router.get("/create", requireAuth, async (req, res) => {
+    const existing = await workspaceService.getByOwner(req.session.email);
+    if (existing.length > 0) {
+        req.session.workspaceId = existing[0].workspaceId;
+        req.session.metier      = existing[0].metier;
+        return req.session.save(() => res.redirect("/qg"));
+    }
+
     const metier = req.query.metier || "";
     const paysOptions = Object.entries(PAYS_DEVISE)
         .map(([code, p]) => `<option value="${code}" data-devise="${p.devise}">${p.label}</option>`)
