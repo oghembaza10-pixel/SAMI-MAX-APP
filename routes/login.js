@@ -122,7 +122,7 @@ router.post("/", async (req, res) => {
 
         // ── ✅ Aller chercher le VRAI workspace de la personne ─
         const workspaces = await workspaceService.getByOwner(email);
-        console.log("🔍 DEBUG login — email:", email, "| workspaces trouvés:", JSON.stringify(workspaces));
+        
         const workspace  = workspaces[0] || null;
 
         req.session.regenerate((err) => {
