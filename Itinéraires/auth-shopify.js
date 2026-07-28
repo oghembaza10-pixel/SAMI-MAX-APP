@@ -1,7 +1,10 @@
 // ==========================================================================
-// OG EMPIRE — CONNEXION OAUTH SHOPIFY (multi-boutiques) V5
+// OG EMPIRE — CONNEXION OAUTH SHOPIFY (multi-boutiques) V6
 // ==========================================================================
-
+// V6 : requireAuth ajouté sur les 2 routes (il faut être connecté à SAMII
+// AVANT de connecter Shopify) + suppression de session.regenerate() qui
+// détruisait la session existante (et son email) à chaque connexion.
+// ==========================================================================
 const express = require("express");
 const axios = require("axios");
 const crypto = require("crypto");
@@ -27,6 +30,11 @@ const SCOPES = [
 ].join(",");
 
 const stateStore = new Map();
+
+function requireAuth(req, res, next) {
+    if (!req.session?.loggedIn) return res.redirect("/login");
+    next();
+}
 
 function verifyHmac(query) {
     const { hmac, signature, ...rest } = query;
@@ -175,7 +183,7 @@ async function registerWebhooks(shop, accessToken) {
     }
 }
 
-router.get("/auth/shopify", (req, res) => {
+router.get("/auth/shopify", requireAuth, (req, res) => {
     const { shop } = req.query;
     if (!shop || !shop.match(/^[a-zA-Z0-9-]+\.myshopify\.com$/)) {
         return res.status(400).send('Paramètre "shop" manquant ou invalide.');
@@ -186,7 +194,7 @@ router.get("/auth/shopify", (req, res) => {
     res.redirect(installUrl);
 });
 
-router.get("/auth/shopify/callback", async (req, res) => {
+router.get("/auth/shopify/callback", requireAuth, async (req, res) => {
     const { shop, code, state } = req.query;
     if (!shop || !code) return res.status(400).send("Paramètres manquants.");
 
@@ -207,19 +215,15 @@ router.get("/auth/shopify/callback", async (req, res) => {
 
         await orchestrator.process({ type: E.SHOP_CONNECTED, shop, payload: { accessToken: tokenData.access_token, scopes: SCOPES } });
 
-        req.session.regenerate((err) => {
-            if (err) { console.error("❌ Session regenerate :", err.message); return res.status(500).send("Erreur session."); }
+        req.session.shop = shop;
+        req.session.boutiqueId = boutique.id;
+        req.session.workspaceId = boutique.workspaceId;
 
-            req.session.loggedIn = true;
-            req.session.shop = shop;
-            req.session.boutiqueId = boutique.id;
-            req.session.workspaceId = boutique.workspaceId;
-
-            req.session.save((err) => {
-                if (err) { console.error("❌ Session save :", err.message); return res.status(500).send("Erreur session."); }
-                return res.redirect("/qg");
-            });
+        req.session.save((err) => {
+            if (err) { console.error("❌ Session save :", err.message); return res.status(500).send("Erreur session."); }
+            return res.redirect("/qg");
         });
+
     } catch (err) {
         console.error("❌ Erreur OAuth:", err.response?.data || err.message);
         res.status(500).send("Erreur connexion Shopify. Vérifie les logs.");
