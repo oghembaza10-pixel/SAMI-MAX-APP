@@ -142,8 +142,9 @@ router.get("/instagram", requireAuth, (req, res) => {
 // ── GET /connect/telegram ─────────────────────────────
 router.get("/telegram", requireAuth, (req, res) => {
     res.render("connect-telegram", {
-        workspaceId : req.session?.workspaceId || "",
-        error       : null,
+        workspaceId    : req.session?.workspaceId || "",
+        telegramChatId : "",
+        error          : null,
     });
 });
 
@@ -154,10 +155,12 @@ router.post("/telegram", requireAuth, async (req, res) => {
         if (!workspaceId) return res.redirect("/hub");
 
         const { chatId } = req.body;
+
         if (!chatId || !chatId.trim()) {
             return res.render("connect-telegram", {
                 workspaceId,
-                error: "Entre ton Chat ID Telegram.",
+                telegramChatId : "",
+                error          : "Entre ton Chat ID Telegram.",
             });
         }
 
@@ -167,16 +170,15 @@ router.post("/telegram", requireAuth, async (req, res) => {
         });
 
         res.redirect("/connect/tools");
-
     } catch (err) {
         console.error("❌ POST /connect/telegram :", err);
         res.render("connect-telegram", {
-            workspaceId : req.session?.workspaceId || "",
-            error       : "Erreur interne. Réessayez.",
+            workspaceId    : req.session?.workspaceId || "",
+            telegramChatId : "",
+            error          : "Erreur interne. Réessayez.",
         });
     }
 });
-
 // ── GET /connect/tools/continue → QG ─────────────────
 router.get("/tools/continue", requireAuth, (req, res) => {
     if (!req.session?.workspaceId) return res.redirect("/hub");
