@@ -1,9 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — CONNEXION OAUTH SHOPIFY (multi-boutiques) V6
-// ==========================================================================
-// V6 : requireAuth ajouté sur les 2 routes (il faut être connecté à SAMII
-// AVANT de connecter Shopify) + suppression de session.regenerate() qui
-// détruisait la session existante (et son email) à chaque connexion.
+// OG EMPIRE — CONNEXION OAUTH SHOPIFY (multi-boutiques) V7
 // ==========================================================================
 const express = require("express");
 const axios = require("axios");
@@ -92,7 +88,7 @@ async function getFreshAccessToken(shop) {
     return refreshed.access_token;
 }
 
-async function upsertBoutique(shop, tokenData, shopInfo) {
+async function upsertBoutique(shop, tokenData, shopInfo, currentUserEmail) {
     const headers = airtableHeaders();
     const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}?filterByFormula={shop_url}="${shop}"`;
     const search = await axios.get(searchUrl, { headers });
@@ -103,10 +99,18 @@ async function upsertBoutique(shop, tokenData, shopInfo) {
 
     let workspaceId = record?.fields?.workspace_id || null;
 
+    if (workspaceId) {
+        const existingWorkspace = await workspaceService.getById(workspaceId);
+        if (!existingWorkspace || existingWorkspace.owner !== currentUserEmail) {
+            console.log(`⚠️ Workspace existant (${workspaceId}) n'appartient pas à ${currentUserEmail} — création d'un nouveau.`);
+            workspaceId = null;
+        }
+    }
+
     if (!workspaceId) {
         const workspace = await workspaceService.create({
             workspaceId: `WS-${crypto.randomUUID()}`,
-            owner: shopInfo?.email || "",
+            owner: currentUserEmail || shopInfo?.email || "",
             nom: shopInfo?.name || shop,
             metier: "ecommerce",
             pays: shopInfo?.country || "DZ",
@@ -209,7 +213,7 @@ router.get("/auth/shopify/callback", requireAuth, async (req, res) => {
         const shopRes = await axios.get(`https://${shop}/admin/api/2026-07/shop.json`, { headers: { "X-Shopify-Access-Token": tokenData.access_token } });
         const shopInfo = shopRes.data.shop;
 
-        const boutique = await upsertBoutique(shop, tokenData, shopInfo);
+        const boutique = await upsertBoutique(shop, tokenData, shopInfo, req.session.email);
         await upsertUser(shop, shopInfo.email);
         await registerWebhooks(shop, tokenData.access_token);
 
