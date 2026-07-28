@@ -1,3 +1,6 @@
+// ======================================================
+// SAMII OS — Connector Routes
+// ======================================================
 const express          = require("express");
 const router           = express.Router();
 const connectorService = require("../services/connectorService");
@@ -32,7 +35,13 @@ router.get("/tools", requireAuth, async (req, res) => {
         const workspace = await workspaceService.getById(workspaceId);
         if (!workspace) return res.redirect("/hub");
         const connecteurs = await connectorService.getByWorkspace(workspaceId);
-        res.render("connect-tools", { workspaceId, nom: workspace.nom || "", tools: TOOLS, connecteurs, error: null });
+        res.render("connect-tools", {
+            workspaceId,
+            nom       : workspace.nom || "",
+            tools     : TOOLS,
+            connecteurs,
+            error     : null,
+        });
     } catch (err) {
         console.error("❌ GET /connect/tools :", err);
         res.redirect("/hub");
@@ -71,22 +80,35 @@ router.post("/tools/disconnect", requireAuth, async (req, res) => {
 
 router.get("/shopify", requireAuth, (req, res) => {
     const shop = req.query.shop || req.session?.shop || "";
-    if (!shop) return res.render("connect-shopify", { workspaceId: req.session?.workspaceId || "", error: null });
+    if (!shop) {
+        return res.render("connect-shopify", {
+            workspaceId : req.session?.workspaceId || "",
+            error       : null,
+        });
+    }
     res.redirect(`/auth/shopify?shop=${encodeURIComponent(shop)}`);
 });
 
 router.post("/shopify", requireAuth, (req, res) => {
     const { shop } = req.body;
     if (!shop || !shop.trim()) {
-        return res.render("connect-shopify", { workspaceId: req.session?.workspaceId || "", error: "Entre l'URL de ta boutique Shopify." });
+        return res.render("connect-shopify", {
+            workspaceId : req.session?.workspaceId || "",
+            error       : "Entre l'URL de ta boutique Shopify.",
+        });
     }
     let shopUrl = shop.trim().toLowerCase();
     if (!shopUrl.includes(".myshopify.com")) shopUrl += ".myshopify.com";
     res.redirect(`/auth/shopify?shop=${encodeURIComponent(shopUrl)}`);
 });
 
-router.get("/facebook", requireAuth, (req, res) => res.redirect("/auth/meta"));
-router.get("/instagram", requireAuth, (req, res) => res.redirect("/auth/meta"));
+router.get("/facebook", requireAuth, (req, res) => {
+    res.redirect("/auth/meta");
+});
+
+router.get("/instagram", requireAuth, (req, res) => {
+    res.redirect("/auth/meta");
+});
 
 router.get("/telegram", requireAuth, async (req, res) => {
     const workspaceId = req.session?.workspaceId || "";
@@ -106,25 +128,49 @@ router.get("/telegram", requireAuth, async (req, res) => {
         console.error("❌ GET /connect/telegram (lecture) :", err.message);
     }
 
-    res.render("connect-telegram", { workspaceId, shop: req.session?.shop || "", telegramChatId, telegramActif, error: null });
+    res.render("connect-telegram", {
+        workspaceId,
+        shop           : req.session?.shop || "",
+        telegramChatId,
+        telegramActif,
+        error          : null,
+    });
 });
 
 router.post("/telegram", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
         if (!workspaceId) return res.redirect("/hub");
+
         const chatId = req.body.telegram_chat_id;
         const actif  = req.body.telegram_actif === "true";
 
         if (!chatId || !chatId.trim()) {
-            return res.render("connect-telegram", { workspaceId, shop: req.session?.shop || "", telegramChatId: "", telegramActif: false, error: "Entre ton Chat ID Telegram." });
+            return res.render("connect-telegram", {
+                workspaceId,
+                shop           : req.session?.shop || "",
+                telegramChatId : "",
+                telegramActif  : false,
+                error          : "Entre ton Chat ID Telegram.",
+            });
         }
 
-        await connectorService.save(workspaceId, "telegram", { chatId: chatId.trim(), actif, connectedAt: new Date().toISOString() });
+        await connectorService.save(workspaceId, "telegram", {
+            chatId      : chatId.trim(),
+            actif,
+            connectedAt : new Date().toISOString(),
+        });
+
         res.redirect("/connect/tools");
     } catch (err) {
         console.error("❌ POST /connect/telegram :", err);
-        res.render("connect-telegram", { workspaceId: req.session?.workspaceId || "", shop: req.session?.shop || "", telegramChatId: "", telegramActif: false, error: "Erreur interne. Réessayez." });
+        res.render("connect-telegram", {
+            workspaceId    : req.session?.workspaceId || "",
+            shop           : req.session?.shop || "",
+            telegramChatId : "",
+            telegramActif  : false,
+            error          : "Erreur interne. Réessayez.",
+        });
     }
 });
 
@@ -136,7 +182,10 @@ router.get("/tools/continue", requireAuth, (req, res) => {
 const COMING_SOON = ["whatsapp", "gmail", "google", "stripe", "paypal", "discord", "youtube", "dahabia", "ccp", "autre"];
 COMING_SOON.forEach(tool => {
     router.get(`/${tool}`, requireAuth, (req, res) => {
-        res.render("connect-soon", { tool: TOOLS.find(t => t.id === tool) || { label: tool, color: "#718096" }, workspaceId: req.session?.workspaceId || "" });
+        res.render("connect-soon", {
+            tool       : TOOLS.find(t => t.id === tool) || { label: tool, color: "#718096" },
+            workspaceId: req.session?.workspaceId || "",
+        });
     });
 });
 
