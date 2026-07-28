@@ -1,31 +1,18 @@
-// ======================================================
-// SAMII OS — Connector Routes
-// ======================================================
-// Gestion des connexions outils par workspace.
-// OAuth : Shopify, Meta (Facebook/Instagram)
-// Simple : Telegram (bot)
-// Bientôt : Google, Stripe, Discord, WhatsApp, etc.
-// ======================================================
-
 const express          = require("express");
 const router           = express.Router();
 const connectorService = require("../services/connectorService");
 const workspaceService = require("../services/workspaceService");
 
-// ── Auth middleware ───────────────────────────────────
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
 }
 
-// ── Liste des outils ──────────────────────────────────
 const TOOLS = [
-    // ✅ Disponibles V1
     { id: "shopify",   label: "Shopify",           icon: "shopping-bag",   color: "#95BF47", available: true  },
     { id: "facebook",  label: "Facebook",          icon: "facebook",       color: "#1877F2", available: true  },
     { id: "instagram", label: "Instagram",         icon: "instagram",      color: "#E1306C", available: true  },
     { id: "telegram",  label: "Telegram",          icon: "send",           color: "#229ED9", available: true  },
-    // ⏳ Bientôt disponibles
     { id: "whatsapp",  label: "WhatsApp Business", icon: "message-circle", color: "#25D366", available: false },
     { id: "gmail",     label: "Gmail",             icon: "mail",           color: "#EA4335", available: false },
     { id: "google",    label: "Google",            icon: "chrome",         color: "#4285F4", available: false },
@@ -38,108 +25,69 @@ const TOOLS = [
     { id: "autre",     label: "Autre outil",       icon: "plug",           color: "#718096", available: false },
 ];
 
-// ── GET /connect/tools ────────────────────────────────
 router.get("/tools", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
         if (!workspaceId) return res.redirect("/hub");
-
         const workspace = await workspaceService.getById(workspaceId);
         if (!workspace) return res.redirect("/hub");
-
         const connecteurs = await connectorService.getByWorkspace(workspaceId);
-
-        res.render("connect-tools", {
-            workspaceId,
-            nom       : workspace.nom || "",
-            tools     : TOOLS,
-            connecteurs,
-            error     : null,
-        });
-
+        res.render("connect-tools", { workspaceId, nom: workspace.nom || "", tools: TOOLS, connecteurs, error: null });
     } catch (err) {
         console.error("❌ GET /connect/tools :", err);
         res.redirect("/hub");
     }
 });
 
-// ── POST /connect/tools/save ──────────────────────────
 router.post("/tools/save", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
         if (!workspaceId) return res.json({ success: false, error: "Session expirée." });
-
         const { toolId, value } = req.body;
         if (!toolId) return res.json({ success: false, error: "Outil manquant." });
-
         const result = await connectorService.save(workspaceId, toolId, value || {});
         if (!result) return res.json({ success: false, error: "Erreur Airtable." });
-
         res.json({ success: true, toolId, connected: true });
-
     } catch (err) {
         console.error("❌ POST /connect/tools/save :", err);
         res.json({ success: false, error: "Erreur interne." });
     }
 });
 
-// ── POST /connect/tools/disconnect ───────────────────
 router.post("/tools/disconnect", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
         if (!workspaceId) return res.json({ success: false, error: "Session expirée." });
-
         const { toolId } = req.body;
         if (!toolId) return res.json({ success: false, error: "Outil manquant." });
-
         const result = await connectorService.disconnect(workspaceId, toolId);
         if (!result) return res.json({ success: false, error: "Connecteur introuvable." });
-
         res.json({ success: true, toolId, connected: false });
-
     } catch (err) {
         console.error("❌ POST /connect/tools/disconnect :", err);
         res.json({ success: false, error: "Erreur interne." });
     }
 });
 
-// ── GET /connect/shopify ──────────────────────────────
 router.get("/shopify", requireAuth, (req, res) => {
     const shop = req.query.shop || req.session?.shop || "";
-    if (!shop) {
-        return res.render("connect-shopify", {
-            workspaceId : req.session?.workspaceId || "",
-            error       : null,
-        });
-    }
+    if (!shop) return res.render("connect-shopify", { workspaceId: req.session?.workspaceId || "", error: null });
     res.redirect(`/auth/shopify?shop=${encodeURIComponent(shop)}`);
 });
 
-// ── POST /connect/shopify ─────────────────────────────
 router.post("/shopify", requireAuth, (req, res) => {
     const { shop } = req.body;
     if (!shop || !shop.trim()) {
-        return res.render("connect-shopify", {
-            workspaceId : req.session?.workspaceId || "",
-            error       : "Entre l'URL de ta boutique Shopify.",
-        });
+        return res.render("connect-shopify", { workspaceId: req.session?.workspaceId || "", error: "Entre l'URL de ta boutique Shopify." });
     }
     let shopUrl = shop.trim().toLowerCase();
     if (!shopUrl.includes(".myshopify.com")) shopUrl += ".myshopify.com";
     res.redirect(`/auth/shopify?shop=${encodeURIComponent(shopUrl)}`);
 });
 
-// ── GET /connect/facebook ─────────────────────────────
-router.get("/facebook", requireAuth, (req, res) => {
-    res.redirect("/auth/meta");
-});
+router.get("/facebook", requireAuth, (req, res) => res.redirect("/auth/meta"));
+router.get("/instagram", requireAuth, (req, res) => res.redirect("/auth/meta"));
 
-// ── GET /connect/instagram ────────────────────────────
-router.get("/instagram", requireAuth, (req, res) => {
-    res.redirect("/auth/meta");
-});
-
-// ── GET /connect/telegram ─────────────────────────────
 router.get("/telegram", requireAuth, async (req, res) => {
     const workspaceId = req.session?.workspaceId || "";
     let telegramChatId = "";
@@ -147,84 +95,48 @@ router.get("/telegram", requireAuth, async (req, res) => {
 
     try {
         if (workspaceId) {
-            const r = await axios.get(airtable(TABLE_CONNECTEURS), {
-                headers: airtableHeaders(),
-                params : {
-                    filterByFormula: `AND({workspace_id}="${workspaceId}",{type}="telegram")`,
-                    maxRecords: 1,
-                },
-            });
-            const rec = r.data.records[0];
-            if (rec) {
-                telegramChatId = rec.fields?.identifiant || "";
-                telegramActif  = rec.fields?.actif === true;
+            const connecteurs = await connectorService.getByWorkspace(workspaceId);
+            const tg = connecteurs?.telegram;
+            if (tg) {
+                telegramChatId = tg.chatId || tg.identifiant || "";
+                telegramActif  = tg.actif === true;
             }
         }
     } catch (err) {
         console.error("❌ GET /connect/telegram (lecture) :", err.message);
     }
 
-    res.render("connect-telegram", {
-        workspaceId,
-        shop           : req.session?.shop || "",
-        telegramChatId,
-        telegramActif,
-        error          : null,
-    });
+    res.render("connect-telegram", { workspaceId, shop: req.session?.shop || "", telegramChatId, telegramActif, error: null });
 });
 
-// ── POST /connect/telegram ────────────────────────────
 router.post("/telegram", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
         if (!workspaceId) return res.redirect("/hub");
-
         const chatId = req.body.telegram_chat_id;
         const actif  = req.body.telegram_actif === "true";
 
         if (!chatId || !chatId.trim()) {
-            return res.render("connect-telegram", {
-                workspaceId,
-                shop           : req.session?.shop || "",
-                telegramChatId : "",
-                telegramActif  : false,
-                error          : "Entre ton Chat ID Telegram.",
-            });
+            return res.render("connect-telegram", { workspaceId, shop: req.session?.shop || "", telegramChatId: "", telegramActif: false, error: "Entre ton Chat ID Telegram." });
         }
 
-        await connectorService.save(workspaceId, "telegram", {
-            chatId      : chatId.trim(),
-            actif,
-            connectedAt : new Date().toISOString(),
-        });
-
+        await connectorService.save(workspaceId, "telegram", { chatId: chatId.trim(), actif, connectedAt: new Date().toISOString() });
         res.redirect("/connect/tools");
     } catch (err) {
         console.error("❌ POST /connect/telegram :", err);
-        res.render("connect-telegram", {
-            workspaceId    : req.session?.workspaceId || "",
-            shop           : req.session?.shop || "",
-            telegramChatId : "",
-            telegramActif  : false,
-            error          : "Erreur interne. Réessayez.",
-        });
+        res.render("connect-telegram", { workspaceId: req.session?.workspaceId || "", shop: req.session?.shop || "", telegramChatId: "", telegramActif: false, error: "Erreur interne. Réessayez." });
     }
 });
-// ── GET /connect/tools/continue → QG ─────────────────
+
 router.get("/tools/continue", requireAuth, (req, res) => {
     if (!req.session?.workspaceId) return res.redirect("/hub");
     res.redirect("/qg");
 });
 
-// ── Routes "Bientôt disponible" ───────────────────────
 const COMING_SOON = ["whatsapp", "gmail", "google", "stripe", "paypal", "discord", "youtube", "dahabia", "ccp", "autre"];
-
 COMING_SOON.forEach(tool => {
     router.get(`/${tool}`, requireAuth, (req, res) => {
-        res.render("connect-soon", {
-            tool       : TOOLS.find(t => t.id === tool) || { label: tool, color: "#718096" },
-            workspaceId: req.session?.workspaceId || "",
-        });
+        res.render("connect-soon", { tool: TOOLS.find(t => t.id === tool) || { label: tool, color: "#718096" }, workspaceId: req.session?.workspaceId || "" });
     });
 });
 
