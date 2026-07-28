@@ -139,7 +139,7 @@ router.post("/", async (req, res) => {
             } else {
                 req.session.workspaceId = null;
             }
-
+          console.log("🔍 SESSION APRÈS SAVE :", JSON.stringify(req.session));
             res.json({
                 success : true,
                 redirect: workspace ? "/qg" : "/hub",
