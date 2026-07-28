@@ -11,8 +11,13 @@ const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
 
 // ── GET /register — accepte ?metier=X depuis le Hub ───────────
 router.get("/", (req, res) => {
-    const metier = req.query.metier || "";
+    // ✅ Déjà connecté ? On saute direct à la création de workspace, pas de nouveau compte à créer
+    if (req.session?.loggedIn) {
+        const metier = req.query.metier || "";
+        return res.redirect(`/workspace/create${metier ? `?metier=${metier}` : ""}`);
+    }
 
+    const metier = req.query.metier || "";
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
