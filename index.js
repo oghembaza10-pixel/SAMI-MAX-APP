@@ -1,11 +1,11 @@
 // ======================================================
 // SAMII OS V1 — Point d'entrée
 // ======================================================
-
 const path             = require("path");
 const express          = require("express");
 const session          = require("express-session");
-const MemoryStore      = require("memorystore")(session);
+const pgSession         = require("connect-pg-simple")(session);
+const { Pool }          = require("pg");
 const http             = require("http");
 const { Server }       = require("socket.io");
 const CONFIG           = require("./config");
@@ -21,26 +21,30 @@ socketService.init(io);
 // ── MIDDLEWARES ───────────────────────────────────────
 app.set("trust proxy", 1);
 
-// Webhook Stripe (body brut pour la vérification de signature)
 app.use("/billing/webhook", express.raw({ type: "application/json" }));
-
-// Webhooks (Shopify, conformité, etc.)
 app.use("/webhook", express.raw({ type: "application/json" }));
 
-// Middlewares globaux
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
-
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// ── SESSION ───────────────────────────────────────────
+// ── SESSION (Supabase/Postgres — persiste aux redéploiements) ──
+const pgPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+});
+
 app.use(session({
+    store: new pgSession({
+        pool                : pgPool,
+        tableName           : "session",
+        createTableIfMissing: true,
+    }),
     secret           : process.env.SESSION_SECRET || "samii-secret-v1",
     resave           : false,
     saveUninitialized: false,
-    store            : new MemoryStore({ checkPeriod: 86400000 }),
     cookie           : {
         httpOnly : true,
         sameSite : "lax",
@@ -104,8 +108,8 @@ app.use(requireAuth, require("./routes/tools"));
 app.use("/profile",   requireAuth, require("./routes/profile"));
 app.use("/settings",  requireAuth, require("./routes/settings"));
 app.use("/ads",       requireAuth, require("./routes/ads"));
-app.use("/coffre", requireAuth, require("./routes/coffre"));
-app.use("/arsenal", requireAuth, require("./routes/arsenal"));
+app.use("/coffre",    requireAuth, require("./routes/coffre"));
+app.use("/arsenal",   requireAuth, require("./routes/arsenal"));
 app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 app.use("/connect",   require("./routes/connector"));
 
@@ -118,8 +122,6 @@ app.use("/marketplace", require("./routes/marketplace"));
 app.use("/drivers",     require("./routes/drivers"));
 app.use("/api",         require("./routes/api"));
 
-// Ancienne route "/inscription" → tout redirigé vers le vrai système
-// unique (routes/workspace.js), pour ne pas avoir 2 chemins différents.
 app.get("/inscription", requireAuth, (req, res) => {
     const metier = req.query.metier || "";
     res.redirect(`/workspace/create${metier ? `?metier=${metier}` : ""}`);
@@ -164,8 +166,6 @@ app.get("/qg", requireAuth, async (req, res) => {
     }
 });
 
-// Ancien lien "/qg/:metier" (avant qu'on ait un vrai système de
-// workspace) → redirige simplement vers le vrai QG.
 app.get("/qg/:metier", requireAuth, (req, res) => {
     if (req.session?.workspaceId) return res.redirect("/qg");
     res.redirect("/hub");
@@ -205,6 +205,7 @@ io.on("connection", (socket) => {
 if (!CONFIG.AIRTABLE.API_KEY) console.error("❌ AIRTABLE_API_KEY manquante");
 if (!CONFIG.AIRTABLE.BASE_ID) console.error("❌ AIRTABLE_BASE_ID manquant");
 if (!CONFIG.GEMINI.API_KEY)   console.error("❌ GEMINI_API_KEY manquante");
+if (!process.env.DATABASE_URL) console.error("❌ DATABASE_URL manquante (sessions Supabase)");
 
 // ── TEST TELEGRAM ─────────────────────────────────────
 app.get("/test-telegram", async (req, res) => {
