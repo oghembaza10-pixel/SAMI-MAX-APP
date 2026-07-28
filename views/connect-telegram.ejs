@@ -1,71 +1,52 @@
-// ── GET /connect/telegram ─────────────────────────────
-router.get("/telegram", requireAuth, async (req, res) => {
-    const workspaceId = req.session?.workspaceId || "";
-    let telegramChatId = "";
-    let telegramActif  = false;
-
-    try {
-        if (workspaceId) {
-            const r = await axios.get(airtable(TABLE_CONNECTEURS), {
-                headers: airtableHeaders(),
-                params : {
-                    filterByFormula: `AND({workspace_id}="${workspaceId}",{type}="telegram")`,
-                    maxRecords: 1,
-                },
-            });
-            const rec = r.data.records[0];
-            if (rec) {
-                telegramChatId = rec.fields?.identifiant || "";
-                telegramActif  = rec.fields?.actif === true;
-            }
-        }
-    } catch (err) {
-        console.error("❌ GET /connect/telegram (lecture) :", err.message);
-    }
-
-    res.render("connect-telegram", {
-        workspaceId,
-        shop           : req.session?.shop || "",
-        telegramChatId,
-        telegramActif,
-        error          : null,
-    });
-});
-
-// ── POST /connect/telegram ────────────────────────────
-router.post("/telegram", requireAuth, async (req, res) => {
-    try {
-        const workspaceId = req.session?.workspaceId;
-        if (!workspaceId) return res.redirect("/hub");
-
-        const chatId = req.body.telegram_chat_id;
-        const actif  = req.body.telegram_actif === "true";
-
-        if (!chatId || !chatId.trim()) {
-            return res.render("connect-telegram", {
-                workspaceId,
-                shop           : req.session?.shop || "",
-                telegramChatId : "",
-                telegramActif  : false,
-                error          : "Entre ton Chat ID Telegram.",
-            });
-        }
-
-        await connectorService.save(workspaceId, "telegram", {
-            chatId      : chatId.trim(),
-            actif,
-            connectedAt : new Date().toISOString(),
-        });
-
-        res.redirect("/connect/tools");
-    } catch (err) {
-        console.error("❌ POST /connect/telegram :", err);
-        res.render("connect-telegram", {
-            workspaceId    : req.session?.workspaceId || "",
-            shop           : req.session?.shop || "",
-            telegramChatId : "",
-            telegramActif  : false,
-            error          : "Erreur interne. Réessayez.",
-        });
-    }
-});
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Connecter Telegram — OG Empire</title>
+  <link rel="stylesheet" href="/css/hub-premium.css">
+</head>
+<body>
+<div class="og-capital">
+  <%- include("./partials/sidebar") %>
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+    <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
+      <div style="text-align:center;margin-bottom:30px;">
+        <div style="font-size:3rem;">✈️</div>
+        <h2 style="color:#fff;margin-top:10px;">Connecter Telegram</h2>
+        <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+          Ouvre <a href="https://t.me/SAMII_OGBot" target="_blank" style="color:#0088cc;">@SAMII_OGBot</a>
+          et tape <strong style="color:#fff;">/start</strong> pour obtenir ton Chat ID
+        </p>
+      </div>
+      <form method="POST" action="/connect/telegram">
+        <input type="hidden" name="shop" value="<%= shop %>">
+        <div style="margin-bottom:16px;">
+          <label style="color:#888;font-size:0.82rem;display:block;margin-bottom:6px;">Chat ID Telegram</label>
+          <input
+            type="text"
+            name="telegram_chat_id"
+            value="<%= telegramChatId %>"
+            placeholder="ex: 123456789"
+            style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:12px 16px;color:#fff;font-size:0.9rem;outline:none;"
+          >
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+          <span style="color:#888;font-size:0.85rem;">Activer les notifications</span>
+          <label style="position:relative;width:44px;height:24px;">
+            <input type="checkbox" name="telegram_actif" value="true" <%= telegramActif ? "checked" : "" %>
+              style="opacity:0;width:0;height:0;">
+            <span style="position:absolute;inset:0;background:<%= telegramActif ? '#0072ff' : '#333' %>;border-radius:24px;cursor:pointer;"></span>
+          </label>
+        </div>
+        <button type="submit"
+          style="width:100%;padding:13px;background:linear-gradient(135deg,#00c6ff,#0072ff);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
+          💾 Sauvegarder
+        </button>
+      </form>
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
+</body>
+</html>
