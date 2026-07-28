@@ -140,10 +140,35 @@ router.get("/instagram", requireAuth, (req, res) => {
 });
 
 // ── GET /connect/telegram ─────────────────────────────
-router.get("/telegram", requireAuth, (req, res) => {
+router.get("/telegram", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId || "";
+    let telegramChatId = "";
+    let telegramActif  = false;
+
+    try {
+        if (workspaceId) {
+            const r = await axios.get(airtable(TABLE_CONNECTEURS), {
+                headers: airtableHeaders(),
+                params : {
+                    filterByFormula: `AND({workspace_id}="${workspaceId}",{type}="telegram")`,
+                    maxRecords: 1,
+                },
+            });
+            const rec = r.data.records[0];
+            if (rec) {
+                telegramChatId = rec.fields?.identifiant || "";
+                telegramActif  = rec.fields?.actif === true;
+            }
+        }
+    } catch (err) {
+        console.error("❌ GET /connect/telegram (lecture) :", err.message);
+    }
+
     res.render("connect-telegram", {
-        workspaceId    : req.session?.workspaceId || "",
-        telegramChatId : "",
+        workspaceId,
+        shop           : req.session?.shop || "",
+        telegramChatId,
+        telegramActif,
         error          : null,
     });
 });
@@ -154,18 +179,22 @@ router.post("/telegram", requireAuth, async (req, res) => {
         const workspaceId = req.session?.workspaceId;
         if (!workspaceId) return res.redirect("/hub");
 
-        const { chatId } = req.body;
+        const chatId = req.body.telegram_chat_id;
+        const actif  = req.body.telegram_actif === "true";
 
         if (!chatId || !chatId.trim()) {
             return res.render("connect-telegram", {
                 workspaceId,
+                shop           : req.session?.shop || "",
                 telegramChatId : "",
+                telegramActif  : false,
                 error          : "Entre ton Chat ID Telegram.",
             });
         }
 
         await connectorService.save(workspaceId, "telegram", {
             chatId      : chatId.trim(),
+            actif,
             connectedAt : new Date().toISOString(),
         });
 
@@ -174,7 +203,9 @@ router.post("/telegram", requireAuth, async (req, res) => {
         console.error("❌ POST /connect/telegram :", err);
         res.render("connect-telegram", {
             workspaceId    : req.session?.workspaceId || "",
+            shop           : req.session?.shop || "",
             telegramChatId : "",
+            telegramActif  : false,
             error          : "Erreur interne. Réessayez.",
         });
     }
