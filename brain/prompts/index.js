@@ -2,7 +2,7 @@
 // SAMII OS — SYSTEM PROMPT V3
 // Fusionne la vraie personnalité SAMII + les lois souveraines
 // ======================================================
-const PERSONALITY = require("./personality");
+const PERSONALITY = require("../personality");
 const { getTables } = require("./sovereign/tables");
 
 function SAMII_PROMPT(message, context = {}) {
