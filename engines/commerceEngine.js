@@ -70,7 +70,19 @@ class CommerceEngine {
             const { client, phone, address } = this.getClientData(order);
 
             console.log(`🛒 Nouvelle commande #${order.order_number} — ${shop}`);
+         // ── ✅ BOUCLIER ANTI-FRAUDE : détection de commandes à risque ──
+            const montantCommande = parseFloat(order.total_price || 0);
+            const SEUIL_RISQUE = 50000; // ajuste selon ta devise/marché
+            let alerteFraude = null;
 
+            if (montantCommande > SEUIL_RISQUE) {
+                alerteFraude = `Montant élevé (${montantCommande} DZD)`;
+            }
+            if (order.customer?.orders_count === 0 && montantCommande > SEUIL_RISQUE / 2) {
+                alerteFraude = alerteFraude
+                    ? `${alerteFraude} + Premier achat`
+                    : "Premier achat avec montant important";
+            }
             const workspaceId = await this.getWorkspaceIdForShop(shop);
 
             await airtable.create("COMMANDES", {
@@ -98,7 +110,21 @@ class CommerceEngine {
                 `📊 *Statut :* ${order.financial_status}\n\n` +
                 `_SAMII gère la suite automatiquement._`;
 
-            await this.notifyShop(shop, { whatsapp: phone }, message);
+           await this.notifyShop(shop, { whatsapp: phone }, message);
+
+            // ── Alerte séparée si risque détecté ──
+            if (alerteFraude) {
+                const alerteMsg =
+                    `🛡️ *SAMII — Bouclier Anti-Fraude*\n\n` +
+                    `⚠️ Commande #${order.order_number} signalée pour vérification.\n\n` +
+                    `👤 *Client :* ${client}\n` +
+                    `💰 *Montant :* ${order.total_price} DZD\n` +
+                    `🚩 *Raison :* ${alerteFraude}\n\n` +
+                    `_Vérifiez cette commande avant expédition._`;
+                await this.notifyShop(shop, { whatsapp: phone }, alerteMsg);
+                await airtable.log("fraude.alerte", `#${order.order_number} — ${alerteFraude}`, shop);
+            }
+
             socketService.emitToShop(shop, "nouvelle-commande", { id: order.order_number });
 
             return { success: true, shop, orderId: order.id };
@@ -108,7 +134,6 @@ class CommerceEngine {
             return { success: false, error: err.message };
         }
     }
-
     // =========================================================
     // COMMANDE MISE À JOUR
     // =========================================================
