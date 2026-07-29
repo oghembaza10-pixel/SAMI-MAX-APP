@@ -1,9 +1,7 @@
 // ==========================================================================
 // OG EMPIRE — SERVICE META (Facebook / Instagram / Ads) — MULTI-COMPTES
 // ==========================================================================
-
 const axios = require("axios");
-
 const GRAPH_VERSION = "v25.0";
 const BASE_URL = `https://graph.facebook.com/${GRAPH_VERSION}`;
 
@@ -38,6 +36,7 @@ async function createCampaign(creds, name, objective = "OUTCOME_TRAFFIC") {
             objective,
             status: "PAUSED",
             special_ad_categories: JSON.stringify([]),
+            is_adset_budget_sharing_enabled: false,
             access_token: creds.accessToken,
         },
     });
