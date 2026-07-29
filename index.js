@@ -83,7 +83,7 @@ registerScheduledJobs();
 // ══════════════════════════════════════════════════════
 app.use(require("./Itinéraires/auth-meta"));
 app.use(require("./Itinéraires/auth-shopify"));
-
+app.use(require("./Itinéraires/auth-woocommerce"));
 // ══════════════════════════════════════════════════════
 // ROUTES — Webhooks entrants
 // ══════════════════════════════════════════════════════
