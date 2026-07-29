@@ -134,6 +134,39 @@ class CommerceEngine {
             return { success: false, error: err.message };
         }
     }
+   // =========================================================
+    // SIRÈNE — PANIER ABANDONNÉ (checkout créé mais pas payé)
+    // =========================================================
+    async abandonedCheckout(event) {
+        try {
+            const checkout = event.payload;
+            const shop = event.shop;
+            const phone = checkout.shipping_address?.phone || checkout.phone || "";
+            const client = `${checkout.shipping_address?.first_name || ""} ${checkout.shipping_address?.last_name || ""}`.trim() || "cher client";
+
+            if (!phone) return { success: false, error: "Pas de téléphone." };
+
+            // ── Attendre 1h avant de relancer (évite de spammer trop tôt) ──
+            setTimeout(async () => {
+                try {
+                    const message =
+                        `👋 Bonjour ${client} !\n\n` +
+                        `Vous avez laissé des articles dans votre panier. 🛒\n\n` +
+                        `Besoin d'aide pour finaliser votre commande ? Répondez-nous, on est là !`;
+
+                    await this.notifyShop(shop, { whatsapp: phone }, message);
+                    await airtable.log("sirene.relance.envoyee", `Checkout ${checkout.id}`, shop);
+                } catch (err) {
+                    console.warn("⚠️ Sirène relance échouée :", err.message);
+                }
+            }, 60 * 60 * 1000); // 1h
+
+            return { success: true, shop };
+        } catch (err) {
+            console.error("❌ CommerceEngine.abandonedCheckout :", err.message);
+            return { success: false, error: err.message };
+        }
+    } 
     // =========================================================
     // COMMANDE MISE À JOUR
     // =========================================================
