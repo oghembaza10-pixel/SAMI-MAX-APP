@@ -162,7 +162,14 @@
                 </div>
             </div>
             <form class="samii-chat__form" id="samii-page-form">
+                <input type="file" id="samii-photo-input" accept="image/*" style="display:none;">
+                <button type="button" id="samii-photo-btn" aria-label="Envoyer une photo" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
+                    <i data-lucide="image"></i>
+                </button>
                 <input type="text" id="samii-page-input" data-i18n-placeholder="samii.chat.placeholder" placeholder="Parler à SAMII…" autocomplete="off">
+                <button type="button" id="samii-mic-btn" aria-label="Parler" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
+                    <i data-lucide="mic"></i>
+                </button>
                 <button type="submit" aria-label="Envoyer">
                     <i data-lucide="arrow-up"></i>
                 </button>
