@@ -1,3 +1,6 @@
+// ==========================================================================
+// SAMII OS — TELEGRAM WEBHOOK (marchands + leurs clients, pensé mobile)
+// ==========================================================================
 const express      = require("express");
 const axios        = require("axios");
 const CONFIG       = require("../config");
@@ -20,6 +23,61 @@ async function reply(chatId, text) {
     } catch (err) {
         console.error("❌ Telegram reply :", err.response?.data || err.message);
     }
+}
+
+async function linkClientToWorkspace(chatId, workspaceId) {
+    try {
+        const existing = await airtable.findOne("CONNECTEURS",
+            `AND({type}="telegram_client",SEARCH("${chatId}",{config}))`
+        );
+        if (existing) return;
+
+        await airtable.create("CONNECTEURS", {
+            workspace_id: workspaceId,
+            type        : "telegram_client",
+            config      : JSON.stringify({ chatId: String(chatId), linkedAt: new Date().toISOString() }),
+            actif       : true,
+        });
+        console.log(`🔗 Client ${chatId} lié au workspace ${workspaceId}`);
+    } catch (err) {
+        console.error("❌ linkClientToWorkspace :", err.message);
+    }
+}
+
+async function linkMerchantToWorkspace(chatId, workspaceId) {
+    try {
+        const existing = await airtable.findOne("CONNECTEURS",
+            `AND({type}="telegram",{workspace_id}="${workspaceId}")`
+        );
+        if (existing) {
+            await airtable.update("CONNECTEURS", existing.id, {
+                config: JSON.stringify({ chatId: String(chatId), connectedAt: new Date().toISOString() }),
+                actif : true,
+            });
+            return true;
+        }
+
+        await airtable.create("CONNECTEURS", {
+            workspace_id: workspaceId,
+            type        : "telegram",
+            config      : JSON.stringify({ chatId: String(chatId), connectedAt: new Date().toISOString() }),
+            actif       : true,
+        });
+        return true;
+    } catch (err) {
+        console.error("❌ linkMerchantToWorkspace :", err.message);
+        return false;
+    }
+}
+
+async function getClientWorkspace(chatId) {
+    try {
+        const record = await airtable.findOne("CONNECTEURS",
+            `AND({type}="telegram_client",SEARCH("${chatId}",{config}))`
+        );
+        if (!record) return "";
+        return record.fields?.workspace_id || "";
+    } catch { return ""; }
 }
 
 async function getWorkspaceByChatId(chatId) {
@@ -73,9 +131,14 @@ async function handleOrderFlow(chatId, text, name) {
     }
 
     if (step === "adresse") {
-        const orderId     = genOrderId();
-        const s           = memory.get(chatId);
-        const workspaceId = await getWorkspaceByChatId(chatId);
+        const orderId = genOrderId();
+        const s = memory.get(chatId);
+
+        let workspaceId = await getClientWorkspace(chatId);
+        if (!workspaceId) {
+            workspaceId = await getWorkspaceByChatId(chatId);
+        }
+
         const adminChatId = await getAdminChatId(workspaceId);
 
         console.log(`🛒 Création commande Telegram — orderId=${orderId}, workspaceId="${workspaceId}", chatId=${chatId}`);
@@ -110,8 +173,7 @@ async function handleOrderFlow(chatId, text, name) {
                     `👤 *Client :* ${s.name}\n` +
                     `📞 *Tél :* ${s.telephone}\n` +
                     `📦 *Produit :* ${s.produit}\n` +
-                    `📍 *Adresse :* ${text}\n` +
-                    `🏪 *Workspace :* ${workspaceId}`,
+                    `📍 *Adresse :* ${text}`,
                 reply_markup: {
                     inline_keyboard: [[
                         { text: "✅ Confirmer", callback_data: `confirm_${orderId}` },
@@ -180,9 +242,7 @@ router.post("/", async (req, res) => {
             if (data.startsWith("confirm_")) {
                 const orderId = data.replace("confirm_", "");
                 await orchestrator.process({
-                    type   : "order.confirmed",
-                    shop   : "",
-                    payload: { orderId, chatId },
+                    type: "order.confirmed", shop: "", payload: { orderId, chatId },
                 });
                 await reply(chatId,
                     `✅ *Commande #${orderId} confirmée !*\n\nNous préparons le colis 📦\nMerci de votre confiance 🙏`
@@ -193,9 +253,7 @@ router.post("/", async (req, res) => {
             if (data.startsWith("cancel_")) {
                 const orderId = data.replace("cancel_", "");
                 await orchestrator.process({
-                    type   : "order.cancelled.telegram",
-                    shop   : "",
-                    payload: { orderId, chatId },
+                    type: "order.cancelled.telegram", shop: "", payload: { orderId, chatId },
                 });
                 await reply(chatId,
                     `❌ *Commande #${orderId} annulée.*\n\nSi c'est une erreur, répondez-nous 😊`
@@ -204,9 +262,7 @@ router.post("/", async (req, res) => {
             }
 
             await orchestrator.process({
-                type   : "telegram.callback",
-                shop   : "",
-                payload: { chatId, data, cb },
+                type: "telegram.callback", shop: "", payload: { chatId, data, cb },
             });
             return;
         }
@@ -220,8 +276,28 @@ router.post("/", async (req, res) => {
 
         console.log(`📨 Telegram [${name}] : ${text}`);
 
-        if (text === "/start") {
+        if (text.startsWith("/start")) {
             memory.clear(chatId);
+            const param = text.split(" ")[1] || null;
+
+            if (param && param.startsWith("admin_")) {
+                const workspaceId = param.replace("admin_", "");
+                const ok = await linkMerchantToWorkspace(chatId, workspaceId);
+                await reply(chatId, ok
+                    ? `✅ *Telegram connecté à ton QG !*\n\nTu recevras désormais toutes tes commandes ici directement. 👑`
+                    : `❌ Erreur de connexion. Réessaie depuis ton QG.`
+                );
+                return;
+            }
+
+            if (param) {
+                await linkClientToWorkspace(chatId, param);
+                await reply(chatId,
+                    `👑 *Bienvenue !*\n\nJe suis SAMII, votre assistant commercial. Comment puis-je vous aider aujourd'hui ?`
+                );
+                return;
+            }
+
             await reply(chatId,
                 `👑 *Bienvenue sur SAMII OS !*\n\n` +
                 `✅ Chat ID : \`${chatId}\`\n\n` +
@@ -252,9 +328,7 @@ router.post("/", async (req, res) => {
         }
 
         await orchestrator.process({
-            type   : "telegram.message",
-            shop   : "",
-            payload: { chatId, text, message },
+            type: "telegram.message", shop: "", payload: { chatId, text, message },
         });
 
         const geminiReply = await planner.ask(text, { source: "telegram", chatId, name });
