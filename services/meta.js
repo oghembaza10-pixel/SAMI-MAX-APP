@@ -62,6 +62,7 @@ async function createAdSet(creds, campaignId, params) {
             daily_budget: dailyBudgetCents,
             billing_event: billingEvent,
             optimization_goal: optimizationGoal,
+            bid_strategy: "LOWEST_COST_WITHOUT_CAP",
             targeting: JSON.stringify(targeting),
             start_time: startTime,
             end_time: endTime,
