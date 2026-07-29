@@ -12,7 +12,7 @@ function requireAuth(req, res, next) {
     next();
 }
 
-router.get("/woocommerce", requireAuth, (req, res) => {
+router.get("/connect/woocommerce", requireAuth, (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -42,7 +42,7 @@ router.get("/woocommerce", requireAuth, (req, res) => {
 </html>`);
 });
 
-router.post("/woocommerce", requireAuth, (req, res) => {
+router.post("/connect/woocommerce", requireAuth, (req, res) => {
     let siteUrl = (req.body.site_url || "").trim();
     if (!siteUrl) return res.redirect("/connect/woocommerce");
 
