@@ -74,9 +74,9 @@ function clearWorkspaceSession(req, callback) {
 }
 
 // ── BOOTSTRAP MOTEURS ─────────────────────────────────
-const { registerChannels } = require("./kernel/bootstrap");
+const { registerChannels, registerScheduledJobs } = require("./kernel/bootstrap");
 registerChannels();
-require("./kernel/scheduler");
+registerScheduledJobs();
 
 // ══════════════════════════════════════════════════════
 // ROUTES — OAuth externes (Meta, Shopify)
