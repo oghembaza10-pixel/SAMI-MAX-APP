@@ -167,8 +167,8 @@ async function upsertUser(shop, email) {
 }
 
 async function registerWebhooks(shop, accessToken) {
-    const webhooks = ["orders/create", "orders/updated", "orders/paid", "orders/fulfilled", "orders/cancelled", "customers/create", "customers/update", "products/update", "inventory_levels/update", "fulfillments/create", "app/uninstalled"];
-
+    
+const webhooks = ["orders/create", "orders/updated", "orders/paid", "orders/fulfilled", "orders/cancelled", "customers/create", "customers/update", "products/update", "inventory_levels/update", "fulfillments/create", "checkouts/create", "app/uninstalled"];
     for (const topic of webhooks) {
         try {
             await axios.post(`https://${shop}/admin/api/2026-07/webhooks.json`, { webhook: { topic, address: `${APP_URL}/webhook`, format: "json" } }, { headers: { "X-Shopify-Access-Token": accessToken, "Content-Type": "application/json" } });
