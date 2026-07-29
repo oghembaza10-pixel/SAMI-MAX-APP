@@ -11,7 +11,7 @@ const automationEngine = require("../engines/automationEngine");
 
 // ── TABLE DE ROUTAGE ────────────────────────────────────────
 const routes = {
-
+"checkout.created" : commerceEngine.abandonedCheckout.bind(commerceEngine),
     // ── SHOPIFY APP ─────────────────────────────────────
     [E.SHOP_CONNECTED]: (e) => {
         console.log(`✅ Boutique connectée : ${e.shop}`);
