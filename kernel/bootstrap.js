@@ -15,6 +15,8 @@ const paypal             = require("../services/paypal");
 const yalidine           = require("../services/yalidine");
 const scheduler          = require("./scheduler");
 const ambassadeurEngine  = require("../engines/ambassadeurEngine");
+const sereniteEngine     = require("../engines/sereniteEngine");
+const messagerEclairEngine = require("../engines/messagerEclairEngine");
 const trackingRegistry   = require("../services/tracking");
 const yalidineTracking   = require("../services/tracking/yalidine");
 
@@ -53,7 +55,8 @@ function registerTrackingProviders() {
 
 function registerScheduledJobs() {
     scheduler.add("0 10 * * *", "Ambassadeur - offres VIP quotidiennes", ambassadeurEngine.runDaily);
-    scheduler.add("0 22 * * *", "Sérénité - rapport quotidien apaisé", require("../engines/sereniteEngine").runDaily);
+    scheduler.add("0 22 * * *", "Sérénité - rapport quotidien apaisé", sereniteEngine.runDaily);
+    scheduler.add("0 * * * *", "Messager Éclair - vérification colis", messagerEclairEngine.runCheck);
     scheduler.start();
 }
 
