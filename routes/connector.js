@@ -18,12 +18,12 @@ const TOOLS = [
     { id: "instagram", label: "Instagram",         icon: "instagram",      color: "#E1306C", available: true  },
     { id: "telegram",  label: "Telegram",          icon: "send",           color: "#229ED9", available: true  },
     { id: "discord",   label: "Discord",           icon: "message-square", color: "#5865F2", available: true  },
-    { id: "linkedin", label: "LinkedIn", icon: "linkedin", color: "#0A66C2", available: true, mode: "impression" },
     { id: "youtube",   label: "YouTube",           icon: "youtube",        color: "#FF0000", available: true, mode: "impression" },
     { id: "tiktok",    label: "TikTok",            icon: "music",          color: "#010101", available: true, mode: "impression" },
     { id: "gmail",     label: "Gmail",             icon: "mail",           color: "#EA4335", available: true, mode: "impression" },
     { id: "google",    label: "Google",            icon: "chrome",         color: "#4285F4", available: true, mode: "impression" },
     { id: "whatsapp",  label: "WhatsApp Business", icon: "message-circle", color: "#25D366", available: true, mode: "impression" },
+    { id: "linkedin",  label: "LinkedIn",          icon: "linkedin",       color: "#0A66C2", available: true, mode: "impression" },
     { id: "stripe",    label: "Stripe",            icon: "credit-card",    color: "#635BFF", available: false },
     { id: "paypal",    label: "PayPal",            icon: "wallet",         color: "#00457C", available: false },
     { id: "dahabia",   label: "Dahabia",           icon: "credit-card",    color: "#00A859", available: false },
@@ -239,10 +239,10 @@ router.post("/discord", requireAuth, async (req, res) => {
     }
 });
 
-// ── MODE IMPRESSION — YouTube, TikTok, Gmail, Google, WhatsApp ──
+// ── MODE IMPRESSION — YouTube, TikTok, Gmail, Google, WhatsApp, LinkedIn ──
 // Pas de vraie API branchée : le client colle un identifiant simple,
 // juste pour l'affichage "connecté" en attendant les permissions officielles.
-const IMPRESSION_TOOLS = ["youtube", "tiktok", "gmail", "google", "whatsapp"];
+const IMPRESSION_TOOLS = ["youtube", "tiktok", "gmail", "google", "whatsapp", "linkedin"];
 
 const IMPRESSION_FIELD_LABEL = {
     youtube : "Lien ou @pseudo de ta chaîne YouTube",
@@ -250,6 +250,7 @@ const IMPRESSION_FIELD_LABEL = {
     gmail   : "Adresse Gmail",
     google  : "Adresse Gmail liée à Google",
     whatsapp: "Numéro WhatsApp Business",
+    linkedin: "Lien de ton profil ou page LinkedIn",
 };
 
 IMPRESSION_TOOLS.forEach(toolId => {
