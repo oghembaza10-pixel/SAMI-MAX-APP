@@ -40,7 +40,7 @@ async function runCheck() {
 
             if (!numeroSuivi || !telephone) continue;
 
-            const result = await tracking.checkStatus(transporteur, numeroSuivi);
+           const result = await tracking.checkStatus(transporteur, numeroSuivi, f.Boutique);
             if (!result.success) continue;
 
             const nouveauStatut = result.statut;
