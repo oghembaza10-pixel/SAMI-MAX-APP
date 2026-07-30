@@ -55,14 +55,24 @@ router.get("/", requireAuth, async (req, res) => {
             box-shadow: 0 0 20px rgba(197,160,89,0.18);
         }
         .griot-shell h1 { font-family: var(--font-display); color: #fff; font-size: 1.5rem; }
-        .griot-shell p.sub { color: var(--text-muted); font-size: .85rem; margin: 8px 0 26px; line-height: 1.6; }
+        .griot-shell p.sub { color: var(--text-muted); font-size: .85rem; margin: 8px 0 20px; line-height: 1.6; }
 
         .griot-card { background: var(--bg-glass); backdrop-filter: blur(12px); border: var(--border-soft); border-radius: 16px; padding: 24px; }
         label { display: block; font-family: var(--font-mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 14px 0 6px; }
-        input, textarea, select { width: 100%; padding: 11px 13px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: var(--text-main); font-size: .88rem; font-family: var(--font-body); }
+        input, textarea, select {
+            width: 100%; padding: 11px 13px; border-radius: 9px;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);
+            color: var(--text-main); font-size: .88rem; font-family: var(--font-body);
+            transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+        }
         select { cursor: pointer; }
         textarea { resize: vertical; min-height: 70px; }
-        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--cyan-tech); box-shadow: 0 0 0 3px rgba(95,212,255,0.12); }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--cyan-tech);
+            box-shadow: 0 0 0 3px rgba(95,212,255,0.15), 0 0 20px rgba(95,212,255,0.25);
+            background: rgba(95,212,255,0.04);
+        }
         .griot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
         button.griot-submit {
@@ -159,6 +169,14 @@ router.get("/", requireAuth, async (req, res) => {
         <h1>Griot</h1>
     </div>
     <p class="sub">Décris ce que tu veux promouvoir — SAMII te livre un pack de contenu complet, prêt à publier.</p>
+
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;margin-bottom:22px;border-radius:14px;background:linear-gradient(135deg, rgba(197,160,89,0.12), rgba(95,212,255,0.08));border:1px solid rgba(197,160,89,0.3);">
+        <div style="font-size:1.4rem;flex-shrink:0;">🎬</div>
+        <div>
+            <div style="font-weight:700;color:#fff;font-size:.88rem;">Bientôt en V2 : SAMII crée la vidéo pour vous, en direct.</div>
+            <div style="color:var(--text-muted);font-size:.78rem;margin-top:2px;">Pour l'instant, ce script est prêt à filmer toi-même ou à confier à un monteur.</div>
+        </div>
+    </div>
 
     <div class="griot-card">
         <form id="form-griot">
