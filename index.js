@@ -74,8 +74,9 @@ function clearWorkspaceSession(req, callback) {
 }
 
 // ── BOOTSTRAP MOTEURS ─────────────────────────────────
-const { registerChannels, registerScheduledJobs } = require("./kernel/bootstrap");
+const { registerChannels, registerScheduledJobs, registerTrackingProviders } = require("./kernel/bootstrap");
 registerChannels();
+registerTrackingProviders();
 registerScheduledJobs();
 
 // ══════════════════════════════════════════════════════
@@ -121,6 +122,7 @@ app.use("/samii/memoire-client", require("./routes/memoireclient"));
 app.use("/automatisations", requireAuth, require("./routes/automatisations"));
 app.use("/missions", requireAuth, require("./routes/missions"));
 app.use("/samii/miroir", requireAuth, require("./routes/miroir"));
+app.use("/samii/messager-eclair", requireAuth, require("./routes/messagereclair"));
 app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 app.use("/connect",   require("./routes/connector"));
 
