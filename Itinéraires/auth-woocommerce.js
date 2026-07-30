@@ -17,27 +17,39 @@ router.get("/connect/woocommerce", requireAuth, (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Connecter WooCommerce — SAMII</title>
-    <style>
-        *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:#0b0b0b;font-family:Arial;display:flex;justify-content:center;align-items:center;min-height:100vh;color:white;padding:20px;}
-        .box{width:100%;max-width:420px;background:#181818;padding:35px;border-radius:14px;border:1px solid #333;text-align:center;}
-        h1{color:#96588a;margin-bottom:8px;font-size:1.4rem;}
-        p{color:#888;font-size:0.85rem;margin-bottom:24px;}
-        input{width:100%;padding:12px;border:1px solid #333;border-radius:8px;background:#111;color:white;font-size:0.95rem;margin-bottom:16px;}
-        input:focus{outline:none;border-color:#96588a;}
-        button{width:100%;padding:13px;background:#96588a;border:none;border-radius:8px;font-weight:bold;font-size:1rem;cursor:pointer;color:#fff;}
-    </style>
+  <meta charset="UTF-8">
+  <title>Connecter WooCommerce — OG Empire</title>
+  <link rel="stylesheet" href="/css/hub-premium.css">
 </head>
 <body>
-<div class="box">
-    <h1>🛒 Connecter WooCommerce</h1>
-    <p>Entre l'adresse de ta boutique — tu seras redirigé vers ton site pour approuver en un clic.</p>
-    <form method="POST" action="/connect/woocommerce">
-        <input type="text" name="site_url" placeholder="maboutique.com" required>
-        <button type="submit">Connecter ma boutique</button>
-    </form>
+<div class="og-capital">
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+    <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
+
+      <div style="text-align:center;margin-bottom:30px;">
+        <div style="font-size:3rem;">🛒</div>
+        <h2 style="color:#fff;margin-top:10px;">Connecter WooCommerce</h2>
+        <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+          Entre l'adresse de ta boutique — tu seras redirigé vers ton site pour approuver en un clic.
+        </p>
+      </div>
+
+      <form method="POST" action="/connect/woocommerce">
+        <input type="text" name="site_url" placeholder="maboutique.com" required
+               style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+        <button type="submit"
+                style="display:block;width:100%;padding:13px;background:#96588A;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
+          🛒 Connecter ma boutique
+        </button>
+      </form>
+
+      <a href="/connect/tools"
+         style="display:block;margin-top:20px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        ← Retour à mes outils
+      </a>
+
+    </div>
+  </main>
 </div>
 </body>
 </html>`);
@@ -70,13 +82,39 @@ router.get("/auth/woocommerce/return", requireAuth, (req, res) => {
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><title>Connexion WooCommerce</title></head>
-<body style="background:#050505;color:#e8e4d8;font-family:Arial;padding:40px;text-align:center;">
-    ${success
-        ? `<h1 style="color:#3ddc84;">✅ Boutique connectée !</h1><p>WooCommerce est maintenant relié à ton QG.</p>`
-        : `<h1 style="color:#e74c3c;">❌ Connexion annulée</h1><p>Tu peux réessayer depuis ton QG.</p>`
-    }
-    <p style="margin-top:20px;"><a href="/qg" style="color:#5FD4FF;">Retour au QG</a></p>
+<head>
+  <meta charset="UTF-8">
+  <title>Connexion WooCommerce — OG Empire</title>
+  <link rel="stylesheet" href="/css/hub-premium.css">
+</head>
+<body>
+<div class="og-capital">
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+    <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
+
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:3rem;">${success ? "✅" : "❌"}</div>
+        <h2 style="color:${success ? "#3ddc84" : "#e55"};margin-top:10px;">
+          ${success ? "Boutique connectée !" : "Connexion annulée"}
+        </h2>
+        <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+          ${success ? "WooCommerce est maintenant relié à ton QG." : "Tu peux réessayer depuis tes outils."}
+        </p>
+      </div>
+
+      <a href="/connect/tools"
+         style="display:block;margin-top:10px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        ← Retour à mes outils
+      </a>
+      ${success ? `
+      <a href="/qg"
+         style="display:block;margin-top:10px;text-align:center;padding:13px;background:#96588A;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        Retour au QG →
+      </a>` : ""}
+
+    </div>
+  </main>
+</div>
 </body>
 </html>`);
 });
