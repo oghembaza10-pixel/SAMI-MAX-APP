@@ -1,31 +1,60 @@
-const axios        = require("axios");
-const CONFIG       = require("../config");
-const orchestrator = require("../brain/orchestrator");
+// ==========================================================================
+// SAMII OS — TRACKING — Adaptateur Yalidine
+// Utilise la clé perso du marchand si connectée, sinon la clé globale OG Empire.
+// ==========================================================================
+const axios = require("axios");
+const CONFIG = require("../../config");
+const connectorService = require("../connectorService");
 
-async function send({ to, message }) {
-    console.log(`🚚 Yalidine → ${to} : ${message}`);
-    return { success: true };
+async function getCredentials(workspaceId) {
+    try {
+        if (workspaceId) {
+            const connecteurs = await connectorService.getByWorkspace(workspaceId);
+            const perso = connecteurs.find(c => c.type === "yalidine" && c.actif);
+            if (perso?.config?.apiId && perso?.config?.apiToken) {
+                return {
+                    apiId: perso.config.apiId,
+                    apiToken: perso.config.apiToken,
+                    source: "perso",
+                };
+            }
+        }
+    } catch (err) {
+        console.warn("⚠️ Tracking Yalidine (clé perso) :", err.message);
+    }
+
+    return {
+        apiId: CONFIG.YALIDINE?.API_ID,
+        apiToken: CONFIG.YALIDINE?.API_TOKEN,
+        source: "global",
+    };
 }
 
-async function track(trackingNumber) {
+async function checkStatus(trackingNumber, workspaceId) {
     try {
+        const creds = await getCredentials(workspaceId);
+
+        if (!creds.apiId || !creds.apiToken) {
+            return { success: false, error: "Aucune clé Yalidine configurée (ni perso, ni globale)." };
+        }
+
         const res = await axios.get(
             `https://api.yalidine.app/v1/parcels/${trackingNumber}`,
-            { headers: { "X-API-ID": CONFIG.YALIDINE?.API_ID, "X-API-TOKEN": CONFIG.YALIDINE?.API_TOKEN } }
+            { headers: { "X-API-ID": creds.apiId, "X-API-TOKEN": creds.apiToken } }
         );
-        return { success: true, data: res.data };
+
+        const data = res.data || {};
+        return {
+            success: true,
+            statut: data.last_status || data.status || "inconnu",
+            derniereMiseAJour: data.date_status || data.updated_at || null,
+            source: creds.source,
+            details: data,
+        };
     } catch (err) {
-        console.error("❌ Yalidine :", err.message);
+        console.error("❌ Tracking Yalidine :", err.message);
         return { success: false, error: err.message };
     }
 }
 
-async function receive(event) {
-    await orchestrator.process({
-        type   : "yalidine.update",
-        shop   : event.shop || "",
-        payload: event,
-    });
-}
-
-module.exports = { send, receive, track };
+module.exports = { checkStatus };
