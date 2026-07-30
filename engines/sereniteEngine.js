@@ -10,6 +10,16 @@ function getMontant(c) {
     return parseFloat(c.montant || c.Total || 0) || 0;
 }
 
+function isSereniteActive(fields) {
+    if (!fields.automatisations) return true;
+    try {
+        const auto = JSON.parse(fields.automatisations);
+        return auto.serenite !== false;
+    } catch {
+        return true;
+    }
+}
+
 async function getAdminChatId(workspaceId) {
     try {
         const record = await airtable.findOne("CONNECTEURS",
@@ -44,6 +54,7 @@ async function runDaily() {
             const nom = f.nom || "votre activité";
 
             if (!workspaceId) continue;
+            if (!isSereniteActive(f)) continue;
 
             const chatId = await getAdminChatId(workspaceId);
             if (!chatId) continue;
