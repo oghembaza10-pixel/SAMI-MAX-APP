@@ -15,7 +15,7 @@ const CARDS = [
    { loi: "T-006", name: "Mémoire Client", icon: "brain", desc: "Historique relationnel enrichi", available: true, href: "/samii/memoire-client" },
     { loi: "T-007", name: "Bibliothèque SAMII", icon: "book-open",     desc: "Base de connaissance de ton métier", available: false },
     { loi: "T-008", name: "Commandement",       icon: "sliders-horizontal", desc: "Les 5 modes d'autonomie de SAMII", available: true, href: "/samii/mode" },
-    { loi: "T-009", name: "Messager Éclair",    icon: "zap",           desc: "Réponses clients accélérées", available: false },
+    { loi: "T-009", name: "Messager Éclair", icon: "zap", desc: "Suivi colis et notifications client en temps réel", available: true, href: "/samii/messager-eclair" },
     { loi: "T-010", name: "Verrou de Sécurité", icon: "lock",          desc: "Protection renforcée de ton compte", available: false },
     { loi: "T-011", name: "Cadence",            icon: "music",         desc: "Rythme optimal de publication", available: false },
     { loi: "T-012", name: "Chronomaître",       icon: "clock",         desc: "Planification multi-fuseaux horaires", available: false },
