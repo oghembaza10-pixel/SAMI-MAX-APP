@@ -120,6 +120,7 @@ app.use("/samii/chasseur-stock", require("./routes/chasseurstock"));
 app.use("/samii/memoire-client", require("./routes/memoireclient"));
 app.use("/automatisations", requireAuth, require("./routes/automatisations"));
 app.use("/missions", requireAuth, require("./routes/missions"));
+app.use("/samii/miroir", requireAuth, require("./routes/miroir"));
 app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 app.use("/connect",   require("./routes/connector"));
 
