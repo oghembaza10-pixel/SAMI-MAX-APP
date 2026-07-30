@@ -57,13 +57,15 @@
                         <div class="connect-tool-card__info">
                             <h3><%= tool.label %></h3>
                             <span class="connect-tool-card__status">
-                                <% if (isConnected) { %>
-                                    <span class="og-badge og-badge--live">✅ Connecté</span>
-                                <% } else if (!tool.available) { %>
-                                    <span class="og-badge og-badge--soon">⏳ Bientôt</span>
-                                <% } else { %>
-                                    <span class="og-badge og-badge--off">🔴 Non connecté</span>
-                                <% } %>
+                               <% if (isConnected && tool.mode === 'impression') { %>
+    <span class="og-badge og-badge--soon">🟡 Connecté · bientôt synchronisé</span>
+<% } else if (isConnected) { %>
+    <span class="og-badge og-badge--live">✅ Connecté</span>
+<% } else if (!tool.available) { %>
+    <span class="og-badge og-badge--soon">⏳ Bientôt</span>
+<% } else { %>
+    <span class="og-badge og-badge--off">🔴 Non connecté</span>
+<% } %>
                             </span>
                         </div>
                     </div>
@@ -141,6 +143,49 @@
                             <% } else { %>
                                 <a href="/connect/woocommerce" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
                                     Connecter WooCommerce →
+                                </a>
+                            <% } %>
+                        <% } %>
+<% } else if (tool.id === 'woocommerce') { %>
+                            <% if (isConnected) { %>
+                                <p class="connect-tool-card__connected-info">
+                                    🟢 <%= connector.config?.siteUrl || 'Boutique connectée' %>
+                                </p>
+                                <button class="connect-btn connect-btn--disconnect"
+                                        data-tool="woocommerce" data-action="disconnect">
+                                    Déconnecter
+                                </button>
+                            <% } else { %>
+                                <a href="/connect/woocommerce" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
+                                    Connecter WooCommerce →
+                                </a>
+                            <% } %>
+                        <% } else if (tool.id === 'discord') { %>
+                            <% if (isConnected) { %>
+                                <p class="connect-tool-card__connected-info">
+                                    🟢 <%= connector.config?.serverName || 'Bot connecté' %>
+                                </p>
+                                <button class="connect-btn connect-btn--disconnect"
+                                        data-tool="discord" data-action="disconnect">
+                                    Déconnecter
+                                </button>
+                            <% } else { %>
+                                <a href="/connect/discord" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
+                                    Connecter Discord →
+                                </a>
+                            <% } %>
+                        <% } else if (tool.mode === 'impression') { %>
+                            <% if (isConnected) { %>
+                                <p class="connect-tool-card__connected-info">
+                                    🟡 <%= connector.config?.identifiant || 'Connecté' %>
+                                </p>
+                                <button class="connect-btn connect-btn--disconnect"
+                                        data-tool="<%= tool.id %>" data-action="disconnect">
+                                    Déconnecter
+                                </button>
+                            <% } else { %>
+                                <a href="/connect/<%= tool.id %>" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
+                                    Connecter <%= tool.label %> →
                                 </a>
                             <% } %>
                         <% } %>
