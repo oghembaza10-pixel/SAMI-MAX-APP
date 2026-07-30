@@ -11,7 +11,7 @@ const CARDS = [
     { loi: "T-002", name: "Code d'Honneur",     icon: "scroll",        desc: "Charte éthique envers tes clients", available: false },
     { loi: "T-003", name: "Vision Clients",     icon: "eye",           desc: "Analyse du sentiment client", available: false },
     { loi: "T-004", name: "Œil Concurrentiel",  icon: "search",        desc: "Surveillance des prix concurrents", available: false },
-    { loi: "T-005", name: "Diplomate",          icon: "message-circle",desc: "Réponse automatique aux avis négatifs", available: false },
+   { loi: "T-005", name: "Diplomate", icon: "message-circle", desc: "Réponse automatique aux avis négatifs", available: true, href: "/samii/diplomate" },
     { loi: "T-006", name: "Mémoire Client",     icon: "brain",         desc: "Historique relationnel enrichi", available: false },
     { loi: "T-007", name: "Bibliothèque SAMII", icon: "book-open",     desc: "Base de connaissance de ton métier", available: false },
     { loi: "T-008", name: "Commandement",       icon: "sliders-horizontal", desc: "Les 5 modes d'autonomie de SAMII", available: true, href: "/samii/mode" },
