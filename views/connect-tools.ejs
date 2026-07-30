@@ -120,7 +120,7 @@
                                     Déconnecter
                                 </button>
                             <% } else { %>
-                                <form class="connect-inline-form" data-tool="telegram" data-action="save">
+                         <form class="connect-inline-form" data-tool="telegram" data-action="save">
                                     <input type="text" name="chatId"
                                            placeholder="Votre Chat ID Telegram"
                                            class="connect-input" autocomplete="off">
@@ -129,7 +129,7 @@
                                     </button>
                                 </form>
                             <% } %>
-<% } else if (tool.id === 'woocommerce') { %>
+                        <% } else if (tool.id === 'woocommerce') { %>
                             <% if (isConnected) { %>
                                 <p class="connect-tool-card__connected-info">
                                     🟢 <%= connector.config?.siteUrl || 'Boutique connectée' %>
@@ -143,10 +143,8 @@
                                     Connecter WooCommerce →
                                 </a>
                             <% } %>
-
                         <% } %>
-
-                    </div>
+                    </div>       
                 </div>
                 <% }) %>
 
