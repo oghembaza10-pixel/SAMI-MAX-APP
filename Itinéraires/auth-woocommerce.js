@@ -4,6 +4,7 @@
 const express = require("express");
 const axios   = require("axios");
 const router  = express.Router();
+const { registerOrderWebhook } = require("./webhook-woocommerce");
 
 const APP_URL = "https://samii.souverain-store.com";
 
@@ -91,7 +92,10 @@ router.post("/auth/woocommerce/callback", express.json(), async (req, res) => {
         }
 
         const connectorService = require("../services/connectorService");
+        const siteUrl = req.body.store_url || req.body.site_url || "";
+
         await connectorService.save(workspaceId, "woocommerce", {
+            siteUrl,
             consumerKey   : consumer_key,
             consumerSecret: consumer_secret,
             permissions   : key_permissions || "read_write",
@@ -99,6 +103,11 @@ router.post("/auth/woocommerce/callback", express.json(), async (req, res) => {
         });
 
         console.log(`✅ WooCommerce connecté pour workspace ${workspaceId}`);
+
+        if (siteUrl) {
+            await registerOrderWebhook(siteUrl, consumer_key, consumer_secret);
+        }
+
         res.status(200).json({ success: true });
 
     } catch (err) {
