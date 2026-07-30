@@ -1,6 +1,6 @@
 // ==========================================================================
 // SAMII OS — RADAR OPPORTUNITÉS (T-023)
-// Analyse de tendances produits, sans recherche web live (Option A).
+// Avec recherche web réelle (sources cliquables).
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
@@ -201,7 +201,7 @@ router.get("/", requireAuth, async (req, res) => {
         <div class="radar-results-title">Opportunités détectées</div>
         <div id="results-list"></div>
         <div class="opp-note">
-            ℹ️ Ces pistes sont générées par l'analyse de SAMII, pas une recherche en temps réel — vérifie la disponibilité et les prix avant de te lancer.
+            ℹ️ Ces pistes sont générées par l'analyse de SAMII à partir de recherches web — vérifie toujours les sources avant de te lancer.
         </div>
     </div>
 </div>
@@ -280,6 +280,20 @@ function renderOpportunites(list) {
     });
 }
 
+function renderSources(sources) {
+    let el = document.getElementById('opp-sources');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'opp-sources';
+        el.style.cssText = 'margin-top:16px;font-size:.78rem;color:var(--text-muted);';
+        document.getElementById('results').appendChild(el);
+    }
+    if (!sources.length) { el.innerHTML = ''; return; }
+    el.innerHTML = '🔗 Sources consultées : ' + sources.map(s =>
+        \`<a href="\${s.uri}" target="_blank" style="color:var(--cyan-tech);text-decoration:none;">\${s.title}</a>\`
+    ).join(' · ');
+}
+
 document.getElementById('form-radar').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg     = document.getElementById('msg');
@@ -301,6 +315,7 @@ document.getElementById('form-radar').addEventListener('submit', async (e) => {
         if (json.success && json.opportunites?.length) {
             msg.textContent = '';
             renderOpportunites(json.opportunites);
+            renderSources(json.sources || []);
             results.style.display = 'flex';
         } else {
             msg.textContent = json.error || '❌ SAMII n\\'a pas pu générer de résultat. Réessaie.';
@@ -335,7 +350,7 @@ router.post("/", requireAuth, async (req, res) => {
 Marché cible : ${marche}
 ${details ? `Précisions sur le marchand : ${details}` : ""}
 
-Propose entre 3 et 5 catégories ou produits concrets qui pourraient bien marcher sur ce marché, adaptés à un marchand qui démarre.`;
+Utilise la recherche web pour identifier des tendances actuelles. Propose entre 3 et 5 catégories ou produits concrets qui pourraient bien marcher sur ce marché, adaptés à un marchand qui démarre.`;
         } else {
             prompt = `Tu es SAMII, le stratège commercial de OG Empire. Un marchand te demande de repérer des opportunités produits.
 
@@ -343,7 +358,7 @@ Produit / secteur actuel : ${produit}
 Marché cible : ${marche}
 ${details ? `Précisions : ${details}` : ""}
 
-Propose entre 3 et 5 pistes concrètes et actionnables : produits ou variantes qui pourraient bien marcher sur ce marché.`;
+Utilise la recherche web pour identifier des tendances actuelles. Propose entre 3 et 5 pistes concrètes et actionnables : produits ou variantes qui pourraient bien marcher sur ce marché.`;
         }
 
         prompt += `
@@ -353,12 +368,11 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
   { "nom": "Nom court de l'opportunité", "score": 82, "explication": "Une phrase expliquant pourquoi, concrète et actionnable." }
 ]
 
-Le score est un nombre entre 0 et 100 représentant le potentiel réel selon ta connaissance générale du marché. Sois honnête : toutes les pistes ne doivent pas avoir un score élevé.`;
+Le score est un nombre entre 0 et 100 représentant le potentiel réel selon les tendances trouvées. Sois honnête : toutes les pistes ne doivent pas avoir un score élevé.`;
 
-        const result = await gemini.chat({
+        const result = await gemini.chatWithSearch({
             message: prompt,
             context: { source: "radar_opportunites", workspaceId: req.session.workspaceId },
-            useTools: false,
         });
 
         const rawText = result.type === "text" ? result.text : "";
@@ -368,7 +382,7 @@ Le score est un nombre entre 0 et 100 représentant le potentiel réel selon ta 
             return res.json({ success: false, error: "SAMII n'a pas pu structurer sa réponse. Réessaie." });
         }
 
-        res.json({ success: true, opportunites });
+        res.json({ success: true, opportunites, sources: result.sources || [] });
 
     } catch (err) {
         console.error("❌ POST /samii/opportunites :", err.message);
