@@ -1,296 +1,352 @@
 // ======================================================
-// SAMII OS — API V3
+// SAMII OS — Connector Routes
 // ======================================================
-
 const express          = require("express");
 const router           = express.Router();
-const planner          = require("../brain/planner");
-const axios            = require("axios");
+const connectorService = require("../services/connectorService");
 const workspaceService = require("../services/workspaceService");
 
-const AIRTABLE_API_KEY  = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID  = process.env.AIRTABLE_BASE_ID;
-const TABLE_CONNECTEURS = process.env.TABLE_CONNECTEURS || "CONNECTEURS";
-const TABLE_COMMANDES   = process.env.TABLE_COMMANDES   || "COMMANDES";
-const TABLE_CLIENTS     = process.env.TABLE_CLIENTS     || "CLIENTS";
-
-const airtable = (table) =>
-    `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${table}`;
-
-const headers = () => ({
-    Authorization : `Bearer ${AIRTABLE_API_KEY}`,
-    "Content-Type": "application/json",
-});
-
-// ── HELPERS ───────────────────────────────────────────
-function parseConfig(config) {
-    try {
-        if (!config) return {};
-        return JSON.parse(
-            config
-                .replace(/\\_/g, "_")
-                .replace(/\\n/g, "")
-                .replace(/\n/g,  "")
-                .replace(/\r/g,  "")
-                .trim()
-        );
-    } catch { return {}; }
-}
-
-function emptyQgResponse(workspace) {
-    return {
-        success    : true,
-        workspace  : { nom: workspace?.nom || "", metier: workspace?.metier || "" },
-        stats      : { total_commandes: 0, total_revenus: "0.00", en_attente: 0, confirmees: 0, annulees: 0, vip: 0, blacklist: 0 },
-        livraison  : { livrees: 0, en_cours: 0, echecs: 0 },
-        mission    : { date: new Date().toISOString().split("T")[0], commandes: 0, revenus: "0.00" },
-        performance: { revenus_mois: "0.00", commandes_mois: 0, evolution: "—" },
-        commandes  : [],
-        clients    : [],
-    };
-}
-
-function getMontant(c) {
-    return parseFloat(c.montant || c.Total || 0) || 0;
-}
-
 function requireAuth(req, res, next) {
-    if (!req.session?.loggedIn) return res.status(401).json({ error: "Non connecté" });
+    if (!req.session?.loggedIn) return res.redirect("/login");
     next();
 }
 
-// ── Vérifier qu'une commande appartient au workspace ──
-async function verifyCommande(commandeId, workspaceId) {
-    const verification = await axios.get(airtable(TABLE_COMMANDES), {
-        headers: headers(),
-        params : {
-            filterByFormula: `AND(RECORD_ID()="${commandeId}",{workspace_id}="${workspaceId}")`,
-            maxRecords     : 1,
-        },
-    });
-    return verification.data.records.length > 0;
-}
+const TOOLS = [
+    { id: "shopify",   label: "Shopify",           icon: "shopping-bag",   color: "#95BF47", available: true  },
+    { id: "woocommerce", label: "WooCommerce",      icon: "shopping-cart",  color: "#96588A", available: true }, 
+    { id: "facebook",  label: "Facebook",          icon: "facebook",       color: "#1877F2", available: true  },
+    { id: "instagram", label: "Instagram",         icon: "instagram",      color: "#E1306C", available: true  },
+    { id: "telegram",  label: "Telegram",          icon: "send",           color: "#229ED9", available: true  },
+    { id: "discord",   label: "Discord",           icon: "message-square", color: "#5865F2", available: true  },
+    { id: "youtube",   label: "YouTube",           icon: "youtube",        color: "#FF0000", available: true, mode: "impression" },
+    { id: "tiktok",    label: "TikTok",            icon: "music",          color: "#010101", available: true, mode: "impression" },
+    { id: "gmail",     label: "Gmail",             icon: "mail",           color: "#EA4335", available: true, mode: "impression" },
+    { id: "google",    label: "Google",            icon: "chrome",         color: "#4285F4", available: true, mode: "impression" },
+    { id: "whatsapp",  label: "WhatsApp Business", icon: "message-circle", color: "#25D366", available: true, mode: "impression" },
+    { id: "linkedin",  label: "LinkedIn",          icon: "linkedin",       color: "#0A66C2", available: true, mode: "impression" },
+    { id: "stripe",    label: "Stripe",            icon: "credit-card",    color: "#635BFF", available: false },
+    { id: "paypal",    label: "PayPal",            icon: "wallet",         color: "#00457C", available: false },
+    { id: "dahabia",   label: "Dahabia",           icon: "credit-card",    color: "#00A859", available: false },
+    { id: "ccp",       label: "CCP",               icon: "landmark",       color: "#F5A623", available: false },
+    { id: "autre",     label: "Autre outil",       icon: "plug",           color: "#718096", available: false },
+];
 
-// ── CHAT SAMII ────────────────────────────────────────
-router.post("/chat", async (req, res) => {
+router.get("/tools", requireAuth, async (req, res) => {
     try {
-        const message = req.body.message;
-        if (!message) return res.json({ success: false, reply: "Écris un message." });
-
-        const context = {
-            user       : { lang: req.body.lang || "" },
-            workspaceId: req.session?.workspaceId || req.body.workspaceId || "",
-            client     : req.body.client     || "",
-            commande   : req.body.commande   || "",
-            page       : req.body.page       || "",
-            lastAction : req.body.lastAction || "",
-        };
-
-        const result = await planner.build({ goal: message }, context);
-        res.json(result);
-
-    } catch (err) {
-        console.error("❌ API chat :", err.message);
-        res.json({ success: false, reply: "SAMII démarre. Réessaie dans quelques instants." });
-    }
-});
-
-// ── CONNECTEURS ───────────────────────────────────────
-router.get("/connecteurs", requireAuth, async (req, res) => {
-    const workspaceId = req.session.workspaceId;
-    if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
-
-    try {
-        const r = await axios.get(airtable(TABLE_CONNECTEURS), {
-            headers: headers(),
-            params : {
-                filterByFormula: `{workspace_id}="${workspaceId}"`,
-                maxRecords     : 50,
-            },
-        });
-
-        const connecteurs = {};
-        r.data.records.forEach(rec => {
-            const f     = rec.fields;
-            const type  = (f.type || "").toLowerCase();
-            const actif = f.actif === true;
-
-            // ✅ Anti-doublon : si un connecteur actif existe déjà pour ce type,
-            // ne jamais le remplacer par une ligne inactive (évite les doublons
-            // créés pendant des tests de reconnecter le même outil).
-            if (connecteurs[type] && connecteurs[type].actif && !actif) return;
-
-            connecteurs[type] = {
-                actif,
-                identifiant: f.identifiant || "",
-                ...parseConfig(f.config),
-            };
-        });
-
-        res.json({ success: true, connecteurs });
-
-    } catch (err) {
-        console.error("❌ API connecteurs :", err.message);
-        res.status(500).json({ error: "Erreur chargement connecteurs." });
-    }
-});
-
-// ── QG DATA ───────────────────────────────────────────
-router.get("/qg-data", requireAuth, async (req, res) => {
-    const workspaceId = req.session.workspaceId;
-    if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
-    try {
-        // ✅ workspaceService — source de vérité unique
+        const workspaceId = req.session?.workspaceId;
+        if (!workspaceId) return res.redirect("/hub");
         const workspace = await workspaceService.getById(workspaceId);
-        if (!workspace) return res.status(404).json({ error: "Workspace introuvable." });
-        // Commandes
-        const commandesRes = await axios.get(airtable(TABLE_COMMANDES), {
-            headers: headers(),
-            params : {
-                filterByFormula     : `{Boutique}="${workspaceId}"`,
-                "sort[0][field]"    : "Date Commande",
-                "sort[0][direction]": "desc",
-                maxRecords          : 100,
-            },
+        if (!workspace) return res.redirect("/hub");
+        const connecteurs = await connectorService.getByWorkspace(workspaceId);
+        res.render("connect-tools", {
+            workspaceId,
+            nom       : workspace.nom || "",
+            tools     : TOOLS,
+            connecteurs,
+            error     : null,
         });
-        const commandes = commandesRes.data.records.map(r => ({
-            ...r.fields,
-            airtableId: r.id,
-        }));
+    } catch (err) {
+        console.error("❌ GET /connect/tools :", err);
+        res.redirect("/hub");
+    }
+});
 
-        // Clients
-        const clientsRes = await axios.get(airtable(TABLE_CLIENTS), {
-            headers: headers(),
-            params : {
-                filterByFormula     : `{workspace_id}="${workspaceId}"`,
-                "sort[0][field]"    : "Total Dépensé",
-                "sort[0][direction]": "desc",
-                maxRecords          : 50,
-            },
+router.post("/tools/save", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session?.workspaceId;
+        if (!workspaceId) return res.json({ success: false, error: "Session expirée." });
+        const { toolId, value } = req.body;
+        if (!toolId) return res.json({ success: false, error: "Outil manquant." });
+        const result = await connectorService.save(workspaceId, toolId, value || {});
+        if (!result) return res.json({ success: false, error: "Erreur Airtable." });
+        res.json({ success: true, toolId, connected: true });
+    } catch (err) {
+        console.error("❌ POST /connect/tools/save :", err);
+        res.json({ success: false, error: "Erreur interne." });
+    }
+});
+
+router.post("/tools/disconnect", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session?.workspaceId;
+        if (!workspaceId) return res.json({ success: false, error: "Session expirée." });
+        const { toolId } = req.body;
+        if (!toolId) return res.json({ success: false, error: "Outil manquant." });
+        const result = await connectorService.disconnect(workspaceId, toolId);
+        if (!result) return res.json({ success: false, error: "Connecteur introuvable." });
+        res.json({ success: true, toolId, connected: false });
+    } catch (err) {
+        console.error("❌ POST /connect/tools/disconnect :", err);
+        res.json({ success: false, error: "Erreur interne." });
+    }
+});
+
+router.get("/shopify", requireAuth, (req, res) => {
+    const shop = req.query.shop || req.session?.shop || "";
+    if (!shop) {
+        return res.render("connect-shopify", {
+            workspaceId : req.session?.workspaceId || "",
+            error       : null,
         });
-        const clients = clientsRes.data.records.map(r => r.fields);
+    }
+    res.redirect(`/auth/shopify?shop=${encodeURIComponent(shop)}`);
+});
 
-        // Stats
-        const total_commandes = commandes.length;
-        const total_revenus   = commandes.reduce((s, c) => s + getMontant(c), 0);
-        const en_attente      = commandes.filter(c => c.Statut === "en attente").length;
-        const confirmees      = commandes.filter(c => c.Statut === "confirmée").length;
-        const annulees        = commandes.filter(c => c.Statut === "annulée").length;
-        const vip             = clients.filter(c => c.VIP      === true).length;
-        const blacklist       = clients.filter(c => c.Blacklist === true).length;
+router.post("/shopify", requireAuth, (req, res) => {
+    const { shop } = req.body;
+    if (!shop || !shop.trim()) {
+        return res.render("connect-shopify", {
+            workspaceId : req.session?.workspaceId || "",
+            error       : "Entre l'URL de ta boutique Shopify.",
+        });
+    }
+    let shopUrl = shop.trim().toLowerCase();
+    if (!shopUrl.includes(".myshopify.com")) shopUrl += ".myshopify.com";
+    res.redirect(`/auth/shopify?shop=${encodeURIComponent(shopUrl)}`);
+});
 
-        // Livraison
-        const livrees  = commandes.filter(c => c.Statut === "livrée").length;
-        const en_cours = commandes.filter(c => c.Statut === "en cours").length;
-        const echecs   = commandes.filter(c => c.Statut === "échoué").length;
+router.get("/facebook", requireAuth, (req, res) => {
+    res.redirect("/auth/meta");
+});
 
-        // Mission du jour
-        const aujourd     = new Date().toISOString().split("T")[0];
-        const cmd_aujourd = commandes.filter(c => (c["Date Commande"] || "").slice(0, 10) === aujourd);
-        const rev_aujourd = cmd_aujourd.reduce((s, c) => s + getMontant(c), 0);
+router.get("/instagram", requireAuth, (req, res) => {
+    res.redirect("/auth/meta");
+});
 
-        // Performance mensuelle
-        const moisActuel = aujourd.slice(0, 7);
-        const moisPrec   = new Date(new Date().setMonth(new Date().getMonth() - 1))
-                            .toISOString().slice(0, 7);
-        const cmd_mois   = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisActuel));
-        const cmd_moisP  = commandes.filter(c => (c["Date Commande"] || "").startsWith(moisPrec));
-        const rev_mois   = cmd_mois.reduce((s, c)  => s + getMontant(c), 0);
-        const rev_moisP  = cmd_moisP.reduce((s, c) => s + getMontant(c), 0);
-        const evolution  = rev_moisP > 0
-            ? ((rev_mois - rev_moisP) / rev_moisP * 100).toFixed(1) + "%"
-            : "—";
+router.get("/telegram", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId || "";
+    let telegramChatId = "";
+    let telegramActif  = false;
 
-        res.json({
-            success    : true,
-            workspace  : { nom: workspace.nom || "", metier: workspace.metier || "" },
-            stats      : { total_commandes, total_revenus: total_revenus.toFixed(2), en_attente, confirmees, annulees, vip, blacklist },
-            livraison  : { livrees, en_cours, echecs },
-            mission    : { date: aujourd, commandes: cmd_aujourd.length, revenus: rev_aujourd.toFixed(2) },
-            performance: { revenus_mois: rev_mois.toFixed(2), commandes_mois: cmd_mois.length, evolution },
-            commandes,
-            clients,
+    try {
+        if (workspaceId) {
+            const connecteurs = await connectorService.getByWorkspace(workspaceId);
+            const tg = connecteurs?.telegram;
+            if (tg) {
+                telegramChatId = tg.chatId || tg.identifiant || "";
+                telegramActif  = tg.actif === true;
+            }
+        }
+    } catch (err) {
+        console.error("❌ GET /connect/telegram (lecture) :", err.message);
+    }
+
+    res.render("connect-telegram", {
+        workspaceId,
+        shop           : req.session?.shop || "",
+        telegramChatId,
+        telegramActif,
+        error          : null,
+    });
+});
+
+router.post("/telegram", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session?.workspaceId;
+        if (!workspaceId) return res.redirect("/hub");
+
+        const chatId = req.body.telegram_chat_id;
+        const actif  = req.body.telegram_actif === "true";
+
+        if (!chatId || !chatId.trim()) {
+            return res.render("connect-telegram", {
+                workspaceId,
+                shop           : req.session?.shop || "",
+                telegramChatId : "",
+                telegramActif  : false,
+                error          : "Entre ton Chat ID Telegram.",
+            });
+        }
+
+        await connectorService.save(workspaceId, "telegram", {
+            chatId      : chatId.trim(),
+            actif,
+            connectedAt : new Date().toISOString(),
         });
 
+        res.redirect("/connect/tools");
     } catch (err) {
-        console.error("❌ API qg-data :", err.response?.data || err.message);
-        res.status(500).json({ error: "Erreur chargement données." });
+        console.error("❌ POST /connect/telegram :", err);
+        res.render("connect-telegram", {
+            workspaceId    : req.session?.workspaceId || "",
+            shop           : req.session?.shop || "",
+            telegramChatId : "",
+            telegramActif  : false,
+            error          : "Erreur interne. Réessayez.",
+        });
     }
 });
 
-// ── CONFIRMER COMMANDE ────────────────────────────────
-router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
+// ── DISCORD — vraie connexion (token de bot collé par le client) ──
+router.get("/discord", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId || "";
+    let discordActif = false;
+    let discordLabel = "";
+
     try {
-        // ✅ Vérifier ownership
-        const ok = await verifyCommande(req.params.id, req.session.workspaceId);
-        if (!ok) return res.status(403).json({ error: "Commande introuvable." });
-
-        await axios.patch(
-            `${airtable(TABLE_COMMANDES)}/${req.params.id}`,
-            { fields: { "Statut": "confirmée" } },
-            { headers: headers() }
-        );
-        res.json({ success: true });
-
+        if (workspaceId) {
+            const connecteurs = await connectorService.getByWorkspace(workspaceId);
+            const dc = connecteurs.find(c => c.type === "discord");
+            if (dc) {
+                discordActif = dc.actif === true;
+                discordLabel = dc.config?.serverName || "";
+            }
+        }
     } catch (err) {
-        console.error("❌ Confirmer :", err.message);
-        res.status(500).json({ error: "Erreur confirmation." });
+        console.error("❌ GET /connect/discord (lecture) :", err.message);
     }
+
+    res.render("connect-discord", {
+        workspaceId,
+        discordActif,
+        discordLabel,
+        error: null,
+    });
 });
 
-// ── ANNULER COMMANDE ──────────────────────────────────
-router.post("/commandes/:id/annuler", requireAuth, async (req, res) => {
+router.post("/discord", requireAuth, async (req, res) => {
     try {
-        // ✅ Vérifier ownership
-        const ok = await verifyCommande(req.params.id, req.session.workspaceId);
-        if (!ok) return res.status(403).json({ error: "Commande introuvable." });
+        const workspaceId = req.session?.workspaceId;
+        if (!workspaceId) return res.redirect("/hub");
 
-        await axios.patch(
-            `${airtable(TABLE_COMMANDES)}/${req.params.id}`,
-            { fields: { "Statut": "annulée" } },
-            { headers: headers() }
-        );
-        res.json({ success: true });
+        const botToken   = (req.body.bot_token || "").trim();
+        const serverName = (req.body.server_name || "").trim();
 
+        if (!botToken) {
+            return res.render("connect-discord", {
+                workspaceId,
+                discordActif: false,
+                discordLabel: "",
+                error: "Colle le token de ton bot Discord.",
+            });
+        }
+
+        await connectorService.save(workspaceId, "discord", {
+            botToken,
+            serverName,
+            connectedAt: new Date().toISOString(),
+        });
+
+        return res.render("connect-discord", {
+            workspaceId,
+            discordActif: true,
+            discordLabel: serverName,
+            error: null,
+        });
     } catch (err) {
-        console.error("❌ Annuler :", err.message);
-        res.status(500).json({ error: "Erreur annulation." });
-    }
-});
-// ── FEEDBACK CLIENT ───────────────────────────────────
-router.post("/feedback", requireAuth, async (req, res) => {
-    try {
-        const { text } = req.body;
-        if (!text || !text.trim()) return res.json({ success: false, error: "Message vide." });
-
-        const workspaceId = req.session.workspaceId;
-
-       await axios.post(
-            airtable(process.env.TABLE_JOURNAL || "JOURNAL"),
-            {
-                fields: {
-                    type   : "feedback",
-                    message: text.trim(),
-                },
-                typecast: true,
-            },
-            { headers: headers() }
-        );
-
-        res.json({ success: true });
-    } catch (err) {
-        console.error("❌ POST /api/feedback :", err.response?.data || err.message);
-        res.json({ success: false, error: "Erreur serveur." });
+        console.error("❌ POST /connect/discord :", err);
+        res.render("connect-discord", {
+            workspaceId : req.session?.workspaceId || "",
+            discordActif: false,
+            discordLabel: "",
+            error       : "Erreur interne. Réessaie.",
+        });
     }
 });
 
-// ── DEBUG SESSION ─────────────────────────────────────
-router.get("/debug-session", requireAuth, (req, res) => {
-    res.json({
-        workspaceId: req.session.workspaceId,
-        userId     : req.session.userId,
-        email      : req.session.email,
+// ── MODE IMPRESSION — YouTube, TikTok, Gmail, Google, WhatsApp, LinkedIn ──
+// Pas de vraie API branchée : le client colle un identifiant simple,
+// juste pour l'affichage "connecté" en attendant les permissions officielles.
+const IMPRESSION_TOOLS = ["youtube", "tiktok", "gmail", "google", "whatsapp", "linkedin"];
+
+const IMPRESSION_FIELD_LABEL = {
+    youtube : "Lien ou @pseudo de ta chaîne YouTube",
+    tiktok  : "@pseudo TikTok",
+    gmail   : "Adresse Gmail",
+    google  : "Adresse Gmail liée à Google",
+    whatsapp: "Numéro WhatsApp Business",
+    linkedin: "Lien de ton profil ou page LinkedIn",
+};
+
+IMPRESSION_TOOLS.forEach(toolId => {
+    router.get(`/${toolId}`, requireAuth, async (req, res) => {
+        const workspaceId = req.session?.workspaceId || "";
+        let actif = false;
+        let identifiant = "";
+
+        try {
+            if (workspaceId) {
+                const connecteurs = await connectorService.getByWorkspace(workspaceId);
+                const c = connecteurs.find(x => x.type === toolId);
+                if (c) {
+                    actif = c.actif === true;
+                    identifiant = c.config?.identifiant || "";
+                }
+            }
+        } catch (err) {
+            console.error(`❌ GET /connect/${toolId} (lecture) :`, err.message);
+        }
+
+        res.render("connect-impression", {
+            workspaceId,
+            tool: TOOLS.find(t => t.id === toolId),
+            fieldLabel: IMPRESSION_FIELD_LABEL[toolId],
+            actif,
+            identifiant,
+            error: null,
+        });
+    });
+
+    router.post(`/${toolId}`, requireAuth, async (req, res) => {
+        try {
+            const workspaceId = req.session?.workspaceId;
+            if (!workspaceId) return res.redirect("/hub");
+
+            const identifiant = (req.body.identifiant || "").trim();
+
+            if (!identifiant) {
+                return res.render("connect-impression", {
+                    workspaceId,
+                    tool: TOOLS.find(t => t.id === toolId),
+                    fieldLabel: IMPRESSION_FIELD_LABEL[toolId],
+                    actif: false,
+                    identifiant: "",
+                    error: "Ce champ est requis.",
+                });
+            }
+
+            await connectorService.save(workspaceId, toolId, {
+                identifiant,
+                mode: "impression",
+                connectedAt: new Date().toISOString(),
+            });
+
+            return res.render("connect-impression", {
+                workspaceId,
+                tool: TOOLS.find(t => t.id === toolId),
+                fieldLabel: IMPRESSION_FIELD_LABEL[toolId],
+                actif: true,
+                identifiant,
+                error: null,
+            });
+        } catch (err) {
+            console.error(`❌ POST /connect/${toolId} :`, err);
+            res.render("connect-impression", {
+                workspaceId: req.session?.workspaceId || "",
+                tool: TOOLS.find(t => t.id === toolId),
+                fieldLabel: IMPRESSION_FIELD_LABEL[toolId],
+                actif: false,
+                identifiant: "",
+                error: "Erreur interne. Réessaie.",
+            });
+        }
+    });
+});
+
+router.get("/tools/continue", requireAuth, (req, res) => {
+    if (!req.session?.workspaceId) return res.redirect("/hub");
+    res.redirect("/qg");
+});
+
+const COMING_SOON = ["stripe", "paypal", "dahabia", "ccp", "autre"];
+COMING_SOON.forEach(tool => {
+    router.get(`/${tool}`, requireAuth, (req, res) => {
+        res.render("connect-soon", {
+            tool       : TOOLS.find(t => t.id === tool) || { label: tool, color: "#718096" },
+            workspaceId: req.session?.workspaceId || "",
+        });
     });
 });
 
 module.exports = router;
+module.exports.TOOLS = TOOLS;
