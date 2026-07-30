@@ -46,6 +46,21 @@ function parseCoffreConfig(raw) {
     }
 }
 
+function parseAutomatisationsConfig(raw) {
+    const defaultAuto = {
+        ambassadeur: true,
+        serenite: true,
+        bouclierAntiFraude: true,
+    };
+    if (!raw) return defaultAuto;
+    if (typeof raw === "object") return { ...defaultAuto, ...raw };
+    try {
+        return { ...defaultAuto, ...JSON.parse(raw) };
+    } catch {
+        return defaultAuto;
+    }
+}
+
 function mapRecord(r) {
     const f = r.fields;
     return {
@@ -61,6 +76,7 @@ pays        : f.pays         || "",
 description : f.description  || "",
 samii       : parseSamiiConfig(f.samii),
 coffre      : parseCoffreConfig(f.coffre),
+automatisations : parseAutomatisationsConfig(f.automatisations),
 metaAccessToken : f.meta_access_token  || "",
 metaAdAccountId : f.meta_ad_account_id || "",
 metaPageId      : f.meta_page_id       || "",
