@@ -10,12 +10,17 @@
   <%- include("./partials/sidebar") %>
   <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
     <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
+
       <div style="text-align:center;margin-bottom:30px;">
         <div style="font-size:3rem;">💬</div>
-        <h2 style="color:#fff;margin-top:10px;">Connecter Discord</h2>
-        <p style="color:#666;font-size:0.85rem;margin-top:6px;">
-          Crée un bot sur le Discord Developer Portal et colle son token ici.
-        </p>
+        <h2 style="color:#fff;margin-top:10px;">Discord</h2>
+        <% if (discordActif) { %>
+          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ Connecté</span>
+        <% } else { %>
+          <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+            Crée un bot sur le Discord Developer Portal et colle son token ici.
+          </p>
+        <% } %>
       </div>
 
       <% if (error) { %>
@@ -23,25 +28,40 @@
       <% } %>
 
       <% if (discordActif) { %>
-        <p style="text-align:center;color:#3ddc84;font-size:0.85rem;margin-bottom:20px;">
-          ✅ Déjà connecté <% if (discordLabel) { %>· <%= discordLabel %><% } %>
-        </p>
+        <div style="border-top:1px solid #1a1a1a;padding-top:20px;">
+          <div style="display:flex;justify-content:space-between;padding:10px 0;">
+            <span style="color:#666;font-size:0.85rem;">Serveur</span>
+            <span style="color:#fff;font-size:0.85rem;font-weight:500;"><%= discordLabel || '—' %></span>
+          </div>
+        </div>
+      <% } else { %>
+        <form method="POST" action="/connect/discord">
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Token du bot</label>
+          <input type="text" name="bot_token" placeholder="MTIzN..." required
+                 style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
+
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Nom du serveur (optionnel)</label>
+          <input type="text" name="server_name" placeholder="Mon serveur"
+                 style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+
+          <button type="submit"
+                  style="display:block;width:100%;padding:13px;background:linear-gradient(135deg,#5865F2,#404EED);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
+            💬 Connecter Discord
+          </button>
+        </form>
       <% } %>
 
-      <form method="POST" action="/connect/discord">
-        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Token du bot</label>
-        <input type="text" name="bot_token" placeholder="MTIzN..." required
-               style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
+      <a href="/connect/tools"
+         style="display:block;margin-top:20px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        ← Retour à mes outils
+      </a>
+      <% if (discordActif) { %>
+      <a href="/qg"
+         style="display:block;margin-top:10px;text-align:center;padding:13px;background:linear-gradient(135deg,#5865F2,#404EED);border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        Retour au QG →
+      </a>
+      <% } %>
 
-        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Nom du serveur (optionnel)</label>
-        <input type="text" name="server_name" placeholder="Mon serveur"
-               style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
-
-        <button type="submit"
-                style="display:block;width:100%;padding:13px;background:linear-gradient(135deg,#5865F2,#404EED);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
-          💬 Connecter Discord
-        </button>
-      </form>
     </div>
   </main>
 </div>
