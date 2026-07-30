@@ -113,6 +113,7 @@ app.use("/coffre",    requireAuth, require("./routes/coffre"));
 app.use("/arsenal",   requireAuth, require("./routes/arsenal"));
 app.use("/samii/opportunites", require("./routes/opportunites"));
 app.use("/samii/griot", require("./routes/griot"));
+app.use("/samii/top-produits", require("./routes/topproduits"));
 app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 app.use("/connect",   require("./routes/connector"));
 
