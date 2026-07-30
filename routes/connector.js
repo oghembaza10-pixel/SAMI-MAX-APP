@@ -244,7 +244,76 @@ router.post("/discord", requireAuth, async (req, res) => {
         });
     }
 });
+// ── TRANSPORTEURS — clé API perso (optionnel, sinon clé globale OG Empire) ──
+router.get("/yalidine", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId || "";
+    let actif = false;
+    let apiId = "";
 
+    try {
+        if (workspaceId) {
+            const connecteurs = await connectorService.getByWorkspace(workspaceId);
+            const c = connecteurs.find(x => x.type === "yalidine");
+            if (c) {
+                actif = c.actif === true;
+                apiId = c.config?.apiId || "";
+            }
+        }
+    } catch (err) {
+        console.error("❌ GET /connect/yalidine (lecture) :", err.message);
+    }
+
+    res.render("connect-transporteur", {
+        workspaceId,
+        tool: TOOLS.find(t => t.id === "yalidine"),
+        actif,
+        apiId,
+        error: null,
+    });
+});
+
+router.post("/yalidine", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session?.workspaceId;
+        if (!workspaceId) return res.redirect("/hub");
+
+        const apiId    = (req.body.api_id || "").trim();
+        const apiToken = (req.body.api_token || "").trim();
+
+        if (!apiId || !apiToken) {
+            return res.render("connect-transporteur", {
+                workspaceId,
+                tool: TOOLS.find(t => t.id === "yalidine"),
+                actif: false,
+                apiId: "",
+                error: "Les deux champs (ID et Token) sont requis.",
+            });
+        }
+
+        await connectorService.save(workspaceId, "yalidine", {
+            apiId,
+            apiToken,
+            connectedAt: new Date().toISOString(),
+        });
+
+        return res.render("connect-transporteur", {
+            workspaceId,
+            tool: TOOLS.find(t => t.id === "yalidine"),
+            actif: true,
+            apiId,
+            error: null,
+        });
+    } catch (err) {
+        console.error("❌ POST /connect/yalidine :", err);
+        res.render("connect-transporteur", {
+            workspaceId: req.session?.workspaceId || "",
+            tool: TOOLS.find(t => t.id === "yalidine"),
+            actif: false,
+            apiId: "",
+            error: "Erreur interne. Réessaie.",
+        });
+    }
+});
 // ── MODE IMPRESSION — YouTube, TikTok, Gmail, Google, WhatsApp, LinkedIn ──
 // Pas de vraie API branchée : le client colle un identifiant simple,
 // juste pour l'affichage "connecté" en attendant les permissions officielles.
