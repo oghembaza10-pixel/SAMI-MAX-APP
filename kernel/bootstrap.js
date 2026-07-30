@@ -13,7 +13,7 @@ const gmail              = require("../services/gmail");
 const stripe             = require("../services/stripe");
 const paypal             = require("../services/paypal");
 const yalidine           = require("../services/yalidine");
-
+const sereniteEngine     = require("../engines/sereniteEngine");
 const scheduler          = require("./scheduler");
 const ambassadeurEngine  = require("../engines/ambassadeurEngine");
 
