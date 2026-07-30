@@ -24,6 +24,7 @@ const TOOLS = [
     { id: "google",    label: "Google",            icon: "chrome",         color: "#4285F4", available: true, mode: "impression" },
     { id: "whatsapp",  label: "WhatsApp Business", icon: "message-circle", color: "#25D366", available: true, mode: "impression" },
     { id: "linkedin",  label: "LinkedIn",          icon: "linkedin",       color: "#0A66C2", available: true, mode: "impression" },
+    { id: "yalidine", label: "Yalidine", icon: "truck", color: "#F5A623", available: true, mode: "transporteur" },
     { id: "stripe",    label: "Stripe",            icon: "credit-card",    color: "#635BFF", available: false },
     { id: "paypal",    label: "PayPal",            icon: "wallet",         color: "#00457C", available: false },
     { id: "dahabia",   label: "Dahabia",           icon: "credit-card",    color: "#00A859", available: false },
