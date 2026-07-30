@@ -176,12 +176,155 @@ router.post("/telegram", requireAuth, async (req, res) => {
     }
 });
 
+// ── DISCORD — vraie connexion (token de bot collé par le client) ──
+router.get("/discord", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId || "";
+    let discordActif = false;
+    let discordLabel = "";
+
+    try {
+        if (workspaceId) {
+            const connecteurs = await connectorService.getByWorkspace(workspaceId);
+            const dc = connecteurs.find(c => c.type === "discord");
+            if (dc) {
+                discordActif = dc.actif === true;
+                discordLabel = dc.config?.serverName || "";
+            }
+        }
+    } catch (err) {
+        console.error("❌ GET /connect/discord (lecture) :", err.message);
+    }
+
+    res.render("connect-discord", {
+        workspaceId,
+        discordActif,
+        discordLabel,
+        error: null,
+    });
+});
+
+router.post("/discord", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session?.workspaceId;
+        if (!workspaceId) return res.redirect("/hub");
+
+        const botToken   = (req.body.bot_token || "").trim();
+        const serverName = (req.body.server_name || "").trim();
+
+        if (!botToken) {
+            return res.render("connect-discord", {
+                workspaceId,
+                discordActif: false,
+                discordLabel: "",
+                error: "Colle le token de ton bot Discord.",
+            });
+        }
+
+        await connectorService.save(workspaceId, "discord", {
+            botToken,
+            serverName,
+            connectedAt: new Date().toISOString(),
+        });
+
+        res.redirect("/connect/tools");
+    } catch (err) {
+        console.error("❌ POST /connect/discord :", err);
+        res.render("connect-discord", {
+            workspaceId : req.session?.workspaceId || "",
+            discordActif: false,
+            discordLabel: "",
+            error       : "Erreur interne. Réessaie.",
+        });
+    }
+});
+
+// ── MODE IMPRESSION — YouTube, TikTok, Gmail, Google, WhatsApp ──
+// Pas de vraie API branchée : le client colle un identifiant simple,
+// juste pour l'affichage "connecté" en attendant les permissions officielles.
+const IMPRESSION_TOOLS = ["youtube", "tiktok", "gmail", "google", "whatsapp"];
+
+const IMPRESSION_FIELD_LABEL = {
+    youtube : "Lien ou @pseudo de ta chaîne YouTube",
+    tiktok  : "@pseudo TikTok",
+    gmail   : "Adresse Gmail",
+    google  : "Adresse Gmail liée à Google",
+    whatsapp: "Numéro WhatsApp Business",
+};
+
+IMPRESSION_TOOLS.forEach(toolId => {
+    router.get(`/${toolId}`, requireAuth, async (req, res) => {
+        const workspaceId = req.session?.workspaceId || "";
+        let actif = false;
+        let identifiant = "";
+
+        try {
+            if (workspaceId) {
+                const connecteurs = await connectorService.getByWorkspace(workspaceId);
+                const c = connecteurs.find(x => x.type === toolId);
+                if (c) {
+                    actif = c.actif === true;
+                    identifiant = c.config?.identifiant || "";
+                }
+            }
+        } catch (err) {
+            console.error(`❌ GET /connect/${toolId} (lecture) :`, err.message);
+        }
+
+        res.render("connect-impression", {
+            workspaceId,
+            tool: TOOLS.find(t => t.id === toolId),
+            fieldLabel: IMPRESSION_FIELD_LABEL[toolId],
+            actif,
+            identifiant,
+            error: null,
+        });
+    });
+
+    router.post(`/${toolId}`, requireAuth, async (req, res) => {
+        try {
+            const workspaceId = req.session?.workspaceId;
+            if (!workspaceId) return res.redirect("/hub");
+
+            const identifiant = (req.body.identifiant || "").trim();
+
+            if (!identifiant) {
+                return res.render("connect-impression", {
+                    workspaceId,
+                    tool: TOOLS.find(t => t.id === toolId),
+                    fieldLabel: IMPRESSION_FIELD_LABEL[toolId],
+                    actif: false,
+                    identifiant: "",
+                    error: "Ce champ est requis.",
+                });
+            }
+
+            await connectorService.save(workspaceId, toolId, {
+                identifiant,
+                mode: "impression",
+                connectedAt: new Date().toISOString(),
+            });
+
+            res.redirect("/connect/tools");
+        } catch (err) {
+            console.error(`❌ POST /connect/${toolId} :`, err);
+            res.render("connect-impression", {
+                workspaceId: req.session?.workspaceId || "",
+                tool: TOOLS.find(t => t.id === toolId),
+                fieldLabel: IMPRESSION_FIELD_LABEL[toolId],
+                actif: false,
+                identifiant: "",
+                error: "Erreur interne. Réessaie.",
+            });
+        }
+    });
+});
+
 router.get("/tools/continue", requireAuth, (req, res) => {
     if (!req.session?.workspaceId) return res.redirect("/hub");
     res.redirect("/qg");
 });
 
-const COMING_SOON = ["whatsapp", "gmail", "google", "stripe", "paypal", "discord", "youtube", "dahabia", "ccp", "autre"];
+const COMING_SOON = ["stripe", "paypal", "dahabia", "ccp", "autre"];
 COMING_SOON.forEach(tool => {
     router.get(`/${tool}`, requireAuth, (req, res) => {
         res.render("connect-soon", {
