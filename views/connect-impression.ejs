@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OG Empire — Connecter <%= tool.label %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/hub-premium.css">
+</head>
+<body>
+<div class="og-capital">
+    <%- include("partials/sidebar") %>
+    <main class="capitol-content">
+        <header class="hero-premium" style="min-height:220px;">
+            <div class="hero-grid"></div>
+            <div class="hero-glow hero-glow-1"></div>
+            <div class="hero-overlay"></div>
+            <div class="hero-text-zone">
+                <span class="hero-eyebrow">OG Empire</span>
+                <h1>Connecter <%= tool.label %></h1>
+                <p>Les permissions officielles arrivent bientôt — connecte-toi dès maintenant en mode simplifié.</p>
+            </div>
+        </header>
+        <section class="connect-soon-section">
+            <div class="connect-soon-card" style="--tool-color:<%= tool.color %>;max-width:440px;margin:0 auto;">
+                <div class="connect-soon-card__icon">
+                    <i data-lucide="<%= tool.icon || 'plug' %>"></i>
+                </div>
+                <h2><%= tool.label %></h2>
+
+                <% if (error) { %>
+                    <p style="color:#e55;font-size:0.85rem;margin:10px 0;"><%= error %></p>
+                <% } %>
+
+                <% if (actif) { %>
+                    <p style="color:#3ddc84;font-size:0.85rem;margin:10px 0;">
+                        🟡 Connecté · <%= identifiant %><br>
+                        <span style="color:#888;font-size:0.75rem;">Synchronisation complète bientôt disponible</span>
+                    </p>
+                <% } else { %>
+                    <form method="POST" action="/connect/<%= tool.id %>" style="text-align:left;margin-top:18px;">
+                        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;"><%= fieldLabel %></label>
+                        <input type="text" name="identifiant" required
+                               style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
+                        <button type="submit" class="connect-btn connect-btn--primary" style="width:100%;">
+                            Connecter <%= tool.label %> →
+                        </button>
+                    </form>
+                <% } %>
+
+                <span class="og-badge og-badge--soon" style="margin-top:14px;display:inline-block;">⏳ Permissions officielles bientôt</span>
+            </div>
+            <div class="connect-soon-actions">
+                <a href="/connect/tools" class="connect-btn connect-btn--primary">← Retour à mes outils</a>
+                <a href="/qg" class="connect-btn connect-btn--cta">Continuer vers mon QG →</a>
+            </div>
+        </section>
+    </main>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>if (typeof lucide !== "undefined") lucide.createIcons();</script>
+</body>
+</html>
