@@ -66,6 +66,10 @@ router.get("/", requireAuth, async (req, res) => {
             transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
         }
         select { cursor: pointer; }
+        select option {
+            background: #0a0d14;
+            color: #F1F0EC;
+        }
         textarea { resize: vertical; min-height: 70px; }
         input:focus, textarea:focus, select:focus {
             outline: none;
@@ -186,6 +190,8 @@ router.get("/", requireAuth, async (req, res) => {
                 <option value="tiktok">TikTok</option>
                 <option value="instagram">Instagram</option>
                 <option value="facebook">Facebook</option>
+                <option value="linkedin">LinkedIn (post écrit)</option>
+                <option value="email">Email / Gmail (message écrit)</option>
             </select>
 
             <div class="griot-row">
@@ -225,13 +231,22 @@ router.get("/", requireAuth, async (req, res) => {
 </div>
 
 <script>
-// Le format "long" n'a de sens que pour YouTube
 const selectReseau = document.getElementById('select-reseau');
 const selectFormat = document.getElementById('select-format');
+const formatWrapper = selectFormat.closest('div');
+
 function updateFormatOptions() {
-    const isYoutube = selectReseau.value === 'youtube';
-    selectFormat.querySelector('option[value="long"]').disabled = !isYoutube;
-    if (!isYoutube) selectFormat.value = 'short';
+    const reseau = selectReseau.value;
+    const isEcrit = reseau === 'linkedin' || reseau === 'email';
+
+    if (isEcrit) {
+        formatWrapper.style.display = 'none';
+    } else {
+        formatWrapper.style.display = 'block';
+        const isYoutube = reseau === 'youtube';
+        selectFormat.querySelector('option[value="long"]').disabled = !isYoutube;
+        if (!isYoutube) selectFormat.value = 'short';
+    }
 }
 selectReseau.addEventListener('change', updateFormatOptions);
 updateFormatOptions();
@@ -268,15 +283,15 @@ function renderPack(data) {
         const hooksHtml = data.hooks.map((h, i) =>
             \`<div class="griot-hook-item"><span class="griot-hook-num">\${i + 1}</span>\${h}</div>\`
         ).join('');
-        html += block('zap', 'Accroches (3 premières secondes)', \`<div class="griot-hooks">\${hooksHtml}</div>\`, data.hooks.join('\\n\\n'));
+        html += block('zap', 'Accroches', \`<div class="griot-hooks">\${hooksHtml}</div>\`, data.hooks.join('\\n\\n'));
     }
 
     if (data.script) {
-        html += block('film', 'Script', data.script, data.script);
+        html += block('film', 'Contenu principal', data.script, data.script);
     }
 
     if (data.legende) {
-        html += block('message-circle', 'Légende / description', data.legende, data.legende);
+        html += block('message-circle', 'Version courte / légende', data.legende, data.legende);
     }
 
     if (data.hashtags?.length) {
@@ -354,7 +369,48 @@ router.post("/", requireAuth, async (req, res) => {
 
         const formatLabel = format === "long" ? "vidéo longue (2-5 minutes)" : "vidéo courte / short (15-45 secondes)";
 
-        const prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un pack de contenu complet.
+        let prompt;
+
+        if (reseau === "linkedin") {
+            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un post LinkedIn professionnel complet.
+
+Objectif : ${objectifsLabel[objectif] || objectif}
+Sujet : ${sujet}
+${ton ? `Ton souhaité : ${ton}` : "Ton : professionnel, crédible, engageant."}
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
+
+{
+  "hooks": ["accroche 1 pour la première ligne", "accroche 2", "accroche 3"],
+  "script": "le corps complet du post LinkedIn, bien structuré, avec des sauts de ligne",
+  "legende": "une version courte alternative du post, plus directe",
+  "hashtags": ["motcle1", "motcle2", "motcle3"],
+  "cta": ["variante d'appel à l'action 1", "variante 2", "variante 3"],
+  "meilleur_moment": "un jour et une heure recommandés pour publier sur LinkedIn, avec justification"
+}
+
+Ne mets rien dans "miniature" ou laisse-le vide. Sois concret et directement utilisable.`;
+        } else if (reseau === "email") {
+            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un email marketing complet.
+
+Objectif : ${objectifsLabel[objectif] || objectif}
+Sujet : ${sujet}
+${ton ? `Ton souhaité : ${ton}` : "Ton : clair, persuasif, chaleureux."}
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
+
+{
+  "hooks": ["objet d'email 1", "objet d'email 2", "objet d'email 3"],
+  "script": "le corps complet de l'email, bien structuré, prêt à envoyer",
+  "legende": "une version courte pour un aperçu/pré-header",
+  "hashtags": [],
+  "cta": ["variante de bouton d'action 1", "variante 2", "variante 3"],
+  "meilleur_moment": "un jour et une heure recommandés pour envoyer cet email, avec justification"
+}
+
+Ne mets rien dans "miniature" ou laisse-le vide. Sois concret et directement utilisable.`;
+        } else {
+            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un pack de contenu vidéo complet.
 
 Réseau : ${reseau}
 Format : ${formatLabel}
@@ -362,7 +418,7 @@ Objectif : ${objectifsLabel[objectif] || objectif}
 Sujet / produit : ${sujet}
 ${ton ? `Ton souhaité : ${ton}` : "Ton : adapte-le naturellement au réseau et à l'objectif."}
 
-Génère un pack de contenu complet et réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
 
 {
   "hooks": ["accroche 1", "accroche 2", "accroche 3"],
@@ -375,6 +431,7 @@ Génère un pack de contenu complet et réponds UNIQUEMENT avec un objet JSON va
 }
 
 Sois créatif, concret et directement utilisable — pas de généralités vagues.`;
+        }
 
         const result = await gemini.chat({
             message: prompt,
