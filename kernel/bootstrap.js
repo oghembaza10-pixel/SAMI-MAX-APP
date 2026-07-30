@@ -16,6 +16,8 @@ const yalidine           = require("../services/yalidine");
 const sereniteEngine     = require("../engines/sereniteEngine");
 const scheduler          = require("./scheduler");
 const ambassadeurEngine  = require("../engines/ambassadeurEngine");
+const trackingRegistry = require("../services/tracking");
+const yalidineTracking = require("../services/tracking/yalidine");
 
 function registerChannels() {
     notificationEngine.register("telegram", {
