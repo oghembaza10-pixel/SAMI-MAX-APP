@@ -117,6 +117,7 @@ app.use("/samii/top-produits", require("./routes/topproduits"));
 app.use("/samii/diplomate", require("./routes/diplomate"));
 app.use("/samii/oeil-concurrentiel", require("./routes/oeilconcurrentiel"));
 app.use("/samii/chasseur-stock", require("./routes/chasseurstock"));
+app.use("/samii/memoire-client", require("./routes/memoireclient"));
 app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 app.use("/connect",   require("./routes/connector"));
 
