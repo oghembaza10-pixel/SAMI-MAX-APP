@@ -227,7 +227,12 @@ router.post("/discord", requireAuth, async (req, res) => {
             connectedAt: new Date().toISOString(),
         });
 
-        res.redirect("/connect/tools");
+       return res.render("connect-discord", {
+    workspaceId,
+    discordActif: true,
+    discordLabel: serverName,
+    error: null,
+});
     } catch (err) {
         console.error("❌ POST /connect/discord :", err);
         res.render("connect-discord", {
