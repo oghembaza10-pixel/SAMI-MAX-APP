@@ -329,50 +329,46 @@ router.post("/", requireAuth, async (req, res) => {
             if (!question || !question.trim()) {
                 return res.json({ success: false, error: "Pose ta question." });
             }
-            prompt = `Tu es SAMII, spécialiste veille concurrentielle pour OG Empire. Un marchand pose cette question sur les prix :
-
-"${question}"
-
-Utilise la recherche web pour répondre avec des informations concrètes et à jour.
-
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
-{
-  "reponse": "ta réponse complète et concrète à la question",
-  "comparatif": [
-    { "source": "Nom du site/vendeur", "type": "Détail/gros", "prix": "montant avec devise" }
-  ],
-  "fournisseurs": []
-}
-
-Le tableau "comparatif" peut être vide si non pertinent pour la question. Laisse "fournisseurs" vide dans ce mode.`;
+            prompt = "Tu es SAMII, spécialiste veille concurrentielle pour OG Empire. Un marchand pose cette question sur les prix :\n\n"
+                + `"${question}"\n\n`
+                + "Utilise la recherche web pour répondre avec des informations concrètes et à jour.\n\n"
+                + "Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :\n"
+                + "{\n"
+                + '  "reponse": "ta réponse complète et concrète à la question",\n'
+                + '  "comparatif": [\n'
+                + '    { "source": "Nom du site/vendeur", "type": "Détail/gros", "prix": "montant avec devise" }\n'
+                + "  ],\n"
+                + '  "fournisseurs": []\n'
+                + "}\n\n"
+                + 'Le tableau "comparatif" peut être vide si non pertinent pour la question. Laisse "fournisseurs" vide dans ce mode.';
 
         } else {
             if (!produit || !produit.trim()) {
                 return res.json({ success: false, error: "Indique le produit à analyser." });
             }
 
-            prompt = `Tu es SAMII, spécialiste veille concurrentielle pour OG Empire. Un marchand veut analyser le positionnement prix d'un produit.
+            const prixLigne = prix_actuel
+                ? `Prix actuel du marchand : ${prix_actuel}`
+                : 'Le marchand n\'a pas encore de prix, ne fais pas de verdict de comparaison, mets "verdict": null.';
 
-Produit : ${produit}
-${marche ? `Marché : ${marche}` : ""}
-${prix_actuel ? `Prix actuel du marchand : ${prix_actuel}` : "Le marchand n'a pas encore de prix, ne fais pas de verdict de comparaison, mets \\"verdict\\": null."}
-
-Utilise la recherche web pour trouver :
-1. Des prix constatés pour ce produit chez d'autres vendeurs/sites (comparatif détail)
-2. Des fournisseurs ou grossistes potentiels (chinois type Alibaba/1688, ou européens), avec prix de gros estimés si trouvables
-
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
-{
-  "verdict": ${prix_actuel ? `{ "statut": "bas|bien|haut", "explication": "phrase expliquant le positionnement par rapport au prix donné" }` : "null"},
-  "comparatif": [
-    { "source": "Nom du site/vendeur", "type": "Détail", "prix": "montant avec devise" }
-  ],
-  "fournisseurs": [
-    { "nom": "Nom du fournisseur", "origine": "Chine / Europe / etc.", "prix_gros": "montant estimé", "lien": "URL si trouvée" }
-  ]
-}
-
-Donne 3 à 5 éléments par liste quand c'est possible. Sois concret.`;
+            prompt = "Tu es SAMII, spécialiste veille concurrentielle pour OG Empire. Un marchand veut analyser le positionnement prix d'un produit.\n\n"
+                + `Produit : ${produit}\n`
+                + (marche ? `Marché : ${marche}\n` : "")
+                + `${prixLigne}\n\n`
+                + "Utilise la recherche web pour trouver :\n"
+                + "1. Des prix constatés pour ce produit chez d'autres vendeurs/sites (comparatif détail)\n"
+                + "2. Des fournisseurs ou grossistes potentiels (chinois type Alibaba/1688, ou européens), avec prix de gros estimés si trouvables\n\n"
+                + "Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :\n"
+                + "{\n"
+                + `  "verdict": ${prix_actuel ? '{ "statut": "bas|bien|haut", "explication": "phrase expliquant le positionnement par rapport au prix donné" }' : "null"},\n`
+                + '  "comparatif": [\n'
+                + '    { "source": "Nom du site/vendeur", "type": "Détail", "prix": "montant avec devise" }\n'
+                + "  ],\n"
+                + '  "fournisseurs": [\n'
+                + '    { "nom": "Nom du fournisseur", "origine": "Chine / Europe / etc.", "prix_gros": "montant estimé", "lien": "URL si trouvée" }\n'
+                + "  ]\n"
+                + "}\n\n"
+                + "Donne 3 à 5 éléments par liste quand c'est possible. Sois concret.";
         }
 
         const result = await gemini.chatWithSearch({
