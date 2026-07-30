@@ -49,5 +49,10 @@ function registerScheduledJobs() {
     scheduler.add("0 10 * * *", "Ambassadeur - offres VIP quotidiennes", ambassadeurEngine.runDaily);
     scheduler.start();
 }
+function registerScheduledJobs() {
+    scheduler.add("0 10 * * *", "Ambassadeur - offres VIP quotidiennes", ambassadeurEngine.runDaily);
+    scheduler.add("0 22 * * *", "Sérénité - rapport quotidien apaisé", sereniteEngine.runDaily);
+    scheduler.start();
+}
 
 module.exports = { registerChannels, registerScheduledJobs };
