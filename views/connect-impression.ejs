@@ -1,63 +1,67 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OG Empire — Connecter <%= tool.label %></title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/hub-premium.css">
+  <meta charset="UTF-8">
+  <title>Connecter <%= tool.label %> — OG Empire</title>
+  <link rel="stylesheet" href="/css/hub-premium.css">
 </head>
 <body>
 <div class="og-capital">
-    <%- include("partials/sidebar") %>
-    <main class="capitol-content">
-        <header class="hero-premium" style="min-height:220px;">
-            <div class="hero-grid"></div>
-            <div class="hero-glow hero-glow-1"></div>
-            <div class="hero-overlay"></div>
-            <div class="hero-text-zone">
-                <span class="hero-eyebrow">OG Empire</span>
-                <h1>Connecter <%= tool.label %></h1>
-                <p>Les permissions officielles arrivent bientôt — connecte-toi dès maintenant en mode simplifié.</p>
-            </div>
-        </header>
-        <section class="connect-soon-section">
-            <div class="connect-soon-card" style="--tool-color:<%= tool.color %>;max-width:440px;margin:0 auto;">
-                <div class="connect-soon-card__icon">
-                    <i data-lucide="<%= tool.icon || 'plug' %>"></i>
-                </div>
-                <h2><%= tool.label %></h2>
+  <%- include("partials/sidebar") %>
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+    <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
 
-                <% if (error) { %>
-                    <p style="color:#e55;font-size:0.85rem;margin:10px 0;"><%= error %></p>
-                <% } %>
+      <div style="text-align:center;margin-bottom:30px;">
+        <div style="font-size:3rem;"><i data-lucide="<%= tool.icon || 'plug' %>" style="width:48px;height:48px;color:<%= tool.color %>;"></i></div>
+        <h2 style="color:#fff;margin-top:10px;"><%= tool.label %></h2>
+        <% if (actif) { %>
+          <span style="background:#d4af3722;color:#d4af37;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">🟡 Connecté · bientôt synchronisé</span>
+        <% } else { %>
+          <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+            Les permissions officielles arrivent bientôt — connecte-toi dès maintenant en mode simplifié.
+          </p>
+        <% } %>
+      </div>
 
-                <% if (actif) { %>
-                    <p style="color:#3ddc84;font-size:0.85rem;margin:10px 0;">
-                        🟡 Connecté · <%= identifiant %><br>
-                        <span style="color:#888;font-size:0.75rem;">Synchronisation complète bientôt disponible</span>
-                    </p>
-                <% } else { %>
-                    <form method="POST" action="/connect/<%= tool.id %>" style="text-align:left;margin-top:18px;">
-                        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;"><%= fieldLabel %></label>
-                        <input type="text" name="identifiant" required
-                               style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
-                        <button type="submit" class="connect-btn connect-btn--primary" style="width:100%;">
-                            Connecter <%= tool.label %> →
-                        </button>
-                    </form>
-                <% } %>
+      <% if (error) { %>
+        <p style="color:#e55;font-size:0.85rem;margin-bottom:14px;text-align:center;"><%= error %></p>
+      <% } %>
 
-                <span class="og-badge og-badge--soon" style="margin-top:14px;display:inline-block;">⏳ Permissions officielles bientôt</span>
-            </div>
-            <div class="connect-soon-actions">
-                <a href="/connect/tools" class="connect-btn connect-btn--primary">← Retour à mes outils</a>
-                <a href="/qg" class="connect-btn connect-btn--cta">Continuer vers mon QG →</a>
-            </div>
-        </section>
-    </main>
+      <% if (actif) { %>
+        <div style="border-top:1px solid #1a1a1a;padding-top:20px;">
+          <div style="display:flex;justify-content:space-between;padding:10px 0;">
+            <span style="color:#666;font-size:0.85rem;"><%= fieldLabel %></span>
+            <span style="color:#fff;font-size:0.85rem;font-weight:500;"><%= identifiant %></span>
+          </div>
+        </div>
+      <% } else { %>
+        <form method="POST" action="/connect/<%= tool.id %>">
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;"><%= fieldLabel %></label>
+          <input type="text" name="identifiant" required
+                 style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+
+          <button type="submit"
+                  style="display:block;width:100%;padding:13px;background:<%= tool.color %>;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
+            Connecter <%= tool.label %>
+          </button>
+        </form>
+      <% } %>
+
+      <a href="/connect/tools"
+         style="display:block;margin-top:20px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        ← Retour à mes outils
+      </a>
+      <% if (actif) { %>
+      <a href="/qg"
+         style="display:block;margin-top:10px;text-align:center;padding:13px;background:<%= tool.color %>;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        Retour au QG →
+      </a>
+      <% } %>
+
+    </div>
+  </main>
 </div>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script>if (typeof lucide !== "undefined") lucide.createIcons();</script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
