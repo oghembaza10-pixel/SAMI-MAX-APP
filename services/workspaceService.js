@@ -61,6 +61,17 @@ function parseAutomatisationsConfig(raw) {
     }
 }
 
+function parseMissionsConfig(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
 function mapRecord(r) {
     const f = r.fields;
     return {
@@ -77,6 +88,7 @@ description : f.description  || "",
 samii       : parseSamiiConfig(f.samii),
 coffre      : parseCoffreConfig(f.coffre),
 automatisations : parseAutomatisationsConfig(f.automatisations),
+missions    : parseMissionsConfig(f.missions),
 metaAccessToken : f.meta_access_token  || "",
 metaAdAccountId : f.meta_ad_account_id || "",
 metaPageId      : f.meta_page_id       || "",
