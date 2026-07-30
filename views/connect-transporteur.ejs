@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Connecter <%= tool.label %> — OG Empire</title>
+  <link rel="stylesheet" href="/css/hub-premium.css">
+</head>
+<body>
+<div class="og-capital">
+  <%- include("partials/sidebar") %>
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+    <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:460px;width:100%;">
+
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:3rem;">🚚</div>
+        <h2 style="color:#fff;margin-top:10px;">Connecter <%= tool.label %></h2>
+        <% if (actif) { %>
+          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ Ta clé perso est active</span>
+        <% } %>
+      </div>
+
+      <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:14px;margin-bottom:20px;font-size:0.8rem;color:#999;line-height:1.6;">
+        ℹ️ <b>Optionnel.</b> Sans clé perso, SAMII utilise automatiquement le compte <%= tool.label %> global d'OG Empire pour suivre tes colis. Ajoute ta propre clé uniquement si tu as ton propre compte <%= tool.label %> et que tu préfères qu'elle soit utilisée à la place.
+      </div>
+
+      <% if (error) { %>
+        <p style="color:#e55;font-size:0.85rem;margin-bottom:14px;text-align:center;"><%= error %></p>
+      <% } %>
+
+      <form method="POST" action="/connect/<%= tool.id %>">
+        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">ID API</label>
+        <input type="text" name="api_id" value="<%= apiId %>" placeholder="Ton API ID"
+               style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
+
+        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Token API</label>
+        <input type="password" name="api_token" placeholder="Ton API Token"
+               style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+
+        <button type="submit"
+                style="display:block;width:100%;padding:13px;background:<%= tool.color %>;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
+          🚚 Utiliser ma clé <%= tool.label %>
+        </button>
+      </form>
+
+      <a href="/connect/tools"
+         style="display:block;margin-top:16px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        ← Retour à mes outils
+      </a>
+
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
+</body>
+</html>
