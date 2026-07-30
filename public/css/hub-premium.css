@@ -575,3 +575,95 @@ body {
 
     .og-lang-switch { order: 4; margin-top: 4px; }
 }
+/* ==========================================================================
+   CONNECT TOOLS — grille de cartes de connexion
+   ========================================================================== */
+
+.connect-tools-section { padding: 40px 60px 60px; }
+
+.hub-error-msg, .connect-success-msg {
+    max-width: 640px; margin: 0 auto 20px;
+    padding: 14px 18px; border-radius: 12px;
+    font-size: .85rem; text-align: center;
+}
+.hub-error-msg { background: rgba(229,85,85,0.1); border: 1px solid rgba(229,85,85,0.3); color: #e55; }
+.connect-success-msg { background: rgba(61,220,132,0.1); border: 1px solid rgba(61,220,132,0.3); color: #3ddc84; }
+
+.connect-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.connect-tool-card {
+    position: relative;
+    background: var(--bg-panel);
+    border: var(--border-gold);
+    border-radius: 16px;
+    padding: 22px;
+    display: flex; flex-direction: column; gap: 16px;
+    transition: transform .3s var(--ease-premium), border-color .3s var(--ease-premium), box-shadow .3s var(--ease-premium);
+}
+.connect-tool-card:hover { transform: translateY(-3px); border-color: var(--tool-color, var(--cyan-tech)); }
+.connect-tool-card.connected { border-color: color-mix(in srgb, var(--tool-color, #3ddc84) 45%, transparent); }
+.connect-tool-card.soon { opacity: .55; }
+
+.connect-tool-card__header { display: flex; align-items: center; gap: 12px; }
+.connect-tool-card__icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: color-mix(in srgb, var(--tool-color, var(--gold-og)) 15%, transparent);
+    color: var(--tool-color, var(--gold-og));
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.connect-tool-card__icon i { width: 20px; height: 20px; }
+.connect-tool-card__info { flex: 1; min-width: 0; }
+.connect-tool-card__info h3 { font-size: .98rem; color: #fff; font-weight: 600; }
+.connect-tool-card__status { display: block; margin-top: 4px; }
+
+.connect-tool-card__body { display: flex; flex-direction: column; gap: 10px; }
+.connect-tool-card__soon-text { color: var(--text-muted); font-size: .82rem; }
+.connect-tool-card__connected-info { color: var(--text-main); font-size: .85rem; word-break: break-word; }
+
+.connect-inline-form { display: flex; flex-direction: column; gap: 10px; }
+.connect-input {
+    width: 100%; padding: 11px 13px; border-radius: 9px;
+    border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);
+    color: var(--text-main); font-size: .88rem; font-family: var(--font-body);
+}
+.connect-input:focus { outline: none; border-color: var(--cyan-tech); }
+
+.connect-btn {
+    display: inline-block; text-align: center;
+    padding: 11px 16px; border-radius: 10px; border: none;
+    font-weight: 700; font-size: .88rem; cursor: pointer;
+    font-family: var(--font-body);
+    transition: all .2s var(--ease-premium);
+}
+.connect-btn--primary { background: var(--gold-og); color: #000; }
+.connect-btn--primary:hover { background: var(--gold-hover); }
+.connect-btn--disconnect { background: rgba(229,85,85,0.12); color: #e55; border: 1px solid rgba(229,85,85,0.3); }
+.connect-btn--disconnect:hover { background: rgba(229,85,85,0.2); }
+.connect-btn--cta { background: var(--cyan-tech); color: #001018; }
+.connect-btn--cta:hover { background: #8fe6ff; }
+
+.og-badge {
+    display: inline-block; font-family: var(--font-mono); font-size: .68rem;
+    padding: 3px 10px; border-radius: 20px;
+}
+.og-badge--live { background: rgba(61,220,132,0.12); color: #3ddc84; border: 1px solid rgba(61,220,132,0.3); }
+.og-badge--off  { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+.og-badge--soon { background: rgba(197,160,89,0.1); color: var(--gold-og); border: 1px solid rgba(197,160,89,0.2); }
+
+.connect-tools-footer {
+    max-width: 640px; margin: 40px auto 0; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.connect-tools-footer__hint { color: var(--text-muted); font-size: .82rem; }
+
+@media (max-width: 768px) {
+    .connect-tools-section { padding: 24px 20px 40px; }
+    .connect-tools-grid { grid-template-columns: 1fr; }
+}
