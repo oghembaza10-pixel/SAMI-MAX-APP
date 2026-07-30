@@ -18,6 +18,7 @@ const TOOLS = [
     { id: "instagram", label: "Instagram",         icon: "instagram",      color: "#E1306C", available: true  },
     { id: "telegram",  label: "Telegram",          icon: "send",           color: "#229ED9", available: true  },
     { id: "discord",   label: "Discord",           icon: "message-square", color: "#5865F2", available: true  },
+    { id: "linkedin", label: "LinkedIn", icon: "linkedin", color: "#0A66C2", available: true, mode: "impression" },
     { id: "youtube",   label: "YouTube",           icon: "youtube",        color: "#FF0000", available: true, mode: "impression" },
     { id: "tiktok",    label: "TikTok",            icon: "music",          color: "#010101", available: true, mode: "impression" },
     { id: "gmail",     label: "Gmail",             icon: "mail",           color: "#EA4335", available: true, mode: "impression" },
