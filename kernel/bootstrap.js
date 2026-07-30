@@ -10,14 +10,13 @@ const whatsapp           = require("../services/whatsapp");
 const instagram          = require("../services/instagram");
 const facebook           = require("../services/facebook");
 const gmail              = require("../services/gmail");
-const stripe             = require("../services/stripe");
+const stripe              = require("../services/stripe");
 const paypal             = require("../services/paypal");
 const yalidine           = require("../services/yalidine");
-const sereniteEngine     = require("../engines/sereniteEngine");
 const scheduler          = require("./scheduler");
 const ambassadeurEngine  = require("../engines/ambassadeurEngine");
-const trackingRegistry = require("../services/tracking");
-const yalidineTracking = require("../services/tracking/yalidine");
+const trackingRegistry   = require("../services/tracking");
+const yalidineTracking   = require("../services/tracking/yalidine");
 
 function registerChannels() {
     notificationEngine.register("telegram", {
@@ -47,14 +46,15 @@ function registerChannels() {
     console.log("✅ Tous les canaux enregistrés");
 }
 
-function registerScheduledJobs() {
-    scheduler.add("0 10 * * *", "Ambassadeur - offres VIP quotidiennes", ambassadeurEngine.runDaily);
-    scheduler.start();
+function registerTrackingProviders() {
+    trackingRegistry.register("yalidine", yalidineTracking);
+    console.log("✅ Transporteurs de suivi enregistrés :", trackingRegistry.list().join(", "));
 }
+
 function registerScheduledJobs() {
     scheduler.add("0 10 * * *", "Ambassadeur - offres VIP quotidiennes", ambassadeurEngine.runDaily);
-    scheduler.add("0 22 * * *", "Sérénité - rapport quotidien apaisé", sereniteEngine.runDaily);
+    scheduler.add("0 22 * * *", "Sérénité - rapport quotidien apaisé", require("../engines/sereniteEngine").runDaily);
     scheduler.start();
 }
 
-module.exports = { registerChannels, registerScheduledJobs };
+module.exports = { registerChannels, registerScheduledJobs, registerTrackingProviders };
