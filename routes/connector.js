@@ -227,12 +227,12 @@ router.post("/discord", requireAuth, async (req, res) => {
             connectedAt: new Date().toISOString(),
         });
 
-       return res.render("connect-discord", {
-    workspaceId,
-    discordActif: true,
-    discordLabel: serverName,
-    error: null,
-});
+        return res.render("connect-discord", {
+            workspaceId,
+            discordActif: true,
+            discordLabel: serverName,
+            error: null,
+        });
     } catch (err) {
         console.error("❌ POST /connect/discord :", err);
         res.render("connect-discord", {
@@ -311,7 +311,14 @@ IMPRESSION_TOOLS.forEach(toolId => {
                 connectedAt: new Date().toISOString(),
             });
 
-            res.redirect("/connect/tools");
+            return res.render("connect-impression", {
+                workspaceId,
+                tool: TOOLS.find(t => t.id === toolId),
+                fieldLabel: IMPRESSION_FIELD_LABEL[toolId],
+                actif: true,
+                identifiant,
+                error: null,
+            });
         } catch (err) {
             console.error(`❌ POST /connect/${toolId} :`, err);
             res.render("connect-impression", {
