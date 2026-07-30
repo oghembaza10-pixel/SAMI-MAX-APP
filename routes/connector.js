@@ -102,9 +102,6 @@ router.post("/shopify", requireAuth, (req, res) => {
     if (!shopUrl.includes(".myshopify.com")) shopUrl += ".myshopify.com";
     res.redirect(`/auth/shopify?shop=${encodeURIComponent(shopUrl)}`);
 });
-router.get("/woocommerce", requireAuth, (req, res) => {
-    res.redirect("/connect/woocommerce");
-});
 
 router.get("/facebook", requireAuth, (req, res) => {
     res.redirect("/auth/meta");
