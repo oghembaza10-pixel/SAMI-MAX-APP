@@ -30,7 +30,7 @@ const CARDS = [
     { loi: "T-021", name: "Forteresse",         icon: "shield",        desc: "Protège ta réputation pendant 7 jours", available: true, href: "/coffre" },
     { loi: "T-022", name: "Bouclier Anti-Fraude", icon: "shield-alert", desc: "Vérification renforcée des commandes à risque", available: false },
     { loi: "T-023", name: "Radar Opportunités", icon: "radar",         desc: "Analyse quotidienne de tendances", available: false },
-    { loi: "T-024", name: "Chasseur de Stock",  icon: "package-search",desc: "Alertes de réapprovisionnement intelligentes", available: false },
+   { loi: "T-024", name: "Chasseur de Stock", icon: "package-search", desc: "Alertes de réapprovisionnement intelligentes", available: true, href: "/samii/chasseur-stock" },
     { loi: "T-025", name: "Ambassadeur",        icon: "heart-handshake", desc: "Offres de fidélité pour tes clients VIP", available: false },
     { loi: "T-026", name: "Griot",              icon: "feather",       desc: "Storytelling automatique de ta marque", available: false },
     { loi: "T-027", name: "Artillerie Promo",   icon: "rocket",        desc: "Génère et programme une campagne flash", available: false },
