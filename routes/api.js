@@ -111,10 +111,17 @@ router.get("/connecteurs", requireAuth, async (req, res) => {
 
         const connecteurs = {};
         r.data.records.forEach(rec => {
-            const f    = rec.fields;
-            const type = (f.type || "").toLowerCase();
+            const f     = rec.fields;
+            const type  = (f.type || "").toLowerCase();
+            const actif = f.actif === true;
+
+            // ✅ Anti-doublon : si un connecteur actif existe déjà pour ce type,
+            // ne jamais le remplacer par une ligne inactive (évite les doublons
+            // créés pendant des tests de reconnecter le même outil).
+            if (connecteurs[type] && connecteurs[type].actif && !actif) return;
+
             connecteurs[type] = {
-                actif      : f.actif === true,
+                actif,
                 identifiant: f.identifiant || "",
                 ...parseConfig(f.config),
             };
