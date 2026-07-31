@@ -106,6 +106,7 @@ app.use("/password-reset", require("./routes/password-reset"));
 // ══════════════════════════════════════════════════════
 app.use("/hub",       require("./routes/hub"));
 app.use("/workspace", require("./routes/workspace"));
+app.use("/client-qg", require("./routes/client-qg"));
 app.use("/dashboard", requireAuth, require("./routes/dashboard"));
 app.use(requireAuth, require("./routes/tools"));
 app.use("/profile",   requireAuth, require("./routes/profile"));
