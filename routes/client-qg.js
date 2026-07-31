@@ -25,6 +25,6 @@ router.get("/quota", requireAuth, (req, res) => {
 router.use("/transport", require("./client-transport"));
 router.use("/traducteur", require("./client-traducteur"));
 router.use("/services", require("./client-services"));
-// router.use("/pratique", require("./client-pratique"));      // à venir
+router.use("/plans", require("./client-plans"));
 
 module.exports = router;
