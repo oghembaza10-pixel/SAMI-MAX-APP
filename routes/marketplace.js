@@ -400,8 +400,11 @@ router.get("/", requireAuth, async (req, res) => {
         </div>
     </main>
 
-    <script src="https://unpkg.com/lucide@latest"></script>
+   <script src="https://unpkg.com/lucide@latest"></script>
     <script>if (typeof lucide !== "undefined") lucide.createIcons();</script>
 </body>
 </html>`);
 });
+
+// ── EXPORTATION DU ROUTEUR EXPRESS (OBLIGATOIRE) ─────
+module.exports = router;
