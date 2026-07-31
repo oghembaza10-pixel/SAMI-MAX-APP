@@ -45,13 +45,13 @@ router.get("/tools", requireAuth, async (req, res) => {
             tools     : TOOLS,
             connecteurs,
             error     : null,
+            from      : req.query.from || "qg",
         });
     } catch (err) {
         console.error("❌ GET /connect/tools :", err);
         res.redirect("/hub");
     }
 });
-
 router.post("/tools/save", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
