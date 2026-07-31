@@ -153,3 +153,32 @@
 }
 .samii-mode-link:hover { background: rgba(95,212,255,0.08); border-color: var(--cyan-tech); }
 .samii-mode-link i { width: 14px; height: 14px; }
+.samii-attach-menu {
+    position: absolute; bottom: calc(100% + 8px); left: 0;
+    background: var(--bg-panel); border: var(--border-gold); border-radius: 12px;
+    padding: 6px; display: none; flex-direction: column; gap: 2px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4); z-index: 20; min-width: 160px;
+}
+.samii-attach-menu--open { display: flex; }
+.samii-attach-menu button {
+    display: flex; align-items: center; gap: 10px;
+    background: none; border: none; color: var(--text-main);
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    font-size: .85rem; text-align: left;
+}
+.samii-attach-menu button:hover { background: rgba(95,212,255,0.08); }
+.samii-attach-menu button i { width: 16px; height: 16px; color: var(--cyan-tech); }
+
+#samii-lang-select {
+    background: transparent; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    color: var(--text-main); font-size: .78rem; padding: 4px 6px; cursor: pointer;
+}
+#samii-lang-select option { background: #0a0d14; }
+
+.samii-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--cyan-tech);
+    animation: samii-dot-bounce 1.2s infinite ease-in-out;
+}
+.samii-dot:nth-child(2) { animation-delay: .15s; }
+.samii-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes samii-dot-bounce { 0%, 60%, 100% { opacity: .3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
