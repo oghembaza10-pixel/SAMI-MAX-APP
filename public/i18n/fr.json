@@ -64,25 +64,33 @@
     "modules": { "all": "Tout" },
     "arsenal": { "boostMarketing": "Boost Marketing", "radar": "Radar Opportunités", "fortress": "Forteresse", "level": "Niveau", "seeMore": "Voir l'Arsenal" }
   },
-  "samii": {
+ "samii": {
     "topbar": "Stratège IA",
     "status": "OPÉRATIONNEL",
     "title": "Votre centre de vie stratégique.",
-    "chat": { "welcome": "Bienvenue, Général. Je suis SAMII. Comment puis-je vous aider aujourd'hui ?", "placeholder": "Parler à SAMII…" },
+    "changeMode": "Changer le mode de SAMII",
+    "connectTools": "Connecter mes outils",
+    "chat": {
+      "welcome": "Bienvenue, Général. Je suis SAMII. Comment puis-je vous aider aujourd'hui ?",
+      "placeholder": "Parler à SAMII…",
+      "attachPhoto": "Photo",
+      "attachDoc": "Document"
+    },
     "cards": {
-      "marketing": { "label": "Marketing", "value": "Boost actif" },
-      "opportunites": { "label": "Opportunités", "value": "3 nouvelles" },
-      "analyse": { "label": "Analyse résultats", "value": "+12% ce mois" },
-      "conseils": { "label": "Conseils SAMII", "value": "2 recommandations" },
-      "alertes": { "label": "Alertes", "value": "1 urgente" },
-      "missions": { "label": "Missions", "value": "4 en cours" },
-      "performance": { "label": "Performance", "value": "Excellente" },
-      "clients": { "label": "Clients & CRM", "value": "142 actifs" },
-      "revenus": { "label": "Revenus prévus", "value": "+8% attendu" },
-      "radar": { "label": "Radar concurrentiel", "value": "Surveillance active" },
-      "automatisations": { "label": "Automatisations", "value": "5 actives" },
-      "reseau": { "label": "Réseau global", "value": "17 pays" }
+      "marketing": { "label": "Marketing", "value": "Lancer une publicité →" },
+      "messagerEclair": { "label": "Messager Éclair", "value": "Activer un suivi →" },
+      "miroir": { "label": "Miroir", "value": "Voir mon diagnostic →" },
+      "griot": { "label": "Griot", "value": "Créer un pack de contenu →" },
+      "diplomate": { "label": "Diplomate", "value": "Répondre à un client →" },
+      "missions": { "label": "Missions", "value": "Voir mes tâches →" },
+      "oeilConcurrentiel": { "label": "Œil Concurrentiel", "value": "Analyser un prix →" },
+      "memoireClient": { "label": "Mémoire Client", "value": "Chercher un client →" },
+      "oracleFinancier": { "label": "Oracle Financier", "value": "Voir mes projections →" },
+      "topProduits": { "label": "Top Produits", "value": "Voir le classement →" },
+      "automatisations": { "label": "Automatisations", "value": "Gérer mes automatisations →" },
+      "chasseurStock": { "label": "Chasseur de Stock", "value": "Trouver un fournisseur →" }
     }
+  },
   },
   "arsenal": { "title": "L'Arsenal", "subtitle": "33 pouvoirs, chacun ancré dans une loi de SAMII.", "available": "Disponible", "soon": "Bientôt disponible" },
   "ads": {
