@@ -162,8 +162,7 @@
                                 </a>
                             <% } %>
 
-                        <% } else if (tool.mode === 'impression') { %>
-<% } else if (tool.mode === 'transporteur') { %>
+                        <% } else if (tool.mode === 'transporteur') { %>
                             <% if (isConnected) { %>
                                 <p class="connect-tool-card__connected-info">
                                     🟢 Clé perso active
@@ -177,7 +176,8 @@
                                     Connecter <%= tool.label %> →
                                 </a>
                             <% } %>
-                        <% } %>
+
+                        <% } else if (tool.mode === 'impression') { %>
                             <% if (isConnected) { %>
                                 <p class="connect-tool-card__connected-info">
                                     🟡 <%= connector.config?.identifiant || 'Connecté' %>
