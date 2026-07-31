@@ -21,6 +21,14 @@ function messageLisible(statut) {
     return STATUTS_LISIBLES[key] || `Nouveau statut de ton colis : ${statut}`;
 }
 
+function mapVersStatutQG(statutTransporteur) {
+    const s = (statutTransporteur || "").toLowerCase();
+    if (s.includes("livr")) return "livrée";
+    if (s.includes("retour") || s.includes("échec") || s.includes("echec")) return "échoué";
+    if (s.includes("transit") || s.includes("expédi") || s.includes("livraison")) return "en cours";
+    return null; // statut inconnu, on ne touche pas au champ Statut
+}
+
 async function runCheck() {
     try {
         const commandes = await airtable.find(
@@ -40,7 +48,7 @@ async function runCheck() {
 
             if (!numeroSuivi || !telephone) continue;
 
-           const result = await tracking.checkStatus(transporteur, numeroSuivi, f.Boutique);
+            const result = await tracking.checkStatus(transporteur, numeroSuivi, f.Boutique);
             if (!result.success) continue;
 
             const nouveauStatut = result.statut;
@@ -59,9 +67,11 @@ async function runCheck() {
                     shop: f.Boutique || "",
                 });
 
-                await airtable.update("COMMANDES", c.id, {
-                    dernier_statut_suivi: nouveauStatut,
-                });
+                const statutQG = mapVersStatutQG(nouveauStatut);
+                const updateFields = { dernier_statut_suivi: nouveauStatut };
+                if (statutQG) updateFields.Statut = statutQG;
+
+                await airtable.update("COMMANDES", c.id, updateFields);
 
                 console.log(`✅ Client notifié — commande ${f["ID Commande"] || c.id} → ${nouveauStatut}`);
             } catch (err) {
