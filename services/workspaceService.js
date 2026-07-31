@@ -100,6 +100,7 @@ updated_at  : f.updated_at   || "",
     };
 }
 
+
 async function getByOwner(email) {
     try {
         const res = await axios.get(url(), {
@@ -112,6 +113,22 @@ async function getByOwner(email) {
         return res.data.records.map(mapRecord);
     } catch (err) {
         console.error("❌ workspaceService.getByOwner :", err.response?.data || err.message);
+        return [];
+    }
+}
+
+async function getAllActive() {
+    try {
+        const res = await axios.get(url(), {
+            headers: headers(),
+            params : {
+                filterByFormula: `{statut}="actif"`,
+                maxRecords     : 100,
+            },
+        });
+        return res.data.records.map(mapRecord);
+    } catch (err) {
+        console.error("❌ workspaceService.getAllActive :", err.response?.data || err.message);
         return [];
     }
 }
