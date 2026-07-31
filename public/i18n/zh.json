@@ -64,24 +64,31 @@
     "modules": { "all": "全部" },
     "arsenal": { "boostMarketing": "营销加速", "radar": "机会雷达", "fortress": "堡垒", "level": "等级", "seeMore": "查看军械库" }
   },
-  "samii": {
-    "topbar": "AI战略师",
+ "samii": {
+    "topbar": "AI 战略顾问",
     "status": "运行中",
-    "title": "你的战略生活中心。",
-    "chat": { "welcome": "欢迎，将军。我是SAMII。今天能帮您什么？", "placeholder": "与SAMII对话…" },
+    "title": "您的战略生活中心。",
+    "changeMode": "更改 SAMII 模式",
+    "connectTools": "连接我的工具",
+    "chat": {
+      "welcome": "欢迎，将军。我是 SAMII。今天我能帮您什么？",
+      "placeholder": "与 SAMII 对话…",
+      "attachPhoto": "照片",
+      "attachDoc": "文档"
+    },
     "cards": {
-      "marketing": { "label": "营销", "value": "加速中" },
-      "opportunites": { "label": "机会", "value": "3个新机会" },
-      "analyse": { "label": "结果分析", "value": "本月+12%" },
-      "conseils": { "label": "SAMII建议", "value": "2条建议" },
-      "alertes": { "label": "警报", "value": "1条紧急" },
-      "missions": { "label": "任务", "value": "4个进行中" },
-      "performance": { "label": "表现", "value": "优秀" },
-      "clients": { "label": "客户与CRM", "value": "142位活跃" },
-      "revenus": { "label": "预计收入", "value": "预计+8%" },
-      "radar": { "label": "竞争对手雷达", "value": "监控中" },
-      "automatisations": { "label": "自动化", "value": "5个活跃" },
-      "reseau": { "label": "全球网络", "value": "17个国家" }
+      "marketing": { "label": "营销", "value": "投放广告 →" },
+      "messagerEclair": { "label": "闪电信使", "value": "启用追踪 →" },
+      "miroir": { "label": "镜子", "value": "查看我的诊断 →" },
+      "griot": { "label": "格里奥", "value": "创建内容包 →" },
+      "diplomate": { "label": "外交官", "value": "回复客户 →" },
+      "missions": { "label": "任务", "value": "查看我的任务 →" },
+      "oeilConcurrentiel": { "label": "竞品监察", "value": "分析价格 →" },
+      "memoireClient": { "label": "客户记忆", "value": "搜索客户 →" },
+      "oracleFinancier": { "label": "财务预言家", "value": "查看我的预测 →" },
+      "topProduits": { "label": "热门产品", "value": "查看排行榜 →" },
+      "automatisations": { "label": "自动化", "value": "管理我的自动化 →" },
+      "chasseurStock": { "label": "库存猎手", "value": "寻找供应商 →" }
     }
   },
   "arsenal": { "title": "军械库", "subtitle": "33种力量，每一种都源自SAMII的一条法则。", "available": "可用", "soon": "即将推出" },
