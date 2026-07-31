@@ -1,13 +1,9 @@
 // ==========================================================================
-// SAMII OS — LOGIN V3
+// SAMII OS — LOGIN V4 (vérification email + hachage bcrypt)
 // ==========================================================================
-// Correction : workspaceId venait à tort de l'ID utilisateur (table
-// UTILISATEURS). Maintenant on va chercher le vrai workspace de la personne
-// via workspaceService, source de vérité unique (voir workspaceService.js).
-// ==========================================================================
-
 const express = require("express");
 const axios   = require("axios");
+const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const workspaceService = require("../services/workspaceService");
 
@@ -18,6 +14,17 @@ const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
 // ── GET /login ────────────────────────────────────────────────
 router.get("/", (req, res) => {
     if (req.session?.loggedIn) return res.redirect("/hub");
+
+    const { error, verified } = req.query;
+
+    const messages = {
+        token_manquant : "❌ Lien de confirmation invalide.",
+        token_invalide  : "❌ Ce lien de confirmation n'est plus valide.",
+        token_expire    : "⌛ Ce lien a expiré. Réinscris-toi ou contacte le support.",
+        erreur_serveur  : "❌ Une erreur est survenue. Réessaie.",
+    };
+    const preMsg = error ? messages[error] || "" : (verified ? "✅ Email confirmé ! Tu peux te connecter." : "");
+    const preMsgClass = verified ? "ok" : "";
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -38,6 +45,7 @@ router.get("/", (req, res) => {
         .msg.ok{ color:#4caf50; }
         small{ display:block; margin-top:18px; text-align:center; color:#666; font-size:.8rem; }
         a{ color:#d4af37; text-decoration:none; }
+        .forgot{ display:block; text-align:right; margin-top:8px; font-size:.8rem; }
     </style>
 </head>
 <body>
@@ -46,9 +54,10 @@ router.get("/", (req, res) => {
     <form id="form-login">
         <input name="email"    type="email"    placeholder="Adresse e-mail" required>
         <input name="password" type="password" placeholder="Mot de passe"   required>
+        <a href="/password-reset" class="forgot">Mot de passe oublié ?</a>
         <button type="submit">Se connecter</button>
     </form>
-    <div class="msg" id="msg"></div>
+    <div class="msg ${preMsgClass}" id="msg">${preMsg}</div>
     <small>Pas encore de compte ? <a href="/register">Créer un compte</a></small>
 </div>
 <script>
@@ -72,6 +81,7 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
         window.location.href = json.redirect || '/hub';
     } else {
         msg.textContent = json.error || '❌ Erreur. Réessayez.';
+        msg.className   = 'msg';
     }
 });
 </script>
@@ -106,7 +116,14 @@ router.post("/", async (req, res) => {
 
         const user = record.fields;
 
-        if (user.password_hash !== password) {
+        // ── Compte pas encore confirmé ────────────────
+        if (user.email_verifie !== true) {
+            return res.json({ success: false, error: "Confirme ton email avant de te connecter (vérifie ta boîte mail)." });
+        }
+
+        // ── Vérification du mot de passe (bcrypt) ─────
+        const passwordOk = await bcrypt.compare(password, user.password_hash || "");
+        if (!passwordOk) {
             return res.json({ success: false, error: "Email ou mot de passe incorrect." });
         }
 
@@ -120,18 +137,16 @@ router.post("/", async (req, res) => {
             { headers }
         );
 
-        // ── ✅ Aller chercher le VRAI workspace de la personne ─
         const workspaces = await workspaceService.getByOwner(email);
-        
         const workspace  = workspaces[0] || null;
 
         req.session.regenerate((err) => {
             if (err) return res.json({ success: false, error: "Erreur session." });
 
-            req.session.loggedIn    = true;
-            req.session.email       = email;
-            req.session.userId      = record.id;
-            req.session.nom         = `${user.prenom || ""} ${user.nom || ""}`.trim();
+            req.session.loggedIn = true;
+            req.session.email    = email;
+            req.session.userId   = record.id;
+            req.session.nom      = `${user.prenom || ""} ${user.nom || ""}`.trim();
 
             if (workspace) {
                 req.session.workspaceId = workspace.workspaceId;
@@ -139,7 +154,7 @@ router.post("/", async (req, res) => {
             } else {
                 req.session.workspaceId = null;
             }
-          console.log("🔍 SESSION APRÈS SAVE :", JSON.stringify(req.session));
+
             res.json({
                 success : true,
                 redirect: workspace ? "/qg" : "/hub",
