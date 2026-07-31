@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — REGISTER V4 (vérification email + hachage sécurisé)
+// SAMII OS — REGISTER V5 (vérification email + hachage + type de compte)
 // ==========================================================================
 const express = require("express");
 const axios   = require("axios");
@@ -50,6 +50,10 @@ router.get("/", (req, res) => {
         .msg.ok{ color:#4caf50; }
         small{ display:block; margin-top:18px; text-align:center; color:#666; font-size:.8rem; }
         a{ color:#d4af37; text-decoration:none; }
+        .type-choice{ display:flex; gap:10px; margin-top:8px; }
+        .type-choice label{ flex:1; display:flex; align-items:center; gap:8px; padding:12px; border:1px solid #333; border-radius:8px; cursor:pointer; font-size:.85rem; }
+        .type-choice input{ width:auto; margin:0; }
+        .type-label{ display:block; margin-top:14px; font-size:.78rem; color:#888; }
     </style>
 </head>
 <body>
@@ -61,16 +65,32 @@ router.get("/", (req, res) => {
         <input name="prenom"    placeholder="Prénom"      required>
         <input name="email"     type="email" placeholder="Email" required>
         <input name="telephone" placeholder="Téléphone"   required>
-        ${metier
-            ? `<input type="hidden" name="metier" value="${metier}">`
-            : `<select name="metier">
-                <option value="ecommerce">E-commerçant</option>
-                <option value="restaurant">Restaurateur</option>
-                <option value="immobilier">Immobilier</option>
-                <option value="livreur"     disabled>Livreur (bientôt)</option>
-                <option value="fournisseur" disabled>Fournisseur (bientôt)</option>
-              </select>`
-        }
+
+        <label class="type-label">Je m'inscris en tant que :</label>
+        <div class="type-choice">
+            <label>
+                <input type="radio" name="type_compte" value="client" checked>
+                <span>👤 Particulier</span>
+            </label>
+            <label>
+                <input type="radio" name="type_compte" value="marchand">
+                <span>🏪 Marchand</span>
+            </label>
+        </div>
+
+        <div id="bloc-metier" style="display:none;">
+            ${metier
+                ? `<input type="hidden" name="metier" value="${metier}">`
+                : `<select name="metier">
+                    <option value="ecommerce">E-commerçant</option>
+                    <option value="restaurant">Restaurateur</option>
+                    <option value="immobilier">Immobilier</option>
+                    <option value="livreur"     disabled>Livreur (bientôt)</option>
+                    <option value="fournisseur" disabled>Fournisseur (bientôt)</option>
+                  </select>`
+            }
+        </div>
+
         <input name="password" type="password" placeholder="Mot de passe" required minlength="6">
         <button type="submit">Créer mon compte</button>
     </form>
@@ -78,6 +98,14 @@ router.get("/", (req, res) => {
     <small>Déjà un compte ? <a href="/login">Se connecter</a></small>
 </div>
 <script>
+document.querySelectorAll('input[name="type_compte"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        document.getElementById('bloc-metier').style.display =
+            radio.value === 'marchand' && radio.checked ? 'block' : 'none';
+    });
+});
+document.querySelector('input[name="type_compte"][value="marchand"]').dispatchEvent(new Event('change'));
+
 document.getElementById('form-register').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg  = document.getElementById('msg');
@@ -170,7 +198,8 @@ router.get("/confirmer", async (req, res) => {
 
 // ── POST /register — crée le compte, envoie l'email, PAS de connexion auto ──
 router.post("/", async (req, res) => {
-    const { nom, prenom, email, telephone, metier, password } = req.body;
+    const { nom, prenom, email, telephone, metier, password, type_compte } = req.body;
+    const typeCompte = type_compte === "marchand" ? "marchand" : "client";
 
     if (!nom || !prenom || !email || !telephone || !password) {
         return res.json({ success: false, error: "Tous les champs sont obligatoires." });
@@ -200,15 +229,16 @@ router.post("/", async (req, res) => {
                 prenom,
                 email,
                 telephone,
-                metier             : metier || "ecommerce",
-                password_hash      : passwordHash,
-                role                : "owner",
-                statut_acces        : "actif",
-                last_login          : new Date().toISOString().split("T")[0],
-                actif                : true,
-                email_verifie        : false,
-                token_verification   : token,
-                token_expire_le      : expireLe,
+                metier              : typeCompte === "marchand" ? (metier || "ecommerce") : "",
+                type_compte         : typeCompte,
+                password_hash       : passwordHash,
+                role                 : "owner",
+                statut_acces         : "actif",
+                last_login           : new Date().toISOString().split("T")[0],
+                actif                 : true,
+                email_verifie         : false,
+                token_verification    : token,
+                token_expire_le       : expireLe,
             }},
             { headers: headers() }
         );
@@ -230,7 +260,7 @@ router.post("/", async (req, res) => {
             `,
         });
 
-        console.log(`✅ Nouveau compte en attente : ${email}`);
+        console.log(`✅ Nouveau compte en attente (${typeCompte}) : ${email}`);
 
         res.json({
             success: true,
