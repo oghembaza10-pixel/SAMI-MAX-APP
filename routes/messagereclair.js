@@ -33,8 +33,17 @@ router.get("/", requireAuth, async (req, res) => {
                 <div class="me-row__client">${f["nom client"] || f["Nom Client"] || "Client"}</div>
             </div>
             <select class="me-transporteur" data-cmd="${c.id}">
-                <option value="yalidine">Yalidine</option>
+                <option value="yalidine">Yalidine (Algérie)</option>
+                <option value="dhl">DHL</option>
+                <option value="chronopost">Chronopost</option>
+                <option value="colissimo">Colissimo</option>
+                <option value="aramex">Aramex</option>
+                <option value="sendit">Sendit (Maroc)</option>
+                <option value="mallatech">Mallatech (Tunisie)</option>
+                <option value="oto">OTO (Égypte/Golfe)</option>
+                <option value="autre">Autre transporteur...</option>
             </select>
+            <input type="text" class="me-transporteur-custom" data-cmd="${c.id}" placeholder="Nom du transporteur" style="display:none;">
             <input type="text" class="me-numero" data-cmd="${c.id}" placeholder="Numéro de suivi">
             <button type="button" class="me-btn-activer" data-cmd="${c.id}">Activer le suivi</button>
         </div>`;
@@ -64,6 +73,13 @@ router.get("/", requireAuth, async (req, res) => {
         .me-shell h1 { font-family: var(--font-display); color: #fff; font-size: 1.5rem; }
         .me-shell p.sub { color: var(--text-muted); font-size: .85rem; margin: 8px 0 26px; line-height: 1.6; }
 
+        .me-note {
+            display: flex; gap: 10px; align-items: flex-start;
+            padding: 12px 16px; margin-bottom: 22px; border-radius: 12px;
+            background: rgba(197,160,89,0.06); border: 1px solid rgba(197,160,89,0.25);
+            font-size: .78rem; color: var(--text-muted); line-height: 1.6;
+        }
+
         .me-empty { color: var(--text-muted); font-size: .85rem; text-align: center; padding: 30px 0; }
 
         .me-row {
@@ -75,12 +91,12 @@ router.get("/", requireAuth, async (req, res) => {
         .me-row__id { color: #fff; font-size: .85rem; font-weight: 700; }
         .me-row__client { color: var(--text-muted); font-size: .78rem; }
 
-        .me-transporteur, .me-numero {
+        .me-transporteur, .me-numero, .me-transporteur-custom {
             padding: 9px 12px; border-radius: 8px;
             border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);
             color: var(--text-main); font-size: .82rem; font-family: var(--font-body);
         }
-        .me-numero { flex: 1; min-width: 140px; }
+        .me-numero, .me-transporteur-custom { flex: 1; min-width: 140px; }
         .me-transporteur option { background: #0a0d14; }
 
         .me-btn-activer {
@@ -101,17 +117,32 @@ router.get("/", requireAuth, async (req, res) => {
     </div>
     <p class="sub">Active le suivi d'une commande confirmée — SAMII prévient le client à chaque étape, automatiquement.</p>
 
+    <div class="me-note">
+        ℹ️ Le suivi automatique en temps réel fonctionne dès maintenant pour Yalidine. Pour les autres transporteurs, le numéro de suivi est enregistré et prêt — la vérification automatique sera activée dès leur intégration.
+    </div>
+
     ${commandes.length ? rowsHtml : `<div class="me-empty">Aucune commande confirmée en attente de suivi pour le moment.</div>`}
 </div>
 
 <script>
+document.querySelectorAll('.me-transporteur').forEach(select => {
+    select.addEventListener('change', () => {
+        const custom = document.querySelector(`.me-transporteur-custom[data-cmd="${select.dataset.cmd}"]`);
+        custom.style.display = select.value === 'autre' ? 'block' : 'none';
+    });
+});
+
 document.querySelectorAll('.me-btn-activer').forEach(btn => {
     btn.addEventListener('click', async () => {
         const cmdId = btn.dataset.cmd;
-        const numero = document.querySelector(\`.me-numero[data-cmd="\${cmdId}"]\`).value.trim();
-        const transporteur = document.querySelector(\`.me-transporteur[data-cmd="\${cmdId}"]\`).value;
+        const numero = document.querySelector(`.me-numero[data-cmd="${cmdId}"]`).value.trim();
+        const selectTransp = document.querySelector(`.me-transporteur[data-cmd="${cmdId}"]`);
+        const transporteur = selectTransp.value === 'autre'
+            ? document.querySelector(`.me-transporteur-custom[data-cmd="${cmdId}"]`).value.trim()
+            : selectTransp.value;
 
         if (!numero) { alert('Entre le numéro de suivi.'); return; }
+        if (!transporteur) { alert('Indique le nom du transporteur.'); return; }
 
         btn.disabled = true;
         btn.textContent = '...';
@@ -146,13 +177,13 @@ document.querySelectorAll('.me-btn-activer').forEach(btn => {
 router.post("/activer", requireAuth, async (req, res) => {
     try {
         const { commandeId, numero, transporteur } = req.body;
-        if (!commandeId || !numero) {
-            return res.json({ success: false, error: "Numéro de suivi manquant." });
+        if (!commandeId || !numero || !transporteur) {
+            return res.json({ success: false, error: "Numéro de suivi et transporteur requis." });
         }
 
         await airtable.update("COMMANDES", commandeId, {
             numero_suivi: numero,
-            transporteur: transporteur || "yalidine",
+            transporteur: transporteur,
         });
 
         res.json({ success: true });
