@@ -123,6 +123,7 @@ app.use("/automatisations", requireAuth, require("./routes/automatisations"));
 app.use("/missions", requireAuth, require("./routes/missions"));
 app.use("/samii/miroir", requireAuth, require("./routes/miroir"));
 app.use("/samii/messager-eclair", requireAuth, require("./routes/messagereclair"));
+app.use("/samii/oracle-financier", requireAuth, require("./routes/oraclefinancier"));
 app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 app.use("/connect",   require("./routes/connector"));
 
