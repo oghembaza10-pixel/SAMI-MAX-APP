@@ -99,6 +99,7 @@ app.use("/telegram", require("./routes/telegram"));
 app.use("/billing", require("./routes/billing"));
 app.use("/login",    require("./routes/login"));
 app.use("/register", require("./routes/register"));
+app.use("/password-reset", require("./routes/password-reset"));
 
 // ══════════════════════════════════════════════════════
 // ROUTES — Plateforme (protégées par requireAuth)
