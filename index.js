@@ -110,6 +110,7 @@ app.use("/client-qg", require("./routes/client-qg"));
 app.use("/dashboard", requireAuth, require("./routes/dashboard"));
 app.use(requireAuth, require("./routes/tools"));
 app.use("/profile",   requireAuth, require("./routes/profile"));
+app.use("/vitrine", require("./routes/vitrine"));
 app.use("/settings",  requireAuth, require("./routes/settings"));
 app.use("/ads",       requireAuth, require("./routes/ads"));
 app.use("/coffre",    requireAuth, require("./routes/coffre"));
