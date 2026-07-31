@@ -150,6 +150,8 @@ app.get("/", (req, res) => res.render("index"));
 // ── QG — route universelle SOLDAT V1 ─────────────────
 app.get("/qg", requireAuth, async (req, res) => {
     try {
+        if (req.session?.typeCompte === "client") return res.redirect("/client-qg");
+
         const workspaceId = req.session?.workspaceId;
         if (!workspaceId) return res.redirect("/hub");
 
