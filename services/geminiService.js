@@ -34,11 +34,7 @@ const TOOLS = [
         ],
     },
 ];
-async function send({ to, message }) {
-    console.log(`🤖 Gemini → ${to} : ${message}`);
-    return { success: true };
-}
-async function chat({ message, context = {}, useTools = false }) {
+async function chat({ message, context = {}, useTools = false }, retryCount = 0) {
     try {
         const body = {
             contents: [{ role: "user", parts: [{ text: SAMII_PROMPT(message, context) }] }],
@@ -60,9 +56,15 @@ async function chat({ message, context = {}, useTools = false }) {
             type: "text",
             text: textPart?.text || "SAMII n'a pas su répondre, réessaie autrement.",
         };
-    } catch (err) {
+   } catch (err) {
+        const isQuotaError = err.response?.data?.error?.code === 429;
+        if (isQuotaError && retryCount < 1) {
+            console.warn("⏳ Quota Gemini atteint, nouvel essai dans 5s...");
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            return chat({ message, context, useTools }, retryCount + 1);
+        }
         console.error("❌ Gemini :", err.response?.data || err.message);
-        return { type: "text", text: "SAMII démarre actuellement. Réessaie dans quelques instants." };
+        return { type: "text", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
     }
 }
 async function chatWithSearch({ message, context = {} }) {
