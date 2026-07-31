@@ -141,7 +141,7 @@ router.get("/", requireAuth, async (req, res) => {
     <div class="mp-cats">${categoriesHtml}</div>
 
     <div class="mp-grid">
-        ${annonces.length ? cardsHtml : '<div class="mp-empty">Aucune annonce pour l\\'instant. Sois le premier à publier !</div>'}
+        ${annonces.length ? cardsHtml : '<div class="mp-empty">Aucune annonce pour le moment. Sois le premier a publier !</div>'}
     </div>
 
 <script src="https://unpkg.com/lucide@latest"></script>
