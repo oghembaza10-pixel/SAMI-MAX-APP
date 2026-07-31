@@ -99,22 +99,7 @@ module.exports = {
     },
 
     // ==================================================
-    // GEMINI
-    // ==================================================
-
-    GEMINI: {
-        API_KEY: process.env.GEMINI_API_KEY,
-    },
-    RESEND: {
-    API_KEY: process.env.RESEND_API_KEY || "",
-},
-    
-ELEVENLABS: {
-    API_KEY: process.env.ELEVENLABS_API_KEY || "",
-    VOICE_ID: process.env.ELEVENLABS_VOICE_ID || "",
-},
-    // ==================================================
-    // META
+    // META (Facebook / Instagram / Ads)
     // ==================================================
 
     META: {
@@ -130,6 +115,31 @@ ELEVENLABS: {
     YALIDINE: {
         API_KEY  : process.env.YALIDINE_API_KEY,
         API_ID   : process.env.YALIDINE_API_ID,
+    },
+
+    // ==================================================
+    // GEMINI (IA — SAMII)
+    // ==================================================
+
+    GEMINI: {
+        API_KEY: process.env.GEMINI_API_KEY,
+    },
+
+    // ==================================================
+    // RESEND (Email transactionnel)
+    // ==================================================
+
+    RESEND: {
+        API_KEY: process.env.RESEND_API_KEY || "",
+    },
+
+    // ==================================================
+    // ELEVENLABS (Voix IA — désactivé tant que pas de clé)
+    // ==================================================
+
+    ELEVENLABS: {
+        API_KEY  : process.env.ELEVENLABS_API_KEY  || "",
+        VOICE_ID : process.env.ELEVENLABS_VOICE_ID || "",
     },
 
 };
