@@ -125,20 +125,21 @@ router.get("/", requireAuth, async (req, res) => {
 </div>
 
 <script>
-document.querySelectorAll('.me-transporteur').forEach(select => {
-    select.addEventListener('change', () => {
-        const custom = document.querySelector(`.me-transporteur-custom[data-cmd="${select.dataset.cmd}"]`);
+document.querySelectorAll('.me-transporteur').forEach(function(select) {
+    select.addEventListener('change', function() {
+        var cmdId = select.dataset.cmd;
+        var custom = document.querySelector('.me-transporteur-custom[data-cmd="' + cmdId + '"]');
         custom.style.display = select.value === 'autre' ? 'block' : 'none';
     });
 });
 
-document.querySelectorAll('.me-btn-activer').forEach(btn => {
-    btn.addEventListener('click', async () => {
-        const cmdId = btn.dataset.cmd;
-        const numero = document.querySelector(`.me-numero[data-cmd="${cmdId}"]`).value.trim();
-        const selectTransp = document.querySelector(`.me-transporteur[data-cmd="${cmdId}"]`);
-        const transporteur = selectTransp.value === 'autre'
-            ? document.querySelector(`.me-transporteur-custom[data-cmd="${cmdId}"]`).value.trim()
+document.querySelectorAll('.me-btn-activer').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+        var cmdId = btn.dataset.cmd;
+        var numero = document.querySelector('.me-numero[data-cmd="' + cmdId + '"]').value.trim();
+        var selectTransp = document.querySelector('.me-transporteur[data-cmd="' + cmdId + '"]');
+        var transporteur = selectTransp.value === 'autre'
+            ? document.querySelector('.me-transporteur-custom[data-cmd="' + cmdId + '"]').value.trim()
             : selectTransp.value;
 
         if (!numero) { alert('Entre le numéro de suivi.'); return; }
@@ -151,7 +152,7 @@ document.querySelectorAll('.me-btn-activer').forEach(btn => {
             const res = await fetch('/samii/messager-eclair/activer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ commandeId: cmdId, numero, transporteur }),
+                body: JSON.stringify({ commandeId: cmdId, numero: numero, transporteur: transporteur }),
             });
             const json = await res.json();
             if (json.success) {
