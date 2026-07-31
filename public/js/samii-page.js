@@ -88,18 +88,37 @@ document.addEventListener('DOMContentLoaded', () => {
         return anyMatch || voices[0];
     }
 
-    function speak(text) {
-        if (!('speechSynthesis' in window) || !text) return;
-        window.speechSynthesis.cancel();
-        const currentLang = (langSelect?.value || 'fr-FR').split('-')[0];
-        const utterance = new SpeechSynthesisUtterance(text);
-        const voice = pickBestVoice(currentLang);
-        if (voice) utterance.voice = voice;
-        utterance.lang = langSelect?.value || 'fr-FR';
-        utterance.rate = 1.02;
-        utterance.pitch = 1;
-        window.speechSynthesis.speak(utterance);
+   async function speak(text) {
+    if (!text) return;
+
+    try {
+        const res = await fetch('/api/speak', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+        });
+        const data = await res.json();
+
+        if (data.success && data.audio) {
+            const audio = new Audio(data.audio);
+            audio.play();
+            return;
+        }
+    } catch (err) {
+        console.warn('ElevenLabs indisponible, repli sur la voix native.');
     }
+
+    // Repli automatique : voix native du navigateur (comportement actuel)
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const currentLang = (langSelect?.value || 'fr-FR').split('-')[0];
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = pickBestVoice(currentLang);
+    if (voice) utterance.voice = voice;
+    utterance.lang = langSelect?.value || 'fr-FR';
+    utterance.rate = 1.02;
+    window.speechSynthesis.speak(utterance);
+}
     // Certaines voix ne sont dispo qu'après cet event
     if ('speechSynthesis' in window) {
         window.speechSynthesis.onvoiceschanged = () => {};
