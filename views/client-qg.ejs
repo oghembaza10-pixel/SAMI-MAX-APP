@@ -73,7 +73,7 @@
             <div class="qg-hero__content">
                 <span class="qg-eyebrow">BIENVENUE</span>
                 <h1>Bonjour <%= nom || 'Général' %> 👋</h1>
-                <p>SAMII t'aide au quotidien — transport, météo, devoirs, et bien plus.</p>
+                <p>SAMII t'aide au quotidien — transport, devoirs, traduction, et bien plus.</p>
             </div>
         </section>
 
@@ -82,12 +82,12 @@
             <i data-lucide="sparkles"></i>
             <span>Aujourd'hui</span>
         </div>
-       <a href="/client-qg/transport" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
-    <div class="qg-card__icon"><i data-lucide="bus"></i></div>
-    <span class="qg-card__value" style="font-size:1rem;">🚌 Transport</span>
-    <span class="qg-card__label">Trouver un trajet →</span>
-</a>
-           
+        <section class="qg-dashboard">
+            <a href="/client-qg/transport" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="bus"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🚌 Transport</span>
+                <span class="qg-card__label">Trouver un trajet →</span>
+            </a>
             <a href="/client-qg/devoirs" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
                 <div class="qg-card__icon"><i data-lucide="book-open"></i></div>
                 <span class="qg-card__value" style="font-size:1rem;">📚 Devoirs</span>
@@ -116,18 +116,18 @@
             <span>SAMII</span>
         </div>
         <section class="qg-dashboard">
-            <article class="qg-card" style="grid-column:span 3;">
+            <article class="qg-card" style="grid-column:1/-1;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <span style="color:#d4af37;font-weight:700;font-size:.95rem;">Messages restants aujourd'hui</span>
+                    <span style="color:#9d5cff;font-weight:700;font-size:.95rem;">Messages restants aujourd'hui</span>
                     <span class="qg-mono" id="quota-texte" style="color:#5FD4FF;">50 / 50</span>
                 </div>
-                <div style="background:#1a1a1a;border-radius:8px;height:8px;margin-bottom:12px;">
-                    <div id="quota-bar" style="height:8px;border-radius:8px;background:linear-gradient(90deg,#3ddc84,#5FD4FF);width:100%;transition:width .6s ease;"></div>
+                <div style="background:rgba(255,255,255,0.06);border-radius:8px;height:8px;margin-bottom:12px;">
+                    <div id="quota-bar" style="height:8px;border-radius:8px;background:linear-gradient(90deg,#9d5cff,#5FD4FF);width:100%;transition:width .6s ease;"></div>
                 </div>
                 <p style="color:var(--text-muted);font-size:.8rem;">
                     💡 Invite 3 amis avec ton lien pour débloquer plus de messages chaque jour.
                 </p>
-                <button id="btn-copier-lien" style="margin-top:10px;padding:10px 16px;background:var(--gold-og);border:none;border-radius:8px;font-weight:700;cursor:pointer;">
+                <button id="btn-copier-lien" style="margin-top:10px;padding:10px 16px;background:#9d5cff;border:none;border-radius:8px;font-weight:700;cursor:pointer;color:#fff;">
                     🔗 Copier mon lien d'invitation
                 </button>
             </article>
@@ -155,7 +155,6 @@ document.getElementById('btn-copier-lien')?.addEventListener('click', () => {
     });
 });
 
-// Charge le quota réel
 fetch('/client-qg/quota')
     .then(r => r.json())
     .then(data => {
