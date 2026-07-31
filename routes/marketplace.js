@@ -15,24 +15,24 @@ const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
 const CLOUDINARY_PRESET = "MARKETPLACE OG";
 
 const CATEGORIES = [
-    { id: "tous",           icon: "🛍️", label: "Tout" },
-    { id: "electronique",   icon: "📱", label: "Électronique" },
-    { id: "mode",           icon: "👕", label: "Mode" },
-    { id: "beaute",         icon: "💄", label: "Beauté" },
-    { id: "maison",         icon: "🏠", label: "Maison" },
-    { id: "electromenager", icon: "🧺", label: "Électro." },
-    { id: "sport",          icon: "⚽", label: "Sport" },
-    { id: "loisirs",        icon: "🎮", label: "Loisirs" },
-    { id: "livres",         icon: "📚", label: "Livres" },
-    { id: "vehicules",      icon: "🚗", label: "Véhicules" },
-    { id: "immobilier",     icon: "🏢", label: "Immobilier" },
-    { id: "animaux",        icon: "🐾", label: "Animaux" },
-    { id: "alimentation",   icon: "🍽️", label: "Alimentation" },
-    { id: "services",       icon: "🛎️", label: "Services" },
-    { id: "artisanat",      icon: "🎨", label: "Artisanat" },
-    { id: "bebe",           icon: "🍼", label: "Bébé" },
-    { id: "bureau",         icon: "💼", label: "Bureau" },
-    { id: "autre",          icon: "📦", label: "Autre" },
+    { id: "tous",           icon: "layout-grid",   label: "Tout" },
+    { id: "electronique",   icon: "smartphone",    label: "Électronique" },
+    { id: "mode",           icon: "shirt",         label: "Mode" },
+    { id: "beaute",         icon: "sparkles",      label: "Beauté" },
+    { id: "maison",         icon: "home",          label: "Maison" },
+    { id: "electromenager", icon: "washing-machine", label: "Électro." },
+    { id: "sport",          icon: "dumbbell",      label: "Sport" },
+    { id: "loisirs",        icon: "gamepad-2",     label: "Loisirs" },
+    { id: "livres",         icon: "book-open",     label: "Livres" },
+    { id: "vehicules",      icon: "car",           label: "Véhicules" },
+    { id: "immobilier",     icon: "building-2",    label: "Immobilier" },
+    { id: "animaux",        icon: "paw-print",     label: "Animaux" },
+    { id: "alimentation",   icon: "utensils",      label: "Alimentation" },
+    { id: "services",       icon: "concierge-bell",label: "Services" },
+    { id: "artisanat",      icon: "palette",       label: "Artisanat" },
+    { id: "bebe",           icon: "baby",          label: "Bébé" },
+    { id: "bureau",         icon: "briefcase",     label: "Bureau" },
+    { id: "autre",          icon: "package",       label: "Autre" },
 ];
 
 router.get("/", requireAuth, async (req, res) => {
@@ -51,22 +51,23 @@ router.get("/", requireAuth, async (req, res) => {
         console.warn("⚠️ Marketplace annonces :", err.message);
     }
 
-    const catLabel = (id) => CATEGORIES.find(c => c.id === id)?.label || id;
+    const catInfo = (id) => CATEGORIES.find(c => c.id === id) || { icon: "package", label: id };
 
     const cardsHtml = annonces.map(a => {
         const f = a.fields;
+        const cat = catInfo(f.categorie);
         return `
         <a href="/vitrine/${f.vendeur_id}" class="mp-card">
             <div class="mp-card__image">
-                <span class="mp-card__cat-badge">${catLabel(f.categorie)}</span>
+                <span class="mp-card__cat-badge"><i data-lucide="${cat.icon}"></i> ${cat.label}</span>
                 ${f.photo_url ? `<img src="${f.photo_url}" alt="${f.titre}" loading="lazy">` : '<i data-lucide="image"></i>'}
             </div>
             <div class="mp-card__body">
                 <h3>${f.titre}</h3>
                 <div class="mp-card__price">${f.prix || '—'}</div>
                 <div class="mp-card__meta">
-                    <span>📍 ${f.ville || '—'}</span>
-                    <span>${f.type_vendeur === 'marchand' ? '🏪' : '👤'} ${f.vendeur_nom || 'Vendeur'}</span>
+                    <span><i data-lucide="map-pin"></i> ${f.ville || '—'}</span>
+                    <span><i data-lucide="${f.type_vendeur === 'marchand' ? 'store' : 'user'}"></i> ${f.vendeur_nom || 'Vendeur'}</span>
                 </div>
             </div>
         </a>`;
@@ -75,7 +76,7 @@ router.get("/", requireAuth, async (req, res) => {
     const categoriesHtml = CATEGORIES.map(c => `
         <a href="/marketplace?categorie=${c.id}${recherche ? `&recherche=${encodeURIComponent(recherche)}` : ''}${ville ? `&ville=${encodeURIComponent(ville)}` : ''}"
            class="mp-cat-btn ${categorie === c.id || (!categorie && c.id === 'tous') ? 'active' : ''}">
-            <span class="icon">${c.icon}</span><span class="label">${c.label}</span>
+            <i data-lucide="${c.icon}" class="icon"></i><span class="label">${c.label}</span>
         </a>
     `).join("");
 
@@ -97,12 +98,12 @@ router.get("/", requireAuth, async (req, res) => {
         <div class="mp-bg-particles"></div>
     </div>
 
-    <a href="${isClient ? '/client-qg' : '/qg'}" class="mp-back">← Retour</a>
+    <a href="${isClient ? '/client-qg' : '/qg'}" class="mp-back"><i data-lucide="arrow-left"></i> Retour</a>
 
     <section class="mp-hero">
         <div class="mp-hero__inner">
             <div>
-                <h1>🏪 Marketplace</h1>
+                <h1><i data-lucide="store"></i> Marketplace</h1>
                 <p>Produits, services, offres — tout l'écosystème OG Empire.</p>
                 <div class="mp-stats-pill"><span class="dot"></span>${annonces.length} annonce${annonces.length !== 1 ? 's' : ''} disponible${annonces.length !== 1 ? 's' : ''}</div>
             </div>
@@ -126,7 +127,7 @@ router.get("/", requireAuth, async (req, res) => {
     <div class="mp-grid">
         ${annonces.length ? cardsHtml : `
             <div class="mp-empty">
-                <span class="mp-empty__icon">🛍️</span>
+                <i data-lucide="shopping-bag" class="mp-empty__icon"></i>
                 Aucune annonce pour le moment dans cette categorie.<br>Sois le premier a publier !
             </div>`}
     </div>
@@ -139,7 +140,7 @@ router.get("/", requireAuth, async (req, res) => {
 
 router.get("/publier", requireAuth, async (req, res) => {
     const categoriesOptions = CATEGORIES.filter(c => c.id !== "tous")
-        .map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join("");
+        .map(c => `<option value="${c.id}">${c.label}</option>`).join("");
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -158,8 +159,8 @@ router.get("/publier", requireAuth, async (req, res) => {
     </div>
 
 <div class="pb-shell">
-    <a href="/marketplace" class="pb-back">← Retour à la Marketplace</a>
-    <h1>➕ Publier une annonce</h1>
+    <a href="/marketplace" class="pb-back"><i data-lucide="arrow-left"></i> Retour à la Marketplace</a>
+    <h1><i data-lucide="plus-circle"></i> Publier une annonce</h1>
     <div class="pb-card">
         <form id="form-publier">
             <label>Catégorie</label>
@@ -237,7 +238,10 @@ router.get("/publier", requireAuth, async (req, res) => {
         <div class="pb-msg" id="msg"></div>
     </div>
 </div>
+<script src="https://unpkg.com/lucide@latest"></script>
 <script>
+if (typeof lucide !== "undefined") lucide.createIcons();
+
 const CLOUDINARY_CLOUD_NAME = "${CLOUDINARY_CLOUD_NAME}";
 const CLOUDINARY_PRESET = "${CLOUDINARY_PRESET}";
 const MAX_PHOTOS = { vehicules: 5, immobilier: 5, default: 3 };
@@ -262,9 +266,10 @@ function rebuildPhotoGrid(cat) {
         const slot = document.createElement('div');
         slot.className = 'pb-photo-slot';
         slot.dataset.index = i;
-        slot.innerHTML = '<input type="file" accept="image/*" class="pb-photo-input"><div class="pb-photo-slot__icon">📷</div>';
+        slot.innerHTML = '<input type="file" accept="image/*" class="pb-photo-input"><i data-lucide="camera" class="pb-photo-slot__icon"></i>';
         photoGrid.appendChild(slot);
     }
+    if (typeof lucide !== "undefined") lucide.createIcons();
     attachPhotoListeners();
 }
 
