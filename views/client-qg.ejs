@@ -10,7 +10,6 @@
     <link rel="stylesheet" href="/css/client-style.css">
 </head>
 <body>
-<!-- BARRE GRADE -->
 <div class="qg-grade-bar">
     <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
     <span class="qg-grade-bar__nom" id="grade-nom">SOLDAT</span>
@@ -20,7 +19,6 @@
     <span class="qg-grade-bar__next" id="grade-next">→ CAPORAL</span>
 </div>
 <div class="qg-shell">
-    <!-- SIDEBAR -->
     <aside class="qg-sidebar" id="og-sidebar">
         <div class="qg-sidebar__top">
             <a href="/client-qg" class="qg-logo">
@@ -61,23 +59,20 @@
     </aside>
 
     <main class="qg-main">
-        <!-- TOPBAR -->
         <header class="qg-topbar">
             <div class="qg-topbar__breadcrumb">
                 <span class="qg-mono">MON ESPACE</span>
             </div>
         </header>
 
-        <!-- HERO -->
         <section class="qg-hero">
             <div class="qg-hero__content">
                 <span class="qg-eyebrow">BIENVENUE</span>
                 <h1>Bonjour <%= nom || 'Général' %> 👋</h1>
-                <p>SAMII t'aide au quotidien — transport, devoirs, traduction, et bien plus.</p>
+                <p>SAMII t'aide au quotidien — transport, services, plans, et bien plus.</p>
             </div>
         </section>
 
-        <!-- CARTES DU QUOTIDIEN -->
         <div class="qg-section-title">
             <i data-lucide="sparkles"></i>
             <span>Aujourd'hui</span>
@@ -88,39 +83,28 @@
                 <span class="qg-card__value" style="font-size:1rem;">🚌 Transport</span>
                 <span class="qg-card__label">Trouver un trajet →</span>
             </a>
-            <a href="/client-qg/devoirs" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
-                <div class="qg-card__icon"><i data-lucide="book-open"></i></div>
-                <span class="qg-card__value" style="font-size:1rem;">📚 Devoirs</span>
-                <span class="qg-card__label">Poser une question →</span>
-            </a>
             <a href="/client-qg/traducteur" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
                 <div class="qg-card__icon"><i data-lucide="languages"></i></div>
                 <span class="qg-card__value" style="font-size:1rem;">🌐 Traducteur</span>
                 <span class="qg-card__label">Traduire un texte →</span>
             </a>
-<a href="/client-qg/services" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
-    <div class="qg-card__icon"><i data-lucide="hand-helping"></i></div>
-    <span class="qg-card__value" style="font-size:1rem;">🛎️ Services</span>
-    <span class="qg-card__label">Livraison, garde, plus →</span>
-</a>
-            <a href="/client-qg/plans" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
-    <div class="qg-card__icon"><i data-lucide="gift"></i></div>
-    <span class="qg-card__value" style="font-size:1rem;">🎁 Meilleurs Plans</span>
-    <span class="qg-card__label">Découvrir la surprise →</span>
-</a>
-            <a href="/marketplace" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
-                <div class="qg-card__icon"><i data-lucide="search"></i></div>
-                <span class="qg-card__value" style="font-size:1rem;">🏪 Trouver un commerçant</span>
-                <span class="qg-card__label">Chercher près de moi →</span>
+            <a href="/client-qg/services" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="hand-helping"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🛎️ Services</span>
+                <span class="qg-card__label">Livraison, garde, plus →</span>
             </a>
-<a href="/client-qg/academie" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
-    <div class="qg-card__icon"><i data-lucide="graduation-cap"></i></div>
-    <span class="qg-card__value" style="font-size:1rem;">🎓 Académie</span>
-    <span class="qg-card__label">Devenir Marchand →</span>
-</a>
+            <a href="/client-qg/plans" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="gift"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🎁 Meilleurs Plans</span>
+                <span class="qg-card__label">Découvrir la surprise →</span>
+            </a>
+            <a href="/client-qg/academie" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="graduation-cap"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🎓 Technologie</span>
+                <span class="qg-card__label">Devenir Marchand →</span>
+            </a>
         </section>
 
-        <!-- QUOTA MESSAGES -->
         <div class="qg-section-title">
             <i data-lucide="message-circle"></i>
             <span>SAMII</span>
