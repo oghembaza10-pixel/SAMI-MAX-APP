@@ -94,6 +94,25 @@ router.post("/chat", async (req, res) => {
         res.json({ success: false, reply: "SAMII démarre. Réessaie dans quelques instants." });
     }
 });
+// ── VOIX SAMII (ElevenLabs, avec repli sur voix navigateur) ─────
+router.post("/speak", requireAuth, async (req, res) => {
+    try {
+        const { text } = req.body;
+        if (!text) return res.json({ success: false, error: "Texte manquant." });
+
+        const elevenlabs = require("../services/elevenlabs");
+
+        if (!elevenlabs.isEnabled()) {
+            return res.json({ success: false, fallback: true });
+        }
+
+        const result = await elevenlabs.textToSpeech(text);
+        res.json(result);
+    } catch (err) {
+        console.error("❌ POST /api/speak :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
 
 // ── CONNECTEURS ───────────────────────────────────────
 router.get("/connecteurs", requireAuth, async (req, res) => {
