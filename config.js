@@ -105,6 +105,9 @@ module.exports = {
     GEMINI: {
         API_KEY: process.env.GEMINI_API_KEY,
     },
+    RESEND: {
+    API_KEY: process.env.RESEND_API_KEY || "",
+},
     
 ELEVENLABS: {
     API_KEY: process.env.ELEVENLABS_API_KEY || "",
