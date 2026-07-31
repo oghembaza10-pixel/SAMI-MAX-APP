@@ -15,24 +15,24 @@ const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
 const CLOUDINARY_PRESET = "MARKETPLACE OG";
 
 const CATEGORIES = [
-    { id: "tous",           icon: "layout-grid",   label: "Tout" },
-    { id: "electronique",   icon: "smartphone",    label: "Électronique" },
-    { id: "mode",           icon: "shirt",         label: "Mode" },
-    { id: "beaute",         icon: "sparkles",      label: "Beauté" },
-    { id: "maison",         icon: "home",          label: "Maison" },
+    { id: "tous",        icon: "layout-grid",   label: "Tout" },
+    { id: "electronique",    icon: "smartphone",    label: "Électronique" },
+    { id: "mode",            icon: "shirt",         label: "Mode" },
+    { id: "beaute",          icon: "sparkles",      label: "Beauté" },
+    { id: "maison",          icon: "home",          label: "Maison" },
     { id: "electromenager", icon: "washing-machine", label: "Électro." },
-    { id: "sport",          icon: "dumbbell",      label: "Sport" },
-    { id: "loisirs",        icon: "gamepad-2",     label: "Loisirs" },
-    { id: "livres",         icon: "book-open",     label: "Livres" },
-    { id: "vehicules",      icon: "car",           label: "Véhicules" },
-    { id: "immobilier",     icon: "building-2",    label: "Immobilier" },
-    { id: "animaux",        icon: "paw-print",     label: "Animaux" },
-    { id: "alimentation",   icon: "utensils",      label: "Alimentation" },
-    { id: "services",       icon: "concierge-bell",label: "Services" },
-    { id: "artisanat",      icon: "palette",       label: "Artisanat" },
-    { id: "bebe",           icon: "baby",          label: "Bébé" },
-    { id: "bureau",         icon: "briefcase",     label: "Bureau" },
-    { id: "autre",          icon: "package",       label: "Autre" },
+    { id: "sport",           icon: "dumbbell",      label: "Sport" },
+    { id: "loisirs",         icon: "gamepad-2",     label: "Loisirs" },
+    { id: "livres",          icon: "book-open",     label: "Livres" },
+    { id: "vehicules",       icon: "car",           label: "Véhicules" },
+    { id: "immobilier",      icon: "building-2",    label: "Immobilier" },
+    { id: "animaux",         icon: "paw-print",     label: "Animaux" },
+    { id: "alimentation",    icon: "utensils",      label: "Alimentation" },
+    { id: "services",        icon: "concierge-bell",label: "Services" },
+    { id: "artisanat",       icon: "palette",       label: "Artisanat" },
+    { id: "bebe",            icon: "baby",          label: "Bébé" },
+    { id: "bureau",          icon: "briefcase",     label: "Bureau" },
+    { id: "autre",           icon: "package",       label: "Autre" },
 ];
 
 router.get("/", requireAuth, async (req, res) => {
@@ -87,7 +87,36 @@ router.get("/", requireAuth, async (req, res) => {
     <title>Marketplace — OG Empire</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-   /* ── FOND IMMERSIF NÉON & OR ── */
+    <style>
+        :root {
+            --bg-deep: #030305;
+            --bg-panel: rgba(10, 10, 14, 0.82);
+            --bg-panel-hover: rgba(16, 16, 22, 0.92);
+            --gold-og: #d4af37;
+            --gold-hover: #f3e5ab;
+            --gold-dim: rgba(212, 175, 55, 0.15);
+            --gold-glow: 0 0 30px rgba(212, 175, 55, 0.22);
+            --cyan-tech: #00f0ff;
+            --cyan-dim: rgba(0, 240, 255, 0.12);
+            --cyan-glow: 0 0 25px rgba(0, 240, 255, 0.22);
+            --border-gold: 1px solid rgba(212, 175, 55, 0.28);
+            --border-cyan: 1px solid rgba(0, 240, 255, 0.32);
+            --text-main: #f5f5f7;
+            --text-muted: #8e8e93;
+            --font-display: 'Cinzel', serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+        }
+
         .og-bg-fx {
             position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
         }
@@ -114,13 +143,12 @@ router.get("/", requireAuth, async (req, res) => {
             50% { transform: translateY(-30px) scale(1.05); }
         }
 
-        /* ── HEADER STICKY & MEGA NAVIGATION ── */
         .og-header {
             position: sticky; top: 0; z-index: 100;
-            background: rgba(3, 3, 5, 0.92);
+            background: rgba(3, 3, 5, 0.88);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 16px 32px;
+            padding: 16px 24px;
             display: flex; flex-direction: column; gap: 16px;
         }
         .og-header__top {
@@ -153,7 +181,6 @@ router.get("/", requireAuth, async (req, res) => {
         .og-publish-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(212,175,55,0.45); }
         .og-publish-cta i { width: 18px; height: 18px; }
 
-        /* ── BARRE DE RECHERCHE CENTRALE MASSIVE ── */
         .og-search-bar {
             max-width: 1400px; margin: 0 auto; width: 100%;
             display: flex; gap: 10px; background: var(--bg-panel);
@@ -183,13 +210,11 @@ router.get("/", requireAuth, async (req, res) => {
         .og-search-submit:hover { transform: scale(1.03); }
         .og-search-submit i { width: 18px; height: 18px; color: #000; }
 
-        /* ── PILLS DE CATÉGORIES (AVEC SCROLLBAR PROPRE SUR PC) ── */
         .og-categories-container {
             max-width: 1400px; margin: 0 auto; width: 100%;
             display: flex; gap: 10px; overflow-x: auto; padding: 6px 2px 10px;
             scroll-behavior: smooth;
         }
-        /* Scrollbar visible et stylée pour PC */
         .og-categories-container::-webkit-scrollbar { height: 6px; }
         .og-categories-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
         .og-categories-container::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 10px; }
@@ -214,7 +239,6 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .og-cat-chip.active i { color: var(--gold-og); }
 
-        /* ── SECTION RÉSULTATS & STATS ── */
         .og-main-container { max-width: 1400px; margin: 24px auto; padding: 0 32px 80px; }
         
         .og-results-bar {
@@ -228,7 +252,6 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .og-results-count .dot { width: 6px; height: 6px; background: var(--cyan-tech); border-radius: 50%; box-shadow: 0 0 8px var(--cyan-tech); }
 
-        /* ── GRILLE PRODUITS PARFAITE POUR PC & MOBILE ── */
         .og-grid {
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
@@ -287,7 +310,6 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .og-card__meta-grid i { width: 13px; height: 13px; color: var(--cyan-tech); flex-shrink: 0; }
 
-        /* ── ÉTAT VIDE ── */
         .og-empty-state {
             grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 80px 20px; text-align: center; color: var(--text-muted); background: var(--bg-panel);
@@ -295,7 +317,17 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .og-empty-state i { width: 48px; height: 48px; color: var(--gold-og); margin-bottom: 16px; opacity: 0.6; }
 
-        /* ── RESPONSIVE MOBILE ── */
+        @media (min-width: 640px) {
+            .og-header, .og-main-container { padding-left: 32px; padding-right: 32px; }
+            .og-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
+        }
+        @media (min-width: 900px) {
+            .og-header, .og-main-container { padding-left: 48px; padding-right: 48px; }
+            .og-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        }
+        @media (min-width: 1200px) {
+            .og-grid { grid-template-columns: repeat(5, 1fr); }
+        }
         @media (max-width: 768px) {
             .og-header { padding: 12px 16px; }
             .og-search-bar { flex-direction: column; background: transparent; border: none; box-shadow: none; padding: 0; gap: 8px; }
@@ -304,6 +336,7 @@ router.get("/", requireAuth, async (req, res) => {
             .og-main-container { padding: 16px; }
             .og-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
         }
+    </style>
 </head>
 <body>
     <div class="og-bg-fx">
@@ -360,11 +393,10 @@ router.get("/", requireAuth, async (req, res) => {
         </div>
     </main>
 
-   <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>if (typeof lucide !== "undefined") lucide.createIcons();</script>
 </body>
 </html>`);
 });
 
-// ── EXPORTATION DU ROUTEUR EXPRESS (OBLIGATOIRE) ─────
 module.exports = router;
