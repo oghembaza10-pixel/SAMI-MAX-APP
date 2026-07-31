@@ -87,41 +87,7 @@ router.get("/", requireAuth, async (req, res) => {
     <title>Marketplace — OG Empire</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        /* ==========================================================================
-           OG EMPIRE — MARKETPLACE SUPREME HYBRID EDITION (PIXEL BY PIXEL)
-           NOIR PROFOND & OR LUXE x BLEU TECH FUTURISTE
-           ========================================================================== */
-        :root {
-            --bg-deep: #030305;
-            --bg-panel: rgba(10, 10, 14, 0.82);
-            --bg-panel-hover: rgba(16, 16, 22, 0.92);
-            --gold-og: #d4af37;
-            --gold-hover: #f3e5ab;
-            --gold-dim: rgba(212, 175, 55, 0.15);
-            --gold-glow: 0 0 30px rgba(212, 175, 55, 0.22);
-            --cyan-tech: #00f0ff;
-            --cyan-dim: rgba(0, 240, 255, 0.12);
-            --cyan-glow: 0 0 25px rgba(0, 240, 255, 0.22);
-            --border-gold: 1px solid rgba(212, 175, 55, 0.28);
-            --border-cyan: 1px solid rgba(0, 240, 255, 0.32);
-            --text-main: #f5f5f7;
-            --text-muted: #8e8e93;
-            --font-display: 'Cinzel', serif;
-            --font-body: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        body {
-            background-color: var(--bg-deep);
-            color: var(--text-main);
-            font-family: var(--font-body);
-            margin: 0; padding: 0;
-            overflow-x: hidden;
-        }
-
-        /* ── FOND IMMERSIF NÉON & OR ── */
+   /* ── FOND IMMERSIF NÉON & OR ── */
         .og-bg-fx {
             position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
         }
@@ -151,10 +117,10 @@ router.get("/", requireAuth, async (req, res) => {
         /* ── HEADER STICKY & MEGA NAVIGATION ── */
         .og-header {
             position: sticky; top: 0; z-index: 100;
-            background: rgba(3, 3, 5, 0.88);
+            background: rgba(3, 3, 5, 0.92);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 16px 24px;
+            padding: 16px 32px;
             display: flex; flex-direction: column; gap: 16px;
         }
         .og-header__top {
@@ -187,7 +153,7 @@ router.get("/", requireAuth, async (req, res) => {
         .og-publish-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(212,175,55,0.45); }
         .og-publish-cta i { width: 18px; height: 18px; }
 
-        /* ── BARRE DE RECHERCHE CENTRALE MASSIVE (TYPE AMAZON / LEBONCOIN) ── */
+        /* ── BARRE DE RECHERCHE CENTRALE MASSIVE ── */
         .og-search-bar {
             max-width: 1400px; margin: 0 auto; width: 100%;
             display: flex; gap: 10px; background: var(--bg-panel);
@@ -217,19 +183,23 @@ router.get("/", requireAuth, async (req, res) => {
         .og-search-submit:hover { transform: scale(1.03); }
         .og-search-submit i { width: 18px; height: 18px; color: #000; }
 
-        /* ── PILLS DE CATÉGORIES (STYLE VINTED / APP MOBILE) ── */
+        /* ── PILLS DE CATÉGORIES (AVEC SCROLLBAR PROPRE SUR PC) ── */
         .og-categories-container {
             max-width: 1400px; margin: 0 auto; width: 100%;
-            display: flex; gap: 10px; overflow-x: auto; padding: 4px 0 6px;
-            scrollbar-width: none; -ms-overflow-style: none;
+            display: flex; gap: 10px; overflow-x: auto; padding: 6px 2px 10px;
+            scroll-behavior: smooth;
         }
-        .og-categories-container::-webkit-scrollbar { display: none; }
+        /* Scrollbar visible et stylée pour PC */
+        .og-categories-container::-webkit-scrollbar { height: 6px; }
+        .og-categories-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .og-categories-container::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 10px; }
+        .og-categories-container::-webkit-scrollbar-thumb:hover { background: var(--gold-og); }
         
         .og-cat-chip {
-            display: flex; align-items: center; gap: 8px; padding: 12px 18px;
+            display: flex; align-items: center; gap: 8px; padding: 10px 18px;
             background: var(--bg-panel); border: 1px solid rgba(255, 255, 255, 0.07);
             border-radius: 30px; color: var(--text-muted); text-decoration: none;
-            font-size: 0.78rem; font-weight: 500; white-space: nowrap; flex-shrink: 0;
+            font-size: 0.8rem; font-weight: 500; white-space: nowrap; flex-shrink: 0;
             backdrop-filter: blur(10px);
             transition: all 0.3s var(--ease-premium);
         }
@@ -245,7 +215,7 @@ router.get("/", requireAuth, async (req, res) => {
         .og-cat-chip.active i { color: var(--gold-og); }
 
         /* ── SECTION RÉSULTATS & STATS ── */
-        .og-main-container { max-width: 1400px; margin: 24px auto; padding: 0 24px 80px; }
+        .og-main-container { max-width: 1400px; margin: 24px auto; padding: 0 32px 80px; }
         
         .og-results-bar {
             display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px;
@@ -258,9 +228,11 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .og-results-count .dot { width: 6px; height: 6px; background: var(--cyan-tech); border-radius: 50%; box-shadow: 0 0 8px var(--cyan-tech); }
 
-        /* ── GRILLE PRODUITS LUXE & PERFORMANCE ── */
+        /* ── GRILLE PRODUITS PARFAITE POUR PC & MOBILE ── */
         .og-grid {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
+            gap: 20px;
         }
 
         .og-card {
@@ -323,18 +295,7 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .og-empty-state i { width: 48px; height: 48px; color: var(--gold-og); margin-bottom: 16px; opacity: 0.6; }
 
-        /* ── RESPONSIVE ADAPTATIF ── */
-        @media (min-width: 640px) {
-            .og-header, .og-main-container { padding-left: 32px; padding-right: 32px; }
-            .og-grid { grid-template-columns: repeat(3, 1fr); gap: 18px; }
-        }
-        @media (min-width: 900px) {
-            .og-header, .og-main-container { padding-left: 48px; padding-right: 48px; }
-            .og-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
-        }
-        @media (min-width: 1200px) {
-            .og-grid { grid-template-columns: repeat(5, 1fr); }
-        }
+        /* ── RESPONSIVE MOBILE ── */
         @media (max-width: 768px) {
             .og-header { padding: 12px 16px; }
             .og-search-bar { flex-direction: column; background: transparent; border: none; box-shadow: none; padding: 0; gap: 8px; }
@@ -343,7 +304,6 @@ router.get("/", requireAuth, async (req, res) => {
             .og-main-container { padding: 16px; }
             .og-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
         }
-    </style>
 </head>
 <body>
     <div class="og-bg-fx">
