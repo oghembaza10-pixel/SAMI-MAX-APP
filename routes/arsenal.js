@@ -21,7 +21,7 @@ const CARDS = [
     { loi: "T-012", name: "Chronomaître",       icon: "clock",         desc: "Planification multi-fuseaux horaires", available: false },
    { loi: "T-013", name: "Sérénité", icon: "leaf", desc: "Rapport quotidien apaisé, chaque soir à 22h", available: true, href: "/samii" },
    { loi: "T-014", name: "Miroir", icon: "circle-dot", desc: "Auto-diagnostic de ton activité", available: true, href: "/samii/miroir" },
-    { loi: "T-015", name: "Oracle Financier",   icon: "line-chart",    desc: "Prévisions de revenus", available: false },
+    { loi: "T-015", name: "Oracle Financier", icon: "line-chart", desc: "Prévisions de revenus", available: true, href: "/samii/oracle-financier" },
     { loi: "T-016", name: "Vérité Absolue",     icon: "bar-chart-2",   desc: "Rapport détaillé produits/zones performants", available: false },
     { loi: "T-017", name: "Constitution",       icon: "gavel",         desc: "Règles business par défaut", available: false },
     { loi: "T-018", name: "Évolution",          icon: "trending-up",   desc: "SAMII apprend de tes résultats", available: false },
