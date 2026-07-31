@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — LOGIN V4 (vérification email + hachage bcrypt)
+// SAMII OS — LOGIN V5 (vérification email + hachage bcrypt + type de compte)
 // ==========================================================================
 const express = require("express");
 const axios   = require("axios");
@@ -116,12 +116,10 @@ router.post("/", async (req, res) => {
 
         const user = record.fields;
 
-        // ── Compte pas encore confirmé ────────────────
         if (user.email_verifie !== true) {
             return res.json({ success: false, error: "Confirme ton email avant de te connecter (vérifie ta boîte mail)." });
         }
 
-        // ── Vérification du mot de passe (bcrypt) ─────
         const passwordOk = await bcrypt.compare(password, user.password_hash || "");
         if (!passwordOk) {
             return res.json({ success: false, error: "Email ou mot de passe incorrect." });
@@ -137,16 +135,37 @@ router.post("/", async (req, res) => {
             { headers }
         );
 
+        const typeCompte = user.type_compte === "marchand" ? "marchand" : "client";
+
+        // ── Compte Client : pas de workspace, direction le QG Client ──
+        if (typeCompte === "client") {
+            req.session.regenerate((err) => {
+                if (err) return res.json({ success: false, error: "Erreur session." });
+
+                req.session.loggedIn    = true;
+                req.session.email       = email;
+                req.session.userId      = record.id;
+                req.session.nom         = `${user.prenom || ""} ${user.nom || ""}`.trim();
+                req.session.typeCompte  = "client";
+                req.session.workspaceId = null;
+
+                res.json({ success: true, redirect: "/client-qg" });
+            });
+            return;
+        }
+
+        // ── Compte Marchand : chercher son workspace ──
         const workspaces = await workspaceService.getByOwner(email);
         const workspace  = workspaces[0] || null;
 
         req.session.regenerate((err) => {
             if (err) return res.json({ success: false, error: "Erreur session." });
 
-            req.session.loggedIn = true;
-            req.session.email    = email;
-            req.session.userId   = record.id;
-            req.session.nom      = `${user.prenom || ""} ${user.nom || ""}`.trim();
+            req.session.loggedIn   = true;
+            req.session.email      = email;
+            req.session.userId     = record.id;
+            req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
+            req.session.typeCompte = "marchand";
 
             if (workspace) {
                 req.session.workspaceId = workspace.workspaceId;
