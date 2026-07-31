@@ -61,14 +61,19 @@ function requireAuth(req, res, next) {
 // ──────────────────────────────────────────────────────
 // GET /hub
 // ──────────────────────────────────────────────────────
-
 router.get("/", requireAuth, async (req, res) => {
     try {
+        // ✅ Un compte Client n'a rien à faire sur le Hub marchand — redirection directe
+        if (req.session?.typeCompte === "client") {
+            return res.redirect("/client-qg");
+        }
+
         const email = req.session?.email || "";
 
         const workspaces = email
             ? await workspaceService.getByOwner(email)
             : [];
+
 
         res.render("hub", {
             workspaces,
