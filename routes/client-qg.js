@@ -26,5 +26,6 @@ router.use("/transport", require("./client-transport"));
 router.use("/traducteur", require("./client-traducteur"));
 router.use("/services", require("./client-services"));
 router.use("/plans", require("./client-plans"));
+router.use("/academie", require("./client-academie"));
 
 module.exports = router;
