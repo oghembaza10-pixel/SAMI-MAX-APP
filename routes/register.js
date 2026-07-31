@@ -214,8 +214,37 @@ router.post("/", async (req, res) => {
             { headers: headers() }
         );
 
-        if (check.data.records.length > 0) {
-            return res.json({ success: false, error: "Cet email est déjà utilisé." });
+       if (check.data.records.length > 0) {
+            const existing = check.data.records[0];
+            if (existing.fields.email_verifie === true) {
+                return res.json({ success: false, error: "Cet email est déjà utilisé." });
+            }
+            // Compte existant mais pas encore confirmé → on renvoie un nouveau lien
+            const newToken = crypto.randomBytes(32).toString("hex");
+            const newExpire = new Date(Date.now() + TOKEN_VALIDITE_HEURES * 60 * 60 * 1000).toISOString();
+
+            await axios.patch(
+                `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${existing.id}`,
+                { fields: { token_verification: newToken, token_expire_le: newExpire } },
+                { headers: headers() }
+            );
+
+            const lienRenvoi = `${CONFIG.APP_URL}/register/confirmer?token=${newToken}`;
+            await gmail.send({
+                to: email,
+                subject: "Confirme ton compte SAMII OS",
+                html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
+                    <h2 style="color:#C5A059;">Nouveau lien de confirmation</h2>
+                    <p>Clique ci-dessous pour confirmer ton adresse email.</p>
+                    <a href="${lienRenvoi}" style="display:inline-block;padding:12px 24px;background:#C5A059;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;">Confirmer mon email</a>
+                </div>`,
+            });
+
+            return res.json({
+                success: true,
+                message: "✅ Un nouveau lien de confirmation a été envoyé.",
+                redirect: "/register/en-attente",
+            });
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
