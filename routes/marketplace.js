@@ -5,12 +5,14 @@ const express = require("express");
 const router  = express.Router();
 const airtable = require("../services/airtable");
 const workspaceService = require("../services/workspaceService");
-const CONFIG = require("../config");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
 }
+
+const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
+const CLOUDINARY_PRESET = "MARKETPLACE OG";
 
 const CATEGORIES = [
     { id: "tous",           icon: "🛍️", label: "Tout" },
@@ -88,6 +90,13 @@ router.get("/", requireAuth, async (req, res) => {
     <link rel="stylesheet" href="/css/marketplace-style.css">
 </head>
 <body>
+    <div class="mp-bg-fx">
+        <div class="mp-bg-grid"></div>
+        <div class="mp-bg-glow mp-bg-glow--1"></div>
+        <div class="mp-bg-glow mp-bg-glow--2"></div>
+        <div class="mp-bg-particles"></div>
+    </div>
+
     <a href="${isClient ? '/client-qg' : '/qg'}" class="mp-back">← Retour</a>
 
     <section class="mp-hero">
@@ -129,7 +138,6 @@ router.get("/", requireAuth, async (req, res) => {
 });
 
 router.get("/publier", requireAuth, async (req, res) => {
-    const isClient = req.session?.typeCompte === "client";
     const categoriesOptions = CATEGORIES.filter(c => c.id !== "tous")
         .map(c => `<option value="${c.id}">${c.icon} ${c.label}</option>`).join("");
 
@@ -143,6 +151,12 @@ router.get("/publier", requireAuth, async (req, res) => {
     <link rel="stylesheet" href="/css/marketplace-style.css">
 </head>
 <body>
+    <div class="mp-bg-fx">
+        <div class="mp-bg-grid"></div>
+        <div class="mp-bg-glow mp-bg-glow--1"></div>
+        <div class="mp-bg-glow mp-bg-glow--2"></div>
+    </div>
+
 <div class="pb-shell">
     <a href="/marketplace" class="pb-back">← Retour à la Marketplace</a>
     <h1>➕ Publier une annonce</h1>
@@ -194,8 +208,8 @@ router.get("/publier", requireAuth, async (req, res) => {
     </div>
 </div>
 <script>
-const CLOUDINARY_CLOUD_NAME = "TON_CLOUD_NAME";
-const CLOUDINARY_PRESET = "TON_UPLOAD_PRESET";
+const CLOUDINARY_CLOUD_NAME = "${CLOUDINARY_CLOUD_NAME}";
+const CLOUDINARY_PRESET = "${CLOUDINARY_PRESET}";
 
 document.getElementById('input-photo').addEventListener('change', async (e) => {
     const file = e.target.files[0];
