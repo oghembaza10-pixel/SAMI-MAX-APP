@@ -203,9 +203,12 @@
                 <p class="connect-tools-footer__hint">
                     Vous pourrez connecter d'autres outils depuis votre QG à tout moment.
                 </p>
-                <a href="/connect/tools/continue" class="connect-btn connect-btn--cta">
-                    Continuer vers mon QG →
-                </a>
+                <a href="/connect/tools/continue?from=<%= from %>" class="connect-btn connect-btn--cta">
+    <% if (from === 'samii') { %>← Retour à SAMII
+    <% } else if (from === 'hub') { %>← Retour au Hub
+    <% } else { %>Continuer vers mon QG →
+    <% } %>
+</a>
             </div>
 
         </section>
