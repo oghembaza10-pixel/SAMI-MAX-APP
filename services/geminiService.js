@@ -6,6 +6,7 @@ const CONFIG = require("../config");
 const SAMII_PROMPT = require("../brain/prompts/index");
 const MODEL = "gemini-2.5-flash";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${CONFIG.GEMINI.API_KEY}`;
+
 const TOOLS = [
     {
         functionDeclarations: [
@@ -34,6 +35,12 @@ const TOOLS = [
         ],
     },
 ];
+
+async function send({ to, message }) {
+    console.log(`🤖 Gemini → ${to} : ${message}`);
+    return { success: true };
+}
+
 async function chat({ message, context = {}, useTools = false }, retryCount = 0) {
     try {
         const body = {
@@ -56,7 +63,7 @@ async function chat({ message, context = {}, useTools = false }, retryCount = 0)
             type: "text",
             text: textPart?.text || "SAMII n'a pas su répondre, réessaie autrement.",
         };
-   } catch (err) {
+    } catch (err) {
         const isQuotaError = err.response?.data?.error?.code === 429;
         if (isQuotaError && retryCount < 1) {
             console.warn("⏳ Quota Gemini atteint, nouvel essai dans 5s...");
@@ -67,6 +74,7 @@ async function chat({ message, context = {}, useTools = false }, retryCount = 0)
         return { type: "text", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
     }
 }
+
 async function chatWithSearch({ message, context = {} }) {
     try {
         const body = {
@@ -93,6 +101,7 @@ async function chatWithSearch({ message, context = {} }) {
         return { type: "text", text: "SAMII démarre actuellement. Réessaie dans quelques instants.", sources: [] };
     }
 }
+
 async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult }) {
     try {
         const body = {
@@ -112,7 +121,9 @@ async function chatWithFunctionResult({ message, context = {}, functionName, fun
         return "C'est fait ✅";
     }
 }
+
 async function receive(msg) {
     console.log("📥 Gemini receive :", msg);
 }
+
 module.exports = { send, chat, chatWithFunctionResult, chatWithSearch, receive, TOOLS };
