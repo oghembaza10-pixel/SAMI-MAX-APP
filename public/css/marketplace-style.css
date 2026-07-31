@@ -219,3 +219,23 @@ label { display: block; font-family: var(--font-mono); font-size: .7rem; text-tr
 .pb-msg.ok { color: #3ddc84; }
 
 @media (max-width: 560px) { .pb-row { grid-template-columns: 1fr; } }
+/* ── GRILLE MULTI-PHOTOS ── */
+.pb-photo-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px;
+}
+.pb-photo-slot {
+    position: relative; aspect-ratio: 1; border-radius: 14px; overflow: hidden;
+    border: 2px dashed rgba(197,160,89,0.3); background-size: cover; background-position: center;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color .25s ease;
+}
+.pb-photo-slot:hover { border-color: var(--gold-og); }
+.pb-photo-slot.filled { border-style: solid; border-color: rgba(61,220,132,0.4); }
+.pb-photo-slot.uploading { opacity: .5; }
+.pb-photo-slot__icon { font-size: 1.6rem; color: rgba(255,255,255,0.3); }
+.pb-photo-slot.filled .pb-photo-slot__icon { display: none; }
+.pb-photo-slot input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 2; }
+
+@media (max-width: 400px) {
+    .pb-photo-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+}
