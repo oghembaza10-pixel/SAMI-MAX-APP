@@ -1,10 +1,20 @@
 // ==========================================================================
-// SAMII OS — MARKETPLACE — Accueil & Publication d'annonces
+// SAMII OS — MARKETPLACE — Accueil, Publication (5 photos max), Sidebar & Samii
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
 const airtable = require("../services/airtable");
 const workspaceService = require("../services/workspaceService");
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB max par image
+const cloudinary = require('cloudinary').v2;
+
+// Configuration Cloudinary (utilise tes variables ou tes clés directes)
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "ojwx5hft",
+    api_key: process.env.CLOUDINARY_API_KEY || "",
+    api_secret: process.env.CLOUDINARY_API_SECRET || ""
+});
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -12,30 +22,89 @@ function requireAuth(req, res, next) {
 }
 
 const CATEGORIES = [
-    { id: "tous",        icon: "layout-grid",   label: "Tout" },
-    { id: "electronique",    icon: "smartphone",    label: "Électronique" },
-    { id: "mode",            icon: "shirt",         label: "Mode" },
-    { id: "beaute",          icon: "sparkles",      label: "Beauté" },
-    { id: "maison",          icon: "home",          label: "Maison" },
-    { id: "electromenager", icon: "washing-machine", label: "Électro." },
-    { id: "sport",           icon: "dumbbell",      label: "Sport" },
-    { id: "loisirs",         icon: "gamepad-2",     label: "Loisirs" },
-    { id: "livres",          icon: "book-open",     label: "Livres" },
-    { id: "vehicules",       icon: "car",           label: "Véhicules" },
-    { id: "immobilier",      icon: "building-2",    label: "Immobilier" },
-    { id: "animaux",         icon: "paw-print",     label: "Animaux" },
-    { id: "alimentation",    icon: "utensils",      label: "Alimentation" },
-    { id: "services",        icon: "concierge-bell",label: "Services" },
-    { id: "artisanat",       icon: "palette",       label: "Artisanat" },
-    { id: "bebe",            icon: "baby",          label: "Bébé" },
-    { id: "bureau",          icon: "briefcase",     label: "Bureau" },
-    { id: "autre",           icon: "package",       label: "Autre" },
+    { id: "tous",           icon: "layout-grid",    label: "Tout" },
+    { id: "electronique",   icon: "smartphone",     label: "Électronique" },
+    { id: "mode",           icon: "shirt",          label: "Mode" },
+    { id: "beaute",         icon: "sparkles",       label: "Beauté" },
+    { id: "maison",         icon: "home",           label: "Maison" },
+    { id: "electromenager", icon: "washing-machine",label: "Électro." },
+    { id: "sport",          icon: "dumbbell",       label: "Sport" },
+    { id: "loisirs",        icon: "gamepad-2",      label: "Loisirs" },
+    { id: "livres",         icon: "book-open",      label: "Livres" },
+    { id: "vehicules",      icon: "car",            label: "Véhicules" },
+    { id: "immobilier",     icon: "building-2",     label: "Immobilier" },
+    { id: "animaux",        icon: "paw-print",      label: "Animaux" },
+    { id: "alimentation",   icon: "utensils",       label: "Alimentation" },
+    { id: "services",       icon: "concierge-bell", label: "Services" },
+    { id: "artisanat",      icon: "palette",        label: "Artisanat" },
+    { id: "bebe",           icon: "baby",           label: "Bébé" },
+    { id: "bureau",         icon: "briefcase",      label: "Bureau" },
+    { id: "autre",          icon: "package",        label: "Autre" },
 ];
 
-// --- 1. PAGE D'ACCUEIL MARKETPLACE ---
+const SHARED_STYLES = `
+    :root {
+        --bg-deep: #030305; --bg-panel: rgba(10, 10, 14, 0.88); --bg-panel-hover: rgba(16, 16, 22, 0.95);
+        --gold-og: #d4af37; --gold-hover: #f3e5ab; --gold-glow: 0 0 30px rgba(212, 175, 55, 0.22);
+        --cyan-tech: #00f0ff; --cyan-dim: rgba(0, 240, 255, 0.12); --cyan-glow: 0 0 25px rgba(0, 240, 255, 0.22);
+        --border-gold: 1px solid rgba(212, 175, 55, 0.28); --border-cyan: 1px solid rgba(0, 240, 255, 0.32);
+        --text-main: #f5f5f7; --text-muted: #8e8e93;
+        --font-display: 'Cinzel', serif; --font-body: 'Inter', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+        --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    body { background-color: var(--bg-deep); color: var(--text-main); font-family: var(--font-body); margin: 0; padding: 0; overflow-x: hidden; display: flex; }
+    
+    /* --- SIDEBAR --- */
+    .og-sidebar {
+        width: 280px; height: 100vh; position: fixed; top: 0; left: 0; background: rgba(5, 5, 8, 0.95);
+        border-right: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(20px); display: flex; flex-direction: column; z-index: 200;
+        padding: 24px; box-sizing: border-box; justify-content: space-between;
+    }
+    .og-sidebar-brand { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; margin-bottom: 30px; }
+    .og-sidebar-brand i { color: var(--gold-og); }
+    .og-sidebar-menu { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .og-sidebar-link {
+        display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px;
+        color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500;
+        transition: all 0.3s var(--ease-premium); border: 1px solid transparent;
+    }
+    .og-sidebar-link i { width: 18px; height: 18px; color: var(--text-muted); transition: color 0.3s; }
+    .og-sidebar-link:hover, .og-sidebar-link.active {
+        background: rgba(212, 175, 55, 0.08); border-color: rgba(212, 175, 55, 0.2); color: #fff;
+    }
+    .og-sidebar-link:hover i, .og-sidebar-link.active i { color: var(--gold-og); }
+    
+    /* --- SPHERE SAMII --- */
+    .og-samii-sphere {
+        background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(10, 10, 14, 0.9));
+        border: var(--border-cyan); border-radius: 16px; padding: 16px; margin-top: auto;
+        box-shadow: var(--cyan-glow); position: relative; overflow: hidden;
+    }
+    .og-samii-sphere::before {
+        content: ''; position: absolute; top: -50px; right: -50px; width: 100px; height: 100px;
+        background: var(--cyan-tech); filter: blur(40px); opacity: 0.3; pointer-events: none;
+    }
+    .og-samii-title { font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan-tech); display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: 700; }
+    .og-samii-text { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+
+    /* --- LAYOUT CONTENT PRINCIPAL --- */
+    .og-main-wrapper { margin-left: 280px; width: calc(100% - 280px); min-height: 100vh; display: flex; flex-direction: column; }
+    
+    .og-bg-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+    .og-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px); background-size: 60px 60px; }
+    .og-ambient-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; filter: blur(150px); opacity: .14; z-index: -1; }
+    .og-ambient-glow.gold { background: var(--gold-og); left: 300px; top: -100px; }
+    .og-ambient-glow.cyan { background: var(--cyan-tech); right: -150px; top: 25%; }
+
+    @media (max-width: 1024px) {
+        .og-sidebar { display: none; }
+        .og-main-wrapper { margin-left: 0; width: 100%; }
+    }
+`;
+
+// --- 1. ACCUEIL MARKETPLACE ---
 router.get("/", requireAuth, async (req, res) => {
     const { categorie, recherche, ville } = req.query;
-    const isClient = req.session?.typeCompte === "client";
 
     let filtres = ['{actif}=1'];
     if (categorie && categorie !== "tous") filtres.push(`{categorie}="${categorie}"`);
@@ -54,151 +123,142 @@ router.get("/", requireAuth, async (req, res) => {
     const cardsHtml = annonces.map(a => {
         const f = a.fields;
         const cat = catInfo(f.categorie);
+        const photos = [f.photo_url, f.photo_url_2, f.photo_url_3, f.photo_url_4, f.photo_url_5].filter(Boolean);
+        const mainPhoto = photos.length ? photos[0] : '';
         return `
         <a href="/vitrine/${f.vendeur_id}" class="og-card">
             <div class="og-card__media">
                 <span class="og-card__badge"><i data-lucide="${cat.icon}"></i> ${cat.label}</span>
-                ${f.photo_url ? `<img src="${f.photo_url}" alt="${f.titre}" loading="lazy">` : '<i data-lucide="image" class="og-card__placeholder-icon"></i>'}
+                ${mainPhoto ? `<img src="${mainPhoto}" alt="${f.titre}" loading="lazy">` : '<i data-lucide="image" class="og-card__placeholder-icon"></i>'}
                 <div class="og-card__price-tag">${f.prix || '—'}</div>
             </div>
             <div class="og-card__content">
                 <h3 class="og-card__title">${f.titre}</h3>
                 <div class="og-card__meta-grid">
                     <span><i data-lucide="map-pin"></i> ${f.ville || '—'}</span>
-                    <span><i data-lucide="${f.type_vendeur === 'marchand' ? 'store' : 'user'}"></i> ${f.vendeur_nom || 'Vendeur'}</span>
+                    <span><i data-lucide="user"></i> ${f.vendeur_nom || 'Vendeur'}</span>
                 </div>
             </div>
         </a>`;
     }).join("");
 
-    const categoriesHtml = CATEGORIES.filter(c => c.id !== 'tous').map(c => `
+    const categoriesHtml = CATEGORIES.map(c => `
         <a href="/marketplace?categorie=${c.id}${recherche ? `&recherche=${encodeURIComponent(recherche)}` : ''}${ville ? `&ville=${encodeURIComponent(ville)}` : ''}"
-            class="og-cat-chip ${categorie === c.id ? 'active' : ''}">
+            class="og-cat-chip ${categorie === c.id || (!categorie && c.id === 'tous') ? 'active' : ''}">
             <i data-lucide="${c.icon}"></i><span>${c.label}</span>
         </a>
     `).join("");
-
-    const allCatHtml = `
-        <a href="/marketplace?${recherche ? `recherche=${encodeURIComponent(recherche)}` : ''}${ville ? `&ville=${encodeURIComponent(ville)}` : ''}"
-            class="og-cat-chip ${!categorie || categorie === 'tous' ? 'active' : ''}">
-            <i data-lucide="layout-grid"></i><span>Tout</span>
-        </a> ${categoriesHtml}`;
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Marketplace — OG Empire</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-deep: #030305; --bg-panel: rgba(10, 10, 14, 0.82); --bg-panel-hover: rgba(16, 16, 22, 0.92);
-            --gold-og: #d4af37; --gold-hover: #f3e5ab; --gold-glow: 0 0 30px rgba(212, 175, 55, 0.22);
-            --cyan-tech: #00f0ff; --cyan-dim: rgba(0, 240, 255, 0.12); --cyan-glow: 0 0 25px rgba(0, 240, 255, 0.22);
-            --border-gold: 1px solid rgba(212, 175, 55, 0.28); --border-cyan: 1px solid rgba(0, 240, 255, 0.32);
-            --text-main: #f5f5f7; --text-muted: #8e8e93;
-            --font-display: 'Cinzel', serif; --font-body: 'Inter', sans-serif; --font-mono: 'JetBrains Mono', monospace;
-            --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        body { background-color: var(--bg-deep); color: var(--text-main); font-family: var(--font-body); margin: 0; padding: 0; overflow-x: hidden; }
-        .og-bg-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
-        .og-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px); background-size: 60px 60px; }
-        .og-ambient-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; filter: blur(150px); opacity: .14; z-index: -1; }
-        .og-ambient-glow.gold { background: var(--gold-og); left: -150px; top: -100px; }
-        .og-ambient-glow.cyan { background: var(--cyan-tech); right: -150px; top: 25%; }
-        .og-header { position: sticky; top: 0; z-index: 100; background: rgba(3, 3, 5, 0.88); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding: 16px 24px; display: flex; flex-direction: column; gap: 16px; }
-        .og-header__top { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto; width: 100%; }
-        .og-back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); text-decoration: none; font-size: 0.85rem; }
-        .og-back-link i { width: 16px; height: 16px; color: var(--cyan-tech); }
-        .og-brand-title { font-family: var(--font-display); color: #fff; font-size: 1.6rem; font-weight: 700; display: flex; align-items: center; gap: 12px; margin: 0; }
-        .og-brand-title i { color: var(--gold-og); width: 28px; height: 28px; }
-        .og-publish-cta { display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 14px; text-decoration: none; background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #000; font-weight: 700; font-size: 0.88rem; font-family: var(--font-display); box-shadow: 0 8px 25px rgba(212,175,55,0.25); }
-        .og-search-bar { max-width: 1400px; margin: 0 auto; width: 100%; display: flex; gap: 10px; background: var(--bg-panel); border: var(--border-gold); border-radius: 18px; padding: 8px; backdrop-filter: blur(15px); }
-        .og-search-field { flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: rgba(0, 0, 0, 0.45); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        ${SHARED_STYLES}
+        .og-header { position: sticky; top: 0; z-index: 100; background: rgba(3, 3, 5, 0.88); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding: 20px 32px; display: flex; flex-direction: column; gap: 16px; }
+        .og-header__top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .og-brand-title { font-family: var(--font-display); color: #fff; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 12px; margin: 0; }
+        .og-brand-title i { color: var(--gold-og); width: 26px; height: 26px; }
+        .og-publish-cta { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 12px; text-decoration: none; background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #000; font-weight: 700; font-size: 0.85rem; font-family: var(--font-display); box-shadow: 0 8px 25px rgba(212,175,55,0.25); }
+        .og-search-bar { width: 100%; display: flex; gap: 10px; background: var(--bg-panel); border: var(--border-gold); border-radius: 16px; padding: 8px; backdrop-filter: blur(15px); }
+        .og-search-field { flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: rgba(0, 0, 0, 0.45); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); }
         .og-search-field i { width: 18px; height: 18px; color: var(--gold-og); flex-shrink: 0; }
-        .og-search-field input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.9rem; font-family: var(--font-body); padding: 13px 0; outline: none; }
-        .og-search-submit { background: linear-gradient(135deg, var(--cyan-tech), #0099ff); color: #000; border: none; border-radius: 12px; padding: 0 28px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--cyan-glow); }
-        .og-categories-container { max-width: 1400px; margin: 0 auto; width: 100%; display: flex; gap: 10px; overflow-x: auto; padding: 6px 2px 10px; scroll-behavior: smooth; }
-        .og-categories-container::-webkit-scrollbar { height: 6px; }
+        .og-search-field input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.9rem; font-family: var(--font-body); padding: 12px 0; outline: none; }
+        .og-search-submit { background: linear-gradient(135deg, var(--cyan-tech), #0099ff); color: #000; border: none; border-radius: 10px; padding: 0 24px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--cyan-glow); }
+        .og-categories-container { width: 100%; display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-behavior: smooth; }
+        .og-categories-container::-webkit-scrollbar { height: 4px; }
         .og-categories-container::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 10px; }
-        .og-cat-chip { display: flex; align-items: center; gap: 8px; padding: 10px 18px; background: var(--bg-panel); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 30px; color: var(--text-muted); text-decoration: none; font-size: 0.8rem; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+        .og-cat-chip { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg-panel); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 25px; color: var(--text-muted); text-decoration: none; font-size: 0.8rem; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
         .og-cat-chip.active { background: linear-gradient(135deg, rgba(212,175,55,0.2), rgba(12,12,14,0.9)); border-color: var(--gold-og); color: var(--gold-hover); font-weight: 700; box-shadow: var(--gold-glow); }
-        .og-main-container { max-width: 1400px; margin: 24px auto; padding: 0 32px 80px; }
-        .og-results-count { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--cyan-tech); background: var(--cyan-dim); padding: 6px 14px; border-radius: 20px; border: var(--border-cyan); }
-        .og-results-count .dot { width: 6px; height: 6px; background: var(--cyan-tech); border-radius: 50%; }
+        .og-cat-chip.active i { color: var(--gold-og); }
+        .og-main-container { padding: 32px; flex: 1; }
         .og-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 20px; }
-        .og-card { position: relative; background: var(--bg-panel); border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); text-decoration: none; display: flex; flex-direction: column; transition: transform 0.35s var(--ease-premium), border-color 0.35s var(--ease-premium); }
+        .og-card { position: relative; background: var(--bg-panel); border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); text-decoration: none; display: flex; flex-direction: column; transition: transform 0.35s var(--ease-premium), border-color 0.35s var(--ease-premium); }
         .og-card:hover { transform: translateY(-6px); border-color: rgba(212, 175, 55, 0.6); box-shadow: 0 20px 45px rgba(0,0,0,0.75), var(--gold-glow); }
         .og-card__media { position: relative; width: 100%; aspect-ratio: 1/1; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .og-card__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
         .og-card:hover .og-card__media img { transform: scale(1.08); }
         .og-card__badge { position: absolute; top: 10px; left: 10px; z-index: 2; display: flex; align-items: center; gap: 5px; font-size: 0.65rem; font-family: var(--font-mono); padding: 5px 10px; border-radius: 20px; background: rgba(5, 5, 5, 0.8); color: #fff; border: 1px solid rgba(255,255,255,0.08); }
-        .og-card__price-tag { position: absolute; bottom: 10px; right: 10px; z-index: 2; background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #000; font-family: var(--font-mono); font-weight: 700; font-size: 0.95rem; padding: 6px 12px; border-radius: 12px; }
+        .og-card__price-tag { position: absolute; bottom: 10px; right: 10px; z-index: 2; background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #000; font-family: var(--font-mono); font-weight: 700; font-size: 0.95rem; padding: 6px 12px; border-radius: 10px; }
         .og-card__content { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
         .og-card__title { font-size: 0.88rem; font-weight: 600; color: #fff; line-height: 1.35; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .og-card__meta-grid { display: flex; flex-direction: column; gap: 5px; font-size: 0.72rem; color: var(--text-muted); margin-top: auto; }
         .og-card__meta-grid span { display: flex; align-items: center; gap: 6px; }
         .og-empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; text-align: center; color: var(--text-muted); background: var(--bg-panel); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.1); }
-        @media(max-width: 768px) {
-            .og-search-bar { flex-direction: column; background: transparent; border: none; padding: 0; }
-            .og-search-field { background: var(--bg-panel); border: var(--border-gold); }
-            .og-search-submit { width: 100%; padding: 14px; }
-            .og-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        }
     </style>
 </head>
 <body>
-    <div class="og-bg-fx">
-        <div class="og-bg-grid"></div>
-        <div class="og-ambient-glow gold"></div>
-        <div class="og-ambient-glow cyan"></div>
+    <!-- SIDEBAR AVEC QG, ACADEMY, COMMUNITY, ARSENAL ET LA SPHERE SAMII -->
+    <aside class="og-sidebar">
+        <div>
+            <div class="og-sidebar-brand"><i data-lucide="crown"></i> OG EMPIRE</div>
+            <nav class="og-sidebar-menu">
+                <a href="/qg" class="og-sidebar-link"><i data-lucide="layout-dashboard"></i> QG Central</a>
+                <a href="/marketplace" class="og-sidebar-link active"><i data-lucide="store"></i> Marketplace</a>
+                <a href="/academy" class="og-sidebar-link"><i data-lucide="graduation-cap"></i> Academy</a>
+                <a href="/community" class="og-sidebar-link"><i data-lucide="users"></i> Community</a>
+                <a href="/arsenal" class="og-sidebar-link"><i data-lucide="shield-check"></i> Arsenal</a>
+            </nav>
+        </div>
+        
+        <div class="og-samii-sphere">
+            <div class="og-samii-title"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> Sphère Samii</div>
+            <div class="og-samii-text">Navigation active. Je supervise vos flux et sécurise vos annonces en temps réel.</div>
+        </div>
+    </aside>
+
+    <div class="og-main-wrapper">
+        <div class="og-bg-fx">
+            <div class="og-bg-grid"></div>
+            <div class="og-ambient-glow gold"></div>
+            <div class="og-ambient-glow cyan"></div>
+        </div>
+
+        <header class="og-header">
+            <div class="og-header__top">
+                <h1 class="og-brand-title"><i data-lucide="store"></i> Marketplace</h1>
+                <a href="/marketplace/publier" class="og-publish-cta"><i data-lucide="plus-circle"></i> Publier une annonce</a>
+            </div>
+            <form class="og-search-bar" method="GET">
+                <input type="hidden" name="categorie" value="${categorie || 'tous'}">
+                <div class="og-search-field" style="flex: 2;">
+                    <i data-lucide="search"></i>
+                    <input type="text" name="recherche" placeholder="Que recherchez-vous ?" value="${recherche || ''}">
+                </div>
+                <div class="og-search-field" style="flex: 1;">
+                    <i data-lucide="map-pin"></i>
+                    <input type="text" name="ville" placeholder="Ville ou zone" value="${ville || ''}">
+                </div>
+                <button type="submit" class="og-search-submit"><i data-lucide="search"></i></button>
+            </form>
+            <div class="og-categories-container">${categoriesHtml}</div>
+        </header>
+
+        <main class="og-main-container">
+            <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--cyan-tech); margin-bottom: 16px;">
+                ● ${annonces.length} annonce${annonces.length !== 1 ? 's' : ''} active${annonces.length !== 1 ? 's' : ''}
+            </div>
+            <div class="og-grid">
+                ${annonces.length ? cardsHtml : `
+                    <div class="og-empty-state">
+                        <i data-lucide="shopping-bag" style="width:48px;height:48px;color:var(--gold-og);margin-bottom:16px;"></i>
+                        <div>Aucune annonce trouvée.<br>Soyez le premier à publier votre offre !</div>
+                    </div>
+                `}
+            </div>
+        </main>
     </div>
 
-    <header class="og-header">
-        <div class="og-header__top">
-            <a href="${isClient ? '/client-qg' : '/qg'}" class="og-back-link"><i data-lucide="arrow-left"></i> Retour au QG</a>
-            <h1 class="og-brand-title"><i data-lucide="store"></i> Marketplace</h1>
-            <a href="/marketplace/publier" class="og-publish-cta"><i data-lucide="plus-circle"></i> Publier</a>
-        </div>
-        <form class="og-search-bar" method="GET">
-            <input type="hidden" name="categorie" value="${categorie || 'tous'}">
-            <div class="og-search-field" style="flex: 2;">
-                <i data-lucide="search"></i>
-                <input type="text" name="recherche" placeholder="Que recherchez-vous ?" value="${recherche || ''}">
-            </div>
-            <div class="og-search-field" style="flex: 1;">
-                <i data-lucide="map-pin"></i>
-                <input type="text" name="ville" placeholder="Ville ou zone" value="${ville || ''}">
-            </div>
-            <button type="submit" class="og-search-submit"><i data-lucide="search"></i></button>
-        </form>
-        <div class="og-categories-container">${allCatHtml}</div>
-    </header>
-
-    <main class="og-main-container">
-        <div class="og-results-bar">
-            <div class="og-results-count"><span class="dot"></span> ${annonces.length} annonce${annonces.length !== 1 ? 's' : ''} active${annonces.length !== 1 ? 's' : ''}</div>
-        </div>
-        <div class="og-grid">
-            ${annonces.length ? cardsHtml : `
-                <div class="og-empty-state">
-                    <i data-lucide="shopping-bag" style="width:48px;height:48px;color:var(--gold-og);margin-bottom:16px;"></i>
-                    <div>Aucune annonce trouvée.<br>Soyez le premier à publier votre offre !</div>
-                </div>
-            `}
-        </div>
-    </main>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>if (typeof lucide !== "undefined") lucide.createIcons();</script>
 </body>
 </html>`);
 });
 
-// --- 2. PAGE DE PUBLICATION D'UNE ANNONCE (Formulaire Complet) ---
+// --- 2. PAGE DE PUBLICATION (Formulaire avec 5 photos max) ---
 router.get("/publier", requireAuth, async (req, res) => {
-    const isClient = req.session?.typeCompte === "client";
-    
     const optionsCategories = CATEGORIES.filter(c => c.id !== 'tous').map(c => 
         `<option value="${c.id}">${c.label}</option>`
     ).join("");
@@ -210,15 +270,9 @@ router.get("/publier", requireAuth, async (req, res) => {
     <title>Publier une annonce — OG Empire</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-deep: #030305; --bg-panel: rgba(10, 10, 14, 0.88);
-            --gold-og: #d4af37; --gold-hover: #f3e5ab; --gold-glow: 0 0 30px rgba(212, 175, 55, 0.22);
-            --cyan-tech: #00f0ff; --cyan-dim: rgba(0, 240, 255, 0.12); --cyan-glow: 0 0 25px rgba(0, 240, 255, 0.22);
-            --border-gold: 1px solid rgba(212, 175, 55, 0.28); --text-main: #f5f5f7; --text-muted: #8e8e93;
-            --font-display: 'Cinzel', serif; --font-body: 'Inter', sans-serif; --font-mono: 'JetBrains Mono', monospace;
-        }
-        body { background-color: var(--bg-deep); color: var(--text-main); font-family: var(--font-body); margin: 0; padding: 20px; }
-        .og-form-container { max-width: 700px; margin: 40px auto; background: var(--bg-panel); border: var(--border-gold); border-radius: 24px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), var(--gold-glow); backdrop-filter: blur(20px); }
+        ${SHARED_STYLES}
+        body { padding: 40px 20px; justify-content: center; }
+        .og-form-container { width: 100%; max-width: 750px; margin: auto; background: var(--bg-panel); border: var(--border-gold); border-radius: 24px; padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), var(--gold-glow); backdrop-filter: blur(20px); box-sizing: border-box; }
         .og-form-title { font-family: var(--font-display); color: #fff; font-size: 1.8rem; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
         .og-form-title i { color: var(--gold-og); }
         .og-form-group { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
@@ -233,6 +287,12 @@ router.get("/publier", requireAuth, async (req, res) => {
     </style>
 </head>
 <body>
+    <div class="og-bg-fx">
+        <div class="og-bg-grid"></div>
+        <div class="og-ambient-glow gold"></div>
+        <div class="og-ambient-glow cyan"></div>
+    </div>
+
     <div class="og-form-container">
         <a href="/marketplace" class="og-back"><i data-lucide="arrow-left"></i> Retour à la Marketplace</a>
         <h1 class="og-form-title"><i data-lucide="plus-circle"></i> Publier une annonce</h1>
@@ -252,8 +312,8 @@ router.get("/publier", requireAuth, async (req, res) => {
             </div>
 
             <div class="og-form-group">
-                <label>Prix (€ ou devise)</label>
-                <input type="text" name="prix" class="og-form-control" required placeholder="Ex: 450 € ou 7777">
+                <label>Prix</label>
+                <input type="text" name="prix" class="og-form-control" required placeholder="Ex: 450 €">
             </div>
 
             <div class="og-form-group">
@@ -262,13 +322,14 @@ router.get("/publier", requireAuth, async (req, res) => {
             </div>
 
             <div class="og-form-group">
-                <label>Matricule / Référence interne (Optionnel)</label>
+                <label>Matricule / Référence interne</label>
                 <input type="text" name="matricule" class="og-form-control" placeholder="Ex: MAT-9921">
             </div>
 
             <div class="og-form-group">
-                <label>Photo de l'annonce</label>
-                <input type="file" name="photo" class="og-form-control" accept="image/*">
+                <label>Photos (Maximum 5 photos)</label>
+                <input type="file" name="photos" class="og-form-control" accept="image/*" multiple max="5">
+                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">Vous pouvez sélectionner jusqu'à 5 images simultanément.</small>
             </div>
 
             <button type="submit" class="og-submit-btn">Mettre en ligne</button>
@@ -280,18 +341,33 @@ router.get("/publier", requireAuth, async (req, res) => {
 </html>`);
 });
 
-// --- 3. TRAITEMENT DE LA PUBLICATION (POST) ---
-router.post("/publier", requireAuth, async (req, res) => {
+// --- 3. TRAITEMENT POST AVEC UPLOAD DE 5 PHOTOS SUR CLOUDINARY ---
+router.post("/publier", requireAuth, upload.array("photos", 5), async (req, res) => {
     try {
         const { titre, categorie, prix, ville, matricule } = req.body;
-        
-        // Enregistrement de l'annonce dans Airtable
+        let photoUrls = [];
+
+        if (req.files && req.files.length > 0) {
+            for (let file of req.files) {
+                let b64 = Buffer.from(file.buffer).toString("base64");
+                let dataURI = "data:" + file.mimetype + ";base64," + b64;
+                let uploadResponse = await cloudinary.uploader.upload(dataURI, { folder: "og_marketplace" });
+                photoUrls.push(uploadResponse.secure_url);
+            }
+        }
+
+        // Enregistrement Airtable supportant jusqu'à 5 liens photos
         await airtable.create("ANNONCES", {
             titre,
             categorie,
             prix,
             ville,
             matricule: matricule || '',
+            photo_url: photoUrls[0] || '',
+            photo_url_2: photoUrls[1] || '',
+            photo_url_3: photoUrls[2] || '',
+            photo_url_4: photoUrls[3] || '',
+            photo_url_5: photoUrls[4] || '',
             vendeur_id: req.session.userId || 'admin_og',
             vendeur_nom: req.session.nom || 'Mohamed',
             type_vendeur: req.session.typeCompte === 'client' ? 'particulier' : 'marchand',
