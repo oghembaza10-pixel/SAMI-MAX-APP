@@ -164,19 +164,41 @@
                     </div>
                 </div>
             </div>
-            <form class="samii-chat__form" id="samii-page-form">
-                <input type="file" id="samii-photo-input" accept="image/*" style="display:none;">
-                <button type="button" id="samii-photo-btn" aria-label="Envoyer une photo" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
-                    <i data-lucide="image"></i>
-                </button>
-                <input type="text" id="samii-page-input" data-i18n-placeholder="samii.chat.placeholder" placeholder="Parler à SAMII…" autocomplete="off">
-                <button type="button" id="samii-mic-btn" aria-label="Parler" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
-                    <i data-lucide="mic"></i>
-                </button>
-                <button type="submit" aria-label="Envoyer">
-                    <i data-lucide="arrow-up"></i>
-                </button>
-            </form>
+           <form class="samii-chat__form" id="samii-page-form" style="position:relative;">
+    <input type="file" id="samii-photo-input" accept="image/*" style="display:none;">
+    <input type="file" id="samii-doc-input" accept=".pdf,.doc,.docx,.txt" style="display:none;">
+
+    <div style="position:relative;">
+        <button type="button" id="samii-attach-btn" aria-label="Ajouter un fichier" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
+            <i data-lucide="paperclip"></i>
+        </button>
+        <div id="samii-attach-menu" class="samii-attach-menu">
+            <button type="button" data-attach-type="image">
+                <i data-lucide="image"></i> Photo
+            </button>
+            <button type="button" data-attach-type="document">
+                <i data-lucide="file-text"></i> Document
+            </button>
+        </div>
+    </div>
+
+    <input type="text" id="samii-page-input" placeholder="Parler à SAMII…" autocomplete="off">
+
+    <select id="samii-lang-select" title="Langue du micro et de la voix">
+        <option value="fr-FR">🇫🇷 FR</option>
+        <option value="ar-SA">🇸🇦 AR</option>
+        <option value="ar-DZ">🇩🇿 DZ</option>
+        <option value="en-US">🇬🇧 EN</option>
+    </select>
+
+    <button type="button" id="samii-mic-btn" aria-label="Parler" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
+        <i data-lucide="mic"></i>
+    </button>
+    <button type="submit" aria-label="Envoyer">
+        <i data-lucide="arrow-up"></i>
+    </button>
+</form>
+<div id="samii-attach-preview" style="display:none;align-items:center;gap:10px;max-width:680px;margin:8px auto 0;padding:8px 14px;background:var(--bg-panel);border:1px solid rgba(95,212,255,0.2);border-radius:12px;"></div>
         </section>
     </main>
 </div>
