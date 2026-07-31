@@ -64,25 +64,33 @@
     "modules": { "all": "الكل" },
     "arsenal": { "boostMarketing": "تعزيز التسويق", "radar": "رادار الفرص", "fortress": "الحصن", "level": "المستوى", "seeMore": "عرض الترسانة" }
   },
-  "samii": {
-    "topbar": "الاستراتيجي الذكي",
-    "status": "يعمل",
+ "samii": {
+    "topbar": "المستشار الذكي",
+    "status": "قيد التشغيل",
     "title": "مركز حياتك الاستراتيجي.",
-    "chat": { "welcome": "أهلاً أيها الجنرال. أنا سامي. كيف يمكنني مساعدتك اليوم؟", "placeholder": "تحدث إلى سامي…" },
+    "changeMode": "تغيير وضع سامي",
+    "connectTools": "ربط أدواتي",
+    "chat": {
+      "welcome": "مرحبًا أيها الجنرال. أنا سامي. كيف يمكنني مساعدتك اليوم؟",
+      "placeholder": "تحدث مع سامي…",
+      "attachPhoto": "صورة",
+      "attachDoc": "مستند"
+    },
     "cards": {
-      "marketing": { "label": "التسويق", "value": "تعزيز نشط" },
-      "opportunites": { "label": "الفرص", "value": "3 جديدة" },
-      "analyse": { "label": "تحليل النتائج", "value": "+12% هذا الشهر" },
-      "conseils": { "label": "نصائح سامي", "value": "توصيتان" },
-      "alertes": { "label": "التنبيهات", "value": "1 عاجل" },
-      "missions": { "label": "المهام", "value": "4 جارية" },
-      "performance": { "label": "الأداء", "value": "ممتاز" },
-      "clients": { "label": "العملاء وإدارة العلاقات", "value": "142 نشط" },
-      "revenus": { "label": "الإيرادات المتوقعة", "value": "+8% متوقع" },
-      "radar": { "label": "رادار المنافسين", "value": "مراقبة نشطة" },
-      "automatisations": { "label": "الأتمتة", "value": "5 نشطة" },
-      "reseau": { "label": "الشبكة العالمية", "value": "17 دولة" }
+      "marketing": { "label": "التسويق", "value": "إطلاق إعلان ←" },
+      "messagerEclair": { "label": "الرسول السريع", "value": "تفعيل التتبع ←" },
+      "miroir": { "label": "المرآة", "value": "عرض تشخيصي ←" },
+      "griot": { "label": "الراوي", "value": "إنشاء حزمة محتوى ←" },
+      "diplomate": { "label": "الدبلوماسي", "value": "الرد على عميل ←" },
+      "missions": { "label": "المهام", "value": "عرض مهامي ←" },
+      "oeilConcurrentiel": { "label": "عين المنافسة", "value": "تحليل سعر ←" },
+      "memoireClient": { "label": "ذاكرة العميل", "value": "البحث عن عميل ←" },
+      "oracleFinancier": { "label": "العرّاف المالي", "value": "عرض توقعاتي ←" },
+      "topProduits": { "label": "أفضل المنتجات", "value": "عرض التصنيف ←" },
+      "automatisations": { "label": "الأتمتة", "value": "إدارة الأتمتة ←" },
+      "chasseurStock": { "label": "صائد المخزون", "value": "البحث عن مورّد ←" }
     }
+  },
   },
   "arsenal": { "title": "الترسانة", "subtitle": "33 قوة، كل واحدة مرتبطة بقانون من قوانين سامي.", "available": "متاح", "soon": "قريباً" },
   "ads": {
