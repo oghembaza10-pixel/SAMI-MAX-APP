@@ -29,4 +29,5 @@ router.use("/plans", require("./client-plans"));
 router.use("/academie", require("./client-academie"));
 router.use("/emploi", require("./client-emploi"));
 router.use("/premium", require("./client-premium"));
+router.use("/connect", require("./client-connect"));
 module.exports = router;
