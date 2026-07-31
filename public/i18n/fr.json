@@ -91,7 +91,7 @@
       "chasseurStock": { "label": "Chasseur de Stock", "value": "Trouver un fournisseur →" }
     }
   },
-  },
+  
   "arsenal": { "title": "L'Arsenal", "subtitle": "33 pouvoirs, chacun ancré dans une loi de SAMII.", "available": "Disponible", "soon": "Bientôt disponible" },
   "ads": {
     "settings": { "title": "Connecter Meta Ads", "subtitle": "Ces identifiants sont propres à ce workspace.", "accessToken": "Access Token", "adAccountId": "Ad Account ID", "pageId": "Page ID", "save": "Enregistrer" },
