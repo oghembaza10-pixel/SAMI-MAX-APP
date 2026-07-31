@@ -128,6 +128,7 @@ app.use("/samii/messager-eclair", requireAuth, require("./routes/messagereclair"
 app.use("/samii/oracle-financier", requireAuth, require("./routes/oraclefinancier"));
 app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 app.use("/connect",   require("./routes/connector"));
+app.use("/client-qg/transport", require("./routes/client-transport"));
 
 // ══════════════════════════════════════════════════════
 // ROUTES — Vitrine (public)
