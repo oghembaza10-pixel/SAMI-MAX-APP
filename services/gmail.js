@@ -1,15 +1,43 @@
-const axios        = require("axios");
-const CONFIG       = require("../config");
-const orchestrator = require("../brain/orchestrator");
+const axios         = require("axios");
+const CONFIG         = require("../config");
+const orchestrator   = require("../brain/orchestrator");
 
-async function send({ to, subject, message }) {
+const RESEND_API_URL = "https://api.resend.com/emails";
+const FROM_ADDRESS   = process.env.RESEND_FROM || "SAMII OS <onboarding@resend.dev>";
+
+async function send({ to, subject, message, html }) {
     try {
-        console.log(`📧 Gmail → ${to} : ${subject}`);
-        // Brancher nodemailer ou Gmail API ici
+        if (!CONFIG.RESEND?.API_KEY) {
+            console.warn("⚠️ RESEND_API_KEY manquante — email non envoyé.");
+            return { success: false, error: "Service email non configuré." };
+        }
+        if (!to || !subject) {
+            return { success: false, error: "Destinataire et sujet requis." };
+        }
+
+        await axios.post(
+            RESEND_API_URL,
+            {
+                from: FROM_ADDRESS,
+                to: [to],
+                subject,
+                html: html || `<p>${message || ""}</p>`,
+                text: message || "",
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${CONFIG.RESEND.API_KEY}`,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+
+        console.log(`📧 Email envoyé → ${to} : ${subject}`);
         return { success: true };
+
     } catch (err) {
-        console.error("❌ Gmail send :", err.message);
-        return { success: false, error: err.message };
+        console.error("❌ Resend send :", err.response?.data || err.message);
+        return { success: false, error: "Erreur envoi email." };
     }
 }
 
