@@ -1,0 +1,112 @@
+/* ==========================================================================
+   OG EMPIRE — VITRINE PUBLIQUE : noir / or / bleu technologique
+   ========================================================================== */
+
+:root {
+    --vt-bg-deep: #050505;
+    --vt-bg-panel: #0d0d0d;
+    --vt-gold: #C5A059;
+    --vt-gold-hover: #E8C27A;
+    --vt-cyan: #5FD4FF;
+    --vt-text-main: #F1F0EC;
+    --vt-text-muted: #86807A;
+    --vt-border: 1px solid rgba(197, 160, 89, 0.2);
+    --vt-border-cyan: 1px solid rgba(95, 212, 255, 0.25);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background:
+        radial-gradient(ellipse 900px 500px at 15% -5%, rgba(197, 160, 89, 0.08), transparent 60%),
+        radial-gradient(ellipse 700px 500px at 100% 20%, rgba(95, 212, 255, 0.07), transparent 60%),
+        var(--vt-bg-deep);
+    color: var(--vt-text-main);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+}
+
+.vt-shell { max-width: 680px; margin: 0 auto; padding: 50px 24px 80px; }
+
+/* ── HEADER ── */
+.vt-header { text-align: center; margin-bottom: 30px; }
+
+.vt-avatar {
+    width: 104px; height: 104px; border-radius: 50%; margin: 0 auto 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif; font-size: 2.3rem; font-weight: 700; color: #000;
+    background: linear-gradient(135deg, var(--vt-gold), var(--vt-gold-hover));
+    border: 3px solid rgba(197, 160, 89, 0.35);
+    box-shadow: 0 0 44px rgba(197, 160, 89, 0.3);
+    background-size: cover;
+    background-position: center;
+}
+
+.vt-header h1 {
+    font-family: 'Cinzel', serif; font-size: 1.6rem; color: #fff;
+    text-shadow: 0 0 24px rgba(197, 160, 89, 0.35);
+}
+
+.vt-badges { display: flex; justify-content: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.vt-badge {
+    font-size: .7rem; padding: 5px 13px; border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: .03em;
+}
+.vt-badge--premium {
+    background: rgba(197, 160, 89, 0.14); color: var(--vt-gold);
+    border: 1px solid rgba(197, 160, 89, 0.4);
+}
+.vt-badge--pays {
+    background: rgba(95, 212, 255, 0.1); color: var(--vt-cyan);
+    border: 1px solid rgba(95, 212, 255, 0.28);
+}
+
+.vt-bio {
+    text-align: center; color: var(--vt-text-muted); font-size: .9rem; line-height: 1.75;
+    margin: 22px auto 0; max-width: 480px;
+}
+
+/* ── SECTIONS ── */
+.vt-section-title {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'JetBrains Mono', monospace; font-size: .72rem; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--vt-cyan); margin: 44px 0 18px;
+}
+.vt-section-title::before, .vt-section-title::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to right, transparent, rgba(95, 212, 255, 0.3), transparent);
+}
+
+.vt-annonces { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+
+.vt-annonce {
+    position: relative; overflow: hidden;
+    background: var(--vt-bg-panel); border: var(--vt-border); border-radius: 16px; padding: 18px;
+    transition: border-color .25s ease, transform .25s ease;
+}
+.vt-annonce:hover { border-color: rgba(197, 160, 89, 0.5); transform: translateY(-3px); }
+.vt-annonce h4 { color: #fff; font-size: .92rem; margin-bottom: 8px; }
+.vt-annonce p { color: var(--vt-text-muted); font-size: .78rem; line-height: 1.55; margin-bottom: 10px; }
+
+.vt-chip {
+    display: inline-block; font-size: .74rem; padding: 4px 11px; border-radius: 20px;
+    background: rgba(197, 160, 89, 0.1); color: var(--vt-gold);
+    border: 1px solid rgba(197, 160, 89, 0.25); font-family: 'JetBrains Mono', monospace;
+}
+
+.vt-empty {
+    text-align: center; color: var(--vt-text-muted); font-size: .85rem; padding: 30px;
+    grid-column: 1 / -1;
+}
+
+/* ── FOOTER ── */
+.vt-footer { text-align: center; margin-top: 54px; }
+.vt-footer a {
+    color: var(--vt-gold); text-decoration: none; font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem; letter-spacing: .06em;
+}
+.vt-footer a:hover { color: var(--vt-gold-hover); }
+
+@media (max-width: 560px) {
+    .vt-annonces { grid-template-columns: 1fr 1fr; }
+}
