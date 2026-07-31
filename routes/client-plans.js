@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — CLIENT : MEILLEURS PLANS — surprise à chaque clic
+// SAMII OS — CLIENT : MEILLEURS PLANS — surprise à chaque clic, géolocalisé
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
@@ -42,7 +42,16 @@ router.get("/", requireAuth, (req, res) => {
             box-shadow: 0 0 30px rgba(157,92,255,0.25);
         }
         .pl-shell h1 { font-family: var(--font-display); color: #fff; font-size: 1.6rem; }
-        .pl-shell p.sub { color: var(--text-muted); font-size: .88rem; margin: 10px 0 36px; line-height: 1.6; }
+        .pl-shell p.sub { color: var(--text-muted); font-size: .88rem; margin: 10px 0 30px; line-height: 1.6; }
+
+        .pl-ville-wrap { max-width: 340px; margin: 0 auto 26px; }
+        .pl-ville-wrap input {
+            width: 100%; padding: 13px 16px; border-radius: 12px;
+            border: 1px solid rgba(157,92,255,0.3); background: rgba(0,0,0,0.3);
+            color: #fff; font-size: .9rem; text-align: center; font-family: var(--font-body);
+        }
+        .pl-ville-wrap input:focus { outline: none; border-color: var(--cyan-tech); }
+        .pl-ville-label { font-family: var(--font-mono); font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; display: block; }
 
         /* ── Bouton "mystère" central ── */
         .pl-mystery-btn {
@@ -63,7 +72,7 @@ router.get("/", requireAuth, (req, res) => {
         .pl-mystery-btn.spinning { animation: pl-spin 1.2s linear infinite; }
         @keyframes pl-spin { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
 
-        .pl-msg { font-size: .85rem; color: var(--text-muted); min-height: 24px; }
+        .pl-msg { font-size: .85rem; color: #e55; min-height: 24px; }
 
         /* ── Carte résultat, effet reveal ── */
         .pl-result {
@@ -74,9 +83,10 @@ router.get("/", requireAuth, (req, res) => {
         }
         @keyframes pl-reveal { from { opacity: 0; transform: translateY(20px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-        .pl-result-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .pl-result-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
         .pl-result-icon { font-size: 2rem; }
         .pl-result-header h2 { color: #fff; font-size: 1.15rem; font-family: var(--font-display); }
+        .pl-result-ville { color: var(--cyan-tech); font-size: .78rem; font-family: var(--font-mono); margin-bottom: 16px; }
         .pl-result-body { color: var(--text-main); font-size: .9rem; line-height: 1.75; white-space: pre-wrap; }
         .pl-sources { margin-top: 16px; font-size: .78rem; color: var(--text-muted); }
 
@@ -97,7 +107,12 @@ router.get("/", requireAuth, (req, res) => {
         <div class="pl-icon-box">🎁</div>
         <h1>Meilleurs Plans</h1>
     </div>
-    <p class="sub">Une nouvelle surprise à chaque fois — clique et découvre.</p>
+    <p class="sub">Une nouvelle surprise à chaque fois, adaptée à ta ville — clique et découvre.</p>
+
+    <div class="pl-ville-wrap">
+        <span class="pl-ville-label">📍 Ta ville</span>
+        <input type="text" id="input-ville" placeholder="Ex : Oran">
+    </div>
 
     <div class="pl-mystery-btn" id="btn-mystery">
         <div class="emoji" id="mystery-emoji">🎲</div>
@@ -110,6 +125,7 @@ router.get("/", requireAuth, (req, res) => {
             <span class="pl-result-icon" id="result-icon">🎁</span>
             <h2 id="result-label"></h2>
         </div>
+        <div class="pl-result-ville" id="result-ville"></div>
         <div class="pl-result-body" id="result-body"></div>
         <div class="pl-sources" id="result-sources"></div>
         <button type="button" class="pl-again-btn" id="btn-again">🔁 Une autre surprise</button>
@@ -123,8 +139,20 @@ const mysteryText  = document.getElementById('mystery-text');
 const msgEl        = document.getElementById('msg');
 const resultEl     = document.getElementById('result');
 const btnAgain     = document.getElementById('btn-again');
+const inputVille   = document.getElementById('input-ville');
+
+const villeSauvegardee = localStorage.getItem('samii-ville');
+if (villeSauvegardee) inputVille.value = villeSauvegardee;
 
 async function decouvrir() {
+    const ville = inputVille.value.trim();
+    if (!ville) {
+        inputVille.focus();
+        msgEl.textContent = "📍 Indique ta ville d'abord.";
+        return;
+    }
+    localStorage.setItem('samii-ville', ville);
+
     mysteryBtn.classList.add('spinning');
     mysteryEmoji.textContent = '✨';
     mysteryText.textContent = 'Recherche...';
@@ -132,7 +160,11 @@ async function decouvrir() {
     resultEl.style.display = 'none';
 
     try {
-        const res  = await fetch('/client-qg/plans/decouvrir', { method: 'POST' });
+        const res  = await fetch('/client-qg/plans/decouvrir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ville }),
+        });
         const json = await res.json();
 
         mysteryBtn.classList.remove('spinning');
@@ -142,6 +174,7 @@ async function decouvrir() {
         if (json.success) {
             document.getElementById('result-icon').textContent = json.icon;
             document.getElementById('result-label').textContent = json.label;
+            document.getElementById('result-ville').textContent = '📍 ' + ville;
             document.getElementById('result-body').textContent = json.reponse;
             const srcEl = document.getElementById('result-sources');
             srcEl.innerHTML = (json.sources || []).length
@@ -168,9 +201,13 @@ btnAgain.addEventListener('click', decouvrir);
 
 router.post("/decouvrir", requireAuth, async (req, res) => {
     try {
+        const { ville } = req.body;
+        if (!ville) return res.json({ success: false, error: "Indique ta ville." });
+
         const categorie = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
 
-        const prompt = `Tu es SAMII, tu dévoiles ${categorie.prompt} à un utilisateur qui adore les surprises.\n\n`
+        const prompt = `Tu es SAMII, tu dévoiles ${categorie.prompt} à un utilisateur situé à ${ville}.\n\n`
+            + `Trouve quelque chose de pertinent PRÈS de ${ville} ou accessible depuis cette ville (pas à l'autre bout du monde, sauf pour la catégorie "voyage" où une destination lointaine mais réaliste depuis ${ville} est acceptable). `
             + "Utilise la recherche web pour trouver quelque chose de concret et actuel. "
             + "Sois enthousiaste mais reste factuel — donne un vrai nom de lieu/produit/destination si possible, un prix approximatif, et pourquoi c'est un bon plan. "
             + "4-6 lignes, direct, sans JSON ni markdown.";
