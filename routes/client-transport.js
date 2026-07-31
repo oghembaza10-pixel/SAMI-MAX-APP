@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — CLIENT : TRANSPORT — Bus, train, TGV, métro
+// SAMII OS — CLIENT : TRANSPORT — Bus, train, TGV, métro, tous pays
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
@@ -9,6 +9,48 @@ function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
 }
+
+// ── Base de liens officiels — pas exhaustive, mais large, à enrichir au fil du temps ──
+const LIENS_OFFICIELS = {
+    DZ: {
+        train: { nom: "SNTF", url: "https://www.sntf.dz" },
+        bus:   { nom: "ETUSA", url: "https://etusa.dz" },
+        metro: { nom: "Métro d'Alger", url: "https://www.metroalger-dz.com" },
+    },
+    MA: {
+        train: { nom: "ONCF", url: "https://www.oncf-voyages.ma" },
+        bus:   { nom: "CTM", url: "https://www.ctm.ma" },
+        tgv:   { nom: "Al Boraq", url: "https://www.oncf-voyages.ma" },
+    },
+    TN: {
+        train: { nom: "SNCFT", url: "https://www.sncft.com.tn" },
+        bus:   { nom: "SNTRI", url: "https://www.sntri.com.tn" },
+        metro: { nom: "Transtu", url: "https://www.transtu.tn" },
+    },
+    FR: {
+        train: { nom: "SNCF Connect", url: "https://www.sncf-connect.com" },
+        bus:   { nom: "BlaBlaCar Bus", url: "https://www.blablacar.fr/bus" },
+        tgv:   { nom: "SNCF Connect (TGV)", url: "https://www.sncf-connect.com" },
+        metro: { nom: "RATP", url: "https://www.ratp.fr" },
+    },
+    BE: { train: { nom: "SNCB", url: "https://www.belgiantrain.be" }, bus: { nom: "FlixBus", url: "https://www.flixbus.be" } },
+    CH: { train: { nom: "CFF", url: "https://www.cff.ch" }, bus: { nom: "FlixBus", url: "https://www.flixbus.ch" } },
+    DE: { train: { nom: "Deutsche Bahn", url: "https://www.bahn.de" }, tgv: { nom: "ICE (Deutsche Bahn)", url: "https://www.bahn.de" } },
+    ES: { train: { nom: "Renfe", url: "https://www.renfe.com" }, tgv: { nom: "AVE (Renfe)", url: "https://www.renfe.com" } },
+    IT: { train: { nom: "Trenitalia", url: "https://www.trenitalia.com" }, tgv: { nom: "Frecciarossa", url: "https://www.trenitalia.com" } },
+    UK: { train: { nom: "National Rail", url: "https://www.nationalrail.co.uk" } },
+    CA: { train: { nom: "VIA Rail Canada", url: "https://www.viarail.ca" }, bus: { nom: "FlixBus Canada", url: "https://www.flixbus.ca" } },
+    US: { train: { nom: "Amtrak", url: "https://www.amtrak.com" }, bus: { nom: "Greyhound", url: "https://www.greyhound.com" } },
+    EG: { train: { nom: "Egyptian National Railways", url: "https://enr.gov.eg" } },
+    SA: { train: { nom: "SAR (Saudi Railways)", url: "https://www.sar.com.sa" } },
+    AE: { metro: { nom: "Dubai Metro (RTA)", url: "https://www.rta.ae" } },
+    SN: { train: { nom: "TER Sénégal", url: "https://www.ter.sn" } },
+    CI: { bus: { nom: "SOTRA (Abidjan)", url: "https://www.sotra.ci" } },
+    TR: { train: { nom: "TCDD Taşımacılık", url: "https://www.tcddtasimacilik.gov.tr" } },
+    IN: { train: { nom: "IRCTC (Indian Railways)", url: "https://www.irctc.co.in" } },
+    CN: { train: { nom: "12306 (China Railway)", url: "https://www.12306.cn" } },
+    JP: { train: { nom: "JR (Japan Rail)", url: "https://www.jrpass.com" }, tgv: { nom: "Shinkansen", url: "https://www.jrpass.com" } },
+};
 
 router.get("/", requireAuth, (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -44,19 +86,29 @@ router.get("/", requireAuth, (req, res) => {
         }
         .tr-type-btn .icon { font-size: 1.3rem; }
         .tr-type-btn .label { font-weight: 700; color: var(--text-main); font-size: .74rem; }
-        .tr-type-btn.active { border-color: var(--violet, #9d5cff); background: rgba(157,92,255,0.08); box-shadow: 0 0 18px rgba(157,92,255,0.15); }
-        .tr-type-btn.active .label { color: var(--violet, #9d5cff); }
+        .tr-type-btn.active { border-color: #9d5cff; background: rgba(157,92,255,0.08); box-shadow: 0 0 18px rgba(157,92,255,0.15); }
+        .tr-type-btn.active .label { color: #9d5cff; }
 
         .tr-card { background: var(--bg-glass); backdrop-filter: blur(12px); border: var(--border-soft); border-radius: 16px; padding: 24px; }
         label { display: block; font-family: var(--font-mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 14px 0 6px; }
-        input, select {
+        input {
             width: 100%; padding: 11px 13px; border-radius: 9px;
             border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);
             color: var(--text-main); font-size: .88rem; font-family: var(--font-body);
         }
-        select option { background: #0d0a1a; }
-        input:focus, select:focus { outline: none; border-color: var(--cyan-tech); box-shadow: 0 0 0 3px rgba(95,212,255,0.15); }
+        input:focus { outline: none; border-color: var(--cyan-tech); box-shadow: 0 0 0 3px rgba(95,212,255,0.15); }
         .tr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        /* Autocomplete pays */
+        .tr-pays-wrap { position: relative; }
+        .tr-pays-list {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: #0d0a1a; border: 1px solid rgba(157,92,255,0.3); border-radius: 10px;
+            max-height: 220px; overflow-y: auto; z-index: 20; display: none;
+        }
+        .tr-pays-list.open { display: block; }
+        .tr-pays-item { padding: 10px 14px; cursor: pointer; font-size: .85rem; color: var(--text-main); }
+        .tr-pays-item:hover { background: rgba(157,92,255,0.12); }
 
         button.tr-submit {
             width: 100%; padding: 14px; margin-top: 18px;
@@ -72,6 +124,11 @@ router.get("/", requireAuth, (req, res) => {
             border-radius: 14px; padding: 18px 20px; color: var(--text-main); font-size: .87rem; line-height: 1.7;
             white-space: pre-wrap;
         }
+        .tr-buy-btn {
+            display: block; text-align: center; padding: 13px;
+            background: linear-gradient(135deg, #3ddc84, #24a85c);
+            color: #fff; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: .9rem;
+        }
         .tr-sources { font-size: .78rem; color: var(--text-muted); }
     </style>
 </head>
@@ -83,7 +140,7 @@ router.get("/", requireAuth, (req, res) => {
         <div class="tr-icon-box">🚌</div>
         <h1>Transport</h1>
     </div>
-    <p class="sub">Choisis ton pays et ton moyen de transport — SAMII cherche les infos pour toi.</p>
+    <p class="sub">Choisis ton pays et ton moyen de transport — SAMII cherche les infos pour toi, où que tu sois.</p>
 
     <div class="tr-types" id="tr-types">
         <button type="button" class="tr-type-btn active" data-type="bus">
@@ -103,16 +160,13 @@ router.get("/", requireAuth, (req, res) => {
     <div class="tr-card">
         <form id="form-tr">
             <input type="hidden" name="type" id="input-type" value="bus">
+            <input type="hidden" name="pays" id="input-pays-code" value="">
 
             <label>Pays</label>
-            <select name="pays">
-                <option value="DZ">Algérie</option>
-                <option value="MA">Maroc</option>
-                <option value="TN">Tunisie</option>
-                <option value="FR">France</option>
-                <option value="BE">Belgique</option>
-                <option value="CA">Canada</option>
-            </select>
+            <div class="tr-pays-wrap">
+                <input type="text" id="input-pays-nom" placeholder="Tape le nom de ton pays..." autocomplete="off" required>
+                <div class="tr-pays-list" id="tr-pays-list"></div>
+            </div>
 
             <div class="tr-row">
                 <div>
@@ -132,11 +186,51 @@ router.get("/", requireAuth, (req, res) => {
 
     <div class="tr-results" id="results">
         <div class="tr-result-card" id="result-content"></div>
+        <div id="lien-officiel" style="display:none;"></div>
         <div class="tr-sources" id="sources"></div>
     </div>
 </div>
 
 <script>
+// Liste large de pays — le client tape, ça filtre. Pas limité à quelques pays.
+const PAYS = [
+    { code: "DZ", nom: "Algérie" }, { code: "MA", nom: "Maroc" }, { code: "TN", nom: "Tunisie" },
+    { code: "FR", nom: "France" }, { code: "BE", nom: "Belgique" }, { code: "CH", nom: "Suisse" },
+    { code: "DE", nom: "Allemagne" }, { code: "ES", nom: "Espagne" }, { code: "IT", nom: "Italie" },
+    { code: "UK", nom: "Royaume-Uni" }, { code: "CA", nom: "Canada" }, { code: "US", nom: "États-Unis" },
+    { code: "EG", nom: "Égypte" }, { code: "SA", nom: "Arabie Saoudite" }, { code: "AE", nom: "Émirats Arabes Unis" },
+    { code: "SN", nom: "Sénégal" }, { code: "CI", nom: "Côte d'Ivoire" }, { code: "ML", nom: "Mali" },
+    { code: "CM", nom: "Cameroun" }, { code: "TR", nom: "Turquie" }, { code: "IN", nom: "Inde" },
+    { code: "CN", nom: "Chine" }, { code: "JP", nom: "Japon" }, { code: "QA", nom: "Qatar" },
+    { code: "LY", nom: "Libye" }, { code: "MR", nom: "Mauritanie" }, { code: "JO", nom: "Jordanie" },
+    { code: "LB", nom: "Liban" }, { code: "PT", nom: "Portugal" }, { code: "NL", nom: "Pays-Bas" },
+];
+
+const inputPaysNom  = document.getElementById('input-pays-nom');
+const inputPaysCode = document.getElementById('input-pays-code');
+const paysListEl    = document.getElementById('tr-pays-list');
+
+function renderPaysList(filtre) {
+    const resultats = PAYS.filter(p => p.nom.toLowerCase().includes(filtre.toLowerCase()));
+    paysListEl.innerHTML = resultats.map(p =>
+        \`<div class="tr-pays-item" data-code="\${p.code}" data-nom="\${p.nom}">\${p.nom}</div>\`
+    ).join('') || '<div class="tr-pays-item" style="color:var(--text-muted);">Aucun résultat — tape quand même, SAMII essaiera de comprendre.</div>';
+    paysListEl.classList.add('open');
+}
+
+inputPaysNom.addEventListener('input', () => renderPaysList(inputPaysNom.value));
+inputPaysNom.addEventListener('focus', () => renderPaysList(inputPaysNom.value));
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.tr-pays-wrap')) paysListEl.classList.remove('open');
+});
+paysListEl.addEventListener('click', (e) => {
+    const item = e.target.closest('.tr-pays-item[data-code]');
+    if (!item) return;
+    inputPaysNom.value = item.dataset.nom;
+    inputPaysCode.value = item.dataset.code;
+    paysListEl.classList.remove('open');
+});
+
 let currentType = 'bus';
 document.querySelectorAll('.tr-type-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -154,6 +248,9 @@ document.getElementById('form-tr').addEventListener('submit', async (e) => {
     const btn     = e.target.querySelector('button');
     const data    = Object.fromEntries(new FormData(e.target));
 
+    // Si le client a tapé un pays absent de la liste, on envoie quand même le texte tapé
+    if (!data.pays) data.pays = inputPaysNom.value;
+
     btn.disabled = true;
     msg.textContent = '🚌 SAMII cherche les infos...';
     results.style.display = 'none';
@@ -167,6 +264,15 @@ document.getElementById('form-tr').addEventListener('submit', async (e) => {
         if (json.success) {
             msg.textContent = '';
             document.getElementById('result-content').textContent = json.reponse;
+
+            const lienEl = document.getElementById('lien-officiel');
+            if (json.lienOfficiel) {
+                lienEl.style.display = 'block';
+                lienEl.innerHTML = \`<a href="\${json.lienOfficiel.url}" target="_blank" class="tr-buy-btn">🎟️ Acheter sur \${json.lienOfficiel.nom} →</a>\`;
+            } else {
+                lienEl.style.display = 'none';
+            }
+
             const srcEl = document.getElementById('sources');
             srcEl.innerHTML = (json.sources || []).length
                 ? '🔗 ' + json.sources.map(s => \`<a href="\${s.uri}" target="_blank" style="color:var(--cyan-tech);text-decoration:none;">\${s.title}</a>\`).join(' · ')
@@ -190,6 +296,7 @@ router.post("/chercher", requireAuth, async (req, res) => {
     try {
         const { type, pays, depart, arrivee } = req.body;
         if (!depart) return res.json({ success: false, error: "Indique ta ville de départ." });
+        if (!pays) return res.json({ success: false, error: "Indique ton pays." });
 
         const typesLabel = {
             bus: "bus", train: "train", tgv: "TGV / train à grande vitesse", metro: "métro ou tramway",
@@ -200,17 +307,21 @@ router.post("/chercher", requireAuth, async (req, res) => {
             + `Pays : ${pays}\n`
             + `Départ : ${depart}\n`
             + (arrivee ? `Arrivée : ${arrivee}\n` : "")
-            + "\nUtilise la recherche web pour trouver des informations concrètes et actuelles : horaires probables, fréquence, prix approximatif, opérateur/compagnie officielle si connue. Réponds directement, en 4-6 lignes claires, sans JSON ni markdown.";
+            + "\nUtilise la recherche web pour trouver des informations concrètes et actuelles : horaires probables, fréquence, prix approximatif, opérateur/compagnie officielle. Réponds directement, en 4-6 lignes claires, sans JSON ni markdown.";
 
         const result = await gemini.chatWithSearch({
             message: prompt,
             context: { source: "client_transport" },
         });
 
+        // Cherche le lien officiel par code pays si connu, sinon essaie de matcher le texte tapé
+        let lienOfficiel = LIENS_OFFICIELS[pays]?.[type] || null;
+
         res.json({
             success: true,
             reponse: result.text,
             sources: result.sources || [],
+            lienOfficiel,
         });
 
     } catch (err) {
