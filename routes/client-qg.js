@@ -24,7 +24,7 @@ router.get("/quota", requireAuth, (req, res) => {
 // ── SOUS-ROUTES (chaque carte a son propre fichier) ────
 router.use("/transport", require("./client-transport"));
 router.use("/traducteur", require("./client-traducteur"));
-// router.use("/devoirs", require("./client-devoirs"));        // à venir
+router.use("/services", require("./client-services"));
 // router.use("/pratique", require("./client-pratique"));      // à venir
 
 module.exports = router;
