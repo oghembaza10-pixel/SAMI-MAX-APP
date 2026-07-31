@@ -1,7 +1,42 @@
 /* ==========================================================================
    OG EMPIRE — MARKETPLACE : noir / or / bleu technologique, mobile-first
    ========================================================================== */
+/* ── FOND FUTURISTE ANIMÉ ── */
+.mp-bg-fx {
+    position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+}
+.mp-bg-grid {
+    position: absolute; inset: 0;
+    background-image:
+        linear-gradient(rgba(197,160,89,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(95,212,255,0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: mp-grid-move 22s linear infinite;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 90%);
+}
+@keyframes mp-grid-move { from { background-position: 0 0; } to { background-position: 50px 50px; } }
 
+.mp-bg-glow {
+    position: absolute; width: 560px; height: 560px; border-radius: 50%;
+    filter: blur(130px); opacity: .16;
+    animation: mp-glow-float 15s ease-in-out infinite;
+}
+.mp-bg-glow--1 { background: var(--gold-og); left: -140px; top: -100px; }
+.mp-bg-glow--2 { background: var(--cyan-tech); right: -160px; top: 20%; animation-delay: 5s; }
+@keyframes mp-glow-float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-40px) scale(1.08); }
+}
+
+.mp-bg-particles {
+    position: absolute; inset: 0; opacity: .35;
+    background-image:
+        radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px),
+        radial-gradient(circle, rgba(95,212,255,0.35) 1px, transparent 1px);
+    background-size: 150px 150px, 230px 230px;
+    animation: mp-particles-drift 45s linear infinite;
+}
+@keyframes mp-particles-drift { from { background-position: 0 0, 0 0; } to { background-position: 0 -400px, 0 -560px; } }
 .mp-back {
     display: inline-flex; align-items: center; gap: 6px;
     color: var(--text-muted); text-decoration: none; font-size: .82rem;
