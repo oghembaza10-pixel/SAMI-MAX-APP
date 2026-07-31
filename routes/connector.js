@@ -405,9 +405,10 @@ IMPRESSION_TOOLS.forEach(toolId => {
 
 router.get("/tools/continue", requireAuth, (req, res) => {
     if (!req.session?.workspaceId) return res.redirect("/hub");
-    res.redirect("/qg");
+    const destinations = { hub: "/hub", qg: "/qg", samii: "/samii" };
+    const destination = destinations[req.query.from] || "/qg";
+    res.redirect(destination);
 });
-
 const COMING_SOON = ["stripe", "paypal", "dahabia", "ccp", "autre"];
 COMING_SOON.forEach(tool => {
     router.get(`/${tool}`, requireAuth, (req, res) => {
