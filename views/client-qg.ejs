@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Espace · OG Empire</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/qg-style.css">
+</head>
+<body>
+<!-- BARRE GRADE -->
+<div class="qg-grade-bar">
+    <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
+    <span class="qg-grade-bar__nom" id="grade-nom">SOLDAT</span>
+    <div class="qg-grade-bar__batterie">
+        <div class="qg-grade-bar__fill" id="grade-fill" style="width:5%"></div>
+    </div>
+    <span class="qg-grade-bar__next" id="grade-next">→ CAPORAL</span>
+</div>
+<div class="qg-shell">
+    <!-- SIDEBAR -->
+    <aside class="qg-sidebar" id="og-sidebar">
+        <div class="qg-sidebar__top">
+            <a href="/client-qg" class="qg-logo">
+                <img src="/og.png" alt="OG">
+                <span class="qg-logo__text">OG · EMPIRE</span>
+            </a>
+            <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar">
+                <i data-lucide="chevrons-left"></i>
+            </button>
+        </div>
+        <nav class="qg-nav">
+            <a href="/client-qg" class="qg-nav__item active">
+                <i data-lucide="home"></i><span>Mon Espace</span>
+            </a>
+            <a href="/marketplace" class="qg-nav__item">
+                <i data-lucide="store"></i><span>Marketplace</span>
+            </a>
+            <a href="/community" class="qg-nav__item">
+                <i data-lucide="users"></i><span>Community</span>
+            </a>
+            <a href="/academy" class="qg-nav__item">
+                <i data-lucide="graduation-cap"></i><span>Academy</span>
+            </a>
+            <div class="qg-nav__divider"></div>
+            <a href="/client-qg/samii" class="qg-nav__item qg-nav__item--samii">
+                <i data-lucide="bot"></i><span>SAMII</span>
+                <span class="qg-status-dot qg-status-dot--on"></span>
+            </a>
+        </nav>
+        <div class="qg-sidebar__bottom">
+            <a href="/settings" class="qg-nav__item">
+                <i data-lucide="settings"></i><span>Paramètres</span>
+            </a>
+            <a href="/logout" class="qg-nav__item" style="color:#e55;">
+                <i data-lucide="log-out"></i><span>Déconnexion</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="qg-main">
+        <!-- TOPBAR -->
+        <header class="qg-topbar">
+            <div class="qg-topbar__breadcrumb">
+                <span class="qg-mono">MON ESPACE</span>
+            </div>
+        </header>
+
+        <!-- HERO -->
+        <section class="qg-hero">
+            <div class="qg-hero__content">
+                <span class="qg-eyebrow">BIENVENUE</span>
+                <h1>Bonjour <%= nom || 'Général' %> 👋</h1>
+                <p>SAMII t'aide au quotidien — transport, météo, devoirs, et bien plus.</p>
+            </div>
+        </section>
+
+        <!-- CARTES DU QUOTIDIEN -->
+        <div class="qg-section-title">
+            <i data-lucide="sparkles"></i>
+            <span>Aujourd'hui</span>
+        </div>
+        <section class="qg-dashboard" id="client-cards">
+            <a href="/client-qg/transport" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="bus"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🚌 Transport</span>
+                <span class="qg-card__label">Prochain bus/train →</span>
+            </a>
+            <a href="/client-qg/meteo" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="cloud-sun"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🌦️ Météo</span>
+                <span class="qg-card__label">Voir la météo →</span>
+            </a>
+            <a href="/client-qg/devoirs" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="book-open"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">📚 Devoirs</span>
+                <span class="qg-card__label">Poser une question →</span>
+            </a>
+            <a href="/client-qg/traducteur" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="languages"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🌐 Traducteur</span>
+                <span class="qg-card__label">Traduire un texte →</span>
+            </a>
+            <a href="/client-qg/pratique" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="lightbulb"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">💡 Question pratique</span>
+                <span class="qg-card__label">Demander à SAMII →</span>
+            </a>
+            <a href="/marketplace" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="search"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🏪 Trouver un commerçant</span>
+                <span class="qg-card__label">Chercher près de moi →</span>
+            </a>
+        </section>
+
+        <!-- QUOTA MESSAGES -->
+        <div class="qg-section-title">
+            <i data-lucide="message-circle"></i>
+            <span>SAMII</span>
+        </div>
+        <section class="qg-dashboard">
+            <article class="qg-card" style="grid-column:span 3;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <span style="color:#d4af37;font-weight:700;font-size:.95rem;">Messages restants aujourd'hui</span>
+                    <span class="qg-mono" id="quota-texte" style="color:#5FD4FF;">50 / 50</span>
+                </div>
+                <div style="background:#1a1a1a;border-radius:8px;height:8px;margin-bottom:12px;">
+                    <div id="quota-bar" style="height:8px;border-radius:8px;background:linear-gradient(90deg,#3ddc84,#5FD4FF);width:100%;transition:width .6s ease;"></div>
+                </div>
+                <p style="color:var(--text-muted);font-size:.8rem;">
+                    💡 Invite 3 amis avec ton lien pour débloquer plus de messages chaque jour.
+                </p>
+                <button id="btn-copier-lien" style="margin-top:10px;padding:10px 16px;background:var(--gold-og);border:none;border-radius:8px;font-weight:700;cursor:pointer;">
+                    🔗 Copier mon lien d'invitation
+                </button>
+            </article>
+        </section>
+    </main>
+</div>
+
+<a href="/client-qg/samii" class="samii-orb" aria-label="Ouvrir SAMII">
+    <span class="samii-orb__aura"></span>
+    <span class="samii-orb__aura samii-orb__aura--2"></span>
+    <i data-lucide="bot"></i>
+</a>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+if (typeof lucide !== "undefined") lucide.createIcons();
+
+document.getElementById('btn-copier-lien')?.addEventListener('click', () => {
+    const lien = window.location.origin + '/register?ref=<%= codeParrainage || "" %>';
+    navigator.clipboard.writeText(lien).then(() => {
+        const btn = document.getElementById('btn-copier-lien');
+        const original = btn.textContent;
+        btn.textContent = '✅ Lien copié !';
+        setTimeout(() => { btn.textContent = original; }, 2000);
+    });
+});
+
+// Charge le quota réel
+fetch('/client-qg/quota')
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+        document.getElementById('quota-texte').textContent = `${data.restant} / ${data.total}`;
+        const pct = Math.round((data.restant / data.total) * 100);
+        document.getElementById('quota-bar').style.width = pct + '%';
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>
