@@ -163,6 +163,21 @@
                             <% } %>
 
                         <% } else if (tool.mode === 'impression') { %>
+<% } else if (tool.mode === 'transporteur') { %>
+                            <% if (isConnected) { %>
+                                <p class="connect-tool-card__connected-info">
+                                    🟢 Clé perso active
+                                </p>
+                                <button class="connect-btn connect-btn--disconnect"
+                                        data-tool="<%= tool.id %>" data-action="disconnect">
+                                    Déconnecter
+                                </button>
+                            <% } else { %>
+                                <a href="/connect/<%= tool.id %>" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
+                                    Connecter <%= tool.label %> →
+                                </a>
+                            <% } %>
+                        <% } %>
                             <% if (isConnected) { %>
                                 <p class="connect-tool-card__connected-info">
                                     🟡 <%= connector.config?.identifiant || 'Connecté' %>
