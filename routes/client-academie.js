@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — CLIENT : ACADÉMIE — Apprendre l'e-commerce, devenir marchand
+// SAMII OS — CLIENT : TECHNOLOGIE — Apprendre l'e-commerce, devenir marchand
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
@@ -35,14 +35,14 @@ router.get("/", requireAuth, async (req, res) => {
         );
         leconsFaites = search.data.records[0]?.fields?.lecons_ecommerce_faites || 0;
     } catch (err) {
-        console.warn("⚠️ Lecture progression académie :", err.message);
+        console.warn("⚠️ Lecture progression technologie :", err.message);
     }
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Académie — SAMII</title>
+    <title>Technologie — SAMII</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/client-style.css">
     <style>
@@ -62,13 +62,11 @@ router.get("/", requireAuth, async (req, res) => {
         .ac-shell h1 { font-family: var(--font-display); color: #fff; font-size: 1.6rem; }
         .ac-shell p.sub { color: var(--text-muted); font-size: .88rem; margin: 10px 0 24px; line-height: 1.6; }
 
-        /* ── Barre de progression ── */
         .ac-progress-wrap { max-width: 400px; margin: 0 auto 30px; }
         .ac-progress-label { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: .72rem; color: var(--text-muted); margin-bottom: 6px; }
         .ac-progress-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.06); overflow: hidden; }
         .ac-progress-fill { height: 100%; background: linear-gradient(90deg, #C5A059, #9d5cff); border-radius: 4px; transition: width .6s ease; }
 
-        /* ── Bouton mystère, thème or/violet pour différencier de Plans ── */
         .ac-mystery-btn {
             width: 200px; height: 200px; border-radius: 50%; margin: 0 auto 30px;
             background: radial-gradient(circle at 30% 30%, rgba(197,160,89,0.35), rgba(10,10,20,0.9));
@@ -110,7 +108,6 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .ac-again-btn:hover { background: rgba(197,160,89,0.25); }
 
-        /* ── Bandeau de conversion, apparaît quand tout est fait ── */
         .ac-cta-marchand {
             display: none; margin-top: 30px; padding: 28px;
             background: linear-gradient(135deg, rgba(197,160,89,0.15), rgba(157,92,255,0.1));
@@ -133,7 +130,7 @@ router.get("/", requireAuth, async (req, res) => {
 
     <div class="ac-title">
         <div class="ac-icon-box">🎓</div>
-        <h1>Académie</h1>
+        <h1>Technologie</h1>
     </div>
     <p class="sub">Apprends l'e-commerce, une leçon à la fois — jusqu'à devenir marchand toi-même.</p>
 
@@ -268,7 +265,7 @@ router.post("/lecon", requireAuth, async (req, res) => {
 
         const result = await gemini.chat({
             message: prompt,
-            context: { source: "client_academie" },
+            context: { source: "client_technologie" },
             useTools: false,
         });
 
