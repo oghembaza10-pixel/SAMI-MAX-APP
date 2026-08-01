@@ -1,423 +1,338 @@
-// ==========================================================================
-// SAMII OS — MARKETPLACE OG — Version Header Pro + Sélecteur Pays/Devise & Panier Coulissant
-// ==========================================================================
-const express = require("express");
-const router  = express.Router();
-const airtable = require("../services/airtable");
+// --- SECTION INTÉGRÉE : MODULE COMPLET MARKETPLACE OG ---
+const express = require('express');
+const router = express.Router();
 
-function requireAuth(req, res, next) {
-    if (!req.session?.loggedIn) return res.redirect("/login");
-    next();
-}
-
+// Configuration globale des catégories (style Amazon & Services professionnels)
 const CATEGORIES_AMAZON = [
-    { id: "tous",            label: "Toutes nos catégories" },
-    { id: "alexa",           label: "Alexa Skills" },
-    { id: "global",          label: "Amazon Global Store" },
-    { id: "haul",            label: "Amazon Haul" },
-    { id: "seconde_main",    label: "Amazon Seconde main" },
-    { id: "animalerie",      label: "Animalerie" },
-    { id: "appareils",       label: "Appareils Amazon" },
-    { id: "applis",          label: "Applis & Jeux" },
-    { id: "auto",            label: "Auto et Moto" },
-    { id: "bagages",         label: "Bagages et accessoires de voyage" },
-    { id: "beaute",          label: "Beauté et Parfum" },
-    { id: "beaute_premium",  label: "Beauté Premium" },
-    { id: "cheques",         label: "Boutique chèques-cadeaux" },
-    { id: "kindle",          label: "Boutique Kindle" },
-    { id: "bricolage",       label: "Bricolage" },
-    { id: "bebe",            label: "Bébés & Puériculture" },
-    { id: "cuisine",         label: "Cuisine & Maison" },
-    { id: "dvd",             label: "DVD & Blu-ray" },
-    { id: "epicerie",        label: "Épicerie" },
-    { id: "bureau",          label: "Fournitures de bureau" },
-    { id: "electronique",    label: "High-Tech & Électronique" },
-    { id: "jardin",          label: "Jardin & Plein air" },
-    { id: "jeux",            label: "Jeux et Jouets" },
-    { id: "livres",          label: "Livres" },
-    { id: "luxe",            label: "Luxe & Joaillerie" },
-    { id: "mode",            label: "Mode & Vêtements" },
-    { id: "musique",         label: "Musique, Instruments & Vinyles" },
-    { id: "sante",           label: "Santé et Soins du corps" },
-    { id: "services",        label: "Services & Prestations" },
-    { id: "sport",           label: "Sports et Loisirs" },
-    { id: "logiciels",       label: "Logiciels" },
-    { id: "autre",           label: "Autre" }
+    { id: 'tous', label: 'Toutes nos catégories' },
+    { id: 'montres_luxe', label: 'Montres & Joaillerie de Luxe (The Sovereign)' },
+    { id: 'services', label: 'Services à la personne & Urgences (Nounou, Livreur 24h)' },
+    { id: 'tech', label: 'High-Tech, IA & Automatisation' },
+    { id: 'mode', label: 'Mode & Accessoires Premium' },
+    { id: 'maison', label: 'Maison & Design Minimaliste' },
+    { id: 'cartes_cadeaux', label: 'Cartes Cadeaux & Ventes Flash' }
 ];
 
-const ANNONCES_VIRTUELLES = [
-    {
-        id: "v_1",
-        fields: {
-            titre: "💎 Rolex Submariner Date — Édition Collector Or & Noir",
-            categorie: "luxe",
-            prix: "12 500 €",
-            pays: "Suisse",
-            ville: "Genève",
-            photo_url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80",
-            vendeur_id: "ai_agent_samii",
-            vendeur_nom: "🤖 Samii Core (Agent IA)",
-            type_vendeur: "ia_marchand",
-            actif: 1
-        }
-    },
-    {
-        id: "v_2",
-        fields: {
-            titre: "⚡ MacBook Pro M3 Max — 64Go RAM / 2To SSD (Pack Studio)",
-            categorie: "electronique",
-            prix: "3 490 $",
-            pays: "États-Unis",
-            ville: "New York",
-            photo_url: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
-            vendeur_id: "ai_agent_vaulta",
-            vendeur_nom: "🤖 Vaulta Automation (Bot)",
-            type_vendeur: "ia_marchand",
-            actif: 1
-        }
-    },
-    {
-        id: "v_3",
-        fields: {
-            titre: "🚀 Workflow n8n & Make — Automatisation e-commerce clés en main",
-            categorie: "services",
-            prix: "950 £",
-            pays: "Royaume-Uni",
-            ville: "Londres",
-            photo_url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
-            vendeur_id: "marchand_verified_1",
-            vendeur_nom: "Boutique Partenaire Vérifiée",
-            type_vendeur: "marchand",
-            actif: 1
-        }
-    },
-    {
-        id: "v_4",
-        fields: {
-            titre: "🌿 Coffret Parfum Privé & Essence d'Oud Souverain",
-            categorie: "beaute_premium",
-            prix: "280 €",
-            pays: "France",
-            ville: "Paris",
-            photo_url: "https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=800&q=80",
-            vendeur_id: "ai_agent_samii",
-            vendeur_nom: "🤖 Samii Core (Agent IA)",
-            type_vendeur: "ia_marchand",
-            actif: 1
-        }
-    }
-];
-
+// Styles CSS partagés avec intégration du sélecteur de mode, sidebar rétractable, panier et pivot 4 langues (FR, EN, CN, AR avec RTL)
 const SHARED_STYLES = `
     :root {
-        --bg-deep: #030307; 
-        --bg-panel: rgba(12, 12, 18, 0.92); 
-        --gold-og: #d4af37; 
-        --gold-hover: #f3e5ab; 
-        --gold-glow: 0 0 35px rgba(212, 175, 55, 0.28);
-        --cyan-tech: #00f0ff; 
-        --cyan-glow: 0 0 30px rgba(0, 240, 255, 0.3);
-        --purple-vibe: #bd00ff;
-        --purple-glow: 0 0 30px rgba(189, 0, 255, 0.25);
-        --text-main: #f8f8f2; 
-        --text-muted: #9494a0;
-        --font-display: 'Cinzel', serif; 
-        --font-body: 'Inter', sans-serif; 
+        --bg-deep: #030307;
+        --bg-panel: rgba(10, 10, 15, 0.85);
+        --gold-og: #D4AF37;
+        --gold-hover: #E6C554;
+        --gold-glow: 0 0 25px rgba(212, 175, 55, 0.35);
+        --cyan-og: #00F0FF;
+        --cyan-glow: 0 0 25px rgba(0, 240, 255, 0.35);
+        --purple-og: #BD00FF;
+        --purple-glow: 0 0 25px rgba(189, 0, 255, 0.35);
+        --text-main: #F4F4F8;
+        --text-muted: #9BA1A6;
+        --font-display: 'Cinzel', serif;
+        --font-body: 'Inter', sans-serif;
         --font-mono: 'JetBrains Mono', monospace;
         --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     
-    body { 
-        background-color: var(--bg-deep); color: var(--text-main); font-family: var(--font-body); 
-        margin: 0; padding: 0; overflow-x: hidden; display: flex; 
-        background-image: 
-            radial-gradient(circle at 10% 20%, rgba(189, 0, 255, 0.08) 0%, transparent 40%),
-            radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
-            radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 60%);
+    body {
+        background-color: var(--bg-deep);
+        color: var(--text-main);
+        font-family: var(--font-body);
+        min-height: 100vh;
+        display: flex;
+        overflow-x: hidden;
     }
-    
+
+    /* Gestion dynamique du RTL pour l'Arabe */
+    body[dir="rtl"] {
+        direction: rtl;
+        text-align: right;
+    }
+    body[dir="rtl"] .og-sidebar { left: auto; right: 0; border-left: none; border-right: 1px solid rgba(212,175,55,0.2); }
+    body[dir="rtl"] .og-main-wrapper { margin-left: 0; margin-right: 280px; }
+    body[dir="rtl"] .og-cart-drawer { right: auto; left: -420px; border-left: none; border-right: 1px solid rgba(212,175,55,0.3); }
+    body[dir="rtl"] .og-cart-drawer.open { right: auto; left: 0; }
+
+    /* Effets de fond et grille cyberpunk / luxe */
+    .og-bg-fx {
+        position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        background: radial-gradient(circle at 50% 10%, rgba(212,175,55,0.06) 0%, transparent 60%),
+                    radial-gradient(circle at 85% 90%, rgba(0,240,255,0.04) 0%, transparent 50%);
+    }
+    .og-bg-grid {
+        position: absolute; inset: 0;
+        background-image: linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                          linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+
+    /* Sidebar Rétractable */
     .og-sidebar {
-        width: 280px; height: 100vh; position: fixed; top: 0; left: 0; background: rgba(5, 5, 10, 0.95);
-        border-right: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(25px); display: flex; flex-direction: column; z-index: 200;
-        padding: 24px; box-sizing: border-box; justify-content: space-between;
+        width: 280px; height: 100vh; position: fixed; top: 0; left: 0;
+        background: rgba(5, 5, 10, 0.95); border-right: 1px solid rgba(212, 175, 55, 0.2);
+        backdrop-filter: blur(20px); z-index: 100; display: flex; flex-direction: column;
+        justify-content: space-between; padding: 24px; transition: transform 0.3s var(--ease-premium);
     }
-    .og-sidebar-brand { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; margin-bottom: 30px; text-shadow: var(--gold-glow); }
-    .og-sidebar-brand i { color: var(--gold-og); }
-    .og-sidebar-menu { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .og-sidebar-brand {
+        font-family: var(--font-display); font-size: 1.35rem; color: var(--gold-og);
+        font-weight: 700; display: flex; align-items: center; gap: 10px; margin-bottom: 35px;
+        letter-spacing: 1px; text-shadow: var(--gold-glow);
+    }
+    .og-sidebar-menu { display: flex; flex-direction: column; gap: 8px; }
     .og-sidebar-link {
         display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px;
         color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500;
-        transition: all 0.3s var(--ease-premium); border: 1px solid transparent;
+        transition: all 0.2s; border: 1px solid transparent;
     }
-    .og-sidebar-link i { width: 18px; height: 18px; color: var(--text-muted); transition: color 0.3s; }
     .og-sidebar-link:hover, .og-sidebar-link.active {
-        background: linear-gradient(90deg, rgba(212, 175, 55, 0.12), rgba(0, 240, 255, 0.08)); 
-        border-color: rgba(212, 175, 55, 0.3); color: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        background: rgba(212, 175, 55, 0.08); color: var(--gold-og);
+        border-color: rgba(212, 175, 55, 0.25); box-shadow: var(--gold-glow);
     }
-    .og-sidebar-link:hover i, .og-sidebar-link.active i { color: var(--cyan-tech); filter: drop-shadow(0 0 8px var(--cyan-tech)); }
     
     .og-samii-sphere {
-        background: linear-gradient(135deg, rgba(0, 240, 255, 0.12), rgba(189, 0, 255, 0.08), rgba(12, 12, 18, 0.95));
-        border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 16px; padding: 16px; margin-top: auto;
-        box-shadow: var(--cyan-glow); position: relative; overflow: hidden;
+        background: rgba(189, 0, 255, 0.05); border: 1px solid rgba(189, 0, 255, 0.2);
+        border-radius: 16px; padding: 16px; font-size: 0.78rem; color: var(--text-muted);
     }
-    .og-samii-title { font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan-tech); display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: 700; text-shadow: 0 0 10px rgba(0,240,255,0.5); }
-    .og-samii-text { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+    .og-samii-title { color: var(--purple-og); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
 
-    .og-main-wrapper { margin-left: 280px; width: calc(100% - 280px); min-height: 100vh; display: flex; flex-direction: column; }
-    .og-bg-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
-    .og-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(212, 175, 55, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px); background-size: 50px 50px; }
-
-    @media (max-width: 1024px) {
-        .og-sidebar { display: none; }
-        .og-main-wrapper { margin-left: 0; width: 100%; }
+    /* Main Wrapper & Header */
+    .og-main-wrapper { margin-left: 280px; flex: 1; display: flex; flex-direction: column; position: relative; z-index: 1; transition: margin 0.3s ease; }
+    
+    .og-top-promo-banner {
+        background: linear-gradient(90deg, #12121a, #1f1a0d, #12121a); color: var(--gold-og);
+        font-family: var(--font-mono); font-size: 0.75rem; text-align: center; padding: 8px;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2); letter-spacing: 0.5px;
     }
+
+    .og-header {
+        background: rgba(5, 5, 10, 0.9); backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08); position: sticky; top: 0; z-index: 90;
+    }
+    .og-header__main-row { padding: 14px 24px; display: flex; align-items: center; gap: 20px; }
+    .og-brand-title { font-family: var(--font-display); font-size: 1.4rem; color: #fff; font-weight: 700; text-decoration: none; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
+    
+    /* Widget Livraison */
+    .og-delivery-widget {
+        display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; font-size: 0.78rem; color: var(--text-muted); cursor: pointer; transition: border-color 0.2s;
+    }
+    .og-delivery-widget:hover { border-color: var(--gold-og); }
+    .og-delivery-widget .sub-txt { color: #fff; font-weight: 600; }
+
+    /* Sélecteur Pays & Devise */
+    .og-locale-selector {
+        display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 10px;
+    }
+    .og-locale-selector select { background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.8rem; outline: none; cursor: pointer; }
+    .og-locale-selector select option { background: #08080f; color: #fff; }
+
+    /* Barre de recherche style Amazon */
+    .og-amazon-search {
+        flex: 1; display: flex; background: rgba(0,0,0,0.6); border: 1px solid rgba(212,175,55,0.3);
+        border-radius: 12px; overflow: hidden; transition: box-shadow 0.3s;
+    }
+    .og-amazon-search:focus-within { box-shadow: var(--gold-glow); border-color: var(--gold-og); }
+    .og-category-select-wrapper { background: rgba(255,255,255,0.04); border-right: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; }
+    .og-category-select-wrapper select { background: transparent; border: none; color: var(--text-muted); padding: 0 14px; font-size: 0.82rem; font-family: var(--font-body); outline: none; cursor: pointer; }
+    .og-category-select-wrapper select option { background: #0a0a0f; color: #fff; }
+    .og-search-input-box { flex: 1; display: flex; }
+    .og-search-input-box input { width: 100%; background: transparent; border: none; padding: 12px 16px; color: #fff; font-size: 0.9rem; outline: none; }
+    .og-search-submit { background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); border: none; padding: 0 22px; cursor: pointer; font-size: 1rem; transition: filter 0.2s; }
+    .og-search-submit:hover { filter: brightness(1.15); }
+
+    /* Actions Droite Header */
+    .og-header-right { display: flex; align-items: center; gap: 15px; }
+    .og-account-link { color: #fff; text-decoration: none; font-size: 0.78rem; line-height: 1.3; }
+    .og-account-link .line-bold { display: block; font-weight: 700; color: var(--gold-og); font-size: 0.85rem; }
+    
+    .og-cart-btn {
+        background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.4); color: var(--gold-og);
+        padding: 8px 14px; border-radius: 10px; font-weight: 700; font-family: var(--font-mono);
+        font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+    }
+    .og-cart-btn:hover { background: var(--gold-og); color: #030307; box-shadow: var(--gold-glow); }
+
+    .og-publish-cta {
+        background: linear-gradient(135deg, var(--cyan-og), #0088ff); color: #030307; border: none;
+        padding: 8px 16px; border-radius: 10px; font-weight: 800; font-family: var(--font-display);
+        font-size: 0.82rem; text-decoration: none; box-shadow: var(--cyan-glow); transition: filter 0.2s;
+    }
+    .og-publish-cta:hover { filter: brightness(1.1); }
+
+    /* Sous-ligne liens rapides */
+    .og-header__sub-row { background: rgba(0,0,0,0.5); padding: 8px 24px; border-top: 1px solid rgba(255,255,255,0.05); }
+    .og-sub-links { display: flex; list-style: none; gap: 20px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+    .og-sub-links::-webkit-scrollbar { display: none; }
+    .og-sub-links a { color: var(--text-muted); text-decoration: none; font-size: 0.82rem; font-weight: 500; transition: color 0.2s; }
+    .og-sub-links a:hover { color: var(--gold-og); }
+
+    /* Sélecteur de Langue Pivot 4 Langues (FR, EN, CN, AR) */
+    .og-lang-pivot-container {
+        position: fixed; bottom: 25px; right: 25px; z-index: 9999;
+        display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+    }
+    .og-lang-main-btn {
+        background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307;
+        width: 50px; height: 50px; border-radius: 50%; border: none; font-weight: 800;
+        font-family: var(--font-mono); font-size: 0.9rem; cursor: pointer; box-shadow: var(--gold-glow);
+        display: flex; align-items: center; justify-content: center; transition: transform 0.3s var(--ease-premium);
+    }
+    .og-lang-main-btn:hover { transform: scale(1.1); }
+    .og-lang-options {
+        display: flex; flex-direction: column; gap: 6px; background: rgba(5,5,10,0.95);
+        border: 1px solid rgba(212,175,55,0.3); padding: 8px; border-radius: 16px;
+        backdrop-filter: blur(15px); opacity: 0; transform: translateY(10px) scale(0.95);
+        pointer-events: none; transition: all 0.25s var(--ease-premium); box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .og-lang-pivot-container.open .og-lang-options { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .og-lang-option-btn {
+        background: transparent; border: none; color: var(--text-muted); padding: 8px 14px;
+        border-radius: 8px; font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
+        cursor: pointer; text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+    }
+    body[dir="rtl"] .og-lang-option-btn { text-align: right; }
+    .og-lang-option-btn:hover, .og-lang-option-btn.active { background: rgba(212,175,55,0.12); color: var(--gold-og); }
+
+    /* Main Container Grid & Cards */
+    .og-main-container { padding: 30px 24px; max-width: 1500px; margin: 0 auto; width: 100%; }
+    .og-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+    
+    .og-card {
+        background: var(--bg-panel); border-radius: 20px; overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column;
+        transition: all 0.4s var(--ease-premium); position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .og-card.cyan-border { border: 1px solid rgba(0, 240, 255, 0.25); }
+    .og-card.gold-border { border: 1px solid rgba(212, 175, 55, 0.25); }
+    .og-card.purple-border { border: 1px solid rgba(189, 0, 255, 0.35); box-shadow: 0 0 20px rgba(189, 0, 255, 0.15); }
+    
+    .og-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 25px 60px rgba(0,0,0,0.8), var(--cyan-glow); }
+    .og-card.gold-border:hover { box-shadow: 0 25px 60px rgba(0,0,0,0.8), var(--gold-glow); }
+    .og-card.purple-border:hover { box-shadow: 0 25px 60px rgba(0,0,0,0.8), var(--purple-glow); }
+    
+    .og-card__media { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .og-card__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s var(--ease-premium); }
+    .og-card:hover .og-card__media img { transform: scale(1.12); }
+    
+    .og-ai-badge {
+        position: absolute; top: 12px; right: 12px; z-index: 3; 
+        font-size: 0.68rem; font-family: var(--font-mono); padding: 5px 10px; border-radius: 20px;
+        background: rgba(189, 0, 255, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+        box-shadow: 0 0 12px rgba(189,0,255,0.6); backdrop-filter: blur(8px);
+    }
+    .og-card__badge { 
+        position: absolute; top: 12px; left: 12px; z-index: 3; 
+        font-size: 0.7rem; font-family: var(--font-mono); padding: 6px 12px; border-radius: 20px; 
+        background: rgba(5, 5, 10, 0.85); color: #fff; border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(10px);
+    }
+    .og-card__price-tag { 
+        position: absolute; bottom: 12px; right: 12px; z-index: 3; 
+        background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307; 
+        font-family: var(--font-mono); font-weight: 800; font-size: 1rem; padding: 6px 14px; border-radius: 12px; 
+        box-shadow: 0 4px 15px rgba(212,175,55,0.4);
+    }
+    
+    .og-card__content { padding: 18px; display: flex; flex-direction: column; gap: 12px; flex: 1; background: linear-gradient(180deg, rgba(12,12,18,0.6), rgba(5,5,10,0.9)); }
+    .og-card__title { font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.4; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .og-card__meta-grid { display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; color: var(--text-muted); margin-top: auto; }
+    
+    .og-add-cart-btn {
+        width: 100%; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.4); color: var(--gold-og);
+        padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
+        font-family: var(--font-mono);
+    }
+    .og-add-cart-btn:hover { background: var(--gold-og); color: #030307; box-shadow: var(--gold-glow); }
+
+    /* Panier Coulissant (Slide-over Cart) */
+    .og-cart-drawer-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 999;
+        display: none; opacity: 0; transition: opacity 0.3s ease;
+    }
+    .og-cart-drawer-overlay.open { display: block; opacity: 1; }
+    
+    .og-cart-drawer {
+        position: fixed; top: 0; right: -420px; width: 400px; height: 100vh; background: #08080f;
+        border-left: 1px solid rgba(212,175,55,0.3); z-index: 1000; box-shadow: -10px 0 50px rgba(0,0,0,0.8);
+        display: flex; flex-direction: column; transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-sizing: border-box; padding: 24px;
+    }
+    .og-cart-drawer.open { right: 0; }
+    
+    .og-cart-drawer-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px; margin-bottom: 16px; }
+    .og-cart-drawer-title { font-family: var(--font-display); font-size: 1.2rem; color: #fff; font-weight: 700; }
+    .og-cart-close-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; transition: color 0.2s; }
+    .og-cart-close-btn:hover { color: #fff; }
+
+    .og-cart-items-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .og-cart-item-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .og-cart-drawer-footer { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 16px; }
+    .og-checkout-btn { width: 100%; background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307; border: none; border-radius: 12px; padding: 14px; font-weight: 800; font-size: 1rem; font-family: var(--font-display); cursor: pointer; box-shadow: var(--gold-glow); transition: filter 0.2s; }
+    .og-checkout-btn:hover { filter: brightness(1.1); }
+
+    .og-empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 90px 20px; text-align: center; color: var(--text-muted); background: var(--bg-panel); border-radius: 24px; border: 1px dashed rgba(212,175,55,0.3); }
 `;
 
-// --- 1. ROUTE ACCUEIL MARKETPLACE ---
-router.get("/", requireAuth, async (req, res) => {
-    const { categorie, recherche, pays, ville } = req.query;
-
-    let annoncesAirtable = [];
+// --- 1. ROUTE INDEX MARKETPLACE ---
+router.get("/", async (req, res) => {
+    const { categorie, recherche } = req.query;
+    
+    // Récupération des annonces depuis Airtable (ou tableau vide de secours)
+    let toutesAnnonces = [];
     try {
-        let filtres = ['{actif}=1'];
-        if (categorie && categorie !== "tous") filtres.push(`{categorie}="${categorie}"`);
-        if (recherche) filtres.push(`SEARCH(LOWER("${recherche}"), LOWER({titre}))`);
-        if (pays) filtres.push(`SEARCH(LOWER("${pays}"), LOWER({pays}))`);
-        if (ville) filtres.push(`SEARCH(LOWER("${ville}"), LOWER({ville}))`);
-
-        annoncesAirtable = await airtable.find("ANNONCES", `AND(${filtres.join(",")})`, 50);
-    } catch (err) {
-        console.warn("⚠️ Mode secours actif (Airtable injoignable) :", err.message);
+        const records = await airtable.select("ANNONCES", { filterByFormula: "{actif} = 1" });
+        toutesAnnonces = records.map(r => ({ id: r.id, ...r.fields }));
+    } catch (e) {
+        console.warn("Airtable fetch warning, fallback mode actif.");
     }
 
-    let toutesAnnonces = [...ANNONCES_VIRTUELLES, ...annoncesAirtable];
+    // Filtrage dynamique par catégorie et recherche textuelle
+    let annoncesFiltrees = toutesAnnonces.filter(item => {
+        const matchCat = !categorie || categorie === 'tous' || item.categorie === categorie;
+        const matchSearch = !recherche || 
+            (item.titre && item.titre.toLowerCase().includes(recherche.toLowerCase())) ||
+            (item.pays && item.pays.toLowerCase().includes(recherche.toLowerCase())) ||
+            (item.ville && item.ville.toLowerCase().includes(recherche.toLowerCase()));
+        return matchCat && matchSearch;
+    });
 
-    if (categorie && categorie !== "tous") {
-        toutesAnnonces = toutesAnnonces.filter(a => a.fields.categorie === categorie);
-    }
-    if (recherche) {
-        const query = recherche.toLowerCase();
-        toutesAnnonces = toutesAnnonces.filter(a => a.fields.titre.toLowerCase().includes(query));
-    }
+    const categoryOptionsHtml = CATEGORIES_AMAZON.map(cat => 
+        `<option value="${cat.id}" ${categorie === cat.id ? 'selected' : ''}>${cat.label}</option>`
+    ).join("");
 
-    const catInfo = (id) => CATEGORIES_AMAZON.find(c => c.id === id) || { label: id };
-
-    const cardsHtml = toutesAnnonces.map((a, index) => {
-        const f = a.fields;
-        const cat = catInfo(f.categorie);
-        const mainPhoto = f.photo_url || '';
-        const isAiAgent = f.type_vendeur === 'ia_marchand';
-        const accentClass = isAiAgent ? 'purple-border' : (index % 2 === 0 ? 'cyan-border' : 'gold-border');
-
+    const cardsHtml = annoncesFiltrees.map((item, idx) => {
+        const borderClass = idx % 3 === 0 ? 'gold-border' : (idx % 3 === 1 ? 'cyan-border' : 'purple-border');
+        const imgUrl = item.photo_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80';
         return `
-        <div class="og-card ${accentClass}">
-            <a href="/vitrine/${f.vendeur_id || 'marchand_verified_1'}" style="text-decoration:none; display:flex; flex-direction:column; flex:1;">
+            <div class="og-card ${borderClass}">
                 <div class="og-card__media">
-                    ${isAiAgent ? '<div class="og-ai-badge">Marchand IA</div>' : ''}
-                    <span class="og-card__badge">${cat.label}</span>
-                    ${mainPhoto ? `<img src="${mainPhoto}" alt="${f.titre}" loading="lazy">` : '<div class="og-card__placeholder">⚡</div>'}
-                    <div class="og-card__price-tag">${f.prix || 'Sur devis'}</div>
+                    <div class="og-card__badge">📍 ${item.pays || 'International'}${item.ville ? ' — ' + item.ville : ''}</div>
+                    <div class="og-ai-badge"><i data-lucide="sparkles" style="width:10px;height:10px;"></i> Samii OS</div>
+                    <img src="${imgUrl}" alt="${item.titre}" loading="lazy">
+                    <div class="og-card__price-tag">${item.prix || 'Sur devis'}</div>
                 </div>
                 <div class="og-card__content">
-                    <h3 class="og-card__title">${f.titre}</h3>
+                    <h3 class="og-card__title">${item.titre}</h3>
                     <div class="og-card__meta-grid">
-                        <span>📍 ${f.pays || 'International'} ${f.ville ? '— ' + f.ville : ''}</span>
-                        <span>🛡️ ${f.vendeur_nom || 'Boutique Partenaire Vérifiée'}</span>
+                        <div>Vendeur : <strong>${item.vendeur_nom || 'Boutique Partenaire'}</strong></div>
+                        <div>Disponibilité : <span style="color: var(--cyan-og)">Expédition rapide 24/48h</span></div>
                     </div>
+                    <button class="og-add-cart-btn" onclick="ajouterAuPanier('${item.titre.replace(/'/g, "\\'")}', '${item.prix || '0 €'}')">
+                        + Ajouter au Panier OG
+                    </button>
                 </div>
-            </a>
-            <div style="padding: 0 18px 18px 18px; background: rgba(5,5,10,0.9);">
-                <button onclick="ajouterAuPanier('${f.titre.replace(/'/g, "\\'")}', '${f.prix || 'Sur devis'}')" class="og-add-cart-btn">+ Ajouter au panier</button>
             </div>
-        </div>`;
+        `;
     }).join("");
-
-    const categoryOptionsHtml = CATEGORIES_AMAZON.map(c => 
-        `<option value="${c.id}" ${categorie === c.id ? 'selected' : ''}>${c.label}</option>`
-    ).join("");
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Marketplace OG — Catalogue Exclusif</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        ${SHARED_STYLES}
-        
-        /* Barre Promo Défilante Supérieure */
-        .og-top-promo-banner {
-            background: linear-gradient(90deg, #111, #221a05, #111);
-            border-bottom: 1px solid rgba(212,175,55,0.3);
-            color: var(--gold-og); font-family: var(--font-mono); font-size: 0.78rem;
-            padding: 6px 20px; text-align: center; font-weight: 700; letter-spacing: 0.5px;
-            box-shadow: inset 0 0 20px rgba(212,175,55,0.1);
-        }
-
-        .og-header { 
-            position: sticky; top: 0; z-index: 100; background: rgba(3, 3, 7, 0.96); 
-            backdrop-filter: blur(25px); border-bottom: 1px solid rgba(212, 175, 55, 0.25); 
-            display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-        }
-        
-        .og-header__main-row {
-            padding: 12px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        
-        .og-brand-title { 
-            font-family: var(--font-display); color: #fff; font-size: 1.35rem; font-weight: 800; 
-            display: flex; align-items: center; gap: 10px; margin: 0; text-decoration: none; white-space: nowrap;
-            background: linear-gradient(135deg, #fff 30%, var(--gold-og) 70%, var(--cyan-tech) 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-
-        .og-delivery-widget {
-            display: flex; align-items: flex-start; gap: 6px; padding: 6px 10px; border-radius: 8px; 
-            border: 1px dashed rgba(255,255,255,0.15); color: var(--text-muted); font-size: 0.78rem; cursor: pointer; transition: border-color 0.2s;
-        }
-        .og-delivery-widget:hover { border-color: var(--gold-og); color: #fff; }
-        .og-delivery-widget .sub-txt { font-weight: 700; color: #fff; font-size: 0.85rem; }
-
-        /* Sélecteur Pays & Devise style Amazon */
-        .og-locale-selector {
-            display: flex; align-items: center; gap: 6px; background: rgba(20,20,30,0.8);
-            border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 10px; color: #fff;
-            font-size: 0.8rem; font-family: var(--font-mono); cursor: pointer; transition: border-color 0.2s;
-        }
-        .og-locale-selector:hover { border-color: var(--gold-og); }
-        .og-locale-selector select { background: transparent; border: none; color: #fff; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; outline: none; cursor: pointer; }
-        .og-locale-selector select option { background: #0a0a10; color: #fff; }
-
-        .og-amazon-search { 
-            flex: 1; max-width: 550px; display: flex; background: var(--bg-panel); 
-            border: 2px solid var(--gold-og); border-radius: 10px; overflow: hidden; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5), var(--gold-glow);
-        }
-        .og-category-select-wrapper { background: rgba(20, 20, 30, 0.98); border-right: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; padding: 0 8px; }
-        .og-category-select-wrapper select { background: transparent; border: none; color: #fff; font-family: var(--font-body); font-size: 0.8rem; font-weight: 600; outline: none; cursor: pointer; padding: 10px 4px; }
-        .og-category-select-wrapper select option { background: #0a0a10; color: #fff; }
-        
-        .og-search-input-box { flex: 1; display: flex; align-items: center; padding: 0 12px; background: rgba(0,0,0,0.2); }
-        .og-search-input-box input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.9rem; font-family: var(--font-body); padding: 10px 0; outline: none; }
-        
-        .og-search-submit { 
-            background: linear-gradient(135deg, var(--gold-og), #b89728); color: #030307; border: none; padding: 0 18px; font-weight: 800; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center; transition: filter 0.2s; font-size: 0.9rem;
-        }
-        .og-search-submit:hover { filter: brightness(1.15); }
-
-        .og-header-right { display: flex; align-items: center; gap: 14px; }
-        
-        .og-account-link {
-            display: flex; flex-direction: column; text-decoration: none; color: var(--text-main); font-size: 0.78rem; padding: 4px 8px; border-radius: 8px; border: 1px solid transparent; transition: all 0.2s;
-        }
-        .og-account-link:hover { border-color: rgba(212,175,55,0.4); background: rgba(212,175,55,0.05); }
-        .og-account-link .line-bold { font-weight: 700; color: #fff; font-size: 0.85rem; font-family: var(--font-display); }
-
-        /* Bouton Panier coulissant */
-        .og-cart-btn {
-            display: flex; align-items: center; gap: 6px; text-decoration: none; color: var(--gold-og); font-weight: 700; font-size: 0.85rem; padding: 8px 12px; border-radius: 8px; background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.3); cursor: pointer; transition: all 0.2s;
-        }
-        .og-cart-btn:hover { background: rgba(212,175,55,0.15); }
-
-        .og-header__sub-row {
-            background: rgba(10, 10, 16, 0.98); padding: 10px 28px; display: flex; align-items: center; justify-content: space-between; overflow-x: auto; white-space: nowrap; border-top: 1px solid rgba(255,255,255,0.04);
-        }
-        .og-sub-links { display: flex; align-items: center; gap: 24px; list-style: none; margin: 0; padding: 0; }
-        .og-sub-links a {
-            color: #dcdce6; text-decoration: none; font-size: 0.85rem; font-weight: 600; font-family: var(--font-body); transition: color 0.2s; position: relative; padding-bottom: 2px;
-        }
-        .og-sub-links a:hover { color: var(--gold-og); }
-        .og-sub-links a::after {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--gold-og); transition: width 0.3s;
-        }
-        .og-sub-links a:hover::after { width: 100%; }
-        
-        .og-publish-cta { 
-            display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; text-decoration: none; 
-            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307; font-weight: 800; font-size: 0.8rem; 
-            font-family: var(--font-display); box-shadow: 0 4px 15px rgba(212,175,55,0.3); transition: all 0.2s;
-        }
-        .og-publish-cta:hover { transform: translateY(-2px); }
-
-        .og-main-container { padding: 36px; flex: 1; }
-        .og-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 28px; margin-top: 24px; }
-        
-        .og-card { 
-            position: relative; background: var(--bg-panel); border-radius: 20px; overflow: hidden; 
-            display: flex; flex-direction: column; transition: all 0.4s var(--ease-premium); box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-        }
-        .og-card.cyan-border { border: 1px solid rgba(0, 240, 255, 0.25); }
-        .og-card.gold-border { border: 1px solid rgba(212, 175, 55, 0.25); }
-        .og-card.purple-border { border: 1px solid rgba(189, 0, 255, 0.35); box-shadow: 0 0 20px rgba(189, 0, 255, 0.15); }
-        
-        .og-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 25px 60px rgba(0,0,0,0.8), var(--cyan-glow); }
-        .og-card.gold-border:hover { box-shadow: 0 25px 60px rgba(0,0,0,0.8), var(--gold-glow); }
-        .og-card.purple-border:hover { box-shadow: 0 25px 60px rgba(0,0,0,0.8), var(--purple-glow); }
-        
-        .og-card__media { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .og-card__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s var(--ease-premium); }
-        .og-card:hover .og-card__media img { transform: scale(1.12); }
-        
-        .og-ai-badge {
-            position: absolute; top: 12px; right: 12px; z-index: 3; 
-            font-size: 0.68rem; font-family: var(--font-mono); padding: 5px 10px; border-radius: 20px;
-            background: rgba(189, 0, 255, 0.9); color: #fff; border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 0 12px rgba(189,0,255,0.6); backdrop-filter: blur(8px);
-        }
-        
-        .og-card__badge { 
-            position: absolute; top: 12px; left: 12px; z-index: 3; 
-            font-size: 0.7rem; font-family: var(--font-mono); padding: 6px 12px; border-radius: 20px; 
-            background: rgba(5, 5, 10, 0.85); color: #fff; border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(10px);
-        }
-        .og-card__price-tag { 
-            position: absolute; bottom: 12px; right: 12px; z-index: 3; 
-            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307; 
-            font-family: var(--font-mono); font-weight: 800; font-size: 1rem; padding: 6px 14px; border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(212,175,55,0.4);
-        }
-        
-        .og-card__content { padding: 18px; display: flex; flex-direction: column; gap: 12px; flex: 1; background: linear-gradient(180deg, rgba(12,12,18,0.6), rgba(5,5,10,0.9)); }
-        .og-card__title { font-size: 0.95rem; font-weight: 700; color: #fff; line-height: 1.4; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .og-card__meta-grid { display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; color: var(--text-muted); margin-top: auto; }
-        
-        .og-add-cart-btn {
-            width: 100%; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.4); color: var(--gold-og);
-            padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;
-            font-family: var(--font-mono);
-        }
-        .og-add-cart-btn:hover { background: var(--gold-og); color: #030307; box-shadow: var(--gold-glow); }
-
-        /* Panier Coulissant (Slide-over Cart) */
-        .og-cart-drawer-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 999;
-            display: none; opacity: 0; transition: opacity 0.3s ease;
-        }
-        .og-cart-drawer-overlay.open { display: block; opacity: 1; }
-        
-        .og-cart-drawer {
-            position: fixed; top: 0; right: -420px; width: 400px; height: 100vh; background: #08080f;
-            border-left: 1px solid rgba(212,175,55,0.3); z-index: 1000; box-shadow: -10px 0 50px rgba(0,0,0,0.8);
-            display: flex; flex-direction: column; transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-sizing: border-box; padding: 24px;
-        }
-        .og-cart-drawer.open { right: 0; }
-        
-        .og-cart-drawer-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px; margin-bottom: 16px; }
-        .og-cart-drawer-title { font-family: var(--font-display); font-size: 1.2rem; color: #fff; font-weight: 700; }
-        .og-cart-close-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; transition: color 0.2s; }
-        .og-cart-close-btn:hover { color: #fff; }
-
-        .og-cart-items-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .og-cart-item-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
-        
-        .og-cart-drawer-footer { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 16px; }
-        .og-checkout-btn { width: 100%; background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307; border: none; border-radius: 12px; padding: 14px; font-weight: 800; font-size: 1rem; font-family: var(--font-display); cursor: pointer; box-shadow: var(--gold-glow); transition: filter 0.2s; }
-        .og-checkout-btn:hover { filter: brightness(1.1); }
-
-        .og-empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 90px 20px; text-align: center; color: var(--text-muted); background: var(--bg-panel); border-radius: 24px; border: 1px dashed rgba(212,175,55,0.3); }
-    </style>
+    <title>Marketplace Internationale OG — Samii OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>${SHARED_STYLES}</style>
 </head>
 <body>
     <aside class="og-sidebar">
@@ -443,7 +358,6 @@ router.get("/", requireAuth, async (req, res) => {
             <div class="og-bg-grid"></div>
         </div>
 
-        <!-- Barre de notification supérieure -->
         <div class="og-top-promo-banner">
             ⚡ MARKETPLACE INTERNATIONALE OG — VENTES FLASH & SERVICES D'URGENCE DISPONIBLES EN CONTINU
         </div>
@@ -460,7 +374,6 @@ router.get("/", requireAuth, async (req, res) => {
                     </div>
                 </div>
 
-                <!-- Sélecteur Pays & Devise style Amazon -->
                 <div class="og-locale-selector">
                     <span>🌐</span>
                     <select id="deviseSelect">
@@ -488,7 +401,6 @@ router.get("/", requireAuth, async (req, res) => {
                         <span class="line-bold">Compte & QG</span>
                     </a>
 
-                    <!-- Bouton Panier Coulissant -->
                     <button onclick="toggleCart()" class="og-cart-btn">
                         🛒 <span id="cartCountBadge">0</span> art.
                     </button>
@@ -545,6 +457,17 @@ router.get("/", requireAuth, async (req, res) => {
         </div>
     </div>
 
+    <!-- Bouton Pivot 4 Langues (Français, Anglais, Chinois, Arabe avec RTL dynamique) -->
+    <div class="og-lang-pivot-container" id="langPivotContainer">
+        <div class="og-lang-options">
+            <button class="og-lang-option-btn active" onclick="setLanguage('fr')">🇫🇷 Français</button>
+            <button class="og-lang-option-btn" onclick="setLanguage('en')">🇬🇧 English</button>
+            <button class="og-lang-option-btn" onclick="setLanguage('cn')">🇨🇳 中文</button>
+            <button class="og-lang-option-btn" onclick="setLanguage('ar')">🇸🇦 العربية</button>
+        </div>
+        <button class="og-lang-main-btn" onclick="toggleLangMenu()" title="Changer de langue">🌐</button>
+    </div>
+
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         if (typeof lucide !== "undefined") lucide.createIcons();
@@ -572,13 +495,12 @@ router.get("/", requireAuth, async (req, res) => {
             const container = document.getElementById('cartItemsContainer');
             
             if (panier.length === 0) {
-                container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-top: 40px;">Votre panier est vide pour l'instant.</div>';
+                container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-top: 40px;">Votre panier est vide pour l\\'instant.</div>';
                 document.getElementById('cartTotalPrice').innerText = '0 €';
                 return;
             }
 
             let html = '';
-            let total = 0;
             panier.forEach((item, idx) => {
                 html += \`
                 <div class="og-cart-item-row">
@@ -592,13 +514,33 @@ router.get("/", requireAuth, async (req, res) => {
             container.innerHTML = html;
             document.getElementById('cartTotalPrice').innerText = panier.length > 0 ? panier[0].prix : '0 €';
         }
+
+        // Logique du Bouton Pivot 4 Langues & Gestion RTL
+        function toggleLangMenu() {
+            document.getElementById('langPivotContainer').classList.toggle('open');
+        }
+
+        function setLanguage(lang) {
+            document.querySelectorAll('.og-lang-option-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            toggleLangMenu();
+
+            if (lang === 'ar') {
+                document.documentElement.setAttribute('dir', 'rtl');
+                document.body.setAttribute('dir', 'rtl');
+            } else {
+                document.documentElement.setAttribute('dir', 'ltr');
+                document.body.setAttribute('dir', 'ltr');
+            }
+            // Synchronisation locale ou rechargement ciblé si besoin
+        }
     </script>
 </body>
 </html>`);
 });
 
 // --- 2. ROUTE FORMULAIRE DE PUBLICATION ---
-router.get("/publier", requireAuth, async (req, res) => {
+router.get("/publier", async (req, res) => {
     const optionsCategories = CATEGORIES_AMAZON.filter(c => c.id !== 'tous').map(c => 
         `<option value="${c.id}">${c.label}</option>`
     ).join("");
@@ -679,7 +621,7 @@ router.get("/publier", requireAuth, async (req, res) => {
 });
 
 // --- 3. TRAITEMENT POST PUBLICATION ---
-router.post("/publier", requireAuth, async (req, res) => {
+router.post("/publier", async (req, res) => {
     try {
         const { titre, categorie, prix, pays, ville, photo_url } = req.body;
 
