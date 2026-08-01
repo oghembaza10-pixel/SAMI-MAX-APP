@@ -4,6 +4,9 @@ const router = express.Router();
 
 router.get("/", (req, res) => {
 
+    const nom = req.session?.nom || "Membre SAMII";
+    const typeCompte = req.session?.typeCompte || "membre";
+
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -20,286 +23,270 @@ router.get("/", (req, res) => {
         }
 
         body {
-            background: #050505;
+            background: #0b0b0d;
             color: #f5f5f5;
             font-family: Arial, Helvetica, sans-serif;
         }
 
         button,
-        input,
-        textarea {
-            font-family: inherit;
+        input {
+            font: inherit;
         }
 
-        button {
-            cursor: pointer;
+        a {
+            color: inherit;
+            text-decoration: none;
         }
 
-        /* =====================================================
+        /* =========================================================
            HEADER
-        ===================================================== */
+        ========================================================= */
 
         .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
             height: 64px;
+            border-bottom: 1px solid #242429;
+            background: #101014;
 
             display: flex;
             align-items: center;
-            justify-content: space-between;
 
             padding: 0 28px;
 
-            background: rgba(10, 10, 10, .96);
-            border-bottom: 1px solid #242424;
-            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        .logo {
+            font-size: 22px;
             font-weight: 800;
-            letter-spacing: .08em;
-        }
-
-        .brand-mark {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            background: linear-gradient(145deg, #7d5cff, #4d35c9);
-            font-size: 18px;
-        }
-
-        .brand span {
-            color: #c5a059;
+            letter-spacing: .5px;
+            color: #d4af37;
         }
 
         .search {
+            margin-left: 35px;
             width: 320px;
-            margin-left: 40px;
         }
 
         .search input {
             width: 100%;
-            padding: 10px 14px;
-
-            border: 1px solid #303030;
-            border-radius: 20px;
-
-            background: #111;
+            background: #19191f;
+            border: 1px solid #2c2c33;
             color: white;
+
+            padding: 10px 15px;
+            border-radius: 22px;
             outline: none;
         }
 
         .search input:focus {
-            border-color: #c5a059;
+            border-color: #d4af37;
         }
 
         .top-actions {
+            margin-left: auto;
+
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 18px;
         }
 
-        .top-btn {
-            width: 40px;
-            height: 40px;
+        .top-icon {
+            font-size: 20px;
+            cursor: pointer;
+            opacity: .8;
+        }
 
-            border: 1px solid #2b2b2b;
+        .top-icon:hover {
+            opacity: 1;
+        }
+
+        .avatar-small {
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
 
-            background: #111;
-            color: white;
-
-            font-size: 17px;
-        }
-
-        .top-btn:hover {
-            border-color: #c5a059;
-        }
-
-        /* =====================================================
-           LAYOUT
-        ===================================================== */
-
-        .community {
-            width: 100%;
-            max-width: 1450px;
-            margin: 0 auto;
-
-            display: grid;
-            grid-template-columns: 230px minmax(400px, 680px) 280px;
-            gap: 24px;
-
-            padding: 28px 22px 60px;
-        }
-
-        /* =====================================================
-           LEFT SIDEBAR
-        ===================================================== */
-
-        .sidebar {
-            position: sticky;
-            top: 88px;
-            height: fit-content;
-        }
-
-        .profile-mini {
-            padding: 18px;
-            border: 1px solid #272727;
-            border-radius: 14px;
-            background: #101010;
-            margin-bottom: 14px;
-        }
-
-        .avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
+            background: linear-gradient(145deg, #7d5cff, #4b35b8);
 
             display: flex;
             align-items: center;
             justify-content: center;
 
-            background: linear-gradient(145deg, #7d5cff, #4d35c9);
-
-            font-size: 21px;
-        }
-
-        .profile-name {
-            margin-top: 12px;
             font-weight: bold;
         }
 
-        .profile-role {
-            margin-top: 5px;
-            color: #777;
-            font-size: .82rem;
+        /* =========================================================
+           LAYOUT
+        ========================================================= */
+
+        .community {
+            max-width: 1400px;
+            margin: auto;
+
+            display: grid;
+            grid-template-columns: 230px minmax(400px, 680px) 280px;
+
+            gap: 24px;
+
+            padding: 28px 20px;
         }
 
-        .nav {
-            padding: 8px;
+        /* =========================================================
+           LEFT SIDEBAR
+        ========================================================= */
 
-            border: 1px solid #272727;
+        .sidebar {
+            position: sticky;
+            top: 90px;
+            height: fit-content;
+        }
+
+        .profile-card {
+            background: #111116;
+            border: 1px solid #25252b;
             border-radius: 14px;
+            overflow: hidden;
 
-            background: #101010;
+            margin-bottom: 15px;
         }
 
-        .nav-item {
-            width: 100%;
+        .profile-cover {
+            height: 65px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #171321,
+                    #2b2350
+                );
+        }
+
+        .profile-body {
+            padding: 15px;
+            text-align: center;
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+
+            border-radius: 50%;
+
+            margin: -42px auto 10px;
+
+            border: 4px solid #111116;
+
+            background: linear-gradient(145deg, #7d5cff, #4b35b8);
 
             display: flex;
             align-items: center;
+            justify-content: center;
+
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .profile-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .profile-type {
+            color: #888891;
+            font-size: 12px;
+        }
+
+        .menu {
+            background: #111116;
+            border: 1px solid #25252b;
+            border-radius: 14px;
+
+            padding: 8px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+
             gap: 12px;
 
             padding: 12px;
 
-            border: none;
             border-radius: 9px;
 
-            background: transparent;
-            color: #d0d0d0;
+            color: #b9b9c0;
 
-            text-align: left;
-            font-size: .9rem;
+            cursor: pointer;
         }
 
-        .nav-item:hover,
-        .nav-item.active {
-            background: #1b1b1b;
-            color: #fff;
+        .menu-item:hover {
+            background: #1b1b21;
+            color: white;
         }
 
-        .nav-item.active {
-            border-left: 2px solid #c5a059;
+        .menu-item.active {
+            background: rgba(212, 175, 55, .12);
+            color: #d4af37;
         }
 
-        /* =====================================================
-           MAIN
-        ===================================================== */
+        /* =========================================================
+           CENTER
+        ========================================================= */
 
         .main {
             min-width: 0;
         }
 
-        .welcome {
-            padding: 22px;
-
-            border: 1px solid #292929;
-            border-radius: 16px;
-
-            background:
-                radial-gradient(
-                    circle at top right,
-                    rgba(125,92,255,.15),
-                    transparent 45%
-                ),
-                #101010;
-
-            margin-bottom: 16px;
+        .community-title {
+            margin-bottom: 18px;
         }
 
-        .welcome h1 {
-            font-size: 1.45rem;
-            margin-bottom: 8px;
+        .community-title h1 {
+            font-size: 28px;
+            margin-bottom: 6px;
         }
 
-        .welcome p {
-            color: #888;
-            line-height: 1.5;
-            font-size: .9rem;
+        .community-title p {
+            color: #888891;
+            font-size: 14px;
         }
 
-        /* =====================================================
-           CREATE POST
-        ===================================================== */
+        /* CREATE POST */
 
         .create-post {
-            padding: 18px;
+            background: #111116;
+            border: 1px solid #25252b;
+            border-radius: 14px;
 
-            border: 1px solid #292929;
-            border-radius: 16px;
+            padding: 16px;
 
-            background: #101010;
-
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
 
         .create-top {
             display: flex;
+            align-items: center;
             gap: 12px;
         }
 
         .create-input {
             flex: 1;
 
-            padding: 13px 16px;
+            background: #19191f;
+            border: 1px solid #292930;
 
-            border: 1px solid #2b2b2b;
-            border-radius: 24px;
+            padding: 12px 16px;
 
-            background: #151515;
-            color: #aaa;
+            border-radius: 22px;
 
-            text-align: left;
-        }
+            color: #999;
 
-        .create-input:hover {
-            border-color: #555;
-            color: white;
+            cursor: pointer;
         }
 
         .create-actions {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
 
             gap: 8px;
 
@@ -307,244 +294,249 @@ router.get("/", (req, res) => {
         }
 
         .create-action {
-            padding: 10px;
+            flex: 1;
 
-            border: 1px solid transparent;
-            border-radius: 9px;
-
+            border: none;
             background: transparent;
-            color: #aaa;
+
+            color: #aaaab2;
+
+            padding: 9px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
         }
 
         .create-action:hover {
-            background: #191919;
+            background: #1b1b21;
             color: white;
-            border-color: #292929;
         }
 
-        /* =====================================================
-           FEED FILTER
-        ===================================================== */
-
-        .feed-filter {
-            display: flex;
-            gap: 8px;
-
-            margin-bottom: 14px;
-
-            overflow-x: auto;
-        }
-
-        .filter-btn {
-            white-space: nowrap;
-
-            padding: 8px 14px;
-
-            border: 1px solid #292929;
-            border-radius: 20px;
-
-            background: #101010;
-            color: #888;
-        }
-
-        .filter-btn.active,
-        .filter-btn:hover {
-            color: white;
-            border-color: #c5a059;
-        }
-
-        /* =====================================================
-           POST
-        ===================================================== */
+        /* POST */
 
         .post {
-            padding: 20px;
+            background: #111116;
+            border: 1px solid #25252b;
 
-            border: 1px solid #292929;
-            border-radius: 16px;
+            border-radius: 14px;
 
-            background: #101010;
+            padding: 18px;
 
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
 
-        .post-head {
+        .post-header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 11px;
         }
 
-        .post-user {
-            flex: 1;
+        .post-avatar {
+            width: 42px;
+            height: 42px;
+
+            border-radius: 50%;
+
+            background: linear-gradient(145deg, #7d5cff, #4b35b8);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-weight: bold;
         }
 
-        .post-user strong {
-            display: block;
-            font-size: .95rem;
+        .post-author {
+            font-weight: bold;
         }
 
-        .post-user small {
-            color: #707070;
-            font-size: .75rem;
-        }
-
-        .post-menu {
-            border: none;
-            background: transparent;
-            color: #777;
-            font-size: 20px;
+        .post-meta {
+            color: #777780;
+            font-size: 12px;
+            margin-top: 3px;
         }
 
         .post-content {
             margin-top: 16px;
 
-            color: #ddd;
+            color: #dedee2;
+
             line-height: 1.6;
-            font-size: .93rem;
+
+            font-size: 15px;
         }
 
         .post-tag {
             display: inline-block;
 
-            margin-top: 14px;
+            margin-top: 12px;
+
             padding: 5px 9px;
 
             border-radius: 6px;
 
-            background: #1b1710;
-            color: #c5a059;
+            background: rgba(212, 175, 55, .1);
 
-            font-size: .72rem;
+            color: #d4af37;
+
+            font-size: 11px;
         }
 
         .post-actions {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
 
-            gap: 5px;
+            gap: 6px;
 
             margin-top: 18px;
+
             padding-top: 12px;
 
-            border-top: 1px solid #242424;
+            border-top: 1px solid #24242a;
         }
 
         .post-action {
-            padding: 9px;
-
-            border: none;
-            border-radius: 8px;
+            flex: 1;
 
             background: transparent;
-            color: #777;
+            border: none;
+
+            color: #888891;
+
+            padding: 9px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
         }
 
         .post-action:hover {
-            background: #191919;
+            background: #1b1b21;
             color: white;
         }
 
-        /* =====================================================
-           RIGHT
-        ===================================================== */
+        /* =========================================================
+           RIGHT SIDEBAR
+        ========================================================= */
 
-        .right-column {
+        .rightbar {
             position: sticky;
-            top: 88px;
+            top: 90px;
             height: fit-content;
         }
 
-        .panel {
-            padding: 18px;
+        .side-card {
+            background: #111116;
 
-            border: 1px solid #292929;
+            border: 1px solid #25252b;
+
             border-radius: 14px;
 
-            background: #101010;
+            padding: 17px;
+
+            margin-bottom: 16px;
+        }
+
+        .side-title {
+            font-weight: bold;
 
             margin-bottom: 14px;
         }
 
-        .panel h3 {
-            font-size: .95rem;
-            margin-bottom: 16px;
-        }
-
         .trend {
-            padding: 11px 0;
+            padding: 10px 0;
 
-            border-bottom: 1px solid #222;
+            border-bottom: 1px solid #222229;
         }
 
         .trend:last-child {
             border-bottom: none;
         }
 
-        .trend small {
-            color: #666;
+        .trend-name {
+            font-weight: bold;
+            font-size: 14px;
         }
 
-        .trend strong {
-            display: block;
+        .trend-count {
+            color: #777780;
+            font-size: 12px;
+
             margin-top: 4px;
-            font-size: .85rem;
         }
 
         .member {
             display: flex;
+
             align-items: center;
+
             gap: 10px;
 
-            padding: 10px 0;
+            margin-bottom: 13px;
         }
 
-        .member-info {
-            flex: 1;
+        .member-avatar {
+            width: 36px;
+            height: 36px;
+
+            border-radius: 50%;
+
+            background: #272732;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .member-info strong {
-            display: block;
-            font-size: .82rem;
+        .member-name {
+            font-size: 13px;
+            font-weight: bold;
         }
 
-        .member-info small {
-            color: #666;
+        .member-type {
+            color: #777780;
+            font-size: 11px;
+            margin-top: 3px;
         }
 
         .follow {
-            padding: 6px 10px;
+            margin-left: auto;
 
-            border: 1px solid #c5a059;
-            border-radius: 15px;
+            border: 1px solid #3b3b43;
 
             background: transparent;
-            color: #c5a059;
 
-            font-size: .72rem;
+            color: #d4af37;
+
+            padding: 5px 9px;
+
+            border-radius: 7px;
+
+            cursor: pointer;
+
+            font-size: 11px;
         }
 
-        .follow:hover {
-            background: #c5a059;
-            color: #000;
-        }
-
-        /* =====================================================
+        /* =========================================================
            RESPONSIVE
-        ===================================================== */
+        ========================================================= */
 
-        @media (max-width: 1100px) {
+        @media (max-width: 1050px) {
+
             .community {
                 grid-template-columns: 200px minmax(400px, 1fr);
             }
 
-            .right-column {
+            .rightbar {
                 display: none;
             }
+
         }
 
-        @media (max-width: 760px) {
+        @media (max-width: 720px) {
+
             .topbar {
-                padding: 0 14px;
+                padding: 0 15px;
             }
 
             .search {
@@ -553,31 +545,31 @@ router.get("/", (req, res) => {
 
             .community {
                 display: block;
-                padding: 15px 12px 40px;
+                padding: 18px 12px;
             }
 
             .sidebar {
                 position: static;
-                margin-bottom: 15px;
+                margin-bottom: 18px;
             }
 
-            .profile-mini {
+            .menu {
+                display: flex;
+                overflow-x: auto;
+            }
+
+            .menu-item {
+                white-space: nowrap;
+            }
+
+            .profile-card {
                 display: none;
             }
 
-            .nav {
-                display: flex;
-                overflow-x: auto;
-                gap: 5px;
+            .community-title h1 {
+                font-size: 24px;
             }
 
-            .nav-item {
-                min-width: max-content;
-            }
-
-            .create-actions {
-                grid-template-columns: repeat(2, 1fr);
-            }
         }
     </style>
 </head>
@@ -586,21 +578,31 @@ router.get("/", (req, res) => {
 
 <header class="topbar">
 
-    <div class="brand">
-        <div class="brand-mark">🤖</div>
-        <div>SAMII <span>COMMUNITY</span></div>
+    <div class="logo">
+        SAMII
     </div>
 
     <div class="search">
         <input
-            type="search"
+            type="text"
             placeholder="Rechercher dans Community..."
         >
     </div>
 
     <div class="top-actions">
-        <button class="top-btn" title="Notifications">🔔</button>
-        <button class="top-btn" title="Profil">👤</button>
+
+        <div class="top-icon">
+            🔔
+        </div>
+
+        <div class="top-icon">
+            💬
+        </div>
+
+        <div class="avatar-small">
+            ${String(nom).charAt(0).toUpperCase()}
+        </div>
+
     </div>
 
 </header>
@@ -614,48 +616,52 @@ router.get("/", (req, res) => {
 
     <aside class="sidebar">
 
-        <div class="profile-mini">
+        <div class="profile-card">
 
-            <div class="avatar">👤</div>
+            <div class="profile-cover"></div>
 
-            <div class="profile-name">
-                Mon profil
-            </div>
+            <div class="profile-body">
 
-            <div class="profile-role">
-                Membre SAMII
+                <div class="profile-avatar">
+                    ${String(nom).charAt(0).toUpperCase()}
+                </div>
+
+                <div class="profile-name">
+                    ${nom}
+                </div>
+
+                <div class="profile-type">
+                    ${typeCompte}
+                </div>
+
             </div>
 
         </div>
 
-        <nav class="nav">
 
-            <button class="nav-item active">
+        <div class="menu">
+
+            <div class="menu-item active">
                 🏠
                 <span>Accueil</span>
-            </button>
+            </div>
 
-            <button class="nav-item">
+            <div class="menu-item">
                 🔥
                 <span>Explorer</span>
-            </button>
+            </div>
 
-            <button class="nav-item">
-                ✍️
-                <span>Publier</span>
-            </button>
-
-            <button class="nav-item">
+            <div class="menu-item">
                 👥
                 <span>Communautés</span>
-            </button>
+            </div>
 
-            <button class="nav-item">
+            <div class="menu-item">
                 🔖
                 <span>Enregistrés</span>
-            </button>
+            </div>
 
-        </nav>
+        </div>
 
     </aside>
 
@@ -666,116 +672,111 @@ router.get("/", (req, res) => {
 
     <main class="main">
 
-        <section class="welcome">
+        <div class="community-title">
 
-            <h1>Bienvenue dans SAMII Community 🌐</h1>
+            <h1>
+                Community
+            </h1>
 
             <p>
-                L'espace où clients, commerçants, créateurs et membres
-                de SAMII peuvent se rencontrer, partager, demander,
-                proposer et découvrir.
+                Le réseau de SAMII — clients, marchands et membres de l'écosystème.
             </p>
-
-        </section>
-
-
-        <section class="create-post">
-
-            <div class="create-top">
-
-                <div class="avatar">👤</div>
-
-                <button class="create-input">
-                    Quoi de neuf ? Partagez avec la communauté...
-                </button>
-
-            </div>
-
-            <div class="create-actions">
-
-                <button class="create-action">
-                    📷 Photo
-                </button>
-
-                <button class="create-action">
-                    📦 Produit
-                </button>
-
-                <button class="create-action">
-                    💼 Offre
-                </button>
-
-                <button class="create-action">
-                    ❓ Demande
-                </button>
-
-            </div>
-
-        </section>
-
-
-        <div class="feed-filter">
-
-            <button class="filter-btn active">
-                Tout
-            </button>
-
-            <button class="filter-btn">
-                🔥 Tendances
-            </button>
-
-            <button class="filter-btn">
-                📦 Produits
-            </button>
-
-            <button class="filter-btn">
-                💼 Offres
-            </button>
-
-            <button class="filter-btn">
-                ❓ Demandes
-            </button>
 
         </div>
 
 
-        <!-- POST 1 -->
+        <!-- CREATE -->
+
+        <div class="create-post">
+
+            <div class="create-top">
+
+                <div class="post-avatar">
+                    ${String(nom).charAt(0).toUpperCase()}
+                </div>
+
+                <div
+                    class="create-input"
+                    onclick="ouvrirPublication()"
+                >
+                    Quoi de neuf, ${nom} ?
+                </div>
+
+            </div>
+
+
+            <div class="create-actions">
+
+                <button
+                    class="create-action"
+                    onclick="ouvrirPublication('discussion')"
+                >
+                    💬 Discussion
+                </button>
+
+                <button
+                    class="create-action"
+                    onclick="ouvrirPublication('demande')"
+                >
+                    🔎 Demande
+                </button>
+
+                <button
+                    class="create-action"
+                    onclick="ouvrirPublication('produit')"
+                >
+                    🛍️ Produit
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- DEMO POST 1 -->
 
         <article class="post">
 
-            <div class="post-head">
+            <div class="post-header">
 
-                <div class="avatar">🏪</div>
+                <div class="post-avatar">
+                    S
+                </div>
 
-                <div class="post-user">
+                <div>
 
-                    <strong>Exemple Boutique</strong>
+                    <div class="post-author">
+                        SAMII
+                    </div>
 
-                    <small>
-                        Marchand · Algérie · Il y a 2 h
-                    </small>
+                    <div class="post-meta">
+                        Administrateur · Aujourd'hui
+                    </div>
 
                 </div>
 
-                <button class="post-menu">⋮</button>
-
             </div>
+
 
             <div class="post-content">
 
-                Bienvenue dans SAMII Community 👋
+                Bienvenue dans <strong>SAMII Community</strong>.
+                Ici, clients, marchands et membres de l'écosystème
+                peuvent échanger, partager leurs besoins, présenter
+                leurs produits et créer de nouvelles opportunités.
 
-                <br><br>
+                <div>
+                    <span class="post-tag">
+                        #SAMII
+                    </span>
 
-                Ici, les marchands peuvent présenter leurs produits,
-                les clients peuvent découvrir des offres et tout le
-                monde peut échanger avec la communauté.
+                    <span class="post-tag">
+                        #Community
+                    </span>
+                </div>
 
             </div>
 
-            <span class="post-tag">
-                🏪 Commerce
-            </span>
 
             <div class="post-actions">
 
@@ -796,38 +797,49 @@ router.get("/", (req, res) => {
         </article>
 
 
-        <!-- POST 2 -->
+        <!-- DEMO POST 2 -->
 
         <article class="post">
 
-            <div class="post-head">
+            <div class="post-header">
 
-                <div class="avatar">👤</div>
+                <div class="post-avatar">
+                    A
+                </div>
 
-                <div class="post-user">
+                <div>
 
-                    <strong>Membre SAMII</strong>
+                    <div class="post-author">
+                        Ahmed
+                    </div>
 
-                    <small>
-                        Client · Algérie · Il y a 4 h
-                    </small>
+                    <div class="post-meta">
+                        Marchand · Il y a 2 h
+                    </div>
 
                 </div>
 
-                <button class="post-menu">⋮</button>
-
             </div>
+
 
             <div class="post-content">
 
-                Je cherche un service pour m'aider à développer
-                ma boutique. Des recommandations ?
+                Je viens de lancer ma nouvelle collection.
+                Je cherche également des partenaires pour
+                développer ma distribution en Algérie.
+
+                <div>
+                    <span class="post-tag">
+                        #Commerce
+                    </span>
+
+                    <span class="post-tag">
+                        #Algérie
+                    </span>
+                </div>
 
             </div>
 
-            <span class="post-tag">
-                ❓ Demande
-            </span>
 
             <div class="post-actions">
 
@@ -851,62 +863,76 @@ router.get("/", (req, res) => {
 
 
     <!-- =====================================================
-         RIGHT COLUMN
+         RIGHT SIDEBAR
     ====================================================== -->
 
-    <aside class="right-column">
+    <aside class="rightbar">
 
-        <section class="panel">
+        <div class="side-card">
 
-            <h3>🔥 Tendances</h3>
+            <div class="side-title">
+                🔥 Tendances
+            </div>
 
             <div class="trend">
 
-                <small>Commerce</small>
+                <div class="trend-name">
+                    #Ecommerce
+                </div>
 
-                <strong>
-                    #EcommerceAlgerie
-                </strong>
+                <div class="trend-count">
+                    Commerce · 1 240 publications
+                </div>
 
             </div>
 
             <div class="trend">
 
-                <small>SAMII</small>
+                <div class="trend-name">
+                    #Algérie
+                </div>
 
-                <strong>
-                    #SAMIIOS
-                </strong>
+                <div class="trend-count">
+                    840 publications
+                </div>
 
             </div>
 
             <div class="trend">
 
-                <small>Marketplace</small>
+                <div class="trend-name">
+                    #Entrepreneurs
+                </div>
 
-                <strong>
-                    #NouveauxProduits
-                </strong>
+                <div class="trend-count">
+                    620 publications
+                </div>
 
             </div>
 
-        </section>
+        </div>
 
 
-        <section class="panel">
+        <div class="side-card">
 
-            <h3>👥 Membres à découvrir</h3>
+            <div class="side-title">
+                👥 À découvrir
+            </div>
 
             <div class="member">
 
-                <div class="avatar">🏪</div>
+                <div class="member-avatar">
+                    M
+                </div>
 
-                <div class="member-info">
+                <div>
+                    <div class="member-name">
+                        Mohamed
+                    </div>
 
-                    <strong>Boutique Exemple</strong>
-
-                    <small>Marchand</small>
-
+                    <div class="member-type">
+                        Marchand
+                    </div>
                 </div>
 
                 <button class="follow">
@@ -918,14 +944,18 @@ router.get("/", (req, res) => {
 
             <div class="member">
 
-                <div class="avatar">👤</div>
+                <div class="member-avatar">
+                    S
+                </div>
 
-                <div class="member-info">
+                <div>
+                    <div class="member-name">
+                        Sarah
+                    </div>
 
-                    <strong>Membre SAMII</strong>
-
-                    <small>Client</small>
-
+                    <div class="member-type">
+                        Client
+                    </div>
                 </div>
 
                 <button class="follow">
@@ -934,11 +964,31 @@ router.get("/", (req, res) => {
 
             </div>
 
-        </section>
+        </div>
 
     </aside>
 
 </div>
+
+
+<script>
+
+function ouvrirPublication(type = "discussion") {
+
+    const labels = {
+        discussion: "Discussion",
+        demande: "Demande",
+        produit: "Produit"
+    };
+
+    alert(
+        "Création d'une publication : " +
+        (labels[type] || "Publication") +
+        "\\n\\nLe système de publication sera connecté ensuite."
+    );
+}
+
+</script>
 
 </body>
 </html>`);
