@@ -1,0 +1,146 @@
+/* ==========================================================================
+   SAMII OS — Module Sidebar EGS (Fichier Séparé)
+   ========================================================================== */
+
+.og-sidebar {
+    width: 320px; 
+    height: 100vh; 
+    position: fixed; 
+    top: 0; 
+    left: -350px; 
+    background: var(--bg-panel, rgba(12, 12, 18, 0.92));
+    border-right: 1px solid rgba(255,255,255,0.08); 
+    backdrop-filter: blur(25px); 
+    display: flex; 
+    flex-direction: column; 
+    z-index: 300;
+    padding: 24px; 
+    box-sizing: border-box; 
+    justify-content: space-between;
+    transition: left 0.4s var(--ease-premium, cubic-bezier(0.16, 1, 0.3, 1));
+    box-shadow: 10px 0 40px rgba(0,0,0,0.8);
+}
+
+.og-sidebar.open { 
+    left: 0; 
+}
+
+.og-sidebar-header {
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    margin-bottom: 20px; 
+    border-bottom: 1px solid rgba(255,255,255,0.08); 
+    padding-bottom: 15px;
+}
+
+.og-sidebar-brand { 
+    font-family: var(--font-display, serif); 
+    font-size: 1.1rem; 
+    font-weight: 700; 
+    color: #fff; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    text-shadow: var(--gold-glow, 0 0 35px rgba(212, 175, 55, 0.28)); 
+}
+
+.og-sidebar-brand span { 
+    color: var(--gold-og, #d4af37); 
+}
+
+.og-sidebar .close-btn {
+    background: transparent; 
+    border: none; 
+    color: var(--text-muted, #9494a0); 
+    font-size: 1.5rem; 
+    cursor: pointer; 
+    transition: color 0.2s;
+}
+
+.og-sidebar .close-btn:hover { 
+    color: var(--cyan-tech, #00f0ff); 
+}
+
+.og-sidebar-menu { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 6px; 
+    flex: 1; 
+    overflow-y: auto; 
+    padding-right: 4px; 
+}
+
+.og-sidebar .sidebar-section-label {
+    font-family: var(--font-mono, monospace); 
+    font-size: 0.75rem; 
+    color: var(--gold-og, #d4af37); 
+    text-transform: uppercase; 
+    letter-spacing: 1px;
+    margin: 12px 0 6px 12px;
+}
+
+.og-sidebar-link {
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding: 10px 14px; 
+    border-radius: 10px;
+    color: var(--text-muted, #9494a0); 
+    text-decoration: none; 
+    font-size: 0.88rem; 
+    font-weight: 500;
+    transition: all 0.3s var(--ease-premium); 
+    border: 1px solid transparent;
+}
+
+.og-sidebar-link-content { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+}
+
+.og-sidebar-link span.arrow { 
+    font-size: 0.8rem; 
+    color: var(--text-muted, #9494a0); 
+}
+
+.og-sidebar-link:hover, .og-sidebar-link.active {
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.12), rgba(0, 240, 255, 0.08)); 
+    border-color: rgba(212, 175, 55, 0.3); 
+    color: #fff; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.og-sidebar-link:hover span.arrow, .og-sidebar-link.active span.arrow { 
+    color: var(--cyan-tech, #00f0ff); 
+}
+
+.og-sidebar .badge-gold {
+    background: rgba(212, 175, 55, 0.15); 
+    color: var(--gold-og, #d4af37); 
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    font-size: 0.7rem; 
+    padding: 2px 6px; 
+    border-radius: 4px; 
+    font-family: var(--font-mono, monospace);
+}
+
+.og-sidebar-overlay {
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: rgba(3, 3, 7, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 250;
+    opacity: 0; 
+    visibility: hidden;
+    transition: all 0.3s var(--ease-premium);
+}
+
+.og-sidebar-overlay.active { 
+    opacity: 1; 
+    visibility: visible; 
+}
