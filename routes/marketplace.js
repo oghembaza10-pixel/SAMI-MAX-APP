@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — MARKETPLACE OG — Version Ultime (Flux Dynamique & Agents IA)
+// SAMII OS — MARKETPLACE OG — Version Structurée Façon Amazon & International
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
@@ -10,29 +10,49 @@ function requireAuth(req, res, next) {
     next();
 }
 
-const CATEGORIES = [
-    { id: "tous",            icon: "layout-grid",    label: "Toutes nos catégories" },
-    { id: "electronique",    icon: "smartphone",     label: "Électronique & High-Tech" },
-    { id: "mode",            icon: "shirt",          label: "Mode & Vêtements" },
-    { id: "beaute",          icon: "sparkles",       label: "Beauté & Parfums" },
-    { id: "maison",          icon: "home",           label: "Cuisine & Maison" },
-    { id: "electromenager",  icon: "washing-machine",label: "Électroménager" },
-    { id: "sport",           icon: "dumbbell",       label: "Sports & Loisirs" },
-    { id: "vehicules",       icon: "car",            label: "Auto et Moto / Véhicules" },
-    { id: "immobilier",      icon: "building-2",     label: "Immobilier" },
-    { id: "bureau",          icon: "briefcase",      label: "Fournitures de bureau" },
-    { id: "livres",          icon: "book-open",      label: "Livres & E-books" },
-    { id: "services",        icon: "concierge-bell", label: "Services & Prestations" },
-    { id: "autre",           icon: "package",        label: "Autre" }
+// Liste complète et structurée des catégories façon Amazon
+const CATEGORIES_AMAZON = [
+    { id: "tous",            label: "Toutes nos catégories" },
+    { id: "alexa",           label: "Alexa Skills" },
+    { id: "global",          label: "Amazon Global Store" },
+    { id: "haul",            label: "Amazon Haul" },
+    { id: "seconde_main",    label: "Amazon Seconde main" },
+    { id: "animalerie",      label: "Animalerie" },
+    { id: "appareils",       label: "Appareils Amazon" },
+    { id: "applis",          label: "Applis & Jeux" },
+    { id: "auto",            label: "Auto et Moto" },
+    { id: "bagages",         label: "Bagages et accessoires de voyage" },
+    { id: "beaute",          label: "Beauté et Parfum" },
+    { id: "beaute_premium",  label: "Beauté Premium" },
+    { id: "cheques",         label: "Boutique chèques-cadeaux" },
+    { id: "kindle",          label: "Boutique Kindle" },
+    { id: "bricolage",       label: "Bricolage" },
+    { id: "bebe",            label: "Bébés & Puériculture" },
+    { id: "cuisine",         label: "Cuisine & Maison" },
+    { id: "dvd",             label: "DVD & Blu-ray" },
+    { id: "epicerie",        label: "Épicerie" },
+    { id: "bureau",          label: "Fournitures de bureau" },
+    { id: "electronique",    label: "High-Tech & Électronique" },
+    { id: "jardin",          label: "Jardin & Plein air" },
+    { id: "jeux",            label: "Jeux et Jouets" },
+    { id: "livres",          label: "Livres" },
+    { id: "luxe",            label: "Luxe & Joaillerie" },
+    { id: "mode",            label: "Mode & Vêtements" },
+    { id: "musique",         label: "Musique, Instruments & Vinyles" },
+    { id: "sante",           label: "Santé et Soins du corps" },
+    { id: "services",        label: "Services & Prestations" },
+    { id: "sport",           label: "Sports et Loisirs" },
+    { id: "logiciels",       label: "Logiciels" },
+    { id: "autre",           label: "Autre" }
 ];
 
-// 🤖 ANNONCES TEST FICTIVES (Marchands & Agents IA Autonomes)
+// Exemples virtuels centrés sur l'Europe et l'International (Londres, Paris, New York, Genève) avec devises EUR/USD/GBP
 const ANNONCES_VIRTUELLES = [
     {
         id: "v_1",
         fields: {
             titre: "💎 Rolex Submariner Date — Édition Collector Or & Noir",
-            categorie: "mode",
+            categorie: "luxe",
             prix: "12 500 €",
             pays: "Suisse",
             ville: "Genève",
@@ -48,9 +68,9 @@ const ANNONCES_VIRTUELLES = [
         fields: {
             titre: "⚡ MacBook Pro M3 Max — 64Go RAM / 2To SSD (Pack Studio)",
             categorie: "electronique",
-            prix: "3 490 €",
-            pays: "France",
-            ville: "Paris",
+            prix: "3 490 $",
+            pays: "États-Unis",
+            ville: "New York",
             photo_url: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
             vendeur_id: "ai_agent_vaulta",
             vendeur_nom: "🤖 Vaulta Automation (Bot)",
@@ -63,9 +83,9 @@ const ANNONCES_VIRTUELLES = [
         fields: {
             titre: "🚀 Workflow n8n & Make — Automatisation e-commerce clés en main",
             categorie: "services",
-            prix: "850 €",
-            pays: "Algérie",
-            ville: "Oran",
+            prix: "950 £",
+            pays: "Royaume-Uni",
+            ville: "Londres",
             photo_url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
             vendeur_id: "marchand_verified_1",
             vendeur_nom: "Boutique Partenaire Vérifiée",
@@ -77,10 +97,10 @@ const ANNONCES_VIRTUELLES = [
         id: "v_4",
         fields: {
             titre: "🌿 Coffret Parfum Privé & Essence d'Oud Souverain",
-            categorie: "beaute",
-            prix: "220 €",
-            pays: "Émirats Arabes Unis",
-            ville: "Dubaï",
+            categorie: "beaute_premium",
+            prix: "280 €",
+            pays: "France",
+            ville: "Paris",
             photo_url: "https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=800&q=80",
             vendeur_id: "ai_agent_samii",
             vendeur_nom: "🤖 Samii Core (Agent IA)",
@@ -93,7 +113,7 @@ const ANNONCES_VIRTUELLES = [
 const SHARED_STYLES = `
     :root {
         --bg-deep: #030307; 
-        --bg-panel: rgba(12, 12, 18, 0.88); 
+        --bg-panel: rgba(12, 12, 18, 0.92); 
         --gold-og: #d4af37; 
         --gold-hover: #f3e5ab; 
         --gold-glow: 0 0 35px rgba(212, 175, 55, 0.28);
@@ -119,7 +139,7 @@ const SHARED_STYLES = `
     }
     
     .og-sidebar {
-        width: 280px; height: 100vh; position: fixed; top: 0; left: 0; background: rgba(5, 5, 10, 0.92);
+        width: 280px; height: 100vh; position: fixed; top: 0; left: 0; background: rgba(5, 5, 10, 0.95);
         border-right: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(25px); display: flex; flex-direction: column; z-index: 200;
         padding: 24px; box-sizing: border-box; justify-content: space-between;
     }
@@ -156,7 +176,7 @@ const SHARED_STYLES = `
     }
 `;
 
-// --- 1. ACCUEIL MARKETPLACE (Mix Airtable + Test IA) ---
+// --- 1. ROUTE ACCUEIL MARKETPLACE ---
 router.get("/", requireAuth, async (req, res) => {
     const { categorie, recherche, pays, ville } = req.query;
 
@@ -183,21 +203,20 @@ router.get("/", requireAuth, async (req, res) => {
         toutesAnnonces = toutesAnnonces.filter(a => a.fields.titre.toLowerCase().includes(query));
     }
 
-    const catInfo = (id) => CATEGORIES.find(c => c.id === id) || { icon: "package", label: id };
+    const catInfo = (id) => CATEGORIES_AMAZON.find(c => c.id === id) || { label: id };
 
     const cardsHtml = toutesAnnonces.map((a, index) => {
         const f = a.fields;
         const cat = catInfo(f.categorie);
         const mainPhoto = f.photo_url || '';
         const isAiAgent = f.type_vendeur === 'ia_marchand';
-        
         const accentClass = isAiAgent ? 'purple-border' : (index % 2 === 0 ? 'cyan-border' : 'gold-border');
 
         return `
         <a href="/vitrine/${f.vendeur_id || 'marchand_verified_1'}" class="og-card ${accentClass}">
             <div class="og-card__media">
                 ${isAiAgent ? '<div class="og-ai-badge"><i data-lucide="bot"></i> Marchand IA</div>' : ''}
-                <span class="og-card__badge"><i data-lucide="${cat.icon}"></i> ${cat.label}</span>
+                <span class="og-card__badge"><i data-lucide="tag"></i> ${cat.label}</span>
                 ${mainPhoto ? `<img src="${mainPhoto}" alt="${f.titre}" loading="lazy">` : '<div class="og-card__placeholder"><i data-lucide="zap" style="width:36px;height:36px;color:var(--cyan-tech);"></i></div>'}
                 <div class="og-card__price-tag">${f.prix || 'Sur devis'}</div>
             </div>
@@ -211,7 +230,7 @@ router.get("/", requireAuth, async (req, res) => {
         </a>`;
     }).join("");
 
-    const categoryOptionsHtml = CATEGORIES.map(c => 
+    const categoryOptionsHtml = CATEGORIES_AMAZON.map(c => 
         `<option value="${c.id}" ${categorie === c.id ? 'selected' : ''}>${c.label}</option>`
     ).join("");
 
@@ -225,52 +244,52 @@ router.get("/", requireAuth, async (req, res) => {
         ${SHARED_STYLES}
         
         .og-header { 
-            position: sticky; top: 0; z-index: 100; background: rgba(3, 3, 7, 0.90); 
+            position: sticky; top: 0; z-index: 100; background: rgba(3, 3, 7, 0.95); 
             backdrop-filter: blur(25px); border-bottom: 1px solid rgba(212, 175, 55, 0.2); 
-            padding: 22px 36px; display: flex; flex-direction: column; gap: 18px; 
+            padding: 18px 36px; display: flex; flex-direction: column; gap: 14px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .og-header__top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         
         .og-brand-title { 
-            font-family: var(--font-display); color: #fff; font-size: 1.6rem; font-weight: 800; 
-            display: flex; align-items: center; gap: 14px; margin: 0; 
+            font-family: var(--font-display); color: #fff; font-size: 1.5rem; font-weight: 800; 
+            display: flex; align-items: center; gap: 12px; margin: 0; 
             background: linear-gradient(135deg, #fff 30%, var(--gold-og) 70%, var(--cyan-tech) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 40px rgba(212,175,55,0.3);
         }
-        .og-brand-title i { color: var(--gold-og); width: 28px; height: 28px; filter: drop-shadow(0 0 10px var(--gold-og)); }
+        .og-brand-title i { color: var(--gold-og); width: 26px; height: 26px; filter: drop-shadow(0 0 10px var(--gold-og)); }
         
         .og-publish-cta { 
-            display: inline-flex; align-items: center; gap: 10px; padding: 12px 24px; border-radius: 14px; text-decoration: none; 
-            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307; font-weight: 800; font-size: 0.9rem; 
+            display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 12px; text-decoration: none; 
+            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307; font-weight: 800; font-size: 0.88rem; 
             font-family: var(--font-display); box-shadow: 0 8px 30px rgba(212,175,55,0.4); transition: all 0.3s var(--ease-premium); border: 1px solid #fff;
         }
         .og-publish-cta:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 40px rgba(0,240,255,0.4); }
         
+        /* Barre de recherche style Amazon exacte */
         .og-amazon-search { 
             width: 100%; display: flex; background: var(--bg-panel); 
-            border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 16px; overflow: hidden; backdrop-filter: blur(20px); 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 0 15px rgba(0,240,255,0.05);
+            border: 2px solid var(--gold-og); border-radius: 12px; overflow: hidden; backdrop-filter: blur(20px); 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), var(--gold-glow);
         }
-        .og-category-select-wrapper { background: rgba(15, 15, 25, 0.95); border-right: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; padding: 0 16px; }
-        .og-category-select-wrapper select { background: transparent; border: none; color: #fff; font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; outline: none; cursor: pointer; padding: 14px 0; }
+        .og-category-select-wrapper { background: rgba(25, 25, 35, 0.98); border-right: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; padding: 0 14px; position: relative; }
+        .og-category-select-wrapper select { background: transparent; border: none; color: #fff; font-family: var(--font-body); font-size: 0.88rem; font-weight: 600; outline: none; cursor: pointer; padding: 12px 8px; appearance: auto; }
         .og-category-select-wrapper select option { background: #0a0a10; color: #fff; }
         
-        .og-search-input-box { flex: 2; display: flex; align-items: center; gap: 12px; padding: 0 18px; background: rgba(0,0,0,0.25); }
-        .og-search-input-box input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.95rem; font-family: var(--font-body); padding: 14px 0; outline: none; }
+        .og-search-input-box { flex: 2; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: rgba(0,0,0,0.2); }
+        .og-search-input-box input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.95rem; font-family: var(--font-body); padding: 12px 0; outline: none; }
         
-        .og-location-box { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-left: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.15); }
-        .og-location-box input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.9rem; font-family: var(--font-body); outline: none; }
+        .og-location-box { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-left: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.1); }
+        .og-location-box input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.88rem; font-family: var(--font-body); outline: none; }
         
         .og-search-submit { 
-            background: linear-gradient(135deg, var(--cyan-tech), #0088ff); color: #000; border: none; padding: 0 32px; font-weight: 800; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center; font-family: var(--font-display); transition: filter 0.2s;
+            background: linear-gradient(135deg, var(--gold-og), #b89728); color: #030307; border: none; padding: 0 28px; font-weight: 800; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; font-family: var(--font-display); transition: filter 0.2s; font-size: 0.95rem;
         }
-        .og-search-submit:hover { filter: brightness(1.2); }
+        .og-search-submit:hover { filter: brightness(1.15); }
 
         .og-main-container { padding: 36px; flex: 1; }
-        
         .og-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 28px; margin-top: 24px; }
         
         .og-card { 
@@ -303,7 +322,7 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .og-card__price-tag { 
             position: absolute; bottom: 12px; right: 12px; z-index: 3; 
-            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #000; 
+            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307; 
             font-family: var(--font-mono); font-weight: 800; font-size: 1rem; padding: 6px 14px; border-radius: 12px; 
             box-shadow: 0 4px 15px rgba(212,175,55,0.4);
         }
@@ -313,7 +332,7 @@ router.get("/", requireAuth, async (req, res) => {
         .og-card__meta-grid { display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; color: var(--text-muted); margin-top: auto; }
         .og-card__meta-grid span { display: flex; align-items: center; gap: 8px; }
         
-        .og-empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 90px 20px; text-align: center; color: var(--text-muted); background: var(--bg-panel); border-radius: 24px; border: 1px dashed rgba(0,240,255,0.3); }
+        .og-empty-state { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 90px 20px; text-align: center; color: var(--text-muted); background: var(--bg-panel); border-radius: 24px; border: 1px dashed rgba(212,175,55,0.3); }
     </style>
 </head>
 <body>
@@ -331,7 +350,7 @@ router.get("/", requireAuth, async (req, res) => {
         
         <div class="og-samii-sphere">
             <div class="og-samii-title"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> Sphère Samii</div>
-            <div class="og-samii-text">Marketplace hybride active. Agents IA & Marchands synchronisés en temps réel.</div>
+            <div class="og-samii-text">Marketplace internationale active (EUR, USD, GBP). Synchronisée en temps réel.</div>
         </div>
     </aside>
 
@@ -342,7 +361,7 @@ router.get("/", requireAuth, async (req, res) => {
 
         <header class="og-header">
             <div class="og-header__top">
-                <h1 class="og-brand-title"><i data-lucide="store"></i> MARKETPLACE OG</h1>
+                <h1 class="og-brand-title"><i data-lucide="store"></i> MARKETPLACE OG INTERNATIONAL</h1>
                 <a href="/marketplace/publier" class="og-publish-cta"><i data-lucide="plus-circle"></i> Publier une annonce</a>
             </div>
             
@@ -353,28 +372,28 @@ router.get("/", requireAuth, async (req, res) => {
                     </select>
                 </div>
                 <div class="og-search-input-box">
-                    <i data-lucide="search" style="color:var(--cyan-tech); width:20px; height:20px; flex-shrink:0;"></i>
-                    <input type="text" name="recherche" placeholder="Rechercher un produit ou agent IA..." value="${recherche || ''}">
+                    <i data-lucide="search" style="color:var(--gold-og); width:20px; height:20px; flex-shrink:0;"></i>
+                    <input type="text" name="recherche" placeholder="Rechercher sur Marketplace OG (ex: Rolex, MacBook, Workflow...)" value="${recherche || ''}">
                 </div>
                 <div class="og-location-box">
-                    <i data-lucide="globe" style="color:var(--gold-og); width:18px; height:18px; flex-shrink:0;"></i>
-                    <input type="text" name="pays" placeholder="Pays / Ville" value="${pays || ville || ''}">
+                    <i data-lucide="globe" style="color:var(--cyan-tech); width:18px; height:18px; flex-shrink:0;"></i>
+                    <input type="text" name="pays" placeholder="Ex: London, Paris, New York..." value="${pays || ville || ''}">
                 </div>
                 <button type="submit" class="og-search-submit"><i data-lucide="search"></i> Explorer</button>
             </form>
         </header>
 
         <main class="og-main-container">
-            <div style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--cyan-tech); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-                <span style="width: 8px; height: 8px; background: var(--cyan-tech); border-radius: 50%; box-shadow: var(--cyan-glow); display: inline-block;"></span>
-                ${toutesAnnonces.length} annonce${toutesAnnonces.length !== 1 ? 's' : ''} disponible${toutesAnnonces.length !== 1 ? 's' : ''} (dont agents IA marchands)
+            <div style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--gold-og); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                <span style="width: 8px; height: 8px; background: var(--gold-og); border-radius: 50%; box-shadow: var(--gold-glow); display: inline-block;"></span>
+                ${toutesAnnonces.length} annonce${toutesAnnonces.length !== 1 ? 's' : ''} disponible${toutesAnnonces.length !== 1 ? 's' : ''} (Marchands EU, UK & US)
             </div>
             <div class="og-grid">
                 ${toutesAnnonces.length ? cardsHtml : `
                     <div class="og-empty-state">
                         <i data-lucide="shopping-bag" style="width:56px;height:56px;color:var(--gold-og);margin-bottom:16px;"></i>
                         <div style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 8px;">Aucune annonce active</div>
-                        <div style="font-size: 0.85rem;">Publiez un article pour alimenter la marketplace.</div>
+                        <div style="font-size: 0.85rem;">Publiez un article pour alimenter le catalogue international.</div>
                     </div>
                 `}
             </div>
@@ -387,9 +406,9 @@ router.get("/", requireAuth, async (req, res) => {
 </html>`);
 });
 
-// --- 2. PAGE DE PUBLICATION ---
+// --- 2. ROUTE FORMULAIRE DE PUBLICATION ---
 router.get("/publier", requireAuth, async (req, res) => {
-    const optionsCategories = CATEGORIES.filter(c => c.id !== 'tous').map(c => 
+    const optionsCategories = CATEGORIES_AMAZON.filter(c => c.id !== 'tous').map(c => 
         `<option value="${c.id}">${c.label}</option>`
     ).join("");
 
@@ -402,18 +421,18 @@ router.get("/publier", requireAuth, async (req, res) => {
     <style>
         ${SHARED_STYLES}
         body { padding: 40px 20px; justify-content: center; align-items: center; }
-        .og-form-container { width: 100%; max-width: 750px; margin: auto; background: var(--bg-panel); border: 1px solid rgba(0, 240, 255, 0.35); border-radius: 24px; padding: 45px; box-shadow: 0 25px 60px rgba(0,0,0,0.8), var(--cyan-glow); backdrop-filter: blur(25px); box-sizing: border-box; }
-        .og-form-title { font-family: var(--font-display); color: #fff; font-size: 1.8rem; margin-bottom: 24px; display: flex; align-items: center; gap: 14px; text-shadow: 0 0 20px rgba(0,240,255,0.4); }
-        .og-form-title i { color: var(--cyan-tech); }
+        .og-form-container { width: 100%; max-width: 750px; margin: auto; background: var(--bg-panel); border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 24px; padding: 45px; box-shadow: 0 25px 60px rgba(0,0,0,0.8), var(--gold-glow); backdrop-filter: blur(25px); box-sizing: border-box; }
+        .og-form-title { font-family: var(--font-display); color: #fff; font-size: 1.8rem; margin-bottom: 24px; display: flex; align-items: center; gap: 14px; text-shadow: 0 0 20px rgba(212,175,55,0.4); }
+        .og-form-title i { color: var(--gold-og); }
         .og-form-group { margin-bottom: 22px; display: flex; flex-direction: column; gap: 8px; }
         .og-form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); font-family: var(--font-mono); }
         .og-form-control { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 14px 16px; color: #fff; font-size: 0.95rem; font-family: var(--font-body); outline: none; transition: all 0.3s; }
-        .og-form-control:focus { border-color: var(--cyan-tech); box-shadow: var(--cyan-glow); background: rgba(0,240,255,0.03); }
+        .og-form-control:focus { border-color: var(--gold-og); box-shadow: var(--gold-glow); background: rgba(212,175,55,0.03); }
         select.og-form-control { cursor: pointer; }
         .og-submit-btn { width: 100%; background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #030307; border: none; border-radius: 14px; padding: 16px; font-weight: 800; font-size: 1.05rem; font-family: var(--font-display); cursor: pointer; margin-top: 15px; box-shadow: 0 10px 35px rgba(212,175,55,0.4); transition: all 0.3s; }
         .og-submit-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 45px rgba(0,240,255,0.5); }
         .og-back { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); text-decoration: none; font-size: 0.88rem; margin-bottom: 24px; transition: color 0.2s; }
-        .og-back:hover { color: var(--cyan-tech); }
+        .og-back:hover { color: var(--gold-og); }
     </style>
 </head>
 <body>
@@ -423,16 +442,16 @@ router.get("/publier", requireAuth, async (req, res) => {
 
     <div class="og-form-container">
         <a href="/marketplace" class="og-back"><i data-lucide="arrow-left"></i> Retour à la Marketplace</a>
-        <h1 class="og-form-title"><i data-lucide="plus-circle"></i> Publier une annonce</h1>
+        <h1 class="og-form-title"><i data-lucide="plus-circle"></i> Publier une annonce internationale</h1>
         
         <form action="/marketplace/publier" method="POST">
             <div class="og-form-group">
                 <label>Titre de l'annonce</label>
-                <input type="text" name="titre" class="og-form-control" required placeholder="Ex: Montre de Luxe / Service Exclusif">
+                <input type="text" name="titre" class="og-form-control" required placeholder="Ex: Rolex Submariner / MacBook Pro">
             </div>
             
             <div class="og-form-group">
-                <label>Catégorie</label>
+                <label>Catégorie (Façon Amazon)</label>
                 <select name="categorie" class="og-form-control" required>
                     <option value="">Sélectionner une catégorie...</option>
                     ${optionsCategories}
@@ -440,18 +459,18 @@ router.get("/publier", requireAuth, async (req, res) => {
             </div>
 
             <div class="og-form-group">
-                <label>Prix</label>
-                <input type="text" name="prix" class="og-form-control" required placeholder="Ex: 250 €">
+                <label>Prix (Devise au choix: €, $, £...)</label>
+                <input type="text" name="prix" class="og-form-control" required placeholder="Ex: 12 500 € ou 3 490 $ ou 950 £">
             </div>
 
             <div class="og-form-group">
                 <label>Pays / Zone</label>
-                <input type="text" name="pays" class="og-form-control" required placeholder="Ex: France, Algérie, International...">
+                <input type="text" name="pays" class="og-form-control" required placeholder="Ex: Royaume-Uni, France, Suisse, États-Unis...">
             </div>
 
             <div class="og-form-group">
                 <label>Ville</label>
-                <input type="text" name="ville" class="og-form-control" placeholder="Ex: Paris, Oran...">
+                <input type="text" name="ville" class="og-form-control" placeholder="Ex: Londres, Paris, Genève, New York...">
             </div>
 
             <div class="og-form-group">
@@ -468,12 +487,11 @@ router.get("/publier", requireAuth, async (req, res) => {
 </html>`);
 });
 
-// --- 3. TRAITEMENT POST PUBLICATION (Sécurisé Anonyme / Pro) ---
+// --- 3. TRAITEMENT POST PUBLICATION ---
 router.post("/publier", requireAuth, async (req, res) => {
     try {
         const { titre, categorie, prix, pays, ville, photo_url } = req.body;
 
-        // Enregistrement sécurisé dans Airtable sans fuite de tes identifiants perso
         await airtable.create("ANNONCES", {
             titre,
             categorie,
