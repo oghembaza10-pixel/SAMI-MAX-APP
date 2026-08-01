@@ -127,7 +127,62 @@ const SHARED_STYLES = `
         --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
     }
     
-    body { 
+    body { <!-- Overlay de la Sidebar -->
+<div class="og-sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Structure de la Sidebar Sourcing & EGS -->
+<div class="og-sidebar" id="ogSidebar">
+    <div>
+        <div class="og-sidebar-header">
+            <div class="og-sidebar-brand"><span>⚡</span> EGS Market Sidebar</div>
+            <button class="close-btn" onclick="toggleSidebar()">&times;</button>
+        </div>
+
+        <div class="og-sidebar-menu">
+            
+            <!-- HUB FOURNISSEURS MONDIAUX -->
+            <div class="sidebar-section-label">🌐 Hub Fournisseurs Sourcing</div>
+            <a href="#" class="og-sidebar-link">
+                <div class="og-sidebar-link-content">🇨🇳 <span>Fournisseur Chinois</span></div>
+                <span class="arrow">▸</span>
+            </a>
+            <a href="#" class="og-sidebar-link">
+                <div class="og-sidebar-link-content">🇪🇺 <span>Fournisseur Européen</span></div>
+                <span class="arrow">▸</span>
+            </a>
+            <a href="#" class="og-sidebar-link">
+                <div class="og-sidebar-link-content">🇹🇷 <span>Fournisseur Turc</span></div>
+                <span class="arrow">▸</span>
+            </a>
+
+            <!-- TENDANCES & CATALOGUE -->
+            <div class="sidebar-section-label">Tendances & Catalogue</div>
+            <a href="#" class="og-sidebar-link">
+                <div class="og-sidebar-link-content">🔥 <span>Meilleures ventes</span></div>
+                <span class="arrow">▸</span>
+            </a>
+            <a href="#" class="og-sidebar-link">
+                <div class="og-sidebar-link-content">✨ <span>Dernières Nouveautés</span></div>
+                <span class="arrow">▸</span>
+            </a>
+            <a href="#" class="og-sidebar-link">
+                <div class="og-sidebar-link-content">💎 <span>Montres & Joaillerie</span></div>
+                <span class="badge-gold">Luxe</span>
+            </a>
+
+            <!-- WORKFLOWS & SYSTEM -->
+            <div class="sidebar-section-label">Automations & Workflows</div>
+            <a href="#" class="og-sidebar-link">
+                <div class="og-sidebar-link-content">⚙️ <span>Modules n8n & Mère Table</span></div>
+                <span class="arrow">▸</span>
+            </a>
+            <a href="#" class="og-sidebar-link">
+                <div class="og-sidebar-link-content">🤖 <span>Agent SAMII Core</span></div>
+                <span class="arrow">▸</span>
+            </a>
+        </div>
+    </div>
+</div>
         background-color: var(--bg-deep); color: var(--text-main); font-family: var(--font-body); 
         margin: 0; padding: 0; overflow-x: hidden; display: flex; 
         background-image: 
