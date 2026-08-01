@@ -4,43 +4,33 @@ const router = express.Router();
 
 router.get("/", (req, res) => {
 
+    const nom = req.session?.nom || "Membre SAMII";
+
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-    <title>Community — SAMII</title>
+<title>Community — SAMII</title>
 
-   :root {
-    --bg: #07080b;
-    --bg-soft: #0b0d11;
-    --panel: rgba(17, 19, 24, .82);
-    --panel-solid: #111318;
-    --panel-hover: #171a21;
+<style>
 
-    --border: rgba(255,255,255,.07);
-    --border-hover: rgba(197,160,89,.30);
+:root {
+    --bg: #070707;
+    --card: #101010;
+    --card2: #151515;
+    --line: #242424;
 
-    --text: #f5f5f7;
-    --text-soft: #a5a8b0;
-    --text-muted: #6d7078;
+    --text: #f5f5f5;
+    --muted: #8b8b8b;
 
     --gold: #c5a059;
-    --gold-light: #e2c47d;
+    --gold2: #e0bd72;
 
-    --purple: #795cff;
-    --purple-soft: rgba(121,92,255,.14);
+    --purple: #7357ff;
 
-    --radius-lg: 20px;
-    --radius-md: 14px;
-    --radius-sm: 10px;
-
-    --shadow:
-        0 20px 60px rgba(0,0,0,.35);
-
-    --transition:
-        180ms cubic-bezier(.2,.8,.2,1);
+    --radius: 18px;
 }
 
 * {
@@ -50,7 +40,7 @@ router.get("/", (req, res) => {
 }
 
 html {
-    scroll-behavior: smooth;
+    background: var(--bg);
 }
 
 body {
@@ -58,14 +48,9 @@ body {
 
     background:
         radial-gradient(
-            circle at 15% -10%,
-            rgba(121,92,255,.10),
-            transparent 32%
-        ),
-        radial-gradient(
-            circle at 85% 0%,
-            rgba(197,160,89,.07),
-            transparent 28%
+            circle at 50% -15%,
+            rgba(115,87,255,.13),
+            transparent 35%
         ),
         var(--bg);
 
@@ -73,150 +58,302 @@ body {
 
     font-family:
         Inter,
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
+        Arial,
+        Helvetica,
         sans-serif;
 
     -webkit-font-smoothing: antialiased;
+
+    padding-bottom: 75px;
 }
 
 button,
 input,
 textarea {
-    font: inherit;
+    font-family: inherit;
 }
 
 button {
     cursor: pointer;
 }
 
-button,
-input {
-    outline: none;
-}
-
 /* =========================================================
-   TOP BAR
+   TOP MOBILE
 ========================================================= */
 
 .topbar {
+
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 100;
 
-    height: 68px;
+    height: 62px;
 
     display: flex;
     align-items: center;
+    justify-content: space-between;
 
-    padding: 0 30px;
+    padding: 0 15px;
 
-    background: rgba(7,8,11,.78);
+    background: rgba(7,7,7,.92);
 
-    border-bottom:
-        1px solid rgba(255,255,255,.055);
+    border-bottom: 1px solid rgba(255,255,255,.06);
 
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(18px);
 }
 
-.brand {
+.logo {
     display: flex;
     align-items: center;
-    gap: 11px;
+    gap: 9px;
 
-    min-width: 210px;
-
-    font-size: .92rem;
     font-weight: 800;
-    letter-spacing: .07em;
+    font-size: .92rem;
+    letter-spacing: .04em;
 }
 
-.brand-mark {
-    width: 39px;
-    height: 39px;
+.logo-icon {
+
+    width: 34px;
+    height: 34px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 12px;
+    border-radius: 11px;
 
     background:
         linear-gradient(
             145deg,
-            #876cff,
-            #5439d4
+            #836cff,
+            #5138d0
         );
 
     box-shadow:
-        0 8px 25px rgba(121,92,255,.25);
-
-    font-size: 17px;
+        0 5px 20px rgba(115,87,255,.25);
 }
 
-.brand span {
-    color: var(--gold-light);
+.logo span {
+    color: var(--gold);
 }
 
-/* SEARCH */
-
-.search {
-    flex: 1;
-    max-width: 470px;
-
-    margin: 0 auto;
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
 }
 
-.search input {
-    width: 100%;
-    height: 42px;
+.header-btn {
 
-    padding: 0 18px 0 42px;
-
-    border:
-        1px solid rgba(255,255,255,.07);
-
-    border-radius: 13px;
-
-    background:
-        rgba(255,255,255,.035);
-
-    color: var(--text);
-
-    transition: var(--transition);
-}
-
-.search input::placeholder {
-    color: #62656d;
-}
-
-.search input:focus {
-    background: rgba(255,255,255,.055);
-
-    border-color:
-        rgba(197,160,89,.45);
-
-    box-shadow:
-        0 0 0 4px rgba(197,160,89,.06);
-}
-
-/* ACTIONS */
-
-.top-actions {
-    min-width: 210px;
+    width: 36px;
+    height: 36px;
 
     display: flex;
-    justify-content: flex-end;
     align-items: center;
+    justify-content: center;
 
-    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+
+    background: #111;
+    color: #ddd;
+
+    font-size: 16px;
 }
 
-.top-btn {
+/* =========================================================
+   MOBILE NAVIGATION
+========================================================= */
+
+.mobile-nav {
+
+    position: sticky;
+    top: 62px;
+    z-index: 90;
+
+    display: flex;
+
+    overflow-x: auto;
+
+    gap: 6px;
+
+    padding: 9px 13px;
+
+    background: rgba(7,7,7,.94);
+
+    border-bottom: 1px solid rgba(255,255,255,.045);
+
+    scrollbar-width: none;
+}
+
+.mobile-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.mobile-nav button {
+
+    flex-shrink: 0;
+
+    padding: 8px 13px;
+
+    border: 1px solid #242424;
+    border-radius: 100px;
+
+    background: #101010;
+
+    color: #858585;
+
+    font-size: .74rem;
+}
+
+.mobile-nav button.active {
+
+    background:
+        rgba(197,160,89,.10);
+
+    border-color:
+        rgba(197,160,89,.35);
+
+    color:
+        var(--gold2);
+}
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.community {
+
+    width: 100%;
+
+    max-width: 720px;
+
+    margin: 0 auto;
+
+    padding: 13px 12px 30px;
+}
+
+/* =========================================================
+   WELCOME
+========================================================= */
+
+.welcome {
+
+    position: relative;
+
+    overflow: hidden;
+
+    padding: 20px;
+
+    margin-bottom: 12px;
+
+    border:
+        1px solid var(--line);
+
+    border-radius: var(--radius);
+
+    background:
+        linear-gradient(
+            145deg,
+            #141414,
+            #0e0e0e
+        );
+}
+
+.welcome::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 140px;
+    height: 140px;
+
+    right: -65px;
+    top: -65px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(115,87,255,.13);
+
+    filter: blur(15px);
+}
+
+.welcome-label {
+
+    position: relative;
+    z-index: 1;
+
+    color: var(--gold);
+
+    font-size: .68rem;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: .12em;
+
+    margin-bottom: 7px;
+}
+
+.welcome h1 {
+
+    position: relative;
+    z-index: 1;
+
+    font-size: 1.28rem;
+
+    line-height: 1.25;
+
+    margin-bottom: 7px;
+}
+
+.welcome p {
+
+    position: relative;
+    z-index: 1;
+
+    color: var(--muted);
+
+    font-size: .82rem;
+
+    line-height: 1.55;
+}
+
+/* =========================================================
+   CREATE POST
+========================================================= */
+
+.create {
+
+    padding: 14px;
+
+    border:
+        1px solid var(--line);
+
+    border-radius: var(--radius);
+
+    background: var(--card);
+
+    margin-bottom: 12px;
+}
+
+.create-head {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.user-avatar {
+
+    flex-shrink: 0;
+
     width: 40px;
     height: 40px;
 
@@ -224,418 +361,113 @@ input {
     align-items: center;
     justify-content: center;
 
-    border:
-        1px solid rgba(255,255,255,.065);
-
-    border-radius: 12px;
-
-    background:
-        rgba(255,255,255,.035);
-
-    color: #d6d7dc;
-
-    transition: var(--transition);
-}
-
-.top-btn:hover {
-    transform: translateY(-1px);
-
-    background:
-        rgba(255,255,255,.075);
-
-    border-color:
-        rgba(197,160,89,.30);
-
-    color: white;
-}
-
-/* =========================================================
-   MAIN LAYOUT
-========================================================= */
-
-.community {
-    width: 100%;
-    max-width: 1480px;
-
-    margin: auto;
-
-    display: grid;
-
-    grid-template-columns:
-        230px
-        minmax(450px, 680px)
-        290px;
-
-    gap: 25px;
-
-    padding:
-        28px 24px 70px;
-}
-
-/* =========================================================
-   SIDEBAR
-========================================================= */
-
-.sidebar {
-    position: sticky;
-    top: 92px;
-
-    height: fit-content;
-}
-
-.profile-mini,
-.nav,
-.panel,
-.create-post,
-.post,
-.welcome {
-    border:
-        1px solid var(--border);
+    border-radius: 13px;
 
     background:
         linear-gradient(
             145deg,
-            rgba(20,22,28,.88),
-            rgba(12,14,18,.88)
+            #765cff,
+            #4d36c4
         );
 
-    box-shadow:
-        0 12px 40px rgba(0,0,0,.18);
-
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    font-size: 16px;
 }
 
-/* PROFILE */
+.create-button {
 
-.profile-mini {
-    padding: 19px;
+    flex: 1;
 
-    border-radius: var(--radius-lg);
+    min-height: 42px;
 
-    margin-bottom: 12px;
-}
+    padding: 0 15px;
 
-.avatar {
-    width: 46px;
-    height: 46px;
+    border:
+        1px solid #292929;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 13px;
 
-    border-radius: 14px;
+    background: #151515;
 
-    background:
-        linear-gradient(
-            145deg,
-            #8268ff,
-            #4c35c4
-        );
+    color: #777;
 
-    box-shadow:
-        0 8px 25px rgba(121,92,255,.20);
-
-    font-size: 18px;
-}
-
-.profile-name {
-    margin-top: 13px;
-
-    font-size: .91rem;
-    font-weight: 700;
-}
-
-.profile-role {
-    margin-top: 5px;
-
-    color: var(--text-muted);
+    text-align: left;
 
     font-size: .78rem;
 }
 
-/* NAV */
+.create-button:active {
 
-.nav {
-    padding: 7px;
+    background: #1b1b1b;
 
-    border-radius: var(--radius-lg);
+    border-color: #3b3b3b;
 }
 
-.nav-item {
-    position: relative;
+.create-options {
 
-    width: 100%;
-
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    padding: 12px 13px;
-
-    border: 0;
-    border-radius: 11px;
-
-    background: transparent;
-
-    color: #92959e;
-
-    text-align: left;
-
-    font-size: .86rem;
-
-    transition: var(--transition);
-}
-
-.nav-item:hover {
-    background:
-        rgba(255,255,255,.045);
-
-    color: white;
-
-    transform: translateX(2px);
-}
-
-.nav-item.active {
-    background:
-        linear-gradient(
-            90deg,
-            rgba(197,160,89,.11),
-            rgba(197,160,89,.025)
-        );
-
-    color: #f3dfb5;
-}
-
-.nav-item.active::before {
-    content: "";
-
-    position: absolute;
-    left: 0;
-    top: 9px;
-    bottom: 9px;
-
-    width: 2px;
-
-    border-radius: 4px;
-
-    background:
-        linear-gradient(
-            180deg,
-            var(--gold-light),
-            var(--gold)
-        );
-}
-
-/* =========================================================
-   MAIN
-========================================================= */
-
-.main {
-    min-width: 0;
-}
-
-/* WELCOME */
-
-.welcome {
-    position: relative;
-    overflow: hidden;
-
-    padding: 25px;
-
-    border-radius: var(--radius-lg);
-
-    margin-bottom: 14px;
-}
-
-.welcome::after {
-    content: "";
-
-    position: absolute;
-
-    width: 180px;
-    height: 180px;
-
-    right: -70px;
-    top: -90px;
-
-    border-radius: 50%;
-
-    background:
-        rgba(121,92,255,.10);
-
-    filter: blur(10px);
-}
-
-.welcome h1 {
-    position: relative;
-    z-index: 1;
-
-    font-size: 1.38rem;
-
-    letter-spacing: -.025em;
-}
-
-.welcome p {
-    position: relative;
-    z-index: 1;
-
-    max-width: 570px;
-
-    margin-top: 8px;
-
-    color: var(--text-muted);
-
-    font-size: .86rem;
-
-    line-height: 1.6;
-}
-
-/* =========================================================
-   CREATE POST
-========================================================= */
-
-.create-post {
-    padding: 17px;
-
-    border-radius: var(--radius-lg);
-
-    margin-bottom: 14px;
-}
-
-.create-top {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.create-input {
-    flex: 1;
-
-    min-height: 46px;
-
-    padding: 0 17px;
-
-    border:
-        1px solid rgba(255,255,255,.07);
-
-    border-radius: 15px;
-
-    background:
-        rgba(255,255,255,.035);
-
-    color: #777b84;
-
-    text-align: left;
-
-    transition: var(--transition);
-}
-
-.create-input:hover {
-    background:
-        rgba(255,255,255,.055);
-
-    border-color:
-        rgba(255,255,255,.12);
-
-    color: #c5c7cc;
-}
-
-.create-actions {
     display: grid;
 
     grid-template-columns:
         repeat(4, 1fr);
 
-    gap: 7px;
+    gap: 5px;
 
-    margin-top: 13px;
+    margin-top: 11px;
 }
 
-.create-action {
-    padding: 10px 8px;
+.create-option {
 
-    border:
-        1px solid transparent;
+    padding: 9px 3px;
 
-    border-radius: 10px;
+    border: 0;
+
+    border-radius: 9px;
 
     background: transparent;
 
-    color: #858891;
+    color: #858585;
 
-    font-size: .78rem;
+    font-size: .66rem;
 
-    transition: var(--transition);
+    text-align: center;
 }
 
-.create-action:hover {
-    background:
-        rgba(255,255,255,.045);
+.create-option:active {
 
-    border-color:
-        rgba(255,255,255,.07);
+    background: #1b1b1b;
 
-    color: #eee;
-
-    transform: translateY(-1px);
+    color: white;
 }
 
 /* =========================================================
-   FILTERS
+   FEED
 ========================================================= */
 
-.feed-filter {
+.feed-title {
+
     display: flex;
+
     align-items: center;
-    gap: 7px;
+    justify-content: space-between;
 
-    margin-bottom: 13px;
+    padding: 7px 3px;
 
-    overflow-x: auto;
-
-    scrollbar-width: none;
+    margin-bottom: 5px;
 }
 
-.feed-filter::-webkit-scrollbar {
-    display: none;
+.feed-title strong {
+
+    font-size: .78rem;
 }
 
-.filter-btn {
-    white-space: nowrap;
+.feed-title button {
 
-    padding: 8px 13px;
+    border: 0;
 
-    border:
-        1px solid rgba(255,255,255,.065);
+    background: transparent;
 
-    border-radius: 100px;
+    color: var(--gold);
 
-    background:
-        rgba(255,255,255,.025);
-
-    color: #777a82;
-
-    font-size: .76rem;
-
-    transition: var(--transition);
-}
-
-.filter-btn:hover {
-    color: #ddd;
-
-    border-color:
-        rgba(255,255,255,.12);
-}
-
-.filter-btn.active {
-    color: #f1ddb0;
-
-    border-color:
-        rgba(197,160,89,.32);
-
-    background:
-        rgba(197,160,89,.08);
+    font-size: .7rem;
 }
 
 /* =========================================================
@@ -643,552 +475,822 @@ input {
 ========================================================= */
 
 .post {
-    padding: 20px;
 
-    border-radius: var(--radius-lg);
+    overflow: hidden;
 
-    margin-bottom: 13px;
+    margin-bottom: 10px;
 
-    transition: var(--transition);
+    padding: 16px;
+
+    border:
+        1px solid var(--line);
+
+    border-radius: var(--radius);
+
+    background:
+        linear-gradient(
+            145deg,
+            #111,
+            #0e0e0e
+        );
 }
 
-.post:hover {
-    border-color:
-        rgba(255,255,255,.10);
+.post-header {
 
-    transform: translateY(-1px);
-
-    box-shadow:
-        0 18px 50px rgba(0,0,0,.24);
-}
-
-.post-head {
     display: flex;
+
     align-items: center;
-    gap: 12px;
+
+    gap: 10px;
 }
 
 .post-user {
+
     flex: 1;
+
+    min-width: 0;
 }
 
 .post-user strong {
+
     display: block;
 
-    color: #f0f0f2;
+    font-size: .81rem;
 
-    font-size: .88rem;
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
 }
 
 .post-user small {
+
     display: block;
 
     margin-top: 3px;
 
-    color: #666a72;
+    color: #686868;
 
-    font-size: .71rem;
+    font-size: .66rem;
 }
 
 .post-menu {
-    width: 32px;
-    height: 32px;
+
+    width: 30px;
+    height: 30px;
 
     border: 0;
-    border-radius: 9px;
+
+    border-radius: 8px;
 
     background: transparent;
 
-    color: #666a72;
+    color: #666;
 
-    transition: var(--transition);
-}
-
-.post-menu:hover {
-    background:
-        rgba(255,255,255,.05);
-
-    color: white;
+    font-size: 18px;
 }
 
 .post-content {
-    margin-top: 16px;
-
-    color: #c9cbd0;
-
-    font-size: .88rem;
-
-    line-height: 1.7;
-}
-
-.post-tag {
-    display: inline-flex;
-    align-items: center;
 
     margin-top: 14px;
 
-    padding: 5px 9px;
+    color: #d0d0d0;
 
-    border:
-        1px solid rgba(197,160,89,.14);
+    font-size: .82rem;
+
+    line-height: 1.65;
+}
+
+.post-tag {
+
+    display: inline-block;
+
+    margin-top: 12px;
+
+    padding: 5px 8px;
 
     border-radius: 7px;
 
     background:
-        rgba(197,160,89,.055);
+        rgba(197,160,89,.08);
 
-    color: #c9aa6b;
+    border:
+        1px solid rgba(197,160,89,.16);
 
-    font-size: .68rem;
+    color: var(--gold2);
+
+    font-size: .63rem;
 }
 
+/* =========================================================
+   POST ACTIONS
+========================================================= */
+
 .post-actions {
+
     display: grid;
 
     grid-template-columns:
         repeat(3, 1fr);
 
-    gap: 5px;
+    gap: 4px;
 
-    margin-top: 17px;
-    padding-top: 10px;
+    margin-top: 14px;
+
+    padding-top: 9px;
 
     border-top:
-        1px solid rgba(255,255,255,.055);
+        1px solid #202020;
 }
 
 .post-action {
-    padding: 9px;
+
+    padding: 9px 3px;
 
     border: 0;
+
     border-radius: 9px;
 
     background: transparent;
 
-    color: #696c74;
+    color: #707070;
 
-    font-size: .75rem;
-
-    transition: var(--transition);
+    font-size: .68rem;
 }
 
-.post-action:hover {
-    background:
-        rgba(255,255,255,.045);
+.post-action:active {
 
-    color: #ddd;
+    background: #191919;
+
+    color: white;
 }
 
 /* =========================================================
-   RIGHT COLUMN
+   DISCOVERY SECTION
 ========================================================= */
 
-.right-column {
-    position: sticky;
-    top: 92px;
+.discovery {
 
-    height: fit-content;
+    margin-top: 18px;
 }
 
-.panel {
-    padding: 18px;
+.section-title {
 
-    border-radius: var(--radius-lg);
-
-    margin-bottom: 13px;
-}
-
-.panel h3 {
-    margin-bottom: 13px;
-
-    font-size: .86rem;
-
-    letter-spacing: -.01em;
-}
-
-/* TRENDS */
-
-.trend {
-    padding: 11px 0;
-
-    border-bottom:
-        1px solid rgba(255,255,255,.045);
-}
-
-.trend:last-child {
-    border-bottom: none;
-}
-
-.trend small {
-    color: #5e6169;
-
-    font-size: .67rem;
-}
-
-.trend strong {
-    display: block;
-
-    margin-top: 4px;
-
-    color: #d5d6da;
-
-    font-size: .78rem;
-}
-
-/* MEMBERS */
-
-.member {
     display: flex;
+
     align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 9px;
+
+    padding: 0 3px;
+}
+
+.section-title strong {
+
+    font-size: .82rem;
+}
+
+.section-title button {
+
+    border: 0;
+
+    background: transparent;
+
+    color: var(--gold);
+
+    font-size: .68rem;
+}
+
+.discovery-scroll {
+
+    display: flex;
+
+    overflow-x: auto;
+
     gap: 9px;
 
-    padding: 9px 0;
+    scrollbar-width: none;
 }
 
-.member .avatar {
+.discovery-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.discovery-card {
+
+    flex-shrink: 0;
+
+    width: 145px;
+
+    padding: 14px;
+
+    border:
+        1px solid var(--line);
+
+    border-radius: 15px;
+
+    background: #101010;
+}
+
+.discovery-card .user-avatar {
+
     width: 38px;
     height: 38px;
 
-    border-radius: 11px;
-
-    font-size: 14px;
+    margin-bottom: 10px;
 }
 
-.member-info {
-    flex: 1;
-    min-width: 0;
-}
+.discovery-card strong {
 
-.member-info strong {
     display: block;
 
     overflow: hidden;
 
-    color: #ddd;
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
 
     font-size: .74rem;
-
-    white-space: nowrap;
-    text-overflow: ellipsis;
 }
 
-.member-info small {
+.discovery-card small {
+
     display: block;
 
-    margin-top: 3px;
+    margin-top: 4px;
 
-    color: #5f626a;
+    color: #666;
 
-    font-size: .66rem;
+    font-size: .63rem;
 }
 
 .follow {
-    padding: 6px 9px;
+
+    width: 100%;
+
+    margin-top: 11px;
+
+    padding: 7px;
 
     border:
-        1px solid rgba(197,160,89,.35);
+        1px solid rgba(197,160,89,.30);
 
-    border-radius: 100px;
+    border-radius: 9px;
 
-    background:
-        transparent;
+    background: transparent;
 
-    color: #c5a059;
+    color: var(--gold);
 
     font-size: .65rem;
-
-    transition: var(--transition);
 }
 
-.follow:hover {
+/* =========================================================
+   TRENDING
+========================================================= */
+
+.trending {
+
+    margin-top: 18px;
+
+    padding: 16px;
+
+    border:
+        1px solid var(--line);
+
+    border-radius: var(--radius);
+
+    background: #101010;
+}
+
+.trending h3 {
+
+    margin-bottom: 10px;
+
+    font-size: .8rem;
+}
+
+.trend {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 9px 0;
+
+    border-bottom:
+        1px solid #202020;
+}
+
+.trend:last-child {
+    border-bottom: 0;
+}
+
+.trend span {
+
+    color: #666;
+
+    font-size: .64rem;
+}
+
+.trend strong {
+
+    color: #cfcfcf;
+
+    font-size: .71rem;
+}
+
+/* =========================================================
+   BOTTOM MOBILE NAV
+========================================================= */
+
+.bottom-nav {
+
+    position: fixed;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    z-index: 200;
+
+    height: 65px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(5, 1fr);
+
+    padding:
+        7px 8px
+        env(safe-area-inset-bottom);
+
     background:
-        var(--gold);
+        rgba(10,10,10,.94);
 
-    color: #080808;
+    border-top:
+        1px solid rgba(255,255,255,.07);
 
-    transform: translateY(-1px);
+    backdrop-filter: blur(20px);
 }
 
-/* =========================================================
-   SCROLLBAR
-========================================================= */
+.bottom-item {
 
-::-webkit-scrollbar {
-    width: 7px;
-}
+    display: flex;
 
-::-webkit-scrollbar-track {
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 3px;
+
+    border: 0;
+
     background: transparent;
+
+    color: #686868;
+
+    font-size: .58rem;
 }
 
-::-webkit-scrollbar-thumb {
-    background: #25272d;
-    border-radius: 20px;
+.bottom-item span:first-child {
+
+    font-size: 17px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #34363e;
+.bottom-item.active {
+
+    color: var(--gold2);
+}
+
+.bottom-publish {
+
+    position: relative;
+
+    margin-top: -20px;
+}
+
+.bottom-publish span:first-child {
+
+    width: 43px;
+    height: 43px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            145deg,
+            var(--gold2),
+            var(--gold)
+        );
+
+    color: #050505;
+
+    box-shadow:
+        0 8px 25px rgba(197,160,89,.25);
+
+    font-size: 20px;
 }
 
 /* =========================================================
-   RESPONSIVE
+   DESKTOP
 ========================================================= */
 
-@media (max-width: 1180px) {
+@media (min-width: 800px) {
 
-    .community {
-        grid-template-columns:
-            210px
-            minmax(420px, 1fr);
+    body {
+        padding-bottom: 0;
     }
-
-    .right-column {
-        display: none;
-    }
-}
-
-@media (max-width: 780px) {
 
     .topbar {
-        height: 62px;
-        padding: 0 14px;
-    }
 
-    .brand {
-        min-width: auto;
-    }
-
-    .brand > div:last-child {
-        display: none;
-    }
-
-    .search {
-        display: none;
-    }
-
-    .top-actions {
-        min-width: auto;
+        padding:
+            0 30px;
     }
 
     .community {
-        display: block;
+
+        max-width: 1200px;
+
+        display: grid;
+
+        grid-template-columns:
+            210px
+            minmax(420px, 650px)
+            260px;
+
+        gap: 20px;
 
         padding:
-            14px 11px 45px;
+            25px 20px 60px;
     }
 
-    .sidebar {
-        position: static;
+    .desktop-sidebar {
 
-        margin-bottom: 13px;
+        display: block;
     }
 
-    .profile-mini {
+    .sidebar-card {
+
+        position: sticky;
+
+        top: 88px;
+    }
+
+    .bottom-nav {
+
         display: none;
     }
 
-    .nav {
+    .mobile-nav {
+
+        display: none;
+    }
+
+    .desktop-sidebar {
+
+        position: sticky;
+
+        top: 88px;
+
+        height: fit-content;
+    }
+
+    .desktop-menu {
+
+        padding: 8px;
+
+        border:
+            1px solid var(--line);
+
+        border-radius: 16px;
+
+        background: #101010;
+    }
+
+    .desktop-menu button {
+
+        width: 100%;
+
         display: flex;
 
-        overflow-x: auto;
+        align-items: center;
 
-        gap: 4px;
+        gap: 10px;
 
-        padding: 5px;
+        padding: 11px;
 
-        scrollbar-width: none;
+        border: 0;
+
+        border-radius: 10px;
+
+        background: transparent;
+
+        color: #888;
+
+        text-align: left;
+
+        font-size: .75rem;
     }
 
-    .nav::-webkit-scrollbar {
-        display: none;
+    .desktop-menu button.active {
+
+        background:
+            rgba(197,160,89,.08);
+
+        color: var(--gold2);
     }
 
-    .nav-item {
-        width: auto;
+    .desktop-profile {
 
-        min-width: max-content;
-
-        padding: 10px 13px;
-    }
-
-    .nav-item.active::before {
-        display: none;
-    }
-
-    .welcome {
-        padding: 20px;
-    }
-
-    .welcome h1 {
-        font-size: 1.2rem;
-    }
-
-    .create-actions {
-        grid-template-columns:
-            repeat(2, 1fr);
-    }
-
-    .post {
         padding: 16px;
+
+        margin-bottom: 10px;
+
+        border:
+            1px solid var(--line);
+
+        border-radius: 16px;
+
+        background: #101010;
+    }
+
+    .desktop-profile strong {
+
+        display: block;
+
+        margin-top: 9px;
+
+        font-size: .78rem;
+    }
+
+    .desktop-profile small {
+
+        display: block;
+
+        margin-top: 3px;
+
+        color: #666;
+
+        font-size: .64rem;
+    }
+
+    .desktop-right {
+
+        position: sticky;
+
+        top: 88px;
+
+        height: fit-content;
+    }
+
+    .desktop-panel {
+
+        padding: 16px;
+
+        margin-bottom: 10px;
+
+        border:
+            1px solid var(--line);
+
+        border-radius: 16px;
+
+        background: #101010;
+    }
+
+    .desktop-panel h3 {
+
+        margin-bottom: 10px;
+
+        font-size: .78rem;
+    }
+
+    .mobile-only {
+
+        display: none !important;
     }
 }
 
-@media (max-width: 430px) {
+/* =========================================================
+   MOBILE ONLY
+========================================================= */
 
-    .top-btn {
-        width: 36px;
-        height: 36px;
+@media (max-width: 799px) {
+
+    .desktop-only {
+        display: none !important;
     }
+}
 
-    .brand-mark {
-        width: 36px;
-        height: 36px;
-    }
+/* =========================================================
+   LARGE DESKTOP
+========================================================= */
 
-    .create-actions {
-        gap: 4px;
-    }
+@media (min-width: 1200px) {
 
-    .create-action {
-        font-size: .71rem;
-    }
+    .community {
 
-    .post-actions {
+        max-width: 1280px;
+
         grid-template-columns:
-            repeat(3, 1fr);
-    }
-
-    .post-action {
-        font-size: .68rem;
+            230px
+            minmax(500px, 700px)
+            280px;
     }
 }
+
+</style>
 </head>
 
 <body>
 
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
 <header class="topbar">
 
-    <div class="brand">
-        <div class="brand-mark">🤖</div>
-        <div>SAMII <span>COMMUNITY</span></div>
+    <div class="logo">
+
+        <div class="logo-icon">
+            🤖
+        </div>
+
+        <div>
+            SAMII <span>COMMUNITY</span>
+        </div>
+
     </div>
 
-    <div class="search">
-        <input
-            type="search"
-            placeholder="Rechercher dans Community..."
-        >
-    </div>
+    <div class="header-actions">
 
-    <div class="top-actions">
-        <button class="top-btn" title="Notifications">🔔</button>
-        <button class="top-btn" title="Profil">👤</button>
+        <button class="header-btn">
+            🔍
+        </button>
+
+        <button class="header-btn">
+            🔔
+        </button>
+
     </div>
 
 </header>
 
 
+<!-- =====================================================
+     MOBILE CATEGORY NAV
+===================================================== -->
+
+<nav class="mobile-nav">
+
+    <button class="active">
+        🏠 Accueil
+    </button>
+
+    <button>
+        🔥 Explorer
+    </button>
+
+    <button>
+        📦 Produits
+    </button>
+
+    <button>
+        💼 Offres
+    </button>
+
+    <button>
+        ❓ Demandes
+    </button>
+
+</nav>
+
+
 <div class="community">
 
-    <!-- =====================================================
-         SIDEBAR
-    ====================================================== -->
 
-    <aside class="sidebar">
+    <!-- =================================================
+         DESKTOP LEFT
+    ================================================== -->
 
-        <div class="profile-mini">
+    <aside class="desktop-sidebar desktop-only">
 
-            <div class="avatar">👤</div>
+        <div class="desktop-profile">
 
-            <div class="profile-name">
-                Mon profil
+            <div class="user-avatar">
+                👤
             </div>
 
-            <div class="profile-role">
+            <strong>
+                ${nom}
+            </strong>
+
+            <small>
                 Membre SAMII
-            </div>
+            </small>
 
         </div>
 
-        <nav class="nav">
+        <div class="desktop-menu">
 
-            <button class="nav-item active">
-                🏠
-                <span>Accueil</span>
+            <button class="active">
+                🏠 Accueil
             </button>
 
-            <button class="nav-item">
-                🔥
-                <span>Explorer</span>
+            <button>
+                🔥 Explorer
             </button>
 
-            <button class="nav-item">
-                ✍️
-                <span>Publier</span>
+            <button>
+                👥 Communautés
             </button>
 
-            <button class="nav-item">
-                👥
-                <span>Communautés</span>
+            <button>
+                🔖 Enregistrés
             </button>
 
-            <button class="nav-item">
-                🔖
-                <span>Enregistrés</span>
+            <button>
+                👤 Mon profil
             </button>
 
-        </nav>
+        </div>
 
     </aside>
 
 
-    <!-- =====================================================
-         MAIN FEED
-    ====================================================== -->
+    <!-- =================================================
+         FEED
+    ================================================== -->
 
-    <main class="main">
+    <main>
+
+
+        <!-- WELCOME -->
 
         <section class="welcome">
 
-            <h1>Bienvenue dans SAMII Community 🌐</h1>
+            <div class="welcome-label">
+                SAMII COMMUNITY
+            </div>
+
+            <h1>
+                Bienvenue dans la communauté 🌐
+            </h1>
 
             <p>
-                L'espace où clients, commerçants, créateurs et membres
-                de SAMII peuvent se rencontrer, partager, demander,
-                proposer et découvrir.
+                Clients, commerçants et membres SAMII
+                se rencontrent, partagent et développent
+                leurs activités ensemble.
             </p>
 
         </section>
 
 
-        <section class="create-post">
+        <!-- CREATE -->
 
-            <div class="create-top">
+        <section class="create">
 
-                <div class="avatar">👤</div>
+            <div class="create-head">
 
-                <button class="create-input">
-                    Quoi de neuf ? Partagez avec la communauté...
+                <div class="user-avatar">
+                    👤
+                </div>
+
+                <button class="create-button">
+                    Quoi de neuf ? Partage quelque chose...
                 </button>
 
             </div>
 
-            <div class="create-actions">
+            <div class="create-options">
 
-                <button class="create-action">
-                    📷 Photo
+                <button class="create-option">
+                    📷<br>
+                    Photo
                 </button>
 
-                <button class="create-action">
-                    📦 Produit
+                <button class="create-option">
+                    📦<br>
+                    Produit
                 </button>
 
-                <button class="create-action">
-                    💼 Offre
+                <button class="create-option">
+                    💼<br>
+                    Offre
                 </button>
 
-                <button class="create-action">
-                    ❓ Demande
+                <button class="create-option">
+                    ❓<br>
+                    Demande
                 </button>
 
             </div>
@@ -1196,52 +1298,51 @@ input {
         </section>
 
 
-        <div class="feed-filter">
+        <!-- FEED TITLE -->
 
-            <button class="filter-btn active">
-                Tout
-            </button>
+        <div class="feed-title">
 
-            <button class="filter-btn">
-                🔥 Tendances
-            </button>
+            <strong>
+                Fil de la communauté
+            </strong>
 
-            <button class="filter-btn">
-                📦 Produits
-            </button>
-
-            <button class="filter-btn">
-                💼 Offres
-            </button>
-
-            <button class="filter-btn">
-                ❓ Demandes
+            <button>
+                Récent ▾
             </button>
 
         </div>
 
 
-        <!-- POST 1 -->
+        <!-- =================================================
+             POST
+        ================================================== -->
 
         <article class="post">
 
-            <div class="post-head">
+            <div class="post-header">
 
-                <div class="avatar">🏪</div>
+                <div class="user-avatar">
+                    🏪
+                </div>
 
                 <div class="post-user">
 
-                    <strong>Exemple Boutique</strong>
+                    <strong>
+                        Exemple Boutique
+                    </strong>
 
                     <small>
-                        Marchand · Algérie · Il y a 2 h
+                        Marchand · Algérie · 2 h
                     </small>
 
                 </div>
 
-                <button class="post-menu">⋮</button>
+                <button class="post-menu">
+                    ⋮
+                </button>
 
             </div>
+
 
             <div class="post-content">
 
@@ -1249,16 +1350,19 @@ input {
 
                 <br><br>
 
-                Ici, les marchands peuvent présenter leurs produits,
-                les clients peuvent découvrir des offres et tout le
-                monde peut échanger avec la communauté.
+                Ici les commerçants peuvent présenter
+                leurs produits, les clients découvrir
+                de nouvelles offres et toute la communauté
+                peut échanger.
 
             </div>
+
 
             <span class="post-tag">
                 🏪 Commerce
             </span>
 
+
             <div class="post-actions">
 
                 <button class="post-action">
@@ -1278,39 +1382,54 @@ input {
         </article>
 
 
-        <!-- POST 2 -->
+        <!-- =================================================
+             POST 2
+        ================================================== -->
 
         <article class="post">
 
-            <div class="post-head">
+            <div class="post-header">
 
-                <div class="avatar">👤</div>
+                <div class="user-avatar">
+                    👤
+                </div>
 
                 <div class="post-user">
 
-                    <strong>Membre SAMII</strong>
+                    <strong>
+                        Membre SAMII
+                    </strong>
 
                     <small>
-                        Client · Algérie · Il y a 4 h
+                        Client · Algérie · 4 h
                     </small>
 
                 </div>
 
-                <button class="post-menu">⋮</button>
+                <button class="post-menu">
+                    ⋮
+                </button>
 
             </div>
+
 
             <div class="post-content">
 
-                Je cherche un service pour m'aider à développer
-                ma boutique. Des recommandations ?
+                Je cherche un service pour m'aider
+                à développer ma boutique.
+
+                <br><br>
+
+                Des recommandations dans la communauté ?
 
             </div>
+
 
             <span class="post-tag">
                 ❓ Demande
             </span>
 
+
             <div class="post-actions">
 
                 <button class="post-action">
@@ -1329,22 +1448,112 @@ input {
 
         </article>
 
-    </main>
+
+        <!-- =================================================
+             DISCOVERY
+        ================================================== -->
+
+        <section class="discovery">
+
+            <div class="section-title">
+
+                <strong>
+                    👥 À découvrir
+                </strong>
+
+                <button>
+                    Voir tout
+                </button>
+
+            </div>
 
 
-    <!-- =====================================================
-         RIGHT COLUMN
-    ====================================================== -->
+            <div class="discovery-scroll">
 
-    <aside class="right-column">
 
-        <section class="panel">
+                <div class="discovery-card">
 
-            <h3>🔥 Tendances</h3>
+                    <div class="user-avatar">
+                        🏪
+                    </div>
+
+                    <strong>
+                        Boutique Exemple
+                    </strong>
+
+                    <small>
+                        Marchand
+                    </small>
+
+                    <button class="follow">
+                        Suivre
+                    </button>
+
+                </div>
+
+
+                <div class="discovery-card">
+
+                    <div class="user-avatar">
+                        👤
+                    </div>
+
+                    <strong>
+                        Membre SAMII
+                    </strong>
+
+                    <small>
+                        Client
+                    </small>
+
+                    <button class="follow">
+                        Suivre
+                    </button>
+
+                </div>
+
+
+                <div class="discovery-card">
+
+                    <div class="user-avatar">
+                        🚚
+                    </div>
+
+                    <strong>
+                        Transport Express
+                    </strong>
+
+                    <small>
+                        Service
+                    </small>
+
+                    <button class="follow">
+                        Suivre
+                    </button>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             TRENDING MOBILE
+        ================================================== -->
+
+        <section class="trending mobile-only">
+
+            <h3>
+                🔥 Tendances
+            </h3>
 
             <div class="trend">
 
-                <small>Commerce</small>
+                <span>
+                    Commerce
+                </span>
 
                 <strong>
                     #EcommerceAlgerie
@@ -1354,7 +1563,9 @@ input {
 
             <div class="trend">
 
-                <small>SAMII</small>
+                <span>
+                    SAMII
+                </span>
 
                 <strong>
                     #SAMIIOS
@@ -1364,7 +1575,62 @@ input {
 
             <div class="trend">
 
-                <small>Marketplace</small>
+                <span>
+                    Marketplace
+                </span>
+
+                <strong>
+                    #NouveauxProduits
+                </strong>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =================================================
+         DESKTOP RIGHT
+    ================================================== -->
+
+    <aside class="desktop-right desktop-only">
+
+        <section class="desktop-panel">
+
+            <h3>
+                🔥 Tendances
+            </h3>
+
+            <div class="trend">
+
+                <span>
+                    Commerce
+                </span>
+
+                <strong>
+                    #EcommerceAlgerie
+                </strong>
+
+            </div>
+
+            <div class="trend">
+
+                <span>
+                    SAMII
+                </span>
+
+                <strong>
+                    #SAMIIOS
+                </strong>
+
+            </div>
+
+            <div class="trend">
+
+                <span>
+                    Marketplace
+                </span>
 
                 <strong>
                     #NouveauxProduits
@@ -1375,44 +1641,50 @@ input {
         </section>
 
 
-        <section class="panel">
+        <section class="desktop-panel">
 
-            <h3>👥 Membres à découvrir</h3>
+            <h3>
+                👥 Membres
+            </h3>
 
             <div class="member">
 
-                <div class="avatar">🏪</div>
-
-                <div class="member-info">
-
-                    <strong>Boutique Exemple</strong>
-
-                    <small>Marchand</small>
-
+                <div class="user-avatar">
+                    🏪
                 </div>
 
-                <button class="follow">
-                    Suivre
-                </button>
+                <div class="post-user">
+
+                    <strong>
+                        Boutique Exemple
+                    </strong>
+
+                    <small>
+                        Marchand
+                    </small>
+
+                </div>
 
             </div>
 
 
             <div class="member">
 
-                <div class="avatar">👤</div>
-
-                <div class="member-info">
-
-                    <strong>Membre SAMII</strong>
-
-                    <small>Client</small>
-
+                <div class="user-avatar">
+                    👤
                 </div>
 
-                <button class="follow">
-                    Suivre
-                </button>
+                <div class="post-user">
+
+                    <strong>
+                        Membre SAMII
+                    </strong>
+
+                    <small>
+                        Client
+                    </small>
+
+                </div>
 
             </div>
 
@@ -1421,6 +1693,72 @@ input {
     </aside>
 
 </div>
+
+
+<!-- =====================================================
+     MOBILE BOTTOM NAV
+===================================================== -->
+
+<nav class="bottom-nav">
+
+    <button class="bottom-item active">
+
+        <span>🏠</span>
+
+        <span>
+            Accueil
+        </span>
+
+    </button>
+
+
+    <button class="bottom-item">
+
+        <span>🔎</span>
+
+        <span>
+            Explorer
+        </span>
+
+    </button>
+
+
+    <button class="bottom-item bottom-publish">
+
+        <span>
+            ＋
+        </span>
+
+        <span>
+            Publier
+        </span>
+
+    </button>
+
+
+    <button class="bottom-item">
+
+        <span>🔔</span>
+
+        <span>
+            Alertes
+        </span>
+
+    </button>
+
+
+    <button class="bottom-item">
+
+        <span>👤</span>
+
+        <span>
+            Profil
+        </span>
+
+    </button>
+
+</nav>
+
 
 </body>
 </html>`);
