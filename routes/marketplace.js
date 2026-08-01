@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marketplace OG — Catalogue Exclusif</title>
+    <title>Marketplace OG — Catalogue Exclusif & International</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -91,38 +91,7 @@
             color: var(--cyan-tech);
             filter: drop-shadow(0 0 8px var(--cyan-tech));
         }
-        .og-sidebar-link:hover span.arrow, .og-sidebar-link.active span.arrow { 
-            color: var(--cyan-tech, #00f0ff); 
-        }
 
-        .og-sidebar .badge-gold {
-            background: rgba(212, 175, 55, 0.15); 
-            color: var(--gold-og, #d4af37);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            font-size: 0.7rem; 
-            padding: 2px 6px; 
-            border-radius: 4px; 
-            font-family: var(--font-mono, monospace);
-        }
-
-        .og-sidebar-overlay {
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%;
-            background: rgba(3, 3, 7, 0.8);
-            backdrop-filter: blur(8px);
-            z-index: 250;
-            opacity: 0; 
-            visibility: hidden;
-            transition: all 0.3s var(--ease-premium);
-        }
-        .og-sidebar-overlay.active { 
-            opacity: 1; 
-            visibility: visible; 
-        }
-        
         .og-samii-sphere {
             background: linear-gradient(135deg, rgba(0, 240, 255, 0.12), rgba(189, 0, 255, 0.08), rgba(12, 12, 18, 0.95));
             border: 1px solid rgba(0, 240, 255, 0.4);
@@ -161,7 +130,6 @@
             background-size: 50px 50px;
         }
 
-        /* Barre Promo Défilante Supérieure */
         .og-top-promo-banner {
             background: linear-gradient(90deg, #111, #221a05, #111);
             border-bottom: 1px solid rgba(212,175,55,0.3);
@@ -227,7 +195,6 @@
         .og-delivery-widget:hover { border-color: var(--gold-og); color: #fff; }
         .og-delivery-widget .sub-txt { font-weight: 700; color: #fff; font-size: 0.85rem; }
 
-        /* Sélecteur Pays & Devise style Amazon */
         .og-locale-selector {
             display: flex;
             align-items: center;
@@ -294,7 +261,6 @@
         .og-account-link:hover { border-color: rgba(212,175,55,0.4); background: rgba(212,175,55,0.05); }
         .og-account-link .line-bold { font-weight: 700; color: #fff; font-size: 0.85rem; font-family: var(--font-display); }
 
-        /* Bouton Panier coulissant */
         .og-cart-btn {
             display: flex;
             align-items: center;
@@ -452,7 +418,6 @@
         }
         .og-add-cart-btn:hover { background: var(--gold-og); color: #030307; box-shadow: var(--gold-glow); }
 
-        /* Panier Coulissant (Slide-over Cart) */
         .og-cart-drawer-overlay {
             position: fixed;
             inset: 0;
@@ -527,7 +492,6 @@
             <div class="og-bg-grid"></div>
         </div>
 
-        <!-- Barre de notification supérieure -->
         <div class="og-top-promo-banner">
             ⚡ MARKETPLACE INTERNATIONALE OG — VENTES FLASH & SERVICES D'URGENCE DISPONIBLES EN CONTINU
         </div>
@@ -544,7 +508,6 @@
                     </div>
                 </div>
 
-                <!-- Sélecteur Pays & Devise style Amazon -->
                 <div class="og-locale-selector">
                     <span>🌐</span>
                     <select id="deviseSelect">
@@ -576,6 +539,7 @@
                     <button class="og-cart-btn" onclick="toggleCartDrawer()">
                         <i data-lucide="shopping-cart" style="width:18px;height:18px;"></i>
                         <span>Panier</span>
+                        <span id="cartCountBadge" style="margin-left: 4px;">0</span>
                     </button>
                 </div>
             </div>
@@ -612,7 +576,6 @@
         </main>
     </div>
 
-    <!-- Tiroir Panier Coulissant -->
     <div class="og-cart-drawer-overlay" id="cartOverlay" onclick="toggleCartDrawer()"></div>
     <div class="og-cart-drawer" id="cartDrawer">
         <div class="og-cart-drawer-header">
@@ -623,152 +586,11 @@
             <div style="color: var(--text-muted); text-align: center; margin-top: 40px; font-size: 0.9rem;">Votre panier est vide pour le moment.</div>
         </div>
         <div class="og-cart-drawer-footer">
-            <button class="og-checkout-btn" onclick="procederPaiement()">Commander en sécurité</button>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        lucide.createIcons();
-
-        function toggleCartDrawer() {
-            document.getElementById('cartDrawer').classList.toggle('open');
-            document.getElementById('cartOverlay').classList.toggle('open');
-        }
-
-        let panier = [];
-        function ajouterAuPanier(titre, prix) {
-            panier.push({ titre, prix });
-            mettreAJourPanierUI();
-            toggleCartDrawer();
-        }
-
-        function mettreAJourPanierUI() {
-            const listContainer = document.getElementById('cartItemsList');
-            if (panier.length === 0) {
-                listContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center; margin-top: 40px; font-size: 0.9rem;">Votre panier est vide pour le moment.</div>';
-                return;
-            }
-            listContainer.innerHTML = panier.map((item, idx) => `
-                <div class="og-cart-item-row">
-                    <div>
-                        <div style="color: #fff; font-weight: 600; font-size: 0.88rem;">${item.titre}</div>
-                        <div style="color: var(--gold-og); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 4px;">${item.prix}</div>
-                    </div>
-                    <button onclick="supprimerDuPanier(${idx})" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1rem;">&times;</button>
-                </div>
-            `).join('');
-        }
-
-        function supprimerDuPanier(index) {
-            panier.splice(index, 1);
-            mettreAJourPanierUI();
-        }
-
-        function procederPaiement() {
-            alert("Redirection vers le tunnel de paiement sécurisé de la Marketplace OG...");
-        }
-    </script>
-</body>
-</html>
-// --- 1. ROUTE INDEX MARKETPLACE (Suite & Fin) ---
-router.get("/", async (req, res) => {
-    try {
-        const toutesAnnonces = await airtable.select("ANNONCES");
-        const recherche = req.query.recherche || '';
-        const cardsHtml = ''; // Assurez-vous que cardsHtml est défini ou généré correctement ici
-
-        res.send(`<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marketplace OG — International</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        ${SHARED_STYLES}
-    </style>
-</head>
-<body>
-    <div class="og-bg-fx">
-        <div class="og-bg-grid"></div>
-    </div>
-
-    <div class="og-app-layout">
-        <!-- HEADER PRINCIPAL -->
-        <header class="og-header">
-            <div class="og-header__top-row">
-                <a href="/marketplace" class="og-logo">
-                    MARKETPLACE<span>OG</span>
-                </a>
-
-                <form action="/marketplace" method="GET" class="og-search-form">
-                    <div class="og-search-input-box">
-                        <input type="text" name="recherche" placeholder="Rechercher sur Marketplace OG..." value="${recherche || ''}">
-                    </div>
-                    <button type="submit" class="og-search-submit">🔍</button>
-                </form>
-
-                <div class="og-header-right">
-                    <a href="/login" class="og-account-link">
-                        <span>Bonjour, Connectez-vous</span>
-                        <span class="line-bold">Compte & QG</span>
-                    </a>
-
-                    <!-- Bouton Panier Coulissant -->
-                    <button onclick="toggleCart()" class="og-cart-btn">
-                        🛒 <span id="cartCountBadge">0</span> art.
-                    </button>
-
-                    <a href="/marketplace/publier" class="og-publish-cta">+ Publier</a>
-                </div>
-            </div>
-
-            <div class="og-header__sub-row">
-                <ul class="og-sub-links">
-                    <li><a href="/marketplace?recherche=top+vente">Top Ventes</a></li>
-                    <li><a href="/marketplace?recherche=livreur+24h">Livreur en moins de 24h</a></li>
-                    <li><a href="/marketplace?categorie=services&recherche=nounou">Nounou disponible</a></li>
-                    <li><a href="/marketplace?recherche=services+rapides">Services d'urgence</a></li>
-                    <li><a href="/marketplace?recherche=exclusivites">Nouveautés & Exclusivités</a></li>
-                    <li><a href="/marketplace?recherche=cartes+cadeaux">Cartes Cadeaux</a></li>
-                    <li><a href="/marketplace?recherche=ventes+flash">Ventes Flash</a></li>
-                </ul>
-            </div>
-        </header>
-
-        <main class="og-main-container">
-            <div style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--gold-og); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-                <span style="width: 8px; height: 8px; background: var(--gold-og); border-radius: 50%; box-shadow: var(--gold-glow); display: inline-block;"></span>
-                ${toutesAnnonces.length} annonce${toutesAnnonces.length !== 1 ? 's' : ''} disponible${toutesAnnonces.length !== 1 ? 's' : ''} (Marchands EU, UK & US)
-            </div>
-            <div class="og-grid">
-                ${toutesAnnonces.length ? cardsHtml : `
-                    <div class="og-empty-state">
-                        <div style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 8px;">Aucune annonce active</div>
-                        <div style="font-size: 0.85rem;">Publiez un article pour alimenter le catalogue international.</div>
-                    </div>
-                `}
-            </div>
-        </main>
-    </div>
-
-    <!-- Panier Latéral Coulissant -->
-    <div id="cartOverlay" class="og-cart-drawer-overlay" onclick="toggleCart()"></div>
-    <div id="cartDrawer" class="og-cart-drawer">
-        <div class="og-cart-drawer-header">
-            <div class="og-cart-drawer-title">Mon Panier OG</div>
-            <button class="og-cart-close-btn" onclick="toggleCart()">&times;</button>
-        </div>
-        <div class="og-cart-items-list" id="cartItemsContainer">
-            <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-top: 40px;">Votre panier est vide pour l'instant.</div>
-        </div>
-        <div class="og-cart-drawer-footer">
             <div style="display: flex; justify-content: space-between; margin-bottom: 14px; font-family: var(--font-mono); font-size: 0.9rem;">
                 <span style="color: var(--text-muted);">Total estimé :</span>
                 <span id="cartTotalPrice" style="color: var(--gold-og); font-weight: 700;">0 €</span>
             </div>
-            <button class="og-checkout-btn" onclick="alert('Redirection sécurisée vers la passerelle de paiement Samii OS...')">Passer la commande</button>
+            <button class="og-checkout-btn" onclick="procederPaiement()">Passer la commande en sécurité</button>
         </div>
     </div>
 
@@ -778,7 +600,7 @@ router.get("/", async (req, res) => {
 
         let panier = [];
 
-        function toggleCart() {
+        function toggleCartDrawer() {
             document.getElementById('cartDrawer').classList.toggle('open');
             document.getElementById('cartOverlay').classList.toggle('open');
         }
@@ -786,44 +608,163 @@ router.get("/", async (req, res) => {
         function ajouterAuPanier(titre, prix) {
             panier.push({ titre, prix });
             mettreAJourPanierUI();
-            toggleCart();
+            toggleCartDrawer();
         }
 
-        function retirerDuPanier(index) {
+        function supprimerDuPanier(index) {
             panier.splice(index, 1);
             mettreAJourPanierUI();
         }
 
         function mettreAJourPanierUI() {
-            document.getElementById('cartCountBadge').innerText = panier.length;
-            const container = document.getElementById('cartItemsContainer');
-            
+            const countBadge = document.getElementById('cartCountBadge');
+            if (countBadge) countBadge.innerText = panier.length;
+
+            const listContainer = document.getElementById('cartItemsList');
+            const totalPriceEl = document.getElementById('cartTotalPrice');
+
             if (panier.length === 0) {
-                container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-top: 40px;">Votre panier est vide pour l\\'instant.</div>';
-                document.getElementById('cartTotalPrice').innerText = '0 €';
+                if (listContainer) listContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center; margin-top: 40px; font-size: 0.9rem;">Votre panier est vide pour le moment.</div>';
+                if (totalPriceEl) totalPriceEl.innerText = '0 €';
                 return;
             }
 
-            let html = '';
-            let total = 0;
-            panier.forEach((item, idx) => {
-                html += \`
-                <div class="og-cart-item-row">
-                    <div>
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 4px;">\${item.titre}</div>
-                        <div style="font-size: 0.78rem; color: var(--gold-og); font-family: var(--font-mono);">\${item.prix}</div>
+            if (listContainer) {
+                listContainer.innerHTML = panier.map((item, idx) => `
+                    <div class="og-cart-item-row">
+                        <div>
+                            <div style="color: #fff; font-weight: 600; font-size: 0.88rem;">${item.titre}</div>
+                            <div style="color: var(--gold-og); font-family: var(--font-mono); font-size: 0.8rem; margin-top: 4px;">${item.prix}</div>
+                        </div>
+                        <button onclick="supprimerDuPanier(${idx})" style="background:transparent; border:none; color:#ff4d4d; cursor:pointer; font-size:1rem;">&times;</button>
                     </div>
-                    <button onclick="retirerDuPanier(\${idx})" style="background:transparent; border:none; color:#ff4d4d; cursor:pointer; font-size:1rem;">&times;</button>
-                </div>\`;
-            });
-            container.innerHTML = html;
-            document.getElementById('cartTotalPrice').innerText = panier.length > 0 ? panier[0].prix : '0 €';
+                `).join('');
+            }
+
+            if (totalPriceEl) {
+                totalPriceEl.innerText = panier.length > 0 ? panier[0].prix : '0 €';
+            }
+        }
+
+        function procederPaiement() {
+            alert("Redirection sécurisée vers la passerelle de paiement Samii OS...");
         }
     </script>
 </body>
-</html>`);
-    } catch (err) {
-        console.error("Erreur chargement Marketplace OG :", err);
-        res.status(500).send("Erreur interne du serveur");
+</html>
+// ==========================================
+// SERVEUR BACKEND NODE.JS / EXPRESS — SAMII OS
+// ==========================================
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Données fictives initiales de la Marketplace OG (Sami OS / Le Sovereign / Vaulta)
+const toutesAnnonces = [
+    {
+        id: 1,
+        titre: "Montre de Luxe Le Sovereign — Édition Limitée Noir & Or",
+        categorie: "exclusivites",
+        prix: "1 250 €",
+        devise: "EUR",
+        image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80",
+        badge: "Le Sovereign",
+        vendeur: "OG Officiel",
+        stock: "En stock"
+    },
+    {
+        id: 2,
+        titre: "Agent IA Samii — Pack Automatisation n8n (33 Tables / 231 Branches)",
+        categorie: "automatisation",
+        prix: "497 €",
+        devise: "EUR",
+        image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80",
+        badge: "IA Officielle",
+        vendeur: "Samii OS",
+        stock: "Accès instantané"
+    },
+    {
+        id: 3,
+        titre: "Masterclass Business Automation & Funnel SaaS — V2 & V3",
+        categorie: "services",
+        prix: "197 €",
+        devise: "EUR",
+        image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80",
+        badge: "Formation",
+        vendeur: "Sovereign Academy",
+        stock: "Places limitées"
+    },
+    {
+        id: 4,
+        titre: "Coffret Bijoux Exclusif — Finition Anthracite & Or 24K",
+        categorie: "exclusivites",
+        prix: "349 €",
+        devise: "EUR",
+        image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&auto=format&fit=crop&q=80",
+        badge: "Le Sovereign",
+        vendeur: "OG Officiel",
+        stock: "En stock"
     }
+];
+
+// Routes principales de la Marketplace
+app.get('/marketplace', (req, res) => {
+    const { categorie, recherche } = req.query;
+
+    let resultats = toutesAnnonces;
+
+    if (categorie && categorie !== 'toutes') {
+        resultats = resultats.filter(item => item.categorie === categorie);
+    }
+
+    if (recherche) {
+        const query = recherche.toLowerCase();
+        resultats = resultats.filter(item => 
+            item.titre.toLowerCase().includes(query) || 
+            item.vendeur.toLowerCase().includes(query)
+        );
+    }
+
+    const categoriesList = [
+        { id: 'toutes', label: 'Toutes les catégories' },
+        { id: 'exclusivites', label: 'Le Sovereign (Exclusivités)' },
+        { id: 'automatisation', label: 'Automatisations & n8n' },
+        { id: 'services', label: 'Services & Consulting' },
+        { id: 'ia_marchand', label: 'Marchands IA' }
+    ];
+
+    const categoryOptionsHtml = categoriesList.map(cat => 
+        `<option value="${cat.id}" ${categorie === cat.id ? 'selected' : ''}>${cat.label}</option>`
+    ).join('');
+
+    const cardsHtml = resultats.map(item => `
+        <div class="og-card gold-border">
+            <div class="og-card__media">
+                <span class="og-card__badge">${item.badge}</span>
+                <span class="og-ai-badge">Samii Sync</span>
+                <img src="${item.image}" alt="${item.titre}">
+                <div class="og-card__price-tag">${item.prix}</div>
+            </div>
+            <div class="og-card__content">
+                <h3 class="og-card__title">${item.titre}</h3>
+                <div class="og-card__meta-grid">
+                    <span>Vendeur : <strong>${item.vendeur}</strong></span>
+                    <span>Disponibilité : <strong style="color: var(--cyan-tech);">${item.stock}</strong></span>
+                </div>
+                <button class="og-add-cart-btn" onclick="ajouterAuPanier('${item.titre.replace(/'/g, "\\'")}', '${item.prix}')">
+                    + Ajouter au panier
+                </button>
+            </div>
+        </div>
+    `).join('');
+
+    // Ici, vous injectez le HTML complet fourni précédemment avec les variables dynamiques (cardsHtml, categoryOptionsHtml, recherche)
+    res.send("Le serveur Node.js est actif et prêt à relayer la vue Marketplace OG.");
+});
+
+app.listen(PORT, () => {
+    console.log(`[SAMII OS] Serveur Marketplace actif sur le port ${PORT}`);
 });
