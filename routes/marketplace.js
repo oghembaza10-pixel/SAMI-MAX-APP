@@ -1,15 +1,13 @@
 // ==========================================================================
-// SAMII OS — MARKETPLACE — Accueil, Publication (5 photos max), Sidebar & Samii
+// SAMII OS — MARKETPLACE — Structure Inspirée Amazon (Recherche & Sélecteur)
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
 const airtable = require("../services/airtable");
-const workspaceService = require("../services/workspaceService");
 const multer = require("multer");
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB max par image
 const cloudinary = require('cloudinary').v2;
 
-// Configuration Cloudinary (utilise tes variables ou tes clés directes)
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "ojwx5hft",
     api_key: process.env.CLOUDINARY_API_KEY || "",
@@ -22,24 +20,19 @@ function requireAuth(req, res, next) {
 }
 
 const CATEGORIES = [
-    { id: "tous",           icon: "layout-grid",    label: "Tout" },
-    { id: "electronique",   icon: "smartphone",     label: "Électronique" },
-    { id: "mode",           icon: "shirt",          label: "Mode" },
-    { id: "beaute",         icon: "sparkles",       label: "Beauté" },
-    { id: "maison",         icon: "home",           label: "Maison" },
-    { id: "electromenager", icon: "washing-machine",label: "Électro." },
-    { id: "sport",          icon: "dumbbell",       label: "Sport" },
-    { id: "loisirs",        icon: "gamepad-2",      label: "Loisirs" },
-    { id: "livres",         icon: "book-open",      label: "Livres" },
-    { id: "vehicules",      icon: "car",            label: "Véhicules" },
+    { id: "tous",           icon: "layout-grid",    label: "Toutes nos catégories" },
+    { id: "electronique",   icon: "smartphone",     label: "Électronique & High-Tech" },
+    { id: "mode",           icon: "shirt",          label: "Mode & Vêtements" },
+    { id: "beaute",         icon: "sparkles",       label: "Beauté & Parfums" },
+    { id: "maison",         icon: "home",           label: "Cuisine & Maison" },
+    { id: "electromenager", icon: "washing-machine",label: "Électroménager" },
+    { id: "sport",          icon: "dumbbell",       label: "Sports & Loisirs" },
+    { id: "vehicules",      icon: "car",            label: "Auto et Moto / Véhicules" },
     { id: "immobilier",     icon: "building-2",     label: "Immobilier" },
-    { id: "animaux",        icon: "paw-print",      label: "Animaux" },
-    { id: "alimentation",   icon: "utensils",       label: "Alimentation" },
-    { id: "services",       icon: "concierge-bell", label: "Services" },
-    { id: "artisanat",      icon: "palette",        label: "Artisanat" },
-    { id: "bebe",           icon: "baby",           label: "Bébé" },
-    { id: "bureau",         icon: "briefcase",      label: "Bureau" },
-    { id: "autre",          icon: "package",        label: "Autre" },
+    { id: "bureau",         icon: "briefcase",      label: "Fournitures de bureau" },
+    { id: "livres",         icon: "book-open",      label: "Livres & E-books" },
+    { id: "services",       icon: "concierge-bell", label: "Services & Prestations" },
+    { id: "autre",          icon: "package",        label: "Autre" }
 ];
 
 const SHARED_STYLES = `
@@ -80,14 +73,9 @@ const SHARED_STYLES = `
         border: var(--border-cyan); border-radius: 16px; padding: 16px; margin-top: auto;
         box-shadow: var(--cyan-glow); position: relative; overflow: hidden;
     }
-    .og-samii-sphere::before {
-        content: ''; position: absolute; top: -50px; right: -50px; width: 100px; height: 100px;
-        background: var(--cyan-tech); filter: blur(40px); opacity: 0.3; pointer-events: none;
-    }
     .og-samii-title { font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan-tech); display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-weight: 700; }
     .og-samii-text { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
 
-    /* --- LAYOUT CONTENT PRINCIPAL --- */
     .og-main-wrapper { margin-left: 280px; width: calc(100% - 280px); min-height: 100vh; display: flex; flex-direction: column; }
     
     .og-bg-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
@@ -102,13 +90,14 @@ const SHARED_STYLES = `
     }
 `;
 
-// --- 1. ACCUEIL MARKETPLACE ---
+// --- 1. ACCUEIL MARKETPLACE (Recherche type Amazon & Sélecteur) ---
 router.get("/", requireAuth, async (req, res) => {
-    const { categorie, recherche, ville } = req.query;
+    const { categorie, recherche, pays, ville } = req.query;
 
     let filtres = ['{actif}=1'];
     if (categorie && categorie !== "tous") filtres.push(`{categorie}="${categorie}"`);
     if (recherche) filtres.push(`SEARCH(LOWER("${recherche}"), LOWER({titre}))`);
+    if (pays) filtres.push(`SEARCH(LOWER("${pays}"), LOWER({pays}))`);
     if (ville) filtres.push(`SEARCH(LOWER("${ville}"), LOWER({ville}))`);
 
     let annonces = [];
@@ -135,19 +124,16 @@ router.get("/", requireAuth, async (req, res) => {
             <div class="og-card__content">
                 <h3 class="og-card__title">${f.titre}</h3>
                 <div class="og-card__meta-grid">
-                    <span><i data-lucide="map-pin"></i> ${f.ville || '—'}</span>
+                    <span><i data-lucide="globe"></i> ${f.pays || 'International'} ${f.ville ? '— ' + f.ville : ''}</span>
                     <span><i data-lucide="user"></i> ${f.vendeur_nom || 'Vendeur'}</span>
                 </div>
             </div>
         </a>`;
     }).join("");
 
-    const categoriesHtml = CATEGORIES.map(c => `
-        <a href="/marketplace?categorie=${c.id}${recherche ? `&recherche=${encodeURIComponent(recherche)}` : ''}${ville ? `&ville=${encodeURIComponent(ville)}` : ''}"
-            class="og-cat-chip ${categorie === c.id || (!categorie && c.id === 'tous') ? 'active' : ''}">
-            <i data-lucide="${c.icon}"></i><span>${c.label}</span>
-        </a>
-    `).join("");
+    const categoryOptionsHtml = CATEGORIES.map(c => 
+        `<option value="${c.id}" ${categorie === c.id ? 'selected' : ''}>${c.label}</option>`
+    ).join("");
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -157,22 +143,26 @@ router.get("/", requireAuth, async (req, res) => {
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         ${SHARED_STYLES}
-        .og-header { position: sticky; top: 0; z-index: 100; background: rgba(3, 3, 5, 0.88); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding: 20px 32px; display: flex; flex-direction: column; gap: 16px; }
+        .og-header { position: sticky; top: 0; z-index: 100; background: rgba(3, 3, 5, 0.92); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding: 20px 32px; display: flex; flex-direction: column; gap: 16px; }
         .og-header__top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         .og-brand-title { font-family: var(--font-display); color: #fff; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 12px; margin: 0; }
         .og-brand-title i { color: var(--gold-og); width: 26px; height: 26px; }
         .og-publish-cta { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 12px; text-decoration: none; background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #000; font-weight: 700; font-size: 0.85rem; font-family: var(--font-display); box-shadow: 0 8px 25px rgba(212,175,55,0.25); }
-        .og-search-bar { width: 100%; display: flex; gap: 10px; background: var(--bg-panel); border: var(--border-gold); border-radius: 16px; padding: 8px; backdrop-filter: blur(15px); }
-        .og-search-field { flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: rgba(0, 0, 0, 0.45); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05); }
-        .og-search-field i { width: 18px; height: 18px; color: var(--gold-og); flex-shrink: 0; }
-        .og-search-field input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.9rem; font-family: var(--font-body); padding: 12px 0; outline: none; }
-        .og-search-submit { background: linear-gradient(135deg, var(--cyan-tech), #0099ff); color: #000; border: none; border-radius: 10px; padding: 0 24px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--cyan-glow); }
-        .og-categories-container { width: 100%; display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-behavior: smooth; }
-        .og-categories-container::-webkit-scrollbar { height: 4px; }
-        .og-categories-container::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 10px; }
-        .og-cat-chip { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg-panel); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 25px; color: var(--text-muted); text-decoration: none; font-size: 0.8rem; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
-        .og-cat-chip.active { background: linear-gradient(135deg, rgba(212,175,55,0.2), rgba(12,12,14,0.9)); border-color: var(--gold-og); color: var(--gold-hover); font-weight: 700; box-shadow: var(--gold-glow); }
-        .og-cat-chip.active i { color: var(--gold-og); }
+        
+        /* BARRE DE RECHERCHE TYPE AMAZON */
+        .og-amazon-search { width: 100%; display: flex; background: var(--bg-panel); border: var(--border-gold); border-radius: 14px; overflow: hidden; backdrop-filter: blur(15px); }
+        .og-category-select-wrapper { background: rgba(20, 20, 28, 0.9); border-right: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; padding: 0 14px; }
+        .og-category-select-wrapper select { background: transparent; border: none; color: #fff; font-family: var(--font-body); font-size: 0.85rem; outline: none; cursor: pointer; padding: 12px 0; }
+        .og-category-select-wrapper select option { background: #121218; color: #fff; }
+        
+        .og-search-input-box { flex: 2; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: rgba(0,0,0,0.3); }
+        .og-search-input-box input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.9rem; font-family: var(--font-body); padding: 12px 0; outline: none; }
+        
+        .og-location-box { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-left: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.2); }
+        .og-location-box input { width: 100%; background: transparent; border: none; color: #fff; font-size: 0.85rem; font-family: var(--font-body); outline: none; }
+        
+        .og-search-submit { background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #000; border: none; padding: 0 28px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); }
+
         .og-main-container { padding: 32px; flex: 1; }
         .og-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-top: 20px; }
         .og-card { position: relative; background: var(--bg-panel); border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); text-decoration: none; display: flex; flex-direction: column; transition: transform 0.35s var(--ease-premium), border-color 0.35s var(--ease-premium); }
@@ -190,7 +180,6 @@ router.get("/", requireAuth, async (req, res) => {
     </style>
 </head>
 <body>
-    <!-- SIDEBAR AVEC QG, ACADEMY, COMMUNITY, ARSENAL ET LA SPHERE SAMII -->
     <aside class="og-sidebar">
         <div>
             <div class="og-sidebar-brand"><i data-lucide="crown"></i> OG EMPIRE</div>
@@ -205,7 +194,7 @@ router.get("/", requireAuth, async (req, res) => {
         
         <div class="og-samii-sphere">
             <div class="og-samii-title"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> Sphère Samii</div>
-            <div class="og-samii-text">Navigation active. Je supervise vos flux et sécurise vos annonces en temps réel.</div>
+            <div class="og-samii-text">Moteur de recherche global configuré. Prêt à filtrer vos flux par pays et catégories.</div>
         </div>
     </aside>
 
@@ -218,33 +207,38 @@ router.get("/", requireAuth, async (req, res) => {
 
         <header class="og-header">
             <div class="og-header__top">
-                <h1 class="og-brand-title"><i data-lucide="store"></i> Marketplace</h1>
+                <h1 class="og-brand-title"><i data-lucide="store"></i> Marketplace Internationale</h1>
                 <a href="/marketplace/publier" class="og-publish-cta"><i data-lucide="plus-circle"></i> Publier une annonce</a>
             </div>
-            <form class="og-search-bar" method="GET">
-                <input type="hidden" name="categorie" value="${categorie || 'tous'}">
-                <div class="og-search-field" style="flex: 2;">
-                    <i data-lucide="search"></i>
-                    <input type="text" name="recherche" placeholder="Que recherchez-vous ?" value="${recherche || ''}">
+            
+            <!-- BARRE DE RECHERCHE STRUCTURÉE TYPE AMAZON -->
+            <form class="og-amazon-search" method="GET">
+                <div class="og-category-select-wrapper">
+                    <select name="categorie">
+                        ${categoryOptionsHtml}
+                    </select>
                 </div>
-                <div class="og-search-field" style="flex: 1;">
-                    <i data-lucide="map-pin"></i>
-                    <input type="text" name="ville" placeholder="Ville ou zone" value="${ville || ''}">
+                <div class="og-search-input-box">
+                    <i data-lucide="search" style="color:var(--gold-og); width:18px; height:18px; flex-shrink:0;"></i>
+                    <input type="text" name="recherche" placeholder="Rechercher un produit, une marque..." value="${recherche || ''}">
+                </div>
+                <div class="og-location-box">
+                    <i data-lucide="globe" style="color:var(--cyan-tech); width:16px; height:16px; flex-shrink:0;"></i>
+                    <input type="text" name="pays" placeholder="Pays / Ville" value="${pays || ville || ''}">
                 </div>
                 <button type="submit" class="og-search-submit"><i data-lucide="search"></i></button>
             </form>
-            <div class="og-categories-container">${categoriesHtml}</div>
         </header>
 
         <main class="og-main-container">
             <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--cyan-tech); margin-bottom: 16px;">
-                ● ${annonces.length} annonce${annonces.length !== 1 ? 's' : ''} active${annonces.length !== 1 ? 's' : ''}
+                ● ${annonces.length} annonce${annonces.length !== 1 ? 's' : ''} active${annonces.length !== 1 ? 's' : ''} trouvée${annonces.length !== 1 ? 's' : ''}
             </div>
             <div class="og-grid">
                 ${annonces.length ? cardsHtml : `
                     <div class="og-empty-state">
                         <i data-lucide="shopping-bag" style="width:48px;height:48px;color:var(--gold-og);margin-bottom:16px;"></i>
-                        <div>Aucune annonce trouvée.<br>Soyez le premier à publier votre offre !</div>
+                        <div>Aucune annonce ne correspond à vos critères.<br>Essayez d'élargir votre recherche ou publiez votre offre.</div>
                     </div>
                 `}
             </div>
@@ -257,7 +251,7 @@ router.get("/", requireAuth, async (req, res) => {
 </html>`);
 });
 
-// --- 2. PAGE DE PUBLICATION (Formulaire avec 5 photos max) ---
+// --- 2. PAGE DE PUBLICATION (Formulaire Vraies Photos Cloudinary) ---
 router.get("/publier", requireAuth, async (req, res) => {
     const optionsCategories = CATEGORIES.filter(c => c.id !== 'tous').map(c => 
         `<option value="${c.id}">${c.label}</option>`
@@ -300,7 +294,7 @@ router.get("/publier", requireAuth, async (req, res) => {
         <form action="/marketplace/publier" method="POST" enctype="multipart/form-data">
             <div class="og-form-group">
                 <label>Titre de l'annonce</label>
-                <input type="text" name="titre" class="og-form-control" required placeholder="Ex: iPhone 13 Pro Max 256Go">
+                <input type="text" name="titre" class="og-form-control" required placeholder="Ex: iPhone 15 Pro Max 256Go">
             </div>
             
             <div class="og-form-group">
@@ -313,12 +307,17 @@ router.get("/publier", requireAuth, async (req, res) => {
 
             <div class="og-form-group">
                 <label>Prix</label>
-                <input type="text" name="prix" class="og-form-control" required placeholder="Ex: 450 €">
+                <input type="text" name="prix" class="og-form-control" required placeholder="Ex: 850 €">
             </div>
 
             <div class="og-form-group">
-                <label>Ville / Localisation</label>
-                <input type="text" name="ville" class="og-form-control" required placeholder="Ex: Paris">
+                <label>Pays / Zone géographique</label>
+                <input type="text" name="pays" class="og-form-control" required placeholder="Ex: France, Algérie, International...">
+            </div>
+
+            <div class="og-form-group">
+                <label>Ville</label>
+                <input type="text" name="ville" class="og-form-control" placeholder="Ex: Paris, Oran...">
             </div>
 
             <div class="og-form-group">
@@ -327,9 +326,9 @@ router.get("/publier", requireAuth, async (req, res) => {
             </div>
 
             <div class="og-form-group">
-                <label>Photos (Maximum 5 photos)</label>
-                <input type="file" name="photos" class="og-form-control" accept="image/*" multiple max="5">
-                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">Vous pouvez sélectionner jusqu'à 5 images simultanément.</small>
+                <label>Vraies Photos (Maximum 5 photos)</label>
+                <input type="file" name="photos" class="og-form-control" accept="image/*" multiple>
+                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">Envoi direct sécurisé via Cloudinary (jusqu'à 5 visuels).</small>
             </div>
 
             <button type="submit" class="og-submit-btn">Mettre en ligne</button>
@@ -341,10 +340,10 @@ router.get("/publier", requireAuth, async (req, res) => {
 </html>`);
 });
 
-// --- 3. TRAITEMENT POST AVEC UPLOAD DE 5 PHOTOS SUR CLOUDINARY ---
+// --- 3. TRAITEMENT POST ET UPLOAD CLOUDINARY ---
 router.post("/publier", requireAuth, upload.array("photos", 5), async (req, res) => {
     try {
-        const { titre, categorie, prix, ville, matricule } = req.body;
+        const { titre, categorie, prix, pays, ville, matricule } = req.body;
         let photoUrls = [];
 
         if (req.files && req.files.length > 0) {
@@ -356,12 +355,12 @@ router.post("/publier", requireAuth, upload.array("photos", 5), async (req, res)
             }
         }
 
-        // Enregistrement Airtable supportant jusqu'à 5 liens photos
         await airtable.create("ANNONCES", {
             titre,
             categorie,
             prix,
-            ville,
+            pays: pays || 'International',
+            ville: ville || '',
             matricule: matricule || '',
             photo_url: photoUrls[0] || '',
             photo_url_2: photoUrls[1] || '',
