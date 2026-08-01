@@ -11,19 +11,19 @@ function requireAuth(req, res, next) {
 }
 
 const CATEGORIES = [
-    { id: "tous",           icon: "layout-grid",    label: "Toutes nos catégories" },
-    { id: "electronique",   icon: "smartphone",     label: "Électronique & High-Tech" },
-    { id: "mode",           icon: "shirt",          label: "Mode & Vêtements" },
-    { id: "beaute",         icon: "sparkles",       label: "Beauté & Parfums" },
-    { id: "maison",         icon: "home",           label: "Cuisine & Maison" },
-    { id: "electromenager", icon: "washing-machine",label: "Électroménager" },
-    { id: "sport",          icon: "dumbbell",       label: "Sports & Loisirs" },
-    { id: "vehicules",      icon: "car",            label: "Auto et Moto / Véhicules" },
-    { id: "immobilier",     icon: "building-2",     label: "Immobilier" },
-    { id: "bureau",         icon: "briefcase",      label: "Fournitures de bureau" },
-    { id: "livres",         icon: "book-open",      label: "Livres & E-books" },
-    { id: "services",       icon: "concierge-bell", label: "Services & Prestations" },
-    { id: "autre",          icon: "package",        label: "Autre" }
+    { id: "tous",            icon: "layout-grid",    label: "Toutes nos catégories" },
+    { id: "electronique",    icon: "smartphone",     label: "Électronique & High-Tech" },
+    { id: "mode",            icon: "shirt",          label: "Mode & Vêtements" },
+    { id: "beaute",          icon: "sparkles",       label: "Beauté & Parfums" },
+    { id: "maison",          icon: "home",           label: "Cuisine & Maison" },
+    { id: "electromenager",  icon: "washing-machine",label: "Électroménager" },
+    { id: "sport",           icon: "dumbbell",       label: "Sports & Loisirs" },
+    { id: "vehicules",       icon: "car",            label: "Auto et Moto / Véhicules" },
+    { id: "immobilier",      icon: "building-2",     label: "Immobilier" },
+    { id: "bureau",          icon: "briefcase",      label: "Fournitures de bureau" },
+    { id: "livres",          icon: "book-open",      label: "Livres & E-books" },
+    { id: "services",        icon: "concierge-bell", label: "Services & Prestations" },
+    { id: "autre",           icon: "package",        label: "Autre" }
 ];
 
 // 🤖 ANNONCES TEST FICTIVES (Marchands & Agents IA Autonomes)
@@ -67,8 +67,8 @@ const ANNONCES_VIRTUELLES = [
             pays: "Algérie",
             ville: "Oran",
             photo_url: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
-            vendeur_id: "admin_og",
-            vendeur_nom: "Claudine Harry",
+            vendeur_id: "marchand_verified_1",
+            vendeur_nom: "Boutique Partenaire Vérifiée",
             type_vendeur: "marchand",
             actif: 1
         }
@@ -170,13 +170,11 @@ router.get("/", requireAuth, async (req, res) => {
 
         annoncesAirtable = await airtable.find("ANNONCES", `AND(${filtres.join(",")})`, 50);
     } catch (err) {
-        console.warn("⚠️ Mode secours actif (Airtale injoignable) :", err.message);
+        console.warn("⚠️ Mode secours actif (Airtable injoignable) :", err.message);
     }
 
-    // Fusion avec les annonces virtuelles / test IA pour un rendu ultra-riche
     let toutesAnnonces = [...ANNONCES_VIRTUELLES, ...annoncesAirtable];
 
-    // Filtrage dynamique en mémoire si Airtable est vide ou pour compléter les tests
     if (categorie && categorie !== "tous") {
         toutesAnnonces = toutesAnnonces.filter(a => a.fields.categorie === categorie);
     }
@@ -196,7 +194,7 @@ router.get("/", requireAuth, async (req, res) => {
         const accentClass = isAiAgent ? 'purple-border' : (index % 2 === 0 ? 'cyan-border' : 'gold-border');
 
         return `
-        <a href="/vitrine/${f.vendeur_id || 'admin_og'}" class="og-card ${accentClass}">
+        <a href="/vitrine/${f.vendeur_id || 'marchand_verified_1'}" class="og-card ${accentClass}">
             <div class="og-card__media">
                 ${isAiAgent ? '<div class="og-ai-badge"><i data-lucide="bot"></i> Marchand IA</div>' : ''}
                 <span class="og-card__badge"><i data-lucide="${cat.icon}"></i> ${cat.label}</span>
@@ -207,7 +205,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <h3 class="og-card__title">${f.titre}</h3>
                 <div class="og-card__meta-grid">
                     <span><i data-lucide="map-pin" style="color:var(--cyan-tech); width:14px; height:14px;"></i> ${f.pays || 'International'} ${f.ville ? '— ' + f.ville : ''}</span>
-                    <span><i data-lucide="shield-check" style="color:var(--gold-og); width:14px; height:14px;"></i> ${f.vendeur_nom || 'Claudine Harry'}</span>
+                    <span><i data-lucide="shield-check" style="color:var(--gold-og); width:14px; height:14px;"></i> ${f.vendeur_nom || 'Boutique Partenaire Vérifiée'}</span>
                 </div>
             </div>
         </a>`;
@@ -221,7 +219,7 @@ router.get("/", requireAuth, async (req, res) => {
 <html lang="fr">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Marketplace OG — OG Empire</title>
+    <title>Marketplace OG — Catalogue Exclusif</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         ${SHARED_STYLES}
@@ -470,11 +468,12 @@ router.get("/publier", requireAuth, async (req, res) => {
 </html>`);
 });
 
-// --- 3. TRAITEMENT POST PUBLICATION ---
+// --- 3. TRAITEMENT POST PUBLICATION (Sécurisé Anonyme / Pro) ---
 router.post("/publier", requireAuth, async (req, res) => {
     try {
         const { titre, categorie, prix, pays, ville, photo_url } = req.body;
 
+        // Enregistrement sécurisé dans Airtable sans fuite de tes identifiants perso
         await airtable.create("ANNONCES", {
             titre,
             categorie,
@@ -482,8 +481,8 @@ router.post("/publier", requireAuth, async (req, res) => {
             pays: pays || 'International',
             ville: ville || '',
             photo_url: photo_url || '',
-            vendeur_id: req.session.userId || 'admin_og',
-            vendeur_nom: req.session.nom || 'Claudine Harry',
+            vendeur_id: 'marchand_verified_' + Date.now(),
+            vendeur_nom: 'Boutique Partenaire Vérifiée',
             type_vendeur: 'marchand',
             actif: 1
         });
