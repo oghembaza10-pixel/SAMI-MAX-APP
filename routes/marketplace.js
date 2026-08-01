@@ -673,8 +673,12 @@
 </html>
 // --- 1. ROUTE INDEX MARKETPLACE (Suite & Fin) ---
 router.get("/", async (req, res) => {
-    // [Code précédent des routes ou filtres si nécessaire...]
-    res.send(`<!DOCTYPE html>
+    try {
+        const toutesAnnonces = await airtable.select("ANNONCES");
+        const recherche = req.query.recherche || '';
+        const cardsHtml = ''; // Assurez-vous que cardsHtml est défini ou généré correctement ici
+
+        res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -818,4 +822,8 @@ router.get("/", async (req, res) => {
     </script>
 </body>
 </html>`);
+    } catch (err) {
+        console.error("Erreur chargement Marketplace OG :", err);
+        res.status(500).send("Erreur interne du serveur");
+    }
 });
