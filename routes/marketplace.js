@@ -1,17 +1,16 @@
 // ==========================================================================
-// SAMII OS — MARKETPLACE — Structure Inspirée Amazon (Recherche & Sélecteur)
+// SAMII OS — MARKETPLACE OG — Version Définitive (Unsigned & Sans Clé Secrète)
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
 const airtable = require("../services/airtable");
 const multer = require("multer");
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB max par image
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 const cloudinary = require('cloudinary').v2;
 
+// Configuration uniquement avec le cloud_name (aucun api_key ni api_secret requis pour l'unsigned)
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "ojwx5hft",
-    api_key: process.env.CLOUDINARY_API_KEY || "",
-    api_secret: process.env.CLOUDINARY_API_SECRET || ""
+    cloud_name: "ojwx5hft"
 });
 
 function requireAuth(req, res, next) {
@@ -47,7 +46,6 @@ const SHARED_STYLES = `
     }
     body { background-color: var(--bg-deep); color: var(--text-main); font-family: var(--font-body); margin: 0; padding: 0; overflow-x: hidden; display: flex; }
     
-    /* --- SIDEBAR --- */
     .og-sidebar {
         width: 280px; height: 100vh; position: fixed; top: 0; left: 0; background: rgba(5, 5, 8, 0.95);
         border-right: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(20px); display: flex; flex-direction: column; z-index: 200;
@@ -67,7 +65,6 @@ const SHARED_STYLES = `
     }
     .og-sidebar-link:hover i, .og-sidebar-link.active i { color: var(--gold-og); }
     
-    /* --- SPHERE SAMII --- */
     .og-samii-sphere {
         background: linear-gradient(135deg, rgba(0, 240, 255, 0.1), rgba(10, 10, 14, 0.9));
         border: var(--border-cyan); border-radius: 16px; padding: 16px; margin-top: auto;
@@ -77,7 +74,6 @@ const SHARED_STYLES = `
     .og-samii-text { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
 
     .og-main-wrapper { margin-left: 280px; width: calc(100% - 280px); min-height: 100vh; display: flex; flex-direction: column; }
-    
     .og-bg-fx { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
     .og-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px); background-size: 60px 60px; }
     .og-ambient-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; filter: blur(150px); opacity: .14; z-index: -1; }
@@ -90,7 +86,7 @@ const SHARED_STYLES = `
     }
 `;
 
-// --- 1. ACCUEIL MARKETPLACE (Recherche type Amazon & Sélecteur) ---
+// --- 1. ACCUEIL MARKETPLACE ---
 router.get("/", requireAuth, async (req, res) => {
     const { categorie, recherche, pays, ville } = req.query;
 
@@ -139,7 +135,7 @@ router.get("/", requireAuth, async (req, res) => {
 <html lang="fr">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Marketplace — OG Empire</title>
+    <title>Marketplace OG — OG Empire</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         ${SHARED_STYLES}
@@ -149,7 +145,6 @@ router.get("/", requireAuth, async (req, res) => {
         .og-brand-title i { color: var(--gold-og); width: 26px; height: 26px; }
         .og-publish-cta { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 12px; text-decoration: none; background: linear-gradient(135deg, var(--gold-og), var(--gold-hover)); color: #000; font-weight: 700; font-size: 0.85rem; font-family: var(--font-display); box-shadow: 0 8px 25px rgba(212,175,55,0.25); }
         
-        /* BARRE DE RECHERCHE TYPE AMAZON */
         .og-amazon-search { width: 100%; display: flex; background: var(--bg-panel); border: var(--border-gold); border-radius: 14px; overflow: hidden; backdrop-filter: blur(15px); }
         .og-category-select-wrapper { background: rgba(20, 20, 28, 0.9); border-right: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; padding: 0 14px; }
         .og-category-select-wrapper select { background: transparent; border: none; color: #fff; font-family: var(--font-body); font-size: 0.85rem; outline: none; cursor: pointer; padding: 12px 0; }
@@ -194,7 +189,7 @@ router.get("/", requireAuth, async (req, res) => {
         
         <div class="og-samii-sphere">
             <div class="og-samii-title"><i data-lucide="sparkles" style="width:14px;height:14px;"></i> Sphère Samii</div>
-            <div class="og-samii-text">Moteur de recherche global configuré. Prêt à filtrer vos flux par pays et catégories.</div>
+            <div class="og-samii-text">Marketplace connectée. Flux synchronisés avec Cloudinary (Preset: MARKETPLACE OG).</div>
         </div>
     </aside>
 
@@ -207,11 +202,10 @@ router.get("/", requireAuth, async (req, res) => {
 
         <header class="og-header">
             <div class="og-header__top">
-                <h1 class="og-brand-title"><i data-lucide="store"></i> Marketplace Internationale</h1>
+                <h1 class="og-brand-title"><i data-lucide="store"></i> MARKETPLACE OG</h1>
                 <a href="/marketplace/publier" class="og-publish-cta"><i data-lucide="plus-circle"></i> Publier une annonce</a>
             </div>
             
-            <!-- BARRE DE RECHERCHE STRUCTURÉE TYPE AMAZON -->
             <form class="og-amazon-search" method="GET">
                 <div class="og-category-select-wrapper">
                     <select name="categorie">
@@ -220,7 +214,7 @@ router.get("/", requireAuth, async (req, res) => {
                 </div>
                 <div class="og-search-input-box">
                     <i data-lucide="search" style="color:var(--gold-og); width:18px; height:18px; flex-shrink:0;"></i>
-                    <input type="text" name="recherche" placeholder="Rechercher un produit, une marque..." value="${recherche || ''}">
+                    <input type="text" name="recherche" placeholder="Rechercher un produit..." value="${recherche || ''}">
                 </div>
                 <div class="og-location-box">
                     <i data-lucide="globe" style="color:var(--cyan-tech); width:16px; height:16px; flex-shrink:0;"></i>
@@ -232,13 +226,13 @@ router.get("/", requireAuth, async (req, res) => {
 
         <main class="og-main-container">
             <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--cyan-tech); margin-bottom: 16px;">
-                ● ${annonces.length} annonce${annonces.length !== 1 ? 's' : ''} active${annonces.length !== 1 ? 's' : ''} trouvée${annonces.length !== 1 ? 's' : ''}
+                ● ${annonces.length} annonce${annonces.length !== 1 ? 's' : ''} active${annonces.length !== 1 ? 's' : ''}
             </div>
             <div class="og-grid">
                 ${annonces.length ? cardsHtml : `
                     <div class="og-empty-state">
                         <i data-lucide="shopping-bag" style="width:48px;height:48px;color:var(--gold-og);margin-bottom:16px;"></i>
-                        <div>Aucune annonce ne correspond à vos critères.<br>Essayez d'élargir votre recherche ou publiez votre offre.</div>
+                        <div>Aucune annonce trouvée. Soyez le premier à publier !</div>
                     </div>
                 `}
             </div>
@@ -251,7 +245,7 @@ router.get("/", requireAuth, async (req, res) => {
 </html>`);
 });
 
-// --- 2. PAGE DE PUBLICATION (Formulaire Vraies Photos Cloudinary) ---
+// --- 2. PAGE DE PUBLICATION ---
 router.get("/publier", requireAuth, async (req, res) => {
     const optionsCategories = CATEGORIES.filter(c => c.id !== 'tous').map(c => 
         `<option value="${c.id}">${c.label}</option>`
@@ -261,7 +255,7 @@ router.get("/publier", requireAuth, async (req, res) => {
 <html lang="fr">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Publier une annonce — OG Empire</title>
+    <title>Publier — MARKETPLACE OG</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         ${SHARED_STYLES}
@@ -294,7 +288,7 @@ router.get("/publier", requireAuth, async (req, res) => {
         <form action="/marketplace/publier" method="POST" enctype="multipart/form-data">
             <div class="og-form-group">
                 <label>Titre de l'annonce</label>
-                <input type="text" name="titre" class="og-form-control" required placeholder="Ex: iPhone 15 Pro Max 256Go">
+                <input type="text" name="titre" class="og-form-control" required placeholder="Ex: Produit Premium">
             </div>
             
             <div class="og-form-group">
@@ -307,28 +301,28 @@ router.get("/publier", requireAuth, async (req, res) => {
 
             <div class="og-form-group">
                 <label>Prix</label>
-                <input type="text" name="prix" class="og-form-control" required placeholder="Ex: 850 €">
+                <input type="text" name="prix" class="og-form-control" required placeholder="Ex: 100 €">
             </div>
 
             <div class="og-form-group">
-                <label>Pays / Zone géographique</label>
-                <input type="text" name="pays" class="og-form-control" required placeholder="Ex: France, Algérie, International...">
+                <label>Pays / Zone</label>
+                <input type="text" name="pays" class="og-form-control" required placeholder="Ex: France, Algérie...">
             </div>
 
             <div class="og-form-group">
                 <label>Ville</label>
-                <input type="text" name="ville" class="og-form-control" placeholder="Ex: Paris, Oran...">
+                <input type="text" name="ville" class="og-form-control" placeholder="Ex: Paris...">
             </div>
 
             <div class="og-form-group">
-                <label>Matricule / Référence interne</label>
-                <input type="text" name="matricule" class="og-form-control" placeholder="Ex: MAT-9921">
+                <label>Matricule / Référence</label>
+                <input type="text" name="matricule" class="og-form-control" placeholder="Ex: MAT-001">
             </div>
 
             <div class="og-form-group">
                 <label>Vraies Photos (Maximum 5 photos)</label>
                 <input type="file" name="photos" class="og-form-control" accept="image/*" multiple>
-                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">Envoi direct sécurisé via Cloudinary (jusqu'à 5 visuels).</small>
+                <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px;">Envoi direct via le preset unsigned MARKETPLACE OG.</small>
             </div>
 
             <button type="submit" class="og-submit-btn">Mettre en ligne</button>
@@ -340,7 +334,7 @@ router.get("/publier", requireAuth, async (req, res) => {
 </html>`);
 });
 
-// --- 3. TRAITEMENT POST ET UPLOAD CLOUDINARY ---
+// --- 3. TRAITEMENT POST UPLOAD (AVEC UPLOAD_PRESET EN UNSIGNED) ---
 router.post("/publier", requireAuth, upload.array("photos", 5), async (req, res) => {
     try {
         const { titre, categorie, prix, pays, ville, matricule } = req.body;
@@ -350,7 +344,11 @@ router.post("/publier", requireAuth, upload.array("photos", 5), async (req, res)
             for (let file of req.files) {
                 let b64 = Buffer.from(file.buffer).toString("base64");
                 let dataURI = "data:" + file.mimetype + ";base64," + b64;
-                let uploadResponse = await cloudinary.uploader.upload(dataURI, { folder: "og_marketplace" });
+                
+                // Appel cloud_name + preset unsigned exact (sans api_secret)
+                let uploadResponse = await cloudinary.uploader.upload(dataURI, {
+                    upload_preset: "MARKETPLACE OG"
+                });
                 photoUrls.push(uploadResponse.secure_url);
             }
         }
@@ -369,13 +367,13 @@ router.post("/publier", requireAuth, upload.array("photos", 5), async (req, res)
             photo_url_5: photoUrls[4] || '',
             vendeur_id: req.session.userId || 'admin_og',
             vendeur_nom: req.session.nom || 'Mohamed',
-            type_vendeur: req.session.typeCompte === 'client' ? 'particulier' : 'marchand',
+            type_vendeur: 'marchand',
             actif: 1
         });
 
         res.redirect("/marketplace");
     } catch (err) {
-        console.error("Erreur publication annonce :", err);
+        console.error("Erreur publication annonce Marketplace OG :", err);
         res.redirect("/marketplace/publier?erreur=1");
     }
 });
