@@ -4,7 +4,7 @@ const router = express.Router();
 
 router.get("/", (req, res) => {
 
-    const nom = req.session?.nom || "Mohamed Ouahid Ghembaza";
+    const nom = req.session?.nom || "Membre SAMII";
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -17,22 +17,22 @@ router.get("/", (req, res) => {
 <style>
 
 :root {
-    --bg: #030712;
-    --card: #0b1329;
-    --card2: #0f1b3b;
-    --line: #1e294b;
+    --bg: #05070b;
+    --card: #0a0f18;
+    --card2: #0f1726;
+    --line: #1e293b;
 
     --text: #f8fafc;
     --muted: #94a3b8;
 
-    --gold: #c5a059;
-    --gold2: #dfbc73;
-    --gold-glow: rgba(197, 160, 89, 0.25);
+    --gold: #d4af37;
+    --gold2: #f3e5ab;
 
-    --blue-tech: #00f0ff;
-    --blue-glow: rgba(0, 240, 255, 0.15);
+    --tech-blue: #00f0ff;
+    --tech-blue-glow: rgba(0, 240, 255, 0.18);
+    --tech-blue-border: rgba(0, 240, 255, 0.4);
 
-    --radius: 16px;
+    --radius: 18px;
 }
 
 * {
@@ -50,14 +50,9 @@ body {
 
     background:
         radial-gradient(
-            circle at 50% -20%,
-            rgba(0, 240, 255, 0.12),
+            circle at 50% -15%,
+            var(--tech-blue-glow),
             transparent 40%
-        ),
-        radial-gradient(
-            circle at 85% 15%,
-            rgba(197, 160, 89, 0.08),
-            transparent 35%
         ),
         var(--bg);
 
@@ -102,9 +97,9 @@ button {
 
     padding: 0 15px;
 
-    background: rgba(3, 7, 18, 0.88);
+    background: rgba(5, 7, 11, .92);
 
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--tech-blue-border);
 
     backdrop-filter: blur(18px);
 }
@@ -128,20 +123,17 @@ button {
     align-items: center;
     justify-content: center;
 
-    border-radius: 10px;
+    border-radius: 11px;
 
     background:
         linear-gradient(
-            135deg,
-            var(--gold2),
-            var(--gold)
+            145deg,
+            var(--tech-blue),
+            #0066ff
         );
 
     box-shadow:
-        0 4px 15px var(--gold-glow);
-    
-    color: #030712;
-    font-size: 18px;
+        0 5px 20px var(--tech-blue-glow);
 }
 
 .logo span {
@@ -163,18 +155,13 @@ button {
     align-items: center;
     justify-content: center;
 
-    border: 1px solid var(--line);
-    border-radius: 10px;
+    border: 1px solid var(--tech-blue-border);
+    border-radius: 11px;
 
-    background: var(--card);
-    color: var(--gold);
+    background: #0a0f18;
+    color: var(--tech-blue);
 
     font-size: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.header-btn:active {
-    border-color: var(--gold);
 }
 
 /* =========================================================
@@ -195,7 +182,7 @@ button {
 
     padding: 9px 13px;
 
-    background: rgba(3, 7, 18, 0.9);
+    background: rgba(5, 7, 11, .94);
 
     border-bottom: 1px solid var(--line);
 
@@ -210,7 +197,7 @@ button {
 
     flex-shrink: 0;
 
-    padding: 8px 14px;
+    padding: 8px 13px;
 
     border: 1px solid var(--line);
     border-radius: 100px;
@@ -220,21 +207,18 @@ button {
     color: var(--muted);
 
     font-size: .74rem;
-    font-weight: 500;
 }
 
 .mobile-nav button.active {
 
     background:
-        rgba(197, 160, 89, 0.12);
+        rgba(212, 175, 55, .10);
 
     border-color:
-        rgba(197, 160, 89, 0.4);
+        rgba(212, 175, 55, .35);
 
     color:
         var(--gold2);
-    
-    box-shadow: 0 0 12px rgba(197, 160, 89, 0.15);
 }
 
 /* =========================================================
@@ -267,7 +251,7 @@ button {
     margin-bottom: 12px;
 
     border:
-        1px solid var(--line);
+        1px solid var(--tech-blue-border);
 
     border-radius: var(--radius);
 
@@ -278,17 +262,7 @@ button {
             var(--bg)
         );
     
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-}
-
-.welcome::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 3px;
-    height: 100%;
-    background: linear-gradient(to bottom, var(--gold2), var(--gold));
+    box-shadow: 0 0 20px var(--tech-blue-glow);
 }
 
 .welcome::after {
@@ -300,15 +274,15 @@ button {
     width: 140px;
     height: 140px;
 
-    right: -50px;
-    top: -50px;
+    right: -65px;
+    top: -65px;
 
     border-radius: 50%;
 
     background:
-        rgba(0, 240, 255, 0.1);
+        var(--tech-blue-glow);
 
-    filter: blur(25px);
+    filter: blur(15px);
 }
 
 .welcome-label {
@@ -339,7 +313,6 @@ button {
     line-height: 1.25;
 
     margin-bottom: 7px;
-    color: var(--text);
 }
 
 .welcome p {
@@ -370,7 +343,6 @@ button {
     background: var(--card);
 
     margin-bottom: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
 .create-head {
@@ -386,54 +358,53 @@ button {
 
     flex-shrink: 0;
 
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border-radius: 12px;
+    border-radius: 13px;
 
     background:
         linear-gradient(
-            135deg,
-            var(--gold2),
-            var(--gold)
+            145deg,
+            var(--tech-blue),
+            #0044cc
         );
 
-    font-size: 18px;
-    color: #030712;
-    box-shadow: 0 4px 12px var(--gold-glow);
+    font-size: 16px;
+    box-shadow: 0 0 10px var(--tech-blue-glow);
 }
 
 .create-button {
 
     flex: 1;
 
-    min-height: 44px;
+    min-height: 42px;
 
     padding: 0 15px;
 
     border:
         1px solid var(--line);
 
-    border-radius: 12px;
+    border-radius: 13px;
 
-    background: var(--bg);
+    background: var(--card2);
 
     color: var(--muted);
 
     text-align: left;
 
     font-size: .78rem;
-    transition: all 0.2s ease;
 }
 
 .create-button:active {
 
-    border-color: var(--gold);
-    color: var(--text);
+    background: #151d2e;
+
+    border-color: var(--tech-blue);
 }
 
 .create-options {
@@ -443,35 +414,33 @@ button {
     grid-template-columns:
         repeat(4, 1fr);
 
-    gap: 6px;
+    gap: 5px;
 
     margin-top: 11px;
 }
 
 .create-option {
 
-    padding: 10px 4px;
+    padding: 9px 3px;
 
-    border: 1px solid transparent;
+    border: 0;
 
-    border-radius: 10px;
+    border-radius: 9px;
 
-    background: var(--bg);
+    background: transparent;
 
     color: var(--muted);
 
     font-size: .66rem;
 
     text-align: center;
-    transition: all 0.2s ease;
 }
 
 .create-option:active {
 
     background: var(--card2);
-    border-color: var(--line);
 
-    color: var(--gold2);
+    color: white;
 }
 
 /* =========================================================
@@ -493,7 +462,6 @@ button {
 .feed-title strong {
 
     font-size: .78rem;
-    color: var(--text);
 }
 
 .feed-title button {
@@ -505,7 +473,6 @@ button {
     color: var(--gold);
 
     font-size: .7rem;
-    font-weight: 600;
 }
 
 /* =========================================================
@@ -516,7 +483,7 @@ button {
 
     overflow: hidden;
 
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 
     padding: 16px;
 
@@ -531,8 +498,6 @@ button {
             var(--card),
             var(--bg)
         );
-    
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
 
 .post-header {
@@ -562,7 +527,6 @@ button {
     overflow: hidden;
 
     text-overflow: ellipsis;
-    color: var(--text);
 }
 
 .post-user small {
@@ -609,20 +573,19 @@ button {
 
     margin-top: 12px;
 
-    padding: 5px 10px;
+    padding: 5px 8px;
 
-    border-radius: 8px;
+    border-radius: 7px;
 
     background:
-        rgba(197, 160, 89, 0.1);
+        rgba(212, 175, 55, .08);
 
     border:
-        1px solid rgba(197, 160, 89, 0.25);
+        1px solid rgba(212, 175, 55, .16);
 
     color: var(--gold2);
 
     font-size: .63rem;
-    font-weight: 600;
 }
 
 /* =========================================================
@@ -636,11 +599,11 @@ button {
     grid-template-columns:
         repeat(3, 1fr);
 
-    gap: 6px;
+    gap: 4px;
 
     margin-top: 14px;
 
-    padding-top: 10px;
+    padding-top: 9px;
 
     border-top:
         1px solid var(--line);
@@ -650,25 +613,22 @@ button {
 
     padding: 9px 3px;
 
-    border: 1px solid transparent;
+    border: 0;
 
     border-radius: 9px;
 
-    background: var(--bg);
+    background: transparent;
 
     color: var(--muted);
 
     font-size: .68rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
 }
 
 .post-action:active {
 
     background: var(--card2);
-    border-color: var(--line);
 
-    color: var(--gold2);
+    color: white;
 }
 
 /* =========================================================
@@ -695,7 +655,6 @@ button {
 .section-title strong {
 
     font-size: .82rem;
-    color: var(--text);
 }
 
 .section-title button {
@@ -707,7 +666,6 @@ button {
     color: var(--gold);
 
     font-size: .68rem;
-    font-weight: 600;
 }
 
 .discovery-scroll {
@@ -716,7 +674,7 @@ button {
 
     overflow-x: auto;
 
-    gap: 10px;
+    gap: 9px;
 
     scrollbar-width: none;
 }
@@ -729,17 +687,16 @@ button {
 
     flex-shrink: 0;
 
-    width: 150px;
+    width: 145px;
 
     padding: 14px;
 
     border:
         1px solid var(--line);
 
-    border-radius: 16px;
+    border-radius: 15px;
 
     background: var(--card);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
 .discovery-card .user-avatar {
@@ -761,7 +718,6 @@ button {
     text-overflow: ellipsis;
 
     font-size: .74rem;
-    color: var(--text);
 }
 
 .discovery-card small {
@@ -784,22 +740,15 @@ button {
     padding: 7px;
 
     border:
-        1px solid rgba(197, 160, 89, 0.35);
+        1px solid rgba(212, 175, 55, .30);
 
     border-radius: 9px;
 
-    background: rgba(197, 160, 89, 0.05);
+    background: transparent;
 
     color: var(--gold);
 
     font-size: .65rem;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.follow:active {
-    background: var(--gold);
-    color: #030712;
 }
 
 /* =========================================================
@@ -818,7 +767,6 @@ button {
     border-radius: var(--radius);
 
     background: var(--card);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
 .trending h3 {
@@ -826,7 +774,6 @@ button {
     margin-bottom: 10px;
 
     font-size: .8rem;
-    color: var(--text);
 }
 
 .trend {
@@ -837,7 +784,7 @@ button {
 
     justify-content: space-between;
 
-    padding: 10px 0;
+    padding: 9px 0;
 
     border-bottom:
         1px solid var(--line);
@@ -856,7 +803,7 @@ button {
 
 .trend strong {
 
-    color: var(--gold2);
+    color: #e2e8f0;
 
     font-size: .71rem;
 }
@@ -887,10 +834,10 @@ button {
         env(safe-area-inset-bottom);
 
     background:
-        rgba(3, 7, 18, 0.94);
+        rgba(5, 7, 11, .94);
 
     border-top:
-        1px solid var(--line);
+        1px solid var(--tech-blue-border);
 
     backdrop-filter: blur(20px);
 }
@@ -917,7 +864,7 @@ button {
 
 .bottom-item span:first-child {
 
-    font-size: 18px;
+    font-size: 17px;
 }
 
 .bottom-item.active {
@@ -929,40 +876,38 @@ button {
 
     position: relative;
 
-    margin-top: -22px;
+    margin-top: -20px;
 }
 
 .bottom-publish span:first-child {
 
-    width: 44px;
-    height: 44px;
+    width: 43px;
+    height: 43px;
 
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
     border-radius: 50%;
 
     background:
         linear-gradient(
-            135deg,
+            145deg,
             var(--gold2),
             var(--gold)
         );
 
-    color: #030712;
+    color: #050505;
 
     box-shadow:
-        0 6px 20px var(--gold-glow);
+        0 8px 25px rgba(212, 175, 55, .25);
 
-    font-size: 22px;
-    font-weight: bold;
+    font-size: 20px;
 }
 
 /* =========================================================
-   DESKTOP (LinkedIn Inspired 3-Column Layout)
+   DESKTOP
 ========================================================= */
 
 @media (min-width: 800px) {
@@ -984,11 +929,11 @@ button {
         display: grid;
 
         grid-template-columns:
-            225px
-            minmax(420px, 640px)
-            270px;
+            210px
+            minmax(420px, 650px)
+            260px;
 
-        gap: 24px;
+        gap: 20px;
 
         padding:
             25px 20px 60px;
@@ -997,111 +942,13 @@ button {
     .desktop-sidebar {
 
         display: block;
+    }
+
+    .sidebar-card {
+
         position: sticky;
 
         top: 88px;
-
-        height: fit-content;
-    }
-
-    .desktop-profile {
-
-        padding: 18px;
-
-        margin-bottom: 12px;
-
-        border:
-            1px solid var(--line);
-
-        border-radius: 16px;
-
-        background: var(--card);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-        text-align: center;
-    }
-
-    .desktop-profile .user-avatar {
-        width: 54px;
-        height: 54px;
-        margin: 0 auto 10px auto;
-        font-size: 24px;
-    }
-
-    .desktop-profile strong {
-
-        display: block;
-
-        margin-top: 6px;
-
-        font-size: .85rem;
-        color: var(--text);
-    }
-
-    .desktop-profile small {
-
-        display: block;
-
-        margin-top: 3px;
-
-        color: var(--gold);
-
-        font-size: .68rem;
-        font-weight: 500;
-    }
-
-    .desktop-menu {
-
-        padding: 10px;
-
-        border:
-            1px solid var(--line);
-
-        border-radius: 16px;
-
-        background: var(--card);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-    }
-
-    .desktop-menu button {
-
-        width: 100%;
-
-        display: flex;
-
-        align-items: center;
-
-        gap: 12px;
-
-        padding: 11px 12px;
-
-        border: 1px solid transparent;
-
-        border-radius: 10px;
-
-        background: transparent;
-
-        color: var(--muted);
-
-        text-align: left;
-
-        font-size: .76rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-    }
-
-    .desktop-menu button:hover {
-        background: var(--bg);
-        color: var(--text);
-    }
-
-    .desktop-menu button.active {
-
-        background:
-            rgba(197, 160, 89, 0.1);
-
-        border-color: rgba(197, 160, 89, 0.3);
-
-        color: var(--gold2);
     }
 
     .bottom-nav {
@@ -1114,21 +961,18 @@ button {
         display: none;
     }
 
-    .desktop-right {
+    .desktop-sidebar {
 
         position: sticky;
 
         top: 88px;
 
         height: fit-content;
-        display: block;
     }
 
-    .desktop-panel {
+    .desktop-menu {
 
-        padding: 16px;
-
-        margin-bottom: 12px;
+        padding: 8px;
 
         border:
             1px solid var(--line);
@@ -1136,37 +980,103 @@ button {
         border-radius: 16px;
 
         background: var(--card);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+
+    .desktop-menu button {
+
+        width: 100%;
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 10px;
+
+        padding: 11px;
+
+        border: 0;
+
+        border-radius: 10px;
+
+        background: transparent;
+
+        color: var(--muted);
+
+        text-align: left;
+
+        font-size: .75rem;
+    }
+
+    .desktop-menu button.active {
+
+        background:
+            rgba(212, 175, 55, .08);
+
+        color: var(--gold2);
+    }
+
+    .desktop-profile {
+
+        padding: 16px;
+
+        margin-bottom: 10px;
+
+        border:
+            1px solid var(--line);
+
+        border-radius: 16px;
+
+        background: var(--card);
+    }
+
+    .desktop-profile strong {
+
+        display: block;
+
+        margin-top: 9px;
+
+        font-size: .78rem;
+    }
+
+    .desktop-profile small {
+
+        display: block;
+
+        margin-top: 3px;
+
+        color: var(--muted);
+
+        font-size: .64rem;
+    }
+
+    .desktop-right {
+
+        position: sticky;
+
+        top: 88px;
+
+        height: fit-content;
+    }
+
+    .desktop-panel {
+
+        padding: 16px;
+
+        margin-bottom: 10px;
+
+        border:
+            1px solid var(--line);
+
+        border-radius: 16px;
+
+        background: var(--card);
     }
 
     .desktop-panel h3 {
 
-        margin-bottom: 12px;
+        margin-bottom: 10px;
 
-        font-size: .8rem;
-        color: var(--text);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .member {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 0;
-        border-bottom: 1px solid var(--line);
-    }
-
-    .member:last-child {
-        border-bottom: 0;
-    }
-
-    .member .user-avatar {
-        width: 34px;
-        height: 34px;
-        font-size: 15px;
-        margin-bottom: 0;
+        font-size: .78rem;
     }
 
     .mobile-only {
@@ -1192,14 +1102,14 @@ button {
 
 @media (min-width: 1200px) {
 
-    .community {
+    community {
 
         max-width: 1280px;
 
         grid-template-columns:
-            240px
-            minmax(500px, 680px)
-            290px;
+            230px
+            minmax(500px, 700px)
+            280px;
     }
 }
 
@@ -1210,14 +1120,14 @@ button {
 
 <!-- =====================================================
      HEADER
-===================================================== -->
+================================================     -->
 
 <header class="topbar">
 
     <div class="logo">
 
         <div class="logo-icon">
-            ⚡
+            🤖
         </div>
 
         <div>
@@ -1243,7 +1153,7 @@ button {
 
 <!-- =====================================================
      MOBILE CATEGORY NAV
-===================================================== -->
+================================================     -->
 
 <nav class="mobile-nav">
 
@@ -1282,15 +1192,15 @@ button {
         <div class="desktop-profile">
 
             <div class="user-avatar">
-                👑
+                👤
             </div>
 
             <strong>
-                ${nom}
+                \${nom}
             </strong>
 
             <small>
-                The Sovereign OS & Automation
+                Membre SAMII
             </small>
 
         </div>
@@ -1334,7 +1244,7 @@ button {
         <section class="welcome">
 
             <div class="welcome-label">
-                SAMII ECOSYSTEM
+                SAMII COMMUNITY
             </div>
 
             <h1>
@@ -1342,7 +1252,9 @@ button {
             </h1>
 
             <p>
-                Propulsez vos activités e-commerce, automatisez vos workflows et connectez-vous avec l'élite des entrepreneurs.
+                Clients, commerçants et membres SAMII
+                se rencontrent, partagent et développent
+                leurs activités ensemble.
             </p>
 
         </section>
@@ -1355,7 +1267,7 @@ button {
             <div class="create-head">
 
                 <div class="user-avatar">
-                    👑
+                    👤
                 </div>
 
                 <button class="create-button">
@@ -1415,17 +1327,17 @@ button {
             <div class="post-header">
 
                 <div class="user-avatar">
-                    ⚡
+                    🏪
                 </div>
 
                 <div class="post-user">
 
                     <strong>
-                        SAMII Core
+                        Exemple Boutique
                     </strong>
 
                     <small>
-                        Système · Automatisation · 1 h
+                        Marchand · Algérie · 2 h
                     </small>
 
                 </div>
@@ -1438,12 +1350,21 @@ button {
 
 
             <div class="post-content">
-                Architecture des flux initialisée avec succès. Connexion aux tables opérationnelles et synchronisation multi-agents active. 🚀
+
+                Bienvenue dans SAMII Community 👋
+
+                <br><br>
+
+                Ici les commerçants peuvent présenter
+                leurs produits, les clients découvrir
+                de nouvelles offres et toute la communauté
+                peut échanger.
+
             </div>
 
 
             <span class="post-tag">
-                🤖 #SAMIIOS
+                🏪 Commerce
             </span>
 
 
@@ -1475,17 +1396,17 @@ button {
             <div class="post-header">
 
                 <div class="user-avatar">
-                    💼
+                    👤
                 </div>
 
                 <div class="post-user">
 
                     <strong>
-                        The Sovereign
+                        Membre SAMII
                     </strong>
 
                     <small>
-                        E-commerce & Luxe · International · 3 h
+                        Client · Algérie · 4 h
                     </small>
 
                 </div>
@@ -1498,12 +1419,19 @@ button {
 
 
             <div class="post-content">
-                Transition de l'interface numérique vers le format universel anglophone en cours. Esthétique minimaliste noire et or déployée.
+
+                Je cherche un service pour m'aider
+                à développer ma boutique.
+
+                <br><br>
+
+                Des recommandations dans la communauté ?
+
             </div>
 
 
             <span class="post-tag">
-                ✨ #TheSovereign
+                ❓ Demande
             </span>
 
 
@@ -1551,15 +1479,15 @@ button {
                 <div class="discovery-card">
 
                     <div class="user-avatar">
-                        ⚡
+                        🏪
                     </div>
 
                     <strong>
-                        Module Sami
+                        Boutique Exemple
                     </strong>
 
                     <small>
-                        Automatisation
+                        Marchand
                     </small>
 
                     <button class="follow">
@@ -1572,15 +1500,15 @@ button {
                 <div class="discovery-card">
 
                     <div class="user-avatar">
-                        ✨
+                        👤
                     </div>
 
                     <strong>
-                        Vaulta Store
+                        Membre SAMII
                     </strong>
 
                     <small>
-                        E-commerce
+                        Client
                     </small>
 
                     <button class="follow">
@@ -1593,15 +1521,15 @@ button {
                 <div class="discovery-card">
 
                     <div class="user-avatar">
-                        🛡️
+                        🚚
                     </div>
 
                     <strong>
-                        L'Arsenal
+                        Transport Express
                     </strong>
 
                     <small>
-                        Modules OS
+                        Service
                     </small>
 
                     <button class="follow">
@@ -1629,7 +1557,19 @@ button {
             <div class="trend">
 
                 <span>
-                    Automatisation
+                    Commerce
+                </span>
+
+                <strong>
+                    #EcommerceAlgerie
+                </strong>
+
+            </div>
+
+            <div class="trend">
+
+                <span>
+                    SAMII
                 </span>
 
                 <strong>
@@ -1641,23 +1581,11 @@ button {
             <div class="trend">
 
                 <span>
-                    E-commerce
+                    Marketplace
                 </span>
 
                 <strong>
-                    #TheSovereign
-                </strong>
-
-            </div>
-
-            <div class="trend">
-
-                <span>
-                    Workflow
-                </span>
-
-                <strong>
-                    #n8nAutomation
+                    #NouveauxProduits
                 </strong>
 
             </div>
@@ -1682,7 +1610,19 @@ button {
             <div class="trend">
 
                 <span>
-                    Automatisation
+                    Commerce
+                </span>
+
+                <strong>
+                    #EcommerceAlgerie
+                </strong>
+
+            </div>
+
+            <div class="trend">
+
+                <span>
+                    SAMII
                 </span>
 
                 <strong>
@@ -1694,23 +1634,11 @@ button {
             <div class="trend">
 
                 <span>
-                    E-commerce
+                    Marketplace
                 </span>
 
                 <strong>
-                    #TheSovereign
-                </strong>
-
-            </div>
-
-            <div class="trend">
-
-                <span>
-                    Workflow
-                </span>
-
-                <strong>
-                    #n8nAutomation
+                    #NouveauxProduits
                 </strong>
 
             </div>
@@ -1721,23 +1649,23 @@ button {
         <section class="desktop-panel">
 
             <h3>
-                👥 Membres actifs
+                👥 Membres
             </h3>
 
             <div class="member">
 
                 <div class="user-avatar">
-                    ⚡
+                    🏪
                 </div>
 
                 <div class="post-user">
 
                     <strong>
-                        Sami Core
+                        Boutique Exemple
                     </strong>
 
                     <small>
-                        Assistant IA
+                        Marchand
                     </small>
 
                 </div>
@@ -1748,17 +1676,17 @@ button {
             <div class="member">
 
                 <div class="user-avatar">
-                    👑
+                    👤
                 </div>
 
                 <div class="post-user">
 
                     <strong>
-                        ${nom}
+                        Membre SAMII
                     </strong>
 
                     <small>
-                        Fondateur
+                        Client
                     </small>
 
                 </div>
@@ -1774,7 +1702,7 @@ button {
 
 <!-- =====================================================
      MOBILE BOTTOM NAV
-===================================================== -->
+================================================     -->
 
 <nav class="bottom-nav">
 
