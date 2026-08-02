@@ -78,7 +78,14 @@ module.exports = {
         DOMAIN     : process.env.SHOPIFY_SHOP_DOMAIN,
         TOKEN      : process.env.SHOPIFY_ACCESS_TOKEN,
     },
+// ==================================================
+    // CLOUDFLARE (Gestion des sous-domaines clients)
+    // ==================================================
 
+    CLOUDFLARE: {
+        ZONE_ID   : process.env.CLOUDFLARE_ZONE_ID,
+        API_TOKEN : process.env.CLOUDFLARE_API_TOKEN,
+    },
     // ==================================================
     // TELEGRAM
     // ==================================================
