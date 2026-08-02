@@ -1,977 +1,3491 @@
+// ============================================================================
+// SAMII OS — OG TECHNOLOGY COMMUNITY
+// Community Hub — Mobile First / Dark + Light / Futuristic
+// ============================================================================
+
 const express = require("express");
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
 
-    const nom = req.session?.nom || "Mohamed Ouahid Ghembaza";
+// ============================================================================
+// AUTH
+// ============================================================================
 
-    res.send(`<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+function requireAuth(req, res, next) {
+    if (!req.session?.loggedIn) {
+        return res.redirect("/login");
+    }
 
-<title>Community — SAMII OS</title>
+    next();
+}
 
-<style>
+
+// ============================================================================
+// DONNÉES DE DÉMONSTRATION — STRUCTURE PRÊTE POUR AIRTABLE
+// ============================================================================
+
+const POSTS = [
+    {
+        id: 1,
+        author: "Samii Technology",
+        initials: "S",
+        grade: "GÉNÉRAL",
+        verified: true,
+        time: "Il y a 12 min",
+        text: "Bienvenue dans la nouvelle Community SAMII. Ici, clients, marchands, créateurs et partenaires construisent ensemble l'écosystème.",
+        image: "",
+        likes: 128,
+        comments: 24,
+        shares: 11,
+        tag: "SAMII",
+        type: "system"
+    },
+    {
+        id: 2,
+        author: "Marketplace OG",
+        initials: "M",
+        grade: "MARCHAND",
+        verified: true,
+        time: "Il y a 34 min",
+        text: "Nouvelle opportunité publiée sur Marketplace. Les membres de la communauté peuvent maintenant découvrir les produits et services directement depuis leur feed.",
+        image: "",
+        likes: 74,
+        comments: 13,
+        shares: 8,
+        tag: "MARKETPLACE",
+        type: "marketplace"
+    },
+    {
+        id: 3,
+        author: "Membre SAMII",
+        initials: "M",
+        grade: "CAPITAINE",
+        verified: false,
+        time: "Il y a 1 h",
+        text: "Je viens de terminer ma première mission. Les points ont été ajoutés à mon grade. On avance 🚀",
+        image: "",
+        likes: 46,
+        comments: 9,
+        shares: 3,
+        tag: "COMMUNAUTÉ",
+        type: "member"
+    }
+];
+
+
+// ============================================================================
+// CSS GLOBAL
+// ============================================================================
+
+const COMMUNITY_CSS = `
+
+/* ========================================================================
+   VARIABLES
+   ======================================================================== */
 
 :root {
-    --bg: #050505;
-    --surface: #0e0e10;
-    --surface-glass: rgba(14, 14, 16, 0.82);
-    --card: #121216;
-    --card-hover: #18181d;
-    --border: #22222a;
-    --border-light: rgba(255, 255, 255, 0.08);
 
-    --text-main: #f8f9fa;
-    --text-muted: #9ba1a6;
-    --text-dimmed: #5f666d;
+    --og-black: #030508;
+    --og-black-2: #070b11;
+    --og-panel: rgba(9, 15, 24, .88);
+    --og-panel-solid: #0a111b;
 
-    --gold: #c5a059;
-    --gold-light: #dfbe78;
-    --gold-gradient: linear-gradient(135deg, #dfbe78 0%, #c5a059 50%, #9c7b38 100%);
-    
-    --accent-purple: #7357ff;
-    --accent-glow: rgba(115, 87, 255, 0.15);
+    --og-blue: #087cff;
+    --og-blue-bright: #00b7ff;
+    --og-cyan: #00efff;
 
-    --radius-sm: 12px;
-    --radius-md: 18px;
-    --radius-lg: 24px;
-    
-    --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 0 20px rgba(197, 160, 89, 0.05);
+    --og-blue-soft: rgba(0, 132, 255, .12);
+    --og-cyan-soft: rgba(0, 239, 255, .08);
+
+    --og-white: #f5f9ff;
+    --og-text: #dce7f5;
+    --og-muted: #8190a5;
+
+    --og-border: rgba(255,255,255,.08);
+    --og-border-blue: rgba(0,174,255,.22);
+
+    --og-danger: #ff4f67;
+    --og-success: #21e6a0;
+    --og-warning: #ffc857;
+
+    --og-shadow:
+        0 20px 60px rgba(0,0,0,.45);
+
+    --og-glow:
+        0 0 35px rgba(0,174,255,.16);
+
+    --radius-xl: 24px;
+    --radius-lg: 18px;
+    --radius-md: 14px;
+
+    --ease: cubic-bezier(.16,1,.3,1);
 }
+
+
+/* ========================================================================
+   LIGHT MODE
+   ======================================================================== */
+
+body.light-mode {
+
+    --og-black: #eef4fa;
+    --og-black-2: #f6f9fc;
+
+    --og-panel: rgba(255,255,255,.94);
+    --og-panel-solid: #ffffff;
+
+    --og-white: #07111d;
+    --og-text: #26384c;
+    --og-muted: #6d7d90;
+
+    --og-border: rgba(4,25,45,.09);
+    --og-border-blue: rgba(0,105,210,.22);
+
+    --og-blue-soft: rgba(0,115,230,.08);
+    --og-cyan-soft: rgba(0,180,230,.07);
+
+    --og-shadow:
+        0 18px 45px rgba(15,45,75,.10);
+
+    background:
+        radial-gradient(
+            circle at 10% 0%,
+            rgba(0,160,255,.10),
+            transparent 32%
+        ),
+        #eef4fa;
+}
+
+
+/* ========================================================================
+   RESET
+   ======================================================================== */
 
 * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
 
 html {
-    background: var(--bg);
-    color-scheme: dark;
+    scroll-behavior: smooth;
 }
 
 body {
+
+    margin: 0;
+
     min-height: 100vh;
-    background: 
-        radial-gradient(circle at 50% -20%, rgba(115, 87, 255, 0.12), transparent 40%),
-        radial-gradient(circle at 100% 80%, rgba(197, 160, 89, 0.06), transparent 30%),
-        var(--bg);
-    color: var(--text-main);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    padding-bottom: 80px;
+
+    background:
+        radial-gradient(
+            circle at 10% 10%,
+            rgba(0,105,255,.10),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 90% 70%,
+            rgba(0,238,255,.06),
+            transparent 30%
+        ),
+        linear-gradient(
+            135deg,
+            #020407,
+            #050a11 55%,
+            #020509
+        );
+
+    color: var(--og-text);
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    overflow-x: hidden;
+
+    transition:
+        background .35s ease,
+        color .35s ease;
 }
 
-button, input, textarea {
-    font-family: inherit;
+button,
+input,
+textarea {
+    font: inherit;
 }
 
 button {
     cursor: pointer;
-    border: none;
-    background: none;
 }
 
-/* =========================================================
-   TOPBAR (Mobile & Glassmorphism)
-========================================================= */
+a {
+    color: inherit;
+    text-decoration: none;
+}
 
-.topbar {
+
+/* ========================================================================
+   FUTURISTIC BACKGROUND
+   ======================================================================== */
+
+.community-background {
+
+    position: fixed;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    z-index: -1;
+
+    overflow: hidden;
+}
+
+.community-grid {
+
+    position: absolute;
+
+    inset: 0;
+
+    opacity: .18;
+
+    background-image:
+
+        linear-gradient(
+            rgba(0,180,255,.045) 1px,
+            transparent 1px
+        ),
+
+        linear-gradient(
+            90deg,
+            rgba(0,180,255,.045) 1px,
+            transparent 1px
+        );
+
+    background-size: 44px 44px;
+
+    mask-image:
+        linear-gradient(
+            to bottom,
+            black,
+            transparent 90%
+        );
+}
+
+.community-orb {
+
+    position: absolute;
+
+    width: 500px;
+    height: 500px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(0,155,255,.11),
+            transparent 68%
+        );
+
+    filter: blur(25px);
+
+    animation:
+        floatingOrb 12s ease-in-out infinite;
+}
+
+.community-orb.one {
+    top: -220px;
+    left: -160px;
+}
+
+.community-orb.two {
+
+    right: -250px;
+    bottom: -180px;
+
+    animation-delay: -5s;
+}
+
+@keyframes floatingOrb {
+
+    0%,
+    100% {
+        transform: translate3d(0,0,0);
+    }
+
+    50% {
+        transform: translate3d(35px,-25px,0);
+    }
+}
+
+
+/* ========================================================================
+   APP
+   ======================================================================== */
+
+.community-app {
+
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* ========================================================================
+   HEADER
+   ======================================================================== */
+
+.community-header {
+
     position: sticky;
+
     top: 0;
+
     z-index: 100;
-    height: 64px;
+
+    height: 70px;
+
     display: flex;
+
     align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    background: var(--surface-glass);
-    border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+
+    gap: 20px;
+
+    padding:
+        0 28px;
+
+    background:
+        rgba(3,8,14,.82);
+
+    border-bottom:
+        1px solid var(--og-border);
+
+    backdrop-filter:
+        blur(22px);
+
+    -webkit-backdrop-filter:
+        blur(22px);
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 800;
-    font-size: 1rem;
-    letter-spacing: 0.05em;
+body.light-mode .community-header {
+
+    background:
+        rgba(255,255,255,.82);
 }
 
-.logo-icon {
+
+/* LOGO */
+
+.community-logo {
+
+    min-width: 190px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+}
+
+.community-logo-mark {
+
     width: 38px;
     height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+    display: grid;
+    place-items: center;
+
     border-radius: 12px;
-    background: var(--gold-gradient);
-    color: #050505;
-    box-shadow: 0 4px 15px rgba(197, 160, 89, 0.25);
-    font-size: 1.1rem;
+
+    background:
+        linear-gradient(
+            145deg,
+            #008cff,
+            #00eaff
+        );
+
+    color: #00121e;
+
+    font-weight: 1000;
+
+    box-shadow:
+        0 0 25px rgba(0,205,255,.35);
 }
 
-.logo span {
-    background: var(--gold-gradient);
+.community-logo-text {
+
+    display: flex;
+    flex-direction: column;
+
+    line-height: 1;
+}
+
+.community-logo-text strong {
+
+    color: var(--og-white);
+
+    font-size: 16px;
+
+    letter-spacing: 1.5px;
+}
+
+.community-logo-text span {
+
+    margin-top: 5px;
+
+    color: var(--og-cyan);
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: 2.2px;
+}
+
+
+/* SEARCH */
+
+.community-search {
+
+    flex: 1;
+
+    max-width: 620px;
+
+    height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 0 15px;
+
+    border:
+        1px solid var(--og-border);
+
+    border-radius: 12px;
+
+    background:
+        rgba(255,255,255,.035);
+
+    transition:
+        border .25s,
+        box-shadow .25s;
+}
+
+.community-search:focus-within {
+
+    border-color:
+        rgba(0,190,255,.45);
+
+    box-shadow:
+        0 0 0 4px rgba(0,160,255,.06);
+}
+
+.community-search-icon {
+
+    color: var(--og-muted);
+
+    font-size: 16px;
+}
+
+.community-search input {
+
+    width: 100%;
+
+    border: 0;
+
+    outline: 0;
+
+    background: transparent;
+
+    color: var(--og-white);
+
+    font-size: 13px;
+}
+
+.community-search input::placeholder {
+    color: var(--og-muted);
+}
+
+
+/* HEADER ACTIONS */
+
+.community-header-actions {
+
+    margin-left: auto;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+.icon-button {
+
+    width: 40px;
+    height: 40px;
+
+    border:
+        1px solid var(--og-border);
+
+    border-radius: 11px;
+
+    background:
+        rgba(255,255,255,.035);
+
+    color: var(--og-text);
+
+    display: grid;
+
+    place-items: center;
+
+    transition:
+        all .25s var(--ease);
+}
+
+.icon-button:hover {
+
+    border-color:
+        rgba(0,205,255,.4);
+
+    color:
+        var(--og-cyan);
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        var(--og-glow);
+}
+
+.notification-button {
+    position: relative;
+}
+
+.notification-dot {
+
+    position: absolute;
+
+    top: 7px;
+    right: 7px;
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background:
+        var(--og-cyan);
+
+    box-shadow:
+        0 0 10px var(--og-cyan);
+}
+
+
+/* PROFILE */
+
+.header-profile {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding-left: 10px;
+}
+
+.profile-avatar {
+
+    width: 38px;
+    height: 38px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #071827,
+            #006dff
+        );
+
+    border:
+        1px solid rgba(0,220,255,.45);
+
+    color: white;
+
+    font-weight: 900;
+
+    box-shadow:
+        0 0 20px rgba(0,150,255,.18);
+}
+
+.profile-name {
+
+    display: flex;
+
+    flex-direction: column;
+
+    line-height: 1.2;
+}
+
+.profile-name strong {
+
+    color: var(--og-white);
+
+    font-size: 12px;
+}
+
+.profile-name span {
+
+    color: var(--og-cyan);
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+}
+
+
+/* ========================================================================
+   DESKTOP LAYOUT
+   ======================================================================== */
+
+.community-layout {
+
+    width: 100%;
+
+    max-width: 1480px;
+
+    margin: 0 auto;
+
+    padding:
+        28px;
+
+    display: grid;
+
+    grid-template-columns:
+        245px
+        minmax(400px, 680px)
+        285px;
+
+    gap: 22px;
+
+    align-items: start;
+}
+
+
+/* ========================================================================
+   SIDEBARS
+   ======================================================================== */
+
+.community-sidebar {
+
+    position: sticky;
+
+    top: 94px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 14px;
+}
+
+.sidebar-card {
+
+    padding: 16px;
+
+    border:
+        1px solid var(--og-border);
+
+    border-radius: var(--radius-lg);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.045),
+            rgba(255,255,255,.018)
+        );
+
+    box-shadow:
+        var(--og-shadow);
+
+    backdrop-filter:
+        blur(16px);
+}
+
+body.light-mode .sidebar-card {
+
+    background:
+        rgba(255,255,255,.82);
+}
+
+
+/* NAV */
+
+.community-nav {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+.community-nav-link {
+
+    min-height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding:
+        0 12px;
+
+    border-radius: 11px;
+
+    color: var(--og-muted);
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    transition:
+        all .22s var(--ease);
+}
+
+.community-nav-link:hover,
+.community-nav-link.active {
+
+    color: var(--og-white);
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(0,150,255,.14),
+            rgba(0,230,255,.045)
+        );
+
+    box-shadow:
+        inset 3px 0 0 var(--og-cyan);
+}
+
+.community-nav-link .nav-icon {
+
+    width: 27px;
+    height: 27px;
+
+    display: grid;
+
+    place-items: center;
+
+    border-radius: 8px;
+
+    background:
+        rgba(255,255,255,.04);
+
+    font-size: 14px;
+}
+
+
+/* QG CARD */
+
+.qg-card {
+
+    padding: 18px;
+
+    border:
+        1px solid rgba(0,190,255,.2);
+
+    border-radius: var(--radius-lg);
+
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(0,200,255,.13),
+            transparent 55%
+        ),
+        rgba(3,14,24,.8);
+
+    overflow: hidden;
+
+    position: relative;
+}
+
+.qg-card::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 90px;
+    height: 90px;
+
+    right: -40px;
+    top: -40px;
+
+    border-radius: 50%;
+
+    border:
+        1px solid rgba(0,220,255,.25);
+
+    box-shadow:
+        0 0 30px rgba(0,190,255,.12);
+}
+
+.qg-title {
+
+    color: var(--og-cyan);
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: 1.8px;
+
+    margin-bottom: 8px;
+}
+
+.qg-text {
+
+    color: var(--og-muted);
+
+    font-size: 11px;
+
+    line-height: 1.55;
+}
+
+
+/* ========================================================================
+   MAIN FEED
+   ======================================================================== */
+
+.community-feed {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 16px;
+}
+
+
+/* HERO */
+
+.community-hero {
+
+    position: relative;
+
+    overflow: hidden;
+
+    padding: 26px;
+
+    min-height: 180px;
+
+    border:
+        1px solid rgba(0,184,255,.22);
+
+    border-radius:
+        var(--radius-xl);
+
+    background:
+
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(0,222,255,.18),
+            transparent 38%
+        ),
+
+        radial-gradient(
+            circle at 20% 100%,
+            rgba(0,90,255,.18),
+            transparent 45%
+        ),
+
+        linear-gradient(
+            135deg,
+            rgba(8,23,39,.95),
+            rgba(3,9,17,.95)
+        );
+
+    box-shadow:
+        0 25px 70px rgba(0,0,0,.4),
+        inset 0 1px rgba(255,255,255,.05);
+}
+
+body.light-mode .community-hero {
+
+    background:
+        radial-gradient(
+            circle at 90% 10%,
+            rgba(0,175,255,.13),
+            transparent 40%
+        ),
+        linear-gradient(
+            135deg,
+            #ffffff,
+            #eaf6ff
+        );
+}
+
+.hero-kicker {
+
+    color: var(--og-cyan);
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: 2px;
+
+    margin-bottom: 10px;
+}
+
+.community-hero h1 {
+
+    margin: 0;
+
+    max-width: 500px;
+
+    color: var(--og-white);
+
+    font-size:
+        clamp(25px, 4vw, 36px);
+
+    line-height: 1.05;
+
+    letter-spacing: -1px;
+}
+
+.community-hero h1 span {
+
+    background:
+        linear-gradient(
+            90deg,
+            #fff,
+            #00cfff,
+            #008dff
+        );
+
     -webkit-background-clip: text;
+
     -webkit-text-fill-color: transparent;
 }
 
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+.hero-description {
 
-.header-btn {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--card);
-    color: var(--text-main);
-    font-size: 16px;
-    transition: all 0.2s ease;
-}
+    max-width: 530px;
 
-.header-btn:active {
-    transform: scale(0.95);
-    border-color: var(--gold);
-}
+    margin:
+        13px 0 20px;
 
-/* =========================================================
-   MOBILE CATEGORY NAV (Instagram/LinkedIn Hybrid Style)
-========================================================= */
+    color: var(--og-muted);
 
-.mobile-nav {
-    position: sticky;
-    top: 64px;
-    z-index: 90;
-    display: flex;
-    overflow-x: auto;
-    gap: 8px;
-    padding: 10px 16px;
-    background: rgba(5, 5, 5, 0.9);
-    border-bottom: 1px solid var(--border-light);
-    scrollbar-width: none;
-}
+    font-size: 12px;
 
-.mobile-nav::-webkit-scrollbar {
-    display: none;
-}
-
-.mobile-nav button {
-    flex-shrink: 0;
-    padding: 8px 16px;
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    background: var(--card);
-    color: var(--text-muted);
-    font-size: 0.78rem;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.mobile-nav button.active {
-    background: rgba(197, 160, 89, 0.12);
-    border-color: rgba(197, 160, 89, 0.4);
-    color: var(--gold-light);
-    box-shadow: 0 0 15px rgba(197, 160, 89, 0.1);
-}
-
-/* =========================================================
-   MAIN CONTAINER & GRID LAYOUT
-========================================================= */
-
-.community {
-    width: 100%;
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 16px 12px;
-}
-
-/* =========================================================
-   WELCOME BANNER (Effekt Waw Premium)
-========================================================= */
-
-.welcome {
-    position: relative;
-    overflow: hidden;
-    padding: 24px;
-    margin-bottom: 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: linear-gradient(145deg, #121217, #0a0a0e);
-    box-shadow: var(--shadow-premium);
-}
-
-.welcome::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: var(--gold-gradient);
-}
-
-.welcome::after {
-    content: "";
-    position: absolute;
-    width: 160px;
-    height: 160px;
-    right: -50px;
-    top: -50px;
-    border-radius: 50%;
-    background: rgba(197, 160, 89, 0.08);
-    filter: blur(25px);
-}
-
-.welcome-label {
-    position: relative;
-    z-index: 1;
-    color: var(--gold);
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 8px;
-}
-
-.welcome h1 {
-    position: relative;
-    z-index: 1;
-    font-size: 1.35rem;
-    line-height: 1.3;
-    margin-bottom: 8px;
-    font-weight: 700;
-}
-
-.welcome p {
-    position: relative;
-    z-index: 1;
-    color: var(--text-muted);
-    font-size: 0.85rem;
     line-height: 1.6;
 }
 
-/* =========================================================
-   CREATE POST BOX
-========================================================= */
+.hero-actions {
 
-.create {
-    padding: 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--card);
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-premium);
-}
-
-.create-head {
     display: flex;
-    align-items: center;
-    gap: 12px;
+
+    gap: 8px;
+
+    flex-wrap: wrap;
 }
 
-.user-avatar {
-    flex-shrink: 0;
-    width: 42px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #252530, #181820);
-    border: 1px solid var(--border);
-    font-size: 18px;
-}
 
-.create-button {
-    flex: 1;
-    min-height: 44px;
-    padding: 0 16px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--surface);
-    color: var(--text-dimmed);
-    text-align: left;
-    font-size: 0.82rem;
-    transition: all 0.2s;
-}
+/* BUTTONS */
 
-.create-button:active {
-    background: var(--card-hover);
-    border-color: var(--gold);
-}
+.primary-button,
+.secondary-button {
 
-.create-options {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border-light);
-}
+    min-height: 40px;
 
-.create-option {
-    padding: 10px 4px;
+    padding:
+        0 15px;
+
     border-radius: 10px;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 0.7rem;
-    text-align: center;
-    font-weight: 500;
-    transition: all 0.2s;
-}
 
-.create-option:active {
-    background: var(--card-hover);
-    color: var(--gold-light);
-}
+    display: inline-flex;
 
-/* =========================================================
-   FEED & POSTS
-========================================================= */
-
-.feed-title {
-    display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 8px 4px;
-    margin-bottom: 8px;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    font-size: 11px;
+
+    font-weight: 900;
+
+    transition:
+        all .25s var(--ease);
 }
 
-.feed-title strong {
-    font-size: 0.85rem;
-    letter-spacing: 0.02em;
+.primary-button {
+
+    color: #00131e;
+
+    border: 0;
+
+    background:
+        linear-gradient(
+            135deg,
+            #00efff,
+            #0087ff
+        );
+
+    box-shadow:
+        0 7px 25px rgba(0,165,255,.25);
 }
 
-.feed-title button {
-    color: var(--gold);
-    font-size: 0.75rem;
-    font-weight: 600;
+.primary-button:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 12px 35px rgba(0,180,255,.38);
 }
 
-.post {
+.secondary-button {
+
+    color: var(--og-text);
+
+    background:
+        rgba(255,255,255,.045);
+
+    border:
+        1px solid var(--og-border);
+}
+
+.secondary-button:hover {
+
+    border-color:
+        rgba(0,200,255,.35);
+
+    color:
+        var(--og-cyan);
+}
+
+
+/* ========================================================================
+   CREATE POST
+   ======================================================================== */
+
+.create-post {
+
+    padding: 17px;
+
+    border:
+        1px solid var(--og-border);
+
+    border-radius:
+        var(--radius-lg);
+
+    background:
+        var(--og-panel);
+
+    box-shadow:
+        var(--og-shadow);
+
+    backdrop-filter:
+        blur(18px);
+}
+
+.create-post-top {
+
+    display: flex;
+
+    gap: 11px;
+
+    align-items: flex-start;
+}
+
+.create-avatar {
+
+    flex:
+        0 0 auto;
+
+    width: 40px;
+    height: 40px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #006aff,
+            #00d9ff
+        );
+
+    color: white;
+
+    font-weight: 900;
+}
+
+.fake-input {
+
+    flex: 1;
+
+    min-height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    padding:
+        0 14px;
+
+    border:
+        1px solid var(--og-border);
+
+    border-radius: 12px;
+
+    color: var(--og-muted);
+
+    background:
+        rgba(255,255,255,.025);
+
+    font-size: 12px;
+
+    cursor: pointer;
+
+    transition:
+        all .2s;
+}
+
+.fake-input:hover {
+
+    border-color:
+        rgba(0,190,255,.35);
+
+    color:
+        var(--og-text);
+}
+
+.create-actions {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap: 7px;
+
+    margin-top: 13px;
+}
+
+.create-action {
+
+    min-height: 37px;
+
+    border:
+        1px solid var(--og-border);
+
+    border-radius: 10px;
+
+    background:
+        rgba(255,255,255,.025);
+
+    color: var(--og-muted);
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    transition:
+        all .2s;
+}
+
+.create-action:hover {
+
+    color: var(--og-cyan);
+
+    border-color:
+        rgba(0,200,255,.28);
+
+    background:
+        rgba(0,170,255,.06);
+}
+
+
+/* ========================================================================
+   POST
+   ======================================================================== */
+
+.community-post {
+
+    border:
+        1px solid var(--og-border);
+
+    border-radius:
+        var(--radius-lg);
+
+    background:
+        var(--og-panel);
+
+    box-shadow:
+        var(--og-shadow);
+
     overflow: hidden;
-    margin-bottom: 14px;
-    padding: 18px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--card);
-    box-shadow: var(--shadow-premium);
+
+    backdrop-filter:
+        blur(18px);
+
+    transition:
+        border .25s,
+        transform .25s;
+}
+
+.community-post:hover {
+
+    border-color:
+        rgba(0,160,255,.17);
 }
 
 .post-header {
+
     display: flex;
+
     align-items: center;
-    gap: 12px;
+
+    gap: 11px;
+
+    padding:
+        17px 17px 10px;
 }
 
-.post-user {
-    flex: 1;
+.post-avatar {
+
+    width: 42px;
+    height: 42px;
+
+    flex:
+        0 0 auto;
+
+    display: grid;
+
+    place-items: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #081b30,
+            #0079ff
+        );
+
+    border:
+        1px solid rgba(0,195,255,.35);
+
+    color: white;
+
+    font-weight: 900;
+}
+
+.post-author {
+
     min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
 }
 
-.post-user strong {
-    display: block;
-    font-size: 0.85rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.post-author-name {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    color: var(--og-white);
+
+    font-size: 12px;
+
+    font-weight: 900;
 }
 
-.post-user small {
-    display: block;
+.verified {
+
+    color:
+        var(--og-cyan);
+
+    font-size: 10px;
+}
+
+.post-meta {
+
+    color: var(--og-muted);
+
+    font-size: 9px;
+
     margin-top: 3px;
-    color: var(--text-dimmed);
-    font-size: 0.7rem;
 }
 
 .post-menu {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+
+    margin-left: auto;
+
+    border: 0;
+
     background: transparent;
-    color: var(--text-muted);
+
+    color: var(--og-muted);
+
     font-size: 18px;
 }
 
 .post-content {
-    margin-top: 14px;
-    color: #e2e8f0;
-    font-size: 0.85rem;
-    line-height: 1.65;
+
+    padding:
+        5px 17px 15px;
 }
+
+.post-content p {
+
+    margin: 0;
+
+    color: var(--og-text);
+
+    font-size: 13px;
+
+    line-height: 1.65;
+
+    white-space: pre-line;
+}
+
+
+/* POST TAG */
 
 .post-tag {
-    display: inline-block;
-    margin-top: 14px;
-    padding: 6px 10px;
-    border-radius: 8px;
-    background: rgba(197, 160, 89, 0.08);
-    border: 1px solid rgba(197, 160, 89, 0.2);
-    color: var(--gold-light);
-    font-size: 0.68rem;
-    font-weight: 600;
+
+    display: inline-flex;
+
+    margin-top: 13px;
+
+    padding:
+        5px 8px;
+
+    border-radius: 7px;
+
+    background:
+        rgba(0,185,255,.07);
+
+    border:
+        1px solid rgba(0,185,255,.15);
+
+    color:
+        var(--og-cyan);
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+    letter-spacing: 1px;
 }
 
+
+/* POST ACTIONS */
+
 .post-actions {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
+
+    display: flex;
+
+    align-items: center;
+
+    border-top:
+        1px solid var(--og-border);
+
+    padding:
+        8px 12px;
 }
 
 .post-action {
-    padding: 10px 4px;
-    border-radius: 10px;
+
+    flex: 1;
+
+    height: 38px;
+
+    border: 0;
+
+    border-radius: 9px;
+
     background: transparent;
-    color: var(--text-muted);
-    font-size: 0.72rem;
-    font-weight: 500;
-    transition: all 0.2s;
+
+    color: var(--og-muted);
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    transition:
+        all .2s;
 }
 
-.post-action:active {
-    background: var(--card-hover);
-    color: var(--gold-light);
+.post-action:hover {
+
+    color:
+        var(--og-cyan);
+
+    background:
+        rgba(0,180,255,.05);
 }
 
-/* =========================================================
-   DISCOVERY SECTION
-========================================================= */
+.post-action.liked {
 
-.discovery {
-    margin-top: 20px;
+    color:
+        var(--og-cyan);
+
+    text-shadow:
+        0 0 10px rgba(0,220,255,.45);
 }
 
-.section-title {
+
+/* ========================================================================
+   RIGHT SIDEBAR
+   ======================================================================== */
+
+.widget-title {
+
     display: flex;
-    align-items: center;
+
     justify-content: space-between;
-    margin-bottom: 10px;
-    padding: 0 4px;
-}
 
-.section-title strong {
-    font-size: 0.88rem;
-}
-
-.section-title button {
-    color: var(--gold);
-    font-size: 0.72rem;
-}
-
-.discovery-scroll {
-    display: flex;
-    overflow-x: auto;
-    gap: 12px;
-    scrollbar-width: none;
-    padding-bottom: 4px;
-}
-
-.discovery-scroll::-webkit-scrollbar {
-    display: none;
-}
-
-.discovery-card {
-    flex-shrink: 0;
-    width: 155px;
-    padding: 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--card);
-    text-align: center;
-    box-shadow: var(--shadow-premium);
-}
-
-.discovery-card .user-avatar {
-    width: 44px;
-    height: 44px;
-    margin: 0 auto 10px auto;
-}
-
-.discovery-card strong {
-    display: block;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-size: 0.78rem;
-}
-
-.discovery-card small {
-    display: block;
-    margin-top: 3px;
-    color: var(--text-dimmed);
-    font-size: 0.68rem;
-}
-
-.follow {
-    width: 100%;
-    margin-top: 12px;
-    padding: 8px;
-    border: 1px solid rgba(197, 160, 89, 0.35);
-    border-radius: 10px;
-    background: rgba(197, 160, 89, 0.05);
-    color: var(--gold-light);
-    font-size: 0.7rem;
-    font-weight: 600;
-    transition: all 0.2s;
-}
-
-.follow:active {
-    background: var(--gold);
-    color: #000;
-}
-
-/* =========================================================
-   BOTTOM MOBILE NAV (Effekt App Native)
-========================================================= */
-
-.bottom-nav {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 200;
-    height: 68px;
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    padding: 6px 8px env(safe-area-inset-bottom);
-    background: rgba(10, 10, 14, 0.92);
-    border-top: 1px solid var(--border);
-    backdrop-filter: blur(25px);
-}
-
-.bottom-item {
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 3px;
-    background: transparent;
-    color: var(--text-dimmed);
-    font-size: 0.6rem;
-    font-weight: 500;
+
+    margin-bottom: 14px;
+
+    color: var(--og-white);
+
+    font-size: 11px;
+
+    font-weight: 900;
 }
 
-.bottom-item span:first-child {
+.widget-title span {
+
+    color:
+        var(--og-cyan);
+
+    font-size: 9px;
+
+    letter-spacing: 1px;
+}
+
+.trend {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+    padding:
+        9px 0;
+
+    border-bottom:
+        1px solid var(--og-border);
+}
+
+.trend:last-child {
+    border-bottom: 0;
+}
+
+.trend small {
+
+    color: var(--og-muted);
+
+    font-size: 8px;
+}
+
+.trend strong {
+
+    color: var(--og-text);
+
+    font-size: 11px;
+}
+
+.trend span {
+
+    color: var(--og-muted);
+
+    font-size: 8px;
+}
+
+
+/* RANK */
+
+.rank-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 8px 0;
+}
+
+.rank-number {
+
+    width: 22px;
+    height: 22px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 7px;
+
+    color: var(--og-cyan);
+
+    background:
+        rgba(0,180,255,.07);
+
+    font-size: 9px;
+
+    font-weight: 900;
+}
+
+.rank-avatar {
+
+    width: 29px;
+    height: 29px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0a2945,
+            #006aff
+        );
+
+    color: white;
+
+    font-size: 9px;
+
+    font-weight: 900;
+}
+
+.rank-info {
+
+    flex: 1;
+
+    min-width: 0;
+}
+
+.rank-info strong {
+
+    display: block;
+
+    color: var(--og-text);
+
+    font-size: 9px;
+}
+
+.rank-info span {
+
+    color: var(--og-muted);
+
+    font-size: 8px;
+}
+
+
+/* ========================================================================
+   MOBILE BOTTOM NAV
+   ======================================================================== */
+
+.mobile-bottom-nav {
+
+    display: none;
+
+    position: fixed;
+
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+
+    z-index: 200;
+
+    height: 64px;
+
+    padding:
+        6px;
+
+    border:
+        1px solid rgba(0,190,255,.2);
+
+    border-radius: 19px;
+
+    background:
+        rgba(5,11,18,.92);
+
+    backdrop-filter:
+        blur(22px);
+
+    box-shadow:
+        0 20px 50px rgba(0,0,0,.55);
+}
+
+body.light-mode .mobile-bottom-nav {
+
+    background:
+        rgba(255,255,255,.92);
+}
+
+.mobile-nav-item {
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 3px;
+
+    border: 0;
+
+    border-radius: 13px;
+
+    background: transparent;
+
+    color: var(--og-muted);
+
+    font-size: 8px;
+
+    font-weight: 800;
+}
+
+.mobile-nav-item span:first-child {
+
+    font-size: 17px;
+}
+
+.mobile-nav-item.active {
+
+    color:
+        var(--og-cyan);
+
+    background:
+        rgba(0,190,255,.08);
+}
+
+
+/* ========================================================================
+   THEME TOGGLE
+   ======================================================================== */
+
+.theme-switch {
+
+    position: fixed;
+
+    right: 20px;
+    bottom: 20px;
+
+    z-index: 250;
+
+    width: 46px;
+    height: 46px;
+
+    border-radius: 50%;
+
+    border:
+        1px solid rgba(0,190,255,.25);
+
+    background:
+        rgba(7,14,22,.9);
+
+    color:
+        var(--og-cyan);
+
+    box-shadow:
+        0 8px 30px rgba(0,0,0,.35);
+
+    transition:
+        all .25s;
+}
+
+.theme-switch:hover {
+
+    transform:
+        rotate(18deg)
+        scale(1.06);
+
+    box-shadow:
+        0 0 25px rgba(0,200,255,.2);
+}
+
+body.light-mode .theme-switch {
+
+    background:
+        rgba(255,255,255,.95);
+}
+
+
+/* ========================================================================
+   MODAL PUBLICATION
+   ======================================================================== */
+
+.publish-overlay {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 500;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+
+    background:
+        rgba(0,0,0,.72);
+
+    backdrop-filter:
+        blur(12px);
+}
+
+.publish-overlay.open {
+    display: flex;
+}
+
+.publish-modal {
+
+    width: 100%;
+
+    max-width: 620px;
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    padding: 22px;
+
+    border:
+        1px solid rgba(0,190,255,.25);
+
+    border-radius: 22px;
+
+    background:
+        #07101a;
+
+    box-shadow:
+        0 30px 100px rgba(0,0,0,.7),
+        0 0 50px rgba(0,170,255,.08);
+}
+
+body.light-mode .publish-modal {
+    background: #fff;
+}
+
+.modal-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+
+    margin: 0;
+
+    color: var(--og-white);
+
     font-size: 18px;
 }
 
-.bottom-item.active {
-    color: var(--gold-light);
+.modal-close {
+
+    width: 35px;
+    height: 35px;
+
+    border: 0;
+
+    border-radius: 9px;
+
+    background:
+        rgba(255,255,255,.05);
+
+    color: var(--og-muted);
+
+    font-size: 18px;
 }
 
-.bottom-publish {
-    position: relative;
-    margin-top: -22px;
+.publish-textarea {
+
+    width: 100%;
+
+    min-height: 170px;
+
+    resize: vertical;
+
+    border:
+        1px solid var(--og-border);
+
+    border-radius: 14px;
+
+    padding: 14px;
+
+    outline: 0;
+
+    background:
+        rgba(255,255,255,.025);
+
+    color: var(--og-white);
+
+    font-size: 13px;
+
+    line-height: 1.6;
 }
 
-.bottom-publish span:first-child {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: var(--gold-gradient);
-    color: #050505;
-    box-shadow: 0 6px 20px rgba(197, 160, 89, 0.35);
-    font-size: 22px;
-    font-weight: bold;
+.publish-textarea:focus {
+
+    border-color:
+        rgba(0,200,255,.4);
+
+    box-shadow:
+        0 0 0 4px rgba(0,170,255,.06);
 }
 
-/* =========================================================
-   DESKTOP VIEW & AMAZON-INSPIRED LEFT SIDEBAR
-========================================================= */
+.modal-tools {
 
-@media (min-width: 900px) {
-    body {
-        padding-bottom: 0;
+    display: grid;
+
+    grid-template-columns:
+        repeat(3,1fr);
+
+    gap: 8px;
+
+    margin:
+        12px 0;
+}
+
+.modal-tool {
+
+    min-height: 40px;
+
+    border:
+        1px solid var(--og-border);
+
+    border-radius: 10px;
+
+    background:
+        rgba(255,255,255,.025);
+
+    color: var(--og-muted);
+
+    font-size: 10px;
+
+    font-weight: 800;
+}
+
+.modal-publish {
+
+    width: 100%;
+
+    height: 46px;
+
+    border: 0;
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #00eaff,
+            #007cff
+        );
+
+    color:
+        #00111c;
+
+    font-weight: 1000;
+
+    box-shadow:
+        0 10px 30px rgba(0,145,255,.22);
+}
+
+
+/* ========================================================================
+   RESPONSIVE TABLET
+   ======================================================================== */
+
+@media (max-width: 1200px) {
+
+    .community-layout {
+
+        grid-template-columns:
+            210px
+            minmax(400px, 1fr);
+
+        max-width: 1050px;
     }
 
-    .topbar {
-        padding: 0 40px;
+    .community-right-sidebar {
+        display: none;
+    }
+}
+
+
+/* ========================================================================
+   RESPONSIVE MOBILE
+   ======================================================================== */
+
+@media (max-width: 760px) {
+
+    .community-header {
+
+        height: 60px;
+
+        padding:
+            0 13px;
+
+        gap: 8px;
     }
 
-    .community {
-        max-width: 1350px;
-        display: grid;
-        grid-template-columns: 260px minmax(500px, 720px) 300px;
-        gap: 24px;
-        padding: 30px 20px 60px;
+    .community-logo {
+
+        min-width: auto;
     }
 
-    .bottom-nav, .mobile-nav {
-        display: none !important;
+    .community-logo-text span {
+        display: none;
     }
 
-    /* Menu Latéral Inspiré Amazon / Pro Navigation */
-    .desktop-sidebar {
-        position: sticky;
-        top: 88px;
-        height: fit-content;
+    .community-logo-text strong {
+        font-size: 13px;
     }
 
-    .amazon-sidebar-box {
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        background: var(--card);
-        overflow: hidden;
-        box-shadow: var(--shadow-premium);
-        margin-bottom: 16px;
+    .community-logo-mark {
+
+        width: 34px;
+        height: 34px;
     }
 
-    .amazon-sidebar-header {
-        padding: 16px;
-        background: rgba(255, 255, 255, 0.02);
-        border-bottom: 1px solid var(--border);
-        display: flex;
-        align-items: center;
-        gap: 12px;
+    .community-search {
+
+        order: 3;
+
+        position: absolute;
+
+        top: 67px;
+
+        left: 12px;
+        right: 12px;
+
+        max-width: none;
+
+        height: 40px;
     }
 
-    .amazon-sidebar-header strong {
-        font-size: 0.85rem;
+    .community-header-actions {
+
+        gap: 4px;
+    }
+
+    .header-profile {
+        display: none;
+    }
+
+    .community-layout {
+
         display: block;
+
+        padding:
+            58px 10px 90px;
     }
 
-    .amazon-sidebar-header small {
-        color: var(--gold);
-        font-size: 0.7rem;
+    .community-left-sidebar,
+    .community-right-sidebar {
+
+        display: none;
     }
 
-    .amazon-menu-section {
-        padding: 12px;
-        border-bottom: 1px solid var(--border);
-    }
+    .community-feed {
 
-    .amazon-menu-section:last-child {
-        border-bottom: none;
-    }
-
-    .amazon-menu-title {
-        font-size: 0.72rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: var(--text-dimmed);
-        padding: 6px 8px;
-        font-weight: 700;
-    }
-
-    .amazon-menu-section button {
         width: 100%;
+    }
+
+    .community-hero {
+
+        min-height: auto;
+
+        padding:
+            22px 18px;
+
+        border-radius: 19px;
+    }
+
+    .community-hero h1 {
+
+        font-size: 27px;
+    }
+
+    .hero-description {
+
+        font-size: 11px;
+    }
+
+    .hero-actions {
+
+        display: grid;
+
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+    .primary-button,
+    .secondary-button {
+
+        width: 100%;
+
+        min-height: 42px;
+    }
+
+    .create-post {
+
+        padding: 13px;
+
+        border-radius: 16px;
+    }
+
+    .create-actions {
+
+        grid-template-columns:
+            repeat(2,1fr);
+    }
+
+    .community-post {
+
+        border-radius: 16px;
+    }
+
+    .post-header {
+
+        padding:
+            14px 13px 9px;
+    }
+
+    .post-content {
+
+        padding:
+            5px 13px 13px;
+    }
+
+    .post-actions {
+
+        padding:
+            6px;
+    }
+
+    .post-action {
+
+        font-size: 9px;
+    }
+
+    .mobile-bottom-nav {
+
         display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 12px;
-        border-radius: 10px;
-        background: transparent;
-        color: var(--text-muted);
-        text-align: left;
-        font-size: 0.8rem;
-        font-weight: 500;
-        transition: all 0.2s;
     }
 
-    .amazon-menu-section button:hover {
-        background: var(--card-hover);
-        color: var(--text-main);
-    }
+    .theme-switch {
 
-    .amazon-menu-section button.active {
-        background: rgba(197, 160, 89, 0.1);
-        color: var(--gold-light);
-        border-left: 3px solid var(--gold);
-    }
+        right: 12px;
 
-    .desktop-right {
-        position: sticky;
-        top: 88px;
-        height: fit-content;
-    }
+        bottom: 84px;
 
-    .desktop-panel {
-        padding: 18px;
-        margin-bottom: 16px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        background: var(--card);
-        box-shadow: var(--shadow-premium);
-    }
+        width: 40px;
+        height: 40px;
 
-    .desktop-panel h3 {
-        margin-bottom: 14px;
-        font-size: 0.85rem;
-        letter-spacing: 0.03em;
-    }
-
-    .trend {
-        padding: 10px 0;
-        border-bottom: 1px solid var(--border-light);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .trend:last-child {
-        border-bottom: none;
-    }
-
-    .trend span {
-        color: var(--text-dimmed);
-        font-size: 0.68rem;
-    }
-
-    .trend strong {
-        color: var(--text-main);
-        font-size: 0.75rem;
-    }
-
-    .mobile-only {
-        display: none !important;
+        font-size: 14px;
     }
 }
 
-@media (max-width: 899px) {
-    .desktop-only {
-        display: none !important;
+
+/* ========================================================================
+   VERY SMALL PHONES
+   ======================================================================== */
+
+@media (max-width: 380px) {
+
+    .community-layout {
+
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+
+    .community-hero h1 {
+        font-size: 24px;
+    }
+
+    .create-action {
+        font-size: 9px;
+    }
+
+    .mobile-bottom-nav {
+        left: 6px;
+        right: 6px;
     }
 }
 
-</style>
+`;
+
+
+// ============================================================================
+// HTML
+// ============================================================================
+
+router.get("/", requireAuth, async (req, res) => {
+
+    const postsHtml = POSTS.map(post => {
+
+        return `
+        <article
+            class="community-post"
+            data-post-id="${post.id}"
+        >
+
+            <div class="post-header">
+
+                <div class="post-avatar">
+                    ${post.initials}
+                </div>
+
+                <div class="post-author">
+
+                    <div class="post-author-name">
+
+                        ${post.author}
+
+                        ${
+                            post.verified
+                                ? `<span class="verified">✓</span>`
+                                : ""
+                        }
+
+                    </div>
+
+                    <div class="post-meta">
+
+                        ${post.grade}
+                        ·
+                        ${post.time}
+
+                    </div>
+
+                </div>
+
+                <button
+                    class="post-menu"
+                    onclick="postMenu(${post.id})"
+                >
+                    ⋯
+                </button>
+
+            </div>
+
+
+            <div class="post-content">
+
+                <p>${post.text}</p>
+
+                ${
+                    post.tag
+                        ? `
+                            <span class="post-tag">
+                                #${post.tag}
+                            </span>
+                        `
+                        : ""
+                }
+
+            </div>
+
+
+            <div class="post-actions">
+
+                <button
+                    class="post-action"
+                    onclick="likePost(this)"
+                >
+                    ❤️
+                    <span>${post.likes}</span>
+                </button>
+
+                <button
+                    class="post-action"
+                    onclick="openComments(${post.id})"
+                >
+                    💬
+                    <span>${post.comments}</span>
+                </button>
+
+                <button
+                    class="post-action"
+                    onclick="sharePost(${post.id})"
+                >
+                    ↗
+                    <span>${post.shares}</span>
+                </button>
+
+                <button
+                    class="post-action"
+                    onclick="savePost(this)"
+                >
+                    🔖
+                    Enregistrer
+                </button>
+
+            </div>
+
+        </article>
+        `;
+
+    }).join("");
+
+
+    res.send(`
+
+<!DOCTYPE html>
+
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#030508"
+    >
+
+    <title>
+        Community — OG Technology | SAMII OS
+    </title>
+
+    <style>
+
+        ${COMMUNITY_CSS}
+
+    </style>
+
 </head>
+
 
 <body>
 
-<!-- =====================================================
-     HEADER TOPBAR
-===================================================== -->
-<header class="topbar">
-    <div class="logo">
-        <div class="logo-icon">🤖</div>
-        <div>SAMII <span>OS</span></div>
+<div class="community-app">
+
+
+    <!-- ================================================================
+         BACKGROUND
+         ================================================================ -->
+
+    <div class="community-background">
+
+        <div class="community-grid"></div>
+
+        <div class="community-orb one"></div>
+
+        <div class="community-orb two"></div>
+
     </div>
-    <div class="header-actions">
-        <button class="header-btn" title="Rechercher">🔍</button>
-        <button class="header-btn" title="Notifications">🔔</button>
-    </div>
-</header>
 
-<!-- =====================================================
-     MOBILE CATEGORY NAV
-===================================================== -->
-<nav class="mobile-nav">
-    <button class="active">🏠 Accueil</button>
-    <button>🔥 Explorer</button>
-    <button>📦 Produits</button>
-    <button>💼 Offres</button>
-    <button>❓ Demandes</button>
-</nav>
 
-<div class="community">
+    <!-- ================================================================
+         HEADER
+         ================================================================ -->
 
-    <!-- =================================================
-         DESKTOP LEFT SIDEBAR (AMAZON-INSPIRED DEEP NAVIGATION)
-    ================================================== -->
-    <aside class="desktop-sidebar desktop-only">
-        <div class="amazon-sidebar-box">
-            <div class="amazon-sidebar-header">
-                <div class="user-avatar">👤</div>
-                <div>
-                    <strong>${nom}</strong>
-                    <small>Membre SAMII</small>
-                </div>
+    <header class="community-header">
+
+
+        <a
+            href="/community"
+            class="community-logo"
+        >
+
+            <div class="community-logo-mark">
+                OG
             </div>
 
-            <div class="amazon-menu-section">
-                <div class="amazon-menu-title">Navigation Principale</div>
-                <button class="active"><span>🏠</span> Accueil</button>
-                <button><span>🔥</span> Explorer les flux</button>
-                <button><span>👥</span> Réseau & Communautés</button>
-                <button><span>🔖</span> Éléments Enregistrés</button>
+            <div class="community-logo-text">
+
+                <strong>
+                    OG TECHNOLOGY
+                </strong>
+
+                <span>
+                    SAMII COMMUNITY
+                </span>
+
             </div>
 
-            <div class="amazon-menu-section">
-                <div class="amazon-menu-title">Écosystème & Hub</div>
-                <button><span>📦</span> Catalogue Produits</button>
-                <button><span>💼</span> Offres & Missions</button>
-                <button><span>🤖</span> Automatisation Sami</button>
-                <button><span>⚙️</span> Paramètres du Compte</button>
-            </div>
-        </div>
-    </aside>
+        </a>
 
-    <!-- =================================================
-         FEED CENTRAL
-    ================================================== -->
-    <main>
-        <!-- WELCOME -->
-        <section class="welcome">
-            <div class="welcome-label">SAMII COMMUNITY HUB</div>
-            <h1>Bienvenue dans l'écosystème 🌐</h1>
-            <p>Clients, commerçants et membres de l'élite se rencontrent, partagent et développent leurs activités automatisées ensemble.</p>
-        </section>
 
-        <!-- CREATE -->
-        <section class="create">
-            <div class="create-head">
-                <div class="user-avatar">👤</div>
-                <button class="create-button">Quoi de neuf ? Partage quelque chose...</button>
-            </div>
-            <div class="create-options">
-                <button class="create-option">📷<br>Photo</button>
-                <button class="create-option">📦<br>Produit</button>
-                <button class="create-option">💼<br>Offre</button>
-                <button class="create-option">❓<br>Demande</button>
-            </div>
-        </section>
+        <div class="community-search">
 
-        <!-- FEED TITLE -->
-        <div class="feed-title">
-            <strong>Fil de la communauté</strong>
-            <button>Récent ▾</button>
+            <span class="community-search-icon">
+                ⌕
+            </span>
+
+            <input
+                id="communitySearch"
+                type="search"
+                placeholder="Rechercher dans la communauté..."
+                autocomplete="off"
+            >
+
         </div>
 
-        <!-- POST 1 -->
-        <article class="post">
-            <div class="post-header">
-                <div class="user-avatar">🏪</div>
-                <div class="post-user">
-                    <strong>Exemple Boutique</strong>
-                    <small>Marchand · Algérie · 2 h</small>
-                </div>
-                <button class="post-menu">⋮</button>
-            </div>
-            <div class="post-content">
-                Bienvenue dans SAMII Community 👋<br><br>
-                Ici les commerçants peuvent présenter leurs produits, les clients découvrir de nouvelles offres et toute la communauté peut échanger.
-            </div>
-            <span class="post-tag">🏪 Commerce</span>
-            <div class="post-actions">
-                <button class="post-action">❤️ J'aime</button>
-                <button class="post-action">💬 Commenter</button>
-                <button class="post-action">↗ Partager</button>
-            </div>
-        </article>
 
-        <!-- POST 2 -->
-        <article class="post">
-            <div class="post-header">
-                <div class="user-avatar">👤</div>
-                <div class="post-user">
-                    <strong>Membre SAMII</strong>
-                    <small>Client · Algérie · 4 h</small>
-                </div>
-                <button class="post-menu">⋮</button>
-            </div>
-            <div class="post-content">
-                Je cherche un service pour m'aider à développer ma boutique et structurer mes tunnels.<br><br>
-                Des recommandations dans la communauté ?
-            </div>
-            <span class="post-tag">❓ Demande</span>
-            <div class="post-actions">
-                <button class="post-action">❤️ J'aime</button>
-                <button class="post-action">💬 Commenter</button>
-                <button class="post-action">↗ Partager</button>
-            </div>
-        </article>
+        <div class="community-header-actions">
 
-        <!-- DISCOVERY -->
-        <section class="discovery">
-            <div class="section-title">
-                <strong>👥 À découvrir</strong>
-                <button>Voir tout</button>
+
+            <button
+                class="icon-button notification-button"
+                onclick="showNotification()"
+                title="Notifications"
+            >
+
+                🔔
+
+                <span
+                    class="notification-dot"
+                ></span>
+
+            </button>
+
+
+            <button
+                class="icon-button"
+                onclick="openPublish()"
+                title="Publier"
+            >
+                ＋
+            </button>
+
+
+            <div class="header-profile">
+
+                <div class="profile-avatar">
+                    S
+                </div>
+
+                <div class="profile-name">
+
+                    <strong>
+                        Mon QG
+                    </strong>
+
+                    <span>
+                        SOLDAT
+                    </span>
+
+                </div>
+
             </div>
-            <div class="discovery-scroll">
-                <div class="discovery-card">
-                    <div class="user-avatar">🏪</div>
-                    <strong>Boutique Exemple</strong>
-                    <small>Marchand</small>
-                    <button class="follow">Suivre</button>
-                </div>
-                <div class="discovery-card">
-                    <div class="user-avatar">👤</div>
-                    <strong>Membre SAMII</strong>
-                    <small>Client</small>
-                    <button class="follow">Suivre</button>
-                </div>
-                <div class="discovery-card">
-                    <div class="user-avatar">🚚</div>
-                    <strong>Transport Express</strong>
-                    <small>Service</small>
-                    <button class="follow">Suivre</button>
-                </div>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================================================================
+         MAIN LAYOUT
+         ================================================================ -->
+
+    <main class="community-layout">
+
+
+        <!-- ============================================================
+             LEFT SIDEBAR
+             ============================================================ -->
+
+        <aside
+            class="community-sidebar community-left-sidebar"
+        >
+
+
+            <div class="sidebar-card">
+
+                <nav class="community-nav">
+
+
+                    <a
+                        href="/community"
+                        class="community-nav-link active"
+                    >
+
+                        <span class="nav-icon">
+                            ⌂
+                        </span>
+
+                        Accueil
+
+                    </a>
+
+
+                    <a
+                        href="/qg"
+                        class="community-nav-link"
+                    >
+
+                        <span class="nav-icon">
+                            ◈
+                        </span>
+
+                        Mon QG
+
+                    </a>
+
+
+                    <a
+                        href="/marketplace"
+                        class="community-nav-link"
+                    >
+
+                        <span class="nav-icon">
+                            🛒
+                        </span>
+
+                        Marketplace
+
+                    </a>
+
+
+                    <a
+                        href="/arsenal"
+                        class="community-nav-link"
+                    >
+
+                        <span class="nav-icon">
+                            🛡
+                        </span>
+
+                        Arsenal
+
+                    </a>
+
+
+                    <a
+                        href="#"
+                        class="community-nav-link"
+                        onclick="comingSoon(event,'Mon réseau')"
+                    >
+
+                        <span class="nav-icon">
+                            ◉
+                        </span>
+
+                        Mon réseau
+
+                    </a>
+
+
+                    <a
+                        href="#"
+                        class="community-nav-link"
+                        onclick="comingSoon(event,'Groupes')"
+                    >
+
+                        <span class="nav-icon">
+                            ◎
+                        </span>
+
+                        Groupes
+
+                    </a>
+
+
+                    <a
+                        href="#"
+                        class="community-nav-link"
+                        onclick="comingSoon(event,'Enregistrés')"
+                    >
+
+                        <span class="nav-icon">
+                            🔖
+                        </span>
+
+                        Enregistrés
+
+                    </a>
+
+                </nav>
+
             </div>
+
+
+            <div class="qg-card">
+
+                <div class="qg-title">
+                    SAMII CORE
+                </div>
+
+                <div class="qg-text">
+
+                    Votre communauté est connectée
+                    à l'écosystème SAMII.
+
+                    <br><br>
+
+                    Publiez, échangez, développez
+                    votre réseau et progressez
+                    dans les grades.
+
+                </div>
+
+            </div>
+
+
+        </aside>
+
+
+        <!-- ============================================================
+             FEED
+             ============================================================ -->
+
+        <section class="community-feed">
+
+
+            <!-- HERO -->
+
+            <section class="community-hero">
+
+                <div class="hero-kicker">
+                    OG TECHNOLOGY / COMMUNITY
+                </div>
+
+                <h1>
+                    Le réseau où
+                    <span>
+                        tout l'écosystème SAMII
+                    </span>
+                    se rencontre.
+                </h1>
+
+                <p class="hero-description">
+
+                    Clients, marchands, créateurs,
+                    partenaires et membres peuvent
+                    publier, échanger et construire
+                    ensemble.
+
+                </p>
+
+                <div class="hero-actions">
+
+                    <button
+                        class="primary-button"
+                        onclick="openPublish()"
+                    >
+                        ＋ Publier
+                    </button>
+
+                    <a
+                        href="/marketplace"
+                        class="secondary-button"
+                    >
+                        🛒 Marketplace
+                    </a>
+
+                </div>
+
+            </section>
+
+
+            <!-- CREATE -->
+
+            <section class="create-post">
+
+
+                <div class="create-post-top">
+
+                    <div class="create-avatar">
+                        S
+                    </div>
+
+                    <div
+                        class="fake-input"
+                        onclick="openPublish()"
+                    >
+                        Que voulez-vous partager
+                        avec la communauté ?
+                    </div>
+
+                </div>
+
+
+                <div class="create-actions">
+
+                    <button
+                        class="create-action"
+                        onclick="openPublish('photo')"
+                    >
+                        📷 Photo
+                    </button>
+
+                    <button
+                        class="create-action"
+                        onclick="openPublish('video')"
+                    >
+                        🎥 Vidéo
+                    </button>
+
+                    <button
+                        class="create-action"
+                        onclick="openPublish('product')"
+                    >
+                        🛒 Produit
+                    </button>
+
+                    <button
+                        class="create-action"
+                        onclick="openPublish('service')"
+                    >
+                        ⚡ Service
+                    </button>
+
+                </div>
+
+
+            </section>
+
+
+            <!-- FEED -->
+
+            ${postsHtml}
+
+
         </section>
 
-        <!-- TRENDING MOBILE -->
-        <section class="trending mobile-only" style="margin-top:20px; padding:16px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--card);">
-            <h3 style="margin-bottom:12px; font-size:0.85rem;">🔥 Tendances</h3>
-            <div class="trend"><span>Commerce</span><strong>#EcommerceAlgerie</strong></div>
-            <div class="trend"><span>SAMII</span><strong>#SAMIIOS</strong></div>
-            <div class="trend"><span>Marketplace</span><strong>#NouveauxProduits</strong></div>
-        </section>
+
+        <!-- ============================================================
+             RIGHT SIDEBAR
+             ============================================================ -->
+
+        <aside
+            class="community-sidebar community-right-sidebar"
+        >
+
+
+            <!-- TRENDS -->
+
+            <div class="sidebar-card">
+
+                <div class="widget-title">
+
+                    Tendances
+
+                    <span>
+                        LIVE
+                    </span>
+
+                </div>
+
+
+                <div class="trend">
+
+                    <small>
+                        #1 · COMMUNAUTÉ
+                    </small>
+
+                    <strong>
+                        SAMII Technology
+                    </strong>
+
+                    <span>
+                        1 284 publications
+                    </span>
+
+                </div>
+
+
+                <div class="trend">
+
+                    <small>
+                        #2 · MARKETPLACE
+                    </small>
+
+                    <strong>
+                        Nouvelles offres
+                    </strong>
+
+                    <span>
+                        742 publications
+                    </span>
+
+                </div>
+
+
+                <div class="trend">
+
+                    <small>
+                        #3 · BUSINESS
+                    </small>
+
+                    <strong>
+                        Entrepreneurs du Maghreb
+                    </strong>
+
+                    <span>
+                        526 publications
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- RANKING -->
+
+            <div class="sidebar-card">
+
+                <div class="widget-title">
+
+                    Classement SAMII
+
+                    <span>
+                        TOP
+                    </span>
+
+                </div>
+
+
+                <div class="rank-item">
+
+                    <div class="rank-number">
+                        1
+                    </div>
+
+                    <div class="rank-avatar">
+                        S
+                    </div>
+
+                    <div class="rank-info">
+
+                        <strong>
+                            Samii Core
+                        </strong>
+
+                        <span>
+                            GÉNÉRAL · 12 840 pts
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="rank-item">
+
+                    <div class="rank-number">
+                        2
+                    </div>
+
+                    <div class="rank-avatar">
+                        M
+                    </div>
+
+                    <div class="rank-info">
+
+                        <strong>
+                            Marchand Pro
+                        </strong>
+
+                        <span>
+                            COLONEL · 8 420 pts
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="rank-item">
+
+                    <div class="rank-number">
+                        3
+                    </div>
+
+                    <div class="rank-avatar">
+                        A
+                    </div>
+
+                    <div class="rank-info">
+
+                        <strong>
+                            Alpha Store
+                        </strong>
+
+                        <span>
+                            COMMANDANT · 6 210 pts
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ECOSYSTEM -->
+
+            <div class="sidebar-card">
+
+                <div class="widget-title">
+
+                    Écosystème
+
+                </div>
+
+                <div class="qg-text">
+
+                    <strong
+                        style="color:var(--og-cyan)"
+                    >
+                        QG
+                    </strong>
+                    · Pilotez votre activité
+
+                    <br><br>
+
+                    <strong
+                        style="color:var(--og-cyan)"
+                    >
+                        MARKETPLACE
+                    </strong>
+                    · Achetez & vendez
+
+                    <br><br>
+
+                    <strong
+                        style="color:var(--og-cyan)"
+                    >
+                        ARSENAL
+                    </strong>
+                    · Débloquez vos cartes
+
+                </div>
+
+            </div>
+
+
+        </aside>
+
+
     </main>
 
-    <!-- =================================================
-         DESKTOP RIGHT SIDEBAR
-    ================================================== -->
-    <aside class="desktop-right desktop-only">
-        <section class="desktop-panel">
-            <h3>🔥 Tendances du Réseau</h3>
-            <div class="trend"><span>Commerce</span><strong>#EcommerceAlgerie</strong></div>
-            <div class="trend"><span>SAMII</span><strong>#SAMIIOS</strong></div>
-            <div class="trend"><span>Marketplace</span><strong>#NouveauxProduits</strong></div>
-        </section>
 
-        <section class="desktop-panel">
-            <h3>👥 Membres Actifs</h3>
-            <div class="trend" style="padding: 8px 0;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="user-avatar" style="width:32px; height:32px; font-size:14px;">🏪</div>
-                    <div><strong style="display:block; font-size:0.75rem;">Boutique Exemple</strong><small style="color:var(--text-dimmed); font-size:0.65rem;">Marchand</small></div>
-                </div>
+    <!-- ================================================================
+         MOBILE NAVIGATION
+         ================================================================ -->
+
+    <nav class="mobile-bottom-nav">
+
+
+        <button
+            class="mobile-nav-item active"
+            onclick="window.location='/community'"
+        >
+
+            <span>
+                ⌂
+            </span>
+
+            Accueil
+
+        </button>
+
+
+        <button
+            class="mobile-nav-item"
+            onclick="comingSoon(null,'Réseau')"
+        >
+
+            <span>
+                ◉
+            </span>
+
+            Réseau
+
+        </button>
+
+
+        <button
+            class="mobile-nav-item"
+            onclick="openPublish()"
+        >
+
+            <span>
+                ＋
+            </span>
+
+            Publier
+
+        </button>
+
+
+        <button
+            class="mobile-nav-item"
+            onclick="window.location='/marketplace'"
+        >
+
+            <span>
+                🛒
+            </span>
+
+            Market
+
+        </button>
+
+
+        <button
+            class="mobile-nav-item"
+            onclick="window.location='/qg'"
+        >
+
+            <span>
+                ◈
+            </span>
+
+            QG
+
+        </button>
+
+
+    </nav>
+
+
+    <!-- ================================================================
+         THEME
+         ================================================================ -->
+
+    <button
+        class="theme-switch"
+        id="themeSwitch"
+        onclick="toggleTheme()"
+        aria-label="Changer le thème"
+    >
+        ☾
+    </button>
+
+
+    <!-- ================================================================
+         PUBLICATION MODAL
+         ================================================================ -->
+
+    <div
+        id="publishOverlay"
+        class="publish-overlay"
+        onclick="closePublishOutside(event)"
+    >
+
+        <div class="publish-modal">
+
+
+            <div class="modal-header">
+
+                <h2>
+                    Nouvelle publication
+                </h2>
+
+                <button
+                    class="modal-close"
+                    onclick="closePublish()"
+                >
+                    ×
+                </button>
+
             </div>
-            <div class="trend" style="padding: 8px 0;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="user-avatar" style="width:32px; height:32px; font-size:14px;">👤</div>
-                    <div><strong style="display:block; font-size:0.75rem;">Membre SAMII</strong><small style="color:var(--text-dimmed); font-size:0.65rem;">Client</small></div>
-                </div>
+
+
+            <textarea
+                id="publishText"
+                class="publish-textarea"
+                placeholder="Partagez quelque chose avec la communauté..."
+            ></textarea>
+
+
+            <div class="modal-tools">
+
+                <button
+                    class="modal-tool"
+                    onclick="selectPublishType('photo')"
+                >
+                    📷 Photo
+                </button>
+
+                <button
+                    class="modal-tool"
+                    onclick="selectPublishType('video')"
+                >
+                    🎥 Vidéo
+                </button>
+
+                <button
+                    class="modal-tool"
+                    onclick="selectPublishType('product')"
+                >
+                    🛒 Produit
+                </button>
+
             </div>
-        </section>
-    </aside>
+
+
+            <button
+                class="modal-publish"
+                onclick="publishPost()"
+            >
+                PUBLIER DANS LA COMMUNAUTÉ
+            </button>
+
+
+        </div>
+
+    </div>
+
 
 </div>
 
-<!-- =====================================================
-     MOBILE BOTTOM NAVIGATION (App Style)
-===================================================== -->
-<nav class="bottom-nav">
-    <button class="bottom-item active"><span>🏠</span><span>Accueil</span></button>
-    <button class="bottom-item"><span>🔎</span><span>Explorer</span></button>
-    <button class="bottom-item bottom-publish"><span>＋</span><span>Publier</span></button>
-    <button class="bottom-item"><span>🔔</span><span>Alertes</span></button>
-    <button class="bottom-item"><span>👤</span><span>Profil</span></button>
-</nav>
+
+<script>
+
+
+// ========================================================================
+// THEME
+// ========================================================================
+
+const savedTheme =
+    localStorage.getItem("samii-community-theme");
+
+if (savedTheme === "light") {
+
+    document.body.classList.add("light-mode");
+
+    document
+        .getElementById("themeSwitch")
+        .innerText = "☀";
+
+}
+
+
+function toggleTheme() {
+
+    document.body.classList.toggle("light-mode");
+
+    const isLight =
+        document.body.classList.contains("light-mode");
+
+    localStorage.setItem(
+        "samii-community-theme",
+        isLight ? "light" : "dark"
+    );
+
+    document
+        .getElementById("themeSwitch")
+        .innerText =
+            isLight ? "☀" : "☾";
+}
+
+
+// ========================================================================
+// PUBLICATION
+// ========================================================================
+
+let selectedPublishType = "text";
+
+
+function openPublish(type = "text") {
+
+    selectedPublishType = type;
+
+    document
+        .getElementById("publishOverlay")
+        .classList.add("open");
+
+    setTimeout(() => {
+
+        document
+            .getElementById("publishText")
+            .focus();
+
+    }, 100);
+
+}
+
+
+function closePublish() {
+
+    document
+        .getElementById("publishOverlay")
+        .classList.remove("open");
+
+}
+
+
+function closePublishOutside(event) {
+
+    if (
+        event.target.id ===
+        "publishOverlay"
+    ) {
+
+        closePublish();
+
+    }
+
+}
+
+
+function selectPublishType(type) {
+
+    selectedPublishType = type;
+
+    const textarea =
+        document.getElementById("publishText");
+
+    const labels = {
+
+        photo:
+            "Décrivez votre photo ou partagez quelque chose avec la communauté...",
+
+        video:
+            "Présentez votre vidéo à la communauté...",
+
+        product:
+            "Présentez votre produit Marketplace...",
+
+        service:
+            "Présentez votre service...",
+
+        text:
+            "Partagez quelque chose avec la communauté..."
+
+    };
+
+    textarea.placeholder =
+        labels[type] || labels.text;
+
+    textarea.focus();
+
+}
+
+
+function publishPost() {
+
+    const textarea =
+        document.getElementById("publishText");
+
+    const text =
+        textarea.value.trim();
+
+    if (!text) {
+
+        alert(
+            "Écrivez quelque chose avant de publier."
+        );
+
+        textarea.focus();
+
+        return;
+    }
+
+    /*
+     * FUTUR :
+     *
+     * POST /community/api/posts
+     *
+     * Airtable :
+     * COMMUNITY_POSTS
+     *
+     * Pour l'instant on prépare
+     * l'interface sans inventer
+     * de backend.
+     */
+
+    alert(
+        "Publication prête pour la connexion au moteur Community SAMII."
+    );
+
+    textarea.value = "";
+
+    closePublish();
+
+}
+
+
+// ========================================================================
+// LIKE
+// ========================================================================
+
+function likePost(button) {
+
+    button.classList.toggle("liked");
+
+    const counter =
+        button.querySelector("span");
+
+    if (!counter) return;
+
+    let value =
+        parseInt(counter.innerText, 10) || 0;
+
+    if (button.classList.contains("liked")) {
+
+        value++;
+
+    } else {
+
+        value--;
+
+    }
+
+    counter.innerText =
+        Math.max(0, value);
+
+}
+
+
+// ========================================================================
+// SAVE
+// ========================================================================
+
+function savePost(button) {
+
+    if (
+        button.dataset.saved === "1"
+    ) {
+
+        button.dataset.saved = "0";
+
+        button.innerHTML =
+            "🔖 Enregistrer";
+
+    } else {
+
+        button.dataset.saved = "1";
+
+        button.innerHTML =
+            "✅ Enregistré";
+
+    }
+
+}
+
+
+// ========================================================================
+// SHARE
+// ========================================================================
+
+async function sharePost(id) {
+
+    const url =
+        window.location.origin +
+        "/community#post-" +
+        id;
+
+    try {
+
+        if (
+            navigator.share
+        ) {
+
+            await navigator.share({
+
+                title:
+                    "SAMII Community",
+
+                text:
+                    "Découvre cette publication sur SAMII Community.",
+
+                url
+
+            });
+
+        } else {
+
+            await navigator.clipboard.writeText(url);
+
+            alert(
+                "Lien copié."
+            );
+
+        }
+
+    } catch (error) {
+
+        console.log(
+            "Partage annulé."
+        );
+
+    }
+
+}
+
+
+// ========================================================================
+// COMMENTS
+// ========================================================================
+
+function openComments(id) {
+
+    alert(
+        "Système de commentaires Community — connexion backend à venir."
+    );
+
+}
+
+
+// ========================================================================
+// POST MENU
+// ========================================================================
+
+function postMenu(id) {
+
+    alert(
+        "Options de publication : signaler, masquer, enregistrer."
+    );
+
+}
+
+
+// ========================================================================
+// SEARCH
+// ========================================================================
+
+const searchInput =
+    document.getElementById(
+        "communitySearch"
+    );
+
+if (searchInput) {
+
+    searchInput.addEventListener(
+        "input",
+        function () {
+
+            const query =
+                this.value
+                    .trim()
+                    .toLowerCase();
+
+            const posts =
+                document.querySelectorAll(
+                    ".community-post"
+                );
+
+            posts.forEach(post => {
+
+                const text =
+                    post.innerText
+                        .toLowerCase();
+
+                post.style.display =
+                    !query ||
+                    text.includes(query)
+                        ? ""
+                        : "none";
+
+            });
+
+        }
+    );
+
+}
+
+
+// ========================================================================
+// NOTIFICATIONS
+// ========================================================================
+
+function showNotification() {
+
+    alert(
+        "Centre de notifications SAMII — prêt pour la connexion aux événements."
+    );
+
+}
+
+
+// ========================================================================
+// COMING SOON
+// ========================================================================
+
+function comingSoon(event, name) {
+
+    if (event) {
+
+        event.preventDefault();
+
+    }
+
+    alert(
+        name +
+        " sera connecté au moteur Community SAMII."
+    );
+
+}
+
+
+</script>
+
 
 </body>
-</html>`);
+
+</html>
+
+    `);
 
 });
+
 
 module.exports = router;
