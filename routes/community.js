@@ -4,7 +4,7 @@ const router = express.Router();
 
 router.get("/", (req, res) => {
 
-    const nom = req.session?.nom || "Membre SAMII";
+    const nom = req.session?.nom || "Mohamed Ouahid Ghembaza";
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -12,27 +12,35 @@ router.get("/", (req, res) => {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>Community — SAMII</title>
+<title>Community — SAMII OS</title>
 
 <style>
 
 :root {
-    --bg: #05070b;
-    --card: #0a0f18;
-    --card2: #0f1726;
-    --line: #1e293b;
+    --bg: #050505;
+    --surface: #0e0e10;
+    --surface-glass: rgba(14, 14, 16, 0.82);
+    --card: #121216;
+    --card-hover: #18181d;
+    --border: #22222a;
+    --border-light: rgba(255, 255, 255, 0.08);
 
-    --text: #f8fafc;
-    --muted: #94a3b8;
+    --text-main: #f8f9fa;
+    --text-muted: #9ba1a6;
+    --text-dimmed: #5f666d;
 
-    --gold: #d4af37;
-    --gold2: #f3e5ab;
+    --gold: #c5a059;
+    --gold-light: #dfbe78;
+    --gold-gradient: linear-gradient(135deg, #dfbe78 0%, #c5a059 50%, #9c7b38 100%);
+    
+    --accent-purple: #7357ff;
+    --accent-glow: rgba(115, 87, 255, 0.15);
 
-    --tech-blue: #00f0ff;
-    --tech-blue-glow: rgba(0, 240, 255, 0.18);
-    --tech-blue-border: rgba(0, 240, 255, 0.4);
-
-    --radius: 18px;
+    --radius-sm: 12px;
+    --radius-md: 18px;
+    --radius-lg: 24px;
+    
+    --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 0 20px rgba(197, 160, 89, 0.05);
 }
 
 * {
@@ -43,149 +51,117 @@ router.get("/", (req, res) => {
 
 html {
     background: var(--bg);
+    color-scheme: dark;
 }
 
 body {
     min-height: 100vh;
-
-    background:
-        radial-gradient(
-            circle at 50% -15%,
-            var(--tech-blue-glow),
-            transparent 40%
-        ),
+    background: 
+        radial-gradient(circle at 50% -20%, rgba(115, 87, 255, 0.12), transparent 40%),
+        radial-gradient(circle at 100% 80%, rgba(197, 160, 89, 0.06), transparent 30%),
         var(--bg);
-
-    color: var(--text);
-
-    font-family:
-        Inter,
-        Arial,
-        Helvetica,
-        sans-serif;
-
+    color: var(--text-main);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
-
-    padding-bottom: 75px;
+    padding-bottom: 80px;
 }
 
-button,
-input,
-textarea {
+button, input, textarea {
     font-family: inherit;
 }
 
 button {
     cursor: pointer;
+    border: none;
+    background: none;
 }
 
 /* =========================================================
-   TOP MOBILE
+   TOPBAR (Mobile & Glassmorphism)
 ========================================================= */
 
 .topbar {
-
     position: sticky;
     top: 0;
     z-index: 100;
-
-    height: 62px;
-
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-
-    padding: 0 15px;
-
-    background: rgba(5, 7, 11, .92);
-
-    border-bottom: 1px solid var(--tech-blue-border);
-
-    backdrop-filter: blur(18px);
+    padding: 0 16px;
+    background: var(--surface-glass);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .logo {
     display: flex;
     align-items: center;
-    gap: 9px;
-
+    gap: 10px;
     font-weight: 800;
-    font-size: .92rem;
-    letter-spacing: .04em;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
 }
 
 .logo-icon {
-
-    width: 34px;
-    height: 34px;
-
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border-radius: 11px;
-
-    background:
-        linear-gradient(
-            145deg,
-            var(--tech-blue),
-            #0066ff
-        );
-
-    box-shadow:
-        0 5px 20px var(--tech-blue-glow);
+    border-radius: 12px;
+    background: var(--gold-gradient);
+    color: #050505;
+    box-shadow: 0 4px 15px rgba(197, 160, 89, 0.25);
+    font-size: 1.1rem;
 }
 
 .logo span {
-    color: var(--gold);
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
 }
 
 .header-btn {
-
-    width: 36px;
-    height: 36px;
-
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border: 1px solid var(--tech-blue-border);
-    border-radius: 11px;
-
-    background: #0a0f18;
-    color: var(--tech-blue);
-
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--text-main);
     font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.header-btn:active {
+    transform: scale(0.95);
+    border-color: var(--gold);
 }
 
 /* =========================================================
-   MOBILE NAVIGATION
+   MOBILE CATEGORY NAV (Instagram/LinkedIn Hybrid Style)
 ========================================================= */
 
 .mobile-nav {
-
     position: sticky;
-    top: 62px;
+    top: 64px;
     z-index: 90;
-
     display: flex;
-
     overflow-x: auto;
-
-    gap: 6px;
-
-    padding: 9px 13px;
-
-    background: rgba(5, 7, 11, .94);
-
-    border-bottom: 1px solid var(--line);
-
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(5, 5, 5, 0.9);
+    border-bottom: 1px solid var(--border-light);
     scrollbar-width: none;
 }
 
@@ -194,441 +170,284 @@ button {
 }
 
 .mobile-nav button {
-
     flex-shrink: 0;
-
-    padding: 8px 13px;
-
-    border: 1px solid var(--line);
+    padding: 8px 16px;
+    border: 1px solid var(--border);
     border-radius: 100px;
-
     background: var(--card);
-
-    color: var(--muted);
-
-    font-size: .74rem;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
 .mobile-nav button.active {
-
-    background:
-        rgba(212, 175, 55, .10);
-
-    border-color:
-        rgba(212, 175, 55, .35);
-
-    color:
-        var(--gold2);
+    background: rgba(197, 160, 89, 0.12);
+    border-color: rgba(197, 160, 89, 0.4);
+    color: var(--gold-light);
+    box-shadow: 0 0 15px rgba(197, 160, 89, 0.1);
 }
 
 /* =========================================================
-   MAIN
+   MAIN CONTAINER & GRID LAYOUT
 ========================================================= */
 
 .community {
-
     width: 100%;
-
-    max-width: 720px;
-
+    max-width: 1280px;
     margin: 0 auto;
-
-    padding: 13px 12px 30px;
+    padding: 16px 12px;
 }
 
 /* =========================================================
-   WELCOME
+   WELCOME BANNER (Effekt Waw Premium)
 ========================================================= */
 
 .welcome {
-
     position: relative;
-
     overflow: hidden;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: linear-gradient(145deg, #121217, #0a0a0e);
+    box-shadow: var(--shadow-premium);
+}
 
-    padding: 20px;
-
-    margin-bottom: 12px;
-
-    border:
-        1px solid var(--tech-blue-border);
-
-    border-radius: var(--radius);
-
-    background:
-        linear-gradient(
-            145deg,
-            var(--card),
-            var(--bg)
-        );
-    
-    box-shadow: 0 0 20px var(--tech-blue-glow);
+.welcome::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--gold-gradient);
 }
 
 .welcome::after {
-
     content: "";
-
     position: absolute;
-
-    width: 140px;
-    height: 140px;
-
-    right: -65px;
-    top: -65px;
-
+    width: 160px;
+    height: 160px;
+    right: -50px;
+    top: -50px;
     border-radius: 50%;
-
-    background:
-        var(--tech-blue-glow);
-
-    filter: blur(15px);
+    background: rgba(197, 160, 89, 0.08);
+    filter: blur(25px);
 }
 
 .welcome-label {
-
     position: relative;
     z-index: 1;
-
     color: var(--gold);
-
-    font-size: .68rem;
-
+    font-size: 0.7rem;
     font-weight: 700;
-
     text-transform: uppercase;
-
-    letter-spacing: .12em;
-
-    margin-bottom: 7px;
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
 }
 
 .welcome h1 {
-
     position: relative;
     z-index: 1;
-
-    font-size: 1.28rem;
-
-    line-height: 1.25;
-
-    margin-bottom: 7px;
+    font-size: 1.35rem;
+    line-height: 1.3;
+    margin-bottom: 8px;
+    font-weight: 700;
 }
 
 .welcome p {
-
     position: relative;
     z-index: 1;
-
-    color: var(--muted);
-
-    font-size: .82rem;
-
-    line-height: 1.55;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.6;
 }
 
 /* =========================================================
-   CREATE POST
+   CREATE POST BOX
 ========================================================= */
 
 .create {
-
-    padding: 14px;
-
-    border:
-        1px solid var(--line);
-
-    border-radius: var(--radius);
-
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--card);
-
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-premium);
 }
 
 .create-head {
-
     display: flex;
-
     align-items: center;
-
-    gap: 10px;
+    gap: 12px;
 }
 
 .user-avatar {
-
     flex-shrink: 0;
-
-    width: 40px;
-    height: 40px;
-
+    width: 42px;
+    height: 42px;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border-radius: 13px;
-
-    background:
-        linear-gradient(
-            145deg,
-            var(--tech-blue),
-            #0044cc
-        );
-
-    font-size: 16px;
-    box-shadow: 0 0 10px var(--tech-blue-glow);
+    border-radius: 14px;
+    background: linear-gradient(135deg, #252530, #181820);
+    border: 1px solid var(--border);
+    font-size: 18px;
 }
 
 .create-button {
-
     flex: 1;
-
-    min-height: 42px;
-
-    padding: 0 15px;
-
-    border:
-        1px solid var(--line);
-
-    border-radius: 13px;
-
-    background: var(--card2);
-
-    color: var(--muted);
-
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    color: var(--text-dimmed);
     text-align: left;
-
-    font-size: .78rem;
+    font-size: 0.82rem;
+    transition: all 0.2s;
 }
 
 .create-button:active {
-
-    background: #151d2e;
-
-    border-color: var(--tech-blue);
+    background: var(--card-hover);
+    border-color: var(--gold);
 }
 
 .create-options {
-
     display: grid;
-
-    grid-template-columns:
-        repeat(4, 1fr);
-
-    gap: 5px;
-
-    margin-top: 11px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-light);
 }
 
 .create-option {
-
-    padding: 9px 3px;
-
-    border: 0;
-
-    border-radius: 9px;
-
+    padding: 10px 4px;
+    border-radius: 10px;
     background: transparent;
-
-    color: var(--muted);
-
-    font-size: .66rem;
-
+    color: var(--text-muted);
+    font-size: 0.7rem;
     text-align: center;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
 .create-option:active {
-
-    background: var(--card2);
-
-    color: white;
+    background: var(--card-hover);
+    color: var(--gold-light);
 }
 
 /* =========================================================
-   FEED
+   FEED & POSTS
 ========================================================= */
 
 .feed-title {
-
     display: flex;
-
     align-items: center;
     justify-content: space-between;
-
-    padding: 7px 3px;
-
-    margin-bottom: 5px;
+    padding: 8px 4px;
+    margin-bottom: 8px;
 }
 
 .feed-title strong {
-
-    font-size: .78rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
 }
 
 .feed-title button {
-
-    border: 0;
-
-    background: transparent;
-
     color: var(--gold);
-
-    font-size: .7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
 }
 
-/* =========================================================
-   POST
-========================================================= */
-
 .post {
-
     overflow: hidden;
-
-    margin-bottom: 10px;
-
-    padding: 16px;
-
-    border:
-        1px solid var(--line);
-
-    border-radius: var(--radius);
-
-    background:
-        linear-gradient(
-            145deg,
-            var(--card),
-            var(--bg)
-        );
+    margin-bottom: 14px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card);
+    box-shadow: var(--shadow-premium);
 }
 
 .post-header {
-
     display: flex;
-
     align-items: center;
-
-    gap: 10px;
+    gap: 12px;
 }
 
 .post-user {
-
     flex: 1;
-
     min-width: 0;
 }
 
 .post-user strong {
-
     display: block;
-
-    font-size: .81rem;
-
+    font-size: 0.85rem;
     white-space: nowrap;
-
     overflow: hidden;
-
     text-overflow: ellipsis;
 }
 
 .post-user small {
-
     display: block;
-
     margin-top: 3px;
-
-    color: var(--muted);
-
-    font-size: .66rem;
+    color: var(--text-dimmed);
+    font-size: 0.7rem;
 }
 
 .post-menu {
-
-    width: 30px;
-    height: 30px;
-
-    border: 0;
-
+    width: 32px;
+    height: 32px;
     border-radius: 8px;
-
     background: transparent;
-
-    color: var(--muted);
-
+    color: var(--text-muted);
     font-size: 18px;
 }
 
 .post-content {
-
     margin-top: 14px;
-
     color: #e2e8f0;
-
-    font-size: .82rem;
-
+    font-size: 0.85rem;
     line-height: 1.65;
 }
 
 .post-tag {
-
     display: inline-block;
-
-    margin-top: 12px;
-
-    padding: 5px 8px;
-
-    border-radius: 7px;
-
-    background:
-        rgba(212, 175, 55, .08);
-
-    border:
-        1px solid rgba(212, 175, 55, .16);
-
-    color: var(--gold2);
-
-    font-size: .63rem;
+    margin-top: 14px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(197, 160, 89, 0.08);
+    border: 1px solid rgba(197, 160, 89, 0.2);
+    color: var(--gold-light);
+    font-size: 0.68rem;
+    font-weight: 600;
 }
 
-/* =========================================================
-   POST ACTIONS
-========================================================= */
-
 .post-actions {
-
     display: grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap: 4px;
-
-    margin-top: 14px;
-
-    padding-top: 9px;
-
-    border-top:
-        1px solid var(--line);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
 }
 
 .post-action {
-
-    padding: 9px 3px;
-
-    border: 0;
-
-    border-radius: 9px;
-
+    padding: 10px 4px;
+    border-radius: 10px;
     background: transparent;
-
-    color: var(--muted);
-
-    font-size: .68rem;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
 .post-action:active {
-
-    background: var(--card2);
-
-    color: white;
+    background: var(--card-hover);
+    color: var(--gold-light);
 }
 
 /* =========================================================
@@ -636,47 +455,32 @@ button {
 ========================================================= */
 
 .discovery {
-
-    margin-top: 18px;
+    margin-top: 20px;
 }
 
 .section-title {
-
     display: flex;
-
     align-items: center;
     justify-content: space-between;
-
-    margin-bottom: 9px;
-
-    padding: 0 3px;
+    margin-bottom: 10px;
+    padding: 0 4px;
 }
 
 .section-title strong {
-
-    font-size: .82rem;
+    font-size: 0.88rem;
 }
 
 .section-title button {
-
-    border: 0;
-
-    background: transparent;
-
     color: var(--gold);
-
-    font-size: .68rem;
+    font-size: 0.72rem;
 }
 
 .discovery-scroll {
-
     display: flex;
-
     overflow-x: auto;
-
-    gap: 9px;
-
+    gap: 12px;
     scrollbar-width: none;
+    padding-bottom: 4px;
 }
 
 .discovery-scroll::-webkit-scrollbar {
@@ -684,432 +488,268 @@ button {
 }
 
 .discovery-card {
-
     flex-shrink: 0;
-
-    width: 145px;
-
-    padding: 14px;
-
-    border:
-        1px solid var(--line);
-
-    border-radius: 15px;
-
+    width: 155px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     background: var(--card);
+    text-align: center;
+    box-shadow: var(--shadow-premium);
 }
 
 .discovery-card .user-avatar {
-
-    width: 38px;
-    height: 38px;
-
-    margin-bottom: 10px;
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 10px auto;
 }
 
 .discovery-card strong {
-
     display: block;
-
     overflow: hidden;
-
     white-space: nowrap;
-
     text-overflow: ellipsis;
-
-    font-size: .74rem;
+    font-size: 0.78rem;
 }
 
 .discovery-card small {
-
     display: block;
-
-    margin-top: 4px;
-
-    color: var(--muted);
-
-    font-size: .63rem;
+    margin-top: 3px;
+    color: var(--text-dimmed);
+    font-size: 0.68rem;
 }
 
 .follow {
-
     width: 100%;
+    margin-top: 12px;
+    padding: 8px;
+    border: 1px solid rgba(197, 160, 89, 0.35);
+    border-radius: 10px;
+    background: rgba(197, 160, 89, 0.05);
+    color: var(--gold-light);
+    font-size: 0.7rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
 
-    margin-top: 11px;
-
-    padding: 7px;
-
-    border:
-        1px solid rgba(212, 175, 55, .30);
-
-    border-radius: 9px;
-
-    background: transparent;
-
-    color: var(--gold);
-
-    font-size: .65rem;
+.follow:active {
+    background: var(--gold);
+    color: #000;
 }
 
 /* =========================================================
-   TRENDING
-========================================================= */
-
-.trending {
-
-    margin-top: 18px;
-
-    padding: 16px;
-
-    border:
-        1px solid var(--line);
-
-    border-radius: var(--radius);
-
-    background: var(--card);
-}
-
-.trending h3 {
-
-    margin-bottom: 10px;
-
-    font-size: .8rem;
-}
-
-.trend {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    padding: 9px 0;
-
-    border-bottom:
-        1px solid var(--line);
-}
-
-.trend:last-child {
-    border-bottom: 0;
-}
-
-.trend span {
-
-    color: var(--muted);
-
-    font-size: .64rem;
-}
-
-.trend strong {
-
-    color: #e2e8f0;
-
-    font-size: .71rem;
-}
-
-/* =========================================================
-   BOTTOM MOBILE NAV
+   BOTTOM MOBILE NAV (Effekt App Native)
 ========================================================= */
 
 .bottom-nav {
-
     position: fixed;
-
     left: 0;
     right: 0;
     bottom: 0;
-
     z-index: 200;
-
-    height: 65px;
-
+    height: 68px;
     display: grid;
-
-    grid-template-columns:
-        repeat(5, 1fr);
-
-    padding:
-        7px 8px
-        env(safe-area-inset-bottom);
-
-    background:
-        rgba(5, 7, 11, .94);
-
-    border-top:
-        1px solid var(--tech-blue-border);
-
-    backdrop-filter: blur(20px);
+    grid-template-columns: repeat(5, 1fr);
+    padding: 6px 8px env(safe-area-inset-bottom);
+    background: rgba(10, 10, 14, 0.92);
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(25px);
 }
 
 .bottom-item {
-
     display: flex;
-
     flex-direction: column;
-
     align-items: center;
     justify-content: center;
-
     gap: 3px;
-
-    border: 0;
-
     background: transparent;
-
-    color: var(--muted);
-
-    font-size: .58rem;
+    color: var(--text-dimmed);
+    font-size: 0.6rem;
+    font-weight: 500;
 }
 
 .bottom-item span:first-child {
-
-    font-size: 17px;
+    font-size: 18px;
 }
 
 .bottom-item.active {
-
-    color: var(--gold2);
+    color: var(--gold-light);
 }
 
 .bottom-publish {
-
     position: relative;
-
-    margin-top: -20px;
+    margin-top: -22px;
 }
 
 .bottom-publish span:first-child {
-
-    width: 43px;
-    height: 43px;
-
+    width: 48px;
+    height: 48px;
     display: flex;
-
     align-items: center;
     justify-content: center;
-
     border-radius: 50%;
-
-    background:
-        linear-gradient(
-            145deg,
-            var(--gold2),
-            var(--gold)
-        );
-
+    background: var(--gold-gradient);
     color: #050505;
-
-    box-shadow:
-        0 8px 25px rgba(212, 175, 55, .25);
-
-    font-size: 20px;
+    box-shadow: 0 6px 20px rgba(197, 160, 89, 0.35);
+    font-size: 22px;
+    font-weight: bold;
 }
 
 /* =========================================================
-   DESKTOP
+   DESKTOP VIEW & AMAZON-INSPIRED LEFT SIDEBAR
 ========================================================= */
 
-@media (min-width: 800px) {
-
+@media (min-width: 900px) {
     body {
         padding-bottom: 0;
     }
 
     .topbar {
-
-        padding:
-            0 30px;
+        padding: 0 40px;
     }
 
     .community {
-
-        max-width: 1200px;
-
+        max-width: 1350px;
         display: grid;
-
-        grid-template-columns:
-            210px
-            minmax(420px, 650px)
-            260px;
-
-        gap: 20px;
-
-        padding:
-            25px 20px 60px;
+        grid-template-columns: 260px minmax(500px, 720px) 300px;
+        gap: 24px;
+        padding: 30px 20px 60px;
     }
 
+    .bottom-nav, .mobile-nav {
+        display: none !important;
+    }
+
+    /* Menu Latéral Inspiré Amazon / Pro Navigation */
     .desktop-sidebar {
-
-        display: block;
-    }
-
-    .sidebar-card {
-
         position: sticky;
-
         top: 88px;
-    }
-
-    .bottom-nav {
-
-        display: none;
-    }
-
-    .mobile-nav {
-
-        display: none;
-    }
-
-    .desktop-sidebar {
-
-        position: sticky;
-
-        top: 88px;
-
         height: fit-content;
     }
 
-    .desktop-menu {
-
-        padding: 8px;
-
-        border:
-            1px solid var(--line);
-
-        border-radius: 16px;
-
+    .amazon-sidebar-box {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
         background: var(--card);
+        overflow: hidden;
+        box-shadow: var(--shadow-premium);
+        margin-bottom: 16px;
     }
 
-    .desktop-menu button {
-
-        width: 100%;
-
-        display: flex;
-
-        align-items: center;
-
-        gap: 10px;
-
-        padding: 11px;
-
-        border: 0;
-
-        border-radius: 10px;
-
-        background: transparent;
-
-        color: var(--muted);
-
-        text-align: left;
-
-        font-size: .75rem;
-    }
-
-    .desktop-menu button.active {
-
-        background:
-            rgba(212, 175, 55, .08);
-
-        color: var(--gold2);
-    }
-
-    .desktop-profile {
-
+    .amazon-sidebar-header {
         padding: 16px;
-
-        margin-bottom: 10px;
-
-        border:
-            1px solid var(--line);
-
-        border-radius: 16px;
-
-        background: var(--card);
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
-    .desktop-profile strong {
-
+    .amazon-sidebar-header strong {
+        font-size: 0.85rem;
         display: block;
-
-        margin-top: 9px;
-
-        font-size: .78rem;
     }
 
-    .desktop-profile small {
+    .amazon-sidebar-header small {
+        color: var(--gold);
+        font-size: 0.7rem;
+    }
 
-        display: block;
+    .amazon-menu-section {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+    }
 
-        margin-top: 3px;
+    .amazon-menu-section:last-child {
+        border-bottom: none;
+    }
 
-        color: var(--muted);
+    .amazon-menu-title {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-dimmed);
+        padding: 6px 8px;
+        font-weight: 700;
+    }
 
-        font-size: .64rem;
+    .amazon-menu-section button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: transparent;
+        color: var(--text-muted);
+        text-align: left;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .amazon-menu-section button:hover {
+        background: var(--card-hover);
+        color: var(--text-main);
+    }
+
+    .amazon-menu-section button.active {
+        background: rgba(197, 160, 89, 0.1);
+        color: var(--gold-light);
+        border-left: 3px solid var(--gold);
     }
 
     .desktop-right {
-
         position: sticky;
-
         top: 88px;
-
         height: fit-content;
     }
 
     .desktop-panel {
-
-        padding: 16px;
-
-        margin-bottom: 10px;
-
-        border:
-            1px solid var(--line);
-
-        border-radius: 16px;
-
+        padding: 18px;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
         background: var(--card);
+        box-shadow: var(--shadow-premium);
     }
 
     .desktop-panel h3 {
+        margin-bottom: 14px;
+        font-size: 0.85rem;
+        letter-spacing: 0.03em;
+    }
 
-        margin-bottom: 10px;
+    .trend {
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
 
-        font-size: .78rem;
+    .trend:last-child {
+        border-bottom: none;
+    }
+
+    .trend span {
+        color: var(--text-dimmed);
+        font-size: 0.68rem;
+    }
+
+    .trend strong {
+        color: var(--text-main);
+        font-size: 0.75rem;
     }
 
     .mobile-only {
-
         display: none !important;
     }
 }
 
-/* =========================================================
-   MOBILE ONLY
-========================================================= */
-
-@media (max-width: 799px) {
-
+@media (max-width: 899px) {
     .desktop-only {
         display: none !important;
-    }
-}
-
-/* =========================================================
-   LARGE DESKTOP
-========================================================= */
-
-@media (min-width: 1200px) {
-
-    community {
-
-        max-width: 1280px;
-
-        grid-template-columns:
-            230px
-            minmax(500px, 700px)
-            280px;
     }
 }
 
@@ -1119,651 +759,215 @@ button {
 <body>
 
 <!-- =====================================================
-     HEADER
-================================================     -->
-
+     HEADER TOPBAR
+===================================================== -->
 <header class="topbar">
-
     <div class="logo">
-
-        <div class="logo-icon">
-            🤖
-        </div>
-
-        <div>
-            SAMII <span>COMMUNITY</span>
-        </div>
-
+        <div class="logo-icon">🤖</div>
+        <div>SAMII <span>OS</span></div>
     </div>
-
     <div class="header-actions">
-
-        <button class="header-btn">
-            🔍
-        </button>
-
-        <button class="header-btn">
-            🔔
-        </button>
-
+        <button class="header-btn" title="Rechercher">🔍</button>
+        <button class="header-btn" title="Notifications">🔔</button>
     </div>
-
 </header>
-
 
 <!-- =====================================================
      MOBILE CATEGORY NAV
-================================================     -->
-
+===================================================== -->
 <nav class="mobile-nav">
-
-    <button class="active">
-        🏠 Accueil
-    </button>
-
-    <button>
-        🔥 Explorer
-    </button>
-
-    <button>
-        📦 Produits
-    </button>
-
-    <button>
-        💼 Offres
-    </button>
-
-    <button>
-        ❓ Demandes
-    </button>
-
+    <button class="active">🏠 Accueil</button>
+    <button>🔥 Explorer</button>
+    <button>📦 Produits</button>
+    <button>💼 Offres</button>
+    <button>❓ Demandes</button>
 </nav>
-
 
 <div class="community">
 
-
     <!-- =================================================
-         DESKTOP LEFT
+         DESKTOP LEFT SIDEBAR (AMAZON-INSPIRED DEEP NAVIGATION)
     ================================================== -->
-
     <aside class="desktop-sidebar desktop-only">
-
-        <div class="desktop-profile">
-
-            <div class="user-avatar">
-                👤
+        <div class="amazon-sidebar-box">
+            <div class="amazon-sidebar-header">
+                <div class="user-avatar">👤</div>
+                <div>
+                    <strong>${nom}</strong>
+                    <small>Membre SAMII</small>
+                </div>
             </div>
 
-            <strong>
-                \${nom}
-            </strong>
+            <div class="amazon-menu-section">
+                <div class="amazon-menu-title">Navigation Principale</div>
+                <button class="active"><span>🏠</span> Accueil</button>
+                <button><span>🔥</span> Explorer les flux</button>
+                <button><span>👥</span> Réseau & Communautés</button>
+                <button><span>🔖</span> Éléments Enregistrés</button>
+            </div>
 
-            <small>
-                Membre SAMII
-            </small>
-
+            <div class="amazon-menu-section">
+                <div class="amazon-menu-title">Écosystème & Hub</div>
+                <button><span>📦</span> Catalogue Produits</button>
+                <button><span>💼</span> Offres & Missions</button>
+                <button><span>🤖</span> Automatisation Sami</button>
+                <button><span>⚙️</span> Paramètres du Compte</button>
+            </div>
         </div>
-
-        <div class="desktop-menu">
-
-            <button class="active">
-                🏠 Accueil
-            </button>
-
-            <button>
-                🔥 Explorer
-            </button>
-
-            <button>
-                👥 Communautés
-            </button>
-
-            <button>
-                🔖 Enregistrés
-            </button>
-
-            <button>
-                👤 Mon profil
-            </button>
-
-        </div>
-
     </aside>
 
-
     <!-- =================================================
-         FEED
+         FEED CENTRAL
     ================================================== -->
-
     <main>
-
-
         <!-- WELCOME -->
-
         <section class="welcome">
-
-            <div class="welcome-label">
-                SAMII COMMUNITY
-            </div>
-
-            <h1>
-                Bienvenue dans la communauté 🌐
-            </h1>
-
-            <p>
-                Clients, commerçants et membres SAMII
-                se rencontrent, partagent et développent
-                leurs activités ensemble.
-            </p>
-
+            <div class="welcome-label">SAMII COMMUNITY HUB</div>
+            <h1>Bienvenue dans l'écosystème 🌐</h1>
+            <p>Clients, commerçants et membres de l'élite se rencontrent, partagent et développent leurs activités automatisées ensemble.</p>
         </section>
-
 
         <!-- CREATE -->
-
         <section class="create">
-
             <div class="create-head">
-
-                <div class="user-avatar">
-                    👤
-                </div>
-
-                <button class="create-button">
-                    Quoi de neuf ? Partage quelque chose...
-                </button>
-
+                <div class="user-avatar">👤</div>
+                <button class="create-button">Quoi de neuf ? Partage quelque chose...</button>
             </div>
-
             <div class="create-options">
-
-                <button class="create-option">
-                    📷<br>
-                    Photo
-                </button>
-
-                <button class="create-option">
-                    📦<br>
-                    Produit
-                </button>
-
-                <button class="create-option">
-                    💼<br>
-                    Offre
-                </button>
-
-                <button class="create-option">
-                    ❓<br>
-                    Demande
-                </button>
-
+                <button class="create-option">📷<br>Photo</button>
+                <button class="create-option">📦<br>Produit</button>
+                <button class="create-option">💼<br>Offre</button>
+                <button class="create-option">❓<br>Demande</button>
             </div>
-
         </section>
-
 
         <!-- FEED TITLE -->
-
         <div class="feed-title">
-
-            <strong>
-                Fil de la communauté
-            </strong>
-
-            <button>
-                Récent ▾
-            </button>
-
+            <strong>Fil de la communauté</strong>
+            <button>Récent ▾</button>
         </div>
 
-
-        <!-- =================================================
-             POST
-    ================================================== -->
-
+        <!-- POST 1 -->
         <article class="post">
-
             <div class="post-header">
-
-                <div class="user-avatar">
-                    🏪
-                </div>
-
+                <div class="user-avatar">🏪</div>
                 <div class="post-user">
-
-                    <strong>
-                        Exemple Boutique
-                    </strong>
-
-                    <small>
-                        Marchand · Algérie · 2 h
-                    </small>
-
+                    <strong>Exemple Boutique</strong>
+                    <small>Marchand · Algérie · 2 h</small>
                 </div>
-
-                <button class="post-menu">
-                    ⋮
-                </button>
-
+                <button class="post-menu">⋮</button>
             </div>
-
-
             <div class="post-content">
-
-                Bienvenue dans SAMII Community 👋
-
-                <br><br>
-
-                Ici les commerçants peuvent présenter
-                leurs produits, les clients découvrir
-                de nouvelles offres et toute la communauté
-                peut échanger.
-
+                Bienvenue dans SAMII Community 👋<br><br>
+                Ici les commerçants peuvent présenter leurs produits, les clients découvrir de nouvelles offres et toute la communauté peut échanger.
             </div>
-
-
-            <span class="post-tag">
-                🏪 Commerce
-            </span>
-
-
+            <span class="post-tag">🏪 Commerce</span>
             <div class="post-actions">
-
-                <button class="post-action">
-                    ❤️ J'aime
-                </button>
-
-                <button class="post-action">
-                    💬 Commenter
-                </button>
-
-                <button class="post-action">
-                    ↗ Partager
-                </button>
-
+                <button class="post-action">❤️ J'aime</button>
+                <button class="post-action">💬 Commenter</button>
+                <button class="post-action">↗ Partager</button>
             </div>
-
         </article>
 
-
-        <!-- =================================================
-             POST 2
-    ================================================== -->
-
+        <!-- POST 2 -->
         <article class="post">
-
             <div class="post-header">
-
-                <div class="user-avatar">
-                    👤
-                </div>
-
+                <div class="user-avatar">👤</div>
                 <div class="post-user">
-
-                    <strong>
-                        Membre SAMII
-                    </strong>
-
-                    <small>
-                        Client · Algérie · 4 h
-                    </small>
-
+                    <strong>Membre SAMII</strong>
+                    <small>Client · Algérie · 4 h</small>
                 </div>
-
-                <button class="post-menu">
-                    ⋮
-                </button>
-
+                <button class="post-menu">⋮</button>
             </div>
-
-
             <div class="post-content">
-
-                Je cherche un service pour m'aider
-                à développer ma boutique.
-
-                <br><br>
-
+                Je cherche un service pour m'aider à développer ma boutique et structurer mes tunnels.<br><br>
                 Des recommandations dans la communauté ?
-
             </div>
-
-
-            <span class="post-tag">
-                ❓ Demande
-            </span>
-
-
+            <span class="post-tag">❓ Demande</span>
             <div class="post-actions">
-
-                <button class="post-action">
-                    ❤️ J'aime
-                </button>
-
-                <button class="post-action">
-                    💬 Commenter
-                </button>
-
-                <button class="post-action">
-                    ↗ Partager
-                </button>
-
+                <button class="post-action">❤️ J'aime</button>
+                <button class="post-action">💬 Commenter</button>
+                <button class="post-action">↗ Partager</button>
             </div>
-
         </article>
 
-
-        <!-- =================================================
-             DISCOVERY
-    ================================================== -->
-
+        <!-- DISCOVERY -->
         <section class="discovery">
-
             <div class="section-title">
-
-                <strong>
-                    👥 À découvrir
-                </strong>
-
-                <button>
-                    Voir tout
-                </button>
-
+                <strong>👥 À découvrir</strong>
+                <button>Voir tout</button>
             </div>
-
-
             <div class="discovery-scroll">
-
-
                 <div class="discovery-card">
-
-                    <div class="user-avatar">
-                        🏪
-                    </div>
-
-                    <strong>
-                        Boutique Exemple
-                    </strong>
-
-                    <small>
-                        Marchand
-                    </small>
-
-                    <button class="follow">
-                        Suivre
-                    </button>
-
+                    <div class="user-avatar">🏪</div>
+                    <strong>Boutique Exemple</strong>
+                    <small>Marchand</small>
+                    <button class="follow">Suivre</button>
                 </div>
-
-
                 <div class="discovery-card">
-
-                    <div class="user-avatar">
-                        👤
-                    </div>
-
-                    <strong>
-                        Membre SAMII
-                    </strong>
-
-                    <small>
-                        Client
-                    </small>
-
-                    <button class="follow">
-                        Suivre
-                    </button>
-
+                    <div class="user-avatar">👤</div>
+                    <strong>Membre SAMII</strong>
+                    <small>Client</small>
+                    <button class="follow">Suivre</button>
                 </div>
-
-
                 <div class="discovery-card">
-
-                    <div class="user-avatar">
-                        🚚
-                    </div>
-
-                    <strong>
-                        Transport Express
-                    </strong>
-
-                    <small>
-                        Service
-                    </small>
-
-                    <button class="follow">
-                        Suivre
-                    </button>
-
+                    <div class="user-avatar">🚚</div>
+                    <strong>Transport Express</strong>
+                    <small>Service</small>
+                    <button class="follow">Suivre</button>
                 </div>
-
-
             </div>
-
         </section>
 
-
-        <!-- =================================================
-             TRENDING MOBILE
-    ================================================== -->
-
-        <section class="trending mobile-only">
-
-            <h3>
-                🔥 Tendances
-            </h3>
-
-            <div class="trend">
-
-                <span>
-                    Commerce
-                </span>
-
-                <strong>
-                    #EcommerceAlgerie
-                </strong>
-
-            </div>
-
-            <div class="trend">
-
-                <span>
-                    SAMII
-                </span>
-
-                <strong>
-                    #SAMIIOS
-                </strong>
-
-            </div>
-
-            <div class="trend">
-
-                <span>
-                    Marketplace
-                </span>
-
-                <strong>
-                    #NouveauxProduits
-                </strong>
-
-            </div>
-
+        <!-- TRENDING MOBILE -->
+        <section class="trending mobile-only" style="margin-top:20px; padding:16px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--card);">
+            <h3 style="margin-bottom:12px; font-size:0.85rem;">🔥 Tendances</h3>
+            <div class="trend"><span>Commerce</span><strong>#EcommerceAlgerie</strong></div>
+            <div class="trend"><span>SAMII</span><strong>#SAMIIOS</strong></div>
+            <div class="trend"><span>Marketplace</span><strong>#NouveauxProduits</strong></div>
         </section>
-
     </main>
 
-
     <!-- =================================================
-         DESKTOP RIGHT
+         DESKTOP RIGHT SIDEBAR
     ================================================== -->
-
     <aside class="desktop-right desktop-only">
-
         <section class="desktop-panel">
-
-            <h3>
-                🔥 Tendances
-            </h3>
-
-            <div class="trend">
-
-                <span>
-                    Commerce
-                </span>
-
-                <strong>
-                    #EcommerceAlgerie
-                </strong>
-
-            </div>
-
-            <div class="trend">
-
-                <span>
-                    SAMII
-                </span>
-
-                <strong>
-                    #SAMIIOS
-                </strong>
-
-            </div>
-
-            <div class="trend">
-
-                <span>
-                    Marketplace
-                </span>
-
-                <strong>
-                    #NouveauxProduits
-                </strong>
-
-            </div>
-
+            <h3>🔥 Tendances du Réseau</h3>
+            <div class="trend"><span>Commerce</span><strong>#EcommerceAlgerie</strong></div>
+            <div class="trend"><span>SAMII</span><strong>#SAMIIOS</strong></div>
+            <div class="trend"><span>Marketplace</span><strong>#NouveauxProduits</strong></div>
         </section>
 
-
         <section class="desktop-panel">
-
-            <h3>
-                👥 Membres
-            </h3>
-
-            <div class="member">
-
-                <div class="user-avatar">
-                    🏪
+            <h3>👥 Membres Actifs</h3>
+            <div class="trend" style="padding: 8px 0;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="user-avatar" style="width:32px; height:32px; font-size:14px;">🏪</div>
+                    <div><strong style="display:block; font-size:0.75rem;">Boutique Exemple</strong><small style="color:var(--text-dimmed); font-size:0.65rem;">Marchand</small></div>
                 </div>
-
-                <div class="post-user">
-
-                    <strong>
-                        Boutique Exemple
-                    </strong>
-
-                    <small>
-                        Marchand
-                    </small>
-
-                </div>
-
             </div>
-
-
-            <div class="member">
-
-                <div class="user-avatar">
-                    👤
+            <div class="trend" style="padding: 8px 0;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="user-avatar" style="width:32px; height:32px; font-size:14px;">👤</div>
+                    <div><strong style="display:block; font-size:0.75rem;">Membre SAMII</strong><small style="color:var(--text-dimmed); font-size:0.65rem;">Client</small></div>
                 </div>
-
-                <div class="post-user">
-
-                    <strong>
-                        Membre SAMII
-                    </strong>
-
-                    <small>
-                        Client
-                    </small>
-
-                </div>
-
             </div>
-
         </section>
-
     </aside>
 
 </div>
 
-
 <!-- =====================================================
-     MOBILE BOTTOM NAV
-================================================     -->
-
+     MOBILE BOTTOM NAVIGATION (App Style)
+===================================================== -->
 <nav class="bottom-nav">
-
-    <button class="bottom-item active">
-
-        <span>🏠</span>
-
-        <span>
-            Accueil
-        </span>
-
-    </button>
-
-
-    <button class="bottom-item">
-
-        <span>🔎</span>
-
-        <span>
-            Explorer
-        </span>
-
-    </button>
-
-
-    <button class="bottom-item bottom-publish">
-
-        <span>
-            ＋
-        </span>
-
-        <span>
-            Publier
-        </span>
-
-    </button>
-
-
-    <button class="bottom-item">
-
-        <span>🔔</span>
-
-        <span>
-            Alertes
-        </span>
-
-    </button>
-
-
-    <button class="bottom-item">
-
-        <span>👤</span>
-
-        <span>
-            Profil
-        </span>
-
-    </button>
-
+    <button class="bottom-item active"><span>🏠</span><span>Accueil</span></button>
+    <button class="bottom-item"><span>🔎</span><span>Explorer</span></button>
+    <button class="bottom-item bottom-publish"><span>＋</span><span>Publier</span></button>
+    <button class="bottom-item"><span>🔔</span><span>Alertes</span></button>
+    <button class="bottom-item"><span>👤</span><span>Profil</span></button>
 </nav>
-
 
 </body>
 </html>`);
