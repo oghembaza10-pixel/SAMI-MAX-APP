@@ -86,6 +86,9 @@ module.exports = {
         ZONE_ID   : process.env.CLOUDFLARE_ZONE_ID,
         API_TOKEN : process.env.CLOUDFLARE_API_TOKEN,
     },
+    RUNWARE: {
+    API_KEY: process.env.RUNWARE_API_KEY || "",
+},
     // ==================================================
     // TELEGRAM
     // ==================================================
