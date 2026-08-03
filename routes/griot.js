@@ -442,6 +442,7 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
         if (!pack) {
             return res.json({ success: false, error: "SAMII n'a pas pu structurer sa réponse. Réessaie." });
         }
+       console.log("🔍 DEBUG pack complet reçu de Gemini :", JSON.stringify(pack, null, 2)); 
 
         pack.medias = [];
 
