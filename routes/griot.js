@@ -474,18 +474,19 @@ if (runwareApiKey && pack.prompt_visuel) {
                     },
                     body: JSON.stringify([runwareTask]),
                 });
+const runwareData = await runwareRes.json();
+console.log("📸 DEBUG Runware — statut HTTP :", runwareRes.status, "| réponse complète :", JSON.stringify(runwareData));
 
-                const runwareData = await runwareRes.json();
-
-                if (runwareData && Array.isArray(runwareData.data)) {
+if (runwareData && Array.isArray(runwareData.data)) {
+               
                     runwareData.data.forEach(item => {
                         if (item.imageURL) pack.medias.push(item.imageURL);
                         if (item.videoURL) pack.medias.push(item.videoURL);
                     });
                 }
-            } catch (runwareErr) {
-                console.error("⚠️ Erreur appel Runware (non bloquant) :", runwareErr.message);
-            }
+           } catch (runwareErr) {
+    console.error("⚠️ Erreur appel Runware (non bloquant) :", runwareErr.message, runwareErr.stack);
+}
         }
 
         res.json({ success: true, pack });
