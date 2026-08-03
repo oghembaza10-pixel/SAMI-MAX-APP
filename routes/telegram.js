@@ -110,13 +110,51 @@ async function handleOrderFlow(chatId, text, name) {
     const session = memory.get(chatId) || {};
     const step    = session.step;
 
-    if (!step) {
+   if (!step) {
+    let workspaceId = await getClientWorkspace(chatId);
+    if (!workspaceId) workspaceId = await getWorkspaceByChatId(chatId);
+
+    const db = require("../services/db");
+    const produits = await db.query(
+        "SELECT nom, prix FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom",
+        [workspaceId]
+    );
+
+    if (produits.length === 0) {
         memory.set(chatId, { step: "produit", name });
         await reply(chatId,
             `🛍️ *Parfait !*\n\nQuel produit souhaitez-vous commander ?\n_(Nom, taille, couleur...)_`
         );
         return true;
     }
+
+    const listeProduits = produits
+        .map((p, i) => `${i + 1}. *${p.nom}* — ${p.prix} DZD`)
+        .join("\n");
+
+    memory.set(chatId, { step: "produit_choix", name, produitsDisponibles: produits });
+    await reply(chatId,
+        `🛍️ *Voici nos produits disponibles :*\n\n${listeProduits}\n\n` +
+        `Tapez le *numéro* du produit qui vous intéresse.`
+    );
+    return true;
+}
+
+if (step === "produit_choix") {
+    const session = memory.get(chatId);
+    const index = parseInt(text.trim(), 10) - 1;
+    const produits = session.produitsDisponibles || [];
+    const choisi = produits[index];
+
+    if (!choisi) {
+        await reply(chatId, `❌ Numéro invalide. Réessaie avec un numéro de la liste.`);
+        return true;
+    }
+
+    memory.set(chatId, { step: "telephone", produit: `${choisi.nom} (${choisi.prix} DZD)`, name: session.name });
+    await reply(chatId, `📞 Votre *numéro de téléphone* s'il vous plaît ?`);
+    return true;
+}
 
     if (step === "produit") {
         memory.set(chatId, { step: "telephone", produit: text });
