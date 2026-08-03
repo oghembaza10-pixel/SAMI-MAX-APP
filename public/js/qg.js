@@ -65,58 +65,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── DÉFINITION DES MODULES ───────────────────
+    // ── DÉFINITION DES MODULES (Inclus : TikTok, YouTube, Google, Gmail, Discord) ───
     const MODULES = {
         '': {
             label : 'Tout',
             cartes: [
-                { id: 'stat-revenus',    label: 'Revenus (DZD)',    icon: 'trending-up',   key: 'total_revenus'    },
-                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',       key: 'total_commandes'  },
-                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',         key: 'en_attente'       },
-                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',  key: 'confirmees'       },
-                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',      key: 'annulees'         },
-                { id: 'stat-vip',        label: 'Clients VIP',      icon: 'crown',         key: 'vip'              },
-                { id: 'stat-blacklist',  label: 'Blacklist',        icon: 'shield-off',    key: 'blacklist'        },
+                { id: 'stat-revenus',    label: 'Revenus (DZD)',    icon: 'trending-up',    key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',        key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',          key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',   key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',       key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Clients VIP',      icon: 'crown',          key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Blacklist',        icon: 'shield-off',     key: 'blacklist'        },
             ],
-            <!-- ── TABLEAU DE SUIVI DES COMMANDES DU QG ── -->
-<div class="qg-section" style="margin-top: 30px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="color: #fff; font-size: 1.1rem; font-weight: 600;">📦 Dernières Commandes & Suivi</h3>
-    </div>
-    
-    <div style="overflow-x: auto; background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 10px;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; color: #ccc; font-size: 0.9rem;">
-            <thead>
-                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #d4af37;">
-                    <th style="padding: 12px;">ID</th>
-                    <th style="padding: 12px;">Client</th>
-                    <th style="padding: 12px;">Téléphone</th>
-                    <th style="padding: 12px;">Produit</th>
-                    <th style="padding: 12px;">Montant</th>
-                    <th style="padding: 12px;">Statut</th>
-                    <th style="padding: 12px; text-align: center;">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="commandes-tbody">
-                <!-- Injecté dynamiquement par qg.js -->
-                <tr>
-                    <td colspan="7" style="text-align: center; color: #888; padding: 20px;">Chargement des flux...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
         },
         shopify: {
             label : 'Shopify',
             cartes: [
-                { id: 'stat-revenus',    label: 'CA Shopify (DZD)', icon: 'trending-up',   key: 'total_revenus'    },
-                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',       key: 'total_commandes'  },
-                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',         key: 'en_attente'       },
-                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',  key: 'confirmees'       },
-                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',      key: 'annulees'         },
-                { id: 'stat-vip',        label: 'Clients Shopify',  icon: 'users',         key: 'vip'              },
-                { id: 'stat-blacklist',  label: 'Abandons panier',  icon: 'shopping-cart', key: 'blacklist'        },
+                { id: 'stat-revenus',    label: 'CA Shopify (DZD)', icon: 'trending-up',    key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',        key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',          key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',   key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',       key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Clients Shopify',  icon: 'users',          key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Abandons panier',  icon: 'shopping-cart',  key: 'blacklist'        },
             ],
         },
         telegram: {
@@ -134,25 +106,85 @@ document.addEventListener('DOMContentLoaded', () => {
         whatsapp: {
             label : 'WhatsApp',
             cartes: [
-                { id: 'stat-revenus',    label: 'Revenus WhatsApp', icon: 'trending-up',   key: 'total_revenus'    },
-                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',       key: 'total_commandes'  },
-                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',         key: 'en_attente'       },
-                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',  key: 'confirmees'       },
-                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',      key: 'annulees'         },
-                { id: 'stat-vip',        label: 'Clients WhatsApp', icon: 'users',         key: 'vip'              },
-                { id: 'stat-blacklist',  label: 'Diffusions',       icon: 'radio',         key: 'blacklist'        },
+                { id: 'stat-revenus',    label: 'Revenus WhatsApp', icon: 'trending-up',    key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',        key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',          key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',   key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',       key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Clients WhatsApp', icon: 'users',          key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Diffusions',       icon: 'radio',          key: 'blacklist'        },
             ],
         },
         instagram: {
             label : 'Instagram',
             cartes: [
                 { id: 'stat-revenus',    label: 'Revenus Instagram', icon: 'trending-up',   key: 'total_revenus'    },
-                { id: 'stat-commandes',  label: 'Commandes',         icon: 'package',       key: 'total_commandes'  },
-                { id: 'stat-attente',    label: 'Messages',          icon: 'message-circle',key: 'en_attente'       },
-                { id: 'stat-confirmees', label: 'Leads',             icon: 'user-plus',     key: 'confirmees'       },
-                { id: 'stat-annulees',   label: 'Annulées',          icon: 'x-circle',      key: 'annulees'         },
-                { id: 'stat-vip',        label: 'Clients Instagram', icon: 'users',         key: 'vip'              },
-                { id: 'stat-blacklist',  label: 'Blacklist',         icon: 'shield-off',    key: 'blacklist'        },
+                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',        key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'Messages',         icon: 'message-circle', key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Leads',            icon: 'user-plus',      key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',       key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Clients Instagram',icon: 'users',          key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Blacklist',        icon: 'shield-off',     key: 'blacklist'        },
+            ],
+        },
+        tiktok: {
+            label : 'TikTok',
+            cartes: [
+                { id: 'stat-revenus',    label: 'Vues / Portée',    icon: 'eye',            key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Conversions',      icon: 'zap',            key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'Vidéos Actives',   icon: 'video',          key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Leads TikTok',     icon: 'user-plus',      key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Signalements',     icon: 'x-circle',       key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Abonnés VIP',      icon: 'users',          key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Engagement',       icon: 'trending-up',    key: 'blacklist'        },
+            ],
+        },
+        youtube: {
+            label : 'YouTube',
+            cartes: [
+                { id: 'stat-revenus',    label: 'Vues Totales',     icon: 'play-circle',    key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Clics Tunnel',     icon: 'external-link',  key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'Impressions',      icon: 'bar-chart-2',    key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Abonnés Gagnés',   icon: 'user-plus',      key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Désabonnements',   icon: 'user-minus',     key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Membres Actifs',   icon: 'crown',          key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Rétention',        icon: 'activity',       key: 'blacklist'        },
+            ],
+        },
+        google: {
+            label : 'Google / SEO',
+            cartes: [
+                { id: 'stat-revenus',    label: 'Trafic Organique', icon: 'search',         key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Conversions SEO',  icon: 'globe',          key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'Indexation',       icon: 'check-square',   key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Position Top 3',   icon: 'award',          key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Erreurs Crawl',    icon: 'alert-triangle', key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Leads Web',        icon: 'users',          key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Performance Ads',  icon: 'target',         key: 'blacklist'        },
+            ],
+        },
+        gmail: {
+            label : 'Gmail',
+            cartes: [
+                { id: 'stat-revenus',    label: 'Emails Envoyés',   icon: 'send',           key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Commandes Mail',   icon: 'mail',           key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'Non lus',          icon: 'clock',          key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Traités par IA',   icon: 'bot',            key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Spams / Rejets',   icon: 'slash',          key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Contacts Pro',     icon: 'users',          key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Blacklist Mails',  icon: 'shield-off',     key: 'blacklist'        },
+            ],
+        },
+        discord: {
+            label : 'Discord',
+            cartes: [
+                { id: 'stat-revenus',    label: 'Membres QG',       icon: 'users',          key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Notifications',    icon: 'bell',           key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'Tickets Support',  icon: 'life-buoy',      key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Vérifiés',         icon: 'check-circle',   key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Bannis',           icon: 'user-x',         key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Rôles VIP',        icon: 'shield',         key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Bots Actifs',      icon: 'cpu',            key: 'blacklist'        },
             ],
         },
     };
@@ -211,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const en_attente      = commandes.filter(c => c.Statut === 'en attente').length;
         const confirmees      = commandes.filter(c => c.Statut === 'confirmée').length;
         const annulees        = commandes.filter(c => c.Statut === 'annulée').length;
-        const vip             = clients.filter(c => c.VIP      === true).length;
+        const vip             = clients.filter(c => c.VIP     === true).length;
         const blacklist       = clients.filter(c => c.Blacklist === true).length;
         return { total_commandes, total_revenus: total_revenus.toFixed(2),
                  en_attente, confirmees, annulees, vip, blacklist };
@@ -250,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderCommandes(commandes);
 
-
         const titreEl = document.getElementById('qg-boutique-nom');
         if (titreEl) {
             titreEl.textContent = canal
@@ -268,13 +299,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!el || !data.connecteurs) return;
 
             const icones = {
-                shopify  : '🛍',
-                telegram : '💬',
-                whatsapp : '📱',
-                instagram: '📸',
-                gmail    : '📧',
-                yalidine : '📦',
-                tiktok   : '🎵',
+                shopify   : '🛍',
+                telegram  : '💬',
+                whatsapp  : '📱',
+                instagram : '📸',
+                gmail     : '📧',
+                yalidine  : '📦',
+                tiktok    : '🎵',
+                youtube   : '▶️',
+                google    : '🔍',
+                discord   : '🎮',
             };
 
             const actifs = Object.entries(data.connecteurs)
@@ -314,9 +348,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             allData = data;
 
-            setCard('stat-livrees',   data.livraison.livrees);
+            setCard('stat-livrees',    data.livraison.livrees);
             setCard('stat-en-cours', data.livraison.en_cours);
-            setCard('stat-echecs',   data.livraison.echecs);
+            setCard('stat-echecs',    data.livraison.echecs);
 
             const missionDate = document.getElementById('mission-date');
             if (missionDate) missionDate.textContent = data.mission.date;
@@ -342,25 +376,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── RENDER COMMANDES ─────────────────────────
+    // ── RENDER COMMANDES (Avec boutons d'action Yalidine / Suivi) ──
     function renderCommandes(commandes) {
         const tbody = document.getElementById('commandes-tbody');
         if (!tbody) return;
         if (!commandes || commandes.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;padding:20px;">Aucune commande</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">Aucune commande pour le moment</td></tr>`;
             return;
         }
         tbody.innerHTML = commandes.slice(0, 20).map(c => `
-            <tr>
-                <td>#${c['ID Commande'] || '—'}</td>
-                <td>${c['Nom Client']   || '—'}</td>
-                <td>${c['Téléphone']    || '—'}</td>
-                <td>${c['Produit']      || '—'}</td>
-                <td>${parseFloat(c['montant'] || c['Total'] || 0).toFixed(2)} ${c['Devise'] || 'DZD'}</td>
-                <td><span class="qg-badge qg-badge--${statutClass(c['Statut'])}">${c['Statut'] || '—'}</span></td>
+            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <td style="padding: 12px;">#${c['ID Commande'] || c.airtableId?.slice(-4) || '—'}</td>
+                <td style="padding: 12px; font-weight: 500; color: #fff;">${c['Nom Client'] || c['Nom'] || '—'}</td>
+                <td style="padding: 12px;">${c['Téléphone'] || '—'}</td>
+                <td style="padding: 12px;">${c['Produit'] || '—'}</td>
+                <td style="padding: 12px; color: #d4af37; font-weight: 600;">${parseFloat(c['montant'] || c['Total'] || 0).toFixed(2)} ${c['Devise'] || 'DZD'}</td>
+                <td style="padding: 12px;"><span class="qg-badge qg-badge--${statutClass(c['Statut'])}">${c['Statut'] || 'en attente'}</span></td>
+                <td style="padding: 12px; text-align: center;">
+                    <button onclick="agirCommande('${c.airtableId}', 'confirmer')" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-right: 5px;" title="Confirmer">✅</button>
+                    <button onclick="agirCommande('${c.airtableId}', 'annuler')" style="background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 6px; cursor: pointer;" title="Annuler">❌</button>
+                </td>
             </tr>
         `).join('');
     }
+
+    // ── ACTION RAPIDE COMMANDE ───────────────────
+    window.agirCommande = async function(id, action) {
+        try {
+            const res = await fetch(`/api/commandes/${id}/${action}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                loadQGData();
+            } else {
+                alert("Erreur lors de l'action.");
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     function statutClass(statut) {
         const map = {
