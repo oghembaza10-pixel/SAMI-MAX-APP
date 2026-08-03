@@ -1,3 +1,8 @@
+/**
+ * SAMII OS - QG Marchand (Front-End Controller)
+ * Exécution chirurgicale - Zéro usine à gaz.
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -65,61 +70,61 @@ document.addEventListener('DOMContentLoaded', () => {
         '': {
             label : 'Tout',
             cartes: [
-                { id: 'stat-revenus',    label: 'Revenus (DZD)',   icon: 'trending-up',  key: 'total_revenus'    },
-                { id: 'stat-commandes',  label: 'Commandes',       icon: 'package',      key: 'total_commandes'  },
-                { id: 'stat-attente',    label: 'En attente',      icon: 'clock',        key: 'en_attente'       },
-                { id: 'stat-confirmees', label: 'Confirmées',      icon: 'check-circle', key: 'confirmees'       },
-                { id: 'stat-annulees',   label: 'Annulées',        icon: 'x-circle',     key: 'annulees'         },
-                { id: 'stat-vip',        label: 'Clients VIP',     icon: 'crown',        key: 'vip'              },
-                { id: 'stat-blacklist',  label: 'Blacklist',       icon: 'shield-off',   key: 'blacklist'        },
+                { id: 'stat-revenus',    label: 'Revenus (DZD)',    icon: 'trending-up',   key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',       key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',         key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',  key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',      key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Clients VIP',      icon: 'crown',         key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Blacklist',        icon: 'shield-off',    key: 'blacklist'        },
             ],
         },
         shopify: {
             label : 'Shopify',
             cartes: [
-                { id: 'stat-revenus',    label: 'CA Shopify (DZD)', icon: 'trending-up',  key: 'total_revenus'   },
-                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',      key: 'total_commandes' },
-                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',        key: 'en_attente'      },
-                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle', key: 'confirmees'      },
-                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',     key: 'annulees'        },
-                { id: 'stat-vip',        label: 'Clients Shopify',  icon: 'users',        key: 'vip'             },
-                { id: 'stat-blacklist',  label: 'Abandons panier',  icon: 'shopping-cart',key: 'blacklist'       },
+                { id: 'stat-revenus',    label: 'CA Shopify (DZD)', icon: 'trending-up',   key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',       key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',         key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',  key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',      key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Clients Shopify',  icon: 'users',         key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Abandons panier',  icon: 'shopping-cart', key: 'blacklist'        },
             ],
         },
         telegram: {
             label : 'Telegram',
             cartes: [
-                { id: 'stat-revenus',    label: 'Revenus Telegram', icon: 'trending-up',    key: 'total_revenus'   },
-                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',        key: 'total_commandes' },
-                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',          key: 'en_attente'      },
-                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',   key: 'confirmees'      },
-                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',       key: 'annulees'        },
-                { id: 'stat-vip',        label: 'Clients Telegram', icon: 'users',          key: 'vip'             },
-                { id: 'stat-blacklist',  label: 'Réponses IA',      icon: 'bot',            key: 'blacklist'       },
+                { id: 'stat-revenus',    label: 'Revenus Telegram', icon: 'trending-up',    key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',        key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',          key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',   key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',       key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Clients Telegram', icon: 'users',          key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Réponses IA',      icon: 'bot',            key: 'blacklist'        },
             ],
         },
         whatsapp: {
             label : 'WhatsApp',
             cartes: [
-                { id: 'stat-revenus',    label: 'Revenus WhatsApp', icon: 'trending-up',  key: 'total_revenus'   },
-                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',      key: 'total_commandes' },
-                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',        key: 'en_attente'      },
-                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle', key: 'confirmees'      },
-                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',     key: 'annulees'        },
-                { id: 'stat-vip',        label: 'Clients WhatsApp', icon: 'users',        key: 'vip'             },
-                { id: 'stat-blacklist',  label: 'Diffusions',       icon: 'radio',        key: 'blacklist'       },
+                { id: 'stat-revenus',    label: 'Revenus WhatsApp', icon: 'trending-up',   key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',       key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',         key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',  key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',      key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Clients WhatsApp', icon: 'users',         key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Diffusions',       icon: 'radio',         key: 'blacklist'        },
             ],
         },
         instagram: {
             label : 'Instagram',
             cartes: [
-                { id: 'stat-revenus',    label: 'Revenus Instagram', icon: 'trending-up',  key: 'total_revenus'   },
-                { id: 'stat-commandes',  label: 'Commandes',         icon: 'package',      key: 'total_commandes' },
-                { id: 'stat-attente',    label: 'Messages',          icon: 'message-circle',key: 'en_attente'     },
-                { id: 'stat-confirmees', label: 'Leads',             icon: 'user-plus',    key: 'confirmees'      },
-                { id: 'stat-annulees',   label: 'Annulées',          icon: 'x-circle',     key: 'annulees'        },
-                { id: 'stat-vip',        label: 'Clients Instagram', icon: 'users',        key: 'vip'             },
-                { id: 'stat-blacklist',  label: 'Blacklist',         icon: 'shield-off',   key: 'blacklist'       },
+                { id: 'stat-revenus',    label: 'Revenus Instagram', icon: 'trending-up',   key: 'total_revenus'    },
+                { id: 'stat-commandes',  label: 'Commandes',         icon: 'package',       key: 'total_commandes'  },
+                { id: 'stat-attente',    label: 'Messages',          icon: 'message-circle',key: 'en_attente'       },
+                { id: 'stat-confirmees', label: 'Leads',             icon: 'user-plus',     key: 'confirmees'       },
+                { id: 'stat-annulees',   label: 'Annulées',          icon: 'x-circle',      key: 'annulees'         },
+                { id: 'stat-vip',        label: 'Clients Instagram', icon: 'users',         key: 'vip'              },
+                { id: 'stat-blacklist',  label: 'Blacklist',         icon: 'shield-off',    key: 'blacklist'        },
             ],
         },
     };
@@ -204,13 +209,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const stats = calcStats(commandes, clients);
 
-        // Mettre à jour labels + icônes
         updateCarteLabels(canal);
-
-        // Flash effet
         flashCartes();
 
-        // Mettre à jour valeurs
         setCard('stat-revenus',    stats.total_revenus);
         setCard('stat-commandes',  stats.total_commandes);
         setCard('stat-attente',    stats.en_attente);
@@ -219,14 +220,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setCard('stat-vip',        stats.vip);
         setCard('stat-blacklist',  stats.blacklist);
 
-        // Tableau commandes
         renderCommandes(commandes);
 
-        // Clients
         renderClients('vip-list',   clients.filter(c => c.VIP      === true));
         renderClients('black-list', clients.filter(c => c.Blacklist === true));
 
-        // Titre section
         const titreEl = document.getElementById('qg-boutique-nom');
         if (titreEl) {
             titreEl.textContent = canal
@@ -288,15 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (!data.success) return;
 
-            // Stocker globalement
             allData = data;
 
-            // Livraison (toujours global)
-            setCard('stat-livrees',  data.livraison.livrees);
+            setCard('stat-livrees',   data.livraison.livrees);
             setCard('stat-en-cours', data.livraison.en_cours);
             setCard('stat-echecs',   data.livraison.echecs);
 
-            // Mission du jour (toujours global)
             const missionDate = document.getElementById('mission-date');
             if (missionDate) missionDate.textContent = data.mission.date;
             setCard('mission-commandes', data.mission.commandes);
@@ -308,16 +303,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pctEl) pctEl.textContent = pct + '%';
             if (barEl) barEl.style.width = pct + '%';
 
-            // Performance (toujours global)
             setCard('perf-revenus-mois',   data.performance.revenus_mois);
             setCard('perf-commandes-mois', data.performance.commandes_mois);
             const evolEl = document.getElementById('perf-evolution');
             if (evolEl) evolEl.textContent = data.performance.evolution;
 
-            // Grade basé sur total global
             afficherGrade(data.stats.total_commandes);
-
-            // Appliquer module actif (par défaut : tout)
             appliquerModule(canalActif || '');
 
         } catch (err) {
@@ -386,26 +377,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             card.addEventListener('mouseleave', () => card.style.transform = '');
         });
-    }
-
-    // ── APPARITION PROGRESSIVE ───────────────────
-    document.querySelectorAll('.qg-dashboard, .qg-arsenal').forEach(group => {
-        Array.from(group.children).forEach((item, i) => {
-            item.style.opacity    = '0';
-            item.style.transform  = 'translateY(14px)';
-            item.style.transition = `opacity .5s ease ${i * 0.06}s, transform .5s ease ${i * 0.06}s`;
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                item.style.opacity   = '1';
-                item.style.transform = 'translateY(0)';
-            }));
-        });
-    });
-
-    // ── SAMII STATUS ─────────────────────────────
-    const samiiDot = document.getElementById('samii-status-dot');
-    if (samiiDot) {
-        samiiDot.classList.add('qg-status-dot--on');
-        samiiDot.title = 'SAMII actif';
     }
 
     // ── SOCKET.IO ────────────────────────────────
