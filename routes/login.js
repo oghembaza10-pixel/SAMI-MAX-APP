@@ -1,15 +1,10 @@
 // ==========================================================================
-// SAMII OS — LOGIN V5 (vérification email + hachage bcrypt + type de compte)
+// SAMII OS — LOGIN V6 — PostgreSQL (remplace Airtable)
 // ==========================================================================
 const express = require("express");
-const axios   = require("axios");
 const bcrypt  = require("bcrypt");
 const router  = express.Router();
-const workspaceService = require("../services/workspaceService");
-
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
+const db      = require("../services/db");
 
 // ── GET /login ────────────────────────────────────────────────
 router.get("/", (req, res) => {
@@ -98,23 +93,12 @@ router.post("/", async (req, res) => {
     }
 
     try {
-        const headers = {
-            Authorization : `Bearer ${AIRTABLE_API_KEY}`,
-            "Content-Type": "application/json",
-        };
+        const rows = await db.query(`SELECT * FROM utilisateurs WHERE email = $1`, [email]);
+        const user = rows[0];
 
-        const search = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={email}="${email}"`,
-            { headers }
-        );
-
-        const record = search.data.records[0];
-
-        if (!record) {
+        if (!user) {
             return res.json({ success: false, error: "Email ou mot de passe incorrect." });
         }
-
-        const user = record.fields;
 
         if (user.email_verifie !== true) {
             return res.json({ success: false, error: "Confirme ton email avant de te connecter (vérifie ta boîte mail)." });
@@ -129,24 +113,20 @@ router.post("/", async (req, res) => {
             return res.json({ success: false, error: "Compte suspendu. Contactez le support." });
         }
 
-        await axios.patch(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-            { fields: { last_login: new Date().toISOString().split("T")[0] } },
-            { headers }
-        );
+        await db.query(`UPDATE utilisateurs SET last_login = CURRENT_DATE WHERE id = $1`, [user.id]);
 
         const typeCompte = user.type_compte === "marchand" ? "marchand" : "client";
 
-        // ── Compte Client : pas de workspace, direction le QG Client ──
+        // ── Compte Client : direction QG Client, pas de workspace ──
         if (typeCompte === "client") {
             req.session.regenerate((err) => {
                 if (err) return res.json({ success: false, error: "Erreur session." });
 
-                req.session.loggedIn    = true;
-                req.session.email       = email;
-                req.session.userId      = record.id;
-                req.session.nom         = `${user.prenom || ""} ${user.nom || ""}`.trim();
-                req.session.typeCompte  = "client";
+                req.session.loggedIn   = true;
+                req.session.email      = email;
+                req.session.userId     = user.id;
+                req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
+                req.session.typeCompte = "client";
                 req.session.workspaceId = null;
 
                 res.json({ success: true, redirect: "/client-qg" });
@@ -155,20 +135,20 @@ router.post("/", async (req, res) => {
         }
 
         // ── Compte Marchand : chercher son workspace ──
-        const workspaces = await workspaceService.getByOwner(email);
-        const workspace  = workspaces[0] || null;
+        const workspaces = await db.query(`SELECT * FROM workspaces WHERE owner_email = $1`, [email]);
+        const workspace = workspaces[0] || null;
 
         req.session.regenerate((err) => {
             if (err) return res.json({ success: false, error: "Erreur session." });
 
             req.session.loggedIn   = true;
             req.session.email      = email;
-            req.session.userId     = record.id;
+            req.session.userId     = user.id;
             req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
             req.session.typeCompte = "marchand";
 
             if (workspace) {
-                req.session.workspaceId = workspace.workspaceId;
+                req.session.workspaceId = workspace.id;
                 req.session.metier      = workspace.metier;
             } else {
                 req.session.workspaceId = null;
@@ -181,7 +161,7 @@ router.post("/", async (req, res) => {
         });
 
     } catch (err) {
-        console.error("❌ Login :", err.response?.data || err.message);
+        console.error("❌ Login (PostgreSQL) :", err.message);
         res.json({ success: false, error: "Erreur serveur. Réessayez." });
     }
 });
