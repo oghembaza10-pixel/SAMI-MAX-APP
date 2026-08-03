@@ -78,6 +78,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'stat-vip',        label: 'Clients VIP',      icon: 'crown',         key: 'vip'              },
                 { id: 'stat-blacklist',  label: 'Blacklist',        icon: 'shield-off',    key: 'blacklist'        },
             ],
+            <!-- ── TABLEAU DE SUIVI DES COMMANDES DU QG ── -->
+<div class="qg-section" style="margin-top: 30px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="color: #fff; font-size: 1.1rem; font-weight: 600;">📦 Dernières Commandes & Suivi</h3>
+    </div>
+    
+    <div style="overflow-x: auto; background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 12px; padding: 10px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; color: #ccc; font-size: 0.9rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #d4af37;">
+                    <th style="padding: 12px;">ID</th>
+                    <th style="padding: 12px;">Client</th>
+                    <th style="padding: 12px;">Téléphone</th>
+                    <th style="padding: 12px;">Produit</th>
+                    <th style="padding: 12px;">Montant</th>
+                    <th style="padding: 12px;">Statut</th>
+                    <th style="padding: 12px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="commandes-tbody">
+                <!-- Injecté dynamiquement par qg.js -->
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #888; padding: 20px;">Chargement des flux...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
         },
         shopify: {
             label : 'Shopify',
@@ -222,8 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderCommandes(commandes);
 
-        renderClients('vip-list',   clients.filter(c => c.VIP      === true));
-        renderClients('black-list', clients.filter(c => c.Blacklist === true));
 
         const titreEl = document.getElementById('qg-boutique-nom');
         if (titreEl) {
