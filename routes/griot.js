@@ -448,8 +448,8 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
 
         // ── Runware — uniquement si une clé est configurée, sinon on ignore silencieusement ──
         const runwareApiKey = CONFIG.RUNWARE?.API_KEY;
-
-        if (runwareApiKey && pack.prompt_visuel) {
+if (runwareApiKey && pack.prompt_visuel) {
+            console.log("🔑 DEBUG Runware — clé présente ?", !!runwareApiKey, "| prompt_visuel présent ?", !!pack.prompt_visuel);
             try {
                 const runwareTask = {
                     taskType: type_creation === "video" ? "videoInference" : "imageInference",
