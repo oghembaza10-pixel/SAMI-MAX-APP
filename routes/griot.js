@@ -1,10 +1,17 @@
 // ==========================================================================
-// SAMII OS — GRIOT (T-026) — Storytelling automatique + pack de contenu + Runware
+// SAMII OS — GRIOT (T-026) — Storytelling automatique + pack de contenu + Runware (Image/Vidéo)
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
+const multer  = require("multer");
 const gemini  = require("../services/geminiService");
 const workspaceService = require("../services/workspaceService");
+
+// Configuration de multer en mémoire (zéro stockage disque, volatile & scalable)
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // Limite à 10 Mo par sécurité
+});
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -29,6 +36,7 @@ function extractJson(text) {
     }
 }
 
+// ── GET : Interface Griot ──────────────────────────────────────────────
 router.get("/", requireAuth, async (req, res) => {
     const workspace = await getWorkspaceOrRedirect(req, res);
     if (!workspace) return;
@@ -66,10 +74,7 @@ router.get("/", requireAuth, async (req, res) => {
             transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
         }
         select { cursor: pointer; }
-        select option {
-            background: #0a0d14;
-            color: #F1F0EC;
-        }
+        select option { background: #0a0d14; color: #F1F0EC; }
         textarea { resize: vertical; min-height: 70px; }
         input:focus, textarea:focus, select:focus {
             outline: none;
@@ -78,6 +83,28 @@ router.get("/", requireAuth, async (req, res) => {
             background: rgba(95,212,255,0.04);
         }
         .griot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        /* Style spécifique pour l'input file */
+        input[type="file"] {
+            padding: 8px;
+            cursor: pointer;
+            font-size: .8rem;
+            color: var(--text-muted);
+        }
+        input[type="file"]::file-selector-button {
+            background: rgba(197,160,89,0.15);
+            border: 1px solid rgba(197,160,89,0.3);
+            color: var(--gold-og);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 10px;
+            transition: background .2s ease;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background: rgba(197,160,89,0.25);
+        }
 
         button.griot-submit {
             width: 100%; padding: 14px; margin-top: 18px;
@@ -172,10 +199,10 @@ router.get("/", requireAuth, async (req, res) => {
         <div class="griot-icon-box">🪶</div>
         <h1>Griot</h1>
     </div>
-    <p class="sub">Décris ce que tu veux promouvoir — SAMII te livre un pack de contenu complet et génère tes médias.</p>
+    <p class="sub">Décris ce que tu veux promouvoir, ajoute la photo du produit — SAMII te livre ton pack de contenu et pilote Runware.</p>
 
     <div class="griot-card">
-        <form id="form-griot">
+        <form id="form-griot" enctype="multipart/form-data">
             <label>Réseau</label>
             <select name="reseau" id="select-reseau">
                 <option value="youtube">YouTube</option>
@@ -232,11 +259,17 @@ router.get("/", requireAuth, async (req, res) => {
                 </select>
             </div>
 
+            <!-- AJOUT DU CHAMP D'UPLOAD UTILE POUR RUNWARE -->
+            <div>
+                <label>Photo du produit (Optionnel pour Vidéo/Image-to-Video)</label>
+                <input type="file" name="client_image" accept="image/png, image/jpeg, image/webp">
+            </div>
+
             <label>De quoi parle le contenu ?</label>
-            <textarea name="sujet" placeholder="Ex : ma nouvelle collection de vestes d'hiver, faites main, livraison rapide en Algérie..." required></textarea>
+            <textarea name="sujet" placeholder="Ex : ma nouvelle collection de montres de luxe, boîtier noir et or, livraison rapide..." required></textarea>
 
             <label>Ton souhaité (optionnel)</label>
-            <input name="ton" placeholder="Ex : dynamique et jeune, élégant et sobre, humoristique...">
+            <input name="ton" placeholder="Ex : dynamique et jeune, élégant et sobre, luxueux...">
 
             <button type="submit" class="griot-submit">🪶 Générer le pack & Média</button>
         </form>
@@ -281,17 +314,17 @@ function copyText(text, btn) {
 
 function block(icon, title, bodyHtml, copyValue) {
     const copyBtn = copyValue
-        ? `<button type="button" class="griot-copy-btn" onclick='copyText(${JSON.stringify(copyValue)}, this)'>Copier</button>`
+        ? \`<button type="button" class="griot-copy-btn" onclick='copyText(\${JSON.stringify(copyValue)}, this)'>Copier</button>\`
         : '';
-    return `
+    return \`
         <div class="griot-block">
             <div class="griot-block__header">
-                <div class="griot-block__title"><i data-lucide="${icon}"></i> ${title}</div>
-                ${copyBtn}
+                <div class="griot-block__title"><i data-lucide="\${icon}"></i> \${title}</div>
+                \${copyBtn}
             </div>
-            <div class="griot-block__body">${bodyHtml}</div>
+            <div class="griot-block__body">\${bodyHtml}</div>
         </div>
-    `;
+    \`;
 }
 
 function renderPack(data) {
@@ -300,9 +333,9 @@ function renderPack(data) {
 
     if (data.hooks?.length) {
         const hooksHtml = data.hooks.map((h, i) =>
-            `<div class="griot-hook-item"><span class="griot-hook-num">${i + 1}</span>${h}</div>`
+            \`<div class="griot-hook-item"><span class="griot-hook-num">\${i + 1}</span>\${h}</div>\`
         ).join('');
-        html += block('zap', 'Accroches', `<div class="griot-hooks">${hooksHtml}</div>`, data.hooks.join('\n\n'));
+        html += block('zap', 'Accroches', \`<div class="griot-hooks">\${hooksHtml}</div>\`, data.hooks.join('\\n\\n'));
     }
 
     if (data.script) {
@@ -317,9 +350,9 @@ function renderPack(data) {
         let mediaHtml = '<div style="display:flex; flex-direction:column; gap:12px;">';
         data.medias.forEach((url, idx) => {
             if (url.endsWith('.mp4') || url.includes('video')) {
-                mediaHtml += `<div><p style="font-size:0.75rem; color:var(--gold-og); margin-bottom:4px;">Variante Vidéo #${idx + 1}</p><video controls style="width:100%; border-radius:8px;"><source src="${url}" type="video/mp4">Votre navigateur ne supporte pas la vidéo.</video></div>`;
+                mediaHtml += \`<div><p style="font-size:0.75rem; color:var(--gold-og); margin-bottom:4px;">Variante Vidéo #\${idx + 1}</p><video controls style="width:100%; border-radius:8px;"><source src="\${url}" type="video/mp4">Votre navigateur ne supporte pas la vidéo.</video></div>\`;
             } else {
-                mediaHtml += `<div><p style="font-size:0.75rem; color:var(--gold-og); margin-bottom:4px;">Variante Image #${idx + 1}</p><img src="${url}" style="width:100%; border-radius:8px;" alt="Généré par Runware"></div>`;
+                mediaHtml += \`<div><p style="font-size:0.75rem; color:var(--gold-og); margin-bottom:4px;">Variante Image #\${idx + 1}</p><img src="\${url}" style="width:100%; border-radius:8px;" alt="Généré par Runware"></div>\`;
             }
         });
         mediaHtml += '</div>';
@@ -327,7 +360,7 @@ function renderPack(data) {
     }
 
     if (data.hashtags?.length) {
-        const tagsHtml = `<div class="griot-tags">${data.hashtags.map(t => `<span class="griot-tag">${t.startsWith('#') ? t : '#' + t}</span>`).join('')}</div>`;
+        const tagsHtml = \`<div class="griot-tags">\${data.hashtags.map(t => \`<span class="griot-tag">\${t.startsWith('#') ? t : '#' + t}</span>\`).join('')}</div>\`;
         html += block('hash', 'Hashtags', tagsHtml, data.hashtags.map(t => t.startsWith('#') ? t : '#' + t).join(' '));
     }
 
@@ -336,12 +369,12 @@ function renderPack(data) {
     }
 
     if (data.cta?.length) {
-        const ctaHtml = `<div class="griot-cta-list">${data.cta.map(c => `<div class="griot-cta-item">${c}</div>`).join('')}</div>`;
-        html += block('megaphone', 'Appels à l\'action', ctaHtml, data.cta.join('\n'));
+        const ctaHtml = \`<div class="griot-cta-list">\${data.cta.map(c => \`<div class="griot-cta-item">\${c}</div>\`).join('')}</div>\`;
+        html += block('megaphone', 'Appels à l\\'action', ctaHtml, data.cta.join('\\n'));
     }
 
     if (data.meilleur_moment) {
-        html += `<div><span class="griot-timing"><i data-lucide="clock"></i> Meilleur moment : ${data.meilleur_moment}</span></div>`;
+        html += \`<div><span class="griot-timing"><i data-lucide="clock"></i> Meilleur moment : \${data.meilleur_moment}</span></div>\`;
     }
 
     container.innerHTML = html;
@@ -353,15 +386,18 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
     const msg  = document.getElementById('msg');
     const pack = document.getElementById('pack');
     const btn  = e.target.querySelector('button');
-    const data = Object.fromEntries(new FormData(e.target));
+    
+    // Utilisation de FormData pour envoyer le fichier et les textes proprement
+    const formData = new FormData(e.target);
 
     btn.disabled = true;
-    msg.textContent = '🪶 SAMII rédige et pilote Runware en arrière-plan...';
+    msg.textContent = '🪶 SAMII rédige et pilote Runware avec l\\'image source...';
     pack.style.display = 'none';
 
     try {
         const res  = await fetch('/samii/griot', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+            method: 'POST', 
+            body: formData // Pas de Content-Type en header, fetch le gère automatiquement avec FormData
         });
         const json = await res.json();
 
@@ -370,7 +406,7 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
             renderPack(json.pack);
             pack.style.display = 'flex';
         } else {
-            msg.textContent = json.error || '❌ SAMII n\'a pas pu générer le contenu. Réessaie.';
+            msg.textContent = json.error || '❌ SAMII n\\'a pas pu générer le contenu. Réessaie.';
         }
     } catch (err) {
         msg.textContent = '❌ Erreur réseau. Réessaie.';
@@ -384,7 +420,8 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
 </html>`);
 });
 
-router.post("/", requireAuth, async (req, res) => {
+// ── POST : Traitement & Inférence Runware avec Image ──────────────────
+router.post("/", requireAuth, upload.single("client_image"), async (req, res) => {
     try {
         const { reseau, format, objectif, sujet, ton, type_creation, duree, nombre_variantes } = req.body;
 
@@ -404,7 +441,7 @@ router.post("/", requireAuth, async (req, res) => {
         let prompt;
 
         if (reseau === "linkedin") {
-            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un post LinkedIn professionnel complet.
+            prompt = `Tu es SAMII, storyteller de marque pour l'écosystème Bondrol OG. Un marchand a besoin d'un post LinkedIn professionnel complet.
 
 Objectif : ${objectivesLabel[objectif] || objectif}
 Sujet : ${sujet}
@@ -424,7 +461,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises m
   "meilleur_moment": "jour et heure recommandés"
 }`;
         } else if (reseau === "email") {
-            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un email marketing complet.
+            prompt = `Tu es SAMII, storyteller de marque pour l'écosystème Bondrol OG. Un marchand a besoin d'un email marketing complet.
 
 Objectif : ${objectivesLabel[objectif] || objectif}
 Sujet : ${sujet}
@@ -444,7 +481,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises m
   "meilleur_moment": "jour et heure recommandés"
 }`;
         } else {
-            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un pack de contenu ${type_creation || 'vidéo'} complet.
+            prompt = `Tu es SAMII, storyteller de marque pour l'écosystème Bondrol OG. Un marchand a besoin d'un pack de contenu ${type_creation || 'vidéo'} complet.
 
 Réseau : ${reseau}
 Format : ${formatLabel}
@@ -453,7 +490,7 @@ Durée ciblée : ${duree || '30s'}
 Nombre de variantes demandées : ${nombre_variantes || '1'}
 Objectif : ${objectivesLabel[objectif] || objectif}
 Sujet / produit : ${sujet}
-${ton ? `Ton souhaité : ${ton}` : "Ton : adapté au réseau."}
+${ton ? `Ton souhaité : ${ton}` : "Ton : adapté au réseau, orienté conversion."}
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
 
@@ -481,7 +518,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises m
             return res.json({ success: false, error: "SAMII n'a pas pu structurer sa réponse. Réessaie." });
         }
 
-        // --- BRANCHEMENT RUNWARE ICI ---
+        // --- BRANCHEMENT RUNWARE AVEC GESTION IMAGE SOURCE (VOLATILE) ---
         pack.medias = [];
         const runwareApiKey = process.env.RUNWARE_API_KEY;
         const count = parseInt(nombre_variantes) || 1;
@@ -490,17 +527,25 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises m
             try {
                 const taskType = type_creation === 'video' ? 'videoInference' : 'imageInference';
                 
-                // Corps de requête standard pour l'API Runware
-                const runwarePayload = [
-                    {
-                        taskType: taskType,
-                        taskUUID: "samii-" + Date.now(),
-                        positivePrompt: `Commercial product ad for ${sujet}, cinematic, high quality, professional studio lighting`,
-                        numberResults: count,
-                        width: 512,
-                        height: 968 // Format vertical mobile (TikTok / Reels / Shorts)
-                    }
-                ];
+                // Construction du payload Runware
+                const runwareTask = {
+                    taskType: taskType,
+                    taskUUID: "samii-" + Date.now(),
+                    positivePrompt: `Commercial product ad for ${sujet}, cinematic, high quality, professional studio lighting, 4k`,
+                    numberResults: count,
+                    width: 512,
+                    height: 968 // Format vertical mobile (TikTok / Reels / Shorts)
+                };
+
+                // Si le client a uploadé une photo, on la convertit en Data-URI (base64) pour Runware
+                if (req.file && req.file.buffer) {
+                    const b64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+                    // Paramètre standard Runware pour l'image source (Image-to-Image / Image-to-Video)
+                    runwareTask.inputImage = b64Image;
+                    runwareTask.strength = 0.75; // Ajustable selon le besoin d'adhérence à l'image originale
+                }
+
+                const runwarePayload = [runwareTask];
 
                 const runwareRes = await fetch("https://api.runware.ai/v1", {
                     method: "POST",
@@ -523,7 +568,7 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises m
                 console.error("⚠️ Erreur appel Runware (non bloquant) :", runwareErr.message);
             }
         }
-        // -------------------------------
+        // ------------------------------------------------------------------
 
         res.json({ success: true, pack });
 
