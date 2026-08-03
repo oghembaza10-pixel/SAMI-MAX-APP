@@ -1,16 +1,16 @@
 // ==========================================================================
-// SAMII OS — GRIOT (T-026) — Storytelling automatique + pack de contenu + Runware (Image/Vidéo)
+// SAMII OS — GRIOT (T-026) — Storytelling automatique + pack de contenu + Runware
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
 const multer  = require("multer");
 const gemini  = require("../services/geminiService");
 const workspaceService = require("../services/workspaceService");
+const CONFIG  = require("../config");
 
-// Configuration de multer en mémoire (zéro stockage disque, volatile & scalable)
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // Limite à 10 Mo par sécurité
+    limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 function requireAuth(req, res, next) {
@@ -84,27 +84,13 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .griot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
-        /* Style spécifique pour l'input file */
-        input[type="file"] {
-            padding: 8px;
-            cursor: pointer;
-            font-size: .8rem;
-            color: var(--text-muted);
-        }
+        input[type="file"] { padding: 8px; cursor: pointer; font-size: .8rem; color: var(--text-muted); }
         input[type="file"]::file-selector-button {
-            background: rgba(197,160,89,0.15);
-            border: 1px solid rgba(197,160,89,0.3);
-            color: var(--gold-og);
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-right: 10px;
-            transition: background .2s ease;
+            background: rgba(197,160,89,0.15); border: 1px solid rgba(197,160,89,0.3);
+            color: var(--gold-og); padding: 6px 12px; border-radius: 6px; cursor: pointer;
+            font-weight: 600; margin-right: 10px; transition: background .2s ease;
         }
-        input[type="file"]::file-selector-button:hover {
-            background: rgba(197,160,89,0.25);
-        }
+        input[type="file"]::file-selector-button:hover { background: rgba(197,160,89,0.25); }
 
         button.griot-submit {
             width: 100%; padding: 14px; margin-top: 18px;
@@ -117,7 +103,6 @@ router.get("/", requireAuth, async (req, res) => {
 
         .griot-msg { text-align: center; margin-top: 14px; font-size: .85rem; color: #e55; min-height: 20px; }
 
-        /* ── PACK DE CONTENU ── */
         .griot-pack { margin-top: 28px; display: none; flex-direction: column; gap: 16px; }
         .griot-pack-title {
             display: flex; align-items: center; gap: 8px;
@@ -186,9 +171,7 @@ router.get("/", requireAuth, async (req, res) => {
             color: #3ddc84; font-size: .82rem; font-weight: 600;
         }
 
-        @media (max-width: 560px) {
-            .griot-row { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 560px) { .griot-row { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -234,7 +217,7 @@ router.get("/", requireAuth, async (req, res) => {
 
             <div class="griot-row">
                 <div>
-                    <label>Type de Création</label>
+                    <label>Type de création</label>
                     <select name="type_creation">
                         <option value="video">Vidéo</option>
                         <option value="image">Image</option>
@@ -250,34 +233,22 @@ router.get("/", requireAuth, async (req, res) => {
                 </div>
             </div>
 
-            <div>
-                <label>Nombre de Variantes (Options)</label>
-                <select name="nombre_variantes">
-                    <option value="1">1 Variante</option>
-                    <option value="2">2 Variantes</option>
-                    <option value="3">3 Variantes</option>
-                </select>
-            </div>
-
-            <!-- AJOUT DU CHAMP D'UPLOAD UTILE POUR RUNWARE -->
-            <div>
-                <label>Photo du produit (Optionnel pour Vidéo/Image-to-Video)</label>
-                <input type="file" name="client_image" accept="image/png, image/jpeg, image/webp">
-            </div>
-
             <label>De quoi parle le contenu ?</label>
-            <textarea name="sujet" placeholder="Ex : ma nouvelle collection de montres de luxe, boîtier noir et or, livraison rapide..." required></textarea>
+            <textarea name="sujet" placeholder="Ex : ma nouvelle collection de vestes d'hiver..." required></textarea>
 
             <label>Ton souhaité (optionnel)</label>
-            <input name="ton" placeholder="Ex : dynamique et jeune, élégant et sobre, luxueux...">
+            <input name="ton" placeholder="Ex : dynamique et jeune, élégant et sobre...">
 
-            <button type="submit" class="griot-submit">🪶 Générer le pack & Média</button>
+            <label>Photo du produit (optionnel — utilisée par Runware)</label>
+            <input type="file" name="client_image" accept="image/*">
+
+            <button type="submit" class="griot-submit">🪶 Générer le pack &amp; média</button>
         </form>
         <div class="griot-msg" id="msg"></div>
     </div>
 
     <div class="griot-pack" id="pack">
-        <div class="griot-pack-title">Pack de contenu & Médias</div>
+        <div class="griot-pack-title">Pack de contenu &amp; médias</div>
         <div id="pack-content"></div>
     </div>
 </div>
@@ -290,7 +261,6 @@ const formatWrapper = selectFormat.closest('div');
 function updateFormatOptions() {
     const reseau = selectReseau.value;
     const isEcrit = reseau === 'linkedin' || reseau === 'email';
-
     if (isEcrit) {
         formatWrapper.style.display = 'none';
     } else {
@@ -314,17 +284,11 @@ function copyText(text, btn) {
 
 function block(icon, title, bodyHtml, copyValue) {
     const copyBtn = copyValue
-        ? \`<button type="button" class="griot-copy-btn" onclick='copyText(\${JSON.stringify(copyValue)}, this)'>Copier</button>\`
+        ? '<button type="button" class="griot-copy-btn" onclick=\\'copyText(' + JSON.stringify(copyValue) + ', this)\\'>Copier</button>'
         : '';
-    return \`
-        <div class="griot-block">
-            <div class="griot-block__header">
-                <div class="griot-block__title"><i data-lucide="\${icon}"></i> \${title}</div>
-                \${copyBtn}
-            </div>
-            <div class="griot-block__body">\${bodyHtml}</div>
-        </div>
-    \`;
+    return '<div class="griot-block"><div class="griot-block__header">'
+        + '<div class="griot-block__title"><i data-lucide="' + icon + '"></i> ' + title + '</div>'
+        + copyBtn + '</div><div class="griot-block__body">' + bodyHtml + '</div></div>';
 }
 
 function renderPack(data) {
@@ -332,10 +296,10 @@ function renderPack(data) {
     let html = '';
 
     if (data.hooks?.length) {
-        const hooksHtml = data.hooks.map((h, i) =>
-            \`<div class="griot-hook-item"><span class="griot-hook-num">\${i + 1}</span>\${h}</div>\`
-        ).join('');
-        html += block('zap', 'Accroches', \`<div class="griot-hooks">\${hooksHtml}</div>\`, data.hooks.join('\\n\\n'));
+        const hooksHtml = '<div class="griot-hooks">' + data.hooks.map((h, i) =>
+            '<div class="griot-hook-item"><span class="griot-hook-num">' + (i + 1) + '</span>' + h + '</div>'
+        ).join('') + '</div>';
+        html += block('zap', 'Accroches', hooksHtml, data.hooks.join('\\n\\n'));
     }
 
     if (data.script) {
@@ -347,20 +311,22 @@ function renderPack(data) {
     }
 
     if (data.medias && data.medias.length > 0) {
-        let mediaHtml = '<div style="display:flex; flex-direction:column; gap:12px;">';
+        let mediaHtml = '<div style="display:flex;flex-direction:column;gap:12px;">';
         data.medias.forEach((url, idx) => {
             if (url.endsWith('.mp4') || url.includes('video')) {
-                mediaHtml += \`<div><p style="font-size:0.75rem; color:var(--gold-og); margin-bottom:4px;">Variante Vidéo #\${idx + 1}</p><video controls style="width:100%; border-radius:8px;"><source src="\${url}" type="video/mp4">Votre navigateur ne supporte pas la vidéo.</video></div>\`;
+                mediaHtml += '<div><p style="font-size:.75rem;color:var(--gold-og);margin-bottom:4px;">Variante vidéo #' + (idx + 1) + '</p>'
+                    + '<video controls style="width:100%;border-radius:8px;"><source src="' + url + '" type="video/mp4">Ton navigateur ne supporte pas la vidéo.</video></div>';
             } else {
-                mediaHtml += \`<div><p style="font-size:0.75rem; color:var(--gold-og); margin-bottom:4px;">Variante Image #\${idx + 1}</p><img src="\${url}" style="width:100%; border-radius:8px;" alt="Généré par Runware"></div>\`;
+                mediaHtml += '<div><p style="font-size:.75rem;color:var(--gold-og);margin-bottom:4px;">Variante image #' + (idx + 1) + '</p>'
+                    + '<img src="' + url + '" style="width:100%;border-radius:8px;" alt="Généré par Runware"></div>';
             }
         });
         mediaHtml += '</div>';
-        html += block('sparkles', 'Médias Générés (Runware)', mediaHtml);
+        html += block('sparkles', 'Médias générés (Runware)', mediaHtml);
     }
 
     if (data.hashtags?.length) {
-        const tagsHtml = \`<div class="griot-tags">\${data.hashtags.map(t => \`<span class="griot-tag">\${t.startsWith('#') ? t : '#' + t}</span>\`).join('')}</div>\`;
+        const tagsHtml = '<div class="griot-tags">' + data.hashtags.map(t => '<span class="griot-tag">' + (t.startsWith('#') ? t : '#' + t) + '</span>').join('') + '</div>';
         html += block('hash', 'Hashtags', tagsHtml, data.hashtags.map(t => t.startsWith('#') ? t : '#' + t).join(' '));
     }
 
@@ -369,12 +335,12 @@ function renderPack(data) {
     }
 
     if (data.cta?.length) {
-        const ctaHtml = \`<div class="griot-cta-list">\${data.cta.map(c => \`<div class="griot-cta-item">\${c}</div>\`).join('')}</div>\`;
-        html += block('megaphone', 'Appels à l\\'action', ctaHtml, data.cta.join('\\n'));
+        const ctaHtml = '<div class="griot-cta-list">' + data.cta.map(c => '<div class="griot-cta-item">' + c + '</div>').join('') + '</div>';
+        html += block('megaphone', "Appels à l'action", ctaHtml, data.cta.join('\\n'));
     }
 
     if (data.meilleur_moment) {
-        html += \`<div><span class="griot-timing"><i data-lucide="clock"></i> Meilleur moment : \${data.meilleur_moment}</span></div>\`;
+        html += '<div><span class="griot-timing"><i data-lucide="clock"></i> Meilleur moment : ' + data.meilleur_moment + '</span></div>';
     }
 
     container.innerHTML = html;
@@ -386,19 +352,14 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
     const msg  = document.getElementById('msg');
     const pack = document.getElementById('pack');
     const btn  = e.target.querySelector('button');
-    
-    // Utilisation de FormData pour envoyer le fichier et les textes proprement
     const formData = new FormData(e.target);
 
     btn.disabled = true;
-    msg.textContent = '🪶 SAMII rédige et pilote Runware avec l\\'image source...';
+    msg.textContent = "🪶 SAMII rédige et pilote Runware...";
     pack.style.display = 'none';
 
     try {
-        const res  = await fetch('/samii/griot', {
-            method: 'POST', 
-            body: formData // Pas de Content-Type en header, fetch le gère automatiquement avec FormData
-        });
+        const res  = await fetch('/samii/griot', { method: 'POST', body: formData });
         const json = await res.json();
 
         if (json.success && json.pack) {
@@ -406,7 +367,7 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
             renderPack(json.pack);
             pack.style.display = 'flex';
         } else {
-            msg.textContent = json.error || '❌ SAMII n\\'a pas pu générer le contenu. Réessaie.';
+            msg.textContent = json.error || "❌ SAMII n'a pas pu générer le contenu. Réessaie.";
         }
     } catch (err) {
         msg.textContent = '❌ Erreur réseau. Réessaie.';
@@ -420,7 +381,7 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
 </html>`);
 });
 
-// ── POST : Traitement & Inférence Runware avec Image ──────────────────
+// ── POST : Traitement Gemini + Runware ─────────────────────────────────
 router.post("/", requireAuth, upload.single("client_image"), async (req, res) => {
     try {
         const { reseau, format, objectif, sujet, ton, type_creation, duree, nombre_variantes } = req.body;
@@ -429,7 +390,7 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
             return res.json({ success: false, error: "Décris ton produit ou ton sujet." });
         }
 
-        const objectivesLabel = {
+        const objectifsLabel = {
             vendre: "vendre un produit",
             notoriete: "faire connaître la marque",
             promo: "annoncer une promotion",
@@ -441,68 +402,32 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
         let prompt;
 
         if (reseau === "linkedin") {
-            prompt = `Tu es SAMII, storyteller de marque pour l'écosystème Bondrol OG. Un marchand a besoin d'un post LinkedIn professionnel complet.
+            prompt = "Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un post LinkedIn professionnel complet.\n\n"
+                + `Objectif : ${objectifsLabel[objectif] || objectif}\n`
+                + `Sujet : ${sujet}\n`
+                + (ton ? `Ton souhaité : ${ton}\n` : "Ton : professionnel, crédible, engageant.\n")
+                + "\nRéponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :\n"
+                + '{\n  "hooks": ["accroche 1", "accroche 2", "accroche 3"],\n  "script": "le corps complet du post LinkedIn",\n  "legende": "une version courte alternative",\n  "hashtags": ["motcle1", "motcle2", "motcle3"],\n  "cta": ["cta 1", "cta 2", "cta 3"],\n  "meilleur_moment": "jour et heure recommandés"\n}';
 
-Objectif : ${objectivesLabel[objectif] || objectif}
-Sujet : ${sujet}
-Type de rendu demandé : ${type_creation || 'texte'}
-Durée/Format indicatif : ${duree || 'standard'}
-Nombre de variantes souhaitées : ${nombre_variantes || '1'}
-${ton ? `Ton souhaité : ${ton}` : "Ton : professionnel, crédible, engageant."}
-
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
-
-{
-  "hooks": ["accroche 1", "accroche 2", "accroche 3"],
-  "script": "le corps complet du post LinkedIn",
-  "legende": "une version courte alternative",
-  "hashtags": ["motcle1", "motcle2", "motcle3"],
-  "cta": ["cta 1", "cta 2", "cta 3"],
-  "meilleur_moment": "jour et heure recommandés"
-}`;
         } else if (reseau === "email") {
-            prompt = `Tu es SAMII, storyteller de marque pour l'écosystème Bondrol OG. Un marchand a besoin d'un email marketing complet.
+            prompt = "Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un email marketing complet.\n\n"
+                + `Objectif : ${objectifsLabel[objectif] || objectif}\n`
+                + `Sujet : ${sujet}\n`
+                + (ton ? `Ton souhaité : ${ton}\n` : "Ton : clair, persuasif, chaleureux.\n")
+                + "\nRéponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :\n"
+                + '{\n  "hooks": ["objet d\'email 1", "objet 2", "objet 3"],\n  "script": "le corps complet de l\'email",\n  "legende": "aperçu pré-header",\n  "hashtags": [],\n  "cta": ["cta 1", "cta 2", "cta 3"],\n  "meilleur_moment": "jour et heure recommandés"\n}';
 
-Objectif : ${objectivesLabel[objectif] || objectif}
-Sujet : ${sujet}
-Type de rendu demandé : ${type_creation || 'texte'}
-Durée/Format indicatif : ${duree || 'standard'}
-Nombre de variantes souhaitées : ${nombre_variantes || '1'}
-${ton ? `Ton souhaité : ${ton}` : "Ton : clair, persuasif, chaleureux."}
-
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
-
-{
-  "hooks": ["objet d'email 1", "objet 2", "objet 3"],
-  "script": "le corps complet de l'email",
-  "legende": "aperçu pré-header",
-  "hashtags": [],
-  "cta": ["cta 1", "cta 2", "cta 3"],
-  "meilleur_moment": "jour et heure recommandés"
-}`;
         } else {
-            prompt = `Tu es SAMII, storyteller de marque pour l'écosystème Bondrol OG. Un marchand a besoin d'un pack de contenu ${type_creation || 'vidéo'} complet.
-
-Réseau : ${reseau}
-Format : ${formatLabel}
-Type de création : ${type_creation || 'vidéo'}
-Durée ciblée : ${duree || '30s'}
-Nombre de variantes demandées : ${nombre_variantes || '1'}
-Objectif : ${objectivesLabel[objectif] || objectif}
-Sujet / produit : ${sujet}
-${ton ? `Ton souhaité : ${ton}` : "Ton : adapté au réseau, orienté conversion."}
-
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
-
-{
-  "hooks": ["accroche 1", "accroche 2", "accroche 3"],
-  "script": "le script complet",
-  "legende": "la légende prête à publier",
-  "hashtags": ["motcle1", "motcle2", "motcle3", "motcle4", "motcle5"],
-  "miniature": "description pour la miniature",
-  "cta": ["cta 1", "cta 2", "cta 3"],
-  "meilleur_moment": "jour et heure recommandés"
-}`;
+            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un pack de contenu ${type_creation || 'vidéo'} complet.\n\n`
+                + `Réseau : ${reseau}\n`
+                + `Format : ${formatLabel}\n`
+                + `Durée ciblée : ${duree || '30s'}\n`
+                + `Objectif : ${objectifsLabel[objectif] || objectif}\n`
+                + `Sujet / produit : ${sujet}\n`
+                + (ton ? `Ton souhaité : ${ton}\n` : "Ton : adapté au réseau, orienté conversion.\n")
+                + "\nGénère aussi une description visuelle précise du plan principal (pour piloter une génération d'image/vidéo IA), dans le champ \"prompt_visuel\".\n\n"
+                + "Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :\n"
+                + '{\n  "hooks": ["accroche 1", "accroche 2", "accroche 3"],\n  "script": "le script complet",\n  "legende": "la légende prête à publier",\n  "hashtags": ["motcle1", "motcle2", "motcle3", "motcle4", "motcle5"],\n  "miniature": "description pour la miniature",\n  "cta": ["cta 1", "cta 2", "cta 3"],\n  "meilleur_moment": "jour et heure recommandés",\n  "prompt_visuel": "description visuelle détaillée du produit/scène, style photo pro"\n}';
         }
 
         const result = await gemini.chat({
@@ -518,47 +443,40 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises m
             return res.json({ success: false, error: "SAMII n'a pas pu structurer sa réponse. Réessaie." });
         }
 
-        // --- BRANCHEMENT RUNWARE AVEC GESTION IMAGE SOURCE (VOLATILE) ---
         pack.medias = [];
-        const runwareApiKey = process.env.RUNWARE_API_KEY;
-        const count = parseInt(nombre_variantes) || 1;
 
-        if (runwareApiKey && (reseau !== 'linkedin' && reseau !== 'email')) {
+        // ── Runware — uniquement si une clé est configurée, sinon on ignore silencieusement ──
+        const runwareApiKey = CONFIG.RUNWARE?.API_KEY;
+
+        if (runwareApiKey && pack.prompt_visuel) {
             try {
-                const taskType = type_creation === 'video' ? 'videoInference' : 'imageInference';
-                
-                // Construction du payload Runware
                 const runwareTask = {
-                    taskType: taskType,
-                    taskUUID: "samii-" + Date.now(),
-                    positivePrompt: `Commercial product ad for ${sujet}, cinematic, high quality, professional studio lighting, 4k`,
-                    numberResults: count,
-                    width: 512,
-                    height: 968 // Format vertical mobile (TikTok / Reels / Shorts)
+                    taskType: type_creation === "video" ? "videoInference" : "imageInference",
+                    taskUUID: crypto.randomUUID(),
+                    positivePrompt: pack.prompt_visuel,
+                    numberResults: parseInt(nombre_variantes, 10) || 1,
+                    width: 1024,
+                    height: 1024,
                 };
 
-                // Si le client a uploadé une photo, on la convertit en Data-URI (base64) pour Runware
                 if (req.file && req.file.buffer) {
                     const b64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
-                    // Paramètre standard Runware pour l'image source (Image-to-Image / Image-to-Video)
                     runwareTask.inputImage = b64Image;
-                    runwareTask.strength = 0.75; // Ajustable selon le besoin d'adhérence à l'image originale
+                    runwareTask.strength = 0.75;
                 }
-
-                const runwarePayload = [runwareTask];
 
                 const runwareRes = await fetch("https://api.runware.ai/v1", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${runwareApiKey}`
+                        "Authorization": `Bearer ${runwareApiKey}`,
                     },
-                    body: JSON.stringify(runwarePayload)
+                    body: JSON.stringify([runwareTask]),
                 });
 
                 const runwareData = await runwareRes.json();
-                
-                if (runwareData && runwareData.data) {
+
+                if (runwareData && Array.isArray(runwareData.data)) {
                     runwareData.data.forEach(item => {
                         if (item.imageURL) pack.medias.push(item.imageURL);
                         if (item.videoURL) pack.medias.push(item.videoURL);
@@ -568,7 +486,6 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises m
                 console.error("⚠️ Erreur appel Runware (non bloquant) :", runwareErr.message);
             }
         }
-        // ------------------------------------------------------------------
 
         res.json({ success: true, pack });
 
