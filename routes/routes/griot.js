@@ -1,0 +1,458 @@
+// ==========================================================================
+// SAMII OS — GRIOT (T-026) — Storytelling automatique + pack de contenu
+// ==========================================================================
+const express = require("express");
+const router  = express.Router();
+const gemini  = require("../services/geminiService");
+const workspaceService = require("../services/workspaceService");
+
+function requireAuth(req, res, next) {
+    if (!req.session?.loggedIn) return res.redirect("/login");
+    next();
+}
+
+async function getWorkspaceOrRedirect(req, res) {
+    const workspaceId = req.session.workspaceId;
+    if (!workspaceId) { res.redirect("/hub"); return null; }
+    const workspace = await workspaceService.getById(workspaceId);
+    if (!workspace) { res.redirect("/hub"); return null; }
+    return workspace;
+}
+
+function extractJson(text) {
+    try {
+        const match = text.match(/\{[\s\S]*\}/);
+        if (!match) return null;
+        return JSON.parse(match[0]);
+    } catch {
+        return null;
+    }
+}
+
+router.get("/", requireAuth, async (req, res) => {
+    const workspace = await getWorkspaceOrRedirect(req, res);
+    if (!workspace) return;
+
+    res.send(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Griot — SAMII</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/qg-style.css">
+    <style>
+        .griot-shell { max-width: 780px; margin: 0 auto; padding: 40px 24px 80px; }
+        .griot-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: .82rem; margin-bottom: 24px; }
+        .griot-back:hover { color: var(--cyan-tech); }
+
+        .griot-title { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+        .griot-icon-box {
+            width: 44px; height: 44px; border-radius: 12px;
+            background: radial-gradient(circle, rgba(197,160,89,0.22), rgba(95,212,255,0.06));
+            border: 1px solid rgba(197,160,89,0.4);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(197,160,89,0.18);
+        }
+        .griot-shell h1 { font-family: var(--font-display); color: #fff; font-size: 1.5rem; }
+        .griot-shell p.sub { color: var(--text-muted); font-size: .85rem; margin: 8px 0 20px; line-height: 1.6; }
+
+        .griot-card { background: var(--bg-glass); backdrop-filter: blur(12px); border: var(--border-soft); border-radius: 16px; padding: 24px; }
+        label { display: block; font-family: var(--font-mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 14px 0 6px; }
+        input, textarea, select {
+            width: 100%; padding: 11px 13px; border-radius: 9px;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);
+            color: var(--text-main); font-size: .88rem; font-family: var(--font-body);
+            transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+        }
+        select { cursor: pointer; }
+        select option {
+            background: #0a0d14;
+            color: #F1F0EC;
+        }
+        textarea { resize: vertical; min-height: 70px; }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--cyan-tech);
+            box-shadow: 0 0 0 3px rgba(95,212,255,0.15), 0 0 20px rgba(95,212,255,0.25);
+            background: rgba(95,212,255,0.04);
+        }
+        .griot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        button.griot-submit {
+            width: 100%; padding: 14px; margin-top: 18px;
+            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover));
+            border: none; border-radius: 10px; font-weight: 700; cursor: pointer; color: #000; font-size: .95rem;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        button.griot-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(197,160,89,0.25); }
+        button.griot-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+        .griot-msg { text-align: center; margin-top: 14px; font-size: .85rem; color: #e55; min-height: 20px; }
+
+        /* ── PACK DE CONTENU ── */
+        .griot-pack { margin-top: 28px; display: none; flex-direction: column; gap: 16px; }
+        .griot-pack-title {
+            display: flex; align-items: center; gap: 8px;
+            font-family: var(--font-mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .1em;
+            color: var(--gold-og); margin-bottom: 4px;
+        }
+        .griot-pack-title::before, .griot-pack-title::after {
+            content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, rgba(197,160,89,0.35), transparent);
+        }
+
+        .griot-block {
+            position: relative;
+            background: radial-gradient(circle at 100% 0%, rgba(197,160,89,0.06), transparent 60%), var(--bg-panel);
+            border: 1px solid rgba(197,160,89,0.15);
+            border-radius: 16px;
+            padding: 18px 20px;
+            animation: griot-fade-in .5s ease both;
+        }
+        @keyframes griot-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .griot-block__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .griot-block__title { display: flex; align-items: center; gap: 8px; font-size: .85rem; font-weight: 700; color: #fff; }
+        .griot-block__title i { color: var(--gold-og); }
+        .griot-copy-btn {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-muted); font-size: .7rem; padding: 5px 11px; border-radius: 20px;
+            cursor: pointer; font-family: var(--font-mono); transition: all .2s ease;
+        }
+        .griot-copy-btn:hover { color: var(--cyan-tech); border-color: var(--cyan-tech); }
+        .griot-copy-btn.copied { color: #3ddc84; border-color: #3ddc84; }
+
+        .griot-block__body { color: var(--text-main); font-size: .85rem; line-height: 1.65; white-space: pre-wrap; }
+
+        .griot-hooks { display: flex; flex-direction: column; gap: 8px; }
+        .griot-hook-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border-radius: 10px;
+            background: rgba(95,212,255,0.05); border: 1px solid rgba(95,212,255,0.15);
+            font-size: .84rem; color: var(--text-main);
+        }
+        .griot-hook-num {
+            width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+            background: rgba(95,212,255,0.15); color: var(--cyan-tech);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-mono); font-size: .72rem; font-weight: 700;
+        }
+
+        .griot-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .griot-tag {
+            font-family: var(--font-mono); font-size: .78rem; color: var(--cyan-tech);
+            background: rgba(95,212,255,0.08); border: 1px solid rgba(95,212,255,0.2);
+            padding: 5px 12px; border-radius: 20px;
+        }
+
+        .griot-cta-list { display: flex; flex-direction: column; gap: 8px; }
+        .griot-cta-item {
+            padding: 10px 12px; border-radius: 10px;
+            background: rgba(197,160,89,0.06); border: 1px solid rgba(197,160,89,0.2);
+            font-size: .84rem; color: var(--text-main); font-weight: 500;
+        }
+
+        .griot-timing {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 8px 16px; border-radius: 20px;
+            background: rgba(61,220,132,0.08); border: 1px solid rgba(61,220,132,0.25);
+            color: #3ddc84; font-size: .82rem; font-weight: 600;
+        }
+
+        @media (max-width: 560px) {
+            .griot-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="griot-shell">
+    <a href="/samii" class="griot-back">← Retour à SAMII</a>
+
+    <div class="griot-title">
+        <div class="griot-icon-box">🪶</div>
+        <h1>Griot</h1>
+    </div>
+    <p class="sub">Décris ce que tu veux promouvoir — SAMII te livre un pack de contenu complet, prêt à publier.</p>
+
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;margin-bottom:22px;border-radius:14px;background:linear-gradient(135deg, rgba(197,160,89,0.12), rgba(95,212,255,0.08));border:1px solid rgba(197,160,89,0.3);">
+        <div style="font-size:1.4rem;flex-shrink:0;">🎬</div>
+        <div>
+            <div style="font-weight:700;color:#fff;font-size:.88rem;">Bientôt en V2 : SAMII crée la vidéo pour vous, en direct.</div>
+            <div style="color:var(--text-muted);font-size:.78rem;margin-top:2px;">Pour l'instant, ce script est prêt à filmer toi-même ou à confier à un monteur.</div>
+        </div>
+    </div>
+
+    <div class="griot-card">
+        <form id="form-griot">
+            <label>Réseau</label>
+            <select name="reseau" id="select-reseau">
+                <option value="youtube">YouTube</option>
+                <option value="tiktok">TikTok</option>
+                <option value="instagram">Instagram</option>
+                <option value="facebook">Facebook</option>
+                <option value="linkedin">LinkedIn (post écrit)</option>
+                <option value="email">Email / Gmail (message écrit)</option>
+            </select>
+
+            <div class="griot-row">
+                <div>
+                    <label>Format</label>
+                    <select name="format" id="select-format">
+                        <option value="short">Vidéo courte / Short</option>
+                        <option value="long">Vidéo longue</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Objectif</label>
+                    <select name="objectif">
+                        <option value="vendre">Vendre un produit</option>
+                        <option value="notoriete">Faire connaître ma marque</option>
+                        <option value="promo">Annoncer une promo</option>
+                        <option value="fideliser">Fidéliser mes clients</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>De quoi parle le contenu ?</label>
+            <textarea name="sujet" placeholder="Ex : ma nouvelle collection de vestes d'hiver, faites main, livraison rapide en Algérie..." required></textarea>
+
+            <label>Ton souhaité (optionnel)</label>
+            <input name="ton" placeholder="Ex : dynamique et jeune, élégant et sobre, humoristique...">
+
+            <button type="submit" class="griot-submit">🪶 Générer le pack de contenu</button>
+        </form>
+        <div class="griot-msg" id="msg"></div>
+    </div>
+
+    <div class="griot-pack" id="pack">
+        <div class="griot-pack-title">Pack de contenu</div>
+        <div id="pack-content"></div>
+    </div>
+</div>
+
+<script>
+const selectReseau = document.getElementById('select-reseau');
+const selectFormat = document.getElementById('select-format');
+const formatWrapper = selectFormat.closest('div');
+
+function updateFormatOptions() {
+    const reseau = selectReseau.value;
+    const isEcrit = reseau === 'linkedin' || reseau === 'email';
+
+    if (isEcrit) {
+        formatWrapper.style.display = 'none';
+    } else {
+        formatWrapper.style.display = 'block';
+        const isYoutube = reseau === 'youtube';
+        selectFormat.querySelector('option[value="long"]').disabled = !isYoutube;
+        if (!isYoutube) selectFormat.value = 'short';
+    }
+}
+selectReseau.addEventListener('change', updateFormatOptions);
+updateFormatOptions();
+
+function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = '✅ Copié';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1800);
+    });
+}
+
+function block(icon, title, bodyHtml, copyValue) {
+    const copyBtn = copyValue
+        ? \`<button type="button" class="griot-copy-btn" onclick='copyText(\${JSON.stringify(copyValue)}, this)'>Copier</button>\`
+        : '';
+    return \`
+        <div class="griot-block">
+            <div class="griot-block__header">
+                <div class="griot-block__title"><i data-lucide="\${icon}"></i> \${title}</div>
+                \${copyBtn}
+            </div>
+            <div class="griot-block__body">\${bodyHtml}</div>
+        </div>
+    \`;
+}
+
+function renderPack(data) {
+    const container = document.getElementById('pack-content');
+    let html = '';
+
+    if (data.hooks?.length) {
+        const hooksHtml = data.hooks.map((h, i) =>
+            \`<div class="griot-hook-item"><span class="griot-hook-num">\${i + 1}</span>\${h}</div>\`
+        ).join('');
+        html += block('zap', 'Accroches', \`<div class="griot-hooks">\${hooksHtml}</div>\`, data.hooks.join('\\n\\n'));
+    }
+
+    if (data.script) {
+        html += block('film', 'Contenu principal', data.script, data.script);
+    }
+
+    if (data.legende) {
+        html += block('message-circle', 'Version courte / légende', data.legende, data.legende);
+    }
+
+    if (data.hashtags?.length) {
+        const tagsHtml = \`<div class="griot-tags">\${data.hashtags.map(t => \`<span class="griot-tag">\${t.startsWith('#') ? t : '#' + t}</span>\`).join('')}</div>\`;
+        html += block('hash', 'Hashtags', tagsHtml, data.hashtags.map(t => t.startsWith('#') ? t : '#' + t).join(' '));
+    }
+
+    if (data.miniature) {
+        html += block('image', 'Concept de miniature', data.miniature, data.miniature);
+    }
+
+    if (data.cta?.length) {
+        const ctaHtml = \`<div class="griot-cta-list">\${data.cta.map(c => \`<div class="griot-cta-item">\${c}</div>\`).join('')}</div>\`;
+        html += block('megaphone', 'Appels à l\\'action', ctaHtml, data.cta.join('\\n'));
+    }
+
+    if (data.meilleur_moment) {
+        html += \`<div><span class="griot-timing"><i data-lucide="clock"></i> Meilleur moment : \${data.meilleur_moment}</span></div>\`;
+    }
+
+    container.innerHTML = html;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+document.getElementById('form-griot').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg  = document.getElementById('msg');
+    const pack = document.getElementById('pack');
+    const btn  = e.target.querySelector('button');
+    const data = Object.fromEntries(new FormData(e.target));
+
+    btn.disabled = true;
+    msg.textContent = '🪶 SAMII écrit ton contenu...';
+    pack.style.display = 'none';
+
+    try {
+        const res  = await fetch('/samii/griot', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+        });
+        const json = await res.json();
+
+        if (json.success && json.pack) {
+            msg.textContent = '';
+            renderPack(json.pack);
+            pack.style.display = 'flex';
+        } else {
+            msg.textContent = json.error || '❌ SAMII n\\'a pas pu générer le contenu. Réessaie.';
+        }
+    } catch (err) {
+        msg.textContent = '❌ Erreur réseau. Réessaie.';
+    } finally {
+        btn.disabled = false;
+    }
+});
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+</body>
+</html>`);
+});
+
+router.post("/", requireAuth, async (req, res) => {
+    try {
+        const { reseau, format, objectif, sujet, ton } = req.body;
+
+        if (!sujet || !sujet.trim()) {
+            return res.json({ success: false, error: "Décris ton produit ou ton sujet." });
+        }
+
+        const objectifsLabel = {
+            vendre: "vendre un produit",
+            notoriete: "faire connaître la marque",
+            promo: "annoncer une promotion",
+            fideliser: "fidéliser les clients existants",
+        };
+
+        const formatLabel = format === "long" ? "vidéo longue (2-5 minutes)" : "vidéo courte / short (15-45 secondes)";
+
+        let prompt;
+
+        if (reseau === "linkedin") {
+            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un post LinkedIn professionnel complet.
+
+Objectif : ${objectifsLabel[objectif] || objectif}
+Sujet : ${sujet}
+${ton ? `Ton souhaité : ${ton}` : "Ton : professionnel, crédible, engageant."}
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
+
+{
+  "hooks": ["accroche 1 pour la première ligne", "accroche 2", "accroche 3"],
+  "script": "le corps complet du post LinkedIn, bien structuré, avec des sauts de ligne",
+  "legende": "une version courte alternative du post, plus directe",
+  "hashtags": ["motcle1", "motcle2", "motcle3"],
+  "cta": ["variante d'appel à l'action 1", "variante 2", "variante 3"],
+  "meilleur_moment": "un jour et une heure recommandés pour publier sur LinkedIn, avec justification"
+}
+
+Ne mets rien dans "miniature" ou laisse-le vide. Sois concret et directement utilisable.`;
+        } else if (reseau === "email") {
+            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un email marketing complet.
+
+Objectif : ${objectifsLabel[objectif] || objectif}
+Sujet : ${sujet}
+${ton ? `Ton souhaité : ${ton}` : "Ton : clair, persuasif, chaleureux."}
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
+
+{
+  "hooks": ["objet d'email 1", "objet d'email 2", "objet d'email 3"],
+  "script": "le corps complet de l'email, bien structuré, prêt à envoyer",
+  "legende": "une version courte pour un aperçu/pré-header",
+  "hashtags": [],
+  "cta": ["variante de bouton d'action 1", "variante 2", "variante 3"],
+  "meilleur_moment": "un jour et une heure recommandés pour envoyer cet email, avec justification"
+}
+
+Ne mets rien dans "miniature" ou laisse-le vide. Sois concret et directement utilisable.`;
+        } else {
+            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un pack de contenu vidéo complet.
+
+Réseau : ${reseau}
+Format : ${formatLabel}
+Objectif : ${objectifsLabel[objectif] || objectif}
+Sujet / produit : ${sujet}
+${ton ? `Ton souhaité : ${ton}` : "Ton : adapte-le naturellement au réseau et à l'objectif."}
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
+
+{
+  "hooks": ["accroche 1", "accroche 2", "accroche 3"],
+  "script": "le script complet, adapté à la durée et au ton demandés, avec des indications de plan si utile",
+  "legende": "la légende/description prête à publier, avec émojis si adapté au réseau",
+  "hashtags": ["motcle1", "motcle2", "motcle3", "motcle4", "motcle5"],
+  "miniature": "une description concrète de ce qu'il faudrait montrer en vignette/miniature pour maximiser les clics",
+  "cta": ["variante d'appel à l'action 1", "variante 2", "variante 3"],
+  "meilleur_moment": "un jour et une heure recommandés pour publier ce type de contenu sur ce réseau, avec une courte justification"
+}
+
+Sois créatif, concret et directement utilisable — pas de généralités vagues.`;
+        }
+
+        const result = await gemini.chat({
+            message: prompt,
+            context: { source: "griot", workspaceId: req.session.workspaceId },
+            useTools: false,
+        });
+
+        const rawText = result.type === "text" ? result.text : "";
+        const pack = extractJson(rawText);
+
+        if (!pack) {
+            return res.json({ success: false, error: "SAMII n'a pas pu structurer sa réponse. Réessaie." });
+        }
+
+        res.json({ success: true, pack });
+
+    } catch (err) {
+        console.error("❌ POST /samii/griot :", err.message);
+        res.json({ success: false, error: "Erreur lors de la génération. Réessaie." });
+    }
+});
+
+module.exports = router;
+
