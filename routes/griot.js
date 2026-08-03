@@ -213,6 +213,35 @@ router.get("/", requireAuth, async (req, res) => {
                 </div>
             </div>
 
+            <!-- NOUVELLES OPTIONS AJOUTÉES SANS TOUCHER AU RESTE -->
+            <div class="griot-row">
+                <div>
+                    <label>Type de Création</label>
+                    <select name="type_creation">
+                        <option value="video">Vidéo</option>
+                        <option value="image">Image</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Durée / Rendu</label>
+                    <select name="duree">
+                        <option value="15s">15 secondes / Rapide</option>
+                        <option value="30s">30 secondes / Standard</option>
+                        <option value="60s">60 secondes / Long</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label>Nombre de Variantes (Options)</label>
+                <select name="nombre_variantes">
+                    <option value="1">1 Variante</option>
+                    <option value="2">2 Variantes</option>
+                    <option value="3">3 Variantes</option>
+                </select>
+            </div>
+            <!-- FIN DES NOUVELLES OPTIONS -->
+
             <label>De quoi parle le contenu ?</label>
             <textarea name="sujet" placeholder="Ex : ma nouvelle collection de vestes d'hiver, faites main, livraison rapide en Algérie..." required></textarea>
 
@@ -262,17 +291,17 @@ function copyText(text, btn) {
 
 function block(icon, title, bodyHtml, copyValue) {
     const copyBtn = copyValue
-        ? \`<button type="button" class="griot-copy-btn" onclick='copyText(\${JSON.stringify(copyValue)}, this)'>Copier</button>\`
+        ? `<button type="button" class="griot-copy-btn" onclick='copyText(${JSON.stringify(copyValue)}, this)'>Copier</button>`
         : '';
-    return \`
+    return `
         <div class="griot-block">
             <div class="griot-block__header">
-                <div class="griot-block__title"><i data-lucide="\${icon}"></i> \${title}</div>
-                \${copyBtn}
+                <div class="griot-block__title"><i data-lucide="${icon}"></i> ${title}</div>
+                ${copyBtn}
             </div>
-            <div class="griot-block__body">\${bodyHtml}</div>
+            <div class="griot-block__body">${bodyHtml}</div>
         </div>
-    \`;
+    `;
 }
 
 function renderPack(data) {
@@ -281,9 +310,9 @@ function renderPack(data) {
 
     if (data.hooks?.length) {
         const hooksHtml = data.hooks.map((h, i) =>
-            \`<div class="griot-hook-item"><span class="griot-hook-num">\${i + 1}</span>\${h}</div>\`
+            `<div class="griot-hook-item"><span class="griot-hook-num">${i + 1}</span>${h}</div>`
         ).join('');
-        html += block('zap', 'Accroches', \`<div class="griot-hooks">\${hooksHtml}</div>\`, data.hooks.join('\\n\\n'));
+        html += block('zap', 'Accroches', `<div class="griot-hooks">${hooksHtml}</div>`, data.hooks.join('\n\n'));
     }
 
     if (data.script) {
@@ -295,7 +324,7 @@ function renderPack(data) {
     }
 
     if (data.hashtags?.length) {
-        const tagsHtml = \`<div class="griot-tags">\${data.hashtags.map(t => \`<span class="griot-tag">\${t.startsWith('#') ? t : '#' + t}</span>\`).join('')}</div>\`;
+        const tagsHtml = `<div class="griot-tags">${data.hashtags.map(t => `<span class="griot-tag">${t.startsWith('#') ? t : '#' + t}</span>`).join('')}</div>`;
         html += block('hash', 'Hashtags', tagsHtml, data.hashtags.map(t => t.startsWith('#') ? t : '#' + t).join(' '));
     }
 
@@ -304,12 +333,12 @@ function renderPack(data) {
     }
 
     if (data.cta?.length) {
-        const ctaHtml = \`<div class="griot-cta-list">\${data.cta.map(c => \`<div class="griot-cta-item">\${c}</div>\`).join('')}</div>\`;
-        html += block('megaphone', 'Appels à l\\'action', ctaHtml, data.cta.join('\\n'));
+        const ctaHtml = `<div class="griot-cta-list">${data.cta.map(c => `<div class="griot-cta-item">${c}</div>`).join('')}</div>`;
+        html += block('megaphone', 'Appels à l\'action', ctaHtml, data.cta.join('\n'));
     }
 
     if (data.meilleur_moment) {
-        html += \`<div><span class="griot-timing"><i data-lucide="clock"></i> Meilleur moment : \${data.meilleur_moment}</span></div>\`;
+        html += `<div><span class="griot-timing"><i data-lucide="clock"></i> Meilleur moment : ${data.meilleur_moment}</span></div>`;
     }
 
     container.innerHTML = html;
@@ -338,7 +367,7 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
             renderPack(json.pack);
             pack.style.display = 'flex';
         } else {
-            msg.textContent = json.error || '❌ SAMII n\\'a pas pu générer le contenu. Réessaie.';
+            msg.textContent = json.error || '❌ SAMII n\'a pas pu générer le contenu. Réessaie.';
         }
     } catch (err) {
         msg.textContent = '❌ Erreur réseau. Réessaie.';
@@ -354,7 +383,7 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
 
 router.post("/", requireAuth, async (req, res) => {
     try {
-        const { reseau, format, objectif, sujet, ton } = req.body;
+        const { reseau, format, objectif, sujet, ton, type_creation, duree, nombre_variantes } = req.body;
 
         if (!sujet || !sujet.trim()) {
             return res.json({ success: false, error: "Décris ton produit ou ton sujet." });
@@ -376,6 +405,9 @@ router.post("/", requireAuth, async (req, res) => {
 
 Objectif : ${objectifsLabel[objectif] || objectif}
 Sujet : ${sujet}
+Type de rendu demandé : ${type_creation || 'texte'}
+Durée/Format indicatif : ${duree || 'standard'}
+Nombre de variantes souhaitées : ${nombre_variantes || '1'}
 ${ton ? `Ton souhaité : ${ton}` : "Ton : professionnel, crédible, engageant."}
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
@@ -395,6 +427,9 @@ Ne mets rien dans "miniature" ou laisse-le vide. Sois concret et directement uti
 
 Objectif : ${objectifsLabel[objectif] || objectif}
 Sujet : ${sujet}
+Type de rendu demandé : ${type_creation || 'texte'}
+Durée/Format indicatif : ${duree || 'standard'}
+Nombre de variantes souhaitées : ${nombre_variantes || '1'}
 ${ton ? `Ton souhaité : ${ton}` : "Ton : clair, persuasif, chaleureux."}
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
@@ -410,10 +445,13 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises m
 
 Ne mets rien dans "miniature" ou laisse-le vide. Sois concret et directement utilisable.`;
         } else {
-            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un pack de contenu vidéo complet.
+            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un pack de contenu ${type_creation || 'vidéo'} complet.
 
 Réseau : ${reseau}
 Format : ${formatLabel}
+Type de création : ${type_creation || 'vidéo'}
+Durée ciblée : ${duree || '30s'}
+Nombre de variantes demandées : ${nombre_variantes || '1'}
 Objectif : ${objectifsLabel[objectif] || objectif}
 Sujet / produit : ${sujet}
 ${ton ? `Ton souhaité : ${ton}` : "Ton : adapte-le naturellement au réseau et à l'objectif."}
@@ -455,3 +493,4 @@ Sois créatif, concret et directement utilisable — pas de généralités vague
 });
 
 module.exports = router;
+
