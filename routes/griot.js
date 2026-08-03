@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — GRIOT (T-026) — Storytelling automatique + pack de contenu
+// SAMII OS — GRIOT (T-026) — Storytelling automatique + pack de contenu + Runware
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
@@ -172,15 +172,7 @@ router.get("/", requireAuth, async (req, res) => {
         <div class="griot-icon-box">🪶</div>
         <h1>Griot</h1>
     </div>
-    <p class="sub">Décris ce que tu veux promouvoir — SAMII te livre un pack de contenu complet, prêt à publier.</p>
-
-    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;margin-bottom:22px;border-radius:14px;background:linear-gradient(135deg, rgba(197,160,89,0.12), rgba(95,212,255,0.08));border:1px solid rgba(197,160,89,0.3);">
-        <div style="font-size:1.4rem;flex-shrink:0;">🎬</div>
-        <div>
-            <div style="font-weight:700;color:#fff;font-size:.88rem;">Bientôt en V2 : SAMII crée la vidéo pour vous, en direct.</div>
-            <div style="color:var(--text-muted);font-size:.78rem;margin-top:2px;">Pour l'instant, ce script est prêt à filmer toi-même ou à confier à un monteur.</div>
-        </div>
-    </div>
+    <p class="sub">Décris ce que tu veux promouvoir — SAMII te livre un pack de contenu complet et génère tes médias.</p>
 
     <div class="griot-card">
         <form id="form-griot">
@@ -213,7 +205,6 @@ router.get("/", requireAuth, async (req, res) => {
                 </div>
             </div>
 
-            <!-- NOUVELLES OPTIONS AJOUTÉES SANS TOUCHER AU RESTE -->
             <div class="griot-row">
                 <div>
                     <label>Type de Création</label>
@@ -240,7 +231,6 @@ router.get("/", requireAuth, async (req, res) => {
                     <option value="3">3 Variantes</option>
                 </select>
             </div>
-            <!-- FIN DES NOUVELLES OPTIONS -->
 
             <label>De quoi parle le contenu ?</label>
             <textarea name="sujet" placeholder="Ex : ma nouvelle collection de vestes d'hiver, faites main, livraison rapide en Algérie..." required></textarea>
@@ -248,13 +238,13 @@ router.get("/", requireAuth, async (req, res) => {
             <label>Ton souhaité (optionnel)</label>
             <input name="ton" placeholder="Ex : dynamique et jeune, élégant et sobre, humoristique...">
 
-            <button type="submit" class="griot-submit">🪶 Générer le pack de contenu</button>
+            <button type="submit" class="griot-submit">🪶 Générer le pack & Média</button>
         </form>
         <div class="griot-msg" id="msg"></div>
     </div>
 
     <div class="griot-pack" id="pack">
-        <div class="griot-pack-title">Pack de contenu</div>
+        <div class="griot-pack-title">Pack de contenu & Médias</div>
         <div id="pack-content"></div>
     </div>
 </div>
@@ -323,6 +313,19 @@ function renderPack(data) {
         html += block('message-circle', 'Version courte / légende', data.legende, data.legende);
     }
 
+    if (data.medias && data.medias.length > 0) {
+        let mediaHtml = '<div style="display:flex; flex-direction:column; gap:12px;">';
+        data.medias.forEach((url, idx) => {
+            if (url.endsWith('.mp4') || url.includes('video')) {
+                mediaHtml += `<div><p style="font-size:0.75rem; color:var(--gold-og); margin-bottom:4px;">Variante Vidéo #${idx + 1}</p><video controls style="width:100%; border-radius:8px;"><source src="${url}" type="video/mp4">Votre navigateur ne supporte pas la vidéo.</video></div>`;
+            } else {
+                mediaHtml += `<div><p style="font-size:0.75rem; color:var(--gold-og); margin-bottom:4px;">Variante Image #${idx + 1}</p><img src="${url}" style="width:100%; border-radius:8px;" alt="Généré par Runware"></div>`;
+            }
+        });
+        mediaHtml += '</div>';
+        html += block('sparkles', 'Médias Générés (Runware)', mediaHtml);
+    }
+
     if (data.hashtags?.length) {
         const tagsHtml = `<div class="griot-tags">${data.hashtags.map(t => `<span class="griot-tag">${t.startsWith('#') ? t : '#' + t}</span>`).join('')}</div>`;
         html += block('hash', 'Hashtags', tagsHtml, data.hashtags.map(t => t.startsWith('#') ? t : '#' + t).join(' '));
@@ -353,7 +356,7 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
     const data = Object.fromEntries(new FormData(e.target));
 
     btn.disabled = true;
-    msg.textContent = '🪶 SAMII écrit ton contenu...';
+    msg.textContent = '🪶 SAMII rédige et pilote Runware en arrière-plan...';
     pack.style.display = 'none';
 
     try {
@@ -389,7 +392,7 @@ router.post("/", requireAuth, async (req, res) => {
             return res.json({ success: false, error: "Décris ton produit ou ton sujet." });
         }
 
-        const objectifsLabel = {
+        const objectivesLabel = {
             vendre: "vendre un produit",
             notoriete: "faire connaître la marque",
             promo: "annoncer une promotion",
@@ -403,7 +406,7 @@ router.post("/", requireAuth, async (req, res) => {
         if (reseau === "linkedin") {
             prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un post LinkedIn professionnel complet.
 
-Objectif : ${objectifsLabel[objectif] || objectif}
+Objectif : ${objectivesLabel[objectif] || objectif}
 Sujet : ${sujet}
 Type de rendu demandé : ${type_creation || 'texte'}
 Durée/Format indicatif : ${duree || 'standard'}
@@ -413,19 +416,17 @@ ${ton ? `Ton souhaité : ${ton}` : "Ton : professionnel, crédible, engageant."}
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
 
 {
-  "hooks": ["accroche 1 pour la première ligne", "accroche 2", "accroche 3"],
-  "script": "le corps complet du post LinkedIn, bien structuré, avec des sauts de ligne",
-  "legende": "une version courte alternative du post, plus directe",
+  "hooks": ["accroche 1", "accroche 2", "accroche 3"],
+  "script": "le corps complet du post LinkedIn",
+  "legende": "une version courte alternative",
   "hashtags": ["motcle1", "motcle2", "motcle3"],
-  "cta": ["variante d'appel à l'action 1", "variante 2", "variante 3"],
-  "meilleur_moment": "un jour et une heure recommandés pour publier sur LinkedIn, avec justification"
-}
-
-Ne mets rien dans "miniature" ou laisse-le vide. Sois concret et directement utilisable.`;
+  "cta": ["cta 1", "cta 2", "cta 3"],
+  "meilleur_moment": "jour et heure recommandés"
+}`;
         } else if (reseau === "email") {
             prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un email marketing complet.
 
-Objectif : ${objectifsLabel[objectif] || objectif}
+Objectif : ${objectivesLabel[objectif] || objectif}
 Sujet : ${sujet}
 Type de rendu demandé : ${type_creation || 'texte'}
 Durée/Format indicatif : ${duree || 'standard'}
@@ -435,15 +436,13 @@ ${ton ? `Ton souhaité : ${ton}` : "Ton : clair, persuasif, chaleureux."}
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
 
 {
-  "hooks": ["objet d'email 1", "objet d'email 2", "objet d'email 3"],
-  "script": "le corps complet de l'email, bien structuré, prêt à envoyer",
-  "legende": "une version courte pour un aperçu/pré-header",
+  "hooks": ["objet d'email 1", "objet 2", "objet 3"],
+  "script": "le corps complet de l'email",
+  "legende": "aperçu pré-header",
   "hashtags": [],
-  "cta": ["variante de bouton d'action 1", "variante 2", "variante 3"],
-  "meilleur_moment": "un jour et une heure recommandés pour envoyer cet email, avec justification"
-}
-
-Ne mets rien dans "miniature" ou laisse-le vide. Sois concret et directement utilisable.`;
+  "cta": ["cta 1", "cta 2", "cta 3"],
+  "meilleur_moment": "jour et heure recommandés"
+}`;
         } else {
             prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un pack de contenu ${type_creation || 'vidéo'} complet.
 
@@ -452,23 +451,21 @@ Format : ${formatLabel}
 Type de création : ${type_creation || 'vidéo'}
 Durée ciblée : ${duree || '30s'}
 Nombre de variantes demandées : ${nombre_variantes || '1'}
-Objectif : ${objectifsLabel[objectif] || objectif}
+Objectif : ${objectivesLabel[objectif] || objectif}
 Sujet / produit : ${sujet}
-${ton ? `Ton souhaité : ${ton}` : "Ton : adapte-le naturellement au réseau et à l'objectif."}
+${ton ? `Ton souhaité : ${ton}` : "Ton : adapté au réseau."}
 
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
 
 {
   "hooks": ["accroche 1", "accroche 2", "accroche 3"],
-  "script": "le script complet, adapté à la durée et au ton demandés, avec des indications de plan si utile",
-  "legende": "la légende/description prête à publier, avec émojis si adapté au réseau",
+  "script": "le script complet",
+  "legende": "la légende prête à publier",
   "hashtags": ["motcle1", "motcle2", "motcle3", "motcle4", "motcle5"],
-  "miniature": "une description concrète de ce qu'il faudrait montrer en vignette/miniature pour maximiser les clics",
-  "cta": ["variante d'appel à l'action 1", "variante 2", "variante 3"],
-  "meilleur_moment": "un jour et une heure recommandés pour publier ce type de contenu sur ce réseau, avec une courte justification"
-}
-
-Sois créatif, concret et directement utilisable — pas de généralités vagues.`;
+  "miniature": "description pour la miniature",
+  "cta": ["cta 1", "cta 2", "cta 3"],
+  "meilleur_moment": "jour et heure recommandés"
+}`;
         }
 
         const result = await gemini.chat({
@@ -484,6 +481,50 @@ Sois créatif, concret et directement utilisable — pas de généralités vague
             return res.json({ success: false, error: "SAMII n'a pas pu structurer sa réponse. Réessaie." });
         }
 
+        // --- BRANCHEMENT RUNWARE ICI ---
+        pack.medias = [];
+        const runwareApiKey = process.env.RUNWARE_API_KEY;
+        const count = parseInt(nombre_variantes) || 1;
+
+        if (runwareApiKey && (reseau !== 'linkedin' && reseau !== 'email')) {
+            try {
+                const taskType = type_creation === 'video' ? 'videoInference' : 'imageInference';
+                
+                // Corps de requête standard pour l'API Runware
+                const runwarePayload = [
+                    {
+                        taskType: taskType,
+                        taskUUID: "samii-" + Date.now(),
+                        positivePrompt: `Commercial product ad for ${sujet}, cinematic, high quality, professional studio lighting`,
+                        numberResults: count,
+                        width: 512,
+                        height: 968 // Format vertical mobile (TikTok / Reels / Shorts)
+                    }
+                ];
+
+                const runwareRes = await fetch("https://api.runware.ai/v1", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${runwareApiKey}`
+                    },
+                    body: JSON.stringify(runwarePayload)
+                });
+
+                const runwareData = await runwareRes.json();
+                
+                if (runwareData && runwareData.data) {
+                    runwareData.data.forEach(item => {
+                        if (item.imageURL) pack.medias.push(item.imageURL);
+                        if (item.videoURL) pack.medias.push(item.videoURL);
+                    });
+                }
+            } catch (runwareErr) {
+                console.error("⚠️ Erreur appel Runware (non bloquant) :", runwareErr.message);
+            }
+        }
+        // -------------------------------
+
         res.json({ success: true, pack });
 
     } catch (err) {
@@ -493,4 +534,3 @@ Sois créatif, concret et directement utilisable — pas de généralités vague
 });
 
 module.exports = router;
-
