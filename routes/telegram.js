@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — TELEGRAM WEBHOOK (marchands + leurs clients, pensé mobile)
+// SAMII OS — TELEGRAM WEBHOOK — V2 PostgreSQL (remplace Airtable)
 // ==========================================================================
 const express      = require("express");
 const axios        = require("axios");
@@ -7,7 +7,7 @@ const CONFIG       = require("../config");
 const orchestrator = require("../brain/orchestrator");
 const planner      = require("../brain/planner");
 const memory       = require("../brain/memory");
-const airtable     = require("../services/airtable");
+const db           = require("../services/db");
 
 const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
@@ -27,17 +27,16 @@ async function reply(chatId, text) {
 
 async function linkClientToWorkspace(chatId, workspaceId) {
     try {
-        const existing = await airtable.findOne("CONNECTEURS",
-            `AND({type}="telegram_client",SEARCH("${chatId}",{config}))`
+        const existing = await db.query(
+            `SELECT id FROM connecteurs WHERE type = 'telegram_client' AND config LIKE $1`,
+            [`%${chatId}%`]
         );
-        if (existing) return;
+        if (existing.length > 0) return;
 
-        await airtable.create("CONNECTEURS", {
-            workspace_id: workspaceId,
-            type        : "telegram_client",
-            config      : JSON.stringify({ chatId: String(chatId), linkedAt: new Date().toISOString() }),
-            actif       : true,
-        });
+        await db.query(
+            `INSERT INTO connecteurs (workspace_id, type, config, actif) VALUES ($1, 'telegram_client', $2, true)`,
+            [workspaceId, JSON.stringify({ chatId: String(chatId), linkedAt: new Date().toISOString() })]
+        );
         console.log(`🔗 Client ${chatId} lié au workspace ${workspaceId}`);
     } catch (err) {
         console.error("❌ linkClientToWorkspace :", err.message);
@@ -46,23 +45,25 @@ async function linkClientToWorkspace(chatId, workspaceId) {
 
 async function linkMerchantToWorkspace(chatId, workspaceId) {
     try {
-        const existing = await airtable.findOne("CONNECTEURS",
-            `AND({type}="telegram",{workspace_id}="${workspaceId}")`
+        const existing = await db.query(
+            `SELECT id FROM connecteurs WHERE type = 'telegram' AND workspace_id = $1`,
+            [workspaceId]
         );
-        if (existing) {
-            await airtable.update("CONNECTEURS", existing.id, {
-                config: JSON.stringify({ chatId: String(chatId), connectedAt: new Date().toISOString() }),
-                actif : true,
-            });
+
+        const config = JSON.stringify({ chatId: String(chatId), connectedAt: new Date().toISOString() });
+
+        if (existing.length > 0) {
+            await db.query(
+                `UPDATE connecteurs SET config = $1, actif = true WHERE id = $2`,
+                [config, existing[0].id]
+            );
             return true;
         }
 
-        await airtable.create("CONNECTEURS", {
-            workspace_id: workspaceId,
-            type        : "telegram",
-            config      : JSON.stringify({ chatId: String(chatId), connectedAt: new Date().toISOString() }),
-            actif       : true,
-        });
+        await db.query(
+            `INSERT INTO connecteurs (workspace_id, type, config, actif) VALUES ($1, 'telegram', $2, true)`,
+            [workspaceId, config]
+        );
         return true;
     } catch (err) {
         console.error("❌ linkMerchantToWorkspace :", err.message);
@@ -72,33 +73,34 @@ async function linkMerchantToWorkspace(chatId, workspaceId) {
 
 async function getClientWorkspace(chatId) {
     try {
-        const record = await airtable.findOne("CONNECTEURS",
-            `AND({type}="telegram_client",SEARCH("${chatId}",{config}))`
+        const rows = await db.query(
+            `SELECT workspace_id FROM connecteurs WHERE type = 'telegram_client' AND config LIKE $1`,
+            [`%${chatId}%`]
         );
-        if (!record) return "";
-        return record.fields?.workspace_id || "";
+        return rows[0]?.workspace_id || "";
     } catch { return ""; }
 }
 
 async function getWorkspaceByChatId(chatId) {
     try {
-        const record = await airtable.findOne("CONNECTEURS",
-            `AND({type}="telegram",{actif}=1,SEARCH("${chatId}",{config}))`
+        const rows = await db.query(
+            `SELECT workspace_id FROM connecteurs WHERE type = 'telegram' AND actif = true AND config LIKE $1`,
+            [`%${chatId}%`]
         );
-        if (!record) return "";
-        return record.fields?.workspace_id || "";
+        return rows[0]?.workspace_id || "";
     } catch { return ""; }
 }
 
 async function getAdminChatId(workspaceId) {
     try {
         if (!workspaceId) return null;
-        const record = await airtable.findOne("CONNECTEURS",
-            `AND({type}="telegram",{actif}=1,{workspace_id}="${workspaceId}")`
+        const rows = await db.query(
+            `SELECT config FROM connecteurs WHERE type = 'telegram' AND actif = true AND workspace_id = $1`,
+            [workspaceId]
         );
-        if (!record) return null;
-        const config = JSON.parse((record.fields?.config || "{}").replace(/\\_/g, "_"));
-        return config.chat_id || config.chatId || null;
+        if (!rows[0]) return null;
+        const config = JSON.parse(rows[0].config || "{}");
+        return config.chatId || null;
     } catch { return null; }
 }
 
@@ -106,64 +108,70 @@ function genOrderId() {
     return `TG-${Date.now().toString().slice(-6)}`;
 }
 
+async function getProduitsDuWorkspace(workspaceId) {
+    try {
+        return await db.query(
+            `SELECT id, nom, prix FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom`,
+            [workspaceId]
+        );
+    } catch {
+        return [];
+    }
+}
+
 async function handleOrderFlow(chatId, text, name) {
     const session = memory.get(chatId) || {};
     const step    = session.step;
 
-   if (!step) {
-    let workspaceId = await getClientWorkspace(chatId);
-    if (!workspaceId) workspaceId = await getWorkspaceByChatId(chatId);
+    if (!step) {
+        let workspaceId = await getClientWorkspace(chatId);
+        if (!workspaceId) workspaceId = await getWorkspaceByChatId(chatId);
 
-    const db = require("../services/db");
-    const produits = await db.query(
-        "SELECT nom, prix FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom",
-        [workspaceId]
-    );
+        const produits = await getProduitsDuWorkspace(workspaceId);
 
-    if (produits.length === 0) {
-        memory.set(chatId, { step: "produit", name });
+        if (produits.length === 0) {
+            memory.set(chatId, { step: "produit", name });
+            await reply(chatId,
+                `🛍️ *Parfait !*\n\nQuel produit souhaitez-vous commander ?\n_(Nom, taille, couleur...)_`
+            );
+            return true;
+        }
+
+        const listeProduits = produits
+            .map((p, i) => `${i + 1}. *${p.nom}* — ${p.prix} DZD`)
+            .join("\n");
+
+        memory.set(chatId, { step: "produit_choix", name, produitsDisponibles: produits });
         await reply(chatId,
-            `🛍️ *Parfait !*\n\nQuel produit souhaitez-vous commander ?\n_(Nom, taille, couleur...)_`
+            `🛍️ *Voici nos produits disponibles :*\n\n${listeProduits}\n\n` +
+            `Tapez le *numéro* du produit qui vous intéresse.`
         );
         return true;
     }
 
-    const listeProduits = produits
-        .map((p, i) => `${i + 1}. *${p.nom}* — ${p.prix} DZD`)
-        .join("\n");
+    if (step === "produit_choix") {
+        const index = parseInt(text.trim(), 10) - 1;
+        const produits = session.produitsDisponibles || [];
+        const choisi = produits[index];
 
-    memory.set(chatId, { step: "produit_choix", name, produitsDisponibles: produits });
-    await reply(chatId,
-        `🛍️ *Voici nos produits disponibles :*\n\n${listeProduits}\n\n` +
-        `Tapez le *numéro* du produit qui vous intéresse.`
-    );
-    return true;
-}
+        if (!choisi) {
+            await reply(chatId, `❌ Numéro invalide. Réessaie avec un numéro de la liste.`);
+            return true;
+        }
 
-if (step === "produit_choix") {
-    const session = memory.get(chatId);
-    const index = parseInt(text.trim(), 10) - 1;
-    const produits = session.produitsDisponibles || [];
-    const choisi = produits[index];
-
-    if (!choisi) {
-        await reply(chatId, `❌ Numéro invalide. Réessaie avec un numéro de la liste.`);
+        memory.set(chatId, { step: "telephone", produit: `${choisi.nom} (${choisi.prix} DZD)`, name: session.name });
+        await reply(chatId, `📞 Votre *numéro de téléphone* s'il vous plaît ?`);
         return true;
     }
 
-    memory.set(chatId, { step: "telephone", produit: `${choisi.nom} (${choisi.prix} DZD)`, name: session.name });
-    await reply(chatId, `📞 Votre *numéro de téléphone* s'il vous plaît ?`);
-    return true;
-}
-
     if (step === "produit") {
-        memory.set(chatId, { step: "telephone", produit: text });
+        memory.set(chatId, { step: "telephone", produit: text, name: session.name });
         await reply(chatId, `📞 Votre *numéro de téléphone* s'il vous plaît ?`);
         return true;
     }
 
     if (step === "telephone") {
-        memory.set(chatId, { step: "adresse", telephone: text });
+        memory.set(chatId, { ...session, step: "adresse", telephone: text });
         await reply(chatId, `📍 Votre *adresse de livraison* ?`);
         return true;
     }
@@ -173,33 +181,27 @@ if (step === "produit_choix") {
         const s = memory.get(chatId);
 
         let workspaceId = await getClientWorkspace(chatId);
-        if (!workspaceId) {
-            workspaceId = await getWorkspaceByChatId(chatId);
-        }
+        if (!workspaceId) workspaceId = await getWorkspaceByChatId(chatId);
 
         const adminChatId = await getAdminChatId(workspaceId);
 
         console.log(`🛒 Création commande Telegram — orderId=${orderId}, workspaceId="${workspaceId}", chatId=${chatId}`);
 
         try {
-            await airtable.create("COMMANDES", {
-                "ID Commande"  : orderId,
-                "nom client"   : s.name      || "Inconnu",
-                "Téléphone"    : s.telephone || "",
-                "Adresse"      : text,
-                "Produit"      : s.produit   || "",
-                "Statut"       : "en attente",
-                "Boutique"     : workspaceId,
-                "Source"       : "telegram",
-                "Date Commande": new Date().toISOString(),
-                "montant"      : 0,
-            });
+            await db.query(
+                `INSERT INTO commandes (id, workspace_id, nom_client, telephone, adresse, produit, statut, source, montant)
+                 VALUES ($1, $2, $3, $4, $5, $6, 'en attente', 'telegram', 0)`,
+                [orderId, workspaceId, s.name || "Inconnu", s.telephone || "", text, s.produit || ""]
+            );
             console.log(`✅ Commande ${orderId} créée avec succès sur workspace "${workspaceId}"`);
         } catch (createErr) {
             console.error(`❌ Échec création commande ${orderId} :`, createErr.message);
         }
 
-        await airtable.log("order.created.telegram", `#${orderId} — ${s.name}`, workspaceId);
+        await db.query(
+            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+            ["order.created.telegram", `#${orderId} — ${s.name}`, workspaceId]
+        );
 
         if (adminChatId) {
             await axios.post(`${BASE}/sendMessage`, {
@@ -279,6 +281,7 @@ router.post("/", async (req, res) => {
 
             if (data.startsWith("confirm_")) {
                 const orderId = data.replace("confirm_", "");
+                await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1`, [orderId]);
                 await orchestrator.process({
                     type: "order.confirmed", shop: "", payload: { orderId, chatId },
                 });
@@ -290,6 +293,7 @@ router.post("/", async (req, res) => {
 
             if (data.startsWith("cancel_")) {
                 const orderId = data.replace("cancel_", "");
+                await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [orderId]);
                 await orchestrator.process({
                     type: "order.cancelled.telegram", shop: "", payload: { orderId, chatId },
                 });
