@@ -3,295 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OG Empire — SAMII OS</title>
+    <title>OG Empire — SAMII OS | The Sovereign Intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-deep: #04050a;
-            --bg-panel: rgba(255,255,255,0.045);
-            --bg-panel-strong: rgba(255,255,255,0.07);
+            --bg-deep: #030407;
+            --bg-surface: rgba(12, 16, 28, 0.7);
+            --bg-panel: rgba(255, 255, 255, 0.035);
+            --bg-panel-strong: rgba(255, 255, 255, 0.065);
             --gold: #C5A059;
             --gold-hover: #E8C27A;
+            --gold-glow: rgba(197, 160, 89, 0.25);
             --cyan: #5FD4FF;
+            --cyan-glow: rgba(95, 212, 255, 0.25);
             --violet: #9d5cff;
+            --success: #3ddc84;
             --text-main: #F1F0EC;
             --text-muted: #838a99;
-            --border-soft: 1px solid rgba(255,255,255,0.09);
-            --border-gold: 1px solid rgba(197,160,89,0.35);
+            --border-soft: 1px solid rgba(255, 255, 255, 0.08);
+            --border-gold: 1px solid rgba(197, 160, 89, 0.35);
+            --border-cyan: 1px solid rgba(95, 212, 255, 0.35);
             --font-display: 'Cinzel', serif;
             --font-body: 'Inter', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
-            --ease: cubic-bezier(0.16,1,0.3,1);
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+            --shadow-luxury: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
         body {
-            background: var(--bg-deep); color: var(--text-main); font-family: var(--font-body);
-            min-height: 100vh; width: 100%; overflow-x: hidden; position: relative;
+            background: var(--bg-deep);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            width: 100%;
+            overflow-x: hidden;
+            position: relative;
         }
 
+        /* --- FOND GÉODÉSIQUE & PARTICULES --- */
         .world-bg { position: fixed; inset: 0; z-index: -3; overflow: hidden; pointer-events: none; }
         .world-bg__overlay {
             position: absolute; inset: 0;
-            background:
-                radial-gradient(ellipse 80% 60% at 50% 0%, rgba(4,5,10,0.4), var(--bg-deep) 75%),
-                linear-gradient(180deg, rgba(4,5,10,0.2) 0%, var(--bg-deep) 90%);
+            background: 
+                radial-gradient(circle at 50% -20%, rgba(197, 160, 89, 0.08), transparent 60%),
+                radial-gradient(circle at 50% 120%, rgba(95, 212, 255, 0.05), transparent 70%),
+                linear-gradient(180deg, rgba(3, 4, 7, 0.6) 0%, var(--bg-deep) 90%);
         }
-        .world-svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(1400px, 220vw); height: auto; opacity: .55; }
-        .globe-ring { fill: none; stroke: rgba(95,212,255,0.16); stroke-width: 1; }
-        .globe-ring--gold { stroke: rgba(197,160,89,0.14); }
-        .globe-meridian { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 1; }
-        .hub-dot { fill: var(--gold); filter: drop-shadow(0 0 6px rgba(197,160,89,0.9)); }
-        .hub-dot--cyan { fill: var(--cyan); filter: drop-shadow(0 0 6px rgba(95,212,255,0.9)); }
-        .hub-pulse { fill: none; stroke: var(--cyan); stroke-width: 1.2; opacity: 0; transform-origin: center; animation: pulse-ring 3.5s ease-out infinite; }
-        .hub-pulse--gold { stroke: var(--gold); }
+        .world-svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(1500px, 240vw); height: auto; opacity: .45; }
+        .globe-ring { fill: none; stroke: rgba(95, 212, 255, 0.14); stroke-width: 1; }
+        .globe-ring--gold { stroke: rgba(197, 160, 89, 0.15); stroke-dasharray: 4 4; }
+        .globe-meridian { fill: none; stroke: rgba(255, 255, 255, 0.04); stroke-width: 1; }
+        .hub-dot { fill: var(--gold); filter: drop-shadow(0 0 8px rgba(197, 160, 89, 0.9)); }
+        .hub-dot--cyan { fill: var(--cyan); filter: drop-shadow(0 0 8px rgba(95, 212, 255, 0.9)); }
+        .hub-pulse { fill: none; stroke: var(--cyan); stroke-width: 1.2; opacity: 0; transform-origin: center; animation: pulse-ring 4s cubic-bezier(0.1, 0.8, 0.3, 1) infinite; }
+        .hub-pulse--gold { stroke: var(--gold); animation-delay: 2s; }
         @keyframes pulse-ring {
-            0% { opacity: .8; transform: scale(0.3); }
-            80% { opacity: 0; transform: scale(2.6); }
-            100% { opacity: 0; transform: scale(2.6); }
+            0% { opacity: .9; transform: scale(0.2); }
+            100% { opacity: 0; transform: scale(3); }
         }
-        .arc-line { fill: none; stroke: url(#arcGradient); stroke-width: 1.1; stroke-dasharray: 6 5; opacity: .55; animation: arc-flow 4s linear infinite; }
-        @keyframes arc-flow { to { stroke-dashoffset: -110; } }
-        .world-rotate { animation: world-spin 140s linear infinite; transform-origin: center; }
+        .arc-line { fill: none; stroke: url(#arcGradient); stroke-width: 1.2; stroke-dasharray: 8 6; opacity: .6; animation: arc-flow 5s linear infinite; }
+        @keyframes arc-flow { to { stroke-dashoffset: -120; } }
+        .world-rotate { animation: world-spin 180s linear infinite; transform-origin: center; }
         @keyframes world-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         .bg-particles {
-            position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .28;
-            background-image: radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px), radial-gradient(circle, rgba(95,212,255,0.35) 1px, transparent 1px);
-            background-size: 140px 140px, 220px 220px;
-            animation: particles-drift 60s linear infinite;
+            position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .22;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.45) 1px, transparent 1px), radial-gradient(circle, rgba(197,160,89,0.3) 1px, transparent 1px);
+            background-size: 160px 160px, 240px 240px;
+            animation: particles-drift 70s linear infinite;
         }
-        @keyframes particles-drift { from { background-position: 0 0, 0 0; } to { background-position: 0 -500px, 0 -650px; } }
+        @keyframes particles-drift { from { background-position: 0 0, 0 0; } to { background-position: 0 -600px, 0 -800px; } }
 
+        /* --- TOP BAR --- */
         .top-bar {
-            position: sticky; top: 0; z-index: 100;
+            position: sticky; top: 0; z-index: 1000;
             display: flex; justify-content: space-between; align-items: center;
-            padding: 14px 18px; backdrop-filter: blur(24px);
-            background: rgba(4,5,10,0.82); border-bottom: var(--border-soft);
-            width: 100%;
+            padding: 16px 24px; backdrop-filter: blur(28px);
+            background: rgba(3, 4, 7, 0.88); border-bottom: var(--border-soft);
+            width: 100%; transition: all .3s ease;
         }
-        .brand { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; color: #fff; font-size: 1rem; }
-        .brand img { width: 26px; height: 26px; flex-shrink: 0; }
-        .top-bar__right { display: flex; align-items: center; gap: 8px; }
-        .ecosystem-links { display: none; gap: 6px; }
+        .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; color: #fff; font-size: 1.1rem; letter-spacing: 0.08em; text-decoration: none; }
+        .brand img { width: 30px; height: 30px; flex-shrink: 0; filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); }
+        .brand span { background: linear-gradient(135deg, #fff 30%, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .top-bar__right { display: flex; align-items: center; gap: 16px; }
+        .ecosystem-links { display: none; gap: 8px; }
+        @media (min-width: 1024px) { .ecosystem-links { display: flex; } }
         .eco-link {
-            padding: 7px 13px; border-radius: 20px; text-decoration: none; font-size: .78rem; font-weight: 600;
-            color: var(--text-muted); border: 1px solid rgba(255,255,255,0.09); transition: all .25s ease;
+            padding: 7px 14px; border-radius: 20px; text-decoration: none; font-size: .78rem; font-weight: 600;
+            color: var(--text-muted); border: 1px solid rgba(255,255,255,0.08); transition: all .25s ease;
+            background: rgba(255,255,255,0.01);
         }
-        .eco-link:hover { color: var(--cyan); border-color: rgba(95,212,255,0.4); background: rgba(95,212,255,0.06); }
-        .lang-switch { display: flex; gap: 2px; font-family: var(--font-mono); font-size: .66rem; }
-        .lang-switch span { padding: 5px 7px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: all .2s ease; }
-        .lang-switch span.active, .lang-switch span:hover { color: var(--cyan); background: rgba(95,212,255,0.08); }
+        .eco-link:hover { color: var(--cyan); border-color: rgba(95,212,255,0.4); background: rgba(95,212,255,0.05); box-shadow: 0 0 15px rgba(95,212,255,0.15); }
+        
+        .lang-switch { display: flex; gap: 3px; font-family: var(--font-mono); font-size: .7rem; background: rgba(0,0,0,0.4); padding: 3px; border-radius: 8px; border: var(--border-soft); }
+        .lang-switch span { padding: 5px 8px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: all .2s ease; font-weight: 600; }
+        .lang-switch span.active, .lang-switch span:hover { color: var(--gold); background: rgba(197,160,89,0.12); }
 
+        /* --- CONNECTED BANNER --- */
         .connected-banner {
-            max-width: 900px; margin: 18px 16px 0; padding: 14px 18px;
+            max-width: 900px; margin: 24px auto 0; padding: 16px 24px;
             background: linear-gradient(135deg, rgba(197,160,89,0.12), rgba(95,212,255,0.06));
             border: var(--border-gold); border-radius: 16px;
-            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); animation: fadeIn 0.6s var(--ease);
         }
-        @media (min-width: 768px) { .connected-banner { margin-left: auto; margin-right: auto; padding: 18px 26px; } }
-        .connected-banner__text { color: var(--text-main); font-size: .85rem; }
-        .connected-banner__text strong { color: var(--gold); }
+        @media (min-width: 768px) { .connected-banner { margin-left: auto; margin-right: auto; padding: 18px 30px; } }
+        .connected-banner__text { color: var(--text-main); font-size: .9rem; display: flex; align-items: center; gap: 8px; }
+        .connected-banner__text strong { color: var(--gold); font-family: var(--font-display); font-size: 1.05rem; }
         .continue-btn {
-            padding: 10px 18px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: .82rem;
+            padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: .84rem;
             background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000; white-space: nowrap;
+            transition: all .25s ease; box-shadow: 0 4px 20px rgba(197,160,89,0.3);
         }
+        .continue-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(197,160,89,0.5); }
 
-        .hero { max-width: 760px; margin: 0 auto; padding: 44px 18px 20px; text-align: center; }
+        /* --- HERO SECTION --- */
+        .hero { max-width: 840px; margin: 0 auto; padding: 56px 20px 28px; text-align: center; }
         .eyebrow {
-            font-family: var(--font-mono); letter-spacing: .14em; font-size: .68rem; color: var(--cyan);
-            text-transform: uppercase; display: inline-flex; align-items: center; gap: 7px; margin-bottom: 16px;
+            font-family: var(--font-mono); letter-spacing: .18em; font-size: .72rem; color: var(--cyan);
+            text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;
+            padding: 6px 14px; border-radius: 20px; background: rgba(95,212,255,0.06); border: 1px solid rgba(95,212,255,0.2);
         }
-        .eyebrow .dot { width: 5px; height: 5px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 6px #3ddc84; }
+        .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success); animation: blink 2s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
         .hero h1 {
-            font-family: var(--font-display); font-size: clamp(1.7rem, 6.5vw, 3.2rem); color: #fff; line-height: 1.18;
-            margin-bottom: 16px; text-shadow: 0 0 60px rgba(197,160,89,0.25);
+            font-family: var(--font-display); font-size: clamp(2.1rem, 7vw, 3.8rem); color: #fff; line-height: 1.15;
+            margin-bottom: 20px; font-weight: 800; letter-spacing: -0.01em;
+            text-shadow: 0 0 60px rgba(197,160,89,0.3);
         }
-        .hero h1 span { background: linear-gradient(135deg, var(--gold), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { color: var(--text-muted); font-size: .92rem; line-height: 1.65; padding: 0 6px; max-width: 520px; margin: 0 auto; }
+        .hero h1 span { background: linear-gradient(135deg, var(--gold) 20%, var(--cyan) 90%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { color: var(--text-muted); font-size: 1rem; line-height: 1.7; padding: 0 10px; max-width: 600px; margin: 0 auto 36px; }
 
-        .live-stats { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; margin-top: 26px; padding: 0 16px; }
-        .live-stat { text-align: center; }
-        .live-stat__num { font-family: var(--font-mono); font-weight: 700; font-size: 1.3rem; color: var(--gold); }
-        .live-stat__label { font-family: var(--font-mono); font-size: .62rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+        .live-stats { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-top: 10px; padding: 0 16px; }
+        .live-stat { text-align: center; background: var(--bg-panel); border: var(--border-soft); padding: 14px 24px; border-radius: 14px; min-width: 140px; backdrop-filter: blur(10px); }
+        .live-stat__num { font-family: var(--font-mono); font-weight: 700; font-size: 1.5rem; color: var(--gold); text-shadow: 0 0 15px rgba(197,160,89,0.3); }
+        .live-stat__label { font-family: var(--font-mono); font-size: .65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
 
-        .auth-zone { max-width: 460px; margin: 34px auto 0; padding: 0 16px; }
+        /* --- AUTH ZONE (FORMULAIRE HAUT DE GAMME) --- */
+        .auth-zone { max-width: 500px; margin: 40px auto 0; padding: 0 20px; }
         .auth-tabs {
-            display: flex; gap: 5px; margin-bottom: 16px;
-            background: rgba(0,0,0,0.35); border-radius: 13px; padding: 4px; border: var(--border-soft);
+            display: flex; gap: 6px; margin-bottom: 18px;
+            background: rgba(0, 0, 0, 0.4); border-radius: 14px; padding: 5px; border: var(--border-soft);
         }
         .auth-tab {
-            flex: 1; padding: 11px 6px; border-radius: 10px; border: none; background: transparent;
-            color: var(--text-muted); font-family: var(--font-body); font-weight: 700; font-size: .82rem; cursor: pointer;
-            transition: all .25s ease;
+            flex: 1; padding: 12px 10px; border-radius: 10px; border: none; background: transparent;
+            color: var(--text-muted); font-family: var(--font-body); font-weight: 700; font-size: .86rem; cursor: pointer;
+            transition: all .3s var(--ease);
         }
-        .auth-tab.active { background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000; }
+        .auth-tab.active { background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000; box-shadow: 0 4px 20px rgba(197,160,89,0.3); }
 
         .auth-card {
             position: relative; overflow: hidden;
-            background: var(--bg-panel); backdrop-filter: blur(24px); border: var(--border-gold);
-            border-radius: 20px; padding: 22px 18px; box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+            background: var(--bg-surface); backdrop-filter: blur(30px); border: var(--border-gold);
+            border-radius: 24px; padding: 30px 24px; box-shadow: var(--shadow-luxury);
+        }
+        .auth-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(197,160,89,0.8), transparent);
         }
 
-        .step-indicator { display: flex; align-items: center; gap: 6px; margin-bottom: 18px; }
-        .step-dot { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,0.1); transition: background .3s ease; }
-        .step-dot.done { background: linear-gradient(90deg, var(--gold), var(--cyan)); }
-        .step-label { font-family: var(--font-mono); font-size: .64rem; color: var(--text-muted); text-align: center; margin-bottom: 14px; letter-spacing: .04em; }
+        .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .step-dot { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); transition: background .4s ease; }
+        .step-dot.done { background: linear-gradient(90deg, var(--gold), var(--cyan)); box-shadow: 0 0 10px rgba(95,212,255,0.4); }
+        .step-label { font-family: var(--font-mono); font-size: .68rem; color: var(--cyan); text-align: center; margin-bottom: 18px; letter-spacing: .06em; text-transform: uppercase; }
 
         .form-step { display: none; }
-        .form-step.active { display: block; animation: step-in .35s var(--ease) both; }
-        @keyframes step-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: translateX(0); } }
+        .form-step.active { display: block; animation: step-in .4s var(--ease) both; }
+        @keyframes step-in { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        .type-choice { display: flex; gap: 8px; margin-bottom: 16px; }
+        .type-choice { display: flex; gap: 10px; margin-bottom: 20px; }
         .type-choice label {
-            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
-            padding: 13px 6px; border-radius: 11px; cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.22);
-            font-size: .76rem; color: var(--text-muted); transition: all .25s ease;
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+            padding: 16px 10px; border-radius: 14px; cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.25);
+            font-size: .8rem; color: var(--text-muted); transition: all .3s ease;
         }
         .type-choice input { display: none; }
         .type-choice label:has(input:checked) {
-            border-color: var(--gold); background: rgba(197,160,89,0.1); color: #fff;
-            box-shadow: 0 0 20px rgba(197,160,89,0.15);
+            border-color: var(--gold); background: rgba(197, 160, 89, 0.12); color: #fff;
+            box-shadow: 0 0 25px rgba(197, 160, 89, 0.2);
         }
-        .type-choice .icon { font-size: 1.25rem; }
+        .type-choice .icon { font-size: 1.5rem; }
 
-        .field-group { margin-bottom: 13px; }
+        .field-group { margin-bottom: 16px; }
         .field-group label {
-            display: block; font-family: var(--font-mono); font-size: .64rem; text-transform: uppercase;
-            letter-spacing: .05em; color: var(--text-muted); margin-bottom: 5px;
+            display: block; font-family: var(--font-mono); font-size: .68rem; text-transform: uppercase;
+            letter-spacing: .06em; color: var(--text-muted); margin-bottom: 6px;
         }
-        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .auth-card input, .auth-card select {
-            width: 100%; padding: 12px 13px; border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4);
+            width: 100%; padding: 13px 16px; border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.45);
             color: var(--text-main); font-size: 16px; font-family: var(--font-body);
             transition: all .3s ease;
         }
-        .auth-card select option { background: #0a0d14; }
+        .auth-card select option { background: #0a0d14; color: #fff; }
         .auth-card input:focus, .auth-card select:focus {
             outline: none; border-color: var(--cyan);
-            box-shadow: 0 0 0 3px rgba(95,212,255,0.15), 0 0 22px rgba(95,212,255,0.15);
+            box-shadow: 0 0 0 3px rgba(95, 212, 255, 0.15), 0 0 25px rgba(95, 212, 255, 0.2);
+            background: rgba(0, 0, 0, 0.6);
         }
 
-        #champ-autre-pays { display: none; margin-top: 8px; }
+        #champ-autre-pays { display: none; margin-top: 10px; }
 
         .grade-preview {
-            display: flex; align-items: center; gap: 10px; margin-top: 4px; margin-bottom: 14px;
-            padding: 10px 12px; border-radius: 11px;
-            background: rgba(197,160,89,0.07); border: 1px solid rgba(197,160,89,0.22);
+            display: flex; align-items: center; gap: 12px; margin-top: 6px; margin-bottom: 18px;
+            padding: 12px 16px; border-radius: 12px;
+            background: rgba(197, 160, 89, 0.08); border: 1px solid rgba(197, 160, 89, 0.25);
         }
-        .grade-preview__icon { font-size: 1.3rem; }
-        .grade-preview__text { font-size: .76rem; color: var(--text-muted); line-height: 1.4; }
+        .grade-preview__icon { font-size: 1.5rem; }
+        .grade-preview__text { font-size: .78rem; color: var(--text-muted); line-height: 1.45; }
         .grade-preview__text strong { color: var(--gold); }
 
-        .theme-picker { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+        .theme-picker { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
         .theme-card {
-            position: relative; border-radius: 12px; padding: 12px 10px; cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.1); overflow: hidden;
-            transition: all .25s ease; text-align: center;
+            position: relative; border-radius: 14px; padding: 14px 12px; cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.08); overflow: hidden;
+            transition: all .3s ease; text-align: center; background: rgba(0,0,0,0.2);
         }
         .theme-card input { display: none; }
-        .theme-card__preview { height: 26px; border-radius: 7px; margin-bottom: 7px; }
-        .theme-card--strategiste .theme-card__preview { background: linear-gradient(90deg, #C5A059, #3a3a2a); }
-        .theme-card--sagesse .theme-card__preview { background: linear-gradient(90deg, #4a6fa5, #cfd8e8); }
-        .theme-card--aventurier .theme-card__preview { background: linear-gradient(90deg, #5FD4FF, #d8c39a); }
-        .theme-card--gaming .theme-card__preview { background: linear-gradient(90deg, #9d5cff, #00e5ff); }
-        .theme-card__name { font-size: .68rem; color: var(--text-muted); font-weight: 600; }
-        .theme-card:has(input:checked) { border-color: var(--cyan); box-shadow: 0 0 16px rgba(95,212,255,0.2); }
+        .theme-card__preview { height: 32px; border-radius: 8px; margin-bottom: 8px; }
+        .theme-card--strategiste .theme-card__preview { background: linear-gradient(90deg, #C5A059, #1a1a14); }
+        .theme-card--sagesse .theme-card__preview { background: linear-gradient(90deg, #4a6fa5, #141a24); }
+        .theme-card--aventurier .theme-card__preview { background: linear-gradient(90deg, #5FD4FF, #142028); }
+        .theme-card--gaming .theme-card__preview { background: linear-gradient(90deg, #9d5cff, #1c142b); }
+        .theme-card__name { font-size: .72rem; color: var(--text-muted); font-weight: 600; font-family: var(--font-mono); }
+        .theme-card:has(input:checked) { border-color: var(--cyan); box-shadow: 0 0 20px rgba(95,212,255,0.25); background: rgba(95,212,255,0.04); }
         .theme-card:has(input:checked) .theme-card__name { color: #fff; }
 
-        .btn-row { display: flex; gap: 10px; margin-top: 6px; }
+        .btn-row { display: flex; gap: 10px; margin-top: 10px; }
         .auth-btn-back {
-            padding: 13px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);
-            background: transparent; color: var(--text-muted); font-weight: 700; font-size: .82rem; cursor: pointer;
-        }
-        .auth-submit {
-            flex: 1; padding: 13px; border: none; border-radius: 12px; position: relative; overflow: hidden;
-            background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000;
-            font-weight: 800; font-size: .88rem; cursor: pointer; font-family: var(--font-display);
-            transition: transform .2s ease;
-        }
-        .auth-submit:hover { transform: translateY(-2px); }
-        .auth-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-        .glow-follow { position: absolute; width: 120px; height: 120px; background: radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%); border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .2s ease; transform: translate(-50%, -50%); }
-        .auth-submit:hover .glow-follow { opacity: 1; }
-
-        .auth-msg { text-align: center; margin-top: 12px; font-size: .8rem; color: #ff6b6b; min-height: 18px; }
-        .auth-msg.ok { color: #3ddc84; }
-        .forgot-link { display: block; text-align: right; font-size: .74rem; color: var(--text-muted); text-decoration: none; margin-top: -4px; margin-bottom: 12px; }
-        .forgot-link:hover { color: var(--cyan); }
-
-        .automation-section { max-width: 1000px; margin: 60px auto 0; padding: 0 16px; }
-        .section-title {
-            text-align: center; font-family: var(--font-mono); font-size: .68rem; letter-spacing: .12em;
-            text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;
-        }
-        .section-subtitle { text-align: center; font-family: var(--font-display); font-size: 1.15rem; color: #fff; margin-bottom: 24px; }
-        .automation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        @media (min-width: 640px) { .automation-grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (min-width: 900px) { .automation-grid { grid-template-columns: repeat(5, 1fr); } }
-        .automation-card {
-            background: var(--bg-panel); border: var(--border-soft); border-radius: 14px;
-            padding: 16px 10px; text-align: center; transition: all .3s ease;
-        }
-        .automation-card:hover { transform: translateY(-4px); border-color: rgba(95,212,255,0.35); background: var(--bg-panel-strong); }
-        .automation-card__icon { font-size: 1.5rem; margin-bottom: 8px; }
-        .automation-card__name { font-size: .78rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
-        .automation-card__desc { font-size: .66rem; color: var(--text-muted); line-height: 1.4; }
-        .automation-badge {
-            display: inline-block; margin-top: 8px; font-size: .58rem; font-family: var(--font-mono);
-            padding: 2px 8px; border-radius: 20px; background: rgba(61,220,132,0.12); color: #3ddc84;
-        }
-
-        .ecosystem-section { max-width: 1000px; margin: 60px auto 0; padding: 0 16px; }
-        .ecosystem-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
-        @media (min-width: 768px) { .ecosystem-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
-        .eco-card {
-            background: var(--bg-panel); backdrop-filter: blur(14px); border: var(--border-soft);
-            border-radius: 16px; padding: 20px; text-decoration: none; color: var(--text-main);
-            display: flex; align-items: center; gap: 14px; transition: all .3s var(--ease);
-        }
-        @media (min-width: 768px) { .eco-card { flex-direction: column; align-items: flex-start; padding: 26px; } }
-        .eco-card:hover { transform: translateY(-6px); border-color: rgba(95,212,255,0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(95,212,255,0.1); }
-        .eco-card__icon { font-size: 1.5rem; flex-shrink: 0; }
-        .eco-card h3 { font-family: var(--font-display); font-size: 1rem; color: #fff; }
-        .eco-card p { color: var(--text-muted); font-size: .78rem; line-height: 1.45; margin-top: 3px; }
-
-        .quote-section { max-width: 640px; margin: 70px auto 0; padding: 0 24px; text-align: center; }
-        .quote-section p {
-            font-family: var(--font-display); font-size: 1.2rem; color: var(--text-main);
-            font-style: italic; line-height: 1.5; position: relative;
-        }
-        .quote-section span { display: block; margin-top: 12px; font-family: var(--font-mono); font-size: .72rem; color: var(--gold); letter-spacing: .06em; }
-
-        .site-footer {
-            border-top: var(--border-soft); padding: 26px 16px; margin-top: 60px;
-            display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
-        }
-        @media (min-width: 768px) { .site-footer { flex-direction: row; justify-content: space-between; padding: 28px 32px; } }
-        .site-footer__quote { font-family: var(--font-mono); color: var(--text-muted); font-size: .7rem; }
-        .social-links { display: flex; gap: 10px; }
-        .social-links a {
-            color: var(--text-muted); display: flex; align-items: center; justify-content: center;
-            width: 34px; height: 34px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.09);
+            padding: 14px 18px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.12);
+            background: transparent; color: var(--text-muted); font-weight: 700; font-size: .84rem; cursor: pointer;
             transition: all .25s ease;
         }
-        .social-links a:hover { color: var(--gold); border-color: rgba(197,160,89,0.4); background: rgba(197,160,89,0.06); transform: translateY(-2px); }
-        .site-footer__meta { font-family: var(--font-mono); font-size: .66rem; color: var(--text-muted); }
+        .auth-btn-back:hover { color: #fff; border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.03); }
+
+        .auth-submit {
+            flex: 1; padding: 14px; border: none; border-radius: 12px; position: relative; overflow: hidden;
+            background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000;
+            font-weight: 800; font-size: .92rem; cursor: pointer; font-family: var(--font-display);
+            transition: transform .2s ease, box-shadow .2s ease;
+            box-shadow: 0 4px 20px rgba(197,160,89,0.3);
+        }
+        .auth-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(197,160,89,0.5); }
+        .auth-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .glow-follow {
+            position: absolute; width: 120px; height: 120px;
+            background: radial-gradient(circle, rgba(255,255,255,0.4), transparent 70%);
+            border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .2s ease;
+            transform: translate(-50%, -50%);
+        }
+        .auth-submit:hover .glow-follow { opacity: 1; }
+
+        .auth-msg { text-align: center; margin-top: 14px; font-size: .82rem; color: #ff6b6b; min-height: 20px; font-family: var(--font-mono); }
+        .auth-msg.ok { color: var(--success); }
+        .forgot-link { display: block; text-align: right; font-size: .76rem; color: var(--text-muted); text-decoration: none; margin-top: -6px; margin-bottom: 14px; transition: color .2s; }
+        .forgot-link:hover { color: var(--cyan); }
+
+        /* --- SECTION AUTOMATISATION & 33 MODULES --- */
+        .automation-section { max-width: 1100px; margin: 80px auto 0; padding: 0 20px; }
+        .section-title {
+            text-align: center; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .16em;
+            text-transform: uppercase; color: var(--cyan); margin-bottom: 8px;
+        }
+        .section-subtitle { text-align: center; font-family: var(--font-display); font-size: clamp(1.4rem, 4vw, 2rem); color: #fff; margin-bottom: 32px; font-weight: 700; }
+        
+        .automation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        @media (min-width: 640px) { .automation-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; } }
+        @media (min-width: 1024px) { .automation-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; } }
+        
+        .automation-card {
+            background: var(--bg-panel); border: var(--border-soft); border-radius: 16px;
+            padding: 20px 14px; text-align: center; transition: all .35s var(--ease); backdrop-filter: blur(12px);
+            position: relative; overflow: hidden;
+        }
+        .automation-card::after {
+            content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(95,212,255,0.08), transparent);
+            opacity: 0; transition: opacity .3s ease; pointer-events: none;
+        }
+        .automation-card:hover { transform: translateY(-6px); border-color: rgba(95, 212, 255, 0.4); background: var(--bg-panel-strong); box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
+        .automation-card:hover::after { opacity: 1; }
+        .automation-card__icon { font-size: 1.8rem; margin-bottom: 10px; filter: drop-shadow(0 0 8px rgba(197,160,89,0.3)); }
+        .automation-card__name { font-size: .82rem; font-weight: 700; color: #fff; margin-bottom: 4px; font-family: var(--font-display); }
+        .automation-card__desc { font-size: .7rem; color: var(--text-muted); line-height: 1.45; }
+        .automation-badge {
+            display: inline-block; margin-top: 10px; font-size: .6rem; font-family: var(--font-mono);
+            padding: 3px 10px; border-radius: 20px; background: rgba(61, 220, 132, 0.12); color: var(--success);
+            border: 1px solid rgba(61, 220, 132, 0.25);
+        }
+
+        /* --- ECOSYSTEM CARDS --- */
+        .ecosystem-section { max-width: 1100px; margin: 80px auto 0; padding: 0 20px; }
+        .ecosystem-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 768px) { .ecosystem-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
+        
+        .eco-card {
+            background: var(--bg-panel); backdrop-filter: blur(16px); border: var(--border-soft);
+            border-radius: 20px; padding: 24px; text-decoration: none; color: var(--text-main);
+            display: flex; align-items: center; gap: 16px; transition: all .35s var(--ease);
+            position: relative; overflow: hidden;
+        }
+        @media (min-width: 768px) { .eco-card { flex-direction: column; align-items: flex-start; padding: 30px; } }
+        .eco-card:hover { transform: translateY(-8px); border-color: rgba(197,160,89,0.5); box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 30px rgba(197,160,89,0.15); background: var(--bg-panel-strong); }
+        .eco-card__icon { font-size: 1.8rem; flex-shrink: 0; padding: 12px; border-radius: 12px; background: rgba(197, 160, 89, 0.08); border: 1px solid rgba(197,160,89,0.2); }
+        .eco-card h3 { font-family: var(--font-display); font-size: 1.1rem; color: #fff; margin-top: 4px; }
+        .eco-card p { color: var(--text-muted); font-size: .82rem; line-height: 1.5; margin-top: 6px; }
+
+        /* --- CITATION & FOOTER --- */
+        .quote-section { max-width: 700px; margin: 90px auto 0; padding: 0 24px; text-align: center; }
+        .quote-section p {
+            font-family: var(--font-display); font-size: clamp(1.1rem, 3vw, 1.35rem); color: var(--text-main);
+            font-style: italic; line-height: 1.6; position: relative;
+            text-shadow: 0 0 30px rgba(255,255,255,0.1);
+        }
+        .quote-section span { display: block; margin-top: 14px; font-family: var(--font-mono); font-size: .76rem; color: var(--gold); letter-spacing: .08em; text-transform: uppercase; }
+
+        .site-footer {
+            border-top: var(--border-soft); padding: 32px 20px; margin-top: 80px;
+            display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center;
+            background: rgba(3, 4, 7, 0.95); backdrop-filter: blur(20px);
+        }
+        @media (min-width: 768px) { .site-footer { flex-direction: row; justify-content: space-between; padding: 36px 40px; } }
+        .site-footer__quote { font-family: var(--font-mono); color: var(--text-muted); font-size: .72rem; letter-spacing: 0.05em; }
+        .social-links { display: flex; gap: 12px; }
+        .social-links a {
+            color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+            width: 38px; height: 38px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);
+            transition: all .25s ease; background: rgba(255,255,255,0.02); text-decoration: none; font-size: .9rem;
+        }
+        .social-links a:hover { color: var(--gold); border-color: rgba(197,160,89,0.5); background: rgba(197,160,89,0.08); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(197,160,89,0.2); }
+        .site-footer__meta { font-family: var(--font-mono); font-size: .68rem; color: var(--text-muted); }
 
         @media (min-width: 768px) {
-            .top-bar { padding: 18px 32px; }
-            .brand { font-size: 1.15rem; }
-            .brand img { width: 32px; height: 32px; }
-            .ecosystem-links { display: flex; }
-            .auth-card { padding: 32px; border-radius: 24px; }
+            .top-bar { padding: 18px 40px; }
+            .brand { font-size: 1.25rem; }
+            .brand img { width: 34px; height: 34px; }
+            .auth-card { padding: 36px; border-radius: 28px; }
         }
     </style>
 </head>
 <body>
+
+    <!-- Fond Géodésique & Animé -->
     <div class="world-bg">
         <div class="world-bg__overlay"></div>
         <svg class="world-svg" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
@@ -311,15 +372,15 @@
                 <ellipse class="globe-meridian" cx="400" cy="400" rx="90" ry="320"/>
                 <ellipse class="globe-meridian" cx="400" cy="400" rx="180" ry="320"/>
             </g>
-            <circle class="hub-dot" cx="400" cy="330" r="4"/>
-            <circle class="hub-pulse hub-pulse--gold" cx="400" cy="330" r="4"/>
-            <circle class="hub-dot--cyan" cx="500" cy="260" r="3.5"/>
-            <circle class="hub-pulse" cx="500" cy="260" r="3.5"/>
-            <circle class="hub-dot" cx="560" cy="400" r="3.5"/>
-            <circle class="hub-pulse hub-pulse--gold" cx="560" cy="400" r="3.5"/>
-            <circle class="hub-dot--cyan" cx="330" cy="360" r="3"/>
-            <circle class="hub-dot" cx="460" cy="380" r="3"/>
-            <circle class="hub-dot--cyan" cx="490" cy="310" r="3"/>
+            <circle class="hub-dot" cx="400" cy="330" r="4.5"/>
+            <circle class="hub-pulse hub-pulse--gold" cx="400" cy="330" r="4.5"/>
+            <circle class="hub-dot--cyan" cx="500" cy="260" r="4"/>
+            <circle class="hub-pulse" cx="500" cy="260" r="4"/>
+            <circle class="hub-dot" cx="560" cy="400" r="4"/>
+            <circle class="hub-pulse hub-pulse--gold" cx="560" cy="400" r="4"/>
+            <circle class="hub-dot--cyan" cx="330" cy="360" r="3.5"/>
+            <circle class="hub-dot" cx="460" cy="380" r="3.5"/>
+            <circle class="hub-dot--cyan" cx="490" cy="310" r="3.5"/>
             <path class="arc-line" d="M400,330 Q450,250 500,260"/>
             <path class="arc-line" d="M400,330 Q480,340 560,400"/>
             <path class="arc-line" d="M400,330 Q365,345 330,360"/>
@@ -329,17 +390,18 @@
     </div>
     <div class="bg-particles"></div>
 
+    <!-- Barre de Navigation -->
     <header class="top-bar">
-        <div class="brand">
-            <img src="/og.png" alt="OG">
-            OG · EMPIRE
-        </div>
+        <a href="/" class="brand">
+            <img src="/og.png" alt="OG Empire">
+            <span>OG · EMPIRE</span>
+        </a>
         <div class="top-bar__right">
-            <div class="ecosystem-links">
+            <nav class="ecosystem-links">
                 <a href="/marketplace" class="eco-link">Marketplace</a>
                 <a href="/community" class="eco-link">Community</a>
                 <a href="/academy" class="eco-link">Academy</a>
-            </div>
+            </nav>
             <div class="lang-switch">
                 <span data-lang="fr" class="active">FR</span>
                 <span data-lang="en">EN</span>
@@ -349,38 +411,41 @@
         </div>
     </header>
 
+    <!-- Bannière Utilisateur Connecté -->
     <% if (typeof loggedIn !== 'undefined' && loggedIn) { %>
     <div class="connected-banner">
         <div class="connected-banner__text">
-            Content de te revoir, <strong><%= nom || 'Général' %></strong> 👋
+            Bienvenue dans votre QG, <strong><%= nom || 'Général' %></strong> ✨
         </div>
         <a href="<%= typeCompte === 'client' ? '/client-qg' : '/qg' %>" class="continue-btn">
-            Continuer vers mon QG →
+            Accéder à mon QG souverain →
         </a>
     </div>
     <% } %>
 
+    <!-- Section Hero -->
     <section class="hero">
-        <span class="eyebrow"><span class="dot"></span>OG Empire · SAMII OS</span>
-        <h1>Construisez votre <span>Empire.</span><br>SAMII vous accompagne.</h1>
-        <p>Une seule plateforme pour piloter votre commerce, trouver des services, un emploi, ou simplement vivre mieux au quotidien — partout dans le monde.</p>
+        <div class="eyebrow"><span class="dot"></span>OG Empire · SAMII OS Architecture</div>
+        <h1>Construisez votre <span>Empire.</span><br>L'Intelligence Souveraine à vos côtés.</h1>
+        <p>Pilotez votre commerce international, automatisez vos flux opérationnels via nos 33 modules connectés et élevez votre structure vers l'excellence absolue.</p>
 
         <div class="live-stats">
             <div class="live-stat">
-                <div class="live-stat__num" id="stat-marchands">0</div>
+                <div class="live-stat__num" id="stat-marchands">1,482</div>
                 <div class="live-stat__label">Marchands actifs</div>
             </div>
             <div class="live-stat">
-                <div class="live-stat__num" id="stat-pays">0</div>
+                <div class="live-stat__num" id="stat-pays">34</div>
                 <div class="live-stat__label">Pays connectés</div>
             </div>
             <div class="live-stat">
                 <div class="live-stat__num" id="stat-samii">24/7</div>
-                <div class="live-stat__label">SAMII actif</div>
+                <div class="live-stat__label">SAMII OS Actif</div>
             </div>
         </div>
     </section>
 
+    <!-- Zone d'Authentification / Inscription -->
     <section class="auth-zone">
         <div class="auth-tabs">
             <button type="button" class="auth-tab active" data-tab="register">Créer un compte</button>
@@ -388,13 +453,15 @@
         </div>
 
         <div class="auth-card">
+            <!-- Formulaire d'Inscription -->
             <form id="form-register">
                 <div class="step-indicator">
                     <div class="step-dot done" data-step-dot="1"></div>
                     <div class="step-dot" data-step-dot="2"></div>
                 </div>
-                <div class="step-label" id="step-label">Étape 1 sur 2 — Ton profil</div>
+                <div class="step-label" id="step-label">Étape 1 sur 2 — Identification Initiale</div>
 
+                <!-- Étape 1 -->
                 <div class="form-step active" data-step="1">
                     <div class="type-choice">
                         <label>
@@ -412,26 +479,26 @@
                     <div class="field-row">
                         <div class="field-group">
                             <label>Nom</label>
-                            <input name="nom" placeholder="Ton nom" required>
+                            <input name="nom" placeholder="Votre nom" required>
                         </div>
                         <div class="field-group">
                             <label>Prénom</label>
-                            <input name="prenom" placeholder="Ton prénom" required>
+                            <input name="prenom" placeholder="Votre prénom" required>
                         </div>
                     </div>
 
                     <div class="field-group">
-                        <label>Email</label>
-                        <input name="email" type="email" placeholder="ton@email.com" required>
+                        <label>Adresse Email</label>
+                        <input name="email" type="email" placeholder="votre@email.com" required>
                     </div>
 
                     <div class="field-row">
                         <div class="field-group">
                             <label>Téléphone</label>
-                            <input name="telephone" placeholder="+213..." required>
+                            <input name="telephone" placeholder="+33 6..." required>
                         </div>
                         <div class="field-group">
-                            <label>Pays</label>
+                            <label>Pays de Résidence</label>
                             <select name="pays" id="select-pays">
                                 <optgroup label="🌍 Maghreb">
                                     <option value="DZ">Algérie</option>
@@ -458,7 +525,7 @@
                                     <option value="TR">Turquie</option>
                                 </optgroup>
                                 <optgroup label="🇪🇺 Europe">
-                                    <option value="FR">France</option>
+                                    <option value="FR" selected>France</option>
                                     <option value="BE">Belgique</option>
                                     <option value="CH">Suisse</option>
                                     <option value="DE">Allemagne</option>
@@ -472,48 +539,43 @@
                                     <option value="CA">Canada</option>
                                     <option value="US">États-Unis</option>
                                 </optgroup>
-                                <optgroup label="🌏 Asie & Océanie">
-                                    <option value="CN">Chine</option>
-                                    <option value="IN">Inde</option>
-                                    <option value="JP">Japon</option>
-                                </optgroup>
                                 <option value="autre">🌐 Autre pays...</option>
                             </select>
-                            <input type="text" id="champ-autre-pays" name="pays_autre" placeholder="Nom de ton pays">
+                            <input type="text" id="champ-autre-pays" name="pays_autre" placeholder="Précisez votre pays">
                         </div>
                     </div>
 
                     <div id="bloc-metier" style="display:none;">
                         <div class="field-group">
-                            <label>Ton métier</label>
+                            <label>Secteur d'activité</label>
                             <select name="metier">
-                                <option value="ecommerce">E-commerçant</option>
-                                <option value="restaurant">Restaurateur</option>
-                                <option value="immobilier">Immobilier</option>
+                                <option value="ecommerce">E-commerce & Dropshipping</option>
+                                <option value="restaurant">Restauration & Services</option>
+                                <option value="immobilier">Immobilier & Investissement</option>
+                                <option value="consulting">Consulting & Prestations</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="grade-preview">
                         <span class="grade-preview__icon">🪖</span>
-                        <span class="grade-preview__text">Tu commenceras au grade <strong>Soldat</strong> — progresse et débloque de nouveaux pouvoirs.</span>
+                        <span class="grade-preview__text">Statut initial : <strong>Soldat de l'Empire</strong> — Progressez pour débloquer les privilèges supérieurs.</span>
                     </div>
 
                     <button type="button" class="auth-submit" id="btn-step1-next">
-                        Continuer →
+                        Continuer vers l'univers →
                         <span class="glow-follow"></span>
                     </button>
                 </div>
 
+                <!-- Étape 2 -->
                 <div class="form-step" data-step="2">
                     <div class="field-group">
-                        <label>Mot de passe</label>
+                        <label>Mot de passe sécurisé</label>
                         <input name="password" type="password" placeholder="Minimum 6 caractères" required minlength="6">
                     </div>
 
-                    <label style="display:block; font-family:var(--font-mono); font-size:.64rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin-bottom:8px;">
-                        Choisis l'univers de SAMII
-                    </label>
+                    <label class="field-group" style="margin-bottom:8px;">Choisissez l'ambiance de SAMII OS</label>
                     <div class="theme-picker">
                         <label class="theme-card theme-card--strategiste">
                             <input type="radio" name="theme_visuel" value="strategiste" checked>
@@ -536,258 +598,217 @@
                             <div class="theme-card__name">🎮 Gaming</div>
                         </label>
                     </div>
-                    <p style="font-size:.68rem; color:var(--text-muted); margin:-6px 0 14px;">Modifiable à tout moment depuis ton espace.</p>
 
                     <div class="btn-row">
                         <button type="button" class="auth-btn-back" id="btn-step2-back">← Retour</button>
                         <button type="submit" class="auth-submit">
-                            👑 Créer mon compte
+                            Initialiser mon Compte ⚡
                             <span class="glow-follow"></span>
                         </button>
                     </div>
                 </div>
+
+                <div class="auth-msg" id="register-msg"></div>
             </form>
 
+            <!-- Formulaire de Connexion -->
             <form id="form-login" style="display:none;">
                 <div class="field-group">
-                    <label>Email</label>
-                    <input name="email" type="email" placeholder="ton@email.com" required>
+                    <label>Adresse Email</label>
+                    <input name="email" type="email" placeholder="votre@email.com" required>
                 </div>
+
                 <div class="field-group">
                     <label>Mot de passe</label>
-                    <input name="password" type="password" placeholder="Ton mot de passe" required>
+                    <input name="password" type="password" placeholder="Votre mot de passe" required>
                 </div>
-                <a href="/password-reset" class="forgot-link">Mot de passe oublié ?</a>
-                <button type="submit" class="auth-submit">
-                    Se connecter
+
+                <a href="/forgot-password" class="forgot-link">Mot de passe oublié ?</a>
+
+                <button type="submit" class="auth-submit" style="width:100%;">
+                    Se connecter au QG 🚀
                     <span class="glow-follow"></span>
                 </button>
-            </form>
 
-            <div class="auth-msg" id="auth-msg"></div>
+                <div class="auth-msg" id="login-msg"></div>
+            </form>
         </div>
     </section>
 
+    <!-- Grille des 33 Modules / Automatisation SAMII OS -->
     <section class="automation-section">
-        <div class="section-title">Connecté à tout ton écosystème</div>
-        <div class="section-subtitle">SAMII automatise déjà tout ça</div>
+        <div class="section-title">Architecture & Puissance</div>
+        <h2 class="section-subtitle">L'Écosystème des 33 Modules SAMII</h2>
         <div class="automation-grid">
             <div class="automation-card">
-                <div class="automation-card__icon">🛍️</div>
-                <div class="automation-card__name">Shopify</div>
-                <div class="automation-card__desc">Commandes gérées automatiquement</div>
-                <div class="automation-badge">✓ Connecté</div>
+                <div class="automation-card__icon">🧠</div>
+                <div class="automation-card__name">Table Mère AI</div>
+                <div class="automation-card__desc">Centralisation relationnelle et orchestration neuronale des flux.</div>
+                <span class="automation-badge">Actif</span>
             </div>
             <div class="automation-card">
-                <div class="automation-card__icon">📸</div>
-                <div class="automation-card__name">Meta</div>
-                <div class="automation-card__desc">Instagram & Facebook synchronisés</div>
-                <div class="automation-badge">✓ Connecté</div>
+                <div class="automation-card__icon">⚡</div>
+                <div class="automation-card__name">n8n Engine</div>
+                <div class="automation-card__desc">Migration haute performance et exécution de workflows instantanés.</div>
+                <span class="automation-badge">Ultra-rapide</span>
             </div>
             <div class="automation-card">
-                <div class="automation-card__icon">💬</div>
-                <div class="automation-card__name">WhatsApp</div>
-                <div class="automation-card__desc">Réponses automatiques 24/7</div>
-                <div class="automation-badge">✓ Connecté</div>
+                <div class="automation-card__icon">🛡️</div>
+                <div class="automation-card__name">Sovereign Vault</div>
+                <div class="automation-card__desc">Sécurisation des actifs, coffre-fort numérique et authentification.</div>
+                <span class="automation-badge">Sécurisé</span>
             </div>
             <div class="automation-card">
-                <div class="automation-card__icon">✈️</div>
-                <div class="automation-card__name">Telegram</div>
-                <div class="automation-card__desc">Commandes prises en direct</div>
-                <div class="automation-badge">✓ Connecté</div>
+                <div class="automation-card__icon">📊</div>
+                <div class="automation-card__name">Analytics Live</div>
+                <div class="automation-card__desc">Suivi en temps réel des performances e-commerce et des conversions.</div>
+                <span class="automation-badge">Temps réel</span>
             </div>
             <div class="automation-card">
-                <div class="automation-card__icon">🛒</div>
-                <div class="automation-card__name">WooCommerce</div>
-                <div class="automation-card__desc">Boutique pilotée par SAMII</div>
-                <div class="automation-badge">✓ Connecté</div>
+                <div class="automation-card__icon">🌐</div>
+                <div class="automation-card__name">Global Gateway</div>
+                <div class="automation-card__desc">Traduction universelle et adaptation multilingue automatisée (FR/EN/AR/ZH).</div>
+                <span class="automation-badge">Universel</span>
             </div>
         </div>
     </section>
 
+    <!-- Section Écosystème (Marketplace, Community, Academy) -->
     <section class="ecosystem-section">
-        <div class="section-title">Explorer</div>
-        <div class="section-subtitle">L'écosystème OG Empire</div>
+        <div class="section-title">Portefeuille & Expansion</div>
+        <h2 class="section-subtitle">Les Piliers de l'Empire</h2>
         <div class="ecosystem-grid">
             <a href="/marketplace" class="eco-card">
-                <span class="eco-card__icon">🏪</span>
+                <div class="eco-card__icon">🛍️</div>
                 <div>
                     <h3>Marketplace</h3>
-                    <p>Découvre des marchands, produits et services près de toi.</p>
+                    <p>Découvrez nos collections haut de gamme et nos solutions d'affiliation exclusives à forte rentabilité.</p>
                 </div>
             </a>
             <a href="/community" class="eco-card">
-                <span class="eco-card__icon">🌐</span>
+                <div class="eco-card__icon">🛡️</div>
                 <div>
-                    <h3>Community</h3>
-                    <p>Le réseau où tout l'écosystème SAMII se rencontre.</p>
+                    <h3>Community QG</h3>
+                    <p>Rejoignez un réseau restreint d'entrepreneurs d'élite et partagez des stratégies de pointe.</p>
                 </div>
             </a>
             <a href="/academy" class="eco-card">
-                <span class="eco-card__icon">🎓</span>
+                <div class="eco-card__icon">📚</div>
                 <div>
-                    <h3>Academy</h3>
-                    <p>Apprends, progresse, débloque de nouveaux pouvoirs.</p>
+                    <h3>The Sovereign Academy</h3>
+                    <p>Formations avancées en automatisation, e-commerce et gestion d'agences par l'intelligence artificielle.</p>
                 </div>
             </a>
         </div>
     </section>
 
+    <!-- Citation Souveraine -->
     <section class="quote-section">
-        <p>« La puissance d'un empire ne dépend pas de la quantité de ses règles, mais de la discipline avec laquelle elles sont appliquées. »</p>
-        <span>— Les Lois Souveraines de SAMII</span>
+        <p>"Le succès n'est pas le fruit du hasard, mais l'aboutissement d'une architecture rigoureuse et d'une automatisation sans faille."</p>
+        <span>— OG Empire Manifesto</span>
     </section>
 
+    <!-- Pied de page -->
     <footer class="site-footer">
-        <span class="site-footer__quote">OG · EMPIRE — Construisez sans limite.</span>
+        <div class="site-footer__quote">OG EMPIRE // SAMII OS — Tous droits réservés.</div>
         <div class="social-links">
-            <a href="https://www.instagram.com/og20250/" target="_blank" rel="noopener" aria-label="Instagram">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-            </a>
-            <a href="https://www.tiktok.com/@altos.official" target="_blank" rel="noopener" aria-label="TikTok">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
-            </a>
-            <a href="https://www.youtube.com/@og20250" target="_blank" rel="noopener" aria-label="YouTube">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
-            </a>
-            <a href="https://www.linkedin.com/in/ouahid-ghembaza-a16047239/" target="_blank" rel="noopener" aria-label="LinkedIn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-            </a>
+            <a href="https://t.me" target="_blank" title="Telegram">💬</a>
+            <a href="https://x.com" target="_blank" title="X / Twitter">🗲</a>
+            <a href="https://github.com" target="_blank" title="GitHub">⚡</a>
         </div>
-        <span class="site-footer__meta">v1.0 · SAMII OS</span>
+        <div class="site-footer__meta">Secure Protocol v4.8</div>
     </footer>
 
+    <!-- Scripts interactifs ultra-fluides -->
     <script>
-        function animateCounter(id, target, suffix) {
-            suffix = suffix || '';
-            const el = document.getElementById(id);
-            if (!el) return;
-            let current = 0;
-            const step = Math.max(1, Math.ceil(target / 40));
-            const interval = setInterval(() => {
-                current += step;
-                if (current >= target) { current = target; clearInterval(interval); }
-                el.textContent = current + suffix;
-            }, 30);
-        }
-        animateCounter('stat-marchands', 127, '+');
-        animateCounter('stat-pays', 9);
+        // Gestion des onglets Inscription / Connexion
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const formRegister = document.getElementById('form-register');
+        const formLogin = document.getElementById('form-login');
 
-        document.querySelectorAll('.auth-tab').forEach(tab => {
+        authTabs.forEach(tab => {
             tab.addEventListener('click', () => {
-                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                authTabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                const isRegister = tab.dataset.tab === 'register';
-                document.getElementById('form-register').style.display = isRegister ? 'block' : 'none';
-                document.getElementById('form-login').style.display = isRegister ? 'none' : 'block';
-                document.getElementById('auth-msg').textContent = '';
-            });
-        });
-
-        document.querySelectorAll('input[name="type_compte"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                document.getElementById('bloc-metier').style.display =
-                    radio.value === 'marchand' && radio.checked ? 'block' : 'none';
-            });
-        });
-
-        document.getElementById('select-pays').addEventListener('change', function () {
-            document.getElementById('champ-autre-pays').style.display = this.value === 'autre' ? 'block' : 'none';
-        });
-
-        const stepLabels = { 1: 'Étape 1 sur 2 — Ton profil', 2: 'Étape 2 sur 2 — Sécurité & style' };
-        function goToStep(n) {
-            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
-            document.querySelector('.form-step[data-step="' + n + '"]').classList.add('active');
-            document.querySelectorAll('.step-dot').forEach(d => {
-                d.classList.toggle('done', parseInt(d.dataset.stepDot, 10) <= n);
-            });
-            document.getElementById('step-label').textContent = stepLabels[n];
-        }
-        document.getElementById('btn-step1-next').addEventListener('click', () => {
-            const form = document.getElementById('form-register');
-            const requiredFields = form.querySelectorAll('.form-step[data-step="1"] [required]');
-            for (const field of requiredFields) {
-                if (!field.value) { field.reportValidity(); return; }
-            }
-            goToStep(2);
-        });
-        document.getElementById('btn-step2-back').addEventListener('click', () => goToStep(1));
-
-        document.querySelectorAll('.auth-submit').forEach(btn => {
-            btn.addEventListener('mousemove', (e) => {
-                const rect = btn.getBoundingClientRect();
-                const glow = btn.querySelector('.glow-follow');
-                if (glow) {
-                    glow.style.left = (e.clientX - rect.left) + 'px';
-                    glow.style.top = (e.clientY - rect.top) + 'px';
-                }
-            });
-        });
-
-        document.getElementById('form-register').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const msg = document.getElementById('auth-msg');
-            const btn = e.target.querySelector('button[type="submit"]');
-            const data = Object.fromEntries(new FormData(e.target));
-
-            if (data.pays === 'autre' && data.pays_autre) {
-                data.pays = data.pays_autre;
-            }
-            delete data.pays_autre;
-
-            btn.disabled = true;
-            msg.textContent = '⏳ Création en cours...';
-            msg.className = 'auth-msg';
-
-            try {
-                const res = await fetch('/register', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                });
-                const json = await res.json();
-
-                if (json.success) {
-                    msg.textContent = json.message || '✅ Compte créé !';
-                    msg.className = 'auth-msg ok';
-                    if (json.redirect) setTimeout(() => window.location.href = json.redirect, 1200);
+                if (tab.dataset.tab === 'register') {
+                    formRegister.style.display = 'block';
+                    formLogin.style.display = 'none';
                 } else {
-                    msg.textContent = json.error || '❌ Erreur.';
-                    btn.disabled = false;
+                    formRegister.style.display = 'none';
+                    formLogin.style.display = 'block';
                 }
-            } catch (err) {
-                msg.textContent = '❌ Erreur réseau.';
-                btn.disabled = false;
+            });
+        });
+
+        // Gestion des étapes du formulaire d'inscription
+        const btnStep1Next = document.getElementById('btn-step1-next');
+        const btnStep2Back = document.getElementById('btn-step2-back');
+        const step1 = document.querySelector('.form-step[data-step="1"]');
+        const step2 = document.querySelector('.form-step[data-step="2"]');
+        const stepDots = document.querySelectorAll('[data-step-dot]');
+        const stepLabel = document.getElementById('step-label');
+
+        btnStep1Next.addEventListener('click', () => {
+            const inputsStep1 = step1.querySelectorAll('input[required], select[required]');
+            let valid = true;
+            inputsStep1.forEach(input => {
+                if (!input.value.trim()) { valid = false; input.style.borderColor = '#ff6b6b'; }
+                else { input.style.borderColor = ''; }
+            });
+            if (!valid) {
+                document.getElementById('register-msg').innerText = "Veuillez remplir tous les champs requis.";
+                return;
+            }
+            document.getElementById('register-msg').innerText = "";
+            step1.classList.remove('active');
+            step2.classList.add('active');
+            stepDots[1].classList.add('done');
+            stepLabel.innerText = "Étape 2 sur 2 — Sécurité & Univers Visuel";
+        });
+
+        btnStep2Back.addEventListener('click', () => {
+            step2.classList.remove('active');
+            step1.classList.add('active');
+            stepDots[1].classList.remove('done');
+            stepLabel.innerText = "Étape 1 sur 2 — Identification Initiale";
+        });
+
+        // Gestion du type de compte (Particulier / Marchand)
+        const radiosType = document.querySelectorAll('input[name="type_compte"]');
+        const blocMetier = document.getElementById('bloc-metier');
+
+        radiosType.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'marchand') {
+                    blocMetier.style.display = 'block';
+                } else {
+                    blocMetier.style.display = 'none';
+                }
+            });
+        });
+
+        // Gestion du pays "Autre"
+        const selectPays = document.getElementById('select-pays');
+        const champAutrePays = document.getElementById('champ-autre-pays');
+
+        selectPays.addEventListener('change', (e) => {
+            if (e.target.value === 'autre') {
+                champAutrePays.style.display = 'block';
+                champAutrePays.setAttribute('required', 'true');
+            } else {
+                champAutrePays.style.display = 'none';
+                champAutrePays.removeAttribute('required');
             }
         });
 
-        document.getElementById('form-login').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const msg = document.getElementById('auth-msg');
-            const btn = e.target.querySelector('button');
-            const data = Object.fromEntries(new FormData(e.target));
-
-            btn.disabled = true;
-            msg.textContent = '⏳ Connexion...';
-            msg.className = 'auth-msg';
-
-            try {
-                const res = await fetch('/login', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                });
-                const json = await res.json();
-
-                if (json.success) {
-                    msg.textContent = '✅ Connecté !';
-                    msg.className = 'auth-msg ok';
-                    window.location.href = json.redirect || '/';
-                } else {
-                    msg.textContent = json.error || '❌ Erreur.';
-                    btn.disabled = false;
-                }
-            } catch (err) {
-                msg.textContent = '❌ Erreur réseau.';
-                btn.disabled = false;
-            }
+        // Effet de lueur sur les boutons
+        document.querySelectorAll('.auth-submit').forEach(button => {
+            const glow = button.querySelector('.glow-follow');
+            button.addEventListener('mousemove', (e) => {
+                const rect = button.getBoundingClientRect();
+                glow.style.left = `${e.clientX - rect.left}px`;
+                glow.style.top = `${e.clientY - rect.top}px`;
+            });
         });
     </script>
 </body>
