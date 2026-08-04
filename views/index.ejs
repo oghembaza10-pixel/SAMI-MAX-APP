@@ -3,169 +3,457 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OG Empire — Le Hub</title>
-
+    <title>OG Empire — SAMII OS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #05070c;
+            --bg-panel: rgba(255,255,255,0.04);
+            --gold: #C5A059;
+            --gold-hover: #E8C27A;
+            --cyan: #5FD4FF;
+            --text-main: #F1F0EC;
+            --text-muted: #7d8390;
+            --border-soft: 1px solid rgba(255,255,255,0.08);
+            --border-gold: 1px solid rgba(197,160,89,0.3);
+            --font-display: 'Cinzel', serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --ease: cubic-bezier(0.16,1,0.3,1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg-deep); color: var(--text-main); font-family: var(--font-body);
+            min-height: 100vh; overflow-x: hidden; position: relative;
+        }
 
-    <link rel="stylesheet" href="/css/hub-premium.css">
+        /* ── FOND FUTURISTE ── */
+        .bg-fx { position: fixed; inset: 0; z-index: -2; pointer-events: none; overflow: hidden; }
+        .bg-grid {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(197,160,89,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(95,212,255,0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            animation: grid-move 25s linear infinite;
+            mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black 30%, transparent 90%);
+        }
+        @keyframes grid-move { from { background-position: 0 0; } to { background-position: 48px 48px; } }
+        .bg-glow { position: absolute; width: 600px; height: 600px; border-radius: 50%; filter: blur(140px); opacity: .16; animation: glow-float 16s ease-in-out infinite; }
+        .bg-glow--1 { background: var(--gold); left: -160px; top: -120px; }
+        .bg-glow--2 { background: var(--cyan); right: -160px; top: 20%; animation-delay: 5s; }
+        @keyframes glow-float { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-35px) scale(1.06); } }
+        .bg-particles {
+            position: absolute; inset: 0; opacity: .3;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.35) 1px, transparent 1px), radial-gradient(circle, rgba(95,212,255,0.3) 1px, transparent 1px);
+            background-size: 150px 150px, 230px 230px;
+            animation: particles-drift 50s linear infinite;
+        }
+        @keyframes particles-drift { from { background-position: 0 0, 0 0; } to { background-position: 0 -450px, 0 -600px; } }
+
+        /* ── HEADER ── */
+        .top-bar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 18px 32px; backdrop-filter: blur(20px);
+            background: rgba(5,7,12,0.75); border-bottom: var(--border-soft);
+        }
+        .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; color: #fff; font-size: 1.15rem; }
+        .brand img { width: 32px; height: 32px; filter: drop-shadow(0 0 8px rgba(197,160,89,0.5)); }
+
+        .top-bar__right { display: flex; align-items: center; gap: 14px; }
+        .lang-switch { display: flex; gap: 4px; font-family: var(--font-mono); font-size: .72rem; }
+        .lang-switch span {
+            padding: 6px 9px; border-radius: 7px; cursor: pointer; color: var(--text-muted);
+            transition: all .2s ease;
+        }
+        .lang-switch span:hover, .lang-switch span.active { color: var(--cyan); background: rgba(95,212,255,0.08); }
+
+        .ecosystem-links { display: flex; gap: 6px; }
+        .eco-link {
+            padding: 8px 14px; border-radius: 20px; text-decoration: none; font-size: .8rem; font-weight: 600;
+            color: var(--text-muted); border: 1px solid rgba(255,255,255,0.08); transition: all .25s ease;
+        }
+        .eco-link:hover { color: var(--cyan); border-color: rgba(95,212,255,0.35); background: rgba(95,212,255,0.06); }
+
+        /* ── HERO CONNECTÉ (si session active) ── */
+        .connected-banner {
+            max-width: 900px; margin: 30px auto 0; padding: 18px 26px;
+            background: linear-gradient(135deg, rgba(197,160,89,0.1), rgba(95,212,255,0.06));
+            border: var(--border-gold); border-radius: 18px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+        }
+        .connected-banner__text { color: var(--text-main); font-size: .92rem; }
+        .connected-banner__text strong { color: var(--gold); }
+        .continue-btn {
+            padding: 12px 22px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: .88rem;
+            background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000;
+            box-shadow: 0 6px 20px rgba(197,160,89,0.3); transition: transform .2s ease;
+        }
+        .continue-btn:hover { transform: translateY(-2px); }
+
+        /* ── HERO PRINCIPAL ── */
+        .hero { max-width: 1100px; margin: 0 auto; padding: 60px 24px 40px; text-align: center; }
+        .eyebrow {
+            font-family: var(--font-mono); letter-spacing: .18em; font-size: .75rem; color: var(--cyan);
+            text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;
+        }
+        .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 8px #3ddc84; }
+        .hero h1 {
+            font-family: var(--font-display); font-size: clamp(2.2rem, 5.5vw, 4rem); color: #fff; line-height: 1.15;
+            text-shadow: 0 0 50px rgba(197,160,89,0.2); margin-bottom: 20px;
+        }
+        .hero h1 span { background: linear-gradient(135deg, var(--gold), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { color: var(--text-muted); font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.7; }
+
+        /* ── ZONE AUTH (inscription/connexion) ── */
+        .auth-zone { max-width: 480px; margin: 44px auto 0; padding: 0 20px; }
+        .auth-tabs {
+            display: flex; gap: 6px; margin-bottom: 20px;
+            background: rgba(0,0,0,0.3); border-radius: 14px; padding: 5px;
+            border: var(--border-soft);
+        }
+        .auth-tab {
+            flex: 1; padding: 12px; border-radius: 10px; border: none; background: transparent;
+            color: var(--text-muted); font-family: var(--font-body); font-weight: 700; font-size: .88rem; cursor: pointer;
+            transition: all .25s ease;
+        }
+        .auth-tab.active { background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000; }
+
+        .auth-card {
+            background: var(--bg-panel); backdrop-filter: blur(20px); border: var(--border-gold);
+            border-radius: 22px; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .type-choice { display: flex; gap: 10px; margin-bottom: 16px; }
+        .type-choice label {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+            padding: 14px 10px; border-radius: 12px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);
+            transition: all .25s ease; font-size: .82rem; color: var(--text-muted);
+        }
+        .type-choice input { display: none; }
+        .type-choice label:has(input:checked) {
+            border-color: var(--gold); background: rgba(197,160,89,0.1); color: #fff;
+            box-shadow: 0 0 20px rgba(197,160,89,0.15);
+        }
+        .type-choice .icon { font-size: 1.4rem; }
+
+        .field-group { margin-bottom: 14px; }
+        .field-group label {
+            display: block; font-family: var(--font-mono); font-size: .68rem; text-transform: uppercase;
+            letter-spacing: .06em; color: var(--text-muted); margin-bottom: 6px;
+        }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .auth-card input, .auth-card select {
+            width: 100%; padding: 13px 15px; border-radius: 11px;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.35);
+            color: var(--text-main); font-size: .9rem; font-family: var(--font-body);
+            transition: all .3s ease;
+        }
+        .auth-card select option { background: #0a0d14; }
+        .auth-card input:focus, .auth-card select:focus {
+            outline: none; border-color: var(--cyan);
+            box-shadow: 0 0 0 4px rgba(95,212,255,0.15), 0 0 24px rgba(95,212,255,0.2);
+            background: rgba(95,212,255,0.04);
+        }
+
+        .auth-submit {
+            width: 100%; padding: 15px; margin-top: 18px; border: none; border-radius: 13px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000;
+            font-weight: 800; font-size: .98rem; cursor: pointer; font-family: var(--font-display);
+            box-shadow: 0 10px 28px rgba(197,160,89,0.3); transition: all .25s ease;
+        }
+        .auth-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(197,160,89,0.45); }
+        .auth-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+        .auth-msg { text-align: center; margin-top: 14px; font-size: .85rem; color: #ff6b6b; min-height: 20px; }
+        .auth-msg.ok { color: #3ddc84; }
+
+        .auth-switch-text { text-align: center; margin-top: 16px; font-size: .82rem; color: var(--text-muted); }
+        .auth-switch-text a { color: var(--gold); text-decoration: none; font-weight: 600; }
+
+        .forgot-link { display: block; text-align: right; font-size: .78rem; color: var(--text-muted); text-decoration: none; margin-top: -6px; margin-bottom: 14px; }
+        .forgot-link:hover { color: var(--cyan); }
+
+        /* ── SECTION ÉCOSYSTÈME ── */
+        .ecosystem-section { max-width: 1100px; margin: 90px auto 0; padding: 0 24px 80px; }
+        .ecosystem-title {
+            text-align: center; font-family: var(--font-mono); font-size: .78rem; letter-spacing: .15em;
+            text-transform: uppercase; color: var(--text-muted); margin-bottom: 30px;
+        }
+        .ecosystem-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+        .eco-card {
+            background: var(--bg-panel); backdrop-filter: blur(14px); border: var(--border-soft);
+            border-radius: 18px; padding: 26px; text-decoration: none; color: var(--text-main);
+            transition: all .3s var(--ease); display: flex; flex-direction: column; gap: 10px;
+        }
+        .eco-card:hover { transform: translateY(-6px); border-color: rgba(95,212,255,0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(95,212,255,0.12); }
+        .eco-card__icon { font-size: 1.8rem; }
+        .eco-card h3 { font-family: var(--font-display); font-size: 1.1rem; color: #fff; }
+        .eco-card p { color: var(--text-muted); font-size: .85rem; line-height: 1.5; }
+
+        /* ── FOOTER ── */
+        .site-footer {
+            border-top: var(--border-soft); padding: 30px 32px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;
+        }
+        .site-footer__quote { font-family: var(--font-display); color: var(--text-muted); font-size: .88rem; font-style: italic; }
+        .site-footer__meta { font-family: var(--font-mono); font-size: .72rem; color: var(--text-muted); }
+
+        @media (max-width: 640px) {
+            .top-bar { padding: 14px 18px; flex-wrap: wrap; gap: 10px; }
+            .ecosystem-links { display: none; }
+            .field-row { grid-template-columns: 1fr; }
+            .hero { padding: 40px 18px 20px; }
+        }
+    </style>
 </head>
-<body data-workspace="<%= typeof workspaceId !== 'undefined' ? workspaceId : '' %>">
-
-<div class="og-capital">
-
-    <%- include("partials/sidebar") %>
-
-    <main class="capitol-content">
-
-        <!-- MESSAGE ERREUR HUB -->
-        <% if (typeof error !== 'undefined' && error) { %>
-        <div class="hub-error-msg" style="display:block;">
-            <%= error %>
-        </div>
-        <% } %>
-
-        <!-- HERO -->
-        <header class="hero-premium">
-            <img src="/hero-city.png" alt="Ville futuriste OG" class="hero-bg-img" onerror="this.style.display='none'">
-            <div class="hero-grid"></div>
-            <div class="hero-glow hero-glow-1"></div>
-            <div class="hero-glow hero-glow-2"></div>
-            <div class="hero-particles"></div>
-            <div class="hero-light"></div>
-            <div class="hero-overlay"></div>
-
-            <div class="hero-text-zone">
-                <span class="hero-eyebrow" data-i18n="hub.hero.eyebrow">OG Empire</span>
-                <h1 data-i18n="hub.hero.title">Quel empire voulez-vous construire ?</h1>
-                <p data-i18n="hub.hero.subtitle">SAMII vous aide à lancer votre QG et à connecter votre écosystème.</p>
-
-                <div class="hero-search">
-                    <i data-lucide="search"></i>
-                    <input type="text" id="hero-search"
-                           data-i18n-placeholder="hub.hero.searchPlaceholder"
-                           placeholder="Construisez votre prochain empire...">
-                    <button type="button" class="hero-search__btn">
-                        <i data-lucide="arrow-right"></i>
-                    </button>
-                </div>
-            </div>
-
-            <span class="hero-scroll">▼</span>
-        </header>
-
-        <!-- CHOIX DU MÉTIER / WORKSPACES -->
-        <div class="section-eyebrow">
-            <i data-lucide="compass"></i>
-            <span data-i18n="hub.section.choose">Choisis ton métier</span>
-        </div>
-
-        <section class="metier-grid" id="metier-grid">
-            <!-- Rempli dynamiquement par hub.js -->
-        </section>
-
-        <!-- BANNIÈRE -->
-        <section class="hub-banner" id="hub-banner">
-            <img src="/banner-tech.png" alt="OG Empire" class="hub-banner__img" onerror="this.style.opacity=0">
-            <div class="hub-banner__overlay"></div>
-            <div class="hub-banner__glow"></div>
-            <div class="hub-banner__content">
-                <span class="hero-eyebrow">OG Empire</span>
-                <h2>Construisez un empire mondial.</h2>
-                <p>Une seule plateforme. Des possibilités illimitées.</p>
-            </div>
-        </section>
-
-        <!-- FOOTER -->
-        <footer class="og-footer">
-            <div class="og-footer__line"></div>
-            <div class="og-footer__inner">
-                <div class="og-footer__brand">
-                    <span class="og-footer__crest">◆</span>
-                    <span class="og-mono">OG · EMPIRE</span>
-                </div>
-                <p class="og-footer__quote" data-i18n="hub.footer.quote">Chaque général commence soldat.</p>
-                <div class="og-footer__meta">
-                    <span class="og-mono" data-i18n="hub.footer.version">v1.0 · SOLDAT</span>
-                </div>
-            </div>
-        </footer>
-
-    </main>
-
-</div>
-
-<!-- SAMII — sphère flottante -->
-<div class="samii-widget" id="samii-widget" data-open="false">
-    <button class="samii-widget__trigger" id="samii-widget-trigger" aria-label="Ouvrir SAMII">
-        <span class="samii-widget__aura"></span>
-        <span class="samii-widget__aura samii-widget__aura--2"></span>
-        <svg class="samii-widget__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 8V4H8"/>
-            <rect width="16" height="12" x="4" y="8" rx="2"/>
-            <path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
-        </svg>
-    </button>
-    <div class="samii-widget__panel" id="samii-widget-panel" role="dialog" aria-label="Assistant SAMII">
-        <header class="samii-widget__header">
-            <div class="samii-widget__id">
-                <div class="samii-widget__avatar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 8V4H8"/>
-                        <rect width="16" height="12" x="4" y="8" rx="2"/>
-                        <path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="samii-widget__name">SAMII</p>
-                    <p class="samii-widget__status">
-                        <span class="og-badge og-badge--live">OPÉRATIONNEL</span>
-                    </p>
-                </div>
-            </div>
-            <div class="samii-widget__actions">
-                <button class="samii-widget__close" id="samii-widget-close" aria-label="Fermer">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
-                         stroke="currentColor" stroke-width="1.8">
-                        <path d="M18 6 6 18M6 6l12 12"/>
-                    </svg>
-                </button>
-            </div>
-        </header>
-        <div class="samii-widget__feed" id="samii-widget-feed">
-            <div class="samii-msg samii-msg--bot">
-                <div class="samii-msg__bubble">
-                    Bienvenue, Général. Je suis <b>SAMII</b>, votre stratège.<br>
-                    Comment puis-je vous aider aujourd'hui ?
-                </div>
-            </div>
-        </div>
-        <form class="samii-widget__form" id="samii-widget-form">
-            <input type="text" id="samii-widget-input"
-                   placeholder="Parler à SAMII…" autocomplete="off">
-            <button type="submit" aria-label="Envoyer">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
-                     stroke="currentColor" stroke-width="1.8"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/>
-                </svg>
-            </button>
-        </form>
+<body>
+    <div class="bg-fx">
+        <div class="bg-grid"></div>
+        <div class="bg-glow bg-glow--1"></div>
+        <div class="bg-glow bg-glow--2"></div>
+        <div class="bg-particles"></div>
     </div>
-</div>
 
-<!-- ✅ Données serveur → frontend -->
-<script>
-    window.OG_WORKSPACES = <%- JSON.stringify(typeof workspaces !== "undefined" ? workspaces : []) %>;
-    window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(typeof connectedPlatforms !== "undefined" ? connectedPlatforms : []) %>;
-    window.OG_WORKSPACE_ID = "<%= typeof workspaceId !== 'undefined' ? workspaceId : '' %>";
-</script>
+    <header class="top-bar">
+        <div class="brand">
+            <img src="/og.png" alt="OG">
+            OG · EMPIRE
+        </div>
+        <div class="top-bar__right">
+            <div class="ecosystem-links">
+                <a href="/marketplace" class="eco-link">Marketplace</a>
+                <a href="/community" class="eco-link">Community</a>
+                <a href="/academy" class="eco-link">Academy</a>
+            </div>
+            <div class="lang-switch">
+                <span data-lang="fr" class="active">FR</span>
+                <span data-lang="en">EN</span>
+                <span data-lang="ar">AR</span>
+                <span data-lang="zh">ZH</span>
+            </div>
+        </div>
+    </header>
 
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="/js/i18n.js"></script>
-<script src="/js/hub.js"></script>
+    <% if (typeof loggedIn !== 'undefined' && loggedIn) { %>
+    <div class="connected-banner">
+        <div class="connected-banner__text">
+            Content de te revoir, <strong><%= nom || 'Général' %></strong> 👋
+        </div>
+        <a href="<%= typeCompte === 'client' ? '/client-qg' : '/qg' %>" class="continue-btn">
+            Continuer vers mon QG →
+        </a>
+    </div>
+    <% } %>
+
+    <section class="hero">
+        <span class="eyebrow"><span class="dot"></span>OG Empire · SAMII OS</span>
+        <h1>Construisez votre <span>Empire.</span><br>SAMII vous accompagne.</h1>
+        <p>Une seule plateforme pour piloter votre commerce, trouver des services, un emploi, ou simplement vivre mieux au quotidien.</p>
+    </section>
+
+    <section class="auth-zone">
+        <div class="auth-tabs">
+            <button type="button" class="auth-tab active" data-tab="register">Créer un compte</button>
+            <button type="button" class="auth-tab" data-tab="login">Se connecter</button>
+        </div>
+
+        <div class="auth-card">
+            <!-- ── FORMULAIRE INSCRIPTION ── -->
+            <form id="form-register">
+                <div class="type-choice">
+                    <label>
+                        <input type="radio" name="type_compte" value="client" checked>
+                        <span class="icon">👤</span>
+                        <span>Particulier</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="type_compte" value="marchand">
+                        <span class="icon">🏪</span>
+                        <span>Marchand</span>
+                    </label>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-group">
+                        <label>Nom</label>
+                        <input name="nom" placeholder="Ton nom" required>
+                    </div>
+                    <div class="field-group">
+                        <label>Prénom</label>
+                        <input name="prenom" placeholder="Ton prénom" required>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label>Email</label>
+                    <input name="email" type="email" placeholder="ton@email.com" required>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-group">
+                        <label>Téléphone</label>
+                        <input name="telephone" placeholder="+213..." required>
+                    </div>
+                    <div class="field-group">
+                        <label>Pays</label>
+                        <select name="pays">
+                            <option value="DZ">Algérie</option>
+                            <option value="MA">Maroc</option>
+                            <option value="TN">Tunisie</option>
+                            <option value="FR">France</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="bloc-metier" style="display:none;">
+                    <div class="field-group">
+                        <label>Ton métier</label>
+                        <select name="metier">
+                            <option value="ecommerce">E-commerçant</option>
+                            <option value="restaurant">Restaurateur</option>
+                            <option value="immobilier">Immobilier</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label>Mot de passe</label>
+                    <input name="password" type="password" placeholder="Minimum 6 caractères" required minlength="6">
+                </div>
+
+                <button type="submit" class="auth-submit">👑 Créer mon compte</button>
+            </form>
+
+            <!-- ── FORMULAIRE CONNEXION ── -->
+            <form id="form-login" style="display:none;">
+                <div class="field-group">
+                    <label>Email</label>
+                    <input name="email" type="email" placeholder="ton@email.com" required>
+                </div>
+                <div class="field-group">
+                    <label>Mot de passe</label>
+                    <input name="password" type="password" placeholder="Ton mot de passe" required>
+                </div>
+                <a href="/password-reset" class="forgot-link">Mot de passe oublié ?</a>
+                <button type="submit" class="auth-submit">Se connecter</button>
+            </form>
+
+            <div class="auth-msg" id="auth-msg"></div>
+        </div>
+    </section>
+
+    <section class="ecosystem-section">
+        <div class="ecosystem-title">L'écosystème OG Empire</div>
+        <div class="ecosystem-grid">
+            <a href="/marketplace" class="eco-card">
+                <span class="eco-card__icon">🏪</span>
+                <h3>Marketplace</h3>
+                <p>Découvre des marchands, produits et services près de toi.</p>
+            </a>
+            <a href="/community" class="eco-card">
+                <span class="eco-card__icon">🌐</span>
+                <h3>Community</h3>
+                <p>Le réseau où tout l'écosystème SAMII se rencontre.</p>
+            </a>
+            <a href="/academy" class="eco-card">
+                <span class="eco-card__icon">🎓</span>
+                <h3>Academy</h3>
+                <p>Apprends, progresse, débloque de nouveaux pouvoirs.</p>
+            </a>
+        </div>
+    </section>
+
+    <footer class="site-footer">
+        <span class="site-footer__quote">« Chaque général commence soldat. »</span>
+        <span class="site-footer__meta">OG · EMPIRE — v1.0</span>
+    </footer>
+
+    <script>
+        // ── Bascule Inscription / Connexion ──
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const isRegister = tab.dataset.tab === 'register';
+                document.getElementById('form-register').style.display = isRegister ? 'block' : 'none';
+                document.getElementById('form-login').style.display = isRegister ? 'none' : 'block';
+                document.getElementById('auth-msg').textContent = '';
+            });
+        });
+
+        // ── Affiche/cache le champ métier selon le type de compte ──
+        document.querySelectorAll('input[name="type_compte"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('bloc-metier').style.display =
+                    radio.value === 'marchand' && radio.checked ? 'block' : 'none';
+            });
+        });
+
+        // ── Soumission inscription ──
+        document.getElementById('form-register').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('auth-msg');
+            const btn = e.target.querySelector('button');
+            const data = Object.fromEntries(new FormData(e.target));
+
+            btn.disabled = true;
+            msg.textContent = '⏳ Création en cours...';
+            msg.className = 'auth-msg';
+
+            try {
+                const res = await fetch('/register', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    msg.textContent = json.message || '✅ Compte créé !';
+                    msg.className = 'auth-msg ok';
+                    if (json.redirect) setTimeout(() => window.location.href = json.redirect, 1200);
+                } else {
+                    msg.textContent = json.error || '❌ Erreur.';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                msg.textContent = '❌ Erreur réseau.';
+                btn.disabled = false;
+            }
+        });
+
+        // ── Soumission connexion ──
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('auth-msg');
+            const btn = e.target.querySelector('button');
+            const data = Object.fromEntries(new FormData(e.target));
+
+            btn.disabled = true;
+            msg.textContent = '⏳ Connexion...';
+            msg.className = 'auth-msg';
+
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    msg.textContent = '✅ Connecté !';
+                    msg.className = 'auth-msg ok';
+                    window.location.href = json.redirect || '/';
+                } else {
+                    msg.textContent = json.error || '❌ Erreur.';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                msg.textContent = '❌ Erreur réseau.';
+                btn.disabled = false;
+            }
+        });
+    </script>
 </body>
 </html>
