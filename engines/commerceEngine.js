@@ -8,6 +8,7 @@ const socketService = require("../services/socketService");
 const airtable           = require("../services/airtable");
 const notificationEngine = require("../engines/notificationEngine");
 const automationEngine   = require("../engines/automationEngine");
+const db = require("../services/db");
 
 class CommerceEngine {
     // ── HELPER : Boutique ────────────────────────────────────
@@ -325,16 +326,17 @@ class CommerceEngine {
         }
     }
 
-    // =========================================================
-    // TELEGRAM — CONFIRMATION (canal indépendant, pas Shopify)
+   // =========================================================
+    // TELEGRAM — CONFIRMATION (canal indépendant, PostgreSQL)
     // =========================================================
     async confirmTelegramOrder(event) {
         try {
             const { orderId } = event.payload;
-            await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
-                "Statut": "confirmée"
-            });
-            await airtable.log("order.confirmed.telegram", `#${orderId} confirmée via Telegram`, "");
+            await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1`, [orderId]);
+            await db.query(
+                `INSERT INTO journal (action, details) VALUES ($1, $2)`,
+                ["order.confirmed.telegram", `#${orderId} confirmée via Telegram`]
+            );
             return { success: true, orderId };
         } catch (err) {
             console.error("❌ CommerceEngine.confirmTelegramOrder :", err.message);
@@ -343,22 +345,22 @@ class CommerceEngine {
     }
 
     // =========================================================
-    // TELEGRAM — ANNULATION (canal indépendant, pas Shopify)
+    // TELEGRAM — ANNULATION (canal indépendant, PostgreSQL)
     // =========================================================
     async cancelTelegramOrder(event) {
         try {
             const { orderId } = event.payload;
-            await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
-                "Statut": "annulée"
-            });
-            await airtable.log("order.cancelled.telegram", `#${orderId} annulée via Telegram`, "");
+            await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [orderId]);
+            await db.query(
+                `INSERT INTO journal (action, details) VALUES ($1, $2)`,
+                ["order.cancelled.telegram", `#${orderId} annulée via Telegram`]
+            );
             return { success: true, orderId };
         } catch (err) {
             console.error("❌ CommerceEngine.cancelTelegramOrder :", err.message);
             return { success: false, error: err.message };
         }
     }
-
     // =========================================================
     // STOCK FAIBLE
     // =========================================================
