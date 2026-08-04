@@ -1,9 +1,9 @@
 // ==========================================================================
-// SAMII OS — CLIENT : SERVICES — Mise en relation locale (livraison, garde, etc.)
+// SAMII OS — CLIENT : SERVICES — Mise en relation locale (PostgreSQL)
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
-const airtable = require("../services/airtable");
+const db      = require("../services/db");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -100,7 +100,6 @@ router.get("/", requireAuth, (req, res) => {
         <button type="button" class="sv-mode-btn" data-mode="proposer">💼 Proposer mon service</button>
     </div>
 
-    <!-- ── CHERCHER ── -->
     <div id="bloc-chercher">
         <div class="sv-card">
             <form id="form-chercher">
@@ -125,7 +124,6 @@ router.get("/", requireAuth, (req, res) => {
         <div class="sv-results" id="results"></div>
     </div>
 
-    <!-- ── PROPOSER ── -->
     <div id="bloc-proposer" style="display:none;">
         <div class="sv-card">
             <form id="form-proposer">
@@ -181,7 +179,7 @@ document.querySelectorAll('.sv-mode-btn').forEach(btn => {
 function renderResults(list) {
     const container = document.getElementById('results');
     if (!list.length) {
-        container.innerHTML = '<div class="sv-empty">Aucun prestataire trouvé pour ce service dans cette ville pour l\\'instant. Reviens bientôt, ou sois le premier à le proposer !</div>';
+        container.innerHTML = '<div class="sv-empty">Aucun prestataire trouve pour ce service dans cette ville pour le moment. Reviens bientot, ou sois le premier a le proposer !</div>';
         container.style.display = 'flex';
         return;
     }
@@ -221,7 +219,7 @@ document.getElementById('form-chercher').addEventListener('submit', async (e) =>
             msg.textContent = json.error || '❌ Erreur.';
         }
     } catch (err) {
-        msg.textContent = '❌ Erreur réseau.';
+        msg.textContent = '❌ Erreur reseau.';
     } finally {
         btn.disabled = false;
     }
@@ -243,14 +241,14 @@ document.getElementById('form-proposer').addEventListener('submit', async (e) =>
         });
         const json = await res.json();
         if (json.success) {
-            msg.textContent = '✅ Ton service est publié !';
+            msg.textContent = '✅ Ton service est publie !';
             msg.className = 'sv-msg ok';
             e.target.reset();
         } else {
             msg.textContent = json.error || '❌ Erreur.';
         }
     } catch (err) {
-        msg.textContent = '❌ Erreur réseau.';
+        msg.textContent = '❌ Erreur reseau.';
     } finally {
         btn.disabled = false;
     }
@@ -267,16 +265,16 @@ router.post("/chercher", requireAuth, async (req, res) => {
             return res.json({ success: false, error: "Indique le service et la ville." });
         }
 
-        const resultats = await airtable.find(
-            "SERVICES",
-            `AND({actif}=1, SEARCH(LOWER("${type_service}"), LOWER({type_service})), SEARCH(LOWER("${ville}"), LOWER({ville})))`,
-            30
+        const resultats = await db.query(
+            `SELECT * FROM services
+             WHERE actif = true
+               AND LOWER(type_service) LIKE LOWER($1)
+               AND LOWER(ville) LIKE LOWER($2)
+             LIMIT 30`,
+            [`%${type_service}%`, `%${ville}%`]
         );
 
-        res.json({
-            success: true,
-            resultats: resultats.map(r => r.fields),
-        });
+        res.json({ success: true, resultats });
 
     } catch (err) {
         console.error("❌ POST /client-qg/services/chercher :", err.message);
@@ -292,18 +290,14 @@ router.post("/proposer", requireAuth, async (req, res) => {
             return res.json({ success: false, error: "Tous les champs obligatoires doivent être remplis." });
         }
 
-        await airtable.create("SERVICES", {
-            type_service,
-            nom_prestataire,
-            telephone,
-            tarif,
-            ville,
-            pays,
-            description: description || "",
-            email_prestataire: req.session.email || "",
-            actif: true,
-            date_creation: new Date().toISOString(),
-        });
+        await db.query(
+            `INSERT INTO services (type_service, nom_prestataire, telephone, tarif, ville, pays, description, email_prestataire, prestataire_id, actif)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)`,
+            [
+                type_service, nom_prestataire, telephone, tarif, ville, pays,
+                description || "", req.session.email || "", req.session.userId || null,
+            ]
+        );
 
         res.json({ success: true });
 
