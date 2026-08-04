@@ -80,16 +80,6 @@ async function getClientWorkspace(chatId) {
         return rows[0]?.workspace_id || "";
     } catch { return ""; }
 }
-async function getProduitsDuWorkspace(workspaceId) {
-    try {
-        return await db.query(
-            `SELECT id, nom, prix, options FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom`,
-            [workspaceId]
-        );
-    } catch {
-        return [];
-    }
-}
 
 async function getWorkspaceByChatId(chatId) {
     try {
