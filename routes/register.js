@@ -196,21 +196,31 @@ router.post("/", async (req, res) => {
         const existing = await db.query(`SELECT id, email_verifie FROM utilisateurs WHERE email = $1`, [email]);
 
         if (existing.length > 0) {
-            const user = existing[0];
-            if (user.email_verifie === true) {
-                return res.json({ success: false, error: "Cet email est déjà utilisé." });
-            }
+    const user = existing[0];
+    if (user.email_verifie === true) {
+        return res.json({ success: false, error: "Cet email est déjà utilisé." });
+    }
 
-            // Compte existant non confirmé → renvoyer un nouveau lien
-            const newToken = crypto.randomBytes(32).toString("hex");
-            const newExpire = new Date(Date.now() + TOKEN_VALIDITE_HEURES * 60 * 60 * 1000);
+    // Compte existant non confirmé → réutilise le token existant s'il est encore valide
+    const rows = await db.query(`SELECT token_verification, token_expire_le FROM utilisateurs WHERE id = $1`, [user.id]);
+    const existingUser = rows[0];
+    const tokenEncoreValide = existingUser.token_verification && existingUser.token_expire_le && new Date() < new Date(existingUser.token_expire_le);
 
-            await db.query(
-                `UPDATE utilisateurs SET token_verification = $1, token_expire_le = $2 WHERE id = $3`,
-                [newToken, newExpire, user.id]
-            );
+    let tokenAUtiliser;
 
-            const lienRenvoi = `${CONFIG.APP_URL}/register/confirmer?token=${newToken}`;
+    if (tokenEncoreValide) {
+        tokenAUtiliser = existingUser.token_verification;
+    } else {
+        tokenAUtiliser = crypto.randomBytes(32).toString("hex");
+        const newExpire = new Date(Date.now() + TOKEN_VALIDITE_HEURES * 60 * 60 * 1000);
+
+        await db.query(
+            `UPDATE utilisateurs SET token_verification = $1, token_expire_le = $2 WHERE id = $3`,
+            [tokenAUtiliser, newExpire, user.id]
+        );
+    }
+
+    const lienRenvoi = `${CONFIG.APP_URL}/register/confirmer?token=${tokenAUtiliser}`;
             await gmail.send({
                 to: email,
                 subject: "Confirme ton compte SAMII OS",
