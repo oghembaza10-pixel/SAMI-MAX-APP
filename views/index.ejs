@@ -1,26 +1,794 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OG</title>
+    <title>OG Empire — SAMII OS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #04050a;
+            --bg-panel: rgba(255,255,255,0.045);
+            --bg-panel-strong: rgba(255,255,255,0.07);
+            --gold: #C5A059;
+            --gold-hover: #E8C27A;
+            --cyan: #5FD4FF;
+            --violet: #9d5cff;
+            --text-main: #F1F0EC;
+            --text-muted: #838a99;
+            --border-soft: 1px solid rgba(255,255,255,0.09);
+            --border-gold: 1px solid rgba(197,160,89,0.35);
+            --font-display: 'Cinzel', serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --ease: cubic-bezier(0.16,1,0.3,1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+        body {
+            background: var(--bg-deep); color: var(--text-main); font-family: var(--font-body);
+            min-height: 100vh; width: 100%; overflow-x: hidden; position: relative;
+        }
 
-    <link rel="stylesheet" href="/css/index-style.css">
+        .world-bg { position: fixed; inset: 0; z-index: -3; overflow: hidden; pointer-events: none; }
+        .world-bg__overlay {
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 0%, rgba(4,5,10,0.4), var(--bg-deep) 75%),
+                linear-gradient(180deg, rgba(4,5,10,0.2) 0%, var(--bg-deep) 90%);
+        }
+        .world-svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(1400px, 220vw); height: auto; opacity: .55; }
+        .globe-ring { fill: none; stroke: rgba(95,212,255,0.16); stroke-width: 1; }
+        .globe-ring--gold { stroke: rgba(197,160,89,0.14); }
+        .globe-meridian { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 1; }
+        .hub-dot { fill: var(--gold); filter: drop-shadow(0 0 6px rgba(197,160,89,0.9)); }
+        .hub-dot--cyan { fill: var(--cyan); filter: drop-shadow(0 0 6px rgba(95,212,255,0.9)); }
+        .hub-pulse { fill: none; stroke: var(--cyan); stroke-width: 1.2; opacity: 0; transform-origin: center; animation: pulse-ring 3.5s ease-out infinite; }
+        .hub-pulse--gold { stroke: var(--gold); }
+        @keyframes pulse-ring {
+            0% { opacity: .8; transform: scale(0.3); }
+            80% { opacity: 0; transform: scale(2.6); }
+            100% { opacity: 0; transform: scale(2.6); }
+        }
+        .arc-line { fill: none; stroke: url(#arcGradient); stroke-width: 1.1; stroke-dasharray: 6 5; opacity: .55; animation: arc-flow 4s linear infinite; }
+        @keyframes arc-flow { to { stroke-dashoffset: -110; } }
+        .world-rotate { animation: world-spin 140s linear infinite; transform-origin: center; }
+        @keyframes world-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .bg-particles {
+            position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .28;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px), radial-gradient(circle, rgba(95,212,255,0.35) 1px, transparent 1px);
+            background-size: 140px 140px, 220px 220px;
+            animation: particles-drift 60s linear infinite;
+        }
+        @keyframes particles-drift { from { background-position: 0 0, 0 0; } to { background-position: 0 -500px, 0 -650px; } }
+
+        .top-bar {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 18px; backdrop-filter: blur(24px);
+            background: rgba(4,5,10,0.82); border-bottom: var(--border-soft);
+            width: 100%;
+        }
+        .brand { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; color: #fff; font-size: 1rem; }
+        .brand img { width: 26px; height: 26px; flex-shrink: 0; }
+        .top-bar__right { display: flex; align-items: center; gap: 8px; }
+        .ecosystem-links { display: none; gap: 6px; }
+        .eco-link {
+            padding: 7px 13px; border-radius: 20px; text-decoration: none; font-size: .78rem; font-weight: 600;
+            color: var(--text-muted); border: 1px solid rgba(255,255,255,0.09); transition: all .25s ease;
+        }
+        .eco-link:hover { color: var(--cyan); border-color: rgba(95,212,255,0.4); background: rgba(95,212,255,0.06); }
+        .lang-switch { display: flex; gap: 2px; font-family: var(--font-mono); font-size: .66rem; }
+        .lang-switch span { padding: 5px 7px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: all .2s ease; }
+        .lang-switch span.active, .lang-switch span:hover { color: var(--cyan); background: rgba(95,212,255,0.08); }
+
+        .connected-banner {
+            max-width: 900px; margin: 18px 16px 0; padding: 14px 18px;
+            background: linear-gradient(135deg, rgba(197,160,89,0.12), rgba(95,212,255,0.06));
+            border: var(--border-gold); border-radius: 16px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+        }
+        @media (min-width: 768px) { .connected-banner { margin-left: auto; margin-right: auto; padding: 18px 26px; } }
+        .connected-banner__text { color: var(--text-main); font-size: .85rem; }
+        .connected-banner__text strong { color: var(--gold); }
+        .continue-btn {
+            padding: 10px 18px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: .82rem;
+            background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000; white-space: nowrap;
+        }
+
+        .hero { max-width: 760px; margin: 0 auto; padding: 44px 18px 20px; text-align: center; }
+        .eyebrow {
+            font-family: var(--font-mono); letter-spacing: .14em; font-size: .68rem; color: var(--cyan);
+            text-transform: uppercase; display: inline-flex; align-items: center; gap: 7px; margin-bottom: 16px;
+        }
+        .eyebrow .dot { width: 5px; height: 5px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 6px #3ddc84; }
+        .hero h1 {
+            font-family: var(--font-display); font-size: clamp(1.7rem, 6.5vw, 3.2rem); color: #fff; line-height: 1.18;
+            margin-bottom: 16px; text-shadow: 0 0 60px rgba(197,160,89,0.25);
+        }
+        .hero h1 span { background: linear-gradient(135deg, var(--gold), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { color: var(--text-muted); font-size: .92rem; line-height: 1.65; padding: 0 6px; max-width: 520px; margin: 0 auto; }
+
+        .live-stats { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; margin-top: 26px; padding: 0 16px; }
+        .live-stat { text-align: center; }
+        .live-stat__num { font-family: var(--font-mono); font-weight: 700; font-size: 1.3rem; color: var(--gold); }
+        .live-stat__label { font-family: var(--font-mono); font-size: .62rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+        .auth-zone { max-width: 460px; margin: 34px auto 0; padding: 0 16px; }
+        .auth-tabs {
+            display: flex; gap: 5px; margin-bottom: 16px;
+            background: rgba(0,0,0,0.35); border-radius: 13px; padding: 4px; border: var(--border-soft);
+        }
+        .auth-tab {
+            flex: 1; padding: 11px 6px; border-radius: 10px; border: none; background: transparent;
+            color: var(--text-muted); font-family: var(--font-body); font-weight: 700; font-size: .82rem; cursor: pointer;
+            transition: all .25s ease;
+        }
+        .auth-tab.active { background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000; }
+
+        .auth-card {
+            position: relative; overflow: hidden;
+            background: var(--bg-panel); backdrop-filter: blur(24px); border: var(--border-gold);
+            border-radius: 20px; padding: 22px 18px; box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+        }
+
+        .step-indicator { display: flex; align-items: center; gap: 6px; margin-bottom: 18px; }
+        .step-dot { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,0.1); transition: background .3s ease; }
+        .step-dot.done { background: linear-gradient(90deg, var(--gold), var(--cyan)); }
+        .step-label { font-family: var(--font-mono); font-size: .64rem; color: var(--text-muted); text-align: center; margin-bottom: 14px; letter-spacing: .04em; }
+
+        .form-step { display: none; }
+        .form-step.active { display: block; animation: step-in .35s var(--ease) both; }
+        @keyframes step-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: translateX(0); } }
+
+        .type-choice { display: flex; gap: 8px; margin-bottom: 16px; }
+        .type-choice label {
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+            padding: 13px 6px; border-radius: 11px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.22);
+            font-size: .76rem; color: var(--text-muted); transition: all .25s ease;
+        }
+        .type-choice input { display: none; }
+        .type-choice label:has(input:checked) {
+            border-color: var(--gold); background: rgba(197,160,89,0.1); color: #fff;
+            box-shadow: 0 0 20px rgba(197,160,89,0.15);
+        }
+        .type-choice .icon { font-size: 1.25rem; }
+
+        .field-group { margin-bottom: 13px; }
+        .field-group label {
+            display: block; font-family: var(--font-mono); font-size: .64rem; text-transform: uppercase;
+            letter-spacing: .05em; color: var(--text-muted); margin-bottom: 5px;
+        }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .auth-card input, .auth-card select {
+            width: 100%; padding: 12px 13px; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4);
+            color: var(--text-main); font-size: 16px; font-family: var(--font-body);
+            transition: all .3s ease;
+        }
+        .auth-card select option { background: #0a0d14; }
+        .auth-card input:focus, .auth-card select:focus {
+            outline: none; border-color: var(--cyan);
+            box-shadow: 0 0 0 3px rgba(95,212,255,0.15), 0 0 22px rgba(95,212,255,0.15);
+        }
+
+        #champ-autre-pays { display: none; margin-top: 8px; }
+
+        .grade-preview {
+            display: flex; align-items: center; gap: 10px; margin-top: 4px; margin-bottom: 14px;
+            padding: 10px 12px; border-radius: 11px;
+            background: rgba(197,160,89,0.07); border: 1px solid rgba(197,160,89,0.22);
+        }
+        .grade-preview__icon { font-size: 1.3rem; }
+        .grade-preview__text { font-size: .76rem; color: var(--text-muted); line-height: 1.4; }
+        .grade-preview__text strong { color: var(--gold); }
+
+        .theme-picker { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+        .theme-card {
+            position: relative; border-radius: 12px; padding: 12px 10px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.1); overflow: hidden;
+            transition: all .25s ease; text-align: center;
+        }
+        .theme-card input { display: none; }
+        .theme-card__preview { height: 26px; border-radius: 7px; margin-bottom: 7px; }
+        .theme-card--strategiste .theme-card__preview { background: linear-gradient(90deg, #C5A059, #3a3a2a); }
+        .theme-card--sagesse .theme-card__preview { background: linear-gradient(90deg, #4a6fa5, #cfd8e8); }
+        .theme-card--aventurier .theme-card__preview { background: linear-gradient(90deg, #5FD4FF, #d8c39a); }
+        .theme-card--gaming .theme-card__preview { background: linear-gradient(90deg, #9d5cff, #00e5ff); }
+        .theme-card__name { font-size: .68rem; color: var(--text-muted); font-weight: 600; }
+        .theme-card:has(input:checked) { border-color: var(--cyan); box-shadow: 0 0 16px rgba(95,212,255,0.2); }
+        .theme-card:has(input:checked) .theme-card__name { color: #fff; }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 6px; }
+        .auth-btn-back {
+            padding: 13px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12);
+            background: transparent; color: var(--text-muted); font-weight: 700; font-size: .82rem; cursor: pointer;
+        }
+        .auth-submit {
+            flex: 1; padding: 13px; border: none; border-radius: 12px; position: relative; overflow: hidden;
+            background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000;
+            font-weight: 800; font-size: .88rem; cursor: pointer; font-family: var(--font-display);
+            transition: transform .2s ease;
+        }
+        .auth-submit:hover { transform: translateY(-2px); }
+        .auth-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+        .glow-follow { position: absolute; width: 120px; height: 120px; background: radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%); border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .2s ease; transform: translate(-50%, -50%); }
+        .auth-submit:hover .glow-follow { opacity: 1; }
+
+        .auth-msg { text-align: center; margin-top: 12px; font-size: .8rem; color: #ff6b6b; min-height: 18px; }
+        .auth-msg.ok { color: #3ddc84; }
+        .forgot-link { display: block; text-align: right; font-size: .74rem; color: var(--text-muted); text-decoration: none; margin-top: -4px; margin-bottom: 12px; }
+        .forgot-link:hover { color: var(--cyan); }
+
+        .automation-section { max-width: 1000px; margin: 60px auto 0; padding: 0 16px; }
+        .section-title {
+            text-align: center; font-family: var(--font-mono); font-size: .68rem; letter-spacing: .12em;
+            text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;
+        }
+        .section-subtitle { text-align: center; font-family: var(--font-display); font-size: 1.15rem; color: #fff; margin-bottom: 24px; }
+        .automation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        @media (min-width: 640px) { .automation-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 900px) { .automation-grid { grid-template-columns: repeat(5, 1fr); } }
+        .automation-card {
+            background: var(--bg-panel); border: var(--border-soft); border-radius: 14px;
+            padding: 16px 10px; text-align: center; transition: all .3s ease;
+        }
+        .automation-card:hover { transform: translateY(-4px); border-color: rgba(95,212,255,0.35); background: var(--bg-panel-strong); }
+        .automation-card__icon { font-size: 1.5rem; margin-bottom: 8px; }
+        .automation-card__name { font-size: .78rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
+        .automation-card__desc { font-size: .66rem; color: var(--text-muted); line-height: 1.4; }
+        .automation-badge {
+            display: inline-block; margin-top: 8px; font-size: .58rem; font-family: var(--font-mono);
+            padding: 2px 8px; border-radius: 20px; background: rgba(61,220,132,0.12); color: #3ddc84;
+        }
+
+        .ecosystem-section { max-width: 1000px; margin: 60px auto 0; padding: 0 16px; }
+        .ecosystem-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media (min-width: 768px) { .ecosystem-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+        .eco-card {
+            background: var(--bg-panel); backdrop-filter: blur(14px); border: var(--border-soft);
+            border-radius: 16px; padding: 20px; text-decoration: none; color: var(--text-main);
+            display: flex; align-items: center; gap: 14px; transition: all .3s var(--ease);
+        }
+        @media (min-width: 768px) { .eco-card { flex-direction: column; align-items: flex-start; padding: 26px; } }
+        .eco-card:hover { transform: translateY(-6px); border-color: rgba(95,212,255,0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(95,212,255,0.1); }
+        .eco-card__icon { font-size: 1.5rem; flex-shrink: 0; }
+        .eco-card h3 { font-family: var(--font-display); font-size: 1rem; color: #fff; }
+        .eco-card p { color: var(--text-muted); font-size: .78rem; line-height: 1.45; margin-top: 3px; }
+
+        .quote-section { max-width: 640px; margin: 70px auto 0; padding: 0 24px; text-align: center; }
+        .quote-section p {
+            font-family: var(--font-display); font-size: 1.2rem; color: var(--text-main);
+            font-style: italic; line-height: 1.5; position: relative;
+        }
+        .quote-section span { display: block; margin-top: 12px; font-family: var(--font-mono); font-size: .72rem; color: var(--gold); letter-spacing: .06em; }
+
+        .site-footer {
+            border-top: var(--border-soft); padding: 26px 16px; margin-top: 60px;
+            display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
+        }
+        @media (min-width: 768px) { .site-footer { flex-direction: row; justify-content: space-between; padding: 28px 32px; } }
+        .site-footer__quote { font-family: var(--font-mono); color: var(--text-muted); font-size: .7rem; }
+        .social-links { display: flex; gap: 10px; }
+        .social-links a {
+            color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+            width: 34px; height: 34px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.09);
+            transition: all .25s ease;
+        }
+        .social-links a:hover { color: var(--gold); border-color: rgba(197,160,89,0.4); background: rgba(197,160,89,0.06); transform: translateY(-2px); }
+        .site-footer__meta { font-family: var(--font-mono); font-size: .66rem; color: var(--text-muted); }
+
+        @media (min-width: 768px) {
+            .top-bar { padding: 18px 32px; }
+            .brand { font-size: 1.15rem; }
+            .brand img { width: 32px; height: 32px; }
+            .ecosystem-links { display: flex; }
+            .auth-card { padding: 32px; border-radius: 24px; }
+        }
+    </style>
 </head>
-
 <body>
+    <div class="world-bg">
+        <div class="world-bg__overlay"></div>
+        <svg class="world-svg" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="arcGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#C5A059"/>
+                    <stop offset="50%" stop-color="#5FD4FF"/>
+                    <stop offset="100%" stop-color="#9d5cff"/>
+                </linearGradient>
+            </defs>
+            <g class="world-rotate">
+                <circle class="globe-ring" cx="400" cy="400" r="320"/>
+                <circle class="globe-ring globe-ring--gold" cx="400" cy="400" r="260"/>
+                <circle class="globe-ring" cx="400" cy="400" r="200"/>
+                <ellipse class="globe-meridian" cx="400" cy="400" rx="320" ry="90"/>
+                <ellipse class="globe-meridian" cx="400" cy="400" rx="320" ry="180"/>
+                <ellipse class="globe-meridian" cx="400" cy="400" rx="90" ry="320"/>
+                <ellipse class="globe-meridian" cx="400" cy="400" rx="180" ry="320"/>
+            </g>
+            <circle class="hub-dot" cx="400" cy="330" r="4"/>
+            <circle class="hub-pulse hub-pulse--gold" cx="400" cy="330" r="4"/>
+            <circle class="hub-dot--cyan" cx="500" cy="260" r="3.5"/>
+            <circle class="hub-pulse" cx="500" cy="260" r="3.5"/>
+            <circle class="hub-dot" cx="560" cy="400" r="3.5"/>
+            <circle class="hub-pulse hub-pulse--gold" cx="560" cy="400" r="3.5"/>
+            <circle class="hub-dot--cyan" cx="330" cy="360" r="3"/>
+            <circle class="hub-dot" cx="460" cy="380" r="3"/>
+            <circle class="hub-dot--cyan" cx="490" cy="310" r="3"/>
+            <path class="arc-line" d="M400,330 Q450,250 500,260"/>
+            <path class="arc-line" d="M400,330 Q480,340 560,400"/>
+            <path class="arc-line" d="M400,330 Q365,345 330,360"/>
+            <path class="arc-line" d="M400,330 Q430,355 460,380"/>
+            <path class="arc-line" d="M500,260 Q495,285 490,310"/>
+        </svg>
+    </div>
+    <div class="bg-particles"></div>
 
-<div class="hero-container">
+    <header class="top-bar">
+        <div class="brand">
+            <img src="/og.png" alt="OG">
+            OG · EMPIRE
+        </div>
+        <div class="top-bar__right">
+            <div class="ecosystem-links">
+                <a href="/marketplace" class="eco-link">Marketplace</a>
+                <a href="/community" class="eco-link">Community</a>
+                <a href="/academy" class="eco-link">Academy</a>
+            </div>
+            <div class="lang-switch">
+                <span data-lang="fr" class="active">FR</span>
+                <span data-lang="en">EN</span>
+                <span data-lang="ar">AR</span>
+                <span data-lang="zh">ZH</span>
+            </div>
+        </div>
+    </header>
 
-    <img src="/og.png" class="hero-image" alt="OG">
+    <% if (typeof loggedIn !== 'undefined' && loggedIn) { %>
+    <div class="connected-banner">
+        <div class="connected-banner__text">
+            Content de te revoir, <strong><%= nom || 'Général' %></strong> 👋
+        </div>
+        <a href="<%= typeCompte === 'client' ? '/client-qg' : '/qg' %>" class="continue-btn">
+            Continuer vers mon QG →
+        </a>
+    </div>
+    <% } %>
 
-    <a href="/hub" class="cta-button">
-        REJOINDRE MON QG
-    </a>
+    <section class="hero">
+        <span class="eyebrow"><span class="dot"></span>OG Empire · SAMII OS</span>
+        <h1>Construisez votre <span>Empire.</span><br>SAMII vous accompagne.</h1>
+        <p>Une seule plateforme pour piloter votre commerce, trouver des services, un emploi, ou simplement vivre mieux au quotidien — partout dans le monde.</p>
 
-</div>
+        <div class="live-stats">
+            <div class="live-stat">
+                <div class="live-stat__num" id="stat-marchands">0</div>
+                <div class="live-stat__label">Marchands actifs</div>
+            </div>
+            <div class="live-stat">
+                <div class="live-stat__num" id="stat-pays">0</div>
+                <div class="live-stat__label">Pays connectés</div>
+            </div>
+            <div class="live-stat">
+                <div class="live-stat__num" id="stat-samii">24/7</div>
+                <div class="live-stat__label">SAMII actif</div>
+            </div>
+        </div>
+    </section>
 
+    <section class="auth-zone">
+        <div class="auth-tabs">
+            <button type="button" class="auth-tab active" data-tab="register">Créer un compte</button>
+            <button type="button" class="auth-tab" data-tab="login">Se connecter</button>
+        </div>
+
+        <div class="auth-card">
+            <form id="form-register">
+                <div class="step-indicator">
+                    <div class="step-dot done" data-step-dot="1"></div>
+                    <div class="step-dot" data-step-dot="2"></div>
+                </div>
+                <div class="step-label" id="step-label">Étape 1 sur 2 — Ton profil</div>
+
+                <div class="form-step active" data-step="1">
+                    <div class="type-choice">
+                        <label>
+                            <input type="radio" name="type_compte" value="client" checked>
+                            <span class="icon">👤</span>
+                            <span>Particulier</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="type_compte" value="marchand">
+                            <span class="icon">🏪</span>
+                            <span>Marchand</span>
+                        </label>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Nom</label>
+                            <input name="nom" placeholder="Ton nom" required>
+                        </div>
+                        <div class="field-group">
+                            <label>Prénom</label>
+                            <input name="prenom" placeholder="Ton prénom" required>
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label>Email</label>
+                        <input name="email" type="email" placeholder="ton@email.com" required>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-group">
+                            <label>Téléphone</label>
+                            <input name="telephone" placeholder="+213..." required>
+                        </div>
+                        <div class="field-group">
+                            <label>Pays</label>
+                            <select name="pays" id="select-pays">
+                                <optgroup label="🌍 Maghreb">
+                                    <option value="DZ">Algérie</option>
+                                    <option value="MA">Maroc</option>
+                                    <option value="TN">Tunisie</option>
+                                    <option value="LY">Libye</option>
+                                    <option value="MR">Mauritanie</option>
+                                </optgroup>
+                                <optgroup label="🌍 Afrique">
+                                    <option value="SN">Sénégal</option>
+                                    <option value="CI">Côte d'Ivoire</option>
+                                    <option value="ML">Mali</option>
+                                    <option value="CM">Cameroun</option>
+                                    <option value="EG">Égypte</option>
+                                    <option value="NG">Nigeria</option>
+                                    <option value="ZA">Afrique du Sud</option>
+                                </optgroup>
+                                <optgroup label="🕌 Moyen-Orient">
+                                    <option value="AE">Émirats Arabes Unis</option>
+                                    <option value="SA">Arabie Saoudite</option>
+                                    <option value="QA">Qatar</option>
+                                    <option value="JO">Jordanie</option>
+                                    <option value="LB">Liban</option>
+                                    <option value="TR">Turquie</option>
+                                </optgroup>
+                                <optgroup label="🇪🇺 Europe">
+                                    <option value="FR">France</option>
+                                    <option value="BE">Belgique</option>
+                                    <option value="CH">Suisse</option>
+                                    <option value="DE">Allemagne</option>
+                                    <option value="ES">Espagne</option>
+                                    <option value="IT">Italie</option>
+                                    <option value="UK">Royaume-Uni</option>
+                                    <option value="NL">Pays-Bas</option>
+                                    <option value="PT">Portugal</option>
+                                </optgroup>
+                                <optgroup label="🌎 Amériques">
+                                    <option value="CA">Canada</option>
+                                    <option value="US">États-Unis</option>
+                                </optgroup>
+                                <optgroup label="🌏 Asie & Océanie">
+                                    <option value="CN">Chine</option>
+                                    <option value="IN">Inde</option>
+                                    <option value="JP">Japon</option>
+                                </optgroup>
+                                <option value="autre">🌐 Autre pays...</option>
+                            </select>
+                            <input type="text" id="champ-autre-pays" name="pays_autre" placeholder="Nom de ton pays">
+                        </div>
+                    </div>
+
+                    <div id="bloc-metier" style="display:none;">
+                        <div class="field-group">
+                            <label>Ton métier</label>
+                            <select name="metier">
+                                <option value="ecommerce">E-commerçant</option>
+                                <option value="restaurant">Restaurateur</option>
+                                <option value="immobilier">Immobilier</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grade-preview">
+                        <span class="grade-preview__icon">🪖</span>
+                        <span class="grade-preview__text">Tu commenceras au grade <strong>Soldat</strong> — progresse et débloque de nouveaux pouvoirs.</span>
+                    </div>
+
+                    <button type="button" class="auth-submit" id="btn-step1-next">
+                        Continuer →
+                        <span class="glow-follow"></span>
+                    </button>
+                </div>
+
+                <div class="form-step" data-step="2">
+                    <div class="field-group">
+                        <label>Mot de passe</label>
+                        <input name="password" type="password" placeholder="Minimum 6 caractères" required minlength="6">
+                    </div>
+
+                    <label style="display:block; font-family:var(--font-mono); font-size:.64rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin-bottom:8px;">
+                        Choisis l'univers de SAMII
+                    </label>
+                    <div class="theme-picker">
+                        <label class="theme-card theme-card--strategiste">
+                            <input type="radio" name="theme_visuel" value="strategiste" checked>
+                            <div class="theme-card__preview"></div>
+                            <div class="theme-card__name">🪖 Stratège</div>
+                        </label>
+                        <label class="theme-card theme-card--sagesse">
+                            <input type="radio" name="theme_visuel" value="sagesse">
+                            <div class="theme-card__preview"></div>
+                            <div class="theme-card__name">🕊️ Sagesse</div>
+                        </label>
+                        <label class="theme-card theme-card--aventurier">
+                            <input type="radio" name="theme_visuel" value="aventurier">
+                            <div class="theme-card__preview"></div>
+                            <div class="theme-card__name">🧭 Aventurier</div>
+                        </label>
+                        <label class="theme-card theme-card--gaming">
+                            <input type="radio" name="theme_visuel" value="gaming">
+                            <div class="theme-card__preview"></div>
+                            <div class="theme-card__name">🎮 Gaming</div>
+                        </label>
+                    </div>
+                    <p style="font-size:.68rem; color:var(--text-muted); margin:-6px 0 14px;">Modifiable à tout moment depuis ton espace.</p>
+
+                    <div class="btn-row">
+                        <button type="button" class="auth-btn-back" id="btn-step2-back">← Retour</button>
+                        <button type="submit" class="auth-submit">
+                            👑 Créer mon compte
+                            <span class="glow-follow"></span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <form id="form-login" style="display:none;">
+                <div class="field-group">
+                    <label>Email</label>
+                    <input name="email" type="email" placeholder="ton@email.com" required>
+                </div>
+                <div class="field-group">
+                    <label>Mot de passe</label>
+                    <input name="password" type="password" placeholder="Ton mot de passe" required>
+                </div>
+                <a href="/password-reset" class="forgot-link">Mot de passe oublié ?</a>
+                <button type="submit" class="auth-submit">
+                    Se connecter
+                    <span class="glow-follow"></span>
+                </button>
+            </form>
+
+            <div class="auth-msg" id="auth-msg"></div>
+        </div>
+    </section>
+
+    <section class="automation-section">
+        <div class="section-title">Connecté à tout ton écosystème</div>
+        <div class="section-subtitle">SAMII automatise déjà tout ça</div>
+        <div class="automation-grid">
+            <div class="automation-card">
+                <div class="automation-card__icon">🛍️</div>
+                <div class="automation-card__name">Shopify</div>
+                <div class="automation-card__desc">Commandes gérées automatiquement</div>
+                <div class="automation-badge">✓ Connecté</div>
+            </div>
+            <div class="automation-card">
+                <div class="automation-card__icon">📸</div>
+                <div class="automation-card__name">Meta</div>
+                <div class="automation-card__desc">Instagram & Facebook synchronisés</div>
+                <div class="automation-badge">✓ Connecté</div>
+            </div>
+            <div class="automation-card">
+                <div class="automation-card__icon">💬</div>
+                <div class="automation-card__name">WhatsApp</div>
+                <div class="automation-card__desc">Réponses automatiques 24/7</div>
+                <div class="automation-badge">✓ Connecté</div>
+            </div>
+            <div class="automation-card">
+                <div class="automation-card__icon">✈️</div>
+                <div class="automation-card__name">Telegram</div>
+                <div class="automation-card__desc">Commandes prises en direct</div>
+                <div class="automation-badge">✓ Connecté</div>
+            </div>
+            <div class="automation-card">
+                <div class="automation-card__icon">🛒</div>
+                <div class="automation-card__name">WooCommerce</div>
+                <div class="automation-card__desc">Boutique pilotée par SAMII</div>
+                <div class="automation-badge">✓ Connecté</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="ecosystem-section">
+        <div class="section-title">Explorer</div>
+        <div class="section-subtitle">L'écosystème OG Empire</div>
+        <div class="ecosystem-grid">
+            <a href="/marketplace" class="eco-card">
+                <span class="eco-card__icon">🏪</span>
+                <div>
+                    <h3>Marketplace</h3>
+                    <p>Découvre des marchands, produits et services près de toi.</p>
+                </div>
+            </a>
+            <a href="/community" class="eco-card">
+                <span class="eco-card__icon">🌐</span>
+                <div>
+                    <h3>Community</h3>
+                    <p>Le réseau où tout l'écosystème SAMII se rencontre.</p>
+                </div>
+            </a>
+            <a href="/academy" class="eco-card">
+                <span class="eco-card__icon">🎓</span>
+                <div>
+                    <h3>Academy</h3>
+                    <p>Apprends, progresse, débloque de nouveaux pouvoirs.</p>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section class="quote-section">
+        <p>« La puissance d'un empire ne dépend pas de la quantité de ses règles, mais de la discipline avec laquelle elles sont appliquées. »</p>
+        <span>— Les Lois Souveraines de SAMII</span>
+    </section>
+
+    <footer class="site-footer">
+        <span class="site-footer__quote">OG · EMPIRE — Construisez sans limite.</span>
+        <div class="social-links">
+            <a href="https://www.instagram.com/og20250/" target="_blank" rel="noopener" aria-label="Instagram">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+            <a href="https://www.tiktok.com/@altos.official" target="_blank" rel="noopener" aria-label="TikTok">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+            </a>
+            <a href="https://www.youtube.com/@og20250" target="_blank" rel="noopener" aria-label="YouTube">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+            </a>
+            <a href="https://www.linkedin.com/in/ouahid-ghembaza-a16047239/" target="_blank" rel="noopener" aria-label="LinkedIn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+        </div>
+        <span class="site-footer__meta">v1.0 · SAMII OS</span>
+    </footer>
+
+    <script>
+        function animateCounter(id, target, suffix) {
+            suffix = suffix || '';
+            const el = document.getElementById(id);
+            if (!el) return;
+            let current = 0;
+            const step = Math.max(1, Math.ceil(target / 40));
+            const interval = setInterval(() => {
+                current += step;
+                if (current >= target) { current = target; clearInterval(interval); }
+                el.textContent = current + suffix;
+            }, 30);
+        }
+        animateCounter('stat-marchands', 127, '+');
+        animateCounter('stat-pays', 9);
+
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const isRegister = tab.dataset.tab === 'register';
+                document.getElementById('form-register').style.display = isRegister ? 'block' : 'none';
+                document.getElementById('form-login').style.display = isRegister ? 'none' : 'block';
+                document.getElementById('auth-msg').textContent = '';
+            });
+        });
+
+        document.querySelectorAll('input[name="type_compte"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('bloc-metier').style.display =
+                    radio.value === 'marchand' && radio.checked ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('select-pays').addEventListener('change', function () {
+            document.getElementById('champ-autre-pays').style.display = this.value === 'autre' ? 'block' : 'none';
+        });
+
+        const stepLabels = { 1: 'Étape 1 sur 2 — Ton profil', 2: 'Étape 2 sur 2 — Sécurité & style' };
+        function goToStep(n) {
+            document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+            document.querySelector('.form-step[data-step="' + n + '"]').classList.add('active');
+            document.querySelectorAll('.step-dot').forEach(d => {
+                d.classList.toggle('done', parseInt(d.dataset.stepDot, 10) <= n);
+            });
+            document.getElementById('step-label').textContent = stepLabels[n];
+        }
+        document.getElementById('btn-step1-next').addEventListener('click', () => {
+            const form = document.getElementById('form-register');
+            const requiredFields = form.querySelectorAll('.form-step[data-step="1"] [required]');
+            for (const field of requiredFields) {
+                if (!field.value) { field.reportValidity(); return; }
+            }
+            goToStep(2);
+        });
+        document.getElementById('btn-step2-back').addEventListener('click', () => goToStep(1));
+
+        document.querySelectorAll('.auth-submit').forEach(btn => {
+            btn.addEventListener('mousemove', (e) => {
+                const rect = btn.getBoundingClientRect();
+                const glow = btn.querySelector('.glow-follow');
+                if (glow) {
+                    glow.style.left = (e.clientX - rect.left) + 'px';
+                    glow.style.top = (e.clientY - rect.top) + 'px';
+                }
+            });
+        });
+
+        document.getElementById('form-register').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('auth-msg');
+            const btn = e.target.querySelector('button[type="submit"]');
+            const data = Object.fromEntries(new FormData(e.target));
+
+            if (data.pays === 'autre' && data.pays_autre) {
+                data.pays = data.pays_autre;
+            }
+            delete data.pays_autre;
+
+            btn.disabled = true;
+            msg.textContent = '⏳ Création en cours...';
+            msg.className = 'auth-msg';
+
+            try {
+                const res = await fetch('/register', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    msg.textContent = json.message || '✅ Compte créé !';
+                    msg.className = 'auth-msg ok';
+                    if (json.redirect) setTimeout(() => window.location.href = json.redirect, 1200);
+                } else {
+                    msg.textContent = json.error || '❌ Erreur.';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                msg.textContent = '❌ Erreur réseau.';
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById('auth-msg');
+            const btn = e.target.querySelector('button');
+            const data = Object.fromEntries(new FormData(e.target));
+
+            btn.disabled = true;
+            msg.textContent = '⏳ Connexion...';
+            msg.className = 'auth-msg';
+
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    msg.textContent = '✅ Connecté !';
+                    msg.className = 'auth-msg ok';
+                    window.location.href = json.redirect || '/';
+                } else {
+                    msg.textContent = json.error || '❌ Erreur.';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                msg.textContent = '❌ Erreur réseau.';
+                btn.disabled = false;
+            }
+        });
+    </script>
 </body>
-
 </html>
