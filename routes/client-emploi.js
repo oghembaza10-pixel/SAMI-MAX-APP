@@ -1,9 +1,9 @@
 // ==========================================================================
-// SAMII OS — CLIENT : MISSIONS & EMPLOI — mise en relation locale
+// SAMII OS — CLIENT : MISSIONS & EMPLOI — mise en relation locale (PostgreSQL)
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
-const airtable = require("../services/airtable");
+const db      = require("../services/db");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -101,7 +101,6 @@ router.get("/", requireAuth, (req, res) => {
         <button type="button" class="em-mode-btn" data-mode="proposer">📢 Publier une offre</button>
     </div>
 
-    <!-- ── CHERCHER ── -->
     <div id="bloc-chercher">
         <div class="em-card">
             <form id="form-chercher">
@@ -126,7 +125,6 @@ router.get("/", requireAuth, (req, res) => {
         <div class="em-results" id="results"></div>
     </div>
 
-    <!-- ── PROPOSER ── -->
     <div id="bloc-proposer" style="display:none;">
         <div class="em-card">
             <form id="form-proposer">
@@ -193,7 +191,7 @@ document.querySelectorAll('.em-mode-btn').forEach(btn => {
 function renderResults(list) {
     const container = document.getElementById('results');
     if (!list.length) {
-        container.innerHTML = '<div class="em-empty">Aucune offre trouvée pour ce poste dans cette ville pour l\\'instant. Reviens bientôt !</div>';
+        container.innerHTML = '<div class="em-empty">Aucune offre trouvee pour ce poste dans cette ville pour le moment. Reviens bientot !</div>';
         container.style.display = 'flex';
         return;
     }
@@ -235,7 +233,7 @@ document.getElementById('form-chercher').addEventListener('submit', async (e) =>
             msg.textContent = json.error || '❌ Erreur.';
         }
     } catch (err) {
-        msg.textContent = '❌ Erreur réseau.';
+        msg.textContent = '❌ Erreur reseau.';
     } finally {
         btn.disabled = false;
     }
@@ -257,14 +255,14 @@ document.getElementById('form-proposer').addEventListener('submit', async (e) =>
         });
         const json = await res.json();
         if (json.success) {
-            msg.textContent = '✅ Ton offre est publiée !';
+            msg.textContent = '✅ Ton offre est publiee !';
             msg.className = 'em-msg ok';
             e.target.reset();
         } else {
             msg.textContent = json.error || '❌ Erreur.';
         }
     } catch (err) {
-        msg.textContent = '❌ Erreur réseau.';
+        msg.textContent = '❌ Erreur reseau.';
     } finally {
         btn.disabled = false;
     }
@@ -281,16 +279,16 @@ router.post("/chercher", requireAuth, async (req, res) => {
             return res.json({ success: false, error: "Indique le poste et la ville." });
         }
 
-        const resultats = await airtable.find(
-            "EMPLOIS",
-            `AND({actif}=1, SEARCH(LOWER("${titre_poste}"), LOWER({titre_poste})), SEARCH(LOWER("${ville}"), LOWER({ville})))`,
-            30
+        const resultats = await db.query(
+            `SELECT * FROM emplois
+             WHERE actif = true
+               AND LOWER(titre_poste) LIKE LOWER($1)
+               AND LOWER(ville) LIKE LOWER($2)
+             LIMIT 30`,
+            [`%${titre_poste}%`, `%${ville}%`]
         );
 
-        res.json({
-            success: true,
-            resultats: resultats.map(r => r.fields),
-        });
+        res.json({ success: true, resultats });
 
     } catch (err) {
         console.error("❌ POST /client-qg/emploi/chercher :", err.message);
@@ -306,19 +304,14 @@ router.post("/proposer", requireAuth, async (req, res) => {
             return res.json({ success: false, error: "Tous les champs obligatoires doivent être remplis." });
         }
 
-        await airtable.create("EMPLOIS", {
-            titre_poste,
-            type_contrat,
-            entreprise_nom,
-            ville,
-            pays,
-            salaire,
-            description: description || "",
-            contact_telephone,
-            contact_email: contact_email || "",
-            actif: true,
-            date_creation: new Date().toISOString(),
-        });
+        await db.query(
+            `INSERT INTO emplois (titre_poste, type_contrat, entreprise_nom, ville, pays, salaire, description, contact_telephone, contact_email, publicateur_id, actif)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)`,
+            [
+                titre_poste, type_contrat, entreprise_nom, ville, pays, salaire,
+                description || "", contact_telephone, contact_email || "", req.session.userId || null,
+            ]
+        );
 
         res.json({ success: true });
 
