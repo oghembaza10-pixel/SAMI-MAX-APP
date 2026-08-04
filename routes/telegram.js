@@ -111,7 +111,7 @@ function genOrderId() {
 async function getProduitsDuWorkspace(workspaceId) {
     try {
         return await db.query(
-            `SELECT id, nom, prix FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom`,
+            `SELECT id, nom, prix, options FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom`,
             [workspaceId]
         );
     } catch {
@@ -150,77 +150,77 @@ async function handleOrderFlow(chatId, text, name) {
     }
 
     if (step === "produit_choix") {
-    const index = parseInt(text.trim(), 10) - 1;
-    const produits = session.produitsDisponibles || [];
-    const choisi = produits[index];
+        const index = parseInt(text.trim(), 10) - 1;
+        const produits = session.produitsDisponibles || [];
+        const choisi = produits[index];
 
-    if (!choisi) {
-        await reply(chatId, `❌ Numéro invalide. Réessaie avec un numéro de la liste.`);
+        if (!choisi) {
+            await reply(chatId, `❌ Numéro invalide. Réessaie avec un numéro de la liste.`);
+            return true;
+        }
+
+        const options = choisi.options && typeof choisi.options === "object" ? choisi.options : {};
+        const clesOptions = Object.keys(options);
+
+        if (clesOptions.length === 0) {
+            memory.set(chatId, { step: "telephone", produit: `${choisi.nom} (${choisi.prix} DZD)`, name: session.name });
+            await reply(chatId, `📞 Votre *numéro de téléphone* s'il vous plaît ?`);
+            return true;
+        }
+
+        const premiereCle = clesOptions[0];
+        const valeursPossibles = options[premiereCle];
+
+        memory.set(chatId, {
+            step: "option_choix",
+            name: session.name,
+            produitBase: choisi,
+            optionsRestantes: clesOptions,
+            optionIndex: 0,
+            optionsChoisies: {},
+        });
+
+        const liste = valeursPossibles.map((v, i) => `${i + 1}. ${v}`).join("\n");
+        await reply(chatId, `📦 Choisis *${premiereCle}* :\n\n${liste}\n\nTape le numéro.`);
         return true;
     }
 
-    const options = choisi.options && typeof choisi.options === "object" ? choisi.options : {};
-    const clesOptions = Object.keys(options);
+    if (step === "option_choix") {
+        const cleActuelle = session.optionsRestantes[session.optionIndex];
+        const valeursPossibles = session.produitBase.options[cleActuelle];
+        const index = parseInt(text.trim(), 10) - 1;
+        const valeurChoisie = valeursPossibles[index];
 
-    if (clesOptions.length === 0) {
-        memory.set(chatId, { step: "telephone", produit: `${choisi.nom} (${choisi.prix} DZD)`, name: session.name });
+        if (!valeurChoisie) {
+            await reply(chatId, `❌ Numéro invalide. Réessaie.`);
+            return true;
+        }
+
+        const optionsChoisies = { ...session.optionsChoisies, [cleActuelle]: valeurChoisie };
+        const prochainIndex = session.optionIndex + 1;
+
+        if (prochainIndex < session.optionsRestantes.length) {
+            const prochaineCle = session.optionsRestantes[prochainIndex];
+            const prochainesValeurs = session.produitBase.options[prochaineCle];
+
+            memory.set(chatId, {
+                ...session,
+                optionIndex: prochainIndex,
+                optionsChoisies,
+            });
+
+            const liste = prochainesValeurs.map((v, i) => `${i + 1}. ${v}`).join("\n");
+            await reply(chatId, `📦 Choisis *${prochaineCle}* :\n\n${liste}\n\nTape le numéro.`);
+            return true;
+        }
+
+        const descriptifOptions = Object.entries(optionsChoisies).map(([k, v]) => `${k}: ${v}`).join(", ");
+        const produitComplet = `${session.produitBase.nom} (${descriptifOptions}) — ${session.produitBase.prix} DZD`;
+
+        memory.set(chatId, { step: "telephone", produit: produitComplet, name: session.name });
         await reply(chatId, `📞 Votre *numéro de téléphone* s'il vous plaît ?`);
         return true;
     }
-
-    const premiereCle = clesOptions[0];
-    const valeursPossibles = options[premiereCle];
-
-    memory.set(chatId, {
-        step: "option_choix",
-        name: session.name,
-        produitBase: choisi,
-        optionsRestantes: clesOptions,
-        optionIndex: 0,
-        optionsChoisies: {},
-    });
-
-    const liste = valeursPossibles.map((v, i) => `${i + 1}. ${v}`).join("\n");
-    await reply(chatId, `📦 Choisis *${premiereCle}* :\n\n${liste}\n\nTape le numéro.`);
-    return true;
-}
-
-if (step === "option_choix") {
-    const cleActuelle = session.optionsRestantes[session.optionIndex];
-    const valeursPossibles = session.produitBase.options[cleActuelle];
-    const index = parseInt(text.trim(), 10) - 1;
-    const valeurChoisie = valeursPossibles[index];
-
-    if (!valeurChoisie) {
-        await reply(chatId, `❌ Numéro invalide. Réessaie.`);
-        return true;
-    }
-
-    const optionsChoisies = { ...session.optionsChoisies, [cleActuelle]: valeurChoisie };
-    const prochainIndex = session.optionIndex + 1;
-
-    if (prochainIndex < session.optionsRestantes.length) {
-        const prochaineCle = session.optionsRestantes[prochainIndex];
-        const prochainesValeurs = session.produitBase.options[prochaineCle];
-
-        memory.set(chatId, {
-            ...session,
-            optionIndex: prochainIndex,
-            optionsChoisies,
-        });
-
-        const liste = prochainesValeurs.map((v, i) => `${i + 1}. ${v}`).join("\n");
-        await reply(chatId, `📦 Choisis *${prochaineCle}* :\n\n${liste}\n\nTape le numéro.`);
-        return true;
-    }
-
-    const descriptifOptions = Object.entries(optionsChoisies).map(([k, v]) => `${k}: ${v}`).join(", ");
-    const produitComplet = `${session.produitBase.nom} (${descriptifOptions}) — ${session.produitBase.prix} DZD`;
-
-    memory.set(chatId, { step: "telephone", produit: produitComplet, name: session.name });
-    await reply(chatId, `📞 Votre *numéro de téléphone* s'il vous plaît ?`);
-    return true;
-}
 
     if (step === "produit") {
         memory.set(chatId, { step: "telephone", produit: text, name: session.name });
