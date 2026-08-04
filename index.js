@@ -146,7 +146,14 @@ app.get("/inscription", requireAuth, (req, res) => {
 });
 
 // ── PAGE ACCUEIL ──────────────────────────────────────
-app.get("/", (req, res) => res.render("index"));
+app.get("/", (req, res) => {
+    res.render("index", {
+        loggedIn: !!req.session?.loggedIn,
+        nom: req.session?.nom || "",
+        typeCompte: req.session?.typeCompte || "client",
+    });
+});
+
 
 // ── QG — route universelle SOLDAT V1 ─────────────────
 app.get("/qg", requireAuth, async (req, res) => {
