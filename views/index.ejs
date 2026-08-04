@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAMII — Automatisation Intelligente pour E-commerçants</title>
+    <title>SAMII OS — L'Empire de l'Automatisation E-Commerce</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-deep: #030407;
-            --bg-surface: rgba(12, 16, 28, 0.8);
-            --bg-panel: rgba(255, 255, 255, 0.035);
-            --bg-panel-strong: rgba(255, 255, 255, 0.065);
+            --bg-surface: rgba(12, 16, 28, 0.85);
+            --bg-panel: rgba(255, 255, 255, 0.03);
+            --bg-panel-strong: rgba(255, 255, 255, 0.06);
             --gold: #C5A059;
             --gold-hover: #E8C27A;
-            --gold-glow: rgba(197, 160, 89, 0.35);
+            --gold-glow: rgba(197, 160, 89, 0.4);
             --cyan: #5FD4FF;
             --success: #3ddc84;
             --text-main: #F1F0EC;
@@ -26,7 +26,7 @@
             --font-body: 'Inter', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
             --ease: cubic-bezier(0.16, 1, 0.3, 1);
-            --shadow-luxury: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(197, 160, 89, 0.2);
+            --shadow-luxury: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(197, 160, 89, 0.25);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,108 +46,111 @@
         .world-bg__overlay {
             position: absolute; inset: 0;
             background: 
-                radial-gradient(circle at 50% 30%, rgba(197, 160, 89, 0.15), transparent 60%),
-                radial-gradient(circle at 50% 100%, rgba(95, 212, 255, 0.05), transparent 70%),
-                linear-gradient(180deg, rgba(3, 4, 7, 0.7) 0%, var(--bg-deep) 90%);
+                radial-gradient(circle at 50% 25%, rgba(197, 160, 89, 0.18), transparent 55%),
+                radial-gradient(circle at 50% 90%, rgba(95, 212, 255, 0.06), transparent 70%),
+                linear-gradient(180deg, rgba(3, 4, 7, 0.8) 0%, var(--bg-deep) 90%);
         }
-        .world-svg { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); width: min(1400px, 220vw); height: auto; opacity: .6; }
-        .globe-ring { fill: none; stroke: rgba(197, 160, 89, 0.2); stroke-width: 1.2; }
+        .world-svg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: min(1500px, 240vw); height: auto; opacity: .55; }
+        .globe-ring { fill: none; stroke: rgba(197, 160, 89, 0.18); stroke-width: 1.2; }
         .globe-ring--gold { stroke: rgba(197, 160, 89, 0.35); stroke-dasharray: 6 6; }
         .globe-meridian { fill: none; stroke: rgba(197, 160, 89, 0.08); stroke-width: 1; }
-        .gold-sphere { fill: url(#goldSphereGrad); filter: drop-shadow(0 0 35px rgba(197, 160, 89, 0.6)); }
-        .hub-dot { fill: #fff; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9)); }
+        .gold-sphere { fill: url(#goldSphereGrad); filter: drop-shadow(0 0 40px rgba(197, 160, 89, 0.7)); }
+        .hub-dot { fill: #fff; filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9)); }
         .hub-pulse { fill: none; stroke: var(--gold); stroke-width: 1.5; opacity: 0; transform-origin: center; animation: pulse-ring 4s cubic-bezier(0.1, 0.8, 0.3, 1) infinite; }
         @keyframes pulse-ring {
             0% { opacity: .9; transform: scale(0.2); }
-            100% { opacity: 0; transform: scale(3.5); }
+            100% { opacity: 0; transform: scale(3.8); }
         }
         .arc-line { fill: none; stroke: url(#arcGoldGradient); stroke-width: 1.8; stroke-dasharray: 10 6; opacity: .8; animation: arc-flow 4s linear infinite; }
         @keyframes arc-flow { to { stroke-dashoffset: -120; } }
-        .world-rotate { animation: world-spin 120s linear infinite; transform-origin: center; }
+        .world-rotate { animation: world-spin 140s linear infinite; transform-origin: center; }
         @keyframes world-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         .bg-particles {
-            position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .25;
+            position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .22;
             background-image: radial-gradient(circle, rgba(197,160,89,0.5) 1.5px, transparent 1.5px), radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px);
-            background-size: 180px 180px, 260px 260px;
-            animation: particles-drift 60s linear infinite;
+            background-size: 200px 200px, 300px 300px;
+            animation: particles-drift 70s linear infinite;
         }
-        @keyframes particles-drift { from { background-position: 0 0, 0 0; } to { background-position: 0 -600px, 0 -800px; } }
+        @keyframes particles-drift { from { background-position: 0 0, 0 0; } to { background-position: 0 -700px, 0 -900px; } }
 
-        /* --- TOP BAR --- */
+        /* --- TOP BAR & MODE SELECTOR --- */
         .top-bar {
             position: sticky; top: 0; z-index: 1000;
             display: flex; justify-content: space-between; align-items: center;
             padding: 16px 24px; backdrop-filter: blur(28px);
-            background: rgba(3, 4, 7, 0.9); border-bottom: var(--border-soft);
+            background: rgba(3, 4, 7, 0.92); border-bottom: var(--border-soft);
             width: 100%;
         }
-        .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; color: #fff; font-size: 1.15rem; letter-spacing: 0.1em; text-decoration: none; }
-        .brand span { background: linear-gradient(135deg, #fff 30%, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 800; color: #fff; font-size: 1.15rem; letter-spacing: 0.12em; text-decoration: none; }
+        .brand span { background: linear-gradient(135deg, #fff 20%, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
-        .top-bar__right { display: flex; align-items: center; gap: 16px; }
-        .ecosystem-links { display: none; gap: 12px; }
-        @media (min-width: 1024px) { .ecosystem-links { display: flex; } }
-        .eco-link {
-            padding: 7px 14px; border-radius: 20px; text-decoration: none; font-size: .78rem; font-weight: 600;
-            color: var(--text-muted); border: 1px solid rgba(255,255,255,0.08); transition: all .25s ease;
+        .top-bar__right { display: flex; align-items: center; gap: 14px; }
+        
+        /* Sélecteur de Modes (Amazon / GitHub / Database) */
+        .mode-switcher {
+            display: flex; gap: 3px; background: rgba(0,0,0,0.6); padding: 3px; border-radius: 12px; border: var(--border-soft);
         }
-        .eco-link:hover { color: var(--gold); border-color: rgba(197,160,89,0.5); background: rgba(197,160,89,0.06); }
-        
-        .lang-switch { display: flex; gap: 3px; font-family: var(--font-mono); font-size: .7rem; background: rgba(0,0,0,0.5); padding: 3px; border-radius: 8px; border: var(--border-soft); }
-        .lang-switch span { padding: 5px 8px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: all .2s ease; font-weight: 600; }
+        .mode-btn {
+            padding: 6px 12px; border-radius: 9px; border: none; background: transparent; color: var(--text-muted);
+            font-family: var(--font-mono); font-size: .7rem; font-weight: 600; cursor: pointer; transition: all .25s ease;
+        }
+        .mode-btn.active, .mode-btn:hover { color: var(--gold); background: rgba(197,160,89,0.15); box-shadow: 0 0 15px rgba(197,160,89,0.2); }
+
+        .lang-switch { display: flex; gap: 3px; font-family: var(--font-mono); font-size: .7rem; background: rgba(0,0,0,0.6); padding: 3px; border-radius: 10px; border: var(--border-soft); }
+        .lang-switch span { padding: 5px 8px; border-radius: 7px; cursor: pointer; color: var(--text-muted); transition: all .2s ease; font-weight: 600; }
         .lang-switch span.active, .lang-switch span:hover { color: var(--gold); background: rgba(197,160,89,0.15); }
 
         /* --- HERO SECTION --- */
-        .hero { max-width: 860px; margin: 0 auto; padding: 60px 20px 30px; text-align: center; }
+        .hero { max-width: 900px; margin: 0 auto; padding: 50px 20px 20px; text-align: center; }
         .eyebrow {
-            font-family: var(--font-mono); letter-spacing: .18em; font-size: .72rem; color: var(--gold);
+            font-family: var(--font-mono); letter-spacing: .2em; font-size: .72rem; color: var(--gold);
             text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 20px;
-            padding: 6px 16px; border-radius: 20px; background: rgba(197,160,89,0.08); border: 1px solid rgba(197,160,89,0.3);
+            padding: 6px 18px; border-radius: 20px; background: rgba(197,160,89,0.08); border: 1px solid rgba(197,160,89,0.35);
         }
         .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success); animation: blink 2s infinite; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         
         .hero h1 {
-            font-family: var(--font-display); font-size: clamp(2.2rem, 7vw, 4rem); color: #fff; line-height: 1.15;
+            font-family: var(--font-display); font-size: clamp(2.3rem, 7vw, 4.2rem); color: #fff; line-height: 1.12;
             margin-bottom: 20px; font-weight: 800; letter-spacing: -0.01em;
-            text-shadow: 0 0 50px rgba(197,160,89,0.35);
+            text-shadow: 0 0 60px rgba(197,160,89,0.35);
         }
-        .hero h1 span { background: linear-gradient(135deg, #fff 20%, var(--gold) 90%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .hero p { color: var(--text-muted); font-size: 1.05rem; line-height: 1.7; padding: 0 10px; max-width: 640px; margin: 0 auto 36px; }
+        .hero h1 span { background: linear-gradient(135deg, #fff 15%, var(--gold) 85%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { color: var(--text-muted); font-size: 1.08rem; line-height: 1.75; padding: 0 10px; max-width: 680px; margin: 0 auto 32px; }
 
-        .live-stats { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; margin-top: 10px; padding: 0 16px; }
-        .live-stat { text-align: center; background: var(--bg-panel); border: var(--border-soft); padding: 14px 24px; border-radius: 14px; min-width: 140px; backdrop-filter: blur(10px); }
-        .live-stat__num { font-family: var(--font-mono); font-weight: 700; font-size: 1.5rem; color: var(--gold); text-shadow: 0 0 15px rgba(197,160,89,0.4); }
-        .live-stat__label { font-family: var(--font-mono); font-size: .65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
+        .live-stats { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-top: 10px; padding: 0 16px; }
+        .live-stat { text-align: center; background: var(--bg-panel); border: var(--border-soft); padding: 14px 24px; border-radius: 14px; min-width: 150px; backdrop-filter: blur(12px); }
+        .live-stat__num { font-family: var(--font-mono); font-weight: 700; font-size: 1.6rem; color: var(--gold); text-shadow: 0 0 20px rgba(197,160,89,0.45); }
+        .live-stat__label { font-family: var(--font-mono); font-size: .65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 4px; }
 
-        /* --- AUTH ZONE (FORMULAIRE HAUT DE GAMME) --- */
-        .auth-zone { max-width: 500px; margin: 40px auto 0; padding: 0 20px; }
+        /* --- AUTH ZONE (EXPÉRONTION VIRTUELLE & CONNEXION) --- */
+        .auth-zone { max-width: 520px; margin: 36px auto 0; padding: 0 20px; }
         .auth-tabs {
             display: flex; gap: 6px; margin-bottom: 18px;
-            background: rgba(0, 0, 0, 0.4); border-radius: 14px; padding: 5px; border: var(--border-soft);
+            background: rgba(0, 0, 0, 0.5); border-radius: 14px; padding: 5px; border: var(--border-soft);
         }
         .auth-tab {
             flex: 1; padding: 12px 10px; border-radius: 10px; border: none; background: transparent;
             color: var(--text-muted); font-family: var(--font-body); font-weight: 700; font-size: .86rem; cursor: pointer;
             transition: all .3s var(--ease);
         }
-        .auth-tab.active { background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000; box-shadow: 0 4px 20px rgba(197,160,89,0.3); }
+        .auth-tab.active { background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000; box-shadow: 0 4px 20px rgba(197,160,89,0.35); }
 
         .auth-card {
             position: relative; overflow: hidden;
-            background: var(--bg-surface); backdrop-filter: blur(30px); border: var(--border-gold);
-            border-radius: 24px; padding: 30px 24px; box-shadow: var(--shadow-luxury);
+            background: var(--bg-surface); backdrop-filter: blur(35px); border: var(--border-gold);
+            border-radius: 26px; padding: 32px 24px; box-shadow: var(--shadow-luxury);
         }
         .auth-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1.5px;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
             background: linear-gradient(90deg, transparent, var(--gold), transparent);
         }
 
         .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
         .step-dot { flex: 1; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, 0.1); transition: background .4s ease; }
-        .step-dot.done { background: var(--gold); box-shadow: 0 0 10px rgba(197,160,89,0.6); }
-        .step-label { font-family: var(--font-mono); font-size: .68rem; color: var(--gold); text-align: center; margin-bottom: 18px; letter-spacing: .06em; text-transform: uppercase; }
+        .step-dot.done { background: var(--gold); box-shadow: 0 0 12px rgba(197,160,89,0.7); }
+        .step-label { font-family: var(--font-mono); font-size: .68rem; color: var(--gold); text-align: center; margin-bottom: 18px; letter-spacing: .08em; text-transform: uppercase; }
 
         .form-step { display: none; }
         .form-step.active { display: block; animation: step-in .4s var(--ease) both; }
@@ -157,33 +160,33 @@
         .type-choice label {
             flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
             padding: 16px 10px; border-radius: 14px; cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.3);
             font-size: .8rem; color: var(--text-muted); transition: all .3s ease;
         }
         .type-choice input { display: none; }
         .type-choice label:has(input:checked) {
-            border-color: var(--gold); background: rgba(197, 160, 89, 0.12); color: #fff;
-            box-shadow: 0 0 25px rgba(197, 160, 89, 0.25);
+            border-color: var(--gold); background: rgba(197, 160, 89, 0.14); color: #fff;
+            box-shadow: 0 0 25px rgba(197, 160, 89, 0.3);
         }
         .type-choice .icon { font-size: 1.5rem; }
 
         .field-group { margin-bottom: 16px; }
         .field-group label {
             display: block; font-family: var(--font-mono); font-size: .68rem; text-transform: uppercase;
-            letter-spacing: .06em; color: var(--text-muted); margin-bottom: 6px;
+            letter-spacing: .08em; color: var(--text-muted); margin-bottom: 6px;
         }
         .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .auth-card input, .auth-card select {
             width: 100%; padding: 13px 16px; border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(0, 0, 0, 0.5);
             color: var(--text-main); font-size: 16px; font-family: var(--font-body);
             transition: all .3s ease;
         }
         .auth-card select option { background: #0a0d14; color: #fff; }
         .auth-card input:focus, .auth-card select:focus {
             outline: none; border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.15), 0 0 25px rgba(197, 160, 89, 0.25);
-            background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.18), 0 0 25px rgba(197, 160, 89, 0.3);
+            background: rgba(0, 0, 0, 0.7);
         }
 
         #champ-autre-pays { display: none; margin-top: 10px; }
@@ -191,7 +194,7 @@
         .grade-preview {
             display: flex; align-items: center; gap: 12px; margin-top: 6px; margin-bottom: 18px;
             padding: 12px 16px; border-radius: 12px;
-            background: rgba(197, 160, 89, 0.08); border: 1px solid rgba(197, 160, 89, 0.25);
+            background: rgba(197, 160, 89, 0.08); border: 1px solid rgba(197, 160, 89, 0.3);
         }
         .grade-preview__icon { font-size: 1.5rem; }
         .grade-preview__text { font-size: .78rem; color: var(--text-muted); line-height: 1.45; }
@@ -199,20 +202,20 @@
 
         .btn-row { display: flex; gap: 10px; margin-top: 10px; }
         .auth-btn-back {
-            padding: 14px 18px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 14px 18px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.15);
             background: transparent; color: var(--text-muted); font-weight: 700; font-size: .84rem; cursor: pointer;
             transition: all .25s ease;
         }
-        .auth-btn-back:hover { color: #fff; border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.03); }
+        .auth-btn-back:hover { color: #fff; border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.04); }
 
         .auth-submit {
             flex: 1; padding: 14px; border: none; border-radius: 12px; position: relative; overflow: hidden;
             background: linear-gradient(135deg, var(--gold), var(--gold-hover)); color: #000;
             font-weight: 800; font-size: .92rem; cursor: pointer; font-family: var(--font-display);
             transition: transform .2s ease, box-shadow .2s ease;
-            box-shadow: 0 4px 20px rgba(197,160,89,0.3);
+            box-shadow: 0 4px 20px rgba(197,160,89,0.35);
         }
-        .auth-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(197,160,89,0.5); }
+        .auth-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(197,160,89,0.55); }
         
         .glow-follow {
             position: absolute; width: 120px; height: 120px;
@@ -227,51 +230,99 @@
         .forgot-link { display: block; text-align: right; font-size: .76rem; color: var(--text-muted); text-decoration: none; margin-top: -6px; margin-bottom: 14px; transition: color .2s; }
         .forgot-link:hover { color: var(--gold); }
 
-        /* --- SECTION AUTOMATISATION & CANAUX CLIENTS --- */
-        .automation-section { max-width: 1100px; margin: 80px auto 0; padding: 0 20px; }
+        /* --- SECTION AUTOMATISATION & CANAUX OMNICANAUX --- */
+        .automation-section { max-width: 1150px; margin: 90px auto 0; padding: 0 20px; }
         .section-title {
-            text-align: center; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .16em;
+            text-align: center; font-family: var(--font-mono); font-size: .72rem; letter-spacing: .2em;
             text-transform: uppercase; color: var(--gold); margin-bottom: 8px;
         }
-        .section-subtitle { text-align: center; font-family: var(--font-display); font-size: clamp(1.4rem, 4vw, 2rem); color: #fff; margin-bottom: 32px; font-weight: 700; }
+        .section-subtitle { text-align: center; font-family: var(--font-display); font-size: clamp(1.5rem, 4vw, 2.2rem); color: #fff; margin-bottom: 36px; font-weight: 700; }
         
-        .automation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-        @media (min-width: 768px) { .automation-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; } }
+        .automation-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        @media (min-width: 768px) { .automation-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
         
         .automation-card {
-            background: var(--bg-panel); border: var(--border-soft); border-radius: 18px;
-            padding: 24px 18px; text-align: center; transition: all .35s var(--ease); backdrop-filter: blur(12px);
+            background: var(--bg-panel); border: var(--border-soft); border-radius: 20px;
+            padding: 26px 20px; text-align: center; transition: all .35s var(--ease); backdrop-filter: blur(14px);
             position: relative; overflow: hidden;
         }
         .automation-card::after {
-            content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(197,160,89,0.1), transparent);
             opacity: 0; transition: opacity .3s ease; pointer-events: none;
         }
-        .automation-card:hover { transform: translateY(-6px); border-color: rgba(197, 160, 89, 0.5); background: var(--bg-panel-strong); box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .automation-card:hover { transform: translateY(-6px); border-color: rgba(197, 160, 89, 0.55); background: var(--bg-panel-strong); box-shadow: 0 18px 40px rgba(0,0,0,0.6); }
         .automation-card:hover::after { opacity: 1; }
-        .automation-card__icon { font-size: 2.2rem; margin-bottom: 12px; filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); }
-        .automation-card__name { font-size: .95rem; font-weight: 700; color: #fff; margin-bottom: 6px; font-family: var(--font-display); }
-        .automation-card__desc { font-size: .75rem; color: var(--text-muted); line-height: 1.5; }
+        .automation-card__icon { font-size: 2.4rem; margin-bottom: 14px; filter: drop-shadow(0 0 12px rgba(197,160,89,0.45)); }
+        .automation-card__name { font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 8px; font-family: var(--font-display); }
+        .automation-card__desc { font-size: .76rem; color: var(--text-muted); line-height: 1.55; }
         .automation-badge {
-            display: inline-block; margin-top: 14px; font-size: .65rem; font-family: var(--font-mono);
-            padding: 3px 12px; border-radius: 20px; background: rgba(61, 220, 132, 0.12); color: var(--success);
-            border: 1px solid rgba(61, 220, 132, 0.25);
+            display: inline-block; margin-top: 16px; font-size: .65rem; font-family: var(--font-mono);
+            padding: 4px 12px; border-radius: 20px; background: rgba(61, 220, 132, 0.12); color: var(--success);
+            border: 1px solid rgba(61, 220, 132, 0.3);
         }
+
+        /* --- SECTION VISUELLE IMMERSIVE & FUTURISTE (Bas de page) --- */
+        .immersive-render-section { max-width: 1150px; margin: 100px auto 40px; padding: 0 20px; text-align: center; }
+        .render-container {
+            position: relative; border-radius: 28px; overflow: hidden; border: var(--border-gold);
+            background: rgba(10, 14, 24, 0.9); box-shadow: var(--shadow-luxury); padding: 40px 20px;
+        }
+        .render-container::before {
+            content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(197,160,89,0.12), transparent 70%); pointer-events: none;
+        }
+        .render-title { font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 2.4rem); color: #fff; margin-bottom: 16px; font-weight: 800; }
+        .render-desc { color: var(--text-muted); font-size: .95rem; max-width: 700px; margin: 0 auto 32px; line-height: 1.7; }
+        
+        /* Visuel Virtuel Avancé (Simulateur d'interface Graphique) */
+        .virtual-preview-box {
+            position: relative; border-radius: 18px; overflow: hidden; border: var(--border-soft);
+            background: #060911; text-align: left; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+        .preview-header {
+            display: flex; align-items: center; justify-content: space-between; padding: 12px 18px;
+            background: rgba(255,255,255,0.03); border-bottom: var(--border-soft);
+        }
+        .preview-dots { display: flex; gap: 6px; }
+        .preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
+        .preview-title { font-family: var(--font-mono); font-size: .72rem; color: var(--text-muted); letter-spacing: .08em; }
+
+        .preview-body { padding: 30px; display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media(min-width: 768px) { .preview-body { grid-template-columns: 1.2fr 0.8fr; } }
+
+        .preview-console {
+            background: rgba(0,0,0,0.6); border: var(--border-soft); border-radius: 12px; padding: 18px;
+            font-family: var(--font-mono); font-size: .78rem; color: var(--cyan); line-height: 1.6;
+        }
+        .console-line { margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+        .console-prompt { color: var(--gold); }
+
+        .preview-metrics {
+            display: flex; flex-direction: column; gap: 12px; justify-content: center;
+        }
+        .metric-card {
+            background: rgba(255,255,255,0.02); border: var(--border-soft); border-radius: 12px; padding: 14px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .metric-label { font-family: var(--font-mono); font-size: .72rem; color: var(--text-muted); }
+        .metric-val { font-family: var(--font-mono); font-size: .95rem; font-weight: 700; color: var(--success); }
 
         /* --- FOOTER --- */
         .site-footer {
-            border-top: var(--border-soft); padding: 32px 20px; margin-top: 80px;
+            border-top: var(--border-soft); padding: 36px 20px; margin-top: 80px;
             display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center;
-            background: rgba(3, 4, 7, 0.95); backdrop-filter: blur(20px);
+            background: rgba(3, 4, 7, 0.96); backdrop-filter: blur(20px);
         }
-        @media (min-width: 768px) { .site-footer { flex-direction: row; justify-content: space-between; padding: 36px 40px; } }
-        .site-footer__quote { font-family: var(--font-mono); color: var(--text-muted); font-size: .72rem; letter-spacing: 0.05em; }
+        @media (min-width: 768px) { .site-footer { flex-direction: row; justify-content: space-between; padding: 36px 50px; } }
+        .site-footer__quote { font-family: var(--font-mono); color: var(--text-muted); font-size: .72rem; letter-spacing: 0.06em; }
         .site-footer__meta { font-family: var(--font-mono); font-size: .68rem; color: var(--text-muted); }
 
         @media (min-width: 768px) {
-            .top-bar { padding: 18px 40px; }
+            .top-bar { padding: 18px 45px; }
             .brand { font-size: 1.25rem; }
-            .auth-card { padding: 36px; border-radius: 28px; }
+            .auth-card { padding: 38px; border-radius: 30px; }
         }
     </style>
 </head>
@@ -320,17 +371,18 @@
     </div>
     <div class="bg-particles"></div>
 
-    <!-- Barre de Navigation -->
+    <!-- Barre de Navigation & Modes dynamiques -->
     <header class="top-bar">
         <a href="/" class="brand">
-            <span>SAMII · AUTOMATION</span>
+            <span>SAMII OS · EMPIRE OG</span>
         </a>
         <div class="top-bar__right">
-            <nav class="ecosystem-links">
-                <a href="#solutions" class="eco-link">Solutions</a>
-                <a href="#features" class="eco-link">Canaux</a>
-                <a href="#contact" class="eco-link">Contact</a>
-            </nav>
+            <!-- Mode Switcher (Amazon / GitHub / Database) -->
+            <div class="mode-switcher">
+                <button class="mode-btn active" data-mode="amazon">Amazon</button>
+                <button class="mode-btn" data-mode="github">GitHub</button>
+                <button class="mode-btn" data-mode="database">Database</button>
+            </div>
             <div class="lang-switch">
                 <span data-lang="fr" class="active">FR</span>
                 <span data-lang="en">EN</span>
@@ -341,22 +393,22 @@
 
     <!-- Section Hero -->
     <section class="hero">
-        <div class="eyebrow"><span class="dot"></span>SAMII OS · Cloud Infrastructure Render</div>
-        <h1>Automatisez la relation client<br>de vos <span>E-commerçants.</span></h1>
-        <p>Propulsez l'activité de vos clients en connectant instantanément leurs boutiques et leurs réseaux sociaux pour automatiser le support, les commandes et l'acquisition.</p>
+        <div class="eyebrow"><span class="dot"></span>SAMII OS · Virtual Core Engine</div>
+        <h1>L'Automatisation Totale<br>pour vos <span>E-Commerçants.</span></h1>
+        <p>Pilotez l'ensemble de votre infrastructure e-commerce et relationnelle. Connexion instantanée, synchronisation omnicanale et expérience virtuelle haut de gamme.</p>
 
         <div class="live-stats">
             <div class="live-stat">
-                <div class="live-stat__num" id="stat-marchands">1,482</div>
-                <div class="live-stat__label">Boutiques gérées</div>
+                <div class="live-stat__num" id="stat-marchands">2,840</div>
+                <div class="live-stat__label">Boutiques Actives</div>
             </div>
             <div class="live-stat">
-                <div class="live-stat__num" id="stat-pays">34</div>
-                <div class="live-stat__label">Pays connectés</div>
+                <div class="live-stat__num" id="stat-pays">42</div>
+                <div class="live-stat__label">Réseaux Mondiaux</div>
             </div>
             <div class="live-stat">
-                <div class="live-stat__num" id="stat-samii">24/7</div>
-                <div class="live-stat__label">Agent Actif</div>
+                <div class="live-stat__num" id="stat-samii">99.9%</div>
+                <div class="live-stat__label">Disponibilité Cloud</div>
             </div>
         </div>
     </section>
@@ -375,20 +427,20 @@
                     <div class="step-dot done" data-step-dot="1"></div>
                     <div class="step-dot" data-step-dot="2"></div>
                 </div>
-                <div class="step-label" id="step-label">Étape 1 sur 2 — Informations Générales</div>
+                <div class="step-label" id="step-label">Étape 1 sur 2 — Identité & Profil</div>
 
                 <!-- Étape 1 -->
                 <div class="form-step active" data-step="1">
                     <div class="type-choice">
                         <label>
                             <input type="radio" name="type_compte" value="client" checked>
-                            <span class="icon">👤</span>
-                            <span>Particulier</span>
+                            <span class="icon">🛒</span>
+                            <span>E-Commerçant</span>
                         </label>
                         <label>
                             <input type="radio" name="type_compte" value="agence">
-                            <span class="icon">💼</span>
-                            <span>Agence / Pro</span>
+                            <span class="icon">⚡</span>
+                            <span>Agence Pro</span>
                         </label>
                     </div>
 
@@ -404,8 +456,8 @@
                     </div>
 
                     <div class="field-group">
-                        <label>Adresse Email</label>
-                        <input name="email" type="email" placeholder="votre@email.com" required>
+                        <label>Adresse Email Professionnelle</label>
+                        <input name="email" type="email" placeholder="votre@entreprise.com" required>
                     </div>
 
                     <div class="field-row">
@@ -429,8 +481,8 @@
                     </div>
 
                     <div class="grade-preview">
-                        <span class="grade-preview__icon">⚡</span>
-                        <span class="grade-preview__text">Statut : <strong>Partenaire Certifié SAMII</strong> — Accès direct aux automatisations e-commerce.</span>
+                        <span class="grade-preview__icon">💎</span>
+                        <span class="grade-preview__text">Mode Actif : <strong>SAMII OS Core</strong> — Accès complet aux automatisations relationnelles.</span>
                     </div>
 
                     <button type="button" class="auth-submit" id="btn-step1-next">
@@ -449,7 +501,7 @@
                     <div class="btn-row" style="margin-top: 24px;">
                         <button type="button" class="auth-btn-back" id="btn-step2-back">← Retour</button>
                         <button type="submit" class="auth-submit">
-                            Lancer mon Compte 🚀
+                            Initialiser SAMII OS 🚀
                             <span class="glow-follow"></span>
                         </button>
                     </div>
@@ -462,7 +514,7 @@
             <form id="form-login" style="display:none;">
                 <div class="field-group">
                     <label>Adresse Email</label>
-                    <input name="email" type="email" placeholder="votre@email.com" required>
+                    <input name="email" type="email" placeholder="votre@entreprise.com" required>
                 </div>
 
                 <div class="field-group">
@@ -473,7 +525,7 @@
                 <a href="/forgot-password" class="forgot-link">Mot de passe oublié ?</a>
 
                 <button type="submit" class="auth-submit" style="width:100%;">
-                    Se connecter à SAMII OS ⚡
+                    Accéder à l'interface OS ⚡
                     <span class="glow-follow"></span>
                 </button>
 
@@ -482,46 +534,89 @@
         </div>
     </section>
 
-    <!-- Grille des Canaux Automatisés -->
+    <!-- Grille des Canaux d'Automatisation -->
     <section class="automation-section" id="features">
-        <div class="section-title">Canaux d'Automatisation</div>
-        <h2 class="section-subtitle">Connectez vos clients partout où ils vendent</h2>
+        <div class="section-title">Canaux d'Automatisation Omnicanale</div>
+        <h2 class="section-subtitle">Connectez vos clients partout instantanément</h2>
         <div class="automation-grid">
             <div class="automation-card">
                 <div class="automation-card__icon">💬</div>
                 <div class="automation-card__name">WhatsApp Business</div>
-                <div class="automation-card__desc">Gestion automatique des commandes, relances paniers abandonnés et support 24/7.</div>
-                <span class="automation-badge">Actif</span>
+                <div class="automation-card__desc">Gestion intelligente des commandes, tunnels de vente et support client 24/7.</div>
+                <span class="automation-badge">Actif & Fluide</span>
             </div>
             <div class="automation-card">
                 <div class="automation-card__icon">✈️</div>
                 <div class="automation-card__name">Telegram Bot</div>
-                <div class="automation-card__desc">Notifications instantanées et tunnels de vente automatisés pour vos clients.</div>
-                <span class="automation-badge">Ultra-rapide</span>
+                <div class="automation-card__desc">Notifications instantanées et interactions en temps réel pour vos boutiques.</div>
+                <span class="automation-badge">Mode Instant</span>
             </div>
             <div class="automation-card">
-                <div class="automation-card__icon">▶️</div>
-                <div class="automation-card__name">YouTube & Google</div>
-                <div class="automation-card__desc">Acquisition de trafic qualifié et synchronisation des campagnes publicitaires.</div>
-                <span class="automation-badge">Optimisé</span>
+                <div class="automation-card__icon">🌐</div>
+                <div class="automation-card__name">Google & YouTube</div>
+                <div class="automation-card__desc">Acquisition de trafic ciblée, synchronisation publicitaire et analyse de performance.</div>
+                <span class="automation-badge">Optimisé Web</span>
             </div>
             <div class="automation-card">
-                <div class="automation-card__icon">☁️</div>
-                <div class="automation-card__name">Render & GitHub</div>
-                <div class="automation-card__desc">Hébergement cloud souverain et déploiement continu sécurisé et sans coupure.</div>
-                <span class="automation-badge">Cloud Ready</span>
+                <div class="automation-card__icon">⚡</div>
+                <div class="automation-card__name">Meta (FB & Insta)</div>
+                <div class="automation-card__desc">Automatisation des messages directs, conversion des leads et remarketing ciblé.</div>
+                <span class="automation-badge">Omnicanal Ready</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Visuelle Immersive / Rendu Virtuel Avancé (Demandé par l'utilisateur) -->
+    <section class="immersive-render-section">
+        <div class="render-container">
+            <h2 class="render-title">L'Expérience Virtuelle Intégrée</h2>
+            <p class="render-desc">Visualisez en temps réel l'interaction entre les tables relationnelles, les flux d'automatisation et les passerelles de messagerie de votre écosystème.</p>
+            
+            <div class="virtual-preview-box">
+                <div class="preview-header">
+                    <div class="preview-dots">
+                        <span class="preview-dot dot-red"></span>
+                        <span class="preview-dot dot-yellow"></span>
+                        <span class="preview-dot dot-green"></span>
+                    </div>
+                    <div class="preview-title" id="preview-mode-title">SAMII OS // MODE AMAZON (TRANSACTIONNEL)</div>
+                    <div class="preview-dots" style="opacity:0;"></div>
+                </div>
+                <div class="preview-body">
+                    <div class="preview-console" id="preview-console-text">
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [SYSTEM] Initialisation de SAMII OS...</div>
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [CONNECT] Passerelle WhatsApp active (24/7).</div>
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [SYNC] Connexion des tables filles et de la table mère...</div>
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [STATUS] Flux de commandes fluide et sécurisé. Prêt.</div>
+                    </div>
+                    <div class="preview-metrics">
+                        <div class="metric-card">
+                            <span class="metric-label">Latence Réseau</span>
+                            <span class="metric-val">12ms</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Taux de Conversion</span>
+                            <span class="metric-val">+34.8%</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">flux automatiques</span>
+                            <span class="metric-val">Actifs</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Pied de page -->
     <footer class="site-footer">
-        <div class="site-footer__quote">SAMII OS // Cloud Infrastructure — Tous droits réservés.</div>
-        <div class="site-footer__meta">Secure Protocol v4.8 (Render Deployed)</div>
+        <div class="site-footer__quote">SAMII OS // Empire de l'Automatisation — Tous droits réservés.</div>
+        <div class="site-footer__meta">Secure Virtual Core v5.2</div>
     </footer>
 
-    <!-- Scripts interactifs -->
+    <!-- Scripts interactifs pour les modes et formulaires -->
     <script>
+        // Gestion des onglets Inscription / Connexion
         const authTabs = document.querySelectorAll('.auth-tab');
         const formRegister = document.getElementById('form-register');
         const formLogin = document.getElementById('form-login');
@@ -540,6 +635,7 @@
             });
         });
 
+        // Gestion multi-étapes formulaire inscription
         const btnStep1Next = document.getElementById('btn-step1-next');
         const btnStep2Back = document.getElementById('btn-step2-back');
         const step1 = document.querySelector('.form-step[data-step="1"]');
@@ -562,35 +658,63 @@
             step1.classList.remove('active');
             step2.classList.add('active');
             stepDots[1].classList.add('done');
-            stepLabel.innerText = "Étape 2 sur 2 — Sécurité & Mot de passe";
+            stepLabel.innerText = "Étape 2 sur 2 — Sécurité & Initialisation";
         });
 
         btnStep2Back.addEventListener('click', () => {
             step2.classList.remove('active');
             step1.classList.add('active');
             stepDots[1].classList.remove('done');
-            stepLabel.innerText = "Étape 1 sur 2 — Informations Générales";
+            stepLabel.innerText = "Étape 1 sur 2 — Identité & Profil";
         });
 
+        // Gestion du champ "Autre pays"
         const selectPays = document.getElementById('select-pays');
         const champAutrePays = document.getElementById('champ-autre-pays');
 
         selectPays.addEventListener('change', (e) => {
             if (e.target.value === 'autre') {
                 champAutrePays.style.display = 'block';
-                champAutrePays.setAttribute('required', 'true');
+                champAutrePays.required = true;
             } else {
                 champAutrePays.style.display = 'none';
-                champAutrePays.removeAttribute('required');
+                champAutrePays.required = false;
             }
         });
 
-        document.querySelectorAll('.auth-submit').forEach(button => {
-            const glow = button.querySelector('.glow-follow');
-            button.addEventListener('mousemove', (e) => {
-                const rect = button.getBoundingClientRect();
-                glow.style.left = `${e.clientX - rect.left}px`;
-                glow.style.top = `${e.clientY - rect.top}px`;
+        // Bascule dynamique des modes (Amazon / GitHub / Database) pour l'effet interactif
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const previewModeTitle = document.getElementById('preview-mode-title');
+        const previewConsoleText = document.getElementById('preview-console-text');
+
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const mode = btn.dataset.mode;
+
+                if (mode === 'amazon') {
+                    previewModeTitle.innerText = "SAMII OS // MODE AMAZON (TRANSACTIONNEL)";
+                    previewConsoleText.innerHTML = `
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [MODE] Amazon High-Volume Transaction active.</div>
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [CHECKOUT] Flux d'achat instantané et sécurisé.</div>
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [SYNC] Commandes synchronisées en temps réel.</div>
+                    `;
+                } else if (mode === 'github') {
+                    previewModeTitle.innerText = "SAMII OS // MODE GITHUB (TECHNIQUE & REPO)";
+                    previewConsoleText.innerHTML = `
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [MODE] Repository Infrastructure Core chargé.</div>
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [BUILD] Compilation des branches d'automatisation...</div>
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [DEPLOY] Pipeline CI/CD opérationnel sans coupure.</div>
+                    `;
+                } else if (mode === 'database') {
+                    previewModeTitle.innerText = "SAMII OS // MODE DATABASE (RELATIONNEL)";
+                    previewConsoleText.innerHTML = `
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [MODE] Table Mère & Tables Filles connectées.</div>
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [QUERY] Indexation relationnelle des flux e-commerce.</div>
+                        <div class="console-line"><span class="console-prompt">&gt;</span> [OPTIMIZE] Intégrité des données vérifiée à 100%.</div>
+                    `;
+                }
             });
         });
     </script>
