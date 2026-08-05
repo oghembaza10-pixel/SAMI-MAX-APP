@@ -1,11 +1,14 @@
 // ==========================================================================
-// SAMII OS — COMMUNITY — PostgreSQL Edition
-// Feed premium synchronisé avec l'écosystème SAMII (thème bleu/cyan tech)
+// SAMII OS — COMMUNITY — PostgreSQL Edition v2
+// Upload réel photo/vidéo • Catégories • Points de grade • Feed enrichi
 // ==========================================================================
 
 const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
+
+const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
+const CLOUDINARY_UPLOAD_PRESET = "MARKETPLACE OG";
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -30,14 +33,26 @@ function timeAgo(date) {
     if (hours < 24) return `il y a ${hours} h`;
     const days = Math.floor(hours / 24);
     if (days < 7) return `il y a ${days} j`;
-    const weeks = Math.floor(days / 7);
-    return `il y a ${weeks} sem`;
+    return `il y a ${Math.floor(days / 7)} sem`;
 }
 
 function initiales(prenom, nom) {
     const a = (prenom || "").charAt(0).toUpperCase();
     const b = (nom || "").charAt(0).toUpperCase();
     return (a + b) || "OG";
+}
+
+const CATEGORIES = {
+    photo:       { label: "Photo",       icon: "camera",           couleur: "#00d9ff" },
+    video:       { label: "Vidéo",       icon: "video",            couleur: "#ff5ea6" },
+    produit:     { label: "Produit",     icon: "shopping-bag",     couleur: "#d7b34c" },
+    service:     { label: "Service",     icon: "concierge-bell",   couleur: "#3ddc84" },
+    formation:   { label: "Formation",   icon: "graduation-cap",   couleur: "#9d5cff" },
+    publication: { label: "Publication", icon: "message-square",   couleur: "#7f96a8" },
+};
+
+function catInfo(cat) {
+    return CATEGORIES[cat] || CATEGORIES.publication;
 }
 
 // ==========================================================================
@@ -48,6 +63,7 @@ router.get("/", requireAuth, async (req, res) => {
     let publications = [];
     let classement = [];
     let stats = { membres: 0, publications: 0 };
+    let tendancesCategories = [];
 
     try {
         const rows = await db.query(`
@@ -60,7 +76,6 @@ router.get("/", requireAuth, async (req, res) => {
             ORDER BY p.epingle DESC, p.created_at DESC
             LIMIT 40
         `, [req.session.userId || ""]);
-
         publications = rows;
 
         for (const pub of publications) {
@@ -79,9 +94,7 @@ router.get("/", requireAuth, async (req, res) => {
     try {
         classement = await db.query(`
             SELECT id, prenom, nom, grade_actuel, score_grade, type_compte
-            FROM utilisateurs
-            ORDER BY score_grade DESC NULLS LAST
-            LIMIT 5
+            FROM utilisateurs ORDER BY score_grade DESC NULLS LAST LIMIT 5
         `);
     } catch (err) {
         console.warn("⚠️ Community — lecture classement échouée :", err.message);
@@ -92,14 +105,31 @@ router.get("/", requireAuth, async (req, res) => {
         stats.membres = parseInt(countRows[0]?.total || 0, 10);
         const pubRows = await db.query(`SELECT COUNT(*) AS total FROM publications`);
         stats.publications = parseInt(pubRows[0]?.total || 0, 10);
+
+        const catRows = await db.query(`
+            SELECT categorie, COUNT(*) AS total FROM publications
+            GROUP BY categorie ORDER BY total DESC LIMIT 3
+        `);
+        tendancesCategories = catRows;
     } catch (err) {
         console.warn("⚠️ Community — lecture stats échouée :", err.message);
     }
+
+    const categoryButtonsHtml = Object.entries(CATEGORIES).map(([key, c]) => `
+        <button type="button" class="cat-btn" data-cat="${key}" style="--cat-color:${c.couleur};">
+            <i data-lucide="${c.icon}"></i> ${c.label}
+        </button>`).join("");
+
+    const tendancesHtml = tendancesCategories.length ? tendancesCategories.map(t => {
+        const info = catInfo(t.categorie);
+        return `<div class="stat-row"><span><i data-lucide="${info.icon}" style="width:13px;height:13px;color:${info.couleur};"></i> ${info.label}</span><strong>${t.total}</strong></div>`;
+    }).join("") : "";
 
     const feedHtml = publications.length ? publications.map(p => {
         const nomAuteur = escapeHtml(`${p.prenom || "Membre"} ${p.nom || "SAMII"}`);
         const grade = escapeHtml(p.grade_actuel || "Soldat");
         const isMarchand = p.type_compte === "marchand";
+        const cat = catInfo(p.categorie);
 
         const commentairesHtml = p.apercu_commentaires.map(c => `
             <div class="comment-item">
@@ -109,6 +139,13 @@ router.get("/", requireAuth, async (req, res) => {
                     <span>${escapeHtml(c.contenu)}</span>
                 </div>
             </div>`).join("");
+
+        let mediaHtml = "";
+        if (p.video_url) {
+            mediaHtml = `<div class="post-media"><video src="${escapeHtml(p.video_url)}" controls preload="metadata"></video></div>`;
+        } else if (p.image_url) {
+            mediaHtml = `<div class="post-media"><img src="${escapeHtml(p.image_url)}" alt="" loading="lazy"></div>`;
+        }
 
         return `
         <article class="post-card" data-post-id="${p.id}">
@@ -122,9 +159,10 @@ router.get("/", requireAuth, async (req, res) => {
                         <span>${timeAgo(p.created_at)}</span>
                     </div>
                 </div>
+                <span class="cat-badge" style="--cat-color:${cat.couleur};"><i data-lucide="${cat.icon}"></i> ${cat.label}</span>
             </div>
             ${p.contenu ? `<p class="post-text">${escapeHtml(p.contenu)}</p>` : ""}
-            ${p.image_url ? `<div class="post-media"><img src="${escapeHtml(p.image_url)}" alt="" loading="lazy"></div>` : ""}
+            ${mediaHtml}
             <div class="post-stats">
                 <span>${p.nb_likes > 0 ? `❤️ ${p.nb_likes}` : ""}</span>
                 <span>${p.nb_commentaires > 0 ? `${p.nb_commentaires} commentaire${p.nb_commentaires > 1 ? "s" : ""}` : ""}</span>
@@ -209,7 +247,8 @@ body.light .header { background:rgba(244,249,253,.86); }
 .side-panel { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin-bottom:16px; }
 .side-panel h3 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 14px; display:flex; align-items:center; gap:6px; }
 .side-panel h3 svg { width:14px; height:14px; color:var(--blue); }
-.stat-row { display:flex; justify-content:space-between; font-size:13px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.stat-row { display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.stat-row span { display:flex; align-items:center; gap:6px; }
 .stat-row:last-child { border:none; }
 .stat-row strong { color:var(--blue); font-family:"JetBrains Mono"; }
 .eco-link-item { display:flex; align-items:center; gap:10px; padding:10px; border-radius:10px; font-size:12px; font-weight:600; color:var(--muted); transition:.2s; margin-bottom:4px; }
@@ -231,8 +270,15 @@ body.light .header { background:rgba(244,249,253,.86); }
 .composer-avatar { width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-size:12px; font-weight:900; color:white; background:linear-gradient(135deg,var(--blue),var(--blue-2)); flex-shrink:0; }
 .composer textarea { flex:1; resize:none; min-height:44px; border:1px solid var(--border); border-radius:12px; background:rgba(0,0,0,.25); color:var(--text); padding:12px; outline:none; font-size:13px; transition:.2s; }
 .composer textarea:focus { border-color:var(--blue); box-shadow:var(--cyan-glow); }
-.composer-photo { margin-top:10px; }
-.composer-photo input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,.2); color:var(--text); outline:none; font-size:12px; }
+.cat-buttons { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+.cat-btn { display:flex; align-items:center; gap:6px; padding:8px 12px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:11px; font-weight:700; transition:.2s; }
+.cat-btn svg { width:13px; height:13px; }
+.cat-btn:hover { border-color:var(--cat-color); color:var(--cat-color); }
+.cat-btn.selected { background:var(--cat-color); border-color:var(--cat-color); color:#001018; }
+.upload-preview { margin-top:10px; display:none; position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--border); }
+.upload-preview img,.upload-preview video { width:100%; max-height:280px; object-fit:cover; display:block; }
+.upload-remove { position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,.7); color:white; border:none; display:grid; place-items:center; }
+.upload-status { font-size:11px; color:var(--blue); margin-top:8px; display:none; }
 .composer-bottom { display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
 .composer-hint { font-size:11px; color:var(--muted); }
 .composer-submit { padding:10px 20px; border:none; border-radius:11px; background:linear-gradient(135deg,var(--blue),#00a9ff); color:#001018; font-weight:800; font-size:12px; box-shadow:0 5px 20px rgba(0,217,255,.25); transition:.25s; }
@@ -249,9 +295,11 @@ body.light .header { background:rgba(244,249,253,.86); }
 .grade-chip { font-family:"JetBrains Mono"; padding:2px 8px; border-radius:20px; background:rgba(0,217,255,.08); border:1px solid rgba(0,217,255,.2); color:var(--blue); }
 .grade-chip--gold { background:rgba(215,179,76,.1); border-color:rgba(215,179,76,.3); color:var(--gold); }
 .dot-sep { opacity:.5; }
+.cat-badge { display:flex; align-items:center; gap:5px; font-size:10px; font-weight:700; padding:5px 10px; border-radius:20px; background:color-mix(in srgb, var(--cat-color) 15%, transparent); border:1px solid var(--cat-color); color:var(--cat-color); flex-shrink:0; }
+.cat-badge svg { width:11px; height:11px; }
 .post-text { font-size:13.5px; line-height:1.6; margin:0 0 12px; white-space:pre-wrap; }
 .post-media { border-radius:14px; overflow:hidden; border:1px solid var(--border); margin-bottom:12px; }
-.post-media img { width:100%; max-height:420px; object-fit:cover; display:block; }
+.post-media img,.post-media video { width:100%; max-height:420px; object-fit:cover; display:block; background:#000; }
 .post-stats { display:flex; gap:14px; font-size:11px; color:var(--muted); padding-bottom:10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.05); min-height:14px; }
 .post-actions { display:flex; gap:6px; margin-bottom:6px; }
 .post-action-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--muted); font-size:11.5px; font-weight:700; transition:.2s; }
@@ -321,6 +369,7 @@ body.light .header { background:rgba(244,249,253,.86); }
                 <h3><i data-lucide="activity"></i> Tendances</h3>
                 <div class="stat-row"><span>Membres SAMII</span><strong>${stats.membres}</strong></div>
                 <div class="stat-row"><span>Publications</span><strong>${stats.publications}</strong></div>
+                ${tendancesHtml}
                 <div class="stat-row"><span>Statut système</span><strong style="color:#00ff9d;">● Actif</strong></div>
             </div>
             <div class="side-panel">
@@ -336,13 +385,14 @@ body.light .header { background:rgba(244,249,253,.86); }
             <div class="composer">
                 <div class="composer-top">
                     <div class="composer-avatar">${initiales(req.session.nom?.split(" ")[1], req.session.nom?.split(" ")[0])}</div>
-                    <textarea id="composerText" placeholder="Que veux-tu partager avec la communauté ?" rows="2"></textarea>
+                    <textarea id="composerText" placeholder="Exprime-toi... partage, propose, forme, vends. Gagne des points à chaque publication !" rows="2"></textarea>
                 </div>
-                <div class="composer-photo">
-                    <input type="url" id="composerImage" placeholder="Lien d'une image (optionnel)">
-                </div>
+                <div class="cat-buttons">${categoryButtonsHtml}</div>
+                <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;">
+                <div class="upload-preview" id="uploadPreview"></div>
+                <div class="upload-status" id="uploadStatus">⏳ Envoi en cours...</div>
                 <div class="composer-bottom">
-                    <span class="composer-hint">Visible par toute la communauté SAMII</span>
+                    <span class="composer-hint">+5 points à chaque publication</span>
                     <button class="composer-submit" id="composerSubmit" type="button">Publier</button>
                 </div>
             </div>
@@ -387,19 +437,90 @@ function showToast(msg) {
     const t = document.getElementById("toast");
     t.textContent = msg;
     t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 2200);
+    setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+let selectedCategory = "publication";
+let uploadedImageUrl = "";
+let uploadedVideoUrl = "";
+
+document.querySelectorAll(".cat-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        selectedCategory = btn.dataset.cat;
+        if (selectedCategory === "photo" || selectedCategory === "video") {
+            document.getElementById("fileInput").accept = selectedCategory === "photo" ? "image/*" : "video/*";
+            document.getElementById("fileInput").click();
+        }
+    });
+});
+
+document.getElementById("fileInput").addEventListener("change", async function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const status = document.getElementById("uploadStatus");
+    const preview = document.getElementById("uploadPreview");
+    status.style.display = "block";
+    status.textContent = "⏳ Envoi en cours...";
+
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "MARKETPLACE OG");
+
+        const isVideo = file.type.startsWith("video");
+        const resourceType = isVideo ? "video" : "image";
+
+        const res = await fetch("https://api.cloudinary.com/v1_1/ojwx5hft/" + resourceType + "/upload", {
+            method: "POST", body: formData,
+        });
+        const json = await res.json();
+
+        if (json.secure_url) {
+            if (isVideo) { uploadedVideoUrl = json.secure_url; uploadedImageUrl = ""; }
+            else { uploadedImageUrl = json.secure_url; uploadedVideoUrl = ""; }
+
+            preview.style.display = "block";
+            preview.innerHTML = (isVideo
+                ? '<video src="' + json.secure_url + '" controls></video>'
+                : '<img src="' + json.secure_url + '" alt="">') +
+                '<button class="upload-remove" type="button" onclick="removeUpload()"><i data-lucide="x"></i></button>';
+            if (typeof lucide !== "undefined") lucide.createIcons();
+            status.style.display = "none";
+            showToast("✅ Fichier prêt !");
+        } else {
+            status.textContent = "❌ Échec de l'envoi.";
+        }
+    } catch (err) {
+        status.textContent = "❌ Erreur réseau.";
+    }
+});
+
+function removeUpload() {
+    uploadedImageUrl = "";
+    uploadedVideoUrl = "";
+    document.getElementById("uploadPreview").style.display = "none";
+    document.getElementById("uploadPreview").innerHTML = "";
+    document.getElementById("fileInput").value = "";
 }
 
 document.getElementById("composerSubmit").addEventListener("click", async function () {
     const contenu = document.getElementById("composerText").value.trim();
-    const image_url = document.getElementById("composerImage").value.trim();
-    if (!contenu && !image_url) { showToast("Écris quelque chose ou ajoute une image."); return; }
+    if (!contenu && !uploadedImageUrl && !uploadedVideoUrl) {
+        showToast("Écris quelque chose ou ajoute un fichier.");
+        return;
+    }
 
     this.disabled = true;
     try {
         const res = await fetch("/community/publier", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contenu, image_url }),
+            body: JSON.stringify({
+                contenu, categorie: selectedCategory,
+                image_url: uploadedImageUrl, video_url: uploadedVideoUrl,
+            }),
         });
         const json = await res.json();
         if (json.success) {
@@ -418,9 +539,7 @@ async function toggleLike(id, btn) {
     try {
         const res = await fetch("/community/like/" + id, { method: "POST" });
         const json = await res.json();
-        if (json.success) {
-            btn.classList.toggle("liked", json.liked);
-        }
+        if (json.success) btn.classList.toggle("liked", json.liked);
     } catch (err) { showToast("Erreur réseau."); }
 }
 
@@ -440,22 +559,15 @@ async function postComment(id) {
             body: JSON.stringify({ contenu }),
         });
         const json = await res.json();
-        if (json.success) {
-            window.location.reload();
-        } else {
-            showToast(json.error || "Erreur.");
-        }
+        if (json.success) window.location.reload();
+        else showToast(json.error || "Erreur.");
     } catch (err) { showToast("Erreur réseau."); }
 }
 
 function sharePost(id) {
     const url = window.location.origin + "/community#post-" + id;
-    if (navigator.share) {
-        navigator.share({ url }).catch(() => {});
-    } else {
-        navigator.clipboard.writeText(url);
-        showToast("🔗 Lien copié !");
-    }
+    if (navigator.share) navigator.share({ url }).catch(() => {});
+    else { navigator.clipboard.writeText(url); showToast("🔗 Lien copié !"); }
 }
 </script>
 </body>
@@ -468,15 +580,27 @@ function sharePost(id) {
 
 router.post("/publier", requireAuth, async (req, res) => {
     try {
-        const { contenu, image_url } = req.body;
-        if (!contenu && !image_url) {
-            return res.json({ success: false, error: "Ajoute du texte ou une image." });
+        const { contenu, image_url, video_url, categorie } = req.body;
+        if (!contenu && !image_url && !video_url) {
+            return res.json({ success: false, error: "Ajoute du texte ou un fichier." });
         }
 
+        const cat = CATEGORIES[categorie] ? categorie : "publication";
+
         await db.query(
-            `INSERT INTO publications (auteur_id, contenu, image_url, type) VALUES ($1, $2, $3, $4)`,
-            [req.session.userId, contenu || "", image_url || null, image_url ? "image" : "texte"]
+            `INSERT INTO publications (auteur_id, contenu, image_url, video_url, categorie, type)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [req.session.userId, contenu || "", image_url || null, video_url || null, cat, video_url ? "video" : image_url ? "image" : "texte"]
         );
+
+        try {
+            await db.query(
+                `UPDATE utilisateurs SET score_grade = COALESCE(score_grade, 0) + 5 WHERE id = $1`,
+                [req.session.userId]
+            );
+        } catch (grErr) {
+            console.warn("⚠️ Community — mise à jour points échouée :", grErr.message);
+        }
 
         res.json({ success: true });
     } catch (err) {
@@ -505,10 +629,7 @@ router.post("/like/:id", requireAuth, async (req, res) => {
             return res.json({ success: true, liked: false });
         }
 
-        await db.query(
-            `INSERT INTO publications_likes (publication_id, user_id) VALUES ($1, $2)`,
-            [publicationId, userId]
-        );
+        await db.query(`INSERT INTO publications_likes (publication_id, user_id) VALUES ($1, $2)`, [publicationId, userId]);
         res.json({ success: true, liked: true });
     } catch (err) {
         console.error("❌ POST /community/like/:id :", err.message);
