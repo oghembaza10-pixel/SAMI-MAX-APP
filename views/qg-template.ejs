@@ -1,394 +1,207 @@
-<!DOCTYPE html>
+from pathlib import Path
+
+html = r'''<!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QG · <%= metier.toUpperCase() %> · OG Empire</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/qg-style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OG Empire — SAMII OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --bg:#070807;--bg2:#0c0e0c;--card:#101310;--card2:#141814;
+ --text:#f5f5f2;--muted:#91968e;--dim:#62685f;
+ --gold:#d4a94a;--gold2:#f0cb78;--kaki:#68734a;--kaki2:#87985c;
+ --blue:#00d4ff;--blue2:#5fdcff;--green:#22c55e;
+ --line:rgba(255,255,255,.075);--goldline:rgba(212,169,74,.30);
+ --shadow:0 20px 60px rgba(0,0,0,.42);
+ --radius:18px;
+ --display:'Cinzel',serif;--body:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+ min-height:100vh;background:
+ radial-gradient(circle at 50% -10%,rgba(212,169,74,.10),transparent 34rem),
+ radial-gradient(circle at 100% 40%,rgba(0,212,255,.045),transparent 30rem),
+ var(--bg);color:var(--text);font-family:var(--body);overflow-x:hidden;
+}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.035;background-image:linear-gradient(rgba(255,255,255,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.5) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,#000,transparent 75%);z-index:-1}
+.top-bar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:15px 22px;border-bottom:1px solid var(--line);background:rgba(7,8,7,.84);backdrop-filter:blur(22px)}
+.brand{display:flex;align-items:center;gap:10px}.brand img{width:32px;height:32px}.brand__text{font:800 1.05rem var(--display);letter-spacing:.04em}.brand__sub{font:600 .56rem var(--mono);letter-spacing:.16em;color:var(--gold);margin-top:2px}
+.top-bar__right{display:flex;align-items:center;gap:10px}.lang-switch{display:flex;gap:2px}.lang-switch span{font:600 .62rem var(--mono);padding:6px 7px;border-radius:7px;color:var(--dim);cursor:pointer}.lang-switch span.active,.lang-switch span:hover{color:var(--blue);background:rgba(0,212,255,.08)}
+.btn-login-top{padding:9px 15px;border:1px solid var(--goldline);border-radius:10px;color:var(--gold);text-decoration:none;font-size:.75rem;font-weight:800;transition:.25s}.btn-login-top:hover{border-color:var(--blue);color:var(--blue);box-shadow:0 0 22px rgba(0,212,255,.12)}
+.hero{max-width:900px;margin:auto;padding:76px 20px 20px;text-align:center}.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border:1px solid var(--goldline);border-radius:999px;background:rgba(212,169,74,.07);font:600 .64rem var(--mono);letter-spacing:.11em;color:var(--gold)}.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green)}
+.hero h1{font:800 clamp(2.2rem,7vw,4.7rem)/1.05 var(--display);margin:24px 0 15px;letter-spacing:-.025em}.accent{color:var(--gold);text-shadow:0 0 35px rgba(212,169,74,.18)}
+.hero-tagline{font:600 1rem var(--mono);color:var(--muted)}.hero-tagline b{color:var(--blue)}.hero p.desc{max-width:600px;margin:18px auto;color:var(--muted);font-size:.9rem;line-height:1.7}
+.hero-ctas{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:28px}.btn-primary,.auth-submit{position:relative;overflow:hidden;border:0;border-radius:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#090909;font-weight:900;cursor:pointer;box-shadow:0 10px 35px rgba(212,169,74,.16);transition:transform .25s,box-shadow .25s}.btn-primary{padding:14px 24px;text-decoration:none;font-size:.82rem}.btn-primary:hover,.auth-submit:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(0,212,255,.22),0 0 0 1px var(--blue)}.btn-secondary{padding:14px 22px;border:1px solid var(--goldline);border-radius:12px;color:var(--gold);text-decoration:none;font-weight:800;font-size:.82rem;transition:.25s}.btn-secondary:hover{border-color:var(--blue);color:var(--blue);box-shadow:0 0 28px rgba(0,212,255,.12)}
+.section,.preview-section,.modules-section,.soon-section{max-width:1180px;margin:55px auto 0;padding:0 18px}.section-head{display:flex;align-items:center;gap:9px;margin-bottom:15px}.section-head__icon{font-size:1rem}.section-head__title{font-size:.82rem;font-weight:800}.section-head__sub{margin-left:auto;color:var(--dim);font:600 .6rem var(--mono);letter-spacing:.08em}
+.preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.p-card,.m-card,.s-card{position:relative;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012)),var(--card);border:1px solid var(--line);box-shadow:var(--shadow);transition:border-color .3s,box-shadow .3s,transform .3s,background .3s}.p-card{min-height:220px;border-radius:var(--radius);padding:19px}.p-card:hover,.m-card:hover,.s-card:hover{transform:translateY(-3px);border-color:rgba(0,212,255,.62);box-shadow:0 22px 65px rgba(0,0,0,.48),0 0 30px rgba(0,212,255,.09)}
+.p-card__top{display:flex;align-items:center;gap:11px;margin-bottom:19px}.p-card__badge{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:rgba(212,169,74,.09);border:1px solid rgba(212,169,74,.18)}.p-card__badge--shopify{background:rgba(149,197,86,.10)}.p-card__badge--whatsapp{background:rgba(34,197,94,.10)}.p-card__title{font-size:.86rem;font-weight:800}.p-card__desc{font-size:.68rem;color:var(--dim);margin-top:2px}.p-card__stat{font:800 1.55rem var(--mono)}.p-card__stat span{font-size:.8rem;color:var(--dim)}.p-card__statlabel{font-size:.66rem;color:var(--dim);margin:3px 0 20px}.p-card__status{font-size:.7rem;color:var(--dim);display:flex;align-items:center;gap:7px;margin-top:24px}.sdot{width:6px;height:6px;border-radius:50%;background:var(--dim)}
+.p-card-btn{display:block;text-align:center;padding:10px;border-radius:10px;border:1px solid rgba(212,169,74,.22);background:rgba(212,169,74,.06);color:var(--gold);font-size:.7rem;font-weight:800;text-decoration:none;transition:.25s}.p-card-btn:hover{border-color:var(--blue);color:var(--blue);background:rgba(0,212,255,.06);box-shadow:0 0 22px rgba(0,212,255,.09)}
+.globe-mini{position:absolute;right:-35px;bottom:-35px;width:170px;opacity:.7;pointer-events:none}.p-card--globe{overflow:hidden}
+.modules-grid,.soon-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.m-card,.s-card{min-height:76px;border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px}.m-card__icon,.s-card__icon{width:35px;height:35px;display:grid;place-items:center;border-radius:10px;background:rgba(212,169,74,.08);flex-shrink:0}.m-card__name,.s-card__name{font-size:.75rem;font-weight:800}.m-card__desc,.s-card__desc{font-size:.61rem;color:var(--dim);margin-top:2px}.m-check{position:absolute;right:9px;top:9px;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;background:var(--green)}.m-check svg{width:10px;color:#000}
+.s-card{opacity:.72}.s-card__icon{color:var(--dim);background:rgba(255,255,255,.035)}.s-lock{position:absolute;right:11px;top:10px;color:var(--dim);font-size:.75rem}
+.soon-banner{max-width:1144px;margin:13px auto;padding:15px 18px;border:1px solid var(--goldline);border-radius:14px;background:rgba(212,169,74,.055);display:flex;gap:10px;align-items:center;font-size:.75rem;color:var(--muted)}.soon-banner strong{color:var(--gold)}
+.pills-bar{max-width:1144px;margin:40px auto 0;padding:20px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);gap:18px}.pill{display:flex;gap:9px}.pill__icon{color:var(--blue)}.pill__title{font-size:.7rem;font-weight:800}.pill__desc{font-size:.59rem;color:var(--dim);margin-top:2px}
+.auth-section{max-width:500px;margin:70px auto 0;padding:0 18px}.auth-header{text-align:center;margin-bottom:20px}.auth-header h2{font:800 1.55rem var(--display);margin-bottom:7px}.auth-header p{font-size:.75rem;color:var(--dim)}
+.auth-tabs{display:flex;gap:4px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:13px;margin-bottom:15px}.auth-tab{flex:1;padding:11px;border:0;border-radius:9px;background:transparent;color:var(--dim);font-weight:800;cursor:pointer}.auth-tab.active{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000}
+.auth-card{padding:25px;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.01));border:1px solid var(--goldline);border-radius:var(--radius);box-shadow:var(--shadow)}
+.step-indicator{display:flex;gap:5px;margin-bottom:9px}.step-dot{height:3px;flex:1;border-radius:3px;background:rgba(255,255,255,.08)}.step-dot.done{background:var(--gold)}.step-label{text-align:center;font:600 .6rem var(--mono);color:var(--dim);margin-bottom:17px}
+.form-step{display:none}.form-step.active{display:block}.type-choice{display:flex;gap:8px;margin-bottom:13px}.type-choice label{flex:1;padding:12px;border:1px solid var(--line);border-radius:11px;text-align:center;cursor:pointer;color:var(--dim);font-size:.73rem}.type-choice input{display:none}.type-choice label:has(input:checked){border-color:var(--gold);background:rgba(212,169,74,.08);color:#fff}
+.field-group{margin-bottom:12px}.field-group label{display:block;font:600 .6rem var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.auth-card input,.auth-card select{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.09);background:#050605;color:var(--text);font:400 16px var(--body);transition:.25s}.auth-card input:focus,.auth-card select:focus{outline:0;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,212,255,.09),0 0 24px rgba(0,212,255,.08)}
+#champ-autre-pays{display:none;margin-top:8px}.grade-preview{display:flex;gap:10px;align-items:center;padding:11px;border:1px solid var(--goldline);border-radius:11px;background:rgba(212,169,74,.055);margin-bottom:14px}.grade-preview__icon{font-size:1.2rem}.grade-preview__text{font-size:.7rem;color:var(--muted)}.grade-preview__text strong{color:var(--gold)}
+.theme-picker{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}.theme-card{position:relative;padding:11px;border:1px solid var(--line);border-radius:12px;text-align:center;cursor:pointer}.theme-card input{display:none}.theme-card__preview{height:28px;border-radius:7px;margin-bottom:7px}.theme-card--strategiste .theme-card__preview{background:linear-gradient(90deg,#0a0b09,#68734a,#d4a94a)}.theme-card--sagesse .theme-card__preview{background:linear-gradient(90deg,#080b12,#4a6fa5,#d4a94a)}.theme-card--aventurier .theme-card__preview,.theme-card--gaming .theme-card__preview{filter:grayscale(1);opacity:.4}.theme-card__name{font-size:.65rem;color:var(--muted);font-weight:700}.theme-card:has(input:checked){border-color:var(--blue);box-shadow:0 0 20px rgba(0,212,255,.08)}.theme-card:has(input:disabled){cursor:not-allowed}.theme-card--aventurier:after,.theme-card--gaming:after{content:"🔒 À DÉBLOQUER";display:block;font:700 .48rem var(--mono);color:var(--dim);margin-top:5px;letter-spacing:.04em}
+.btn-row{display:flex;gap:9px}.auth-btn-back{padding:13px 15px;border:1px solid var(--line);background:transparent;color:var(--dim);border-radius:11px;font-weight:800;cursor:pointer}.auth-submit{width:100%;padding:13px;font-size:.8rem}.btn-row .auth-submit{flex:1}.auth-msg{text-align:center;min-height:18px;margin-top:12px;font-size:.73rem;color:#ff7070}.auth-msg.ok{color:var(--green)}.forgot-link{display:block;text-align:right;color:var(--dim);font-size:.68rem;margin:-4px 0 12px;text-decoration:none}
+.site-footer{margin-top:65px;padding:27px 22px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:15px}.site-footer__quote,.site-footer__meta{font:600 .61rem var(--mono);color:var(--dim)}.social-links{display:flex;gap:8px}.social-links a{display:grid;place-items:center;width:32px;height:32px;border:1px solid var(--line);border-radius:9px;color:var(--dim);transition:.25s}.social-links a:hover{color:var(--blue);border-color:var(--blue);box-shadow:0 0 18px rgba(0,212,255,.12)}
+.theme-controls{position:fixed;right:18px;bottom:18px;z-index:120;display:flex;gap:6px;padding:5px;background:rgba(8,9,8,.88);border:1px solid var(--line);border-radius:13px;backdrop-filter:blur(16px);box-shadow:0 15px 40px rgba(0,0,0,.4)}
+.theme-controls button{border:0;background:transparent;color:var(--dim);border-radius:8px;padding:8px 10px;font-size:.7rem;font-weight:800;cursor:pointer}.theme-controls button.active{background:rgba(0,212,255,.1);color:var(--blue)}
+body.light{--bg:#f3f5f2;--bg2:#fff;--card:#fff;--card2:#f7f8f6;--text:#121510;--muted:#596058;--dim:#7b8279;--line:rgba(0,0,0,.09);--goldline:rgba(145,105,24,.35);background:radial-gradient(circle at 50% -10%,rgba(212,169,74,.18),transparent 34rem),#f3f5f2}
+body.light:before{opacity:.025}.light .top-bar{}
+body.light .top-bar{background:rgba(243,245,242,.84)}body.light .auth-card input,body.light .auth-card select{background:#fff;color:#121510}.light .p-card,.light .m-card,.light .s-card{box-shadow:0 15px 40px rgba(20,30,20,.08)}
+body.sagesse{--gold:#b8c8e6;--gold2:#e7eefc;--kaki:#536780;--blue:#62dcff;--blue2:#a5edff;background:radial-gradient(circle at 50% -10%,rgba(98,220,255,.10),transparent 35rem),#070a10}
+body.sagesse .hero .accent,body.sagesse .hero-tagline b,body.sagesse .p-card-btn,body.sagesse .grade-preview__text strong{color:var(--gold)}body.sagesse .theme-card--strategiste .theme-card__preview{background:linear-gradient(90deg,#080b12,#4a6fa5,#d4a94a)}
+@media(max-width:900px){.preview-grid{grid-template-columns:1fr 1fr}.modules-grid,.soon-grid{grid-template-columns:1fr 1fr}.pills-bar{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.top-bar{padding:13px 14px}.brand__sub{display:none}.lang-switch{display:none}.hero{padding-top:55px}.preview-grid,.modules-grid,.soon-grid,.pills-bar{grid-template-columns:1fr}.field-row{grid-template-columns:1fr}.site-footer{flex-direction:column;text-align:center}.theme-controls{right:10px;bottom:10px}}
+</style>
 </head>
-<body data-shop="<%= shop %>">
-<!-- BARRE GRADE MILITAIRE -->
-<div class="qg-grade-bar">
-    <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
-    <span class="qg-grade-bar__nom" id="grade-nom">SOLDAT</span>
-    <div class="qg-grade-bar__batterie">
-        <div class="qg-grade-bar__fill" id="grade-fill" style="width:10%"></div>
-    </div>
-    <span class="qg-grade-bar__next" id="grade-next">→ CAPORAL</span>
+<body>
+
+<header class="top-bar">
+<div class="brand"><img src="/og.png" alt="OG"><div><div class="brand__text">SAMII OS</div><div class="brand__sub">LE QG MONDIAL</div></div></div>
+<div class="top-bar__right"><div class="lang-switch"><span class="active">FR</span><span>EN</span><span>AR</span></div><a href="#auth" class="btn-login-top">Se connecter</a></div>
+</header>
+
+<% if (typeof loggedIn !== 'undefined' && loggedIn) { %>
+<div style="max-width:1180px;margin:16px auto 0;padding:0 18px"><div style="background:rgba(212,169,74,.07);border:1px solid rgba(212,169,74,.3);border-radius:14px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px"><div style="font-size:.85rem">Content de te revoir, <strong style="color:var(--gold)"><%= nom || 'Général' %></strong> 👋</div><a href="<%= typeCompte === 'client' ? '/client-qg' : '/qg' %>" class="btn-primary">Continuer vers mon QG →</a></div></div>
+<% } %>
+
+<section class="hero">
+<span class="hero-badge"><span class="dot"></span>SAMII OS · OPÉRATIONNEL</span>
+<h1>Bienvenue au <span class="accent">QG Mondial</span> 👋</h1>
+<div class="hero-tagline"><b>Automatisez.</b> Développez. <b>Dominez.</b></div>
+<p class="desc">Une seule plateforme pour piloter ton commerce, connecter tes outils et faire grandir ton empire — où que tu sois dans le monde.</p>
+<div class="hero-ctas"><a href="#auth" class="btn-primary">👑 Créer mon compte</a><a href="#preview" class="btn-secondary">Découvrir SAMII ↓</a></div>
+</section>
+
+<section class="preview-section" id="preview">
+<div class="section-head"><span>🖥️</span><span class="section-head__title">Aperçu de ton QG</span><span class="section-head__sub">CE QUI T'ATTEND</span></div>
+<div class="preview-grid">
+<div class="p-card"><div class="p-card__top"><div class="p-card__badge">🧠</div><div><div class="p-card__title">IA SAMII</div><div class="p-card__desc">Ton assistant intelligent</div></div></div><div class="p-card__stat">50 <span>/ 50</span></div><div class="p-card__statlabel">messages disponibles chaque jour</div><a href="#auth" class="p-card-btn">Discuter avec SAMII →</a></div>
+<div class="p-card"><div class="p-card__top"><div class="p-card__badge p-card__badge--shopify">🛍️</div><div><div class="p-card__title">Shopify</div><div class="p-card__desc">Connecte ta boutique</div></div></div><div class="p-card__status"><span class="sdot"></span> Non connecté</div><div style="height:26px"></div><a href="#auth" class="p-card-btn">Connecter Shopify →</a></div>
+<div class="p-card"><div class="p-card__top"><div class="p-card__badge p-card__badge--whatsapp">💬</div><div><div class="p-card__title">WhatsApp Business</div><div class="p-card__desc">Connecte ton numéro</div></div></div><div class="p-card__status"><span class="sdot"></span> Non connecté</div><div style="height:26px"></div><a href="#auth" class="p-card-btn">Connecter WhatsApp →</a></div>
+<div class="p-card p-card--globe"><div class="p-card__top"><div class="p-card__badge">📊</div><div><div class="p-card__title">Tableau de bord</div><div class="p-card__desc">Vue d'ensemble</div></div></div><div class="p-card__stat">0</div><div class="p-card__statlabel">commandes aujourd'hui</div><a href="#auth" class="p-card-btn">Voir les statistiques →</a><svg class="globe-mini" viewBox="0 0 200 200"><circle cx="100" cy="100" r="90" fill="none" stroke="rgba(212,169,74,.35)"/><circle cx="100" cy="100" r="65" fill="none" stroke="rgba(212,169,74,.25)"/><ellipse cx="100" cy="100" rx="90" ry="28" fill="none" stroke="rgba(212,169,74,.2)"/><ellipse cx="100" cy="100" rx="28" ry="90" fill="none" stroke="rgba(212,169,74,.2)"/></svg></div>
 </div>
-<div class="qg-shell">
-    <!-- SIDEBAR -->
-    <aside class="qg-sidebar" id="og-sidebar">
-        <div class="qg-sidebar__top">
-            <a href="/hub" class="qg-logo">
-                <img src="/og.png" alt="OG">
-                <span class="qg-logo__text">OG · EMPIRE</span>
-            </a>
-            <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar">
-                <i data-lucide="chevrons-left"></i>
-            </button>
-        </div>
-        <nav class="qg-nav">
-            <a href="/hub" class="qg-nav__item">
-                <i data-lucide="layout-grid"></i><span data-i18n="qg.nav.hub">Hub</span>
-            </a>
-            <a href="/marketplace" class="qg-nav__item">
-                <i data-lucide="store"></i><span data-i18n="qg.nav.marketplace">Marketplace</span>
-            </a>
-            <a href="/community" class="qg-nav__item">
-                <i data-lucide="users"></i><span data-i18n="qg.nav.community">Community</span>
-            </a>
-            <a href="/academy" class="qg-nav__item">
-                <i data-lucide="graduation-cap"></i><span data-i18n="qg.nav.academy">Academy</span>
-            </a>
-            <div class="qg-nav__divider"></div>
-            <a href="/qg" class="qg-nav__item active">
-                <i data-lucide="briefcase"></i><span data-i18n="qg.nav.myBusiness">Mes affaires</span>
-            </a>
-            <a href="/connecter" class="qg-nav__item">
-                <i data-lucide="plug-zap"></i><span data-i18n="qg.nav.connectTools">Connecter mes outils</span>
-            </a>
-            <a href="/outils" class="qg-nav__item">
-                <i data-lucide="wrench"></i><span data-i18n="qg.nav.myTools">Mes outils</span>
-            </a>
-            <a href="/arsenal" class="qg-nav__item">
-                <i data-lucide="sword"></i><span data-i18n="qg.nav.arsenal">Arsenal</span>
-            </a>
-            <a href="/coffre" class="qg-nav__item">
-                <i data-lucide="vault"></i><span data-i18n="qg.nav.vault">Coffre OG</span>
-            </a>
-            <div class="qg-nav__divider"></div>
-            <a href="/samii" class="qg-nav__item qg-nav__item--samii">
-                <i data-lucide="bot"></i><span data-i18n="qg.nav.samii">SAMII</span>
-                <span class="qg-status-dot qg-status-dot--on" id="samii-status-dot" title="SAMII actif"></span>
-            </a> 
-        </nav>
-        <div class="qg-sidebar__bottom">
-            <a href="/settings" class="qg-nav__item">
-                <i data-lucide="settings"></i><span data-i18n="qg.nav.settings">Paramètres</span>
-            </a>
-            <a href="/logout" class="qg-nav__item" style="color:#e55;">
-                <i data-lucide="log-out"></i><span data-i18n="qg.nav.logout">Déconnexion</span>
-            </a>
-            <div class="og-lang-switch">
-                <span data-lang-btn="fr">FR</span>
-                <span data-lang-btn="en">EN</span>
-                <span data-lang-btn="ar">AR</span>
-                <span data-lang-btn="zh">ZH</span>
-            </div>
-        </div>
-    </aside>
-    <main class="qg-main">
-        <!-- TOPBAR -->
-        <header class="qg-topbar">
-            <div class="qg-topbar__breadcrumb">
-                <span class="qg-mono" data-i18n="qg.topbar">QG</span>
-                <i data-lucide="chevron-right"></i>
-                <span class="qg-topbar__metier" id="qg-boutique-nom"><%= metier.toUpperCase() %></span>
-            </div>
-            <div class="qg-topbar__actions">
-                <button class="qg-icon-btn" title="Notifications">
-                    <i data-lucide="bell"></i>
-                </button>
-            </div>
-        </header>
-        <!-- BANDEAU CYBER -->
-        <section class="qg-hero">
-            <div class="qg-hero__grid"></div>
-            <div class="qg-hero__glow qg-hero__glow--gold"></div>
-            <div class="qg-hero__glow qg-hero__glow--cyan"></div>
-            <div class="qg-hero__content" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-                <div>
-                    <span class="qg-eyebrow" data-i18n="qg.hero.eyebrow">Centre de commandement</span>
-                    <h1><span data-i18n="qg.hero.titlePrefix">Votre QG</span> <%= metier.toUpperCase() %></h1>
-                    <p data-i18n="qg.hero.subtitle">Pilotez votre activité, vos outils et vos missions depuis un seul endroit.</p>
-                </div>
-                <!-- BOUTON CRÉER MA BOUTIQUE -->
-                <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.3); padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; min-width: 260px;">
-                    <span style="color: #d4af37; font-size: 0.85rem; font-weight: 700;">🚀 Automatisation Boutique</span>
-                    <input type="text" id="subdomain-input" placeholder="nom-client (ex: client1)" style="padding: 8px 12px; border-radius: 6px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 0.9rem;">
-                    <button id="create-shop-btn" style="padding: 10px 16px; background: var(--gold-og, #d4af37); color: #000; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;">Créer ma boutique</button>
-                    <span id="create-shop-msg" style="font-size: 0.8rem; color: #3ddc84; min-height: 16px;"></span>
-                </div>
-            </div>
-        </section>
-        <!-- MODULES CANAUX -->
-        <div class="qg-modules" id="qg-modules">
-            <button class="qg-module-btn active" data-canal="">📊 <span data-i18n="qg.modules.all">Tout</span></button>
-        </div>
-        <!-- ── VUE D'ENSEMBLE ────────────────────────── -->
-        <div class="qg-section-title">
-            <i data-lucide="activity"></i>
-            <span data-i18n="qg.section.overview">Vue d'ensemble</span>
-        </div>
-        <section class="qg-dashboard">
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="trending-up"></i></div>
-                <span class="qg-card__value" id="stat-revenus">0</span>
-                <span class="qg-card__label">Revenus (<%= devise %>)</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="package"></i></div>
-                <span class="qg-card__value" id="stat-commandes">0</span>
-                <span class="qg-card__label" data-i18n="qg.cards2.orders">Commandes</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="clock"></i></div>
-                <span class="qg-card__value" id="stat-attente">0</span>
-                <span class="qg-card__label" data-i18n="qg.cards2.pending">En attente</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="check-circle"></i></div>
-                <span class="qg-card__value" id="stat-confirmees">0</span>
-                <span class="qg-card__label" data-i18n="qg.cards2.confirmed">Confirmées</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="x-circle"></i></div>
-                <span class="qg-card__value" id="stat-annulees">0</span>
-                <span class="qg-card__label" data-i18n="qg.cards2.cancelled">Annulées</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="crown"></i></div>
-                <span class="qg-card__value" id="stat-vip">0</span>
-                <span class="qg-card__label" data-i18n="qg.cards2.vip">Clients VIP</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="shield-off"></i></div>
-                <span class="qg-card__value" id="stat-blacklist">0</span>
-                <span class="qg-card__label" data-i18n="qg.cards2.blacklist">Blacklist</span>
-            </article>
-        </section>
-        <!-- ── LIVRAISON TEMPS RÉEL ──────────────────── -->
-        <div class="qg-section-title">
-            <i data-lucide="truck"></i>
-            <span data-i18n="qg.section.delivery">Livraison temps réel 🚚</span>
-        </div>
-        <section class="qg-dashboard">
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="package-check"></i></div>
-                <span class="qg-card__value" id="stat-livrees">0</span>
-                <span class="qg-card__label" data-i18n="qg.delivery.delivered">Livrées</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="truck"></i></div>
-                <span class="qg-card__value" id="stat-en-cours">0</span>
-                <span class="qg-card__label" data-i18n="qg.delivery.inProgress">En cours</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="alert-triangle"></i></div>
-                <span class="qg-card__value" id="stat-echecs">0</span>
-                <span class="qg-card__label" data-i18n="qg.delivery.failed">Échecs</span>
-            </article>
-        </section>
-        <!-- ── MISSION DU JOUR ───────────────────────── -->
-        <div class="qg-section-title">
-            <i data-lucide="target"></i>
-            <span data-i18n="qg.section.missionToday">Mission du jour 🎯</span>
-        </div>
-        <section class="qg-dashboard">
-            <article class="qg-card" style="grid-column:span 3;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <span style="color:#d4af37;font-weight:700;font-size:1rem;" data-i18n="qg.mission.objective">Objectif du jour</span>
-                    <span class="qg-mono" id="mission-date" style="color:#555;font-size:.8rem;"></span>
-                </div>
-                <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:16px;">
-                    <div style="text-align:center;">
-                        <div class="qg-card__value" id="mission-commandes">0</div>
-                        <div class="qg-card__label" data-i18n="qg.mission.ordersToday">Commandes aujourd'hui</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div class="qg-card__value" id="mission-revenus">0</div>
-                        <div class="qg-card__label">Revenus aujourd'hui (<%= devise %>)</div>
-                    </div>
-                </div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-                    <span style="color:#888;font-size:.82rem;" data-i18n="qg.mission.progressLabel">Progression vers objectif (10 cmd)</span>
-                    <span style="color:#d4af37;font-size:.82rem;" id="mission-pct">0%</span>
-                </div>
-                <div style="background:#1a1a1a;border-radius:8px;height:8px;">
-                    <div id="mission-bar" style="height:8px;border-radius:8px;background:linear-gradient(90deg,#d4af37,#00c6ff);width:0%;transition:width .6s ease;"></div>
-                </div>
-            </article>
-        </section>
-        <!-- ── PERFORMANCE DU MOIS ───────────────────── -->
-        <div class="qg-section-title">
-            <i data-lucide="bar-chart-2"></i>
-            <span data-i18n="qg.section.performance">Performance du mois 📈</span>
-        </div>
-        <section class="qg-dashboard">
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="trending-up"></i></div>
-                <span class="qg-card__value" id="perf-revenus-mois">0</span>
-                <span class="qg-card__label">Revenus ce mois (<%= devise %>)</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="package"></i></div>
-                <span class="qg-card__value" id="perf-commandes-mois">0</span>
-                <span class="qg-card__label" data-i18n="qg.performance.ordersMonth">Commandes ce mois</span>
-            </article>
-            <article class="qg-card qg-card--tilt">
-                <div class="qg-card__icon"><i data-lucide="activity"></i></div>
-                <span class="qg-card__value" id="perf-evolution">—</span>
-                <span class="qg-card__label" data-i18n="qg.performance.vsLastMonth">vs mois dernier</span>
-            </article>
-        </section>
-        <!-- ── COMMANDES ─────────────────────────────── -->
-        <div class="qg-section-title">
-            <i data-lucide="shopping-bag"></i>
-            <span data-i18n="qg.section.recentOrders">Dernières commandes</span>
-        </div>
-        <section class="qg-table-section">
-            <table class="qg-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th data-i18n="qg.table.client">Client</th>
-                        <th data-i18n="qg.table.phone">Téléphone</th>
-                        <th data-i18n="qg.table.product">Produit</th>
-                        <th data-i18n="qg.table.total">Total</th>
-                        <th data-i18n="qg.table.status">Statut</th>
-                    </tr>
-                </thead>
-                <tbody id="commandes-tbody">
-                    <tr>
-                        <td colspan="6" style="text-align:center;color:#888;padding:20px;" data-i18n="qg.loading">
-                            Chargement...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-        <!-- ── CLIENTS VIP ───────────────────────────── -->
-        <div class="qg-section-title">
-            <i data-lucide="crown"></i>
-            <span data-i18n="qg.section.vipClients">Clients VIP 👑</span>
-        </div>
-        <section class="qg-clients-section">
-            <div id="vip-list" class="qg-client-grid">
-                <p style="color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
-            </div>
-        </section>
-        <!-- ── BLACKLIST ──────────────────────────────── -->
-        <div class="qg-section-title" style="--accent:#e55;">
-            <i data-lucide="shield-off"></i>
-            <span data-i18n="qg.section.blacklist">Blacklist 🚫</span>
-        </div>
-        <section class="qg-clients-section">
-            <div id="black-list" class="qg-client-grid">
-                <p style="color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
-            </div>
-        </section>
-       <!-- ── ARSENAL ───────────────────────────────── -->
-        <div class="qg-section-title">
-            <i data-lucide="sword"></i>
-            <span data-i18n="qg.section.arsenal">Arsenal</span>
-        </div>
-        <section class="qg-arsenal">
-            <a href="/ads/create" class="qg-arsenal-card">
-                <div class="qg-arsenal-card__icon"><i data-lucide="megaphone"></i></div>
-                <h3 data-i18n="qg.arsenal.boostMarketing">Boost Marketing</h3>
-                <span class="qg-badge"><span data-i18n="qg.arsenal.level">Niveau</span> 2</span>
-                <div class="qg-level-bar"><div class="qg-level-bar__fill" style="width:66%"></div></div>
-            </a>
-            <article class="qg-arsenal-card">
-                <div class="qg-arsenal-card__icon"><i data-lucide="radar"></i></div>
-                <h3 data-i18n="qg.arsenal.radar">Radar Opportunités</h3>
-                <span class="qg-badge"><span data-i18n="qg.arsenal.level">Niveau</span> 1</span>
-                <div class="qg-level-bar"><div class="qg-level-bar__fill" style="width:33%"></div></div>
-            </article>
-            <article class="qg-arsenal-card">
-                <div class="qg-arsenal-card__icon"><i data-lucide="shield"></i></div>
-                <h3 data-i18n="qg.arsenal.fortress">Forteresse</h3>
-                <span class="qg-badge"><span data-i18n="qg.arsenal.level">Niveau</span> 3</span>
-                <div class="qg-level-bar"><div class="qg-level-bar__fill" style="width:100%"></div></div>
-            </article>
-            <article class="qg-arsenal-card qg-arsenal-card--more">
-                <i data-lucide="plus-circle"></i>
-                <h3 data-i18n="qg.arsenal.seeMore">Voir l'Arsenal</h3>
-            </article>
-        </section>
+</section>
 
-        <!-- ── AIDEZ-NOUS À VOUS AIDER ──────────────────── -->
-        <div class="qg-section-title" style="margin-top:20px;">
-            <i data-lucide="lightbulb"></i>
-            <span>Aidez-nous à vous aider</span>
-        </div>
-        <section class="qg-dashboard">
-            <article class="qg-card" style="grid-column:span 3;">
-                <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:12px;">
-                    Une idée, un souci, quelque chose à améliorer ? Dites-le à SAMII.
-                </p>
-                <textarea id="feedback-text" placeholder="Votre suggestion..." style="width:100%;min-height:80px;padding:10px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:white;"></textarea>
-                <button id="feedback-submit" style="margin-top:10px;padding:10px 16px;background:var(--gold-og);border:none;border-radius:8px;font-weight:700;cursor:pointer;">Envoyer</button>
-                <span id="feedback-msg" style="display:block;margin-top:8px;font-size:.8rem;color:#3ddc84;"></span>
-            </article>
-        </section>
+<section class="modules-section"><div class="section-head"><span>◎</span><span class="section-head__title">Modules disponibles</span></div><div class="modules-grid">
+<div class="m-card"><div class="m-card__icon">🧠</div><div><div class="m-card__name">IA SAMII</div><div class="m-card__desc">Assistant intelligent</div></div><div class="m-check">✓</div></div>
+<div class="m-card"><div class="m-card__icon">📊</div><div><div class="m-card__name">Dashboard</div><div class="m-card__desc">Tableau de bord</div></div><div class="m-check">✓</div></div>
+<div class="m-card"><div class="m-card__icon">🛍️</div><div><div class="m-card__name">Shopify</div><div class="m-card__desc">E-commerce</div></div><div class="m-check">✓</div></div>
+<div class="m-card"><div class="m-card__icon">💬</div><div><div class="m-card__name">WhatsApp</div><div class="m-card__desc">Messagerie</div></div><div class="m-check">✓</div></div>
+<div class="m-card"><div class="m-card__icon">✈️</div><div><div class="m-card__name">Telegram</div><div class="m-card__desc">Commandes en direct</div></div><div class="m-check">✓</div></div>
+<div class="m-card"><div class="m-card__icon">🏪</div><div><div class="m-card__name">Marketplace</div><div class="m-card__desc">Achète & vends</div></div><div class="m-check">✓</div></div>
+<div class="m-card"><div class="m-card__icon">🛎️</div><div><div class="m-card__name">Services</div><div class="m-card__desc">Livraison, garde...</div></div><div class="m-check">✓</div></div>
+<div class="m-card"><div class="m-card__icon">💼</div><div><div class="m-card__name">Emploi</div><div class="m-card__desc">Missions & postes</div></div><div class="m-check">✓</div></div>
+</div></section>
 
-    </main>
+<section class="soon-section"><div class="section-head"><span>🔒</span><span class="section-head__title">Bientôt disponible</span></div><div class="soon-grid">
+<div class="s-card"><div class="s-card__icon">🌍</div><div><div class="s-card__name">Réseau Mondial</div><div class="s-card__desc">Connectez-vous</div></div><span class="s-lock">🔒</span></div>
+<div class="s-card"><div class="s-card__icon">🚚</div><div><div class="s-card__name">Logistique</div><div class="s-card__desc">Livraison & suivi</div></div><span class="s-lock">🔒</span></div>
+<div class="s-card"><div class="s-card__icon">💳</div><div><div class="s-card__name">Finance</div><div class="s-card__desc">Paiements & compta</div></div><span class="s-lock">🔒</span></div>
+<div class="s-card"><div class="s-card__icon">🔌</div><div><div class="s-card__name">API & Intégrations</div><div class="s-card__desc">Connecte tout</div></div><span class="s-lock">🔒</span></div>
+</div></section>
+
+<div class="soon-banner">🚀 <span><strong>Bonne nouvelle !</strong> De nouvelles fonctionnalités arrivent bientôt. Prépare-toi à passer au niveau supérieur.</span></div>
+<div class="pills-bar">
+<div class="pill"><span class="pill__icon">🛡️</span><div><div class="pill__title">100% Sécurisé</div><div class="pill__desc">Tes données sont protégées</div></div></div>
+<div class="pill"><span class="pill__icon">⚡</span><div><div class="pill__title">IA Puissante</div><div class="pill__desc">Boostée par Gemini</div></div></div>
+<div class="pill"><span class="pill__icon">🔗</span><div><div class="pill__title">Connecté</div><div class="pill__desc">Toutes tes plateformes</div></div></div>
+<div class="pill"><span class="pill__icon">📈</span><div><div class="pill__title">Évolutif</div><div class="pill__desc">Conçu pour grandir</div></div></div>
+<div class="pill"><span class="pill__icon">👥</span><div><div class="pill__title">Communauté</div><div class="pill__desc">Ensemble on va plus loin</div></div></div>
 </div>
 
-<!-- SAMII orb -->
-<a href="/samii" class="samii-orb" aria-label="Ouvrir SAMII">
-    <span class="samii-orb__aura"></span>
-    <span class="samii-orb__aura samii-orb__aura--2"></span>
-    <i data-lucide="bot"></i>
-</a>
+<section class="auth-section" id="auth">
+<div class="auth-header"><h2>Rejoins OG Empire</h2><p>Crée ton compte en 2 minutes, gratuitement.</p></div>
+<div class="auth-tabs"><button type="button" class="auth-tab active" data-tab="register">Créer un compte</button><button type="button" class="auth-tab" data-tab="login">Se connecter</button></div>
+<div class="auth-card">
+<form id="form-register">
+<div class="step-indicator"><div class="step-dot done" data-step-dot="1"></div><div class="step-dot" data-step-dot="2"></div></div><div class="step-label" id="step-label">Étape 1 sur 2 — Ton profil</div>
+<div class="form-step active" data-step="1">
+<div class="type-choice"><label><input type="radio" name="type_compte" value="client" checked><span>👤 Particulier</span></label><label><input type="radio" name="type_compte" value="marchand"><span>🏪 Marchand</span></label></div>
+<div class="field-row"><div class="field-group"><label>Nom</label><input name="nom" placeholder="Ton nom" required></div><div class="field-group"><label>Prénom</label><input name="prenom" placeholder="Ton prénom" required></div></div>
+<div class="field-group"><label>Email</label><input name="email" type="email" placeholder="ton@email.com" required></div>
+<div class="field-row"><div class="field-group"><label>Téléphone</label><input name="telephone" placeholder="+213..." required></div><div class="field-group"><label>Pays</label><select name="pays" id="select-pays"><option value="DZ">Algérie</option><option value="MA">Maroc</option><option value="TN">Tunisie</option><option value="SN">Sénégal</option><option value="CI">Côte d'Ivoire</option><option value="FR">France</option><option value="AE">Émirats Arabes Unis</option><option value="US">États-Unis</option><option value="autre">🌐 Autre pays...</option></select><input id="champ-autre-pays" name="pays_autre" placeholder="Nom de ton pays"></div></div>
+<div id="bloc-metier" style="display:none"><div class="field-group"><label>Ton métier</label><select name="metier"><option value="ecommerce">E-commerçant</option><option value="restaurant">Restaurateur</option><option value="immobilier">Immobilier</option></select></div></div>
+<div class="grade-preview">🪖 <span class="grade-preview__text">Tu commenceras au grade <strong>Soldat</strong> — progresse et débloque de nouveaux pouvoirs.</span></div>
+<button type="button" class="auth-submit" id="btn-step1-next">Continuer →</button>
+</div>
+<div class="form-step" data-step="2">
+<div class="field-group"><label>Mot de passe</label><input name="password" type="password" placeholder="Minimum 6 caractères" required minlength="6"></div>
+<label style="display:block;font:600 .6rem var(--mono);color:var(--dim);margin-bottom:8px;text-transform:uppercase">Choisis l'univers de SAMII</label>
+<div class="theme-picker">
+<label class="theme-card theme-card--strategiste"><input type="radio" name="theme_visuel" value="strategiste" checked><div class="theme-card__preview"></div><div class="theme-card__name">🪖 Militaire · Disponible</div></label>
+<label class="theme-card theme-card--sagesse"><input type="radio" name="theme_visuel" value="sagesse"><div class="theme-card__preview"></div><div class="theme-card__name">🕊️ Sagesse · Disponible</div></label>
+<label class="theme-card theme-card--aventurier"><input type="radio" name="theme_visuel" value="aventurier" disabled><div class="theme-card__preview"></div><div class="theme-card__name">🧭 Aventurier</div></label>
+<label class="theme-card theme-card--gaming"><input type="radio" name="theme_visuel" value="gaming" disabled><div class="theme-card__preview"></div><div class="theme-card__name">🎮 Gaming</div></label>
+</div>
+<p style="font-size:.64rem;color:var(--dim);margin:-5px 0 14px">Deux univers sont disponibles dès maintenant. Les autres seront débloqués plus tard.</p>
+<div class="btn-row"><button type="button" class="auth-btn-back" id="btn-step2-back">← Retour</button><button type="submit" class="auth-submit">👑 Créer mon compte</button></div>
+</div>
+</form>
+<form id="form-login" style="display:none"><div class="field-group"><label>Email</label><input name="email" type="email" placeholder="ton@email.com" required></div><div class="field-group"><label>Mot de passe</label><input name="password" type="password" placeholder="Ton mot de passe" required></div><a href="/password-reset" class="forgot-link">Mot de passe oublié ?</a><button type="submit" class="auth-submit">Se connecter</button></form>
+<div class="auth-msg" id="auth-msg"></div>
+</div>
+</section>
 
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="/socket.io/socket.io.js"></script>
-<script src="/js/i18n.js"></script>
-<script src="/js/qg.js"></script>
+<footer class="site-footer"><span class="site-footer__quote">OG · EMPIRE — Construisez sans limite.</span><div class="social-links"><a href="https://www.instagram.com/og20250/" target="_blank">◎</a><a href="https://www.tiktok.com/@altos.official" target="_blank">♪</a><a href="https://www.youtube.com/@og20250" target="_blank">▶</a><a href="https://www.linkedin.com/in/ouahid-ghembaza-a16047239/" target="_blank">in</a></div><span class="site-footer__meta">v1.0 · SAMII OS</span></footer>
+
+<div class="theme-controls" aria-label="Apparence">
+<button type="button" data-mode="militaire" class="active">🪖 Militaire</button>
+<button type="button" data-mode="sagesse">🕊️ Sagesse</button>
+<button type="button" data-mode="light">☀ Clair</button>
+<button type="button" data-mode="dark">🌙 Sombre</button>
+</div>
+
 <script>
-document.getElementById("feedback-submit")?.addEventListener("click", async () => {
-    const text = document.getElementById("feedback-text").value.trim();
-    if (!text) return;
-    const res = await fetch("/api/feedback", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-    });
-    const json = await res.json();
-    document.getElementById("feedback-msg").textContent = json.success ? "✅ Merci, c'est transmis !" : "❌ Erreur.";
-    if (json.success) document.getElementById("feedback-text").value = "";
+document.querySelectorAll('.auth-tab').forEach(tab=>tab.addEventListener('click',()=>{
+ document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');
+ const r=tab.dataset.tab==='register';document.getElementById('form-register').style.display=r?'block':'none';document.getElementById('form-login').style.display=r?'none':'block';document.getElementById('auth-msg').textContent='';
+}));
+document.querySelectorAll('input[name="type_compte"]').forEach(r=>r.addEventListener('change',()=>{
+ document.getElementById('bloc-metier').style.display=r.value==='marchand'&&r.checked?'block':'none';
+}));
+document.getElementById('select-pays').addEventListener('change',function(){document.getElementById('champ-autre-pays').style.display=this.value==='autre'?'block':'none'});
+const stepLabels={1:'Étape 1 sur 2 — Ton profil',2:'Étape 2 sur 2 — Sécurité & style'};
+function goToStep(n){document.querySelectorAll('.form-step').forEach(s=>s.classList.remove('active'));document.querySelector('.form-step[data-step="'+n+'"]').classList.add('active');document.querySelectorAll('.step-dot').forEach(d=>d.classList.toggle('done',+d.dataset.stepDot<=n));document.getElementById('step-label').textContent=stepLabels[n]}
+document.getElementById('btn-step1-next').addEventListener('click',()=>{for(const f of document.querySelectorAll('.form-step[data-step="1"] [required]'))if(!f.value){f.reportValidity();return}goToStep(2)});
+document.getElementById('btn-step2-back').addEventListener('click',()=>goToStep(1));
+document.getElementById('form-register').addEventListener('submit',async e=>{
+ e.preventDefault();const msg=document.getElementById('auth-msg'),btn=e.target.querySelector('button[type="submit"]'),data=Object.fromEntries(new FormData(e.target));if(data.pays==='autre'&&data.pays_autre)data.pays=data.pays_autre;delete data.pays_autre;btn.disabled=true;msg.textContent='⏳ Création en cours...';msg.className='auth-msg';
+ try{const res=await fetch('/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),json=await res.json();if(json.success){msg.textContent=json.message||'✅ Compte créé !';msg.className='auth-msg ok';if(json.redirect)setTimeout(()=>location.href=json.redirect,1200)}else{msg.textContent=json.error||'❌ Erreur.';btn.disabled=false}}catch(err){msg.textContent='❌ Erreur réseau.';btn.disabled=false}
 });
-
-// Script pour le bouton Créer ma boutique / Cloudflare
-document.getElementById("create-shop-btn")?.addEventListener("click", async () => {
-    const subdomain = document.getElementById("subdomain-input").value.trim().toLowerCase();
-    const msgElement = document.getElementById("create-shop-msg");
-    
-    if (!subdomain) {
-        msgElement.style.color = "#e55";
-        msgElement.textContent = "❌ Entrez un nom valide !";
-        return;
-    }
-
-    msgElement.style.color = "#d4af37";
-    msgElement.textContent = "⏳ Création du sous-domaine en cours...";
-
-    try {
-        const res = await fetch("/api/create-shop", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ subdomain })
-        });
-        const json = await res.json();
-
-        if (json.success) {
-            msgElement.style.color = "#3ddc84";
-            msgElement.textContent = `✅ ${subdomain}.souverain-store.com créé !`;
-            document.getElementById("subdomain-input").value = "";
-        } else {
-            msgElement.style.color = "#e55";
-            msgElement.textContent = `❌ Erreur : ${json.error || "Inconnue"}`;
-        }
-    } catch (err) {
-        msgElement.style.color = "#e55";
-        msgElement.textContent = "❌ Erreur réseau.";
-    }
+document.getElementById('form-login').addEventListener('submit',async e=>{
+ e.preventDefault();const msg=document.getElementById('auth-msg'),btn=e.target.querySelector('button'),data=Object.fromEntries(new FormData(e.target));btn.disabled=true;msg.textContent='⏳ Connexion...';msg.className='auth-msg';
+ try{const res=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}),json=await res.json();if(json.success){msg.textContent='✅ Connecté !';msg.className='auth-msg ok';location.href=json.redirect||'/'}else{msg.textContent=json.error||'❌ Erreur.';btn.disabled=false}}catch(err){msg.textContent='❌ Erreur réseau.';btn.disabled=false}
 });
+const body=document.body;
+document.querySelectorAll('.theme-controls button').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('.theme-controls button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+ body.classList.remove('sagesse','light');
+ const mode=b.dataset.mode;
+ if(mode==='sagesse')body.classList.add('sagesse');
+ if(mode==='light')body.classList.add('light');
+ localStorage.setItem('samii-mode',mode);
+}));
+const saved=localStorage.getItem('samii-mode');
+if(saved){const b=document.querySelector('[data-mode="'+saved+'"]');if(b)b.click()}
 </script>
 </body>
 </html>
+'''
+path = Path("/mnt/data/samii-qg-final.ejs")
+path.write_text(html, encoding="utf-8")
+print(path)
