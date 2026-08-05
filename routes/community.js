@@ -1,3491 +1,544 @@
-// ============================================================================
-// SAMII OS — OG TECHNOLOGY COMMUNITY
-// Community Hub — Mobile First / Dark + Light / Futuristic
-// ============================================================================
+// ==========================================================================
+// SAMII OS — COMMUNITY — PostgreSQL Edition
+// Feed premium synchronisé avec l'écosystème SAMII (thème bleu/cyan tech)
+// ==========================================================================
 
 const express = require("express");
-
 const router = express.Router();
-
-
-// ============================================================================
-// AUTH
-// ============================================================================
+const db = require("../services/db");
 
 function requireAuth(req, res, next) {
-    if (!req.session?.loggedIn) {
-        return res.redirect("/login");
-    }
-
+    if (!req.session?.loggedIn) return res.redirect("/login");
     next();
 }
 
-
-// ============================================================================
-// DONNÉES DE DÉMONSTRATION — STRUCTURE PRÊTE POUR AIRTABLE
-// ============================================================================
-
-const POSTS = [
-    {
-        id: 1,
-        author: "Samii Technology",
-        initials: "S",
-        grade: "GÉNÉRAL",
-        verified: true,
-        time: "Il y a 12 min",
-        text: "Bienvenue dans la nouvelle Community SAMII. Ici, clients, marchands, créateurs et partenaires construisent ensemble l'écosystème.",
-        image: "",
-        likes: 128,
-        comments: 24,
-        shares: 11,
-        tag: "SAMII",
-        type: "system"
-    },
-    {
-        id: 2,
-        author: "Marketplace OG",
-        initials: "M",
-        grade: "MARCHAND",
-        verified: true,
-        time: "Il y a 34 min",
-        text: "Nouvelle opportunité publiée sur Marketplace. Les membres de la communauté peuvent maintenant découvrir les produits et services directement depuis leur feed.",
-        image: "",
-        likes: 74,
-        comments: 13,
-        shares: 8,
-        tag: "MARKETPLACE",
-        type: "marketplace"
-    },
-    {
-        id: 3,
-        author: "Membre SAMII",
-        initials: "M",
-        grade: "CAPITAINE",
-        verified: false,
-        time: "Il y a 1 h",
-        text: "Je viens de terminer ma première mission. Les points ont été ajoutés à mon grade. On avance 🚀",
-        image: "",
-        likes: 46,
-        comments: 9,
-        shares: 3,
-        tag: "COMMUNAUTÉ",
-        type: "member"
-    }
-];
-
-
-// ============================================================================
-// CSS GLOBAL
-// ============================================================================
-
-const COMMUNITY_CSS = `
-
-/* ========================================================================
-   VARIABLES
-   ======================================================================== */
-
-:root {
-
-    --og-black: #030508;
-    --og-black-2: #070b11;
-    --og-panel: rgba(9, 15, 24, .88);
-    --og-panel-solid: #0a111b;
-
-    --og-blue: #087cff;
-    --og-blue-bright: #00b7ff;
-    --og-cyan: #00efff;
-
-    --og-blue-soft: rgba(0, 132, 255, .12);
-    --og-cyan-soft: rgba(0, 239, 255, .08);
-
-    --og-white: #f5f9ff;
-    --og-text: #dce7f5;
-    --og-muted: #8190a5;
-
-    --og-border: rgba(255,255,255,.08);
-    --og-border-blue: rgba(0,174,255,.22);
-
-    --og-danger: #ff4f67;
-    --og-success: #21e6a0;
-    --og-warning: #ffc857;
-
-    --og-shadow:
-        0 20px 60px rgba(0,0,0,.45);
-
-    --og-glow:
-        0 0 35px rgba(0,174,255,.16);
-
-    --radius-xl: 24px;
-    --radius-lg: 18px;
-    --radius-md: 14px;
-
-    --ease: cubic-bezier(.16,1,.3,1);
-}
-
-
-/* ========================================================================
-   LIGHT MODE
-   ======================================================================== */
-
-body.light-mode {
-
-    --og-black: #eef4fa;
-    --og-black-2: #f6f9fc;
-
-    --og-panel: rgba(255,255,255,.94);
-    --og-panel-solid: #ffffff;
-
-    --og-white: #07111d;
-    --og-text: #26384c;
-    --og-muted: #6d7d90;
-
-    --og-border: rgba(4,25,45,.09);
-    --og-border-blue: rgba(0,105,210,.22);
-
-    --og-blue-soft: rgba(0,115,230,.08);
-    --og-cyan-soft: rgba(0,180,230,.07);
-
-    --og-shadow:
-        0 18px 45px rgba(15,45,75,.10);
-
-    background:
-        radial-gradient(
-            circle at 10% 0%,
-            rgba(0,160,255,.10),
-            transparent 32%
-        ),
-        #eef4fa;
-}
-
-
-/* ========================================================================
-   RESET
-   ======================================================================== */
-
-* {
-    box-sizing: border-box;
-}
-
-html {
-    scroll-behavior: smooth;
-}
-
-body {
-
-    margin: 0;
-
-    min-height: 100vh;
-
-    background:
-        radial-gradient(
-            circle at 10% 10%,
-            rgba(0,105,255,.10),
-            transparent 30%
-        ),
-        radial-gradient(
-            circle at 90% 70%,
-            rgba(0,238,255,.06),
-            transparent 30%
-        ),
-        linear-gradient(
-            135deg,
-            #020407,
-            #050a11 55%,
-            #020509
-        );
-
-    color: var(--og-text);
-
-    font-family:
-        Inter,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-
-    overflow-x: hidden;
-
-    transition:
-        background .35s ease,
-        color .35s ease;
-}
-
-button,
-input,
-textarea {
-    font: inherit;
-}
-
-button {
-    cursor: pointer;
-}
-
-a {
-    color: inherit;
-    text-decoration: none;
-}
-
-
-/* ========================================================================
-   FUTURISTIC BACKGROUND
-   ======================================================================== */
-
-.community-background {
-
-    position: fixed;
-
-    inset: 0;
-
-    pointer-events: none;
-
-    z-index: -1;
-
-    overflow: hidden;
-}
-
-.community-grid {
-
-    position: absolute;
-
-    inset: 0;
-
-    opacity: .18;
-
-    background-image:
-
-        linear-gradient(
-            rgba(0,180,255,.045) 1px,
-            transparent 1px
-        ),
-
-        linear-gradient(
-            90deg,
-            rgba(0,180,255,.045) 1px,
-            transparent 1px
-        );
-
-    background-size: 44px 44px;
-
-    mask-image:
-        linear-gradient(
-            to bottom,
-            black,
-            transparent 90%
-        );
-}
-
-.community-orb {
-
-    position: absolute;
-
-    width: 500px;
-    height: 500px;
-
-    border-radius: 50%;
-
-    background:
-        radial-gradient(
-            circle,
-            rgba(0,155,255,.11),
-            transparent 68%
-        );
-
-    filter: blur(25px);
-
-    animation:
-        floatingOrb 12s ease-in-out infinite;
-}
-
-.community-orb.one {
-    top: -220px;
-    left: -160px;
-}
-
-.community-orb.two {
-
-    right: -250px;
-    bottom: -180px;
-
-    animation-delay: -5s;
-}
-
-@keyframes floatingOrb {
-
-    0%,
-    100% {
-        transform: translate3d(0,0,0);
-    }
-
-    50% {
-        transform: translate3d(35px,-25px,0);
-    }
-}
-
-
-/* ========================================================================
-   APP
-   ======================================================================== */
-
-.community-app {
-
-    min-height: 100vh;
-
-    display: flex;
-    flex-direction: column;
-}
-
-
-/* ========================================================================
-   HEADER
-   ======================================================================== */
-
-.community-header {
-
-    position: sticky;
-
-    top: 0;
-
-    z-index: 100;
-
-    height: 70px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 20px;
-
-    padding:
-        0 28px;
-
-    background:
-        rgba(3,8,14,.82);
-
-    border-bottom:
-        1px solid var(--og-border);
-
-    backdrop-filter:
-        blur(22px);
-
-    -webkit-backdrop-filter:
-        blur(22px);
-}
-
-body.light-mode .community-header {
-
-    background:
-        rgba(255,255,255,.82);
-}
-
-
-/* LOGO */
-
-.community-logo {
-
-    min-width: 190px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-}
-
-.community-logo-mark {
-
-    width: 38px;
-    height: 38px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 12px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #008cff,
-            #00eaff
-        );
-
-    color: #00121e;
-
-    font-weight: 1000;
-
-    box-shadow:
-        0 0 25px rgba(0,205,255,.35);
-}
-
-.community-logo-text {
-
-    display: flex;
-    flex-direction: column;
-
-    line-height: 1;
-}
-
-.community-logo-text strong {
-
-    color: var(--og-white);
-
-    font-size: 16px;
-
-    letter-spacing: 1.5px;
-}
-
-.community-logo-text span {
-
-    margin-top: 5px;
-
-    color: var(--og-cyan);
-
-    font-size: 9px;
-
-    font-weight: 800;
-
-    letter-spacing: 2.2px;
-}
-
-
-/* SEARCH */
-
-.community-search {
-
-    flex: 1;
-
-    max-width: 620px;
-
-    height: 42px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    padding: 0 15px;
-
-    border:
-        1px solid var(--og-border);
-
-    border-radius: 12px;
-
-    background:
-        rgba(255,255,255,.035);
-
-    transition:
-        border .25s,
-        box-shadow .25s;
-}
-
-.community-search:focus-within {
-
-    border-color:
-        rgba(0,190,255,.45);
-
-    box-shadow:
-        0 0 0 4px rgba(0,160,255,.06);
-}
-
-.community-search-icon {
-
-    color: var(--og-muted);
-
-    font-size: 16px;
-}
-
-.community-search input {
-
-    width: 100%;
-
-    border: 0;
-
-    outline: 0;
-
-    background: transparent;
-
-    color: var(--og-white);
-
-    font-size: 13px;
-}
-
-.community-search input::placeholder {
-    color: var(--og-muted);
-}
-
-
-/* HEADER ACTIONS */
-
-.community-header-actions {
-
-    margin-left: auto;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-}
-
-.icon-button {
-
-    width: 40px;
-    height: 40px;
-
-    border:
-        1px solid var(--og-border);
-
-    border-radius: 11px;
-
-    background:
-        rgba(255,255,255,.035);
-
-    color: var(--og-text);
-
-    display: grid;
-
-    place-items: center;
-
-    transition:
-        all .25s var(--ease);
-}
-
-.icon-button:hover {
-
-    border-color:
-        rgba(0,205,255,.4);
-
-    color:
-        var(--og-cyan);
-
-    transform:
-        translateY(-2px);
-
-    box-shadow:
-        var(--og-glow);
-}
-
-.notification-button {
-    position: relative;
-}
-
-.notification-dot {
-
-    position: absolute;
-
-    top: 7px;
-    right: 7px;
-
-    width: 7px;
-    height: 7px;
-
-    border-radius: 50%;
-
-    background:
-        var(--og-cyan);
-
-    box-shadow:
-        0 0 10px var(--og-cyan);
-}
-
-
-/* PROFILE */
-
-.header-profile {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    padding-left: 10px;
-}
-
-.profile-avatar {
-
-    width: 38px;
-    height: 38px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 50%;
-
-    background:
-        linear-gradient(
-            135deg,
-            #071827,
-            #006dff
-        );
-
-    border:
-        1px solid rgba(0,220,255,.45);
-
-    color: white;
-
-    font-weight: 900;
-
-    box-shadow:
-        0 0 20px rgba(0,150,255,.18);
-}
-
-.profile-name {
-
-    display: flex;
-
-    flex-direction: column;
-
-    line-height: 1.2;
-}
-
-.profile-name strong {
-
-    color: var(--og-white);
-
-    font-size: 12px;
-}
-
-.profile-name span {
-
-    color: var(--og-cyan);
-
-    font-size: 9px;
-
-    font-weight: 800;
-
-    letter-spacing: 1px;
-}
-
-
-/* ========================================================================
-   DESKTOP LAYOUT
-   ======================================================================== */
-
-.community-layout {
-
-    width: 100%;
-
-    max-width: 1480px;
-
-    margin: 0 auto;
-
-    padding:
-        28px;
-
-    display: grid;
-
-    grid-template-columns:
-        245px
-        minmax(400px, 680px)
-        285px;
-
-    gap: 22px;
-
-    align-items: start;
-}
-
-
-/* ========================================================================
-   SIDEBARS
-   ======================================================================== */
-
-.community-sidebar {
-
-    position: sticky;
-
-    top: 94px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 14px;
-}
-
-.sidebar-card {
-
-    padding: 16px;
-
-    border:
-        1px solid var(--og-border);
-
-    border-radius: var(--radius-lg);
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,255,255,.045),
-            rgba(255,255,255,.018)
-        );
-
-    box-shadow:
-        var(--og-shadow);
-
-    backdrop-filter:
-        blur(16px);
-}
-
-body.light-mode .sidebar-card {
-
-    background:
-        rgba(255,255,255,.82);
-}
-
-
-/* NAV */
-
-.community-nav {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 5px;
-}
-
-.community-nav-link {
-
-    min-height: 44px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    padding:
-        0 12px;
-
-    border-radius: 11px;
-
-    color: var(--og-muted);
-
-    font-size: 12px;
-
-    font-weight: 700;
-
-    transition:
-        all .22s var(--ease);
-}
-
-.community-nav-link:hover,
-.community-nav-link.active {
-
-    color: var(--og-white);
-
-    background:
-        linear-gradient(
-            90deg,
-            rgba(0,150,255,.14),
-            rgba(0,230,255,.045)
-        );
-
-    box-shadow:
-        inset 3px 0 0 var(--og-cyan);
-}
-
-.community-nav-link .nav-icon {
-
-    width: 27px;
-    height: 27px;
-
-    display: grid;
-
-    place-items: center;
-
-    border-radius: 8px;
-
-    background:
-        rgba(255,255,255,.04);
-
-    font-size: 14px;
-}
-
-
-/* QG CARD */
-
-.qg-card {
-
-    padding: 18px;
-
-    border:
-        1px solid rgba(0,190,255,.2);
-
-    border-radius: var(--radius-lg);
-
-    background:
-        radial-gradient(
-            circle at 100% 0%,
-            rgba(0,200,255,.13),
-            transparent 55%
-        ),
-        rgba(3,14,24,.8);
-
-    overflow: hidden;
-
-    position: relative;
-}
-
-.qg-card::after {
-
-    content: "";
-
-    position: absolute;
-
-    width: 90px;
-    height: 90px;
-
-    right: -40px;
-    top: -40px;
-
-    border-radius: 50%;
-
-    border:
-        1px solid rgba(0,220,255,.25);
-
-    box-shadow:
-        0 0 30px rgba(0,190,255,.12);
-}
-
-.qg-title {
-
-    color: var(--og-cyan);
-
-    font-size: 10px;
-
-    font-weight: 900;
-
-    letter-spacing: 1.8px;
-
-    margin-bottom: 8px;
-}
-
-.qg-text {
-
-    color: var(--og-muted);
-
-    font-size: 11px;
-
-    line-height: 1.55;
-}
-
-
-/* ========================================================================
-   MAIN FEED
-   ======================================================================== */
-
-.community-feed {
-
-    min-width: 0;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 16px;
-}
-
-
-/* HERO */
-
-.community-hero {
-
-    position: relative;
-
-    overflow: hidden;
-
-    padding: 26px;
-
-    min-height: 180px;
-
-    border:
-        1px solid rgba(0,184,255,.22);
-
-    border-radius:
-        var(--radius-xl);
-
-    background:
-
-        radial-gradient(
-            circle at 90% 20%,
-            rgba(0,222,255,.18),
-            transparent 38%
-        ),
-
-        radial-gradient(
-            circle at 20% 100%,
-            rgba(0,90,255,.18),
-            transparent 45%
-        ),
-
-        linear-gradient(
-            135deg,
-            rgba(8,23,39,.95),
-            rgba(3,9,17,.95)
-        );
-
-    box-shadow:
-        0 25px 70px rgba(0,0,0,.4),
-        inset 0 1px rgba(255,255,255,.05);
-}
-
-body.light-mode .community-hero {
-
-    background:
-        radial-gradient(
-            circle at 90% 10%,
-            rgba(0,175,255,.13),
-            transparent 40%
-        ),
-        linear-gradient(
-            135deg,
-            #ffffff,
-            #eaf6ff
-        );
-}
-
-.hero-kicker {
-
-    color: var(--og-cyan);
-
-    font-size: 10px;
-
-    font-weight: 900;
-
-    letter-spacing: 2px;
-
-    margin-bottom: 10px;
-}
-
-.community-hero h1 {
-
-    margin: 0;
-
-    max-width: 500px;
-
-    color: var(--og-white);
-
-    font-size:
-        clamp(25px, 4vw, 36px);
-
-    line-height: 1.05;
-
-    letter-spacing: -1px;
-}
-
-.community-hero h1 span {
-
-    background:
-        linear-gradient(
-            90deg,
-            #fff,
-            #00cfff,
-            #008dff
-        );
-
-    -webkit-background-clip: text;
-
-    -webkit-text-fill-color: transparent;
-}
-
-.hero-description {
-
-    max-width: 530px;
-
-    margin:
-        13px 0 20px;
-
-    color: var(--og-muted);
-
-    font-size: 12px;
-
-    line-height: 1.6;
-}
-
-.hero-actions {
-
-    display: flex;
-
-    gap: 8px;
-
-    flex-wrap: wrap;
-}
-
-
-/* BUTTONS */
-
-.primary-button,
-.secondary-button {
-
-    min-height: 40px;
-
-    padding:
-        0 15px;
-
-    border-radius: 10px;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 7px;
-
-    font-size: 11px;
-
-    font-weight: 900;
-
-    transition:
-        all .25s var(--ease);
-}
-
-.primary-button {
-
-    color: #00131e;
-
-    border: 0;
-
-    background:
-        linear-gradient(
-            135deg,
-            #00efff,
-            #0087ff
-        );
-
-    box-shadow:
-        0 7px 25px rgba(0,165,255,.25);
-}
-
-.primary-button:hover {
-
-    transform:
-        translateY(-2px);
-
-    box-shadow:
-        0 12px 35px rgba(0,180,255,.38);
-}
-
-.secondary-button {
-
-    color: var(--og-text);
-
-    background:
-        rgba(255,255,255,.045);
-
-    border:
-        1px solid var(--og-border);
-}
-
-.secondary-button:hover {
-
-    border-color:
-        rgba(0,200,255,.35);
-
-    color:
-        var(--og-cyan);
-}
-
-
-/* ========================================================================
-   CREATE POST
-   ======================================================================== */
-
-.create-post {
-
-    padding: 17px;
-
-    border:
-        1px solid var(--og-border);
-
-    border-radius:
-        var(--radius-lg);
-
-    background:
-        var(--og-panel);
-
-    box-shadow:
-        var(--og-shadow);
-
-    backdrop-filter:
-        blur(18px);
-}
-
-.create-post-top {
-
-    display: flex;
-
-    gap: 11px;
-
-    align-items: flex-start;
-}
-
-.create-avatar {
-
-    flex:
-        0 0 auto;
-
-    width: 40px;
-    height: 40px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 50%;
-
-    background:
-        linear-gradient(
-            135deg,
-            #006aff,
-            #00d9ff
-        );
-
-    color: white;
-
-    font-weight: 900;
-}
-
-.fake-input {
-
-    flex: 1;
-
-    min-height: 42px;
-
-    display: flex;
-
-    align-items: center;
-
-    padding:
-        0 14px;
-
-    border:
-        1px solid var(--og-border);
-
-    border-radius: 12px;
-
-    color: var(--og-muted);
-
-    background:
-        rgba(255,255,255,.025);
-
-    font-size: 12px;
-
-    cursor: pointer;
-
-    transition:
-        all .2s;
-}
-
-.fake-input:hover {
-
-    border-color:
-        rgba(0,190,255,.35);
-
-    color:
-        var(--og-text);
-}
-
-.create-actions {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(4,1fr);
-
-    gap: 7px;
-
-    margin-top: 13px;
-}
-
-.create-action {
-
-    min-height: 37px;
-
-    border:
-        1px solid var(--og-border);
-
-    border-radius: 10px;
-
-    background:
-        rgba(255,255,255,.025);
-
-    color: var(--og-muted);
-
-    font-size: 10px;
-
-    font-weight: 800;
-
-    transition:
-        all .2s;
-}
-
-.create-action:hover {
-
-    color: var(--og-cyan);
-
-    border-color:
-        rgba(0,200,255,.28);
-
-    background:
-        rgba(0,170,255,.06);
-}
-
-
-/* ========================================================================
-   POST
-   ======================================================================== */
-
-.community-post {
-
-    border:
-        1px solid var(--og-border);
-
-    border-radius:
-        var(--radius-lg);
-
-    background:
-        var(--og-panel);
-
-    box-shadow:
-        var(--og-shadow);
-
-    overflow: hidden;
-
-    backdrop-filter:
-        blur(18px);
-
-    transition:
-        border .25s,
-        transform .25s;
-}
-
-.community-post:hover {
-
-    border-color:
-        rgba(0,160,255,.17);
-}
-
-.post-header {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 11px;
-
-    padding:
-        17px 17px 10px;
-}
-
-.post-avatar {
-
-    width: 42px;
-    height: 42px;
-
-    flex:
-        0 0 auto;
-
-    display: grid;
-
-    place-items: center;
-
-    border-radius: 50%;
-
-    background:
-        linear-gradient(
-            135deg,
-            #081b30,
-            #0079ff
-        );
-
-    border:
-        1px solid rgba(0,195,255,.35);
-
-    color: white;
-
-    font-weight: 900;
-}
-
-.post-author {
-
-    min-width: 0;
-
-    display: flex;
-
-    flex-direction: column;
-}
-
-.post-author-name {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 5px;
-
-    color: var(--og-white);
-
-    font-size: 12px;
-
-    font-weight: 900;
-}
-
-.verified {
-
-    color:
-        var(--og-cyan);
-
-    font-size: 10px;
-}
-
-.post-meta {
-
-    color: var(--og-muted);
-
-    font-size: 9px;
-
-    margin-top: 3px;
-}
-
-.post-menu {
-
-    margin-left: auto;
-
-    border: 0;
-
-    background: transparent;
-
-    color: var(--og-muted);
-
-    font-size: 18px;
-}
-
-.post-content {
-
-    padding:
-        5px 17px 15px;
-}
-
-.post-content p {
-
-    margin: 0;
-
-    color: var(--og-text);
-
-    font-size: 13px;
-
-    line-height: 1.65;
-
-    white-space: pre-line;
-}
-
-
-/* POST TAG */
-
-.post-tag {
-
-    display: inline-flex;
-
-    margin-top: 13px;
-
-    padding:
-        5px 8px;
-
-    border-radius: 7px;
-
-    background:
-        rgba(0,185,255,.07);
-
-    border:
-        1px solid rgba(0,185,255,.15);
-
-    color:
-        var(--og-cyan);
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-    letter-spacing: 1px;
-}
-
-
-/* POST ACTIONS */
-
-.post-actions {
-
-    display: flex;
-
-    align-items: center;
-
-    border-top:
-        1px solid var(--og-border);
-
-    padding:
-        8px 12px;
-}
-
-.post-action {
-
-    flex: 1;
-
-    height: 38px;
-
-    border: 0;
-
-    border-radius: 9px;
-
-    background: transparent;
-
-    color: var(--og-muted);
-
-    font-size: 10px;
-
-    font-weight: 800;
-
-    transition:
-        all .2s;
-}
-
-.post-action:hover {
-
-    color:
-        var(--og-cyan);
-
-    background:
-        rgba(0,180,255,.05);
-}
-
-.post-action.liked {
-
-    color:
-        var(--og-cyan);
-
-    text-shadow:
-        0 0 10px rgba(0,220,255,.45);
-}
-
-
-/* ========================================================================
-   RIGHT SIDEBAR
-   ======================================================================== */
-
-.widget-title {
-
-    display: flex;
-
-    justify-content: space-between;
-
-    align-items: center;
-
-    margin-bottom: 14px;
-
-    color: var(--og-white);
-
-    font-size: 11px;
-
-    font-weight: 900;
-}
-
-.widget-title span {
-
-    color:
-        var(--og-cyan);
-
-    font-size: 9px;
-
-    letter-spacing: 1px;
-}
-
-.trend {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 3px;
-
-    padding:
-        9px 0;
-
-    border-bottom:
-        1px solid var(--og-border);
-}
-
-.trend:last-child {
-    border-bottom: 0;
-}
-
-.trend small {
-
-    color: var(--og-muted);
-
-    font-size: 8px;
-}
-
-.trend strong {
-
-    color: var(--og-text);
-
-    font-size: 11px;
-}
-
-.trend span {
-
-    color: var(--og-muted);
-
-    font-size: 8px;
-}
-
-
-/* RANK */
-
-.rank-item {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 9px;
-
-    padding: 8px 0;
-}
-
-.rank-number {
-
-    width: 22px;
-    height: 22px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 7px;
-
-    color: var(--og-cyan);
-
-    background:
-        rgba(0,180,255,.07);
-
-    font-size: 9px;
-
-    font-weight: 900;
-}
-
-.rank-avatar {
-
-    width: 29px;
-    height: 29px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 50%;
-
-    background:
-        linear-gradient(
-            135deg,
-            #0a2945,
-            #006aff
-        );
-
-    color: white;
-
-    font-size: 9px;
-
-    font-weight: 900;
-}
-
-.rank-info {
-
-    flex: 1;
-
-    min-width: 0;
-}
-
-.rank-info strong {
-
-    display: block;
-
-    color: var(--og-text);
-
-    font-size: 9px;
-}
-
-.rank-info span {
-
-    color: var(--og-muted);
-
-    font-size: 8px;
-}
-
-
-/* ========================================================================
-   MOBILE BOTTOM NAV
-   ======================================================================== */
-
-.mobile-bottom-nav {
-
-    display: none;
-
-    position: fixed;
-
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-
-    z-index: 200;
-
-    height: 64px;
-
-    padding:
-        6px;
-
-    border:
-        1px solid rgba(0,190,255,.2);
-
-    border-radius: 19px;
-
-    background:
-        rgba(5,11,18,.92);
-
-    backdrop-filter:
-        blur(22px);
-
-    box-shadow:
-        0 20px 50px rgba(0,0,0,.55);
-}
-
-body.light-mode .mobile-bottom-nav {
-
-    background:
-        rgba(255,255,255,.92);
-}
-
-.mobile-nav-item {
-
-    flex: 1;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 3px;
-
-    border: 0;
-
-    border-radius: 13px;
-
-    background: transparent;
-
-    color: var(--og-muted);
-
-    font-size: 8px;
-
-    font-weight: 800;
-}
-
-.mobile-nav-item span:first-child {
-
-    font-size: 17px;
-}
-
-.mobile-nav-item.active {
-
-    color:
-        var(--og-cyan);
-
-    background:
-        rgba(0,190,255,.08);
-}
-
-
-/* ========================================================================
-   THEME TOGGLE
-   ======================================================================== */
-
-.theme-switch {
-
-    position: fixed;
-
-    right: 20px;
-    bottom: 20px;
-
-    z-index: 250;
-
-    width: 46px;
-    height: 46px;
-
-    border-radius: 50%;
-
-    border:
-        1px solid rgba(0,190,255,.25);
-
-    background:
-        rgba(7,14,22,.9);
-
-    color:
-        var(--og-cyan);
-
-    box-shadow:
-        0 8px 30px rgba(0,0,0,.35);
-
-    transition:
-        all .25s;
-}
-
-.theme-switch:hover {
-
-    transform:
-        rotate(18deg)
-        scale(1.06);
-
-    box-shadow:
-        0 0 25px rgba(0,200,255,.2);
-}
-
-body.light-mode .theme-switch {
-
-    background:
-        rgba(255,255,255,.95);
-}
-
-
-/* ========================================================================
-   MODAL PUBLICATION
-   ======================================================================== */
-
-.publish-overlay {
-
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 500;
-
-    display: none;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 20px;
-
-    background:
-        rgba(0,0,0,.72);
-
-    backdrop-filter:
-        blur(12px);
-}
-
-.publish-overlay.open {
-    display: flex;
-}
-
-.publish-modal {
-
-    width: 100%;
-
-    max-width: 620px;
-
-    max-height: 90vh;
-
-    overflow-y: auto;
-
-    padding: 22px;
-
-    border:
-        1px solid rgba(0,190,255,.25);
-
-    border-radius: 22px;
-
-    background:
-        #07101a;
-
-    box-shadow:
-        0 30px 100px rgba(0,0,0,.7),
-        0 0 50px rgba(0,170,255,.08);
-}
-
-body.light-mode .publish-modal {
-    background: #fff;
-}
-
-.modal-header {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    margin-bottom: 20px;
-}
-
-.modal-header h2 {
-
-    margin: 0;
-
-    color: var(--og-white);
-
-    font-size: 18px;
-}
-
-.modal-close {
-
-    width: 35px;
-    height: 35px;
-
-    border: 0;
-
-    border-radius: 9px;
-
-    background:
-        rgba(255,255,255,.05);
-
-    color: var(--og-muted);
-
-    font-size: 18px;
-}
-
-.publish-textarea {
-
-    width: 100%;
-
-    min-height: 170px;
-
-    resize: vertical;
-
-    border:
-        1px solid var(--og-border);
-
-    border-radius: 14px;
-
-    padding: 14px;
-
-    outline: 0;
-
-    background:
-        rgba(255,255,255,.025);
-
-    color: var(--og-white);
-
-    font-size: 13px;
-
-    line-height: 1.6;
-}
-
-.publish-textarea:focus {
-
-    border-color:
-        rgba(0,200,255,.4);
-
-    box-shadow:
-        0 0 0 4px rgba(0,170,255,.06);
-}
-
-.modal-tools {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(3,1fr);
-
-    gap: 8px;
-
-    margin:
-        12px 0;
-}
-
-.modal-tool {
-
-    min-height: 40px;
-
-    border:
-        1px solid var(--og-border);
-
-    border-radius: 10px;
-
-    background:
-        rgba(255,255,255,.025);
-
-    color: var(--og-muted);
-
-    font-size: 10px;
-
-    font-weight: 800;
-}
-
-.modal-publish {
-
-    width: 100%;
-
-    height: 46px;
-
-    border: 0;
-
-    border-radius: 12px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #00eaff,
-            #007cff
-        );
-
-    color:
-        #00111c;
-
-    font-weight: 1000;
-
-    box-shadow:
-        0 10px 30px rgba(0,145,255,.22);
-}
-
-
-/* ========================================================================
-   RESPONSIVE TABLET
-   ======================================================================== */
-
-@media (max-width: 1200px) {
-
-    .community-layout {
-
-        grid-template-columns:
-            210px
-            minmax(400px, 1fr);
-
-        max-width: 1050px;
-    }
-
-    .community-right-sidebar {
-        display: none;
-    }
-}
-
-
-/* ========================================================================
-   RESPONSIVE MOBILE
-   ======================================================================== */
-
-@media (max-width: 760px) {
-
-    .community-header {
-
-        height: 60px;
-
-        padding:
-            0 13px;
-
-        gap: 8px;
-    }
-
-    .community-logo {
-
-        min-width: auto;
-    }
-
-    .community-logo-text span {
-        display: none;
-    }
-
-    .community-logo-text strong {
-        font-size: 13px;
-    }
-
-    .community-logo-mark {
-
-        width: 34px;
-        height: 34px;
-    }
-
-    .community-search {
-
-        order: 3;
-
-        position: absolute;
-
-        top: 67px;
-
-        left: 12px;
-        right: 12px;
-
-        max-width: none;
-
-        height: 40px;
-    }
-
-    .community-header-actions {
-
-        gap: 4px;
-    }
-
-    .header-profile {
-        display: none;
-    }
-
-    .community-layout {
-
-        display: block;
-
-        padding:
-            58px 10px 90px;
-    }
-
-    .community-left-sidebar,
-    .community-right-sidebar {
-
-        display: none;
-    }
-
-    .community-feed {
-
-        width: 100%;
-    }
-
-    .community-hero {
-
-        min-height: auto;
-
-        padding:
-            22px 18px;
-
-        border-radius: 19px;
-    }
-
-    .community-hero h1 {
-
-        font-size: 27px;
-    }
-
-    .hero-description {
-
-        font-size: 11px;
-    }
-
-    .hero-actions {
-
-        display: grid;
-
-        grid-template-columns:
-            1fr 1fr;
-    }
-
-    .primary-button,
-    .secondary-button {
-
-        width: 100%;
-
-        min-height: 42px;
-    }
-
-    .create-post {
-
-        padding: 13px;
-
-        border-radius: 16px;
-    }
-
-    .create-actions {
-
-        grid-template-columns:
-            repeat(2,1fr);
-    }
-
-    .community-post {
-
-        border-radius: 16px;
-    }
-
-    .post-header {
-
-        padding:
-            14px 13px 9px;
-    }
-
-    .post-content {
-
-        padding:
-            5px 13px 13px;
-    }
-
-    .post-actions {
-
-        padding:
-            6px;
-    }
-
-    .post-action {
-
-        font-size: 9px;
-    }
-
-    .mobile-bottom-nav {
-
-        display: flex;
-    }
-
-    .theme-switch {
-
-        right: 12px;
-
-        bottom: 84px;
-
-        width: 40px;
-        height: 40px;
-
-        font-size: 14px;
-    }
-}
-
-
-/* ========================================================================
-   VERY SMALL PHONES
-   ======================================================================== */
-
-@media (max-width: 380px) {
-
-    .community-layout {
-
-        padding-left: 7px;
-        padding-right: 7px;
-    }
-
-    .community-hero h1 {
-        font-size: 24px;
-    }
-
-    .create-action {
-        font-size: 9px;
-    }
-
-    .mobile-bottom-nav {
-        left: 6px;
-        right: 6px;
-    }
-}
-
-`;
-
-
-// ============================================================================
-// HTML
-// ============================================================================
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function timeAgo(date) {
+    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+    if (seconds < 60) return "à l'instant";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `il y a ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `il y a ${hours} h`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `il y a ${days} j`;
+    const weeks = Math.floor(days / 7);
+    return `il y a ${weeks} sem`;
+}
+
+function initiales(prenom, nom) {
+    const a = (prenom || "").charAt(0).toUpperCase();
+    const b = (nom || "").charAt(0).toUpperCase();
+    return (a + b) || "OG";
+}
+
+// ==========================================================================
+// FEED — LISTE
+// ==========================================================================
 
 router.get("/", requireAuth, async (req, res) => {
-
-    const postsHtml = POSTS.map(post => {
-
-        return `
-        <article
-            class="community-post"
-            data-post-id="${post.id}"
-        >
-
-            <div class="post-header">
-
-                <div class="post-avatar">
-                    ${post.initials}
-                </div>
-
-                <div class="post-author">
-
-                    <div class="post-author-name">
-
-                        ${post.author}
-
-                        ${
-                            post.verified
-                                ? `<span class="verified">✓</span>`
-                                : ""
-                        }
-
-                    </div>
-
-                    <div class="post-meta">
-
-                        ${post.grade}
-                        ·
-                        ${post.time}
-
-                    </div>
-
-                </div>
-
-                <button
-                    class="post-menu"
-                    onclick="postMenu(${post.id})"
-                >
-                    ⋯
-                </button>
-
-            </div>
-
-
-            <div class="post-content">
-
-                <p>${post.text}</p>
-
-                ${
-                    post.tag
-                        ? `
-                            <span class="post-tag">
-                                #${post.tag}
-                            </span>
-                        `
-                        : ""
-                }
-
-            </div>
-
-
-            <div class="post-actions">
-
-                <button
-                    class="post-action"
-                    onclick="likePost(this)"
-                >
-                    ❤️
-                    <span>${post.likes}</span>
-                </button>
-
-                <button
-                    class="post-action"
-                    onclick="openComments(${post.id})"
-                >
-                    💬
-                    <span>${post.comments}</span>
-                </button>
-
-                <button
-                    class="post-action"
-                    onclick="sharePost(${post.id})"
-                >
-                    ↗
-                    <span>${post.shares}</span>
-                </button>
-
-                <button
-                    class="post-action"
-                    onclick="savePost(this)"
-                >
-                    🔖
-                    Enregistrer
-                </button>
-
-            </div>
-
-        </article>
-        `;
-
-    }).join("");
-
-
-    res.send(`
-
-<!DOCTYPE html>
-
-<html lang="fr">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
-    >
-
-    <meta
-        name="theme-color"
-        content="#030508"
-    >
-
-    <title>
-        Community — OG Technology | SAMII OS
-    </title>
-
-    <style>
-
-        ${COMMUNITY_CSS}
-
-    </style>
-
-</head>
-
-
-<body>
-
-<div class="community-app">
-
-
-    <!-- ================================================================
-         BACKGROUND
-         ================================================================ -->
-
-    <div class="community-background">
-
-        <div class="community-grid"></div>
-
-        <div class="community-orb one"></div>
-
-        <div class="community-orb two"></div>
-
-    </div>
-
-
-    <!-- ================================================================
-         HEADER
-         ================================================================ -->
-
-    <header class="community-header">
-
-
-        <a
-            href="/community"
-            class="community-logo"
-        >
-
-            <div class="community-logo-mark">
-                OG
-            </div>
-
-            <div class="community-logo-text">
-
-                <strong>
-                    OG TECHNOLOGY
-                </strong>
-
-                <span>
-                    SAMII COMMUNITY
-                </span>
-
-            </div>
-
-        </a>
-
-
-        <div class="community-search">
-
-            <span class="community-search-icon">
-                ⌕
-            </span>
-
-            <input
-                id="communitySearch"
-                type="search"
-                placeholder="Rechercher dans la communauté..."
-                autocomplete="off"
-            >
-
-        </div>
-
-
-        <div class="community-header-actions">
-
-
-            <button
-                class="icon-button notification-button"
-                onclick="showNotification()"
-                title="Notifications"
-            >
-
-                🔔
-
-                <span
-                    class="notification-dot"
-                ></span>
-
-            </button>
-
-
-            <button
-                class="icon-button"
-                onclick="openPublish()"
-                title="Publier"
-            >
-                ＋
-            </button>
-
-
-            <div class="header-profile">
-
-                <div class="profile-avatar">
-                    S
-                </div>
-
-                <div class="profile-name">
-
-                    <strong>
-                        Mon QG
-                    </strong>
-
-                    <span>
-                        SOLDAT
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </header>
-
-
-    <!-- ================================================================
-         MAIN LAYOUT
-         ================================================================ -->
-
-    <main class="community-layout">
-
-
-        <!-- ============================================================
-             LEFT SIDEBAR
-             ============================================================ -->
-
-        <aside
-            class="community-sidebar community-left-sidebar"
-        >
-
-
-            <div class="sidebar-card">
-
-                <nav class="community-nav">
-
-
-                    <a
-                        href="/community"
-                        class="community-nav-link active"
-                    >
-
-                        <span class="nav-icon">
-                            ⌂
-                        </span>
-
-                        Accueil
-
-                    </a>
-
-
-                    <a
-                        href="/qg"
-                        class="community-nav-link"
-                    >
-
-                        <span class="nav-icon">
-                            ◈
-                        </span>
-
-                        Mon QG
-
-                    </a>
-
-
-                    <a
-                        href="/marketplace"
-                        class="community-nav-link"
-                    >
-
-                        <span class="nav-icon">
-                            🛒
-                        </span>
-
-                        Marketplace
-
-                    </a>
-
-
-                    <a
-                        href="/arsenal"
-                        class="community-nav-link"
-                    >
-
-                        <span class="nav-icon">
-                            🛡
-                        </span>
-
-                        Arsenal
-
-                    </a>
-
-
-                    <a
-                        href="#"
-                        class="community-nav-link"
-                        onclick="comingSoon(event,'Mon réseau')"
-                    >
-
-                        <span class="nav-icon">
-                            ◉
-                        </span>
-
-                        Mon réseau
-
-                    </a>
-
-
-                    <a
-                        href="#"
-                        class="community-nav-link"
-                        onclick="comingSoon(event,'Groupes')"
-                    >
-
-                        <span class="nav-icon">
-                            ◎
-                        </span>
-
-                        Groupes
-
-                    </a>
-
-
-                    <a
-                        href="#"
-                        class="community-nav-link"
-                        onclick="comingSoon(event,'Enregistrés')"
-                    >
-
-                        <span class="nav-icon">
-                            🔖
-                        </span>
-
-                        Enregistrés
-
-                    </a>
-
-                </nav>
-
-            </div>
-
-
-            <div class="qg-card">
-
-                <div class="qg-title">
-                    SAMII CORE
-                </div>
-
-                <div class="qg-text">
-
-                    Votre communauté est connectée
-                    à l'écosystème SAMII.
-
-                    <br><br>
-
-                    Publiez, échangez, développez
-                    votre réseau et progressez
-                    dans les grades.
-
-                </div>
-
-            </div>
-
-
-        </aside>
-
-
-        <!-- ============================================================
-             FEED
-             ============================================================ -->
-
-        <section class="community-feed">
-
-
-            <!-- HERO -->
-
-            <section class="community-hero">
-
-                <div class="hero-kicker">
-                    OG TECHNOLOGY / COMMUNITY
-                </div>
-
-                <h1>
-                    Le réseau où
-                    <span>
-                        tout l'écosystème SAMII
-                    </span>
-                    se rencontre.
-                </h1>
-
-                <p class="hero-description">
-
-                    Clients, marchands, créateurs,
-                    partenaires et membres peuvent
-                    publier, échanger et construire
-                    ensemble.
-
-                </p>
-
-                <div class="hero-actions">
-
-                    <button
-                        class="primary-button"
-                        onclick="openPublish()"
-                    >
-                        ＋ Publier
-                    </button>
-
-                    <a
-                        href="/marketplace"
-                        class="secondary-button"
-                    >
-                        🛒 Marketplace
-                    </a>
-
-                </div>
-
-            </section>
-
-
-            <!-- CREATE -->
-
-            <section class="create-post">
-
-
-                <div class="create-post-top">
-
-                    <div class="create-avatar">
-                        S
-                    </div>
-
-                    <div
-                        class="fake-input"
-                        onclick="openPublish()"
-                    >
-                        Que voulez-vous partager
-                        avec la communauté ?
-                    </div>
-
-                </div>
-
-
-                <div class="create-actions">
-
-                    <button
-                        class="create-action"
-                        onclick="openPublish('photo')"
-                    >
-                        📷 Photo
-                    </button>
-
-                    <button
-                        class="create-action"
-                        onclick="openPublish('video')"
-                    >
-                        🎥 Vidéo
-                    </button>
-
-                    <button
-                        class="create-action"
-                        onclick="openPublish('product')"
-                    >
-                        🛒 Produit
-                    </button>
-
-                    <button
-                        class="create-action"
-                        onclick="openPublish('service')"
-                    >
-                        ⚡ Service
-                    </button>
-
-                </div>
-
-
-            </section>
-
-
-            <!-- FEED -->
-
-            ${postsHtml}
-
-
-        </section>
-
-
-        <!-- ============================================================
-             RIGHT SIDEBAR
-             ============================================================ -->
-
-        <aside
-            class="community-sidebar community-right-sidebar"
-        >
-
-
-            <!-- TRENDS -->
-
-            <div class="sidebar-card">
-
-                <div class="widget-title">
-
-                    Tendances
-
-                    <span>
-                        LIVE
-                    </span>
-
-                </div>
-
-
-                <div class="trend">
-
-                    <small>
-                        #1 · COMMUNAUTÉ
-                    </small>
-
-                    <strong>
-                        SAMII Technology
-                    </strong>
-
-                    <span>
-                        1 284 publications
-                    </span>
-
-                </div>
-
-
-                <div class="trend">
-
-                    <small>
-                        #2 · MARKETPLACE
-                    </small>
-
-                    <strong>
-                        Nouvelles offres
-                    </strong>
-
-                    <span>
-                        742 publications
-                    </span>
-
-                </div>
-
-
-                <div class="trend">
-
-                    <small>
-                        #3 · BUSINESS
-                    </small>
-
-                    <strong>
-                        Entrepreneurs du Maghreb
-                    </strong>
-
-                    <span>
-                        526 publications
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <!-- RANKING -->
-
-            <div class="sidebar-card">
-
-                <div class="widget-title">
-
-                    Classement SAMII
-
-                    <span>
-                        TOP
-                    </span>
-
-                </div>
-
-
-                <div class="rank-item">
-
-                    <div class="rank-number">
-                        1
-                    </div>
-
-                    <div class="rank-avatar">
-                        S
-                    </div>
-
-                    <div class="rank-info">
-
-                        <strong>
-                            Samii Core
-                        </strong>
-
-                        <span>
-                            GÉNÉRAL · 12 840 pts
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="rank-item">
-
-                    <div class="rank-number">
-                        2
-                    </div>
-
-                    <div class="rank-avatar">
-                        M
-                    </div>
-
-                    <div class="rank-info">
-
-                        <strong>
-                            Marchand Pro
-                        </strong>
-
-                        <span>
-                            COLONEL · 8 420 pts
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="rank-item">
-
-                    <div class="rank-number">
-                        3
-                    </div>
-
-                    <div class="rank-avatar">
-                        A
-                    </div>
-
-                    <div class="rank-info">
-
-                        <strong>
-                            Alpha Store
-                        </strong>
-
-                        <span>
-                            COMMANDANT · 6 210 pts
-                        </span>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- ECOSYSTEM -->
-
-            <div class="sidebar-card">
-
-                <div class="widget-title">
-
-                    Écosystème
-
-                </div>
-
-                <div class="qg-text">
-
-                    <strong
-                        style="color:var(--og-cyan)"
-                    >
-                        QG
-                    </strong>
-                    · Pilotez votre activité
-
-                    <br><br>
-
-                    <strong
-                        style="color:var(--og-cyan)"
-                    >
-                        MARKETPLACE
-                    </strong>
-                    · Achetez & vendez
-
-                    <br><br>
-
-                    <strong
-                        style="color:var(--og-cyan)"
-                    >
-                        ARSENAL
-                    </strong>
-                    · Débloquez vos cartes
-
-                </div>
-
-            </div>
-
-
-        </aside>
-
-
-    </main>
-
-
-    <!-- ================================================================
-         MOBILE NAVIGATION
-         ================================================================ -->
-
-    <nav class="mobile-bottom-nav">
-
-
-        <button
-            class="mobile-nav-item active"
-            onclick="window.location='/community'"
-        >
-
-            <span>
-                ⌂
-            </span>
-
-            Accueil
-
-        </button>
-
-
-        <button
-            class="mobile-nav-item"
-            onclick="comingSoon(null,'Réseau')"
-        >
-
-            <span>
-                ◉
-            </span>
-
-            Réseau
-
-        </button>
-
-
-        <button
-            class="mobile-nav-item"
-            onclick="openPublish()"
-        >
-
-            <span>
-                ＋
-            </span>
-
-            Publier
-
-        </button>
-
-
-        <button
-            class="mobile-nav-item"
-            onclick="window.location='/marketplace'"
-        >
-
-            <span>
-                🛒
-            </span>
-
-            Market
-
-        </button>
-
-
-        <button
-            class="mobile-nav-item"
-            onclick="window.location='/qg'"
-        >
-
-            <span>
-                ◈
-            </span>
-
-            QG
-
-        </button>
-
-
-    </nav>
-
-
-    <!-- ================================================================
-         THEME
-         ================================================================ -->
-
-    <button
-        class="theme-switch"
-        id="themeSwitch"
-        onclick="toggleTheme()"
-        aria-label="Changer le thème"
-    >
-        ☾
-    </button>
-
-
-    <!-- ================================================================
-         PUBLICATION MODAL
-         ================================================================ -->
-
-    <div
-        id="publishOverlay"
-        class="publish-overlay"
-        onclick="closePublishOutside(event)"
-    >
-
-        <div class="publish-modal">
-
-
-            <div class="modal-header">
-
-                <h2>
-                    Nouvelle publication
-                </h2>
-
-                <button
-                    class="modal-close"
-                    onclick="closePublish()"
-                >
-                    ×
-                </button>
-
-            </div>
-
-
-            <textarea
-                id="publishText"
-                class="publish-textarea"
-                placeholder="Partagez quelque chose avec la communauté..."
-            ></textarea>
-
-
-            <div class="modal-tools">
-
-                <button
-                    class="modal-tool"
-                    onclick="selectPublishType('photo')"
-                >
-                    📷 Photo
-                </button>
-
-                <button
-                    class="modal-tool"
-                    onclick="selectPublishType('video')"
-                >
-                    🎥 Vidéo
-                </button>
-
-                <button
-                    class="modal-tool"
-                    onclick="selectPublishType('product')"
-                >
-                    🛒 Produit
-                </button>
-
-            </div>
-
-
-            <button
-                class="modal-publish"
-                onclick="publishPost()"
-            >
-                PUBLIER DANS LA COMMUNAUTÉ
-            </button>
-
-
-        </div>
-
-    </div>
-
-
-</div>
-
-
-<script>
-
-
-// ========================================================================
-// THEME
-// ========================================================================
-
-const savedTheme =
-    localStorage.getItem("samii-community-theme");
-
-if (savedTheme === "light") {
-
-    document.body.classList.add("light-mode");
-
-    document
-        .getElementById("themeSwitch")
-        .innerText = "☀";
-
-}
-
-
-function toggleTheme() {
-
-    document.body.classList.toggle("light-mode");
-
-    const isLight =
-        document.body.classList.contains("light-mode");
-
-    localStorage.setItem(
-        "samii-community-theme",
-        isLight ? "light" : "dark"
-    );
-
-    document
-        .getElementById("themeSwitch")
-        .innerText =
-            isLight ? "☀" : "☾";
-}
-
-
-// ========================================================================
-// PUBLICATION
-// ========================================================================
-
-let selectedPublishType = "text";
-
-
-function openPublish(type = "text") {
-
-    selectedPublishType = type;
-
-    document
-        .getElementById("publishOverlay")
-        .classList.add("open");
-
-    setTimeout(() => {
-
-        document
-            .getElementById("publishText")
-            .focus();
-
-    }, 100);
-
-}
-
-
-function closePublish() {
-
-    document
-        .getElementById("publishOverlay")
-        .classList.remove("open");
-
-}
-
-
-function closePublishOutside(event) {
-
-    if (
-        event.target.id ===
-        "publishOverlay"
-    ) {
-
-        closePublish();
-
-    }
-
-}
-
-
-function selectPublishType(type) {
-
-    selectedPublishType = type;
-
-    const textarea =
-        document.getElementById("publishText");
-
-    const labels = {
-
-        photo:
-            "Décrivez votre photo ou partagez quelque chose avec la communauté...",
-
-        video:
-            "Présentez votre vidéo à la communauté...",
-
-        product:
-            "Présentez votre produit Marketplace...",
-
-        service:
-            "Présentez votre service...",
-
-        text:
-            "Partagez quelque chose avec la communauté..."
-
-    };
-
-    textarea.placeholder =
-        labels[type] || labels.text;
-
-    textarea.focus();
-
-}
-
-
-function publishPost() {
-
-    const textarea =
-        document.getElementById("publishText");
-
-    const text =
-        textarea.value.trim();
-
-    if (!text) {
-
-        alert(
-            "Écrivez quelque chose avant de publier."
-        );
-
-        textarea.focus();
-
-        return;
-    }
-
-    /*
-     * FUTUR :
-     *
-     * POST /community/api/posts
-     *
-     * Airtable :
-     * COMMUNITY_POSTS
-     *
-     * Pour l'instant on prépare
-     * l'interface sans inventer
-     * de backend.
-     */
-
-    alert(
-        "Publication prête pour la connexion au moteur Community SAMII."
-    );
-
-    textarea.value = "";
-
-    closePublish();
-
-}
-
-
-// ========================================================================
-// LIKE
-// ========================================================================
-
-function likePost(button) {
-
-    button.classList.toggle("liked");
-
-    const counter =
-        button.querySelector("span");
-
-    if (!counter) return;
-
-    let value =
-        parseInt(counter.innerText, 10) || 0;
-
-    if (button.classList.contains("liked")) {
-
-        value++;
-
-    } else {
-
-        value--;
-
-    }
-
-    counter.innerText =
-        Math.max(0, value);
-
-}
-
-
-// ========================================================================
-// SAVE
-// ========================================================================
-
-function savePost(button) {
-
-    if (
-        button.dataset.saved === "1"
-    ) {
-
-        button.dataset.saved = "0";
-
-        button.innerHTML =
-            "🔖 Enregistrer";
-
-    } else {
-
-        button.dataset.saved = "1";
-
-        button.innerHTML =
-            "✅ Enregistré";
-
-    }
-
-}
-
-
-// ========================================================================
-// SHARE
-// ========================================================================
-
-async function sharePost(id) {
-
-    const url =
-        window.location.origin +
-        "/community#post-" +
-        id;
+    let publications = [];
+    let classement = [];
+    let stats = { membres: 0, publications: 0 };
 
     try {
+        const rows = await db.query(`
+            SELECT p.*, u.prenom, u.nom, u.grade_actuel, u.type_compte,
+                (SELECT COUNT(*) FROM publications_likes pl WHERE pl.publication_id = p.id) AS nb_likes,
+                (SELECT COUNT(*) FROM publications_commentaires pc WHERE pc.publication_id = p.id) AS nb_commentaires,
+                EXISTS(SELECT 1 FROM publications_likes pl2 WHERE pl2.publication_id = p.id AND pl2.user_id = $1) AS jaime
+            FROM publications p
+            LEFT JOIN utilisateurs u ON u.id = p.auteur_id
+            ORDER BY p.epingle DESC, p.created_at DESC
+            LIMIT 40
+        `, [req.session.userId || ""]);
 
-        if (
-            navigator.share
-        ) {
+        publications = rows;
 
-            await navigator.share({
-
-                title:
-                    "SAMII Community",
-
-                text:
-                    "Découvre cette publication sur SAMII Community.",
-
-                url
-
-            });
-
-        } else {
-
-            await navigator.clipboard.writeText(url);
-
-            alert(
-                "Lien copié."
-            );
-
+        for (const pub of publications) {
+            const comms = await db.query(`
+                SELECT pc.*, u.prenom, u.nom FROM publications_commentaires pc
+                LEFT JOIN utilisateurs u ON u.id = pc.auteur_id
+                WHERE pc.publication_id = $1
+                ORDER BY pc.created_at ASC LIMIT 2
+            `, [pub.id]);
+            pub.apercu_commentaires = comms;
         }
-
-    } catch (error) {
-
-        console.log(
-            "Partage annulé."
-        );
-
+    } catch (err) {
+        console.warn("⚠️ Community — lecture publications échouée :", err.message);
     }
 
-}
-
-
-// ========================================================================
-// COMMENTS
-// ========================================================================
-
-function openComments(id) {
-
-    alert(
-        "Système de commentaires Community — connexion backend à venir."
-    );
-
-}
-
-
-// ========================================================================
-// POST MENU
-// ========================================================================
-
-function postMenu(id) {
-
-    alert(
-        "Options de publication : signaler, masquer, enregistrer."
-    );
-
-}
-
-
-// ========================================================================
-// SEARCH
-// ========================================================================
-
-const searchInput =
-    document.getElementById(
-        "communitySearch"
-    );
-
-if (searchInput) {
-
-    searchInput.addEventListener(
-        "input",
-        function () {
-
-            const query =
-                this.value
-                    .trim()
-                    .toLowerCase();
-
-            const posts =
-                document.querySelectorAll(
-                    ".community-post"
-                );
-
-            posts.forEach(post => {
-
-                const text =
-                    post.innerText
-                        .toLowerCase();
-
-                post.style.display =
-                    !query ||
-                    text.includes(query)
-                        ? ""
-                        : "none";
-
-            });
-
-        }
-    );
-
-}
-
-
-// ========================================================================
-// NOTIFICATIONS
-// ========================================================================
-
-function showNotification() {
-
-    alert(
-        "Centre de notifications SAMII — prêt pour la connexion aux événements."
-    );
-
-}
-
-
-// ========================================================================
-// COMING SOON
-// ========================================================================
-
-function comingSoon(event, name) {
-
-    if (event) {
-
-        event.preventDefault();
-
+    try {
+        classement = await db.query(`
+            SELECT id, prenom, nom, grade_actuel, score_grade, type_compte
+            FROM utilisateurs
+            ORDER BY score_grade DESC NULLS LAST
+            LIMIT 5
+        `);
+    } catch (err) {
+        console.warn("⚠️ Community — lecture classement échouée :", err.message);
     }
 
-    alert(
-        name +
-        " sera connecté au moteur Community SAMII."
-    );
+    try {
+        const countRows = await db.query(`SELECT COUNT(*) AS total FROM utilisateurs`);
+        stats.membres = parseInt(countRows[0]?.total || 0, 10);
+        const pubRows = await db.query(`SELECT COUNT(*) AS total FROM publications`);
+        stats.publications = parseInt(pubRows[0]?.total || 0, 10);
+    } catch (err) {
+        console.warn("⚠️ Community — lecture stats échouée :", err.message);
+    }
 
+    const feedHtml = publications.length ? publications.map(p => {
+        const nomAuteur = escapeHtml(`${p.prenom || "Membre"} ${p.nom || "SAMII"}`);
+        const grade = escapeHtml(p.grade_actuel || "Soldat");
+        const isMarchand = p.type_compte === "marchand";
+
+        const commentairesHtml = p.apercu_commentaires.map(c => `
+            <div class="comment-item">
+                <div class="comment-avatar">${initiales(c.prenom, c.nom)}</div>
+                <div class="comment-body">
+                    <strong>${escapeHtml(`${c.prenom || "Membre"} ${c.nom || ""}`)}</strong>
+                    <span>${escapeHtml(c.contenu)}</span>
+                </div>
+            </div>`).join("");
+
+        return `
+        <article class="post-card" data-post-id="${p.id}">
+            <div class="post-head">
+                <div class="post-avatar">${initiales(p.prenom, p.nom)}</div>
+                <div class="post-authorblock">
+                    <div class="post-author">${nomAuteur} ${p.epingle ? '<i data-lucide="pin" class="pin-ic"></i>' : ""}</div>
+                    <div class="post-meta">
+                        <span class="grade-chip ${isMarchand ? "grade-chip--gold" : ""}">${isMarchand ? "🏪" : "👤"} ${grade}</span>
+                        <span class="dot-sep">·</span>
+                        <span>${timeAgo(p.created_at)}</span>
+                    </div>
+                </div>
+            </div>
+            ${p.contenu ? `<p class="post-text">${escapeHtml(p.contenu)}</p>` : ""}
+            ${p.image_url ? `<div class="post-media"><img src="${escapeHtml(p.image_url)}" alt="" loading="lazy"></div>` : ""}
+            <div class="post-stats">
+                <span>${p.nb_likes > 0 ? `❤️ ${p.nb_likes}` : ""}</span>
+                <span>${p.nb_commentaires > 0 ? `${p.nb_commentaires} commentaire${p.nb_commentaires > 1 ? "s" : ""}` : ""}</span>
+            </div>
+            <div class="post-actions">
+                <button class="post-action-btn ${p.jaime ? "liked" : ""}" type="button" onclick="toggleLike(${p.id}, this)">
+                    <i data-lucide="heart"></i> J'aime
+                </button>
+                <button class="post-action-btn" type="button" onclick="toggleCommentBox(${p.id})">
+                    <i data-lucide="message-circle"></i> Commenter
+                </button>
+                <button class="post-action-btn" type="button" onclick="sharePost(${p.id})">
+                    <i data-lucide="share-2"></i> Partager
+                </button>
+            </div>
+            <div class="comments-preview">${commentairesHtml}</div>
+            <div class="comment-box" id="comment-box-${p.id}" style="display:none;">
+                <input type="text" id="comment-input-${p.id}" placeholder="Écris un commentaire...">
+                <button type="button" onclick="postComment(${p.id})"><i data-lucide="send"></i></button>
+            </div>
+        </article>`;
+    }).join("") : `<div class="empty-feed"><i data-lucide="message-square-dashed"></i><h3>Aucune publication pour l'instant</h3><p>Sois le premier à partager quelque chose avec la communauté SAMII.</p></div>`;
+
+    const classementHtml = classement.length ? classement.map((u, i) => `
+        <div class="rank-item">
+            <span class="rank-num rank-${i + 1}">${i + 1}</span>
+            <div class="rank-avatar">${initiales(u.prenom, u.nom)}</div>
+            <div class="rank-info">
+                <strong>${escapeHtml(`${u.prenom || "Membre"} ${u.nom || ""}`)}</strong>
+                <span>${escapeHtml(u.grade_actuel || "Soldat")} · ${u.score_grade || 0} pts</span>
+            </div>
+        </div>`).join("") : `<p class="rank-empty">Le classement se remplira bientôt.</p>`;
+
+    res.send(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Community — SAMII OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root { --bg:#03060b; --panel:rgba(9,18,29,.88); --panel-2:rgba(12,25,39,.96); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --cyan-glow:0 0 15px rgba(0,217,255,.45),0 0 45px rgba(0,119,255,.18); --gold:#d7b34c; --border:rgba(0,217,255,.16); --danger:#ff5470; --radius:18px; --ease:cubic-bezier(.16,1,.3,1); }
+body.light { --bg:#eef5fa; --panel:rgba(255,255,255,.88); --panel-2:rgba(255,255,255,.97); --text:#08121c; --muted:#607384; --border:rgba(0,119,255,.16); --cyan-glow:0 0 20px rgba(0,119,255,.18); }
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; min-height:100vh; background:radial-gradient(circle at 10% 10%,rgba(0,217,255,.09),transparent 30%),radial-gradient(circle at 90% 90%,rgba(0,119,255,.12),transparent 32%),var(--bg); color:var(--text); font-family:Inter,sans-serif; overflow-x:hidden; transition:background .4s ease,color .4s ease; }
+button,input,textarea { font:inherit; }
+button { cursor:pointer; }
+a { color:inherit; text-decoration:none; }
+.tech-bg { position:fixed; inset:0; z-index:-5; pointer-events:none; overflow:hidden; }
+.tech-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(0,217,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,217,255,.035) 1px,transparent 1px); background-size:42px 42px; mask-image:linear-gradient(to bottom,black,transparent 90%); }
+.tech-orb { position:absolute; width:380px; height:380px; border-radius:50%; filter:blur(80px); opacity:.12; background:var(--blue); }
+.tech-orb.one { top:-180px; left:-100px; }
+.tech-orb.two { right:-150px; bottom:10%; background:var(--blue-2); }
+.sidebar { position:fixed; left:0; top:0; width:245px; height:100vh; padding:22px 16px; background:linear-gradient(180deg,rgba(4,10,17,.97),rgba(3,7,12,.94)); border-right:1px solid var(--border); z-index:300; display:flex; flex-direction:column; }
+body.light .sidebar { background:rgba(247,251,254,.95); }
+.brand { display:flex; align-items:center; gap:10px; padding:8px 10px 25px; font-weight:800; }
+.brand-mark { width:37px; height:37px; display:grid; place-items:center; border-radius:11px; color:white; background:linear-gradient(135deg,var(--blue),var(--blue-2)); box-shadow:var(--cyan-glow); font-weight:900; }
+.brand-name { font-size:15px; }
+.brand-name span { color:var(--blue); }
+.side-menu { display:flex; flex-direction:column; gap:6px; }
+.side-link { display:flex; align-items:center; gap:12px; padding:12px 13px; border-radius:12px; color:var(--muted); font-size:13px; font-weight:600; border:1px solid transparent; transition:.25s var(--ease); }
+.side-link svg { width:18px; height:18px; }
+.side-link:hover,.side-link.active { color:var(--text); background:linear-gradient(90deg,rgba(0,217,255,.12),rgba(0,119,255,.04)); border-color:rgba(0,217,255,.22); box-shadow:inset 3px 0 0 var(--blue),var(--cyan-glow); }
+.side-link.active svg { color:var(--blue); filter:drop-shadow(0 0 7px var(--blue)); }
+.side-bottom { margin-top:auto; padding:14px; border:1px solid var(--border); border-radius:16px; background:linear-gradient(135deg,rgba(0,217,255,.08),rgba(0,119,255,.03)); }
+.side-ai { display:flex; align-items:center; gap:8px; font-size:11px; font-family:"JetBrains Mono"; color:var(--blue); margin-bottom:6px; }
+.side-ai-dot { width:7px; height:7px; background:#00ff9d; border-radius:50%; box-shadow:0 0 10px #00ff9d; }
+.side-text { color:var(--muted); font-size:11px; line-height:1.5; }
+.main { margin-left:245px; min-height:100vh; width:calc(100% - 245px); }
+.header { position:sticky; top:0; z-index:200; backdrop-filter:blur(24px); background:rgba(3,7,12,.82); border-bottom:1px solid var(--border); padding:16px 28px; display:flex; align-items:center; justify-content:space-between; gap:15px; }
+body.light .header { background:rgba(244,249,253,.86); }
+.header h1 { font-size:19px; margin:0; }
+.header-actions { display:flex; align-items:center; gap:8px; }
+.icon-btn { width:40px; height:40px; display:grid; place-items:center; border:1px solid var(--border); border-radius:11px; color:var(--muted); background:rgba(255,255,255,.025); transition:.25s var(--ease); }
+.icon-btn:hover { color:var(--blue); border-color:var(--blue); box-shadow:var(--cyan-glow); transform:translateY(-2px); }
+.layout { display:grid; grid-template-columns:1fr; gap:24px; max-width:1300px; margin:0 auto; padding:26px 28px 90px; }
+@media (min-width:1100px) { .layout { grid-template-columns:260px 1fr 280px; align-items:start; } }
+.col-side { display:none; }
+@media (min-width:1100px) { .col-side { display:block; position:sticky; top:90px; } }
+.side-panel { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin-bottom:16px; }
+.side-panel h3 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 14px; display:flex; align-items:center; gap:6px; }
+.side-panel h3 svg { width:14px; height:14px; color:var(--blue); }
+.stat-row { display:flex; justify-content:space-between; font-size:13px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.stat-row:last-child { border:none; }
+.stat-row strong { color:var(--blue); font-family:"JetBrains Mono"; }
+.eco-link-item { display:flex; align-items:center; gap:10px; padding:10px; border-radius:10px; font-size:12px; font-weight:600; color:var(--muted); transition:.2s; margin-bottom:4px; }
+.eco-link-item:hover { background:rgba(0,217,255,.06); color:var(--blue); }
+.eco-link-item svg { width:15px; height:15px; }
+.rank-item { display:flex; align-items:center; gap:10px; padding:9px 0; }
+.rank-num { width:22px; height:22px; border-radius:6px; display:grid; place-items:center; font-size:10px; font-weight:800; background:rgba(255,255,255,.06); color:var(--muted); flex-shrink:0; }
+.rank-1 { background:linear-gradient(135deg,#d7b34c,#f0d98c); color:#1a1400; }
+.rank-2 { background:linear-gradient(135deg,#b8c2cc,#e2e8ee); color:#0a0e12; }
+.rank-3 { background:linear-gradient(135deg,#c98a52,#e0ab7a); color:#1a0e00; }
+.rank-avatar { width:28px; height:28px; border-radius:8px; display:grid; place-items:center; font-size:9px; font-weight:900; color:white; background:linear-gradient(135deg,var(--blue),var(--blue-2)); flex-shrink:0; }
+.rank-info { display:flex; flex-direction:column; min-width:0; }
+.rank-info strong { font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rank-info span { font-size:9px; color:var(--muted); }
+.rank-empty { color:var(--muted); font-size:11px; text-align:center; padding:10px 0; }
+.col-feed { max-width:640px; width:100%; margin:0 auto; }
+.composer { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:20px; }
+.composer-top { display:flex; gap:12px; }
+.composer-avatar { width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-size:12px; font-weight:900; color:white; background:linear-gradient(135deg,var(--blue),var(--blue-2)); flex-shrink:0; }
+.composer textarea { flex:1; resize:none; min-height:44px; border:1px solid var(--border); border-radius:12px; background:rgba(0,0,0,.25); color:var(--text); padding:12px; outline:none; font-size:13px; transition:.2s; }
+.composer textarea:focus { border-color:var(--blue); box-shadow:var(--cyan-glow); }
+.composer-photo { margin-top:10px; }
+.composer-photo input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,.2); color:var(--text); outline:none; font-size:12px; }
+.composer-bottom { display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
+.composer-hint { font-size:11px; color:var(--muted); }
+.composer-submit { padding:10px 20px; border:none; border-radius:11px; background:linear-gradient(135deg,var(--blue),#00a9ff); color:#001018; font-weight:800; font-size:12px; box-shadow:0 5px 20px rgba(0,217,255,.25); transition:.25s; }
+.composer-submit:hover { transform:translateY(-2px); box-shadow:var(--cyan-glow); }
+.composer-submit:disabled { opacity:.5; cursor:not-allowed; }
+.post-card { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin-bottom:16px; transition:border-color .3s; }
+.post-card:hover { border-color:rgba(0,217,255,.3); }
+.post-head { display:flex; align-items:center; gap:11px; margin-bottom:12px; }
+.post-avatar { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; font-size:13px; font-weight:900; color:white; background:linear-gradient(135deg,var(--blue),var(--blue-2)); flex-shrink:0; }
+.post-authorblock { flex:1; min-width:0; }
+.post-author { font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; }
+.pin-ic { width:12px; height:12px; color:var(--gold); }
+.post-meta { display:flex; align-items:center; gap:6px; font-size:10px; color:var(--muted); margin-top:2px; }
+.grade-chip { font-family:"JetBrains Mono"; padding:2px 8px; border-radius:20px; background:rgba(0,217,255,.08); border:1px solid rgba(0,217,255,.2); color:var(--blue); }
+.grade-chip--gold { background:rgba(215,179,76,.1); border-color:rgba(215,179,76,.3); color:var(--gold); }
+.dot-sep { opacity:.5; }
+.post-text { font-size:13.5px; line-height:1.6; margin:0 0 12px; white-space:pre-wrap; }
+.post-media { border-radius:14px; overflow:hidden; border:1px solid var(--border); margin-bottom:12px; }
+.post-media img { width:100%; max-height:420px; object-fit:cover; display:block; }
+.post-stats { display:flex; gap:14px; font-size:11px; color:var(--muted); padding-bottom:10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.05); min-height:14px; }
+.post-actions { display:flex; gap:6px; margin-bottom:6px; }
+.post-action-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px; border-radius:10px; border:1px solid transparent; background:transparent; color:var(--muted); font-size:11.5px; font-weight:700; transition:.2s; }
+.post-action-btn svg { width:15px; height:15px; }
+.post-action-btn:hover { background:rgba(0,217,255,.06); color:var(--blue); }
+.post-action-btn.liked { color:var(--danger); }
+.post-action-btn.liked svg { fill:var(--danger); }
+.comments-preview { display:flex; flex-direction:column; gap:8px; }
+.comment-item { display:flex; gap:8px; align-items:flex-start; }
+.comment-avatar { width:26px; height:26px; border-radius:8px; display:grid; place-items:center; font-size:8px; font-weight:900; color:white; background:linear-gradient(135deg,var(--blue),var(--blue-2)); flex-shrink:0; }
+.comment-body { background:rgba(255,255,255,.03); border-radius:12px; padding:7px 11px; font-size:11.5px; flex:1; }
+.comment-body strong { display:block; font-size:10.5px; margin-bottom:2px; }
+.comment-body span { color:var(--muted); }
+.comment-box { display:flex; gap:8px; margin-top:10px; }
+.comment-box input { flex:1; padding:10px 13px; border-radius:20px; border:1px solid var(--border); background:rgba(0,0,0,.25); color:var(--text); outline:none; font-size:12px; }
+.comment-box input:focus { border-color:var(--blue); }
+.comment-box button { width:38px; height:38px; border-radius:50%; border:none; background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:#001018; display:grid; place-items:center; flex-shrink:0; }
+.comment-box button svg { width:15px; height:15px; }
+.empty-feed { text-align:center; padding:80px 20px; border:1px dashed var(--border); border-radius:20px; color:var(--muted); }
+.empty-feed svg { width:44px; height:44px; color:var(--blue); margin-bottom:14px; }
+.toast { position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px); background:#0c1a28; border:1px solid var(--blue); color:var(--text); padding:12px 22px; border-radius:12px; font-size:12px; z-index:900; opacity:0; transition:.3s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.mobile-nav { display:none; }
+@media (max-width:900px) {
+    .sidebar { display:none; }
+    .main { margin-left:0; width:100%; }
+    .header { padding:12px 14px; }
+    .header h1 { font-size:16px; }
+    .layout { padding:16px 12px 90px; }
+    .mobile-nav { position:fixed; left:8px; right:8px; bottom:8px; height:62px; z-index:400; display:grid; grid-template-columns:repeat(4,1fr); padding:5px; border:1px solid rgba(0,217,255,.22); border-radius:17px; background:rgba(4,10,17,.92); backdrop-filter:blur(25px); box-shadow:0 15px 50px rgba(0,0,0,.45),var(--cyan-glow); }
+    body.light .mobile-nav { background:rgba(250,253,255,.93); }
+    .mobile-nav a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; color:var(--muted); font-size:8px; font-weight:700; border-radius:12px; }
+    .mobile-nav a svg { width:18px; height:18px; }
+    .mobile-nav a.active { color:var(--blue); background:rgba(0,217,255,.08); }
 }
+</style>
+</head>
+<body>
+<div class="tech-bg"><div class="tech-grid"></div><div class="tech-orb one"></div><div class="tech-orb two"></div></div>
+<aside class="sidebar">
+    <div>
+        <div class="brand"><div class="brand-mark">OG</div><div class="brand-name">SAMII <span>TECHNOLOGY</span></div></div>
+        <nav class="side-menu">
+            <a href="/qg" class="side-link"><i data-lucide="layout-dashboard"></i> QG Central</a>
+            <a href="/marketplace" class="side-link"><i data-lucide="store"></i> Marketplace</a>
+            <a href="/community" class="side-link active"><i data-lucide="users"></i> Communauté</a>
+            <a href="/arsenal" class="side-link"><i data-lucide="shield-check"></i> Arsenal</a>
+            <a href="/academy" class="side-link"><i data-lucide="graduation-cap"></i> Academy</a>
+        </nav>
+    </div>
+    <div class="side-bottom">
+        <div class="side-ai"><span class="side-ai-dot"></span> SAMII ENGINE ACTIVE</div>
+        <div class="side-text">Communauté synchronisée avec l'écosystème SAMII.</div>
+    </div>
+</aside>
+<div class="main">
+    <header class="header">
+        <h1>Communauté SAMII</h1>
+        <div class="header-actions">
+            <button class="icon-btn" id="themeBtn" type="button" title="Changer le thème"><i data-lucide="moon"></i></button>
+            <a class="icon-btn" href="/qg" title="Mon QG"><i data-lucide="layout-dashboard"></i></a>
+        </div>
+    </header>
+    <div class="layout">
+        <div class="col-side">
+            <div class="side-panel">
+                <h3><i data-lucide="activity"></i> Tendances</h3>
+                <div class="stat-row"><span>Membres SAMII</span><strong>${stats.membres}</strong></div>
+                <div class="stat-row"><span>Publications</span><strong>${stats.publications}</strong></div>
+                <div class="stat-row"><span>Statut système</span><strong style="color:#00ff9d;">● Actif</strong></div>
+            </div>
+            <div class="side-panel">
+                <h3><i data-lucide="compass"></i> Écosystème</h3>
+                <a href="/qg" class="eco-link-item"><i data-lucide="layout-dashboard"></i> QG · Piloter votre activité</a>
+                <a href="/marketplace" class="eco-link-item"><i data-lucide="store"></i> Marketplace · Acheter & vendre</a>
+                <a href="/arsenal" class="eco-link-item"><i data-lucide="shield-check"></i> Arsenal · Débloquer vos pouvoirs</a>
+                <a href="/academy" class="eco-link-item"><i data-lucide="graduation-cap"></i> Academy · Apprendre & progresser</a>
+            </div>
+        </div>
 
+        <div class="col-feed">
+            <div class="composer">
+                <div class="composer-top">
+                    <div class="composer-avatar">${initiales(req.session.nom?.split(" ")[1], req.session.nom?.split(" ")[0])}</div>
+                    <textarea id="composerText" placeholder="Que veux-tu partager avec la communauté ?" rows="2"></textarea>
+                </div>
+                <div class="composer-photo">
+                    <input type="url" id="composerImage" placeholder="Lien d'une image (optionnel)">
+                </div>
+                <div class="composer-bottom">
+                    <span class="composer-hint">Visible par toute la communauté SAMII</span>
+                    <button class="composer-submit" id="composerSubmit" type="button">Publier</button>
+                </div>
+            </div>
 
-</script>
+            <div id="feedContainer">${feedHtml}</div>
+        </div>
 
+        <div class="col-side">
+            <div class="side-panel">
+                <h3><i data-lucide="trophy"></i> Classement SAMII</h3>
+                ${classementHtml}
+            </div>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<nav class="mobile-nav">
+    <a href="/qg"><i data-lucide="layout-dashboard"></i> QG</a>
+    <a href="/marketplace"><i data-lucide="store"></i> Marché</a>
+    <a href="/community" class="active"><i data-lucide="users"></i> Communauté</a>
+    <a href="/arsenal"><i data-lucide="shield-check"></i> Arsenal</a>
+</nav>
+<script>
+if (typeof lucide !== "undefined") lucide.createIcons();
 
-</body>
-
-</html>
-
-    `);
-
+const savedTheme = localStorage.getItem("samii_community_theme");
+if (savedTheme === "light") document.body.classList.add("light");
+function updateThemeIcon() {
+    const btn = document.getElementById("themeBtn");
+    if (!btn) return;
+    btn.innerHTML = document.body.classList.contains("light") ? '<i data-lucide="sun"></i>' : '<i data-lucide="moon"></i>';
+    if (typeof lucide !== "undefined") lucide.createIcons();
+}
+updateThemeIcon();
+document.getElementById("themeBtn")?.addEventListener("click", () => {
+    document.body.classList.toggle("light");
+    localStorage.setItem("samii_community_theme", document.body.classList.contains("light") ? "light" : "dark");
+    updateThemeIcon();
 });
 
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+document.getElementById("composerSubmit").addEventListener("click", async function () {
+    const contenu = document.getElementById("composerText").value.trim();
+    const image_url = document.getElementById("composerImage").value.trim();
+    if (!contenu && !image_url) { showToast("Écris quelque chose ou ajoute une image."); return; }
+
+    this.disabled = true;
+    try {
+        const res = await fetch("/community/publier", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contenu, image_url }),
+        });
+        const json = await res.json();
+        if (json.success) {
+            window.location.reload();
+        } else {
+            showToast(json.error || "Erreur.");
+            this.disabled = false;
+        }
+    } catch (err) {
+        showToast("Erreur réseau.");
+        this.disabled = false;
+    }
+});
+
+async function toggleLike(id, btn) {
+    try {
+        const res = await fetch("/community/like/" + id, { method: "POST" });
+        const json = await res.json();
+        if (json.success) {
+            btn.classList.toggle("liked", json.liked);
+        }
+    } catch (err) { showToast("Erreur réseau."); }
+}
+
+function toggleCommentBox(id) {
+    const box = document.getElementById("comment-box-" + id);
+    box.style.display = box.style.display === "none" ? "flex" : "none";
+    if (box.style.display === "flex") document.getElementById("comment-input-" + id).focus();
+}
+
+async function postComment(id) {
+    const input = document.getElementById("comment-input-" + id);
+    const contenu = input.value.trim();
+    if (!contenu) return;
+    try {
+        const res = await fetch("/community/commenter/" + id, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contenu }),
+        });
+        const json = await res.json();
+        if (json.success) {
+            window.location.reload();
+        } else {
+            showToast(json.error || "Erreur.");
+        }
+    } catch (err) { showToast("Erreur réseau."); }
+}
+
+function sharePost(id) {
+    const url = window.location.origin + "/community#post-" + id;
+    if (navigator.share) {
+        navigator.share({ url }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(url);
+        showToast("🔗 Lien copié !");
+    }
+}
+</script>
+</body>
+</html>`);
+});
+
+// ==========================================================================
+// PUBLIER
+// ==========================================================================
+
+router.post("/publier", requireAuth, async (req, res) => {
+    try {
+        const { contenu, image_url } = req.body;
+        if (!contenu && !image_url) {
+            return res.json({ success: false, error: "Ajoute du texte ou une image." });
+        }
+
+        await db.query(
+            `INSERT INTO publications (auteur_id, contenu, image_url, type) VALUES ($1, $2, $3, $4)`,
+            [req.session.userId, contenu || "", image_url || null, image_url ? "image" : "texte"]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /community/publier :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+// ==========================================================================
+// LIKE — TOGGLE
+// ==========================================================================
+
+router.post("/like/:id", requireAuth, async (req, res) => {
+    try {
+        const publicationId = parseInt(req.params.id, 10);
+        const userId = req.session.userId;
+        if (!publicationId || !userId) return res.json({ success: false, error: "Requête invalide." });
+
+        const existing = await db.query(
+            `SELECT id FROM publications_likes WHERE publication_id = $1 AND user_id = $2`,
+            [publicationId, userId]
+        );
+
+        if (existing.length > 0) {
+            await db.query(`DELETE FROM publications_likes WHERE id = $1`, [existing[0].id]);
+            return res.json({ success: true, liked: false });
+        }
+
+        await db.query(
+            `INSERT INTO publications_likes (publication_id, user_id) VALUES ($1, $2)`,
+            [publicationId, userId]
+        );
+        res.json({ success: true, liked: true });
+    } catch (err) {
+        console.error("❌ POST /community/like/:id :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+// ==========================================================================
+// COMMENTER
+// ==========================================================================
+
+router.post("/commenter/:id", requireAuth, async (req, res) => {
+    try {
+        const publicationId = parseInt(req.params.id, 10);
+        const { contenu } = req.body;
+
+        if (!publicationId || !contenu || !contenu.trim()) {
+            return res.json({ success: false, error: "Commentaire vide." });
+        }
+
+        await db.query(
+            `INSERT INTO publications_commentaires (publication_id, auteur_id, contenu) VALUES ($1, $2, $3)`,
+            [publicationId, req.session.userId, contenu.trim()]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /community/commenter/:id :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
 
 module.exports = router;
