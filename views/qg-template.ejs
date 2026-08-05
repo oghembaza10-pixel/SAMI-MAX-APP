@@ -24,7 +24,6 @@
     <aside class="qg-sidebar" id="og-sidebar">
         <div class="qg-sidebar__top">
             <a href="/hub" class="qg-logo">
-                <img src="/og.png" alt="OG">
                 <span class="qg-logo__text">OG · EMPIRE</span>
             </a>
             <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar">
@@ -100,19 +99,10 @@
             <div class="qg-hero__grid"></div>
             <div class="qg-hero__glow qg-hero__glow--gold"></div>
             <div class="qg-hero__glow qg-hero__glow--cyan"></div>
-            <div class="qg-hero__content" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
-                <div>
-                    <span class="qg-eyebrow" data-i18n="qg.hero.eyebrow">Centre de commandement</span>
-                    <h1><span data-i18n="qg.hero.titlePrefix">Votre QG</span> <%= metier.toUpperCase() %></h1>
-                    <p data-i18n="qg.hero.subtitle">Pilotez votre activité, vos outils et vos missions depuis un seul endroit.</p>
-                </div>
-                <!-- BOUTON CRÉER MA BOUTIQUE -->
-                <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(212,175,55,0.3); padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; min-width: 260px;">
-                    <span style="color: #d4af37; font-size: 0.85rem; font-weight: 700;">🚀 Automatisation Boutique</span>
-                    <input type="text" id="subdomain-input" placeholder="nom-client (ex: client1)" style="padding: 8px 12px; border-radius: 6px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 0.9rem;">
-                    <button id="create-shop-btn" style="padding: 10px 16px; background: var(--gold-og, #d4af37); color: #000; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;">Créer ma boutique</button>
-                    <span id="create-shop-msg" style="font-size: 0.8rem; color: #3ddc84; min-height: 16px;"></span>
-                </div>
+            <div class="qg-hero__content">
+                <span class="qg-eyebrow" data-i18n="qg.hero.eyebrow">Centre de commandement</span>
+                <h1><span data-i18n="qg.hero.titlePrefix">Votre QG</span> <%= metier.toUpperCase() %></h1>
+                <p data-i18n="qg.hero.subtitle">Pilotez votre activité, vos outils et vos missions depuis un seul endroit.</p>
             </div>
         </section>
         <!-- MODULES CANAUX -->
@@ -352,42 +342,6 @@ document.getElementById("feedback-submit")?.addEventListener("click", async () =
     const json = await res.json();
     document.getElementById("feedback-msg").textContent = json.success ? "✅ Merci, c'est transmis !" : "❌ Erreur.";
     if (json.success) document.getElementById("feedback-text").value = "";
-});
-
-// Script pour le bouton Créer ma boutique / Cloudflare
-document.getElementById("create-shop-btn")?.addEventListener("click", async () => {
-    const subdomain = document.getElementById("subdomain-input").value.trim().toLowerCase();
-    const msgElement = document.getElementById("create-shop-msg");
-    
-    if (!subdomain) {
-        msgElement.style.color = "#e55";
-        msgElement.textContent = "❌ Entrez un nom valide !";
-        return;
-    }
-
-    msgElement.style.color = "#d4af37";
-    msgElement.textContent = "⏳ Création du sous-domaine en cours...";
-
-    try {
-        const res = await fetch("/api/create-shop", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ subdomain })
-        });
-        const json = await res.json();
-
-        if (json.success) {
-            msgElement.style.color = "#3ddc84";
-            msgElement.textContent = `✅ ${subdomain}.souverain-store.com créé !`;
-            document.getElementById("subdomain-input").value = "";
-        } else {
-            msgElement.style.color = "#e55";
-            msgElement.textContent = `❌ Erreur : ${json.error || "Inconnue"}`;
-        }
-    } catch (err) {
-        msgElement.style.color = "#e55";
-        msgElement.textContent = "❌ Erreur réseau.";
-    }
 });
 </script>
 </body>
