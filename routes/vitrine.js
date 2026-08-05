@@ -1,170 +1,320 @@
 // ==========================================================================
-// SAMII OS — VITRINE — Page publique de profil (client ou marchand)
+// SAMII OS — VITRINE — Profil public premium (PostgreSQL)
+// Photo + bannière réelles, grade, stats, annonces synchronisées
 // ==========================================================================
-const express = require("express");
-const router  = express.Router();
-const axios   = require("axios");
-const airtable = require("../services/airtable");
 
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
+const express = require("express");
+const router = express.Router();
+const db = require("../services/db");
+
+const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
+const CLOUDINARY_UPLOAD_PRESET = "MARKETPLACE OG";
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
 }
 
-async function getUserById(userId) {
-    const res = await axios.get(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${userId}`,
-        { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` } }
-    );
-    return res.data;
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
-// ── PAGE PUBLIQUE — visible par tout le monde, pas besoin d'être connecté ──
-router.get("/:userId", async (req, res) => {
-    try {
-        const record = await getUserById(req.params.userId);
-        const f = record.fields;
+function initiales(prenom, nom) {
+    const a = (prenom || "").charAt(0).toUpperCase();
+    const b = (nom || "").charAt(0).toUpperCase();
+    return (a + b) || "OG";
+}
 
-        let annonces = [];
-        try {
-            annonces = await airtable.find("ANNONCES", `{vendeur_id}="${req.params.userId}"`, 50);
-        } catch (err) {
-            console.warn("⚠️ Annonces vitrine :", err.message);
+function membreDepuis(date) {
+    if (!date) return "";
+    const d = new Date(date);
+    const mois = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+    return `${mois[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ==========================================================================
+// PAGE PUBLIQUE
+// ==========================================================================
+
+router.get("/:userId", async (req, res) => {
+    const userId = req.params.userId;
+    let user = null;
+    let annonces = [];
+    let stats = { totalAnnonces: 0, noteMoyenne: 0, totalAvis: 0 };
+
+    try {
+        const rows = await db.query(`SELECT * FROM utilisateurs WHERE id = $1`, [userId]);
+        user = rows[0] || null;
+
+        if (!user) {
+            return res.status(404).send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Introuvable</title>
+            <style>body{background:#03060b;color:#f5fbff;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;}</style>
+            </head><body><div><h1>👤 Profil introuvable</h1><p><a href="/" style="color:#00d9ff;">Retour à l'accueil</a></p></div></body></html>`);
         }
 
-        const annoncesHtml = annonces.map(a => {
-            const af = a.fields;
-            return `
-            <div class="vt-annonce">
-                <h4>${af.titre}</h4>
-                <p>${af.description || ""}</p>
-                <span class="vt-chip">${af.prix || "—"}</span>
-            </div>`;
-        }).join("");
+        annonces = await db.query(
+            `SELECT * FROM annonces WHERE vendeur_id = $1 AND actif = true ORDER BY created_at DESC LIMIT 24`,
+            [userId]
+        );
+        stats.totalAnnonces = annonces.length;
 
-        const nomComplet = `${f.prenom || ""} ${f.nom || ""}`.trim() || "Utilisateur OG Empire";
-        const initiale = nomComplet.charAt(0).toUpperCase();
-        const estPremium = f.abonnement === "premium";
-        const avatarStyle = f.photo_profil_url
-            ? `background-image:url('${f.photo_profil_url}');`
-            : "";
-
-        res.send(`<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>${nomComplet} — OG Empire</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/vitrine-style.css">
-</head>
-<body>
-<div class="vt-shell">
-    <div class="vt-header">
-        <div class="vt-avatar" style="${avatarStyle}">${!f.photo_profil_url ? initiale : ""}</div>
-        <h1>${nomComplet}</h1>
-        <div class="vt-badges">
-            ${estPremium ? '<span class="vt-badge vt-badge--premium">Premium</span>' : ""}
-            ${f.pays ? `<span class="vt-badge vt-badge--pays">${f.pays}</span>` : ""}
-        </div>
-        ${f.bio_vitrine ? `<p class="vt-bio">${f.bio_vitrine}</p>` : ""}
-    </div>
-
-    <div class="vt-section-title">Annonces</div>
-    <div class="vt-annonces">
-        ${annonces.length ? annoncesHtml : '<div class="vt-empty">Aucune annonce publiee pour le moment.</div>'}
-    </div>
-
-    <div class="vt-footer">
-        <a href="/">OG EMPIRE</a>
-    </div>
-</div>
-</body>
-</html>`);
-
+        const noteRows = await db.query(
+            `SELECT ROUND(AVG(note)::numeric, 1) AS moyenne, COUNT(*) AS total FROM avis WHERE cible_type = 'vendeur' AND cible_id = $1`,
+            [userId]
+        );
+        if (noteRows[0]?.total > 0) {
+            stats.noteMoyenne = parseFloat(noteRows[0].moyenne);
+            stats.totalAvis = parseInt(noteRows[0].total, 10);
+        }
     } catch (err) {
         console.error("❌ GET /vitrine/:userId :", err.message);
-        res.status(404).send("Vitrine introuvable.");
+        return res.status(404).send("Vitrine introuvable.");
     }
+
+    const nomComplet = `${user.prenom || ""} ${user.nom || ""}`.trim() || "Membre SAMII";
+    const estPremium = user.abonnement === "premium";
+    const estMarchand = user.type_compte === "marchand";
+    const grade = escapeHtml(user.grade_actuel || "Soldat");
+
+    const annoncesHtml = annonces.length ? annonces.map(a => {
+        let photos = [];
+        try {
+            if (a.photos_urls) photos = JSON.parse(a.photos_urls);
+        } catch { /* ignore */ }
+        const photo = photos[0] || a.photo_url || "";
+        return `
+        <a href="/marketplace/produit/${a.id}" class="vt-card">
+            ${photo ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(a.titre)}" loading="lazy">` : `<div class="vt-card-placeholder"><i data-lucide="image"></i></div>`}
+            <div class="vt-card-body">
+                <span>${escapeHtml(a.titre)}</span>
+                <strong>${escapeHtml(a.prix || "Sur devis")}</strong>
+            </div>
+        </a>`;
+    }).join("") : `<div class="vt-empty"><i data-lucide="package-search"></i><p>Aucune annonce publiée pour le moment.</p></div>`;
+
+    res.send(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(nomComplet)} — SAMII OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root { --bg:#03060b; --panel:rgba(9,18,29,.88); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --gold:#d7b34c; --border:rgba(0,217,255,.16); --radius:18px; --cyan-glow:0 0 15px rgba(0,217,255,.45); }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,sans-serif; padding-bottom:60px; }
+.banner { height:220px; background:linear-gradient(135deg,#07121d,#0a1a2a); position:relative; overflow:hidden; }
+.banner img { width:100%; height:100%; object-fit:cover; }
+.banner::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,transparent 40%,var(--bg) 100%); }
+.profile-wrap { max-width:1000px; margin:0 auto; padding:0 20px; }
+.profile-head { display:flex; align-items:flex-end; gap:18px; margin-top:-56px; position:relative; z-index:2; flex-wrap:wrap; }
+.avatar { width:112px; height:112px; border-radius:24px; border:4px solid var(--bg); background:linear-gradient(135deg,var(--blue),var(--blue-2)); display:grid; place-items:center; font-size:32px; font-weight:900; color:white; flex-shrink:0; overflow:hidden; }
+.avatar img { width:100%; height:100%; object-fit:cover; }
+.profile-info { padding-bottom:8px; }
+.profile-info h1 { margin:0; font-size:24px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.badges-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.pbadge { font-family:"JetBrains Mono"; font-size:10px; padding:5px 11px; border-radius:20px; border:1px solid var(--border); color:var(--blue); background:rgba(0,217,255,.08); display:flex; align-items:center; gap:5px; }
+.pbadge svg { width:11px; height:11px; }
+.pbadge.premium { color:var(--gold); border-color:rgba(215,179,76,.4); background:rgba(215,179,76,.1); }
+.pbadge.grade { color:#3ddc84; border-color:rgba(61,220,132,.3); background:rgba(61,220,132,.08); }
+.stats-bar { display:flex; gap:26px; margin:22px 0; padding:18px 20px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); flex-wrap:wrap; }
+.stat-block { text-align:center; }
+.stat-block strong { display:block; font-family:"JetBrains Mono"; font-size:20px; color:var(--blue); }
+.stat-block span { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+.bio-text { color:var(--muted); font-size:13.5px; line-height:1.7; margin:16px 0; max-width:600px; }
+.section-title { font-size:16px; font-weight:800; margin:30px 0 14px; display:flex; align-items:center; gap:8px; }
+.section-title svg { width:17px; height:17px; color:var(--blue); }
+.vt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:14px; }
+.vt-card { text-decoration:none; color:var(--text); border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--panel); transition:.2s; }
+.vt-card:hover { transform:translateY(-4px); border-color:var(--blue); box-shadow:var(--cyan-glow); }
+.vt-card img { width:100%; aspect-ratio:1/1; object-fit:cover; }
+.vt-card-placeholder { width:100%; aspect-ratio:1/1; display:grid; place-items:center; color:var(--blue); background:#07121d; }
+.vt-card-body { padding:11px; }
+.vt-card-body span { display:block; font-size:11.5px; margin-bottom:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vt-card-body strong { color:var(--blue); font-size:13px; }
+.vt-empty { grid-column:1/-1; text-align:center; padding:60px 20px; border:1px dashed var(--border); border-radius:16px; color:var(--muted); }
+.vt-empty svg { width:36px; height:36px; color:var(--blue); margin-bottom:12px; }
+.back-link { display:inline-flex; align-items:center; gap:8px; color:var(--muted); text-decoration:none; font-size:13px; padding:16px 20px 0; }
+.back-link:hover { color:var(--blue); }
+</style>
+</head>
+<body>
+<a href="/marketplace" class="back-link"><i data-lucide="arrow-left"></i> Retour à Marketplace</a>
+<div class="banner">${user.banniere_url ? `<img src="${escapeHtml(user.banniere_url)}" alt="">` : ""}</div>
+<div class="profile-wrap">
+    <div class="profile-head">
+        <div class="avatar">${user.photo_profil_url ? `<img src="${escapeHtml(user.photo_profil_url)}" alt="">` : initiales(user.prenom, user.nom)}</div>
+        <div class="profile-info">
+            <h1>${escapeHtml(nomComplet)}</h1>
+            <div class="badges-row">
+                <span class="pbadge grade"><i data-lucide="${estMarchand ? "store" : "user"}"></i> ${grade}</span>
+                ${estPremium ? `<span class="pbadge premium"><i data-lucide="crown"></i> Premium</span>` : ""}
+                ${user.pays ? `<span class="pbadge"><i data-lucide="map-pin"></i> ${escapeHtml(user.pays)}</span>` : ""}
+                ${user.created_at ? `<span class="pbadge"><i data-lucide="calendar"></i> Membre depuis ${membreDepuis(user.created_at)}</span>` : ""}
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-block"><strong>${stats.totalAnnonces}</strong><span>Annonces</span></div>
+        <div class="stat-block"><strong>${stats.noteMoyenne || "—"}</strong><span>Note ${stats.totalAvis ? `(${stats.totalAvis})` : ""}</span></div>
+        <div class="stat-block"><strong>${user.score_grade || 0}</strong><span>Points SAMII</span></div>
+    </div>
+
+    ${user.bio_vitrine ? `<p class="bio-text">${escapeHtml(user.bio_vitrine)}</p>` : ""}
+
+    <div class="section-title"><i data-lucide="store"></i> Annonces actives</div>
+    <div class="vt-grid">${annoncesHtml}</div>
+</div>
+<script>if (typeof lucide !== "undefined") lucide.createIcons();</script>
+</body>
+</html>`);
 });
 
-// ── FORMULAIRE PRIVÉ D'ÉDITION ──────────────────────────────
+// ==========================================================================
+// FORMULAIRE PRIVÉ D'ÉDITION
+// ==========================================================================
+
 router.get("/modifier/moi", requireAuth, async (req, res) => {
-    const record = await getUserById(req.session.userId);
-    const f = record.fields;
+    let user = {};
+    try {
+        const rows = await db.query(`SELECT * FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+        user = rows[0] || {};
+    } catch (err) {
+        console.error("❌ GET /vitrine/modifier/moi :", err.message);
+    }
+
     const isClient = req.session.typeCompte === "client";
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Modifier ma vitrine</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="${isClient ? "/css/client-style.css" : "/css/qg-style.css"}">
-    <style>
-        .vm-shell { max-width: 560px; margin: 0 auto; padding: 40px 24px 80px; }
-        .vm-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: .82rem; margin-bottom: 24px; }
-        .vm-shell h1 { font-family: var(--font-display); color: #fff; font-size: 1.5rem; margin-bottom: 24px; }
-        .vm-card { background: var(--bg-glass); backdrop-filter: blur(12px); border: var(--border-soft); border-radius: 16px; padding: 24px; }
-        label { display: block; font-family: var(--font-mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 14px 0 6px; }
-        input, textarea, select {
-            width: 100%; padding: 11px 13px; border-radius: 9px;
-            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3);
-            color: var(--text-main); font-size: .88rem; font-family: var(--font-body);
-        }
-        textarea { resize: vertical; min-height: 90px; }
-        button { width: 100%; padding: 14px; margin-top: 18px; background: var(--gold-og, #9d5cff); border: none; border-radius: 10px; font-weight: 700; cursor: pointer; color: #000; }
-        .vm-msg { text-align: center; margin-top: 14px; font-size: .85rem; color: #e55; min-height: 20px; }
-        .vm-msg.ok { color: #3ddc84; }
-    </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Modifier ma vitrine</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root { --bg:#03060b; --panel:rgba(9,18,29,.88); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --border:rgba(0,217,255,.16); --radius:18px; --cyan-glow:0 0 15px rgba(0,217,255,.45); }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,sans-serif; padding:30px 20px 80px; }
+.vm-shell { max-width:560px; margin:0 auto; }
+.back { display:inline-flex; align-items:center; gap:8px; color:var(--muted); text-decoration:none; font-size:13px; margin-bottom:22px; }
+.back:hover { color:var(--blue); }
+h1 { font-size:22px; margin-bottom:20px; }
+.vm-card { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:24px; }
+label { display:block; font-family:"JetBrains Mono"; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:16px 0 7px; }
+label:first-of-type { margin-top:0; }
+input,textarea,select { width:100%; padding:12px 13px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,.3); color:var(--text); font-size:13.5px; font-family:inherit; outline:none; }
+input:focus,textarea:focus,select:focus { border-color:var(--blue); box-shadow:var(--cyan-glow); }
+select option { background:#07101a; }
+textarea { resize:vertical; min-height:90px; }
+.upload-zone { display:flex; align-items:center; gap:12px; }
+.upload-preview-img { width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid var(--border); flex-shrink:0; background:#07121d; }
+.upload-preview-banner { width:100%; height:80px; border-radius:12px; object-fit:cover; border:1px solid var(--border); background:#07121d; margin-top:8px; }
+.upload-btn { padding:10px 16px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--blue); font-size:12px; font-weight:700; cursor:pointer; }
+.upload-status { font-size:11px; color:var(--blue); margin-top:6px; display:none; }
+button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; border-radius:12px; background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:#001018; font-weight:800; cursor:pointer; box-shadow:var(--cyan-glow); }
+.vm-msg { text-align:center; margin-top:14px; font-size:13px; color:#ff5470; min-height:20px; }
+.vm-msg.ok { color:#3ddc84; }
+</style>
 </head>
 <body>
 <div class="vm-shell">
-    <a href="${isClient ? "/client-qg" : "/qg"}" class="vm-back">← Retour</a>
+    <a href="${isClient ? "/client-qg" : "/qg"}" class="back"><i data-lucide="arrow-left"></i> Retour</a>
     <h1>Modifier ma vitrine</h1>
     <div class="vm-card">
         <form id="form-vitrine">
-            <label>Photo de profil (lien vers une image)</label>
-            <input name="photo_profil_url" value="${f.photo_profil_url || ""}" placeholder="https://...">
+            <label>Photo de profil</label>
+            <div class="upload-zone">
+                <img class="upload-preview-img" id="previewPhoto" src="${escapeHtml(user.photo_profil_url || "")}" alt="">
+                <button type="button" class="upload-btn" onclick="document.getElementById('inputPhoto').click()">Choisir une photo</button>
+            </div>
+            <input type="file" id="inputPhoto" accept="image/*" style="display:none;">
+            <input type="hidden" name="photo_profil_url" id="hiddenPhoto" value="${escapeHtml(user.photo_profil_url || "")}">
+            <div class="upload-status" id="statusPhoto">⏳ Envoi...</div>
 
-            <label>Bio / presentation</label>
-            <textarea name="bio_vitrine" placeholder="Parle un peu de toi ou de ton activite...">${f.bio_vitrine || ""}</textarea>
+            <label>Bannière de couverture</label>
+            <img class="upload-preview-banner" id="previewBanner" src="${escapeHtml(user.banniere_url || "")}" alt="">
+            <button type="button" class="upload-btn" style="margin-top:8px;" onclick="document.getElementById('inputBanner').click()">Choisir une bannière</button>
+            <input type="file" id="inputBanner" accept="image/*" style="display:none;">
+            <input type="hidden" name="banniere_url" id="hiddenBanner" value="${escapeHtml(user.banniere_url || "")}">
+            <div class="upload-status" id="statusBanner">⏳ Envoi...</div>
+
+            <label>Bio / présentation</label>
+            <textarea name="bio_vitrine" placeholder="Parle un peu de toi ou de ton activité...">${escapeHtml(user.bio_vitrine || "")}</textarea>
 
             <label>Pays</label>
-            <input name="pays" value="${f.pays || ""}" placeholder="Ex : Algerie">
+            <input name="pays" value="${escapeHtml(user.pays || "")}" placeholder="Ex : Algérie">
 
-            <label>Langue preferee</label>
+            <label>Langue préférée</label>
             <select name="langue_preferee">
-                <option value="fr" ${f.langue_preferee === "fr" ? "selected" : ""}>Francais</option>
-                <option value="ar" ${f.langue_preferee === "ar" ? "selected" : ""}>Arabe</option>
-                <option value="en" ${f.langue_preferee === "en" ? "selected" : ""}>Anglais</option>
+                <option value="fr" ${user.langue_preferee === "fr" ? "selected" : ""}>Français</option>
+                <option value="ar" ${user.langue_preferee === "ar" ? "selected" : ""}>Arabe</option>
+                <option value="en" ${user.langue_preferee === "en" ? "selected" : ""}>Anglais</option>
             </select>
 
-            <button type="submit">Enregistrer</button>
+            <button type="submit">Enregistrer les modifications</button>
         </form>
         <div class="vm-msg" id="msg"></div>
     </div>
 </div>
 <script>
-document.getElementById('form-vitrine').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const msg = document.getElementById('msg');
-    const data = Object.fromEntries(new FormData(e.target));
-    msg.textContent = 'Enregistrement...';
-    msg.className = 'vm-msg';
+if (typeof lucide !== "undefined") lucide.createIcons();
 
-    const res = await fetch('/vitrine/modifier/moi', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-    });
-    const json = await res.json();
-    if (json.success) {
-        msg.textContent = 'Vitrine mise a jour !';
-        msg.className = 'vm-msg ok';
-    } else {
-        msg.textContent = json.error || 'Erreur.';
+async function uploadToCloudinary(file, statusId, previewId, hiddenId) {
+    const status = document.getElementById(statusId);
+    status.style.display = "block";
+    status.textContent = "⏳ Envoi en cours...";
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", "MARKETPLACE OG");
+        const res = await fetch("https://api.cloudinary.com/v1_1/ojwx5hft/image/upload", { method: "POST", body: formData });
+        const json = await res.json();
+        if (json.secure_url) {
+            document.getElementById(previewId).src = json.secure_url;
+            document.getElementById(hiddenId).value = json.secure_url;
+            status.textContent = "✅ Image envoyée !";
+            setTimeout(() => status.style.display = "none", 1500);
+        } else {
+            status.textContent = "❌ Échec de l'envoi.";
+        }
+    } catch (err) {
+        status.textContent = "❌ Erreur réseau.";
+    }
+}
+
+document.getElementById("inputPhoto").addEventListener("change", function () {
+    if (this.files[0]) uploadToCloudinary(this.files[0], "statusPhoto", "previewPhoto", "hiddenPhoto");
+});
+document.getElementById("inputBanner").addEventListener("change", function () {
+    if (this.files[0]) uploadToCloudinary(this.files[0], "statusBanner", "previewBanner", "hiddenBanner");
+});
+
+document.getElementById("form-vitrine").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("msg");
+    const data = Object.fromEntries(new FormData(e.target));
+    msg.textContent = "Enregistrement...";
+    msg.className = "vm-msg";
+    try {
+        const res = await fetch("/vitrine/modifier/moi", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+        });
+        const json = await res.json();
+        if (json.success) {
+            msg.textContent = "✅ Vitrine mise à jour !";
+            msg.className = "vm-msg ok";
+        } else {
+            msg.textContent = json.error || "Erreur.";
+        }
+    } catch (err) {
+        msg.textContent = "Erreur réseau.";
     }
 });
 </script>
@@ -174,17 +324,11 @@ document.getElementById('form-vitrine').addEventListener('submit', async (e) => 
 
 router.post("/modifier/moi", requireAuth, async (req, res) => {
     try {
-        const { photo_profil_url, bio_vitrine, pays, langue_preferee } = req.body;
+        const { photo_profil_url, banniere_url, bio_vitrine, pays, langue_preferee } = req.body;
 
-        await axios.patch(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${req.session.userId}`,
-            { fields: {
-                photo_profil_url: photo_profil_url || "",
-                bio_vitrine: bio_vitrine || "",
-                pays: pays || "",
-                langue_preferee: langue_preferee || "fr",
-            }},
-            { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" } }
+        await db.query(
+            `UPDATE utilisateurs SET photo_profil_url = $1, banniere_url = $2, bio_vitrine = $3, pays = $4, langue_preferee = $5 WHERE id = $6`,
+            [photo_profil_url || "", banniere_url || "", bio_vitrine || "", pays || "", langue_preferee || "fr", req.session.userId]
         );
 
         res.json({ success: true });
