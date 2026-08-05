@@ -7,10 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/qg-style.css">
+    <link rel="stylesheet" href="/css/qg-style.css?v=2">
 </head>
 <body data-shop="<%= shop %>">
-<!-- BARRE GRADE MILITAIRE -->
 <div class="qg-grade-bar">
     <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
     <span class="qg-grade-bar__nom" id="grade-nom">SOLDAT</span>
@@ -20,7 +19,6 @@
     <span class="qg-grade-bar__next" id="grade-next">→ CAPORAL</span>
 </div>
 <div class="qg-shell">
-    <!-- SIDEBAR -->
     <aside class="qg-sidebar" id="og-sidebar">
         <div class="qg-sidebar__top">
             <a href="/hub" class="qg-logo">
@@ -81,7 +79,6 @@
         </div>
     </aside>
     <main class="qg-main">
-        <!-- TOPBAR -->
         <header class="qg-topbar">
             <div class="qg-topbar__breadcrumb">
                 <span class="qg-mono" data-i18n="qg.topbar">QG</span>
@@ -94,7 +91,6 @@
                 </button>
             </div>
         </header>
-        <!-- BANDEAU CYBER -->
         <section class="qg-hero">
             <div class="qg-hero__grid"></div>
             <div class="qg-hero__glow qg-hero__glow--gold"></div>
@@ -105,11 +101,9 @@
                 <p data-i18n="qg.hero.subtitle">Pilotez votre activité, vos outils et vos missions depuis un seul endroit.</p>
             </div>
         </section>
-        <!-- MODULES CANAUX -->
         <div class="qg-modules" id="qg-modules">
             <button class="qg-module-btn active" data-canal="">📊 <span data-i18n="qg.modules.all">Tout</span></button>
         </div>
-        <!-- ── VUE D'ENSEMBLE ────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="activity"></i>
             <span data-i18n="qg.section.overview">Vue d'ensemble</span>
@@ -151,7 +145,6 @@
                 <span class="qg-card__label" data-i18n="qg.cards2.blacklist">Blacklist</span>
             </article>
         </section>
-        <!-- ── LIVRAISON TEMPS RÉEL ──────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="truck"></i>
             <span data-i18n="qg.section.delivery">Livraison temps réel 🚚</span>
@@ -173,7 +166,6 @@
                 <span class="qg-card__label" data-i18n="qg.delivery.failed">Échecs</span>
             </article>
         </section>
-        <!-- ── MISSION DU JOUR ───────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="target"></i>
             <span data-i18n="qg.section.missionToday">Mission du jour 🎯</span>
@@ -203,7 +195,6 @@
                 </div>
             </article>
         </section>
-        <!-- ── PERFORMANCE DU MOIS ───────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="bar-chart-2"></i>
             <span data-i18n="qg.section.performance">Performance du mois 📈</span>
@@ -225,7 +216,6 @@
                 <span class="qg-card__label" data-i18n="qg.performance.vsLastMonth">vs mois dernier</span>
             </article>
         </section>
-        <!-- ── COMMANDES ─────────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="shopping-bag"></i>
             <span data-i18n="qg.section.recentOrders">Dernières commandes</span>
@@ -251,7 +241,6 @@
                 </tbody>
             </table>
         </section>
-        <!-- ── CLIENTS VIP ───────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="crown"></i>
             <span data-i18n="qg.section.vipClients">Clients VIP 👑</span>
@@ -261,7 +250,6 @@
                 <p style="color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
             </div>
         </section>
-        <!-- ── BLACKLIST ──────────────────────────────── -->
         <div class="qg-section-title" style="--accent:#e55;">
             <i data-lucide="shield-off"></i>
             <span data-i18n="qg.section.blacklist">Blacklist 🚫</span>
@@ -271,7 +259,6 @@
                 <p style="color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
             </div>
         </section>
-       <!-- ── ARSENAL ───────────────────────────────── -->
         <div class="qg-section-title">
             <i data-lucide="sword"></i>
             <span data-i18n="qg.section.arsenal">Arsenal</span>
@@ -300,8 +287,6 @@
                 <h3 data-i18n="qg.arsenal.seeMore">Voir l'Arsenal</h3>
             </article>
         </section>
-
-        <!-- ── AIDEZ-NOUS À VOUS AIDER ──────────────────── -->
         <div class="qg-section-title" style="margin-top:20px;">
             <i data-lucide="lightbulb"></i>
             <span>Aidez-nous à vous aider</span>
@@ -316,11 +301,9 @@
                 <span id="feedback-msg" style="display:block;margin-top:8px;font-size:.8rem;color:#3ddc84;"></span>
             </article>
         </section>
-
     </main>
 </div>
 
-<!-- SAMII orb -->
 <a href="/samii" class="samii-orb" aria-label="Ouvrir SAMII">
     <span class="samii-orb__aura"></span>
     <span class="samii-orb__aura samii-orb__aura--2"></span>
