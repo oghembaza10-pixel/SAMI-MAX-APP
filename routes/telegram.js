@@ -17,8 +17,10 @@ const BASE   = `https://api.telegram.org/bot${TOKEN}`;
 // Rendez-vous : professions de service où le client prend un créneau.
 // Produit (par défaut) : e-commerce, restaurant (menu), boutique, etc.
 const METIERS_RDV = [
-    "dentiste", "avocat", "comptable", "coiffeur", "medecin", "kine",
-    "veterinaire", "notaire", "courtier", "immobilier", "service",
+    "dentiste", "medecin", "avocat", "comptable", "coiffeur", "kine",
+    "veterinaire", "notaire", "courtier", "immobilier", "garage",
+    "lavage", "mecanicien", "esthetique", "tatoueur", "photographe",
+    "formateur", "architecte", "agence", "service",
 ];
 
 function typeParcours(metier) {
@@ -36,8 +38,8 @@ function detecterLangue(message) {
 
 const T = {
     fr: {
-        bienvenueClient: "👑 *Bienvenue !*\n\nJe suis SAMII, votre assistant. Comment puis-je vous aider aujourd'hui ?",
-        bienvenueGenerique: (chatId) => `👑 *Bienvenue sur SAMII OS !*\n\n✅ Chat ID : \`${chatId}\`\n\nJe suis SAMII, votre assistant. Comment puis-je vous aider ?`,
+        bienvenueClient: "👑 *Bienvenue !*\n\nJe suis SAMII, votre Bras droit. Comment puis-je vous aider aujourd'hui ?",
+        bienvenueGenerique: (chatId) => `👑 *Bienvenue sur SAMII OS !*\n\n✅ Chat ID : \`${chatId}\`\n\nJe suis SAMII, votre Bras droit. Comment puis-je vous aider ?`,
         adminConnecte: "✅ *Telegram connecté à ton QG !*\n\nTu recevras désormais toutes tes commandes/rendez-vous ici directement. 👑",
         adminErreur: "❌ Erreur de connexion. Réessaie depuis ton QG.",
         commandeAnnulee: "❌ Commande annulée. Comment puis-je vous aider ?",
