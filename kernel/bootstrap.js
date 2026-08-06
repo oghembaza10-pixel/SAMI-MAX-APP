@@ -17,6 +17,8 @@ const scheduler          = require("./scheduler");
 const ambassadeurEngine  = require("../engines/ambassadeurEngine");
 const sereniteEngine     = require("../engines/sereniteEngine");
 const messagerEclairEngine = require("../engines/messagerEclairEngine");
+const guerreEngine = require("../engines/guerreEngine");
+scheduler.add("0 9 * * *", "Guerre - compte à rebours communauté", guerreEngine.runDaily);
 const trackingRegistry   = require("../services/tracking");
 const yalidineTracking   = require("../services/tracking/yalidine");
 const universalTracking  = require("../services/tracking/universal");
