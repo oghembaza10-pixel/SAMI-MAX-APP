@@ -115,6 +115,7 @@ app.use("/settings",  requireAuth, require("./routes/settings"));
 app.use("/ads",       requireAuth, require("./routes/ads"));
 app.use("/coffre",    requireAuth, require("./routes/coffre"));
 app.use("/arsenal",   requireAuth, require("./routes/arsenal"));
+app.use("/guerre", require("./routes/guerre"));
 app.use("/samii/opportunites", require("./routes/opportunites"));
 app.use("/samii/griot", require("./routes/griot"));
 app.use("/samii/top-produits", require("./routes/topproduits"));
