@@ -3,17 +3,13 @@
  * OG • Sérénité Engine — rapport quotidien apaisé, chaque soir 22h
  * ============================================================
  */
-const airtable = require("../services/airtable");
+const db = require("../services/db");
 const notificationEngine = require("../engines/notificationEngine");
 
-function getMontant(c) {
-    return parseFloat(c.montant || c.Total || 0) || 0;
-}
-
-function isSereniteActive(fields) {
-    if (!fields.automatisations) return true;
+function isSereniteActive(workspace) {
+    if (!workspace.automatisations) return true;
     try {
-        const auto = JSON.parse(fields.automatisations);
+        const auto = JSON.parse(workspace.automatisations);
         return auto.serenite !== false;
     } catch {
         return true;
@@ -22,13 +18,16 @@ function isSereniteActive(fields) {
 
 async function getAdminChatId(workspaceId) {
     try {
-        const record = await airtable.findOne("CONNECTEURS",
-            `AND({type}="telegram",{actif}=1,{workspace_id}="${workspaceId}")`
+        const rows = await db.query(
+            `SELECT config FROM connecteurs WHERE type = 'telegram' AND actif = true AND workspace_id = $1`,
+            [workspaceId]
         );
-        if (!record) return null;
-        const config = JSON.parse((record.fields?.config || "{}").replace(/\\_/g, "_"));
-        return config.chatId || config.chat_id || null;
-    } catch { return null; }
+        if (!rows[0]) return null;
+        const config = JSON.parse(rows[0].config || "{}");
+        return config.chatId || null;
+    } catch {
+        return null;
+    }
 }
 
 function ecartMessage(aujourdhui, hier) {
@@ -42,33 +41,40 @@ function ecartMessage(aujourdhui, hier) {
 
 async function runDaily() {
     try {
-        const workspaces = await airtable.find("WORKSPACES", `{statut}="actif"`, 200);
-        console.log(`🕊️ Sérénité : ${workspaces.length} workspace(s) actif(s) à traiter.`);
+        const workspaces = await db.query(`SELECT * FROM workspaces`);
+        console.log(`🕊️ Sérénité : ${workspaces.length} workspace(s) à traiter.`);
 
         const aujourdhui = new Date().toISOString().split("T")[0];
-        const hierDate   = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+        const hierDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-        for (const record of workspaces) {
-            const f = record.fields;
-            const workspaceId = f.workspace_id;
-            const nom = f.nom || "votre activité";
+        for (const workspace of workspaces) {
+            const workspaceId = workspace.id;
+            const nom = workspace.nom || "votre activité";
 
             if (!workspaceId) continue;
-            if (!isSereniteActive(f)) continue;
+            if (!isSereniteActive(workspace)) continue;
 
             const chatId = await getAdminChatId(workspaceId);
             if (!chatId) continue;
 
             try {
-                const commandes = await airtable.find("COMMANDES", `{Boutique}="${workspaceId}"`, 300);
+                const commandes = await db.query(
+                    `SELECT * FROM commandes WHERE workspace_id = $1`,
+                    [workspaceId]
+                );
 
-                const cmdAujourdhui = commandes.filter(c => (c.fields["Date Commande"] || "").slice(0, 10) === aujourdhui);
-                const cmdHier       = commandes.filter(c => (c.fields["Date Commande"] || "").slice(0, 10) === hierDate);
+                const cmdAujourdhui = commandes.filter(c => {
+                    const d = c.date_commande ? new Date(c.date_commande).toISOString().slice(0, 10) : "";
+                    return d === aujourdhui;
+                });
+                const cmdHier = commandes.filter(c => {
+                    const d = c.date_commande ? new Date(c.date_commande).toISOString().slice(0, 10) : "";
+                    return d === hierDate;
+                });
 
-                const revAujourdhui = cmdAujourdhui.reduce((s, c) => s + getMontant(c.fields), 0);
-                const revHier       = cmdHier.reduce((s, c) => s + getMontant(c.fields), 0);
-
-                const enAttente = cmdAujourdhui.filter(c => c.fields.Statut === "en attente").length;
+                const revAujourdhui = cmdAujourdhui.reduce((s, c) => s + (parseFloat(c.montant) || 0), 0);
+                const revHier = cmdHier.reduce((s, c) => s + (parseFloat(c.montant) || 0), 0);
+                const enAttente = cmdAujourdhui.filter(c => c.statut === "en attente").length;
 
                 const message =
                     `🕊️ *SAMII — Bilan de la journée*\n\n` +
