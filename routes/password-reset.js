@@ -1,26 +1,15 @@
 // ==========================================================================
-// SAMII OS — MOT DE PASSE OUBLIÉ (même mécanique que la vérification email)
+// SAMII OS — MOT DE PASSE OUBLIÉ — PostgreSQL
 // ==========================================================================
 const express = require("express");
-const axios   = require("axios");
 const crypto  = require("crypto");
 const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const gmail   = require("../services/gmail");
 const CONFIG  = require("../config");
-
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
+const db      = require("../services/db");
 
 const TOKEN_VALIDITE_HEURES = 1; // plus court que la vérif email, par sécurité
-
-function headers() {
-    return {
-        Authorization : `Bearer ${AIRTABLE_API_KEY}`,
-        "Content-Type": "application/json",
-    };
-}
 
 // ── GET /password-reset — formulaire "entre ton email" ────────
 router.get("/", (req, res) => {
@@ -63,15 +52,12 @@ document.getElementById('form-forgot').addEventListener('submit', async (e) => {
     const data = Object.fromEntries(new FormData(e.target));
     msg.textContent = '⏳ Envoi en cours...';
     msg.className   = 'msg';
-
     const res  = await fetch('/password-reset/demande', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify(data),
     });
-    const json = await res.json();
-
-    msg.textContent = json.message || json.error || '';
+    const json = await res.json(); msg.textContent = json.message || json.error || '';
     msg.className   = json.success ? 'msg ok' : 'msg';
 });
 </script>
@@ -84,28 +70,22 @@ router.post("/demande", async (req, res) => {
     const { email } = req.body;
     if (!email) return res.json({ success: false, error: "Email requis." });
 
-    // Message toujours identique, qu'un compte existe ou pas — évite de révéler
-    // quels emails sont inscrits (bonne pratique de sécurité).
     const messageGenerique = "✅ Si ce compte existe, un email a été envoyé.";
 
     try {
-        const search = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={email}="${email}"`,
-            { headers: headers() }
-        );
+        const rows = await db.query(`SELECT id, email FROM utilisateurs WHERE email = $1`, [email]);
+        const user = rows[0];
 
-        const record = search.data.records[0];
-        if (!record) {
+        if (!user) {
             return res.json({ success: true, message: messageGenerique });
         }
 
         const token = crypto.randomBytes(32).toString("hex");
-        const expireLe = new Date(Date.now() + TOKEN_VALIDITE_HEURES * 60 * 60 * 1000).toISOString();
+        const expireLe = new Date(Date.now() + TOKEN_VALIDITE_HEURES * 60 * 60 * 1000);
 
-        await axios.patch(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-            { fields: { token_reset_password: token, token_reset_expire_le: expireLe } },
-            { headers: headers() }
+        await db.query(
+            `UPDATE utilisateurs SET token_reset_password = $1, token_reset_expire_le = $2 WHERE id = $3`,
+            [token, expireLe, user.id]
         );
 
         const lienReset = `${CONFIG.APP_URL}/password-reset/nouveau?token=${token}`;
@@ -117,18 +97,19 @@ router.post("/demande", async (req, res) => {
                 <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
                     <h2 style="color:#C5A059;">Réinitialisation du mot de passe</h2>
                     <p>Clique sur le bouton ci-dessous pour choisir un nouveau mot de passe.</p>
-                    <a href="${lienReset}" style="display:inline-block;padding:12px 24px;background:#C5A059;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;">
+                    <a href="${lienReset}" target="_blank" rel="noopener" style="display:inline-block;padding:12px 24px;background:#C5A059;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;">
                         Choisir un nouveau mot de passe
                     </a>
+                    <p style="color:#888;font-size:.8rem;">Si le bouton ne fonctionne pas, copie ce lien :<br>
+                    <a href="${lienReset}" style="color:#5FD4FF;word-break:break-all;">${lienReset}</a></p>
                     <p style="color:#888;font-size:.85rem;">Ce lien expire dans ${TOKEN_VALIDITE_HEURES}h. Si tu n'es pas à l'origine de cette demande, ignore cet email — ton mot de passe actuel reste inchangé.</p>
                 </div>
             `,
         });
 
         res.json({ success: true, message: messageGenerique });
-
     } catch (err) {
-        console.error("❌ /password-reset/demande :", err.response?.data || err.message);
+        console.error("❌ /password-reset/demande :", err.message);
         res.json({ success: false, error: "Erreur serveur. Réessaie." });
     }
 });
@@ -165,30 +146,25 @@ router.get("/nouveau", async (req, res) => {
         <input name="confirm"  type="password" placeholder="Confirme le mot de passe" required minlength="6">
         <button type="submit">Valider</button>
     </form>
-    <div class="msg" id="msg"></div>
-</div>
+    <div class="msg" id="msg"></div></div>
 <script>
 document.getElementById('form-reset').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg  = document.getElementById('msg');
     const data = Object.fromEntries(new FormData(e.target));
-
     if (data.password !== data.confirm) {
         msg.textContent = '❌ Les mots de passe ne correspondent pas.';
         msg.className   = 'msg';
         return;
     }
-
     msg.textContent = '⏳ Enregistrement...';
     msg.className   = 'msg';
-
     const res  = await fetch('/password-reset/nouveau', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify(data),
     });
     const json = await res.json();
-
     if (json.success) {
         msg.textContent = '✅ Mot de passe changé ! Redirection...';
         msg.className   = 'msg ok';
@@ -206,7 +182,6 @@ document.getElementById('form-reset').addEventListener('submit', async (e) => {
 // ── POST /password-reset/nouveau — enregistre le nouveau mdp ──
 router.post("/nouveau", async (req, res) => {
     const { token, password } = req.body;
-
     if (!token || !password) {
         return res.json({ success: false, error: "Données manquantes." });
     }
@@ -215,34 +190,27 @@ router.post("/nouveau", async (req, res) => {
     }
 
     try {
-        const search = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={token_reset_password}="${token}"`,
-            { headers: headers() }
-        );
+        const rows = await db.query(`SELECT * FROM utilisateurs WHERE token_reset_password = $1`, [token]);
+        const user = rows[0];
 
-        const record = search.data.records[0];
-        if (!record) return res.json({ success: false, error: "Lien invalide ou déjà utilisé." });
+        if (!user) return res.json({ success: false, error: "Lien invalide ou déjà utilisé." });
 
-        const f = record.fields;
-        const expireLe = f.token_reset_expire_le ? new Date(f.token_reset_expire_le) : null;
-
+        const expireLe = user.token_reset_expire_le ? new Date(user.token_reset_expire_le) : null;
         if (!expireLe || Date.now() > expireLe.getTime()) {
             return res.json({ success: false, error: "Ce lien a expiré. Refais une demande." });
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
 
-        await axios.patch(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-            { fields: { password_hash: passwordHash, token_reset_password: "", token_reset_expire_le: "" } },
-            { headers: headers() }
+        await db.query(
+            `UPDATE utilisateurs SET password_hash = $1, token_reset_password = NULL, token_reset_expire_le = NULL WHERE id = $2`,
+            [passwordHash, user.id]
         );
 
-        console.log(`✅ Mot de passe réinitialisé pour : ${f.email}`);
+        console.log(`✅ Mot de passe réinitialisé pour : ${user.email}`);
         res.json({ success: true });
-
     } catch (err) {
-        console.error("❌ /password-reset/nouveau :", err.response?.data || err.message);
+        console.error("❌ /password-reset/nouveau :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
     }
 });
