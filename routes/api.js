@@ -1,10 +1,20 @@
 // ======================================================
-// SAMII OS — API V4 — PostgreSQL
+// SAMII OS — API V5 — PostgreSQL + Universel (produit / rendez-vous)
 // ======================================================
 const express = require("express");
 const router = express.Router();
 const planner = require("../brain/planner");
 const db = require("../services/db");
+
+const METIERS_RDV = [
+    "dentiste", "avocat", "comptable", "coiffeur", "medecin", "kine",
+    "veterinaire", "notaire", "courtier", "immobilier", "service",
+];
+
+function typeParcours(metier) {
+    const m = (metier || "").toLowerCase();
+    return METIERS_RDV.includes(m) ? "rdv" : "produit";
+}
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.status(401).json({ error: "Non connecté" });
@@ -78,7 +88,7 @@ router.get("/connecteurs", requireAuth, async (req, res) => {
     }
 });
 
-// ── QG DATA (PostgreSQL) ──────────────────────────────────
+// ── QG DATA — universel (produit ou rendez-vous selon métier) ──
 router.get("/qg-data", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
     if (!workspaceId) return res.status(403).json({ error: "Workspace introuvable." });
@@ -88,112 +98,207 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         const workspace = wsRows[0];
         if (!workspace) return res.status(404).json({ error: "Workspace introuvable." });
 
-        const commandesRows = await db.query(
-            `SELECT * FROM commandes WHERE workspace_id = $1 ORDER BY date_commande DESC LIMIT 100`,
-            [workspaceId]
-        );
-        const commandes = commandesRows.map(c => ({
-            "ID Commande": c.id,
-            "Nom Client": c.nom_client,
-            "Téléphone": c.telephone,
-            "Produit": c.produit,
-            "montant": c.montant,
-            "Devise": c.devise || "DZD",
-            "Statut": c.statut,
-            "Source": c.source,
-            "Date Commande": c.date_commande,
-            airtableId: c.id,
-        }));
+        const parcours = typeParcours(workspace.metier);
 
-        const clientsRows = await db.query(
-            `SELECT * FROM clients WHERE workspace_id = $1 ORDER BY total_depense DESC LIMIT 50`,
-            [workspaceId]
-        );
-        const clients = clientsRows.map(c => ({
-            "Nom": c.nom,
-            "Téléphone": c.telephone,
-            "Total Dépensé": c.total_depense,
-            "VIP": c.statut === "vip",
-            "Blacklist": c.statut === "blacklist",
-        }));
-
-        const total_commandes = commandes.length;
-        const total_revenus = commandes.reduce((s, c) => s + getMontant(c), 0);
-        const en_attente = commandes.filter(c => c.Statut === "en attente").length;
-        const confirmees = commandes.filter(c => c.Statut === "confirmée").length;
-        const annulees = commandes.filter(c => c.Statut === "annulée").length;
-        const vip = clients.filter(c => c.VIP === true).length;
-        const blacklist = clients.filter(c => c.Blacklist === true).length;
-
-        const livrees = commandes.filter(c => c.Statut === "livrée").length;
-        const en_cours = commandes.filter(c => c.Statut === "en cours").length;
-        const echecs = commandes.filter(c => c.Statut === "échoué").length;
-
-        const aujourd = new Date().toISOString().split("T")[0];
-        const cmd_aujourd = commandes.filter(c => {
-            const d = c["Date Commande"] ? new Date(c["Date Commande"]).toISOString().slice(0, 10) : "";
-            return d === aujourd;
-        });
-        const rev_aujourd = cmd_aujourd.reduce((s, c) => s + getMontant(c), 0);
-
-        const moisActuel = aujourd.slice(0, 7);
-        const moisPrec = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
-        const cmd_mois = commandes.filter(c => {
-            const d = c["Date Commande"] ? new Date(c["Date Commande"]).toISOString().slice(0, 7) : "";
-            return d === moisActuel;
-        });
-        const cmd_moisP = commandes.filter(c => {
-            const d = c["Date Commande"] ? new Date(c["Date Commande"]).toISOString().slice(0, 7) : "";
-            return d === moisPrec;
-        });
-        const rev_mois = cmd_mois.reduce((s, c) => s + getMontant(c), 0);
-        const rev_moisP = cmd_moisP.reduce((s, c) => s + getMontant(c), 0);
-        const evolution = rev_moisP > 0 ? (((rev_mois - rev_moisP) / rev_moisP) * 100).toFixed(1) + "%" : "—";
-
-        res.json({
-            success: true,
-            workspace: { nom: workspace.nom || "", metier: workspace.metier || "" },
-            stats: { total_commandes, total_revenus: total_revenus.toFixed(2), en_attente, confirmees, annulees, vip, blacklist },
-            livraison: { livrees, en_cours, echecs },
-            mission: { date: aujourd, commandes: cmd_aujourd.length, revenus: rev_aujourd.toFixed(2) },
-            performance: { revenus_mois: rev_mois.toFixed(2), commandes_mois: cmd_mois.length, evolution },
-            commandes,
-            clients,
-        });
+        if (parcours === "rdv") {
+            return await buildRdvResponse(res, workspace, workspaceId);
+        }
+        return await buildProduitResponse(res, workspace, workspaceId);
     } catch (err) {
         console.error("❌ API qg-data :", err.message);
         res.status(500).json({ error: "Erreur chargement données." });
     }
 });
 
-// ── CONFIRMER COMMANDE ───────────────────────────────────
+// ── Réponse QG — métiers produit (e-commerce, restaurant...) ──
+async function buildProduitResponse(res, workspace, workspaceId) {
+    const commandesRows = await db.query(
+        `SELECT * FROM commandes WHERE workspace_id = $1 ORDER BY date_commande DESC LIMIT 100`,
+        [workspaceId]
+    );
+    const commandes = commandesRows.map(c => ({
+        "ID Commande": c.id,
+        "Nom Client": c.nom_client,
+        "Téléphone": c.telephone,
+        "Produit": c.produit,
+        "montant": c.montant,
+        "Devise": c.devise || "DZD",
+        "Statut": c.statut,
+        "Source": c.source,
+        "Date Commande": c.date_commande,
+        airtableId: c.id,
+    }));
+
+    const clientsRows = await db.query(
+        `SELECT * FROM clients WHERE workspace_id = $1 ORDER BY total_depense DESC LIMIT 50`,
+        [workspaceId]
+    );
+    const clients = clientsRows.map(c => ({
+        "Nom": c.nom,
+        "Téléphone": c.telephone,
+        "Total Dépensé": c.total_depense,
+        "VIP": c.statut === "vip",
+        "Blacklist": c.statut === "blacklist",
+    }));
+
+    const total_commandes = commandes.length;
+    const total_revenus = commandes.reduce((s, c) => s + getMontant(c), 0);
+    const en_attente = commandes.filter(c => c.Statut === "en attente").length;
+    const confirmees = commandes.filter(c => c.Statut === "confirmée").length;
+    const annulees = commandes.filter(c => c.Statut === "annulée").length;
+    const vip = clients.filter(c => c.VIP === true).length;
+    const blacklist = clients.filter(c => c.Blacklist === true).length;
+
+    const livrees = commandes.filter(c => c.Statut === "livrée").length;
+    const en_cours = commandes.filter(c => c.Statut === "en cours").length;
+    const echecs = commandes.filter(c => c.Statut === "échoué").length;
+
+    const aujourd = new Date().toISOString().split("T")[0];
+    const cmd_aujourd = commandes.filter(c => {
+        const d = c["Date Commande"] ? new Date(c["Date Commande"]).toISOString().slice(0, 10) : "";
+        return d === aujourd;
+    });
+    const rev_aujourd = cmd_aujourd.reduce((s, c) => s + getMontant(c), 0);
+
+    const moisActuel = aujourd.slice(0, 7);
+    const moisPrec = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
+    const cmd_mois = commandes.filter(c => {
+        const d = c["Date Commande"] ? new Date(c["Date Commande"]).toISOString().slice(0, 7) : "";
+        return d === moisActuel;
+    });
+    const cmd_moisP = commandes.filter(c => {
+        const d = c["Date Commande"] ? new Date(c["Date Commande"]).toISOString().slice(0, 7) : "";
+        return d === moisPrec;
+    });
+    const rev_mois = cmd_mois.reduce((s, c) => s + getMontant(c), 0);
+    const rev_moisP = cmd_moisP.reduce((s, c) => s + getMontant(c), 0);
+    const evolution = rev_moisP > 0 ? (((rev_mois - rev_moisP) / rev_moisP) * 100).toFixed(1) + "%" : "—";
+
+    res.json({
+        success: true,
+        parcours: "produit",
+        workspace: { nom: workspace.nom || "", metier: workspace.metier || "" },
+        stats: { total_commandes, total_revenus: total_revenus.toFixed(2), en_attente, confirmees, annulees, vip, blacklist },
+        livraison: { livrees, en_cours, echecs },
+        mission: { date: aujourd, commandes: cmd_aujourd.length, revenus: rev_aujourd.toFixed(2) },
+        performance: { revenus_mois: rev_mois.toFixed(2), commandes_mois: cmd_mois.length, evolution },
+        commandes,
+        clients,
+    });
+}
+
+// ── Réponse QG — métiers rendez-vous (dentiste, avocat...) ──
+async function buildRdvResponse(res, workspace, workspaceId) {
+    const rdvRows = await db.query(
+        `SELECT * FROM rendez_vous WHERE workspace_id = $1 ORDER BY created_at DESC LIMIT 100`,
+        [workspaceId]
+    );
+
+    const commandes = rdvRows.map(r => ({
+        "ID Commande": r.id,
+        "Nom Client": r.client_nom,
+        "Téléphone": r.client_telephone,
+        "Produit": r.motif,
+        "DateRdv": r.date_rdv,
+        "montant": 0,
+        "Devise": workspace.devise || "DZD",
+        "Statut": r.statut,
+        "Source": r.source,
+        "Date Commande": r.created_at,
+        airtableId: r.id,
+    }));
+
+    const total_rdv = commandes.length;
+    const en_attente = commandes.filter(c => c.Statut === "en_attente").length;
+    const confirmees = commandes.filter(c => c.Statut === "confirmé").length;
+    const annulees = commandes.filter(c => c.Statut === "annulé").length;
+
+    const aujourd = new Date().toISOString().split("T")[0];
+    const rdv_aujourd = commandes.filter(c => {
+        const d = c["Date Commande"] ? new Date(c["Date Commande"]).toISOString().slice(0, 10) : "";
+        return d === aujourd;
+    });
+
+    const moisActuel = aujourd.slice(0, 7);
+    const moisPrec = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
+    const rdv_mois = commandes.filter(c => {
+        const d = c["Date Commande"] ? new Date(c["Date Commande"]).toISOString().slice(0, 7) : "";
+        return d === moisActuel;
+    });
+    const rdv_moisP = commandes.filter(c => {
+        const d = c["Date Commande"] ? new Date(c["Date Commande"]).toISOString().slice(0, 7) : "";
+        return d === moisPrec;
+    });
+    const evolution = rdv_moisP.length > 0
+        ? (((rdv_mois.length - rdv_moisP.length) / rdv_moisP.length) * 100).toFixed(1) + "%"
+        : "—";
+
+    res.json({
+        success: true,
+        parcours: "rdv",
+        workspace: { nom: workspace.nom || "", metier: workspace.metier || "" },
+        stats: {
+            total_commandes: total_rdv, total_revenus: "0.00",
+            en_attente, confirmees, annulees, vip: 0, blacklist: 0,
+        },
+        livraison: { livrees: 0, en_cours: 0, echecs: 0 },
+        mission: { date: aujourd, commandes: rdv_aujourd.length, revenus: "0.00" },
+        performance: { revenus_mois: "0.00", commandes_mois: rdv_mois.length, evolution },
+        commandes,
+        clients: [],
+    });
+}
+
+// ── CONFIRMER (commande ou rendez-vous, détection automatique) ──
 router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
     try {
-        const check = await db.query(
+        const checkCmd = await db.query(
             `SELECT id FROM commandes WHERE id = $1 AND workspace_id = $2`,
             [req.params.id, req.session.workspaceId]
         );
-        if (!check.length) return res.status(403).json({ error: "Commande introuvable." });
+        if (checkCmd.length) {
+            await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1`, [req.params.id]);
+            return res.json({ success: true });
+        }
 
-        await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1`, [req.params.id]);
-        res.json({ success: true });
+        const checkRdv = await db.query(
+            `SELECT id FROM rendez_vous WHERE id = $1 AND workspace_id = $2`,
+            [req.params.id, req.session.workspaceId]
+        );
+        if (checkRdv.length) {
+            await db.query(`UPDATE rendez_vous SET statut = 'confirmé' WHERE id = $1`, [req.params.id]);
+            return res.json({ success: true });
+        }
+
+        res.status(403).json({ error: "Introuvable." });
     } catch (err) {
         console.error("❌ Confirmer :", err.message);
         res.status(500).json({ error: "Erreur confirmation." });
     }
 });
 
-// ── ANNULER COMMANDE ─────────────────────────────────────
+// ── ANNULER (commande ou rendez-vous, détection automatique) ──
 router.post("/commandes/:id/annuler", requireAuth, async (req, res) => {
     try {
-        const check = await db.query(
+        const checkCmd = await db.query(
             `SELECT id FROM commandes WHERE id = $1 AND workspace_id = $2`,
             [req.params.id, req.session.workspaceId]
         );
-        if (!check.length) return res.status(403).json({ error: "Commande introuvable." });
+        if (checkCmd.length) {
+            await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [req.params.id]);
+            return res.json({ success: true });
+        }
 
-        await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [req.params.id]);
-        res.json({ success: true });
+        const checkRdv = await db.query(
+            `SELECT id FROM rendez_vous WHERE id = $1 AND workspace_id = $2`,
+            [req.params.id, req.session.workspaceId]
+        );
+        if (checkRdv.length) {
+            await db.query(`UPDATE rendez_vous SET statut = 'annulé' WHERE id = $1`, [req.params.id]);
+            return res.json({ success: true });
+        }
+
+        res.status(403).json({ error: "Introuvable." });
     } catch (err) {
         console.error("❌ Annuler :", err.message);
         res.status(500).json({ error: "Erreur annulation." });
