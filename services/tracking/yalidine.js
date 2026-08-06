@@ -1,9 +1,10 @@
 // ==========================================================================
-// SAMII OS — Yalidine — clé API par marchand + écriture PostgreSQL
+// SAMII OS — Yalidine — clé perso marchand, sinon bascule vers 17TRACK
 // ==========================================================================
 const axios = require("axios");
 const orchestrator = require("../../brain/orchestrator");
 const db = require("../db");
+const universal = require("./universal");
 
 async function send({ to, message }) {
     console.log(`🚚 Yalidine → ${to} : ${message}`);
@@ -24,19 +25,23 @@ async function getApiKeys(workspaceId) {
     }
 }
 
-async function track(trackingNumber, workspaceId) {
-    try {
-        const keys = workspaceId ? await getApiKeys(workspaceId) : null;
-        if (!keys) return { success: false, error: "no_key", useUniversal: true };
+async function checkStatus(trackingNumber, workspaceId) {
+    const keys = workspaceId ? await getApiKeys(workspaceId) : null;
 
+    if (!keys) {
+        console.log("ℹ️ Pas de clé Yalidine perso — bascule vers 17TRACK.");
+        return await universal.checkStatus(trackingNumber, workspaceId);
+    }
+
+    try {
         const res = await axios.get(
             `https://api.yalidine.app/v1/parcels/${trackingNumber}`,
             { headers: { "X-API-ID": keys.apiId, "X-API-TOKEN": keys.apiToken } }
         );
-        return { success: true, data: res.data };
+        return { success: true, statut: res.data?.last_status || "En transit", source: "yalidine" };
     } catch (err) {
-        console.error("❌ Yalidine :", err.message);
-        return { success: false, error: err.message };
+        console.error("❌ Yalidine (clé perso) :", err.message);
+        return await universal.checkStatus(trackingNumber, workspaceId);
     }
 }
 
@@ -63,4 +68,4 @@ async function receive(event) {
     await orchestrator.process({ type: "yalidine.update", shop: event.shop || "", payload: event });
 }
 
-module.exports = { send, receive, track, saveOrUpdateTracking, getApiKeys };
+module.exports = { send, receive, checkStatus, saveOrUpdateTracking, getApiKeys };
