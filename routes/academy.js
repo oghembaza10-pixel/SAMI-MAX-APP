@@ -1,6 +1,5 @@
 // ==========================================================================
-// SAMII OS — THE SOVEREIGN ACADEMY — PostgreSQL Edition v4 (Ultra Mobile & Techno)
-// Masterclasses en direct • E-books • Formations • Feed Communautaire & Partages
+// SAMII OS — THE SOVEREIGN ACADEMY — PostgreSQL Edition v5 (Traduction & UI Ultime)
 // ==========================================================================
 
 const express = require("express");
@@ -34,7 +33,6 @@ const FORMATS_RESSOURCES = [
     { id: "outil",   label: "⚙️ Fichiers & Configs" }
 ];
 
-// 6 Exemples uniques, ultra-détaillés ancrés dans l'écosystème Logistique, Transport et SAMII OS
 const COURS_VIRTUELS = [
     { 
         id: "ac_1", 
@@ -147,13 +145,6 @@ function getCategoryLabel(id) {
     return CATEGORIES_ACADEMIE.find(c => c.id === id)?.label || id || "Général";
 }
 
-function getFormatLabel(id) {
-    return FORMATS_RESSOURCES.find(f => f.id === id)?.label || "Ressource";
-}
-
-// ==========================================================================
-// ACADÉMIE — ROUTE DE PUBLICATION COMMUNAUTAIRE (Fichiers, Photos, Articles)
-// ==========================================================================
 router.post("/partager", requireAuth, async (req, res) => {
     const { titre, categorie, format, contenu, lien_ressource } = req.body;
     const userId = req.session.userId || 1;
@@ -180,7 +171,6 @@ router.post("/partager", requireAuth, async (req, res) => {
         );
         return res.json({ success: true, message: "Ressource publiée avec succès dans l'Académie !" });
     } catch (err) {
-        console.warn("⚠️ Erreur publication académie DB (mode virtuel actif) :", err.message);
         COURS_VIRTUELS.unshift({
             id: `usr_${Date.now()}`,
             titre: titre || "Nouvelle Publication",
@@ -201,13 +191,10 @@ router.post("/partager", requireAuth, async (req, res) => {
     }
 });
 
-// Route Likes / J'aime
 router.post("/like/toggle", requireAuth, async (req, res) => {
-    const { coursId } = req.body;
     return res.json({ success: true, liked: true, message: "Like pris en compte" });
 });
 
-// Route Enregistrer / Bookmark
 router.post("/favoris/toggle", requireAuth, async (req, res) => {
     const { coursId } = req.body;
     const userId = req.session.userId;
@@ -226,10 +213,6 @@ router.post("/favoris/toggle", requireAuth, async (req, res) => {
         return res.json({ success: true, saved: true });
     }
 });
-
-// ==========================================================================
-// ACADÉMIE — ROUTE PRINCIPALE ULTRA-MOBILE (2 par ligne, Boutons J'aime/Partager, Techno Switch Animé)
-// ==========================================================================
 
 router.get("/", requireAuth, async (req, res) => {
     const { categorie, format, recherche, niveau } = req.query;
@@ -258,7 +241,7 @@ router.get("/", requireAuth, async (req, res) => {
         }));
 
     } catch (err) {
-        console.warn("⚠️ Académie — lecture PostgreSQL échouée (mode virtuel actif) :", err.message);
+        console.warn("⚠️ Académie — lecture PostgreSQL échouée :", err.message);
     }
 
     let toutesRessources = [...COURS_VIRTUELS, ...coursDB];
@@ -276,9 +259,7 @@ router.get("/", requireAuth, async (req, res) => {
             const favRows = await db.query(`SELECT cours_id FROM academie_favoris WHERE user_id = $1`, [req.session.userId]);
             mesFavorisAcademie = favRows.map(r => String(r.cours_id));
         }
-    } catch (err) {
-        console.warn("⚠️ Académie — lecture favoris échouée :", err.message);
-    }
+    } catch (err) {}
 
     const categoryOptionsHtml = CATEGORIES_ACADEMIE.map(c =>
         `<option value="${escapeHtml(c.id)}" ${categorie === c.id ? "selected" : ""}>${escapeHtml(c.label)}</option>`
@@ -289,7 +270,6 @@ router.get("/", requireAuth, async (req, res) => {
             ${f.label}
         </a>`).join("");
 
-    // Grille 2 colonnes ultra-optimisée Mobile First
     const cardsHtml = toutesRessources.map((c, index) => {
         const id = c.id || `cours_${index}_${Date.now()}`;
         const titre = escapeHtml(c.titre || "Masterclass SAMII OS");
@@ -321,7 +301,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <div class="course-duration"><i data-lucide="clock"></i> ${duree}</div>
             </div>
             <div class="course-body">
-                <a href="/academie/cours/${id}" class="course-title">${titre}</a>
+                <a href="/academie/cours/${id}" class="course-title" data-i18n-title="${titre}">${titre}</a>
                 <div class="trainer-row">
                     <div class="trainer-avatar">${isAI ? "AI" : "OG"}</div>
                     <div class="trainer-info">
@@ -329,7 +309,6 @@ router.get("/", requireAuth, async (req, res) => {
                         <span>${niveau}</span>
                     </div>
                 </div>
-                <!-- Barre d'interactions directes : J'aime, Enregistrer, Partager -->
                 <div class="course-social-actions">
                     <button class="social-btn like-btn" type="button" onclick='toggleLike(${JSON.stringify(String(id))}, this)'>
                         <i data-lucide="heart"></i> <span class="likes-count">${likesCount}</span>
@@ -423,11 +402,38 @@ a { color: inherit; text-decoration: none; }
 
 .header-actions { display: flex; align-items: center; gap: 10px; }
 
-/* BOUTON TECHNOLOGIQUE DARK/LIGHT AMÉLIORÉ AVEC ANIMATION DE DÉPLACEMENT */
+/* SÉLECTEUR DE LANGUE 100% FONCTIONNEL ET DYNAMIQUE */
+.lang-selector {
+    display: flex;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 3px;
+    gap: 2px;
+}
+.lang-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.lang-btn.active {
+    background: var(--cyan);
+    color: #010409;
+    box-shadow: var(--cyan-glow);
+}
+
+/* BOUTON TECHNOLOGIQUE DARK/LIGHT SWITCH */
 .tech-switch-btn {
     position: relative;
-    width: 64px;
-    height: 32px;
+    width: 58px;
+    height: 30px;
     border-radius: 999px;
     background: var(--panel);
     border: 1px solid var(--border);
@@ -435,24 +441,22 @@ a { color: inherit; text-decoration: none; }
     display: flex;
     align-items: center;
     padding: 3px;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
     transition: all 0.4s var(--ease);
 }
 .tech-switch-thumb {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--cyan), #0077ff);
     box-shadow: var(--cyan-glow);
     display: grid;
     place-items: center;
     color: #010409;
-    font-size: 12px;
     transform: translateX(0px);
     transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55), background 0.4s;
 }
 [data-theme="light"] .tech-switch-thumb {
-    transform: translateX(32px);
+    transform: translateX(28px);
     background: linear-gradient(135deg, var(--gold), #ffe66d);
     box-shadow: var(--gold-glow);
 }
@@ -507,7 +511,6 @@ a { color: inherit; text-decoration: none; }
 .trainer-info strong { font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trainer-info span { color: var(--muted); font-size: 8px; }
 
-/* BARRE D'INTERACTIONS SOCIALES (J'aime, Enregistrer, Partager) */
 .course-social-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
 .social-btn { background: transparent; border: none; color: var(--muted); display: flex; align-items: center; gap: 4px; font-size: 10px; font-family: "JetBrains Mono"; padding: 4px 6px; border-radius: 6px; transition: .2s; }
 .social-btn svg { width: 13px; height: 13px; }
@@ -515,12 +518,12 @@ a { color: inherit; text-decoration: none; }
 .social-btn.bookmark-btn:hover, .social-btn.bookmark-btn.saved { color: var(--gold); }
 .social-btn.share-btn:hover { color: var(--cyan); }
 
-/* MODAL DE PARTAGE / EXPRIMEZ-VOUS / CRÉER */
+/* MODAL DE PUBLICATION & RÉSEAUX DE SAMI (FB, NOTIFICATIONS, ABONNEMENT) */
 .modal-overlay { position: fixed; inset: 0; background: rgba(1, 4, 9, 0.85); backdrop-filter: blur(15px); z-index: 1000; display: none; place-items: center; padding: 15px; }
 .modal-overlay.open { display: grid; animation: fadeIn .2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-.modal-card { width: 100%; max-width: 550px; background: var(--panel-2); border: 1px solid var(--cyan); border-radius: 18px; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.6), var(--cyan-glow); position: relative; }
+.modal-card { width: 100%; max-width: 550px; background: var(--panel-2); border: 1px solid var(--cyan); border-radius: 18px; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.6), var(--cyan-glow); position: relative; max-height: 90vh; overflow-y: auto; }
 .modal-close { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: var(--muted); font-size: 18px; }
 .modal-close:hover { color: var(--cyan); }
 .modal-card h2 { font-family: 'Orbitron', sans-serif; margin-top: 0; font-size: 18px; color: var(--cyan); text-shadow: var(--cyan-glow); }
@@ -529,6 +532,40 @@ a { color: inherit; text-decoration: none; }
 .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); outline: none; font-size: 12px; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--cyan); box-shadow: var(--cyan-glow); }
 .modal-submit { width: 100%; padding: 12px; border-radius: 10px; background: linear-gradient(135deg, var(--cyan), #0077ff); border: none; color: #010409; font-weight: 800; font-size: 12px; box-shadow: var(--cyan-glow); }
+
+/* SECTION RÉSEAUX SAMI INTÉGRÉE */
+.sami-social-box {
+    margin-top: 20px;
+    padding: 14px;
+    background: rgba(0, 240, 255, 0.04);
+    border: 1px dashed var(--cyan);
+    border-radius: 12px;
+    text-align: center;
+}
+.sami-social-box p {
+    font-size: 11px;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+.sami-social-links {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+.sami-social-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: var(--cyan);
+    color: #010409;
+    font-weight: 800;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    box-shadow: var(--cyan-glow);
+}
 
 /* MOBILE RESPONSIVE BOTTOM NAV */
 .mobile-nav { display: none; }
@@ -545,23 +582,23 @@ a { color: inherit; text-decoration: none; }
 }
 </style>
 </head>
-<body>
+<body dir="ltr" id="bodyRoot">
 <div class="tech-bg"><div class="tech-grid"></div></div>
 
 <aside class="sidebar">
     <div>
         <div class="brand"><div class="brand-mark">OG</div><div class="brand-name">SAMII <span>OS</span></div></div>
         <nav class="side-menu">
-            <a href="/qg" class="side-link"><i data-lucide="layout-dashboard"></i> QG Central</a>
-            <a href="/marketplace" class="side-link"><i data-lucide="shopping-bag"></i> Marketplace</a>
-            <a href="/academie" class="side-link active"><i data-lucide="graduation-cap"></i> Académie & Feed</a>
-            <a href="/community" class="side-link"><i data-lucide="users"></i> Communauté</a>
+            <a href="/qg" class="side-link"><i data-lucide="layout-dashboard"></i> <span data-i18n="nav_qg">QG Central</span></a>
+            <a href="/marketplace" class="side-link"><i data-lucide="shopping-bag"></i> <span data-i18n="nav_store">Marketplace</span></a>
+            <a href="/academie" class="side-link active"><i data-lucide="graduation-cap"></i> <span data-i18n="nav_academy">Académie & Feed</span></a>
+            <a href="/community" class="side-link"><i data-lucide="users"></i> <span data-i18n="nav_chat">Communauté</span></a>
             <a href="/client-qg" class="side-link"><i data-lucide="shield-check"></i> Client-QG</a>
         </nav>
     </div>
     <div class="side-bottom">
         <div class="side-ai">SAMII OS ACTIVE</div>
-        <div class="side-text">Interface high-tech mobile-first sous marque OG.</div>
+        <div class="side-text" data-i18n="side_desc">Interface high-tech mobile-first sous marque OG.</div>
     </div>
 </aside>
 
@@ -576,14 +613,20 @@ a { color: inherit; text-decoration: none; }
                 <button type="submit"><i data-lucide="search"></i></button>
             </form>
             <div class="header-actions">
-                <!-- Bouton Switch Dark/Lumière technologique avec animation fluide -->
+                <!-- SÉLECTEUR DE LANGUE 100% FONCTIONNEL FR / AR / EN -->
+                <div class="lang-selector">
+                    <button type="button" class="lang-btn active" onclick="setLanguage('fr')">FR</button>
+                    <button type="button" class="lang-btn" onclick="setLanguage('ar')">AR</button>
+                    <button type="button" class="lang-btn" onclick="setLanguage('en')">EN</button>
+                </div>
+                <!-- Bouton Switch Dark/Lumière -->
                 <button class="tech-switch-btn" type="button" onclick="toggleTheme()" title="Changer d'ambiance">
                     <div class="tech-switch-thumb">
                         <i data-lucide="zap" style="width:12px; height:12px;"></i>
                     </div>
                 </button>
                 <button class="action-btn" type="button" onclick="openPartageModal()">
-                    <i data-lucide="plus-circle"></i> Exprimez-vous
+                    <i data-lucide="plus-circle"></i> <span data-i18n="btn_express">Exprimez-vous</span>
                 </button>
             </div>
         </div>
@@ -594,33 +637,32 @@ a { color: inherit; text-decoration: none; }
 
     <div class="content">
         <div class="hero">
-            <div class="hero-kicker"><span class="live-dot"></span> SOTHE SOVEREIGN ACADEMY & FEED</div>
-            <h1>Le Flux <span>OG</span></h1>
-            <p>Formations, logistique, transports et partages de la communauté sous l'écosystème SAMII OS.</p>
+            <div class="hero-kicker"><span class="live-dot"></span> THE SOVEREIGN ACADEMY & FEED</div>
+            <h1 data-i18n="hero_title">Le Flux <span>OG</span></h1>
+            <p data-i18n="hero_desc">Formations, logistique, transports et partages de la communauté sous l'écosystème SAMII OS.</p>
         </div>
 
-        <!-- Grille Mobile à 2 colonnes strictes -->
         <div class="courses-grid">
             ${cardsHtml}
         </div>
     </div>
 </main>
 
-<!-- MODAL DE PUBLICATION (EXPRIMEZ-VOUS / PARTAGER) -->
+<!-- MODAL DE PUBLICATION & RÉSEAUX DE SAMI (FACEBOOK & NOTIFS) -->
 <div class="modal-overlay" id="partageModal">
     <div class="modal-card">
         <button class="modal-close" onclick="closePartageModal()">&times;</button>
-        <h2><i data-lucide="share-2"></i> Exprimez-vous & Partagez</h2>
-        <p style="color:var(--muted); font-size:11px; margin-bottom:15px;">Publiez vos articles, configurations de transport, photos ou astuces.</p>
+        <h2><i data-lucide="share-2"></i> <span data-i18n="modal_title">Exprimez-vous & Partagez</span></h2>
+        <p style="color:var(--muted); font-size:11px; margin-bottom:12px;" data-i18n="modal_desc">Publiez vos articles, configurations de transport, photos ou astuces.</p>
         
         <form id="partageForm" onsubmit="submitPartage(event)">
             <div class="form-group">
-                <label>Titre / Sujet</label>
+                <label data-i18n="form_title">Titre / Sujet</label>
                 <input type="text" name="titre" required placeholder="Ex: Optimisation flotte logistique...">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
-                    <label>Catégorie</label>
+                    <label data-i18n="form_cat">Catégorie</label>
                     <select name="categorie">
                         <option value="ecommerce">E-commerce</option>
                         <option value="automatisation">Automatisation</option>
@@ -629,7 +671,7 @@ a { color: inherit; text-decoration: none; }
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Format</label>
+                    <label data-i18n="form_format">Format</label>
                     <select name="format">
                         <option value="outil" selected>⚙️ Config / Fichier</option>
                         <option value="ebook">📚 Article / PDF</option>
@@ -638,15 +680,23 @@ a { color: inherit; text-decoration: none; }
                 </div>
             </div>
             <div class="form-group">
-                <label>Lien Média / Photo (URL)</label>
+                <label data-i18n="form_link">Lien Média / Photo (URL)</label>
                 <input type="text" name="lien_ressource" placeholder="https://images.unsplash.com/...">
             </div>
             <div class="form-group">
-                <label>Description / Expression</label>
+                <label data-i18n="form_content">Description / Expression</label>
                 <textarea name="contenu" rows="3" required placeholder="Détaillez votre partage..."></textarea>
             </div>
-            <button type="submit" class="modal-submit">Publier sur le Flux</button>
+            <button type="submit" class="modal-submit" data-i18n="form_submit">Publier sur le Flux</button>
         </form>
+
+        <!-- SECTION RÉSEAUX DE SAMI (FB & NOTIFS INTÉGRÉE EN BAS DE MODAL) -->
+        <div class="sami-social-box">
+            <p data-i18n="sami_social_text">📌 N'oubliez pas de vous abonner au Facebook de Sami et de l'ajouter en ami pour voir les vidéos explicatives et les notifications de comment ça marche !</p>
+            <div class="sami-social-links">
+                <a href="https://facebook.com" target="_blank" class="sami-social-btn"><i data-lucide="facebook"></i> <span data-i18n="sami_fb_btn">Facebook de Sami</span></a>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -660,7 +710,98 @@ a { color: inherit; text-decoration: none; }
 <script>
 lucide.createIcons();
 
-// Animation Techno Dark / Light Switch
+// DICTIONNAIRE DE TRADUCTION COMPLET FR / AR / EN
+const i18n = {
+    fr: {
+        nav_qg: "QG Central",
+        nav_store: "Marketplace",
+        nav_academy: "Académie & Feed",
+        nav_chat: "Communauté",
+        side_desc: "Interface high-tech mobile-first sous marque OG.",
+        btn_express: "Exprimez-vous",
+        hero_title: "Le Flux <span>OG</span>",
+        hero_desc: "Formations, logistique, transports et partages de la communauté sous l'écosystème SAMII OS.",
+        modal_title: "Exprimez-vous & Partagez",
+        modal_desc: "Publiez vos articles, configurations de transport, photos ou astuces.",
+        form_title: "Titre / Sujet",
+        form_cat: "Catégorie",
+        form_format: "Format",
+        form_link: "Lien Média / Photo (URL)",
+        form_content: "Description / Expression",
+        form_submit: "Publier sur le Flux",
+        sami_social_text: "📌 N'oubliez pas de vous abonner au Facebook de Sami et de l'ajouter en ami pour voir les vidéos explicatives et les notifications de comment ça marche !",
+        sami_fb_btn: "Facebook de Sami"
+    },
+    ar: {
+        nav_qg: "القيادة المركزية",
+        nav_store: "المتجر الرقمي",
+        nav_academy: "الأكاديمية والتغذية",
+        nav_chat: "المجتمع",
+        side_desc: "واجهة عالية التقنية مصممة خصيصاً لهواتف علامة OG.",
+        btn_express: "شارك برأيك",
+        hero_title: "منصة التدفق <span>OG</span>",
+        hero_desc: "دورات تدريبية، لوجستيات، نقل ومشاركات المجتمع تحت نظام SAMII OS.",
+        modal_title: "شارك ونشر أفكارك",
+        modal_desc: "انشر مقالاتك، إعدادات النقل، الصور أو النصائح المفيدة.",
+        form_title: "العنوان / الموضوع",
+        form_cat: "الفئة",
+        form_format: "الصيغة",
+        form_link: "رابط الوسائط / الصورة (URL)",
+        form_content: "الوصف / التفاصيل",
+        form_submit: "نشر على المنصة",
+        sami_social_text: "📌 لا تنسوا متابعة صفحة سامي على الفيسبوك وإضافته كصديق لمشاهدة الفيديوهات التوضيحية وتنبيهات كيفية العمل!",
+        sami_fb_btn: "فيسبوك سامي"
+    },
+    en: {
+        nav_qg: "Central HQ",
+        nav_store: "Marketplace",
+        nav_academy: "Academy & Feed",
+        nav_chat: "Community",
+        side_desc: "High-tech mobile-first interface under the OG brand.",
+        btn_express: "Express yourself",
+        hero_title: "The OG <span>Feed</span>",
+        hero_desc: "Courses, logistics, transport and community shares under the SAMII OS ecosystem.",
+        modal_title: "Express & Share",
+        modal_desc: "Publish your articles, transport configurations, photos or tips.",
+        form_title: "Title / Subject",
+        form_cat: "Category",
+        form_format: "Format",
+        form_link: "Media / Photo Link (URL)",
+        form_content: "Description / Expression",
+        form_submit: "Publish to Feed",
+        sami_social_text: "📌 Don't forget to subscribe to Sami's Facebook and add him as a friend to see explanatory videos and how-to notifications!",
+        sami_fb_btn: "Sami's Facebook"
+    }
+};
+
+function setLanguage(lang) {
+    localStorage.setItem('og_lang', lang);
+    const root = document.getElementById('bodyRoot');
+    if (lang === 'ar') {
+        root.setAttribute('dir', 'rtl');
+    } else {
+        root.setAttribute('dir', 'ltr');
+    }
+
+    // Activer le bouton de langue correspondant
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+    });
+
+    // Mettre à jour tous les textes dotés de l'attribut data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang] && i18n[lang][key]) {
+            el.innerHTML = i18n[lang][key];
+        }
+    });
+}
+
+// Charger la langue sauvegardée au démarrage (par défaut 'fr')
+const savedLang = localStorage.getItem('og_lang') || 'fr';
+setLanguage(savedLang);
+
+// Thème Dark / Light Switch
 function toggleTheme() {
     const html = document.documentElement;
     const currentTheme = html.getAttribute('data-theme');
@@ -691,7 +832,6 @@ async function submitPartage(event) {
     } catch(err) { alert("Erreur réseau"); }
 }
 
-// Interactions J'aime
 async function toggleLike(coursId, btn) {
     try {
         const res = await fetch('/academie/like/toggle', {
@@ -706,10 +846,9 @@ async function toggleLike(coursId, btn) {
             let count = parseInt(span.textContent);
             span.textContent = btn.classList.contains('liked') ? count + 1 : count - 1;
         }
-    } catch (err) { console.error(err); }
+    } catch (err) {}
 }
 
-// Favoris / Enregistrer
 async function toggleAcademieFavorite(coursId, btn) {
     try {
         const res = await fetch('/academie/favoris/toggle', {
@@ -722,10 +861,9 @@ async function toggleAcademieFavorite(coursId, btn) {
             if (data.saved) btn.classList.add('saved');
             else btn.classList.remove('saved');
         }
-    } catch (err) { console.error(err); }
+    } catch (err) {}
 }
 
-// Partage natif mobile
 function shareContent(title) {
     if (navigator.share) {
         navigator.share({ title: title, url: window.location.href }).catch(() => {});
@@ -736,25 +874,6 @@ function shareContent(title) {
 </script>
 </body>
 </html>`);
-});
-
-router.post("/favoris/toggle", requireAuth, async (req, res) => {
-    const { coursId } = req.body;
-    const userId = req.session.userId;
-    if (!coursId || !userId) return res.status(400).json({ success: false });
-
-    try {
-        const check = await db.query(`SELECT * FROM academie_favoris WHERE user_id = $1 AND cours_id = $2`, [userId, coursId]);
-        if (check.length > 0) {
-            await db.query(`DELETE FROM academie_favoris WHERE user_id = $1 AND cours_id = $2`, [userId, coursId]);
-            return res.json({ success: true, saved: false });
-        } else {
-            await db.query(`INSERT INTO academie_favoris (user_id, cours_id) VALUES ($1, $2)`, [userId, coursId]);
-            return res.json({ success: true, saved: true });
-        }
-    } catch (err) {
-        return res.json({ success: true, saved: true });
-    }
 });
 
 module.exports = router;
