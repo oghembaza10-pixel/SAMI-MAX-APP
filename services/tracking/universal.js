@@ -1,12 +1,11 @@
 // ==========================================================================
-// SAMII OS — Suivi universel via 17TRACK (fallback sans clé perso marchand)
+// SAMII OS — Suivi universel via 17TRACK (fallback pour tous transporteurs)
 // ==========================================================================
 const axios = require("axios");
-const db = require("../db");
 
 const TRACK17_API_KEY = process.env.TRACK17_API_KEY || "";
 
-async function track(trackingNumber) {
+async function checkStatus(trackingNumber, workspaceId) {
     if (!TRACK17_API_KEY) {
         return { success: false, error: "Clé 17TRACK non configurée." };
     }
@@ -18,7 +17,16 @@ async function track(trackingNumber) {
         );
         const info = res.data?.data?.accepted?.[0];
         if (!info) return { success: false, error: "Numéro de suivi introuvable." };
-        return { success: true, data: info };
+
+        const evenements = info.track_info?.tracking?.providers?.[0]?.events || [];
+        const dernier = evenements[0];
+
+        return {
+            success: true,
+            statut: dernier?.description || "En transit",
+            date: dernier?.time_iso || null,
+            source: "17track",
+        };
     } catch (err) {
         console.error("❌ 17TRACK :", err.message);
         return { success: false, error: err.message };
@@ -40,4 +48,4 @@ async function registerTracking(trackingNumber, carrierCode) {
     }
 }
 
-module.exports = { track, registerTracking };
+module.exports = { checkStatus, registerTracking };
