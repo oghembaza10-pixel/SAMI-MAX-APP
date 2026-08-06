@@ -55,9 +55,9 @@ app.use((req, res, next) => {
     res.locals.workspaceId = req.session?.workspaceId || null;
     res.locals.shop        = req.session?.shop || null;
     res.locals.loggedIn    = !!req.session?.loggedIn;
+    res.locals.userId      = req.session?.userId || null;
     next();
 });
-
 // ── AUTH MIDDLEWARE ────────────────────────────────────
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
