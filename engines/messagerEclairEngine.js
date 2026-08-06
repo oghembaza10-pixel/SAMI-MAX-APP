@@ -1,9 +1,10 @@
 /**
  * ============================================================
  * OG • Messager Éclair Engine — suivi colis + notifications temps réel
+ * Vérifie TOUS les transporteurs (Yalidine + 17TRACK universel)
  * ============================================================
  */
-const airtable = require("../services/airtable");
+const db = require("../services/db");
 const notificationEngine = require("../engines/notificationEngine");
 const tracking = require("../services/tracking");
 
@@ -26,29 +27,29 @@ function mapVersStatutQG(statutTransporteur) {
     if (s.includes("livr")) return "livrée";
     if (s.includes("retour") || s.includes("échec") || s.includes("echec")) return "échoué";
     if (s.includes("transit") || s.includes("expédi") || s.includes("livraison")) return "en cours";
-    return null; // statut inconnu, on ne touche pas au champ Statut
+    return null;
 }
 
 async function runCheck() {
     try {
-        const commandes = await airtable.find(
-            "COMMANDES",
-            `AND(NOT({numero_suivi}=""), {Statut}!="livrée", {Statut}!="annulée")`,
-            100
-        );
+        const commandes = await db.query(`
+            SELECT * FROM commandes
+            WHERE numero_suivi IS NOT NULL AND numero_suivi != ''
+              AND statut != 'livrée' AND statut != 'annulée'
+            LIMIT 100
+        `);
 
-        console.log(`🚚 Messager Éclair : ${commandes.length} colis à vérifier.`);
+        console.log(`🚚 Messager Éclair : ${commandes.length} colis à vérifier (tous transporteurs).`);
 
         for (const c of commandes) {
-            const f = c.fields;
-            const numeroSuivi = f.numero_suivi;
-            const transporteur = f.transporteur || "yalidine";
-            const dernierStatutConnu = f.dernier_statut_suivi || "";
-            const telephone = f["Téléphone"] || "";
+            const numeroSuivi = c.numero_suivi;
+            const transporteur = c.transporteur || "yalidine";
+            const dernierStatutConnu = c.dernier_statut_suivi || "";
+            const telephone = c.telephone || "";
 
             if (!numeroSuivi || !telephone) continue;
 
-            const result = await tracking.checkStatus(transporteur, numeroSuivi, f.Boutique);
+            const result = await tracking.checkStatus(transporteur, numeroSuivi, c.workspace_id);
             if (!result.success) continue;
 
             const nouveauStatut = result.statut;
@@ -57,23 +58,30 @@ async function runCheck() {
             const message =
                 `📬 *SAMII — Suivi de commande*\n\n` +
                 `${messageLisible(nouveauStatut)}\n\n` +
-                `_Numéro de suivi : ${numeroSuivi}_`;
+                `_Numéro de suivi : ${numeroSuivi}_ (${transporteur})`;
 
             try {
                 await notificationEngine.send({
                     channel: "telegram",
                     to: telephone,
                     message,
-                    shop: f.Boutique || "",
+                    shop: c.workspace_id || "",
                 });
 
                 const statutQG = mapVersStatutQG(nouveauStatut);
-                const updateFields = { dernier_statut_suivi: nouveauStatut };
-                if (statutQG) updateFields.Statut = statutQG;
+                if (statutQG) {
+                    await db.query(
+                        `UPDATE commandes SET dernier_statut_suivi = $1, statut = $2 WHERE id = $3`,
+                        [nouveauStatut, statutQG, c.id]
+                    );
+                } else {
+                    await db.query(
+                        `UPDATE commandes SET dernier_statut_suivi = $1 WHERE id = $2`,
+                        [nouveauStatut, c.id]
+                    );
+                }
 
-                await airtable.update("COMMANDES", c.id, updateFields);
-
-                console.log(`✅ Client notifié — commande ${f["ID Commande"] || c.id} → ${nouveauStatut}`);
+                console.log(`✅ Client notifié — commande ${c.id} → ${nouveauStatut} (${transporteur})`);
             } catch (err) {
                 console.warn(`⚠️ Échec notification suivi pour ${c.id} :`, err.message);
             }
