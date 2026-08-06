@@ -7,8 +7,10 @@ const planner = require("../brain/planner");
 const db = require("../services/db");
 
 const METIERS_RDV = [
-    "dentiste", "avocat", "comptable", "coiffeur", "medecin", "kine",
-    "veterinaire", "notaire", "courtier", "immobilier", "service",
+    "dentiste", "medecin", "avocat", "comptable", "coiffeur", "kine",
+    "veterinaire", "notaire", "courtier", "immobilier", "garage",
+    "lavage", "mecanicien", "esthetique", "tatoueur", "photographe",
+    "formateur", "architecte", "agence", "service",
 ];
 
 function typeParcours(metier) {
