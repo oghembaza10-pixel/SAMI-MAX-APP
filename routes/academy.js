@@ -1,5 +1,5 @@
 // ==========================================================================
-// SAMII OS — THE SOVEREIGN ACADEMY — PostgreSQL Edition v6 (Boutons réels + Traduction complète)
+// SAMII OS — THE SOVEREIGN ACADEMY — PostgreSQL Edition v7 (Upload réel + Live programmable)
 // ==========================================================================
 const express = require("express");
 const router = express.Router();
@@ -147,8 +147,19 @@ function isRealCourseId(id) {
     return /^\d+$/.test(String(id));
 }
 
+function formatDateLive(date) {
+    if (!date) return "";
+    const d = new Date(date);
+    const jours = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+    const mois = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+    const h = String(d.getHours()).padStart(2, "0");
+    const m = String(d.getMinutes()).padStart(2, "0");
+    return `${jours[d.getDay()]} ${d.getDate()} ${mois[d.getMonth()]} à ${h}h${m}`;
+}
+
+// ── PARTAGER (réel, PostgreSQL, upload photo/vidéo + live programmable) ──
 router.post("/partager", requireAuth, async (req, res) => {
-    const { titre, categorie, format, contenu, lien_ressource } = req.body;
+    const { titre, categorie, format, contenu, photo_url, video_url, date_live } = req.body;
     const userId = req.session.userId || "1";
     const userName = req.session.nom || "Membre OG";
 
@@ -156,32 +167,43 @@ router.post("/partager", requireAuth, async (req, res) => {
         return res.json({ success: false, message: "Le titre est requis." });
     }
 
+    const estLive = format === "live";
+    let duree = "Ressource Partagée";
+    if (estLive && date_live) {
+        duree = "Live le " + formatDateLive(date_live);
+    } else if (estLive) {
+        duree = "Live à venir";
+    }
+
     try {
         await db.query(
-            `INSERT INTO academie_cours (titre, categorie, format, niveau, duree, prix, photo_url, formateur_id, formateur_nom, type_formateur, est_live, actif, created_at) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())`,
+            `INSERT INTO academie_cours (titre, categorie, format, niveau, duree, prix, photo_url, video_url, date_live, formateur_id, formateur_nom, type_formateur, est_live, actif, created_at) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())`,
             [
                 titre || "Publication Communautaire",
                 categorie || "outils",
                 format || "outil",
                 "Tous niveaux",
-                "Ressource Partagée",
+                duree,
                 "Libre",
-                lien_ressource || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1000&q=85",
+                photo_url || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1000&q=85",
+                video_url || null,
+                estLive && date_live ? date_live : null,
                 String(userId),
                 userName,
                 "expert",
-                false,
+                estLive,
                 true
             ]
         );
-        return res.json({ success: true, message: "✅ Ressource publiée avec succès dans l'Académie !" });
+        return res.json({ success: true, message: estLive ? "🔴 Ton live est programmé et visible par la communauté !" : "✅ Ressource publiée avec succès dans l'Académie !" });
     } catch (err) {
         console.error("❌ POST /academie/partager :", err.message);
         return res.json({ success: false, message: "❌ Erreur lors de la publication. Réessaie." });
     }
 });
 
+// ── LIKE — réel, persistant par utilisateur ─────────────────
 router.post("/like/toggle", requireAuth, async (req, res) => {
     const { coursId } = req.body;
     const userId = req.session.userId;
@@ -213,6 +235,7 @@ router.post("/like/toggle", requireAuth, async (req, res) => {
     }
 });
 
+// ── FAVORIS — réel, persistant ───────────────────────────────
 router.post("/favoris/toggle", requireAuth, async (req, res) => {
     const { coursId } = req.body;
     const userId = req.session.userId;
@@ -257,7 +280,8 @@ router.get("/", requireAuth, async (req, res) => {
 
         coursDB = rows.map(r => ({
             id: r.id, titre: r.titre, categorie: r.categorie, format: r.format, niveau: r.niveau,
-            duree: r.duree, prix: r.prix, likes: r.likes || 0, photo_url: r.photo_url, formateur_id: r.formateur_id,
+            duree: r.duree, prix: r.prix, likes: r.likes || 0, photo_url: r.photo_url, video_url: r.video_url,
+            date_live: r.date_live, formateur_id: r.formateur_id,
             formateur_nom: r.formateur_nom, type_formateur: r.type_formateur, est_live: r.est_live, actif: r.actif
         }));
     } catch (err) {
@@ -307,6 +331,7 @@ router.get("/", requireAuth, async (req, res) => {
         const isFavorited = mesFavorisAcademie.includes(String(id));
         const isLiked = mesLikesAcademie.includes(String(id));
         const photoUrl = c.photo_url || "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1000&q=85";
+        const hasVideo = !!c.video_url;
 
         const badgeHtml = isLive 
             ? `<span class="badge-live" data-i18n="badge_live"><span class="live-dot-pulse"></span> LIVE</span>` 
@@ -314,12 +339,14 @@ router.get("/", requireAuth, async (req, res) => {
                 ? `<span class="badge-ai" data-i18n="badge_ai"><span class="ai-dot"></span> SAMII AI</span>` 
                 : `<span class="badge-cat">${catLabel}</span>`;
 
+        const mediaHtml = hasVideo
+            ? `<video src="${escapeHtml(c.video_url)}" poster="${escapeHtml(photoUrl)}" controls preload="metadata"></video>`
+            : `<a href="/academie/cours/${id}" class="course-image-link"><img src="${escapeHtml(photoUrl)}" alt="${titre}" loading="lazy"></a>`;
+
         return `
         <article class="course-card ${isLive ? "is-live-card" : ""}" data-course-id="${escapeHtml(String(id))}" data-real="${isReal}">
             <div class="course-media">
-                <a href="/academie/cours/${id}" class="course-image-link">
-                    <img src="${escapeHtml(photoUrl)}" alt="${titre}" loading="lazy">
-                </a>
+                ${mediaHtml}
                 <div class="course-top-badges">
                     ${badgeHtml}
                 </div>
@@ -441,14 +468,14 @@ a { color: inherit; text-decoration: none; }
 .course-card:hover { transform: translateY(-4px); border-color: var(--cyan); box-shadow: 0 15px 35px rgba(0,0,0,0.25), var(--cyan-glow); }
 .course-card.is-live-card { border-color: rgba(255, 51, 102, 0.4); }
 .course-media { position: relative; aspect-ratio: 16/9; background: #000; overflow: hidden; }
-.course-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+.course-media img, .course-media video { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; background: #000; }
 .course-card:hover .course-media img { transform: scale(1.06); }
-.course-top-badges { position: absolute; top: 8px; left: 8px; display: flex; gap: 4px; pointer-events: none; }
+.course-top-badges { position: absolute; top: 8px; left: 8px; display: flex; gap: 4px; pointer-events: none; z-index: 2; }
 .badge-cat, .badge-live, .badge-ai { padding: 3px 8px; border-radius: 999px; font-family: "JetBrains Mono"; font-size: 7px; font-weight: 700; }
 .badge-cat { color: var(--text); background: rgba(1, 4, 9, 0.85); border: 1px solid var(--border); }
 .badge-live { color: white; background: rgba(255, 51, 102, 0.9); border: 1px solid rgba(255,100,130,0.5); }
 .badge-ai { color: #010409; background: var(--cyan); font-weight: 900; }
-.course-duration { position: absolute; bottom: 8px; left: 8px; display: flex; align-items: center; gap: 4px; font-size: 9px; font-family: "JetBrains Mono"; color: white; background: rgba(1,4,9,0.7); padding: 3px 6px; border-radius: 6px; }
+.course-duration { position: absolute; bottom: 8px; left: 8px; display: flex; align-items: center; gap: 4px; font-size: 9px; font-family: "JetBrains Mono"; color: white; background: rgba(1,4,9,0.7); padding: 3px 6px; border-radius: 6px; z-index: 2; pointer-events: none; }
 .course-duration svg { width: 10px; height: 10px; color: var(--cyan); }
 .course-body { padding: 12px; display: flex; flex-direction: column; flex: 1; }
 .course-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 36px; text-decoration: none; font-size: 11px; font-weight: 700; line-height: 1.4; transition: color .2s; }
@@ -484,6 +511,12 @@ a { color: inherit; text-decoration: none; }
 .sami-social-btn { padding: 8px 14px; border-radius: 8px; background: var(--cyan); color: #010409; font-weight: 800; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; box-shadow: var(--cyan-glow); }
 .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--panel-2); border: 1px solid var(--cyan); color: var(--text); padding: 12px 22px; border-radius: 12px; font-size: 12px; z-index: 900; opacity: 0; transition: .3s; pointer-events: none; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.upload-zone { display: flex; gap: 10px; flex-wrap: wrap; }
+.upload-slot { width: 100%; height: 130px; border-radius: 12px; border: 2px dashed var(--border); display: grid; place-items: center; color: var(--muted); cursor: pointer; position: relative; overflow: hidden; background: var(--bg); flex-direction: column; gap: 6px; }
+.upload-slot img, .upload-slot video { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.upload-status { font-size: 11px; color: var(--cyan); margin-top: 8px; display: none; }
+.live-fields { display: none; margin-top: 10px; padding: 12px; border-radius: 12px; background: rgba(255,51,102,0.06); border: 1px dashed var(--danger); }
+.live-fields.show { display: block; }
 .mobile-nav { display: none; }
 @media (max-width: 900px) {
     .sidebar { display: none; }
@@ -561,7 +594,7 @@ a { color: inherit; text-decoration: none; }
     <div class="modal-card">
         <button class="modal-close" onclick="closePartageModal()">&times;</button>
         <h2><i data-lucide="share-2"></i> <span data-i18n="modal_title">Exprimez-vous & Partagez</span></h2>
-        <p style="color:var(--muted); font-size:11px; margin-bottom:12px;" data-i18n="modal_desc">Publiez vos articles, configurations de transport, photos ou astuces.</p>
+        <p style="color:var(--muted); font-size:11px; margin-bottom:12px;" data-i18n="modal_desc">Publiez vos articles, configurations de transport, photos ou astuces — ou programme un live pour former la communauté.</p>
         
         <form id="partageForm" onsubmit="submitPartage(event)">
             <div class="form-group">
@@ -580,17 +613,35 @@ a { color: inherit; text-decoration: none; }
                 </div>
                 <div class="form-group">
                     <label data-i18n="form_format">Format</label>
-                    <select name="format">
+                    <select name="format" id="formatSelect" onchange="toggleLiveFields()">
                         <option value="outil" data-i18n="fmt_form_outil" selected>⚙️ Config / Fichier</option>
                         <option value="ebook" data-i18n="fmt_form_ebook">📚 Article / PDF</option>
                         <option value="video" data-i18n="fmt_form_video">🎬 Vidéo / Démo</option>
+                        <option value="live" data-i18n="fmt_form_live">🔴 Session Live</option>
                     </select>
                 </div>
             </div>
-            <div class="form-group">
-                <label data-i18n="form_link">Lien Média / Photo (URL)</label>
-                <input type="text" name="lien_ressource" placeholder="https://images.unsplash.com/...">
+
+            <div class="live-fields" id="liveFields">
+                <div class="form-group">
+                    <label data-i18n="form_live_date">📅 Date et heure du live</label>
+                    <input type="datetime-local" name="date_live" id="dateLiveInput">
+                </div>
+                <p style="font-size:10px;color:var(--muted);margin:0;" data-i18n="form_live_hint">Ton live apparaîtra dans le flux avec un compte à rebours pour la communauté.</p>
             </div>
+
+            <div class="form-group">
+                <label data-i18n="form_upload">Photo ou vidéo (upload réel)</label>
+                <div class="upload-slot" id="uploadSlot" onclick="document.getElementById('fileInput').click()">
+                    <i data-lucide="upload-cloud"></i>
+                    <span data-i18n="form_upload_hint" style="font-size:10px;">Clique pour ajouter une photo ou vidéo</span>
+                </div>
+                <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;">
+                <div class="upload-status" id="uploadStatus"></div>
+                <input type="hidden" name="photo_url" id="hiddenPhoto">
+                <input type="hidden" name="video_url" id="hiddenVideo">
+            </div>
+
             <div class="form-group">
                 <label data-i18n="form_content">Description / Expression</label>
                 <textarea name="contenu" rows="3" required placeholder="Détaillez votre partage..."></textarea>
@@ -624,9 +675,11 @@ const i18n = {
         hero_title: "Le Flux <span>OG</span>",
         hero_desc: "Formations, logistique, transports et partages de la communauté sous l'écosystème SAMII OS.",
         modal_title: "Exprimez-vous & Partagez",
-        modal_desc: "Publiez vos articles, configurations de transport, photos ou astuces.",
+        modal_desc: "Publiez vos articles, configurations de transport, photos ou astuces — ou programme un live pour former la communauté.",
         form_title: "Titre / Sujet", form_cat: "Catégorie", form_format: "Format",
-        form_link: "Lien Média / Photo (URL)", form_content: "Description / Expression", form_submit: "Publier sur le Flux",
+        form_upload: "Photo ou vidéo (upload réel)", form_upload_hint: "Clique pour ajouter une photo ou vidéo",
+        form_live_date: "📅 Date et heure du live", form_live_hint: "Ton live apparaîtra dans le flux avec un compte à rebours pour la communauté.",
+        form_content: "Description / Expression", form_submit: "Publier sur le Flux",
         sami_social_text: "📌 N'oubliez pas de vous abonner au Facebook de Sami et de l'ajouter en ami pour voir les vidéos explicatives et les notifications de comment ça marche !",
         sami_fb_btn: "Facebook de Sami",
         search_ph: "Rechercher transport, e-commerce, automatisation...",
@@ -634,11 +687,11 @@ const i18n = {
         empty_state: "Aucune ressource trouvée.",
         fmt_tous: "Tous les formats", fmt_live: "🔴 Lives & Replays", fmt_video: "🎬 Formations Vidéo",
         fmt_ebook: "📚 E-books & Guides PDF", fmt_outil: "⚙️ Fichiers & Configs",
-        fmt_form_outil: "⚙️ Config / Fichier", fmt_form_ebook: "📚 Article / PDF", fmt_form_video: "🎬 Vidéo / Démo",
+        fmt_form_outil: "⚙️ Config / Fichier", fmt_form_ebook: "📚 Article / PDF", fmt_form_video: "🎬 Vidéo / Démo", fmt_form_live: "🔴 Session Live",
         cat_ecommerce: "E-commerce", cat_automatisation: "Automatisation",
         cat_logistique: "Logistique & Transport", cat_affiliation: "Affiliation",
         toast_liked: "❤️ Ajouté à tes favoris", toast_unliked: "Retiré", toast_demo: "Ressource de démonstration.",
-        toast_copied: "🔗 Lien copié !",
+        toast_copied: "🔗 Lien copié !", toast_upload_ok: "✅ Fichier prêt !", toast_upload_fail: "❌ Échec de l'envoi.",
     },
     ar: {
         nav_qg: "القيادة المركزية", nav_store: "المتجر الرقمي", nav_academy: "الأكاديمية والتغذية", nav_chat: "المجتمع",
@@ -647,9 +700,11 @@ const i18n = {
         hero_title: "منصة التدفق <span>OG</span>",
         hero_desc: "دورات تدريبية، لوجستيات، نقل ومشاركات المجتمع تحت نظام SAMII OS.",
         modal_title: "شارك ونشر أفكارك",
-        modal_desc: "انشر مقالاتك، إعدادات النقل، الصور أو النصائح المفيدة.",
+        modal_desc: "انشر مقالاتك، إعدادات النقل، الصور أو النصائح — أو برمج بثاً مباشراً لتدريب المجتمع.",
         form_title: "العنوان / الموضوع", form_cat: "الفئة", form_format: "الصيغة",
-        form_link: "رابط الوسائط / الصورة (URL)", form_content: "الوصف / التفاصيل", form_submit: "نشر على المنصة",
+        form_upload: "صورة أو فيديو (رفع حقيقي)", form_upload_hint: "انقر لإضافة صورة أو فيديو",
+        form_live_date: "📅 تاريخ ووقت البث المباشر", form_live_hint: "سيظهر بثك في التدفق مع عداد تنازلي للمجتمع.",
+        form_content: "الوصف / التفاصيل", form_submit: "نشر على المنصة",
         sami_social_text: "📌 لا تنسوا متابعة صفحة سامي على الفيسبوك وإضافته كصديق لمشاهدة الفيديوهات التوضيحية وتنبيهات كيفية العمل!",
         sami_fb_btn: "فيسبوك سامي",
         search_ph: "ابحث عن النقل، التجارة الإلكترونية، الأتمتة...",
@@ -657,11 +712,11 @@ const i18n = {
         empty_state: "لا توجد موارد.",
         fmt_tous: "كل الصيغ", fmt_live: "🔴 مباشر وإعادة", fmt_video: "🎬 دورات فيديو",
         fmt_ebook: "📚 كتب وأدلة PDF", fmt_outil: "⚙️ ملفات وإعدادات",
-        fmt_form_outil: "⚙️ إعداد / ملف", fmt_form_ebook: "📚 مقال / PDF", fmt_form_video: "🎬 فيديو / عرض",
+        fmt_form_outil: "⚙️ إعداد / ملف", fmt_form_ebook: "📚 مقال / PDF", fmt_form_video: "🎬 فيديو / عرض", fmt_form_live: "🔴 بث مباشر",
         cat_ecommerce: "التجارة الإلكترونية", cat_automatisation: "الأتمتة",
         cat_logistique: "اللوجستيات والنقل", cat_affiliation: "التسويق بالعمولة",
         toast_liked: "❤️ أضيف للمفضلة", toast_unliked: "أُزيل", toast_demo: "مورد تجريبي.",
-        toast_copied: "🔗 تم نسخ الرابط!",
+        toast_copied: "🔗 تم نسخ الرابط!", toast_upload_ok: "✅ الملف جاهز!", toast_upload_fail: "❌ فشل الإرسال.",
     },
     en: {
         nav_qg: "Central HQ", nav_store: "Marketplace", nav_academy: "Academy & Feed", nav_chat: "Community",
@@ -670,9 +725,11 @@ const i18n = {
         hero_title: "The OG <span>Feed</span>",
         hero_desc: "Courses, logistics, transport and community shares under the SAMII OS ecosystem.",
         modal_title: "Express & Share",
-        modal_desc: "Publish your articles, transport configurations, photos or tips.",
+        modal_desc: "Publish your articles, transport configurations, photos or tips — or schedule a live to train the community.",
         form_title: "Title / Subject", form_cat: "Category", form_format: "Format",
-        form_link: "Media / Photo Link (URL)", form_content: "Description / Expression", form_submit: "Publish to Feed",
+        form_upload: "Photo or video (real upload)", form_upload_hint: "Click to add a photo or video",
+        form_live_date: "📅 Live date and time", form_live_hint: "Your live will appear in the feed with a countdown for the community.",
+        form_content: "Description / Expression", form_submit: "Publish to Feed",
         sami_social_text: "📌 Don't forget to subscribe to Sami's Facebook and add him as a friend to see explanatory videos and how-to notifications!",
         sami_fb_btn: "Sami's Facebook",
         search_ph: "Search transport, e-commerce, automation...",
@@ -680,11 +737,11 @@ const i18n = {
         empty_state: "No resources found.",
         fmt_tous: "All formats", fmt_live: "🔴 Lives & Replays", fmt_video: "🎬 Video Courses",
         fmt_ebook: "📚 E-books & PDF Guides", fmt_outil: "⚙️ Files & Configs",
-        fmt_form_outil: "⚙️ Config / File", fmt_form_ebook: "📚 Article / PDF", fmt_form_video: "🎬 Video / Demo",
+        fmt_form_outil: "⚙️ Config / File", fmt_form_ebook: "📚 Article / PDF", fmt_form_video: "🎬 Video / Demo", fmt_form_live: "🔴 Live Session",
         cat_ecommerce: "E-commerce", cat_automatisation: "Automation",
         cat_logistique: "Logistics & Transport", cat_affiliation: "Affiliation",
         toast_liked: "❤️ Added to favorites", toast_unliked: "Removed", toast_demo: "Demo resource.",
-        toast_copied: "🔗 Link copied!",
+        toast_copied: "🔗 Link copied!", toast_upload_ok: "✅ File ready!", toast_upload_fail: "❌ Upload failed.",
     }
 };
 
@@ -740,6 +797,47 @@ document.documentElement.setAttribute('data-theme', savedTheme);
 
 function openPartageModal() { document.getElementById('partageModal').classList.add('open'); }
 function closePartageModal() { document.getElementById('partageModal').classList.remove('open'); }
+
+function toggleLiveFields() {
+    const format = document.getElementById('formatSelect').value;
+    const liveFields = document.getElementById('liveFields');
+    liveFields.classList.toggle('show', format === 'live');
+}
+
+document.getElementById('fileInput').addEventListener('change', async function () {
+    const file = this.files[0];
+    if (!file) return;
+    const lang = currentLang();
+    const status = document.getElementById('uploadStatus');
+    const slot = document.getElementById('uploadSlot');
+    status.style.display = 'block';
+    status.textContent = '⏳...';
+
+    try {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('upload_preset', 'MARKETPLACE OG');
+        const isVideo = file.type.startsWith('video');
+        const rt = isVideo ? 'video' : 'image';
+        const res = await fetch('https://api.cloudinary.com/v1_1/ojwx5hft/' + rt + '/upload', { method: 'POST', body: fd });
+        const json = await res.json();
+        if (json.secure_url) {
+            if (isVideo) {
+                document.getElementById('hiddenVideo').value = json.secure_url;
+                slot.innerHTML = '<video src="' + json.secure_url + '" muted></video>';
+            } else {
+                document.getElementById('hiddenPhoto').value = json.secure_url;
+                slot.innerHTML = '<img src="' + json.secure_url + '" alt="">';
+            }
+            status.textContent = i18n[lang]?.toast_upload_ok || '✅';
+            setTimeout(() => status.style.display = 'none', 1500);
+        } else {
+            status.textContent = i18n[lang]?.toast_upload_fail || '❌';
+        }
+    } catch (err) {
+        status.textContent = i18n[lang]?.toast_upload_fail || '❌';
+    }
+});
 
 async function submitPartage(event) {
     event.preventDefault();
@@ -807,3 +905,4 @@ function shareContent(title) {
 });
 
 module.exports = router;
+
