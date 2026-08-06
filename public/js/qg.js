@@ -1,20 +1,18 @@
 /**
- * SAMII OS - QG Marchand (Front-End Controller)
- * Exécution chirurgicale - Zéro usine à gaz.
+ * SAMII OS - QG Universel (Front-End Controller)
+ * S'adapte automatiquement au métier : produit (e-commerce/restaurant) ou rendez-vous (dentiste/avocat/...)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    // ── MÉMORISER LE DERNIER QG ──────────────────
+    const qgBackLink = document.getElementById('qg-back-link');
     if (window.location.pathname.startsWith('/qg/')) {
         localStorage.setItem('ogLastQG', window.location.pathname);
     }
-    const qgBackLink = document.getElementById('qg-back-link');
     if (qgBackLink) qgBackLink.href = localStorage.getItem('ogLastQG') || '/hub';
 
-    // ── SIDEBAR COLLAPSE ─────────────────────────
     const sidebar   = document.getElementById('og-sidebar');
     const toggleBtn = document.getElementById('og-sidebar-collapse');
     const isMobile  = () => window.matchMedia('(max-width: 900px)').matches;
@@ -24,11 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── ÉTAT GLOBAL ──────────────────────────────
     let canalActif  = null;
     let allData     = null;
+    let parcoursActuel = 'produit';
 
-    // ── GRADES ───────────────────────────────────
     const GRADES = [
         { nom: 'SOLDAT',     icon: '🪖',  seuil: 0   },
         { nom: 'CAPORAL',    icon: '🎖️',  seuil: 10  },
@@ -65,20 +62,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── DÉFINITION DES MODULES (Inclus : TikTok, YouTube, Google, Gmail, Discord) ───
+    const CARTES_PRODUIT = [
+        { id: 'stat-revenus',    label: 'Revenus (DZD)', icon: 'trending-up',  key: 'total_revenus'   },
+        { id: 'stat-commandes',  label: 'Commandes',     icon: 'package',      key: 'total_commandes' },
+        { id: 'stat-attente',    label: 'En attente',    icon: 'clock',        key: 'en_attente'      },
+        { id: 'stat-confirmees', label: 'Confirmées',    icon: 'check-circle', key: 'confirmees'      },
+        { id: 'stat-annulees',   label: 'Annulées',      icon: 'x-circle',     key: 'annulees'        },
+        { id: 'stat-vip',        label: 'Clients VIP',   icon: 'crown',        key: 'vip'              },
+        { id: 'stat-blacklist',  label: 'Blacklist',     icon: 'shield-off',   key: 'blacklist'        },
+    ];
+
+    const CARTES_RDV = [
+        { id: 'stat-revenus',    label: 'Rendez-vous ce mois', icon: 'calendar',      key: 'total_revenus'   },
+        { id: 'stat-commandes',  label: 'Rendez-vous',         icon: 'calendar-days', key: 'total_commandes' },
+        { id: 'stat-attente',    label: 'À confirmer',         icon: 'clock',         key: 'en_attente'      },
+        { id: 'stat-confirmees', label: 'Confirmés',           icon: 'check-circle',  key: 'confirmees'      },
+        { id: 'stat-annulees',   label: 'Annulés',             icon: 'x-circle',      key: 'annulees'        },
+        { id: 'stat-vip',        label: 'Clients fidèles',     icon: 'crown',         key: 'vip'              },
+        { id: 'stat-blacklist',  label: 'Indésirables',        icon: 'shield-off',    key: 'blacklist'        },
+    ];
+
     const MODULES = {
-        '': {
-            label : 'Tout',
-            cartes: [
-                { id: 'stat-revenus',    label: 'Revenus (DZD)',    icon: 'trending-up',    key: 'total_revenus'    },
-                { id: 'stat-commandes',  label: 'Commandes',        icon: 'package',        key: 'total_commandes'  },
-                { id: 'stat-attente',    label: 'En attente',       icon: 'clock',          key: 'en_attente'       },
-                { id: 'stat-confirmees', label: 'Confirmées',       icon: 'check-circle',   key: 'confirmees'       },
-                { id: 'stat-annulees',   label: 'Annulées',         icon: 'x-circle',       key: 'annulees'         },
-                { id: 'stat-vip',        label: 'Clients VIP',      icon: 'crown',          key: 'vip'              },
-                { id: 'stat-blacklist',  label: 'Blacklist',        icon: 'shield-off',     key: 'blacklist'        },
-            ],
-        },
+        '': { label: 'Tout', cartes: CARTES_PRODUIT },
         shopify: {
             label : 'Shopify',
             cartes: [
@@ -189,7 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
         },
     };
 
-    // ── COMPTEUR ANIMÉ ───────────────────────────
     function startCountUp(el, target) {
         let current     = 0;
         const duration  = 1400;
@@ -214,7 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startCountUp(el, parseFloat(value) || 0);
     }
 
-    // ── FLASH EFFET SUR CARTES ───────────────────
     function flashCartes() {
         document.querySelectorAll('.qg-card').forEach(card => {
             card.classList.add('qg-card--flash');
@@ -222,9 +225,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── MISE À JOUR LABELS CARTES ────────────────
     function updateCarteLabels(canal) {
-        const module = MODULES[canal] || MODULES[''];
+        let module = MODULES[canal] || MODULES[''];
+        if (!canal && parcoursActuel === 'rdv') {
+            module = { label: 'Tout', cartes: CARTES_RDV };
+        }
         module.cartes.forEach(carte => {
             const card  = document.getElementById(carte.id)?.closest('.qg-card');
             if (!card) return;
@@ -236,13 +241,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    // ── CALCUL STATS PAR MODULE ──────────────────
     function calcStats(commandes, clients) {
         const total_commandes = commandes.length;
         const total_revenus   = commandes.reduce((s, c) => s + getMontant(c), 0);
-        const en_attente      = commandes.filter(c => c.Statut === 'en attente').length;
-        const confirmees      = commandes.filter(c => c.Statut === 'confirmée').length;
-        const annulees        = commandes.filter(c => c.Statut === 'annulée').length;
+        const en_attente      = commandes.filter(c => c.Statut === 'en attente' || c.Statut === 'en_attente').length;
+        const confirmees      = commandes.filter(c => c.Statut === 'confirmée' || c.Statut === 'confirmé').length;
+        const annulees        = commandes.filter(c => c.Statut === 'annulée' || c.Statut === 'annulé').length;
         const vip             = clients.filter(c => c.VIP     === true).length;
         const blacklist       = clients.filter(c => c.Blacklist === true).length;
         return { total_commandes, total_revenus: total_revenus.toFixed(2),
@@ -253,7 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return parseFloat(c.montant || c.Total || 0) || 0;
     }
 
-    // ── APPLIQUER MODULE ─────────────────────────
     function appliquerModule(canal) {
         if (!allData) return;
 
@@ -272,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCarteLabels(canal);
         flashCartes();
 
-        setCard('stat-revenus',    stats.total_revenus);
+        setCard('stat-revenus',    parcoursActuel === 'rdv' ? stats.total_commandes : stats.total_revenus);
         setCard('stat-commandes',  stats.total_commandes);
         setCard('stat-attente',    stats.en_attente);
         setCard('stat-confirmees', stats.confirmees);
@@ -290,7 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── CHARGER MODULES SIDEBAR ──────────────────
     async function loadModules() {
         try {
             const res  = await fetch('/api/connecteurs');
@@ -338,7 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── CHARGER DONNÉES QG ───────────────────────
     async function loadQGData() {
         try {
             const shop = document.body.getAttribute('data-shop') || '';
@@ -347,6 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.success) return;
 
             allData = data;
+            parcoursActuel = data.parcours || 'produit';
 
             setCard('stat-livrees',    data.livraison.livrees);
             setCard('stat-en-cours', data.livraison.en_cours);
@@ -376,14 +378,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // ── RENDER COMMANDES (Avec boutons d'action Yalidine / Suivi) ──
     function renderCommandes(commandes) {
         const tbody = document.getElementById('commandes-tbody');
         if (!tbody) return;
         if (!commandes || commandes.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">Aucune commande pour le moment</td></tr>`;
+            const texteVide = parcoursActuel === 'rdv' ? 'Aucun rendez-vous pour le moment' : 'Aucune commande pour le moment';
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">${texteVide}</td></tr>`;
             return;
         }
+
+        if (parcoursActuel === 'rdv') {
+            tbody.innerHTML = commandes.slice(0, 20).map(c => `
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                    <td style="padding: 12px;">#${String(c['ID Commande'] || '').toString().slice(-4) || '—'}</td>
+                    <td style="padding: 12px; font-weight: 500; color: #fff;">${c['Nom Client'] || '—'}</td>
+                    <td style="padding: 12px;">${c['Téléphone'] || '—'}</td>
+                    <td style="padding: 12px;">${c['Produit'] || '—'}</td>
+                    <td style="padding: 12px; color: #d4af37; font-weight: 600;">${c['DateRdv'] || '—'}</td>
+                    <td style="padding: 12px;"><span class="qg-badge qg-badge--${statutClass(c['Statut'])}">${c['Statut'] || 'en_attente'}</span></td>
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="agirCommande('${c.airtableId}', 'confirmer')" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-right: 5px;" title="Confirmer">✅</button>
+                        <button onclick="agirCommande('${c.airtableId}', 'annuler')" style="background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 6px; cursor: pointer;" title="Annuler">❌</button>
+                    </td>
+                </tr>
+            `).join('');
+            return;
+        }
+
         tbody.innerHTML = commandes.slice(0, 20).map(c => `
             <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
                 <td style="padding: 12px;">#${c['ID Commande'] || c.airtableId?.slice(-4) || '—'}</td>
@@ -400,7 +421,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
-    // ── ACTION RAPIDE COMMANDE ───────────────────
     window.agirCommande = async function(id, action) {
         try {
             const res = await fetch(`/api/commandes/${id}/${action}`, { method: 'POST' });
@@ -418,8 +438,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function statutClass(statut) {
         const map = {
             'confirmée' : 'green',
+            'confirmé'  : 'green',
             'en attente': 'yellow',
+            'en_attente': 'yellow',
             'annulée'   : 'red',
+            'annulé'    : 'red',
             'expédiée'  : 'blue',
             'livrée'    : 'green',
             'en cours'  : 'blue',
@@ -428,7 +451,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return map[statut] || 'grey';
     }
 
-    // ── RENDER CLIENTS ───────────────────────────
     function renderClients(containerId, clients) {
         const el = document.getElementById(containerId);
         if (!el) return;
@@ -445,7 +467,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
-    // ── TILT CARTES ──────────────────────────────
     if (window.matchMedia('(min-width: 900px)').matches) {
         document.querySelectorAll('.qg-card--tilt').forEach(card => {
             card.addEventListener('mousemove', (e) => {
@@ -458,7 +479,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── SOCKET.IO ────────────────────────────────
     if (typeof io !== 'undefined') {
         const socket = io();
         socket.on('connect', () => {
@@ -479,7 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── TOAST ────────────────────────────────────
     function afficherNotification(message) {
         const toast = document.createElement('div');
         toast.className = 'qg-toast';
@@ -492,7 +511,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     }
 
-    // ── LANCEMENT ────────────────────────────────
     loadModules();
     loadQGData();
 
