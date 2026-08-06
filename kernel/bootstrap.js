@@ -19,6 +19,7 @@ const sereniteEngine     = require("../engines/sereniteEngine");
 const messagerEclairEngine = require("../engines/messagerEclairEngine");
 const trackingRegistry   = require("../services/tracking");
 const yalidineTracking   = require("../services/tracking/yalidine");
+const universalTracking  = require("../services/tracking/universal");
 
 function registerChannels() {
     notificationEngine.register("telegram", {
@@ -49,7 +50,19 @@ function registerChannels() {
 }
 
 function registerTrackingProviders() {
+    // Yalidine — clé perso marchand en priorité, bascule interne vers 17TRACK si absente
     trackingRegistry.register("yalidine", yalidineTracking);
+
+    // Transporteurs mondiaux/africains — tous suivis via l'agrégateur 17TRACK
+    // (aucun n'a d'API individuelle publique accessible sans compte pro dédié)
+    const transporteursUniversels = [
+        "amana", "ctm", "dhl", "aramex",
+        "colissimo", "chronopost", "mondialrelay", "dpd", "ups",
+    ];
+    transporteursUniversels.forEach(id => {
+        trackingRegistry.register(id, universalTracking);
+    });
+
     console.log("✅ Transporteurs de suivi enregistrés :", trackingRegistry.list().join(", "));
 }
 
