@@ -1,67 +1,22 @@
 // ======================================================
-// SAMII OS — Workspace Service
+// SAMII OS — Workspace Service — PostgreSQL
 // ======================================================
 // Source de vérité des Workspaces.
 // Toutes les routes doivent passer par ce service.
-// Interdiction d'appeler Airtable directement
-// pour la table WORKSPACES.
 // ======================================================
+const db = require("../services/db");
 
-const axios = require("axios");
-
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_WORKSPACES = process.env.TABLE_WORKSPACES || "WORKSPACES";
-
-const url     = () => `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_WORKSPACES}`;
-const headers = () => ({ Authorization: `Bearer ${AIRTABLE_API_KEY}` });
-
-function escapeFormula(value = "") {
-    return String(value)
-        .replace(/\\/g, "\\\\")
-        .replace(/"/g, '\\"');
-}
-
-function parseSamiiConfig(raw) {
-    if (!raw) return { mode: "auto" };
+function parseJSON(raw, fallback) {
+    if (!raw) return fallback;
     if (typeof raw === "object") return raw;
     try {
-        return JSON.parse(raw);
+        return { ...fallback, ...JSON.parse(raw) };
     } catch {
-        return { mode: "auto" };
+        return fallback;
     }
 }
 
-function parseCoffreConfig(raw) {
-    const defaultCoffre = {
-        forteresse: { charges: 0, activeUntil: null },
-        boost: { charges: 0, activeUntil: null },
-    };
-    if (!raw) return defaultCoffre;
-    if (typeof raw === "object") return raw;
-    try {
-        return { ...defaultCoffre, ...JSON.parse(raw) };
-    } catch {
-        return defaultCoffre;
-    }
-}
-
-function parseAutomatisationsConfig(raw) {
-    const defaultAuto = {
-        ambassadeur: true,
-        serenite: true,
-        bouclierAntiFraude: true,
-    };
-    if (!raw) return defaultAuto;
-    if (typeof raw === "object") return { ...defaultAuto, ...raw };
-    try {
-        return { ...defaultAuto, ...JSON.parse(raw) };
-    } catch {
-        return defaultAuto;
-    }
-}
-
-function parseMissionsConfig(raw) {
+function parseMissions(raw) {
     if (!raw) return [];
     if (Array.isArray(raw)) return raw;
     try {
@@ -72,116 +27,92 @@ function parseMissionsConfig(raw) {
     }
 }
 
-function mapRecord(r) {
-    const f = r.fields;
+function mapRow(r) {
     return {
-        workspaceId : f.workspace_id || "",
-recordId    : r.id,
-owner       : f.owner        || "",
-nom         : f.nom          || "",
-metier      : f.metier       || "",
-logo        : f.logo         || "",
-langue      : f.langue       || "fr",
-devise      : f.devise       || "DZD",
-pays        : f.pays         || "",
-description : f.description  || "",
-samii       : parseSamiiConfig(f.samii),
-coffre      : parseCoffreConfig(f.coffre),
-automatisations : parseAutomatisationsConfig(f.automatisations),
-missions    : parseMissionsConfig(f.missions),
-metaAccessToken : f.meta_access_token  || "",
-metaAdAccountId : f.meta_ad_account_id || "",
-metaPageId      : f.meta_page_id       || "",
-timezone    : f.timezone     || "Africa/Algiers",
-statut      : f.statut       || "actif",
-actif       : f.statut       === "actif",
-created_at  : f.created_at   || "",
-updated_at  : f.updated_at   || "",
+        workspaceId: r.id || "",
+        recordId: r.id || "",
+        owner: r.owner || r.owner_email || "",
+        nom: r.nom || "",
+        metier: r.metier || "",
+        logo: r.logo || "",
+        langue: r.langue || "fr",
+        devise: r.devise || "DZD",
+        pays: r.pays || "",
+        description: r.description || "",
+        samii: parseJSON(r.samii, { mode: "auto" }),
+        coffre: parseJSON(r.coffre, { forteresse: { charges: 0, activeUntil: null }, boost: { charges: 0, activeUntil: null } }),
+        automatisations: parseJSON(r.automatisations, { ambassadeur: true, serenite: true, bouclierAntiFraude: true }),
+        missions: parseMissions(r.missions),
+        metaAccessToken: r.meta_access_token || "",
+        metaAdAccountId: r.meta_ad_account_id || "",
+        metaPageId: r.meta_page_id || "",
+        timezone: r.timezone || "Africa/Algiers",
+        statut: r.statut || "actif",
+        actif: r.statut === "actif" || !r.statut,
+        created_at: r.created_at || "",
+        updated_at: r.updated_at || "",
     };
 }
 
-
 async function getByOwner(email) {
     try {
-        const res = await axios.get(url(), {
-            headers: headers(),
-            params : {
-                filterByFormula: `{owner}="${escapeFormula(email)}"`,
-                maxRecords     : 50,
-            },
-        });
-        return res.data.records.map(mapRecord);
+        const rows = await db.query(
+            `SELECT * FROM workspaces WHERE owner = $1 OR owner_email = $1 LIMIT 50`,
+            [email]
+        );
+        return rows.map(mapRow);
     } catch (err) {
-        console.error("❌ workspaceService.getByOwner :", err.response?.data || err.message);
+        console.error("❌ workspaceService.getByOwner :", err.message);
         return [];
     }
 }
 
 async function getAllActive() {
     try {
-        const res = await axios.get(url(), {
-            headers: headers(),
-            params : {
-                filterByFormula: `{statut}="actif"`,
-                maxRecords     : 100,
-            },
-        });
-        return res.data.records.map(mapRecord);
+        const rows = await db.query(
+            `SELECT * FROM workspaces WHERE statut = 'actif' OR statut IS NULL LIMIT 100`
+        );
+        return rows.map(mapRow);
     } catch (err) {
-        console.error("❌ workspaceService.getAllActive :", err.response?.data || err.message);
+        console.error("❌ workspaceService.getAllActive :", err.message);
         return [];
     }
 }
 
 async function getById(workspaceId) {
     try {
-        const res = await axios.get(url(), {
-            headers: headers(),
-            params : {
-                filterByFormula: `{workspace_id}="${escapeFormula(workspaceId)}"`,
-                maxRecords     : 1,
-            },
-        });
-        const record = res.data.records[0];
-        return record ? mapRecord(record) : null;
+        const rows = await db.query(`SELECT * FROM workspaces WHERE id = $1 LIMIT 1`, [workspaceId]);
+        return rows[0] ? mapRow(rows[0]) : null;
     } catch (err) {
-        console.error("❌ workspaceService.getById :", err.response?.data || err.message);
+        console.error("❌ workspaceService.getById :", err.message);
         return null;
     }
 }
 
 async function getActiveWorkspace(email) {
     try {
-        const res = await axios.get(url(), {
-            headers: headers(),
-            params : {
-                filterByFormula: `AND({owner}="${escapeFormula(email)}",{statut}="actif")`,
-                maxRecords     : 1,
-            },
-        });
-        const record = res.data.records[0];
-        if (!record) return null;
-        const w = mapRecord(record);
+        const rows = await db.query(
+            `SELECT * FROM workspaces WHERE (owner = $1 OR owner_email = $1) AND (statut = 'actif' OR statut IS NULL) LIMIT 1`,
+            [email]
+        );
+        if (!rows[0]) return null;
+        const w = mapRow(rows[0]);
         return { workspaceId: w.workspaceId, nom: w.nom, metier: w.metier };
     } catch (err) {
-        console.error("❌ workspaceService.getActiveWorkspace :", err.response?.data || err.message);
+        console.error("❌ workspaceService.getActiveWorkspace :", err.message);
         return null;
     }
 }
 
 async function getByMetier(email, metier) {
     try {
-        const res = await axios.get(url(), {
-            headers: headers(),
-            params : {
-                filterByFormula: `AND({owner}="${escapeFormula(email)}",{metier}="${escapeFormula(metier)}")`,
-                maxRecords     : 1,
-            },
-        });
-        const record = res.data.records[0];
-        return record ? mapRecord(record) : null;
+        const rows = await db.query(
+            `SELECT * FROM workspaces WHERE (owner = $1 OR owner_email = $1) AND metier = $2 LIMIT 1`,
+            [email, metier]
+        );
+        return rows[0] ? mapRow(rows[0]) : null;
     } catch (err) {
-        console.error("❌ workspaceService.getByMetier :", err.response?.data || err.message);
+        console.error("❌ workspaceService.getByMetier :", err.message);
         return null;
     }
 }
@@ -193,68 +124,71 @@ async function exists(workspaceId) {
 
 async function belongsToOwner(workspaceId, owner) {
     try {
-        const res = await axios.get(url(), {
-            headers: headers(),
-            params : {
-                filterByFormula: `AND({workspace_id}="${escapeFormula(workspaceId)}",{owner}="${escapeFormula(owner)}")`,
-                maxRecords     : 1,
-            },
-        });
-        return res.data.records.length > 0;
+        const rows = await db.query(
+            `SELECT id FROM workspaces WHERE id = $1 AND (owner = $2 OR owner_email = $2) LIMIT 1`,
+            [workspaceId, owner]
+        );
+        return rows.length > 0;
     } catch (err) {
-        console.error("❌ workspaceService.belongsToOwner :", err.response?.data || err.message);
+        console.error("❌ workspaceService.belongsToOwner :", err.message);
         return false;
     }
 }
 
 async function create({ workspaceId, owner, nom, metier, logo = "", pays = "", devise = "", langue = "fr" }) {
     try {
-        const res = await axios.post(
-            url(),
-            {
-                fields: {
-                    workspace_id: workspaceId,
-                    owner,
-                    nom,
-                    metier,
-                    logo,
-                    pays,
-                    devise,
-                    langue,
-                    statut    : "actif",
-                    
-                },
-                typecast: true,
-            },
-            { headers: { ...headers(), "Content-Type": "application/json" } }
+        await db.query(
+            `INSERT INTO workspaces (id, owner, owner_email, nom, metier, logo, pays, devise, langue, statut)
+             VALUES ($1, $2, $2, $3, $4, $5, $6, $7, $8, 'actif')`,
+            [workspaceId, owner, nom, metier, logo, pays, devise || "DZD", langue]
         );
-        return mapRecord(res.data);
+        return await getById(workspaceId);
     } catch (err) {
-        console.error("❌ workspaceService.create :", JSON.stringify(err.response?.data) || err.message);
+        console.error("❌ workspaceService.create :", err.message);
         return null;
     }
 }
 
 async function update(recordId, fields) {
     try {
-        const res = await axios.patch(
-            `${url()}/${recordId}`,
-           { fields, typecast: true },
-            { headers: { ...headers(), "Content-Type": "application/json" } }
-        );
-        return mapRecord(res.data);
+        const colonnesAutorisees = [
+            "nom", "metier", "logo", "langue", "devise", "pays", "description",
+            "samii", "coffre", "automatisations", "missions",
+            "meta_access_token", "meta_ad_account_id", "meta_page_id",
+            "timezone", "statut",
+        ];
+
+        const sets = [];
+        const values = [];
+        let i = 1;
+
+        for (const [key, value] of Object.entries(fields)) {
+            const colonne = key.replace(/([A-Z])/g, "_$1").toLowerCase(); // camelCase → snake_case
+            if (!colonnesAutorisees.includes(colonne)) continue;
+            const valeurFinale = typeof value === "object" ? JSON.stringify(value) : value;
+            sets.push(`${colonne} = $${i++}`);
+            values.push(valeurFinale);
+        }
+
+        if (!sets.length) return await getById(recordId);
+
+        sets.push(`updated_at = NOW()`);
+        values.push(recordId);
+
+        await db.query(`UPDATE workspaces SET ${sets.join(", ")} WHERE id = $${i}`, values);
+        return await getById(recordId);
     } catch (err) {
-        console.error("❌ workspaceService.update :", err.response?.data || err.message);
+        console.error("❌ workspaceService.update :", err.message);
         return null;
     }
 }
 
 async function remove(recordId) {
     try {
-        await axios.delete(`${url()}/${recordId}`, { headers: headers() });
+        await db.query(`DELETE FROM workspaces WHERE id = $1`, [recordId]);
         return true;
     } catch (err) {
-        console.error("❌ workspaceService.delete :", err.response?.data || err.message);
+        console.error("❌ workspaceService.delete :", err.message);
         return false;
     }
 }
