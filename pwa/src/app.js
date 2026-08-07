@@ -3,7 +3,7 @@
 
 /*
     SAMII OS
-    Core Application Engine
+    Application Core
 */
 
 
@@ -13,45 +13,62 @@ const SAMII_APP = {
     version: "1.0.0",
 
 
+
     init() {
 
+
         console.log(
-            "🤖 SAMII OS INITIALIZED"
+            "🤖 SAMII OS START"
         );
 
 
         this.startBootSequence();
 
+
     },
 
 
+
+
+
     startBootSequence() {
+
 
 
         const status =
         document.querySelector(".samii-status");
 
 
+
         const steps = [
+
 
             "Chargement du noyau SAMII...",
 
+
             "Activation Intelligence...",
 
-            "Connexion des modules...",
+
+            "Synchronisation des modules...",
+
 
             "Système prêt."
 
         ];
 
 
+
         let index = 0;
 
 
-        const interval = setInterval(() => {
+
+
+        const boot = setInterval(() => {
+
 
 
             if(index < steps.length) {
+
 
 
                 if(status) {
@@ -65,56 +82,77 @@ const SAMII_APP = {
                 index++;
 
 
+
             } else {
 
 
-                clearInterval(interval);
+
+                clearInterval(boot);
 
 
-                this.launchHome();
+                this.openHome();
 
 
             }
 
 
-        }, 1200);
+
+        },1000);
+
 
 
     },
 
 
-    launchHome() {
+
+
+
+
+    openHome() {
+
 
 
         console.log(
-            "🚀 SAMII READY"
+            "🚀 SAMII ONLINE"
         );
 
 
-        /*
-            Future:
-            - Router
-            - Auth
-            - QG
-            - Marketplace
-            - Community
-            - Academy
-            - SAMII AI
-        */
+
+        if(window.SAMII_HOME) {
+
+
+            window.SAMII_HOME.render();
+
+
+        } else {
+
+
+            console.error(
+                "SAMII HOME NOT FOUND"
+            );
+
+
+        }
+
 
 
     }
+
 
 
 };
 
 
 
-document.addEventListener(
+
+
+window.addEventListener(
     "DOMContentLoaded",
     () => {
 
+
         SAMII_APP.init();
+
 
     }
 );
