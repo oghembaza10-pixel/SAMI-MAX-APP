@@ -1,0 +1,228 @@
+.samii-home {
+
+    min-height: 100vh;
+
+    padding: 30px 20px;
+
+    background:
+
+    radial-gradient(
+        circle at top,
+        rgba(0,168,255,0.18),
+        transparent 35%
+    ),
+
+    #050505;
+
+}
+
+
+/* HEADER */
+
+.home-header {
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+
+.brand {
+
+    font-size:24px;
+
+    font-weight:900;
+
+    letter-spacing:4px;
+
+    color:#D4AF37;
+
+}
+
+
+.status {
+
+    font-size:12px;
+
+    color:#00A8FF;
+
+}
+
+
+
+
+
+/* WELCOME */
+
+
+.welcome {
+
+    margin-top:50px;
+
+}
+
+
+.welcome h1 {
+
+    font-size:34px;
+
+    line-height:1.2;
+
+}
+
+
+.welcome p {
+
+    margin-top:12px;
+
+    color:#55D6FF;
+
+}
+
+
+
+
+
+/* MODULES */
+
+
+.modules {
+
+    margin-top:40px;
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:18px;
+
+}
+
+
+
+.module-card {
+
+    padding:25px 18px;
+
+    border-radius:25px;
+
+
+    background:
+
+    rgba(255,255,255,0.05);
+
+
+    border:
+
+    1px solid rgba(212,175,55,0.25);
+
+
+    backdrop-filter:blur(15px);
+
+
+    transition:.3s;
+
+
+}
+
+
+
+.module-card:hover {
+
+    transform:translateY(-5px);
+
+
+    border-color:#00A8FF;
+
+
+}
+
+
+
+.module-card span {
+
+    font-size:35px;
+
+}
+
+
+
+.module-card h2 {
+
+    margin-top:15px;
+
+    color:#D4AF37;
+
+}
+
+
+
+.module-card p {
+
+    margin-top:8px;
+
+    color:#aaa;
+
+    font-size:13px;
+
+}
+
+
+
+
+/* SAMII BUTTON */
+
+
+.samii-ai {
+
+
+    position:fixed;
+
+
+    bottom:30px;
+
+    left:50%;
+
+
+    transform:translateX(-50%);
+
+
+
+    padding:18px 45px;
+
+
+    border-radius:50px;
+
+
+    border:none;
+
+
+
+    background:
+
+    linear-gradient(
+        135deg,
+        #D4AF37,
+        #00A8FF
+    );
+
+
+
+    color:#050505;
+
+
+    font-size:17px;
+
+
+    font-weight:800;
+
+
+    box-shadow:
+
+    0 0 35px rgba(0,168,255,.5);
+
+
+}
