@@ -2,49 +2,156 @@
 <html lang="fr">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>SAMII OS</title>
 
+
+    <!-- PWA -->
+
     <meta name="theme-color" content="#050505">
+
+    <meta name="description"
+          content="SAMII OS - Intelligent Business Operating System">
+
 
     <link rel="manifest" href="./manifest.json">
 
+
+    <!-- ICON SAMII EXISTANT -->
+
+    <link rel="icon" href="./assets/icons/samii-os-icon.png">
+
+
+
+    <!-- STYLE SYSTEM -->
+
     <link rel="stylesheet" href="./src/styles/app.css">
+
+    <link rel="stylesheet" href="./src/styles/home.css">
+
 
 </head>
 
 
+
 <body>
+
 
 <div id="app">
 
-    <div class="samii-loader">
 
-        <div class="samii-logo">
-            SAMII
+    <!-- BOOT SCREEN SAMII -->
+
+    <section class="samii-loader">
+
+
+        <div class="samii-core">
+
+
+            <div class="samii-logo">
+
+                SAMII
+
+            </div>
+
+
+
+            <div class="samii-subtitle">
+
+                Intelligent Business Operating System
+
+            </div>
+
+
+
+            <div class="samii-orbit">
+
+                <span></span>
+
+            </div>
+
+
+
+            <div class="samii-status">
+
+                Initialisation...
+
+            </div>
+
+
         </div>
 
-        <div class="samii-subtitle">
-            Intelligent Business Operating System
-        </div>
 
-        <div class="samii-orbit">
-            <span></span>
-        </div>
+    </section>
 
-        <div class="samii-status">
-            Initialisation...
-        </div>
-
-    </div>
 
 </div>
 
 
+
+
+<!-- CORE APP -->
+
 <script src="./src/app.js"></script>
+
+
+<!-- PAGES -->
+
+<script src="./src/pages/home.js"></script>
+
+
+
+<!-- SERVICE WORKER -->
+
+<script>
+
+
+if ("serviceWorker" in navigator) {
+
+
+    window.addEventListener(
+        "load",
+        () => {
+
+
+            navigator.serviceWorker.register(
+                "./service-worker.js"
+            )
+
+            .then(() => {
+
+                console.log(
+                    "SAMII PWA READY"
+                );
+
+            })
+
+            .catch(error => {
+
+
+                console.log(
+                    "PWA ERROR",
+                    error
+                );
+
+
+            });
+
+
+        }
+    );
+
+
+}
+
+
+</script>
+
+
 
 </body>
 
