@@ -1,6 +1,7 @@
 const { listProducts } = require('../services/providers/cj');
 const db = require('../services/db');
 
+const IMPORT_LIMIT = Number(process.env.CJ_IMPORT_LIMIT || 50);
 const MARGIN_PERCENT = Number(process.env.CJ_MARGIN_PERCENT || 20);
 const MARGIN_FIXED_EUR = Number(process.env.CJ_MARGIN_FIXED_EUR || 1);
 
@@ -11,13 +12,16 @@ function priceFor(product) {
 
 function marketplaceCategory(name = '') {
   const n = name.toLowerCase();
-  if (/(earring|jewelry|jewellery|watch|ring|necklace|bracelet)/.test(n)) return 'luxe';
+  if (/(earring|jewelry|jewellery|watch|ring|necklace|bracelet)/.test(n)) return 'bijoux-accessoires';
   if (/(clothing|apparel|dress|shirt|shoe|fashion)/.test(n)) return 'mode';
-  if (/(beauty|cosmetic|skin|makeup|perfume)/.test(n)) return 'beaute';
-  if (/(sport|fitness|outdoor)/.test(n)) return 'sport';
-  if (/(home|appliance|electronic|phone|computer|smart)/.test(n)) return 'electronique';
-  if (/(kitchen|furniture|home decor|house)/.test(n)) return 'cuisine';
-  return 'autre';
+  if (/(beauty|cosmetic|skin|makeup|perfume)/.test(n)) return 'beaute-cosmetiques';
+  if (/(sport|fitness|outdoor)/.test(n)) return 'sport-fitness';
+  if (/(bike|bicycle|electric vehicle|scooter|mobility)/.test(n)) return 'velos-mobilite-electrique';
+  if (/(home|appliance|electronic|phone|computer|smart)/.test(n)) return 'electronique-tech';
+  if (/(kitchen|furniture|home decor|house)/.test(n)) return 'maison-decoration';
+  if (/(gaming|console)/.test(n)) return 'gaming';
+  if (/(audio|headphone|speaker)/.test(n)) return 'audio';
+  return 'tendances-nouveautes';
 }
 
 function imageList(product) {
@@ -33,14 +37,14 @@ function imageList(product) {
 function normalize(product) {
   const externalId = product.pid || product.productId || product.id;
   const name = product.productNameEn || product.productName || product.name || `Produit CJ ${externalId}`;
-  const category = product.categoryName || 'Autres';
+  const sourceCategory = product.categoryName || 'Autres';
   const cost = Number(product.sellPrice || product.price || 0);
   const photos = imageList(product);
   return {
     externalId: String(externalId),
     title: name,
-    category: marketplaceCategory(category),
-    sourceCategory: category,
+    category: marketplaceCategory(sourceCategory),
+    sourceCategory,
     cost,
     price: priceFor(product),
     sku: product.productSku || product.sku || null,
@@ -51,14 +55,15 @@ function normalize(product) {
 }
 
 async function main() {
-  const result = await listProducts({ page: 1, size: 5 });
+  const result = await listProducts({ page: 1, size: IMPORT_LIMIT });
   const list = result?.data?.content || result?.data?.list || result?.data || [];
   if (!Array.isArray(list) || !list.length) throw new Error('CJ n’a retourné aucun produit');
 
-  console.log(`CJ: ${Math.min(list.length, 5)} produits reçus`);
+  const selected = list.filter(p => Number(p.sellPrice || p.price || 0) > 0).slice(0, IMPORT_LIMIT);
+  console.log(`CJ: ${selected.length} produits sélectionnés`);
   console.log(`Marge: ${MARGIN_PERCENT}% + ${MARGIN_FIXED_EUR} EUR`);
 
-  for (const raw of list.slice(0, 5)) {
+  for (const raw of selected) {
     const p = normalize(raw);
     const photosJson = JSON.stringify(p.photos);
 
@@ -84,31 +89,16 @@ async function main() {
         sku=EXCLUDED.sku,
         metadata=EXCLUDED.metadata,
         synced_at=NOW()
-      RETURNING id,titre,prix,photo_url,provider_product_id
+      RETURNING id,titre,prix,provider_product_id
     `, [
-      p.title,
-      p.category,
-      `Produit importé depuis CJ — catégorie fournisseur: ${p.sourceCategory}`,
-      `${p.price} EUR`,
-      p.photos[0] || null,
-      photosJson,
+      p.title, p.category, `Produit importé depuis CJ — catégorie fournisseur: ${p.sourceCategory}`,
+      `${p.price} EUR`, p.photos[0] || null, photosJson,
       JSON.stringify({ source: 'CJ', category: p.sourceCategory, sku: p.sku }),
-      'fournisseur',
-      'cj',
-      'CJ Dropshipping',
-      'Chine',
-      'CJ',
-      p.externalId,
-      null,
-      'chine',
-      p.cost,
-      'EUR',
-      p.stock,
-      p.sku,
-      JSON.stringify(p.metadata),
+      'fournisseur', 'cj', 'CJ Dropshipping', 'Chine', 'CJ', p.externalId,
+      null, 'chine', p.cost, 'EUR', p.stock, p.sku, JSON.stringify(p.metadata),
     ]);
 
-    console.log(JSON.stringify({ ok: true, imported: rows[0] }, null, 2));
+    console.log(JSON.stringify({ ok: true, imported: rows[0] }));
   }
 }
 
