@@ -4,6 +4,13 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
+const {
+    MARKETPLACE_NAME,
+    CATEGORIES,
+    SUPPLIER_REGIONS,
+    categoryLabel,
+    supplierRegionLabel
+} = require("../config/marketplace-catalog");
 
 const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
 const CLOUDINARY_UPLOAD_PRESET = "MARKETPLACE OG";
@@ -13,34 +20,38 @@ function requireAuth(req, res, next) {
     next();
 }
 
-const CATEGORIES_AMAZON = [
+const CATEGORY_OPTIONS_HTML = [
     { id: "tous", label: "Toutes nos catégories" },
-    { id: "electronique", label: "High-Tech & Électronique" },
-    { id: "mode", label: "Mode & Vêtements" },
-    { id: "luxe", label: "Luxe & Joaillerie" },
-    { id: "beaute_premium", label: "Beauté Premium" },
-    { id: "beaute", label: "Beauté et Parfum" },
-    { id: "services", label: "Services & Prestations" },
-    { id: "sport", label: "Sports et Loisirs" },
-    { id: "cuisine", label: "Cuisine & Maison" },
-    { id: "autre", label: "Autre" }
-];
+    ...CATEGORIES
+].map(category => `
+    <option value="${escapeHtml(category.id)}">
+        ${escapeHtml(category.label)}
+    </option>
+`).join("");
 
-const REGIONS_FOURNISSEURS = [
-    { id: "local",   icon: "map-pin",    label: "Fournisseurs Locaux" },
-    { id: "europe",  icon: "landmark",   label: "Fournisseurs Européens" },
-    { id: "chine",   icon: "factory",    label: "Fournisseurs Chinois" },
-    { id: "turquie", icon: "anchor",     label: "Fournisseurs Turcs" },
-    { id: "dubai",   icon: "building-2", label: "Fournisseurs Dubaï" },
-];
+const REGION_CHIPS_HTML = SUPPLIER_REGIONS.map(region => `
+    <a
+        href="/marketplace?region=${encodeURIComponent(region.id)}"
+        class="region-chip"
+        data-region="${escapeHtml(region.id)}"
+    >
+        <i data-lucide="${escapeHtml(region.icon)}"></i>
+        ${escapeHtml(region.label)}
+    </a>
+`).join("");
 
 const ANNONCES_VIRTUELLES = [
-    { id: "v_1", titre: "Rolex Submariner Date — Édition Collector Or & Noir", categorie: "luxe", region_fournisseur: "europe", prix: "12 500 €", pays: "Suisse", ville: "Genève", photo_url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1000&q=85", photos_urls: null, vendeur_id: "ai_agent_samii", vendeur_nom: "Samii Core", type_vendeur: "ia_marchand", actif: true },
+    { id: "v_1", titre: "Rolex Submariner Date — Édition Collector Or & Noir", categorie: "luxe", region_fournisseur: "europe", prix: "8 500 €", pays: "Suisse", ville: "Genève", photo_url: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1000&q=85", photos_urls: null, vendeur_id: "ai_agent_samii", vendeur_nom: "Samii Core", type_vendeur: "ia_marchand", actif: true },
     { id: "v_2", titre: "MacBook Pro M3 Max — 64Go RAM / 2To SSD", categorie: "electronique", region_fournisseur: "europe", prix: "3 490 $", pays: "États-Unis", ville: "New York", photo_url: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1000&q=85", photos_urls: null, vendeur_id: "ai_agent_vaulta", vendeur_nom: "Vaulta Automation", type_vendeur: "ia_marchand", actif: true },
 ];
 
 function escapeHtml(v) {
-    return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    return String(v ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 function getCategoryLabel(id) { return CATEGORIES_AMAZON.find(c => c.id === id)?.label || id || "Autre"; }
 function getRegionLabel(id) { return REGIONS_FOURNISSEURS.find(r => r.id === id)?.label || ""; }
