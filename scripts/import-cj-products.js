@@ -9,20 +9,43 @@ function priceFor(product) {
   return Number((cost * (1 + MARGIN_PERCENT / 100) + MARGIN_FIXED_EUR).toFixed(2));
 }
 
+function marketplaceCategory(name = '') {
+  const n = name.toLowerCase();
+  if (/(earring|jewelry|jewellery|watch|ring|necklace|bracelet)/.test(n)) return 'luxe';
+  if (/(clothing|apparel|dress|shirt|shoe|fashion)/.test(n)) return 'mode';
+  if (/(beauty|cosmetic|skin|makeup|perfume)/.test(n)) return 'beaute';
+  if (/(sport|fitness|outdoor)/.test(n)) return 'sport';
+  if (/(home|appliance|electronic|phone|computer|smart)/.test(n)) return 'electronique';
+  if (/(kitchen|furniture|home decor|house)/.test(n)) return 'cuisine';
+  return 'autre';
+}
+
+function imageList(product) {
+  const raw = product.productImage;
+  if (!raw) return [];
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) return parsed.filter(Boolean);
+  } catch {}
+  return [String(raw)];
+}
+
 function normalize(product) {
   const externalId = product.pid || product.productId || product.id;
   const name = product.productNameEn || product.productName || product.name || `Produit CJ ${externalId}`;
   const category = product.categoryName || 'Autres';
   const cost = Number(product.sellPrice || product.price || 0);
+  const photos = imageList(product);
   return {
     externalId: String(externalId),
     title: name,
-    category,
+    category: marketplaceCategory(category),
+    sourceCategory: category,
     cost,
     price: priceFor(product),
     sku: product.productSku || product.sku || null,
-    stock: Number(product.stock || 0),
-    sourceUrl: product.productUrl || null,
+    stock: Number.isFinite(Number(product.stock)) && Number(product.stock) > 0 ? Number(product.stock) : null,
+    photos,
     metadata: product,
   };
 }
@@ -37,23 +60,55 @@ async function main() {
 
   for (const raw of list.slice(0, 5)) {
     const p = normalize(raw);
-    console.log(JSON.stringify(p, null, 2));
+    const photosJson = JSON.stringify(p.photos);
 
-    // DB adapter compatibility: only write when the existing db service exposes a compatible method.
-    if (typeof db.createAnnonce === 'function') {
-      await db.createAnnonce({
-        titre: p.title,
-        description: `Produit importé depuis CJ. Catégorie: ${p.category}`,
-        prix: p.price,
-        prix_fournisseur: p.cost,
-        provider_code: 'CJ',
-        provider_product_id: p.externalId,
-        sku: p.sku,
-        stock: p.stock,
-        source_url: p.sourceUrl,
-        metadata: p.metadata,
-      });
-    }
+    const rows = await db.query(`
+      INSERT INTO annonces
+        (titre, categorie, description, prix, photo_url, photos_urls, caracteristiques,
+         type_vendeur, vendeur_id, vendeur_nom, pays, actif, created_at,
+         provider_code, provider_product_id, source_url, region_fournisseur,
+         prix_fournisseur, devise, stock, sku, synced_at, metadata)
+      VALUES
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true,NOW(),$12,$13,$14,$15,$16,$17,$18,$19,NOW(),$20::jsonb)
+      ON CONFLICT (provider_code, provider_product_id)
+      WHERE provider_code IS NOT NULL AND provider_product_id IS NOT NULL
+      DO UPDATE SET
+        titre=EXCLUDED.titre,
+        categorie=EXCLUDED.categorie,
+        prix=EXCLUDED.prix,
+        photo_url=EXCLUDED.photo_url,
+        photos_urls=EXCLUDED.photos_urls,
+        prix_fournisseur=EXCLUDED.prix_fournisseur,
+        devise=EXCLUDED.devise,
+        stock=EXCLUDED.stock,
+        sku=EXCLUDED.sku,
+        metadata=EXCLUDED.metadata,
+        synced_at=NOW()
+      RETURNING id,titre,prix,photo_url,provider_product_id
+    `, [
+      p.title,
+      p.category,
+      `Produit importé depuis CJ — catégorie fournisseur: ${p.sourceCategory}`,
+      `${p.price} EUR`,
+      p.photos[0] || null,
+      photosJson,
+      JSON.stringify({ source: 'CJ', category: p.sourceCategory, sku: p.sku }),
+      'fournisseur',
+      'cj',
+      'CJ Dropshipping',
+      'Chine',
+      'CJ',
+      p.externalId,
+      null,
+      'chine',
+      p.cost,
+      'EUR',
+      p.stock,
+      p.sku,
+      JSON.stringify(p.metadata),
+    ]);
+
+    console.log(JSON.stringify({ ok: true, imported: rows[0] }, null, 2));
   }
 }
 
