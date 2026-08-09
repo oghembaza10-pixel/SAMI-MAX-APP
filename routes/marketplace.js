@@ -1441,13 +1441,17 @@ nav {
 }
 
 .photo-dot {
+    /* Le point visuel reste petit ; la zone cliquable/tapable est agrandie
+       via le padding + background-clip, pour rester utilisable au doigt. */
     width: 6px;
     height: 6px;
+    padding: 7px;
 
     border-radius: 50%;
 
     background:
         rgba(255,255,255,.45);
+    background-clip: content-box;
 
     cursor: pointer;
 }
@@ -2617,54 +2621,26 @@ async function toggleFavorite(
 // PHOTO DOTS
 // --------------------------------------------------------------------------
 
-document
-    .querySelectorAll(
-        ".photo-dot"
-    )
-    .forEach(
-        dot => {
+// Délégation sur document (au lieu d'attacher un listener par point au
+// chargement) : fonctionne même si une erreur ailleurs dans ce script
+// interrompt l'exécution avant ce bloc, et couvre aussi les cartes
+// ajoutées dynamiquement plus tard.
+document.addEventListener("click", event => {
+    const dot = event.target.closest(".photo-dot");
+    if (!dot) return;
 
-            dot.addEventListener(
-                "click",
-                event => {
+    event.preventDefault();
+    event.stopPropagation();
 
-                    event.preventDefault();
-                    event.stopPropagation();
+    const card = dot.closest(".product-card");
+    const image = card?.querySelector(".product-main-img");
+    if (image && dot.dataset.photo) {
+        image.src = dot.dataset.photo;
+    }
 
-                    const card =
-                        dot.closest(
-                            ".product-card"
-                        );
-
-                    const image =
-                        card?.querySelector(
-                            ".product-main-img"
-                        );
-
-                    if (image) {
-
-                        image.src =
-                            dot.dataset.photo;
-                    }
-
-                    card
-                        ?.querySelectorAll(
-                            ".photo-dot"
-                        )
-                        .forEach(
-                            d =>
-                                d.classList.remove(
-                                    "active"
-                                )
-                        );
-
-                    dot.classList.add(
-                        "active"
-                    );
-                }
-            );
-        }
-    );
+    card?.querySelectorAll(".photo-dot").forEach(d => d.classList.remove("active"));
+    dot.classList.add("active");
+});
 
 // --------------------------------------------------------------------------
 // CART
