@@ -9,11 +9,15 @@
 const express = require("express");
 const router   = express.Router();
 const workspaceService = require("../services/workspaceService");
+const db = require("../services/db");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
 }
+
+// Compte CCP officiel SAMII — paiement manuel en attendant Stripe.
+const CCP_SAMII = { titulaire: "GHEMBAZA OUAHID", numero: "0044766935", cle: "72" };
 
 const PLAN_GRANTS = {
     standard: { forteresse: 1, boost: 0 },
@@ -50,6 +54,11 @@ router.get("/", requireAuth, (req, res) => {
         .bill-card li::before { content: "✓ "; color: var(--cyan-tech); }
         .bill-btn { padding: 12px; border-radius: 10px; border: none; background: var(--gold-og); color: #000; font-weight: 700; cursor: pointer; }
         .bill-btn--free { background: rgba(255,255,255,0.08); color: var(--text-main); }
+        .bill-ccp { margin-top: 10px; padding: 12px; border-radius: 10px; background: rgba(245,166,35,0.08); border: 1px solid rgba(245,166,35,0.25); }
+        .bill-ccp summary { color: #F5A623; font-size: .8rem; font-weight: 600; cursor: pointer; }
+        .bill-ccp-details { margin-top: 10px; font-size: .78rem; color: var(--text-muted); line-height: 1.6; }
+        .bill-ccp-details b { color: #fff; }
+        .bill-btn--ccp { margin-top: 10px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(245,166,35,0.4); background: transparent; color: #F5A623; font-weight: 600; font-size: .8rem; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -80,6 +89,15 @@ router.get("/", requireAuth, (req, res) => {
                 <li>Messages SAMII illimités</li>
             </ul>
             <button class="bill-btn" data-plan="standard">S'abonner</button>
+            <details class="bill-ccp">
+                <summary>🏦 Payer par CCP</summary>
+                <div class="bill-ccp-details">
+                    Titulaire : <b>${CCP_SAMII.titulaire}</b><br>
+                    Numéro CCP : <b>${CCP_SAMII.numero}</b><br>
+                    Clé RIP : <b>${CCP_SAMII.cle}</b>
+                </div>
+                <button class="bill-btn--ccp" data-plan-ccp="standard">J'ai payé, préviens l'équipe</button>
+            </details>
         </div>
         <div class="bill-card bill-card--pro">
             <h2>👑 Souverain</h2>
@@ -92,9 +110,18 @@ router.get("/", requireAuth, (req, res) => {
                 <li>Support prioritaire</li>
             </ul>
             <button class="bill-btn" data-plan="pro">S'abonner</button>
+            <details class="bill-ccp">
+                <summary>🏦 Payer par CCP</summary>
+                <div class="bill-ccp-details">
+                    Titulaire : <b>${CCP_SAMII.titulaire}</b><br>
+                    Numéro CCP : <b>${CCP_SAMII.numero}</b><br>
+                    Clé RIP : <b>${CCP_SAMII.cle}</b>
+                </div>
+                <button class="bill-btn--ccp" data-plan-ccp="pro">J'ai payé, préviens l'équipe</button>
+            </details>
         </div>
     </div>
-    
+
 </div>
 <script>
 document.querySelectorAll(".bill-btn[data-plan]").forEach(btn => {
@@ -113,6 +140,19 @@ document.querySelectorAll(".bill-btn[data-plan]").forEach(btn => {
             btn.disabled = false;
             btn.textContent = "S'abonner";
         }
+    });
+});
+document.querySelectorAll("[data-plan-ccp]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        btn.textContent = "Envoi...";
+        const res = await fetch("/billing/ccp-request", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plan: btn.dataset.planCcp }),
+        });
+        const json = await res.json();
+        btn.textContent = json.success ? "✅ Équipe prévenue, activation sous 24h" : (json.error || "Erreur, réessaye.");
+        if (!json.success) btn.disabled = false;
     });
 });
 </script>
@@ -145,6 +185,24 @@ router.post("/checkout", requireAuth, async (req, res) => {
     } catch (err) {
         console.error("❌ POST /billing/checkout :", err.message);
         res.json({ error: "Erreur lors de la création du paiement." });
+    }
+});
+
+router.post("/ccp-request", requireAuth, async (req, res) => {
+    try {
+        const { plan } = req.body;
+        if (!["standard", "pro"].includes(plan)) return res.json({ success: false, error: "Plan invalide." });
+        const workspaceId = req.session.workspaceId;
+
+        await db.query(
+            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+            ["abonnement.demande.ccp", `Demande d'activation ${plan} par virement CCP`, workspaceId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /billing/ccp-request :", err.message);
+        res.json({ success: false, error: "Erreur interne." });
     }
 });
 
