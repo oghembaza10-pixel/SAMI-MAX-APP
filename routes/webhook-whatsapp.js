@@ -55,11 +55,19 @@ router.post("/", async (req, res) => {
             ["whatsapp.message", `${senderName}: ${textMessage}`, workspaceId]
         );
 
-        await orchestrator.process({
-            type   : "whatsapp.message",
-            shop   : workspaceId,
-            payload: { senderName, sender, message: textMessage },
-        });
+        try {
+            await orchestrator.process({
+                type   : "whatsapp.message",
+                shop   : workspaceId,
+                payload: { senderName, sender, message: textMessage },
+            });
+        } catch (procErr) {
+            console.error("❌ WhatsApp orchestrator :", procErr.message);
+            await db.query(
+                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                ["error.whatsapp.message", procErr.message, workspaceId]
+            );
+        }
 
         socketService.emitToShop(workspaceId, "whatsapp.message", { senderName, message: textMessage });
     } catch (err) {
