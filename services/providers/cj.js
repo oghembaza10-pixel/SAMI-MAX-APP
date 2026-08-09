@@ -1179,6 +1179,7 @@ module.exports = {
     getProduct,
     getFullProduct,
     getFullProductList,
+    extractProductRows,
 
     // Vidéos
     getProductVideos,

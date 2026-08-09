@@ -429,6 +429,18 @@ router.get("/", requireAuth, async (req, res) => {
             `)
             .join("");
 
+    const subnavHtml =
+        [{ id: "tous", label: "Tout" }, ...(CATEGORIES || [])]
+            .map(c => `
+                <a
+                    href="/marketplace${c.id === "tous" ? "" : `?categorie=${encodeURIComponent(c.id)}`}"
+                    class="${(!categorie && c.id === "tous") || categorie === c.id ? "active" : ""}"
+                >
+                    ${escapeHtml(c.label)}
+                </a>
+            `)
+            .join("");
+
     // ----------------------------------------------------------------------
     // CARDS
     // ----------------------------------------------------------------------
@@ -2267,56 +2279,7 @@ nav {
     </div>
 
     <nav class="subnav">
-
-        <a
-            href="/marketplace"
-            class="${!categorie || categorie === "tous" ? "active" : ""}"
-        >
-            Tout
-        </a>
-
-        <a
-            href="/marketplace?categorie=electronique"
-            class="${categorie === "electronique" ? "active" : ""}"
-        >
-            Technologie
-        </a>
-
-        <a
-            href="/marketplace?categorie=mode"
-            class="${categorie === "mode" ? "active" : ""}"
-        >
-            Mode
-        </a>
-
-        <a
-            href="/marketplace?categorie=luxe"
-            class="${categorie === "luxe" ? "active" : ""}"
-        >
-            Luxe
-        </a>
-
-        <a
-            href="/marketplace?categorie=services"
-            class="${categorie === "services" ? "active" : ""}"
-        >
-            Services
-        </a>
-
-        <a
-            href="/marketplace?categorie=sport"
-            class="${categorie === "sport" ? "active" : ""}"
-        >
-            Sport
-        </a>
-
-        <a
-            href="/marketplace?categorie=autre"
-            class="${categorie === "autre" ? "active" : ""}"
-        >
-            Autres
-        </a>
-
+        ${subnavHtml}
     </nav>
 
     <div class="region-row">
