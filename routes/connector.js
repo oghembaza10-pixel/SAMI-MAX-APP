@@ -39,7 +39,7 @@ const TOOLS = [
     { id: "stripe",       label: "Stripe",                 icon: "credit-card",    color: "#635BFF", available: false },
     { id: "paypal",       label: "PayPal",                 icon: "wallet",         color: "#00457C", available: false },
     { id: "dahabia",      label: "Dahabia",                icon: "credit-card",    color: "#00A859", available: false },
-    { id: "ccp",          label: "CCP",                    icon: "landmark",       color: "#F5A623", available: false },
+    { id: "ccp",          label: "CCP (Algérie Poste)",    icon: "landmark",       color: "#F5A623", available: true  },
     { id: "autre",        label: "Autre outil",            icon: "plug",           color: "#718096", available: false },
 ];
 
@@ -403,8 +403,57 @@ router.get("/tools/continue", requireAuth, (req, res) => {
     res.redirect(destination);
 });
 
+// ── CCP (Algérie Poste) — affichage compte, confirmation manuelle ──
+router.get("/ccp", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId || "";
+    let ccpActif = false, ccpTitulaire = "", ccpNumero = "", ccpCle = "";
+    try {
+        if (workspaceId) {
+            const connecteurs = await connectorService.getByWorkspace(workspaceId);
+            const c = connecteurs.find(c => c.type === "ccp");
+            if (c) {
+                ccpActif = c.actif === true;
+                ccpTitulaire = c.config?.titulaire || "";
+                ccpNumero = c.config?.numero || "";
+                ccpCle = c.config?.cle || "";
+            }
+        }
+    } catch (err) {
+        console.error("❌ GET /connect/ccp (lecture) :", err.message);
+    }
+    res.render("connect-ccp", { workspaceId, ccpActif, ccpTitulaire, ccpNumero, ccpCle, error: null });
+});
+
+router.post("/ccp", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session?.workspaceId;
+        if (!workspaceId) return res.redirect("/hub");
+        const titulaire = (req.body.titulaire || "").trim();
+        const numero = (req.body.numero || "").trim();
+        const cle = (req.body.cle || "").trim();
+        if (!titulaire || !numero) {
+            return res.render("connect-ccp", {
+                workspaceId, ccpActif: false, ccpTitulaire: "", ccpNumero: "", ccpCle: "",
+                error: "Renseigne au moins le titulaire et le numéro de compte.",
+            });
+        }
+        await connectorService.save(workspaceId, "ccp", {
+            titulaire, numero, cle,
+            connectedAt: new Date().toISOString(),
+        });
+        res.render("connect-ccp", { workspaceId, ccpActif: true, ccpTitulaire: titulaire, ccpNumero: numero, ccpCle: cle, error: null });
+    } catch (err) {
+        console.error("❌ POST /connect/ccp :", err);
+        res.render("connect-ccp", {
+            workspaceId: req.session?.workspaceId || "",
+            ccpActif: false, ccpTitulaire: "", ccpNumero: "", ccpCle: "",
+            error: "Erreur interne. Réessaie.",
+        });
+    }
+});
+
 // ── BIENTÔT DISPONIBLE ──────────────────────────────────
-const COMING_SOON = ["stripe", "paypal", "dahabia", "ccp", "autre"];
+const COMING_SOON = ["stripe", "paypal", "dahabia", "autre"];
 COMING_SOON.forEach(tool => {
     router.get(`/${tool}`, requireAuth, (req, res) => {
         res.render("connect-soon", {
