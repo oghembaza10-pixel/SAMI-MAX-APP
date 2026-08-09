@@ -96,11 +96,28 @@ async function getAccessToken() {
 }
 
 // ============================================================================
+// LIMITE DE DÉBIT — CJ autorise 1 requête / seconde
+// ============================================================================
+
+let lastRequestAt = 0;
+const MIN_INTERVAL_MS = 1100;
+
+async function throttle() {
+    const wait = lastRequestAt + MIN_INTERVAL_MS - Date.now();
+    if (wait > 0) {
+        await new Promise(resolve => setTimeout(resolve, wait));
+    }
+    lastRequestAt = Date.now();
+}
+
+// ============================================================================
 // REQUÊTE AUTHENTIFIÉE
 // ============================================================================
 
 async function request(path, options = {}) {
     const token = await getAccessToken();
+
+    await throttle();
 
     const response = await fetch(
         `${BASE_URL}${path}`,
@@ -503,7 +520,11 @@ function normalizeVideos(product) {
 // NORMALISATION VARIANTES
 // ============================================================================
 
-async function getProductVariants(product) {
+// maxDetail : au-delà de ce nombre, les variantes restantes sont conservées
+// telles quelles (sans l'appel getVariant supplémentaire) — CJ limite à
+// 1 requête/seconde, un produit à 80+ variantes prendrait sinon plus d'une
+// minute à lui seul.
+async function getProductVariants(product, maxDetail = 25) {
 
     const variants =
         product?.variants ||
@@ -518,14 +539,14 @@ async function getProductVariants(product) {
 
     const result = [];
 
-    for (const variant of variants) {
+    for (const [index, variant] of variants.entries()) {
 
         const vid =
             variant?.vid ||
             variant?.variantId ||
             variant?.variantID;
 
-        if (!vid) {
+        if (!vid || index >= maxDetail) {
 
             result.push(variant);
 

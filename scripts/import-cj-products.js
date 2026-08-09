@@ -87,8 +87,20 @@ function refineCategory(cjCategoryName, fallback, knownSlugs) {
     return knownSlugs.has(fallback) ? fallback : "tendances-nouveautes";
 }
 
-function priceFor(costPrice) {
-    const cost = Number(costPrice || 0);
+// CJ renvoie parfois le prix d'un produit à variantes sous forme de plage
+// ("2.42-4.86" = prix mini-maxi selon la variante). On prend le prix le plus
+// bas comme prix de base ("à partir de") ; le détail par variante reste dans
+// `variantes`. Retourne null si vraiment rien d'exploitable (on n'invente pas).
+function parseCjPrice(value) {
+    if (value === null || value === undefined || value === "") return null;
+    const str = String(value).trim();
+    const range = str.match(/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)$/);
+    if (range) return Number(range[1]);
+    const num = Number(str);
+    return Number.isFinite(num) ? num : null;
+}
+
+function priceFor(cost) {
     return Number((cost * (1 + MARGIN_PERCENT / 100) + MARGIN_FIXED_EUR).toFixed(2));
 }
 
@@ -135,10 +147,11 @@ async function importTheme(theme, knownSlugs) {
             continue;
         }
 
-        if (!product.title || !(product.cost_price ?? product.price)) { skipped++; continue; }
+        const cost = parseCjPrice(product.cost_price ?? product.price);
+        if (!product.title || cost === null) { skipped++; continue; }
 
         const categorie = refineCategory(product.category, theme.categorie, knownSlugs);
-        const prix = priceFor(product.cost_price ?? product.price);
+        const prix = priceFor(cost);
         const photosUrls = JSON.stringify(product.images || []);
         const videos = JSON.stringify(product.videos || []);
         const variantes = JSON.stringify(product.variants || []);
@@ -191,7 +204,7 @@ async function importTheme(theme, knownSlugs) {
                 JSON.stringify({ source: "CJ", category: product.category, sku: product.sku }),
                 "fournisseur", "cj", "CJ Dropshipping", product.country || "Chine",
                 "CJ", String(product.cj_pid || pid), null, "chine",
-                product.cost_price ?? product.price, "EUR", product.stock, product.sku,
+                cost, "EUR", product.stock, product.sku,
                 metadata, videos, variantes,
             ]);
 
