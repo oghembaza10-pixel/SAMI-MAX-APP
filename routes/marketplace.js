@@ -618,25 +618,6 @@ router.get("/", requireAuth, async (req, res) => {
 
                             ${dotsHtml}
 
-                            <div class="product-quick">
-
-                                <button
-                                    type="button"
-                                    onclick='quickAdd(
-                                        ${JSON.stringify({
-                                            id: String(id),
-                                            titre: a.titre || "",
-                                            prix: a.prix || "Sur devis",
-                                            photo: photos[0] || ""
-                                        })}
-                                    )'
-                                >
-                                    <i data-lucide="shopping-cart"></i>
-                                    Ajouter
-                                </button>
-
-                            </div>
-
                         </div>
 
                         <div class="product-body">
@@ -690,19 +671,40 @@ router.get("/", requireAuth, async (req, res) => {
                                     ${prix}
                                 </div>
 
-                                <button
-                                    class="save-btn ${
-                                        isFav ? "saved" : ""
-                                    }"
-                                    type="button"
-                                    onclick='toggleFavorite(
-                                        ${JSON.stringify(String(id))},
-                                        ${isReal},
-                                        this
-                                    )'
-                                >
-                                    <i data-lucide="bookmark"></i>
-                                </button>
+                                <div class="product-bottom-actions">
+
+                                    <button
+                                        class="cart-mini-btn"
+                                        type="button"
+                                        title="Ajouter au panier"
+                                        onclick='quickAdd(
+                                            ${JSON.stringify({
+                                                id: String(id),
+                                                titre: a.titre || "",
+                                                prix: a.prix || "Sur devis",
+                                                photo: photos[0] || ""
+                                            })}
+                                        )'
+                                    >
+                                        <i data-lucide="shopping-cart"></i>
+                                    </button>
+
+                                    <button
+                                        class="save-btn ${
+                                            isFav ? "saved" : ""
+                                        }"
+                                        type="button"
+                                        title="Ajouter aux favoris"
+                                        onclick='toggleFavorite(
+                                            ${JSON.stringify(String(id))},
+                                            ${isReal},
+                                            this
+                                        )'
+                                    >
+                                        <i data-lucide="bookmark"></i>
+                                    </button>
+
+                                </div>
 
                             </div>
 
@@ -1464,50 +1466,6 @@ nav {
         var(--blue);
 }
 
-.product-quick {
-    position: absolute;
-
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-
-    opacity: 0;
-
-    transform:
-        translateY(5px);
-
-    transition: .2s;
-}
-
-.product-card:hover .product-quick {
-    opacity: 1;
-
-    transform:
-        translateY(0);
-}
-
-.product-quick button {
-    width: 100%;
-
-    padding: 10px;
-
-    border:
-        1px solid
-        rgba(0,217,255,.2);
-
-    border-radius: 9px;
-
-    background:
-        rgba(3,6,11,.9);
-
-    color: var(--blue);
-
-    cursor: pointer;
-
-    font-size: 10px;
-    font-weight: 900;
-}
-
 .product-body {
     padding: 13px;
 }
@@ -1625,6 +1583,33 @@ nav {
     justify-content: space-between;
 
     margin-top: 13px;
+}
+
+.product-bottom-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cart-mini-btn {
+    width: 32px;
+    height: 32px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+
+    background: transparent;
+    color: var(--muted);
+
+    cursor: pointer;
+}
+
+.cart-mini-btn:hover {
+    color: var(--blue);
+    border-color: rgba(0,217,255,.3);
 }
 
 .product-price {
