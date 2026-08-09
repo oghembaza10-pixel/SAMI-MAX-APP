@@ -150,33 +150,31 @@ async function getCategories() {
 // ============================================================================
 
 async function listProducts({
-    page = 1,
-    size = 20,
-    keyword = "",
-    categoryId = "",
-    sort = ""
+  page = 1,
+  size = 20,
+  keyword = '',
+  categoryId = '',
+  warehouse = '',
+  countryCode = '',
+  productType = '',
+  hasVideo = '',
+  sort = ''
 } = {}) {
 
-    const params = new URLSearchParams();
+  const params = new URLSearchParams({
+    pageNum: String(page),
+    pageSize: String(size)
+  });
 
-    params.set("pageNum", String(page));
-    params.set("pageSize", String(size));
+  if (keyword) params.set('productNameEn', keyword);
+  if (categoryId) params.set('categoryId', categoryId);
+  if (warehouse) params.set('warehouse', warehouse);
+  if (countryCode) params.set('countryCode', countryCode);
+  if (productType) params.set('productType', productType);
+  if (hasVideo !== '') params.set('hasVideo', String(hasVideo));
+  if (sort) params.set('sort', sort);
 
-    if (keyword) {
-        params.set("productNameEn", keyword);
-    }
-
-    if (categoryId) {
-        params.set("categoryId", categoryId);
-    }
-
-    if (sort) {
-        params.set("sort", sort);
-    }
-
-    return request(
-        `/product/list?${params.toString()}`
-    );
+  return request(`/product/listV2?${params.toString()}`);
 }
 
 // ============================================================================
