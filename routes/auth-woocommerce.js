@@ -55,7 +55,7 @@ router.get("/connect/woocommerce", requireAuth, (req, res) => {
 </html>`);
 });
 
-router.post("/connect/woocommerce", requireAuth, (req, res) => {
+router.post("/connect/woocommerce", requireAuth, async (req, res) => {
     let siteUrl = (req.body.site_url || "").trim();
     if (!siteUrl) return res.redirect("/connect/woocommerce");
 
@@ -72,7 +72,10 @@ router.post("/connect/woocommerce", requireAuth, (req, res) => {
         callback_url: `${APP_URL}/auth/woocommerce/callback`,
     });
 
-    req.session.pendingWooSite = siteUrl;
+    // WooCommerce ne renvoie pas l'URL de la boutique dans son callback (requête serveur à serveur,
+    // sans cookie de session) — on la pré-enregistre ici pour pouvoir la retrouver au retour.
+    const connectorService = require("../services/connectorService");
+    await connectorService.save(workspaceId, "woocommerce", { siteUrl });
 
     res.redirect(`${siteUrl}/wc-auth/v1/authorize?${params.toString()}`);
 });
@@ -130,10 +133,13 @@ router.post("/auth/woocommerce/callback", express.json(), async (req, res) => {
         }
 
         const connectorService = require("../services/connectorService");
-        const siteUrl = req.body.store_url || req.body.site_url || "";
+
+        // siteUrl a été enregistré à l'étape /connect/woocommerce ; save() fusionne
+        // la config existante donc on ne l'écrase pas ici.
+        const existing = await connectorService.getOne(workspaceId, "woocommerce");
+        const siteUrl = existing?.config?.siteUrl || "";
 
         await connectorService.save(workspaceId, "woocommerce", {
-            siteUrl,
             consumerKey   : consumer_key,
             consumerSecret: consumer_secret,
             permissions   : key_permissions || "read_write",
@@ -144,6 +150,8 @@ router.post("/auth/woocommerce/callback", express.json(), async (req, res) => {
 
         if (siteUrl) {
             await registerOrderWebhook(siteUrl, consumer_key, consumer_secret);
+        } else {
+            console.warn(`⚠️ Pas de siteUrl trouvé pour workspace ${workspaceId} — webhook non enregistré.`);
         }
 
         res.status(200).json({ success: true });

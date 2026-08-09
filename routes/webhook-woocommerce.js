@@ -3,8 +3,9 @@
 // ==========================================================================
 const express = require("express");
 const axios   = require("axios");
-const crypto  = require("crypto");
 const router  = express.Router();
+const db             = require("../services/db");
+const socketService  = require("../services/socketService");
 
 const APP_URL = "https://samii.souverain-store.com";
 
@@ -37,23 +38,24 @@ router.post("/webhook/woocommerce", express.json(), async (req, res) => {
         const order = req.body;
         if (!order || !order.id) return;
 
-        const sourceUrl = req.headers["x-wc-webhook-source"] || "";
+        const sourceUrl = (req.headers["x-wc-webhook-source"] || "")
+            .replace(/^https?:\/\//, "")
+            .replace(/\/$/, "");
 
         console.log(`🛒 Commande WooCommerce reçue — #${order.number} depuis ${sourceUrl}`);
 
-        const connectorService = require("../services/connectorService");
-        const airtable = require("../services/airtable");
-
-        const record = await airtable.findOne("CONNECTEURS",
-            `AND({type}="woocommerce",SEARCH("${sourceUrl.replace(/https?:\/\//, "")}",{config}))`
+        const rows = await db.query(
+            `SELECT workspace_id FROM connecteurs WHERE type = 'woocommerce' AND actif = true AND config LIKE $1`,
+            [`%${sourceUrl}%`]
         );
 
-        if (!record) {
+        if (!rows.length) {
             console.warn(`⚠️ Aucun workspace trouvé pour la boutique WooCommerce : ${sourceUrl}`);
             return;
         }
 
-        const workspaceId = record.fields.workspace_id;
+        const workspaceId = rows[0].workspace_id;
+        const orderId = `WOO-${order.number}`;
 
         const client = `${order.billing?.first_name || ""} ${order.billing?.last_name || ""}`.trim() || "Client";
         const phone  = order.billing?.phone || "";
@@ -61,23 +63,23 @@ router.post("/webhook/woocommerce", express.json(), async (req, res) => {
             ? `${order.billing.address_1 || ""}, ${order.billing.city || ""}`
             : "";
         const produits = (order.line_items || []).map(i => i.name).join(", ");
+        const montant = parseFloat(order.total || 0) || 0;
 
-        await airtable.create("COMMANDES", {
-            "ID Commande"  : `WOO-${order.number}`,
-            "nom client"   : client,
-            "Téléphone"    : phone,
-            "Adresse"      : address,
-            "Produit"      : produits,
-            "Statut"       : "en attente",
-            "Boutique"     : workspaceId,
-            "Source"       : "woocommerce",
-            "Date Commande": order.date_created || new Date().toISOString(),
-            "montant"      : String(parseFloat(order.total || 0)),
-        });
+        await db.query(
+            `INSERT INTO commandes (id, workspace_id, nom_client, telephone, adresse, produit, statut, source, montant)
+             VALUES ($1, $2, $3, $4, $5, $6, 'en attente', 'woocommerce', $7)
+             ON CONFLICT (id) DO NOTHING`,
+            [orderId, workspaceId, client, phone, address, produits, montant]
+        );
 
-        await airtable.log("order.created.woocommerce", `#${order.number} — ${client}`, workspaceId);
+        await db.query(
+            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+            ["order.created.woocommerce", `#${order.number} — ${client}`, workspaceId]
+        );
 
-        console.log(`✅ Commande WooCommerce WOO-${order.number} enregistrée sur workspace ${workspaceId}`);
+        socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
+
+        console.log(`✅ Commande WooCommerce ${orderId} enregistrée sur workspace ${workspaceId}`);
 
     } catch (err) {
         console.error("❌ webhook/woocommerce :", err.message);
