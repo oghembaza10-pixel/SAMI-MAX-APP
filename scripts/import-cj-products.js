@@ -20,6 +20,46 @@
 const cj = require("../services/providers/cj");
 const db = require("../services/db");
 
+// Même compte Cloudinary que routes/marketplace.js (upload non signé déjà
+// utilisé pour les photos publiées manuellement) — réutilisé ici pour
+// réhéberger les images CJ : le CDN de CJ bloque le hotlinking direct
+// depuis un <img src> externe (403), les photos ne s'affichaient donc pas.
+const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
+const CLOUDINARY_UPLOAD_PRESET = "MARKETPLACE OG";
+const REHOST_IMAGES_MAX = 5; // par produit, pour rester raisonnable en temps d'import
+
+async function rehostImage(url) {
+    try {
+        const imgRes = await fetch(url);
+        if (!imgRes.ok) return null;
+        const blob = await imgRes.blob();
+
+        const form = new FormData();
+        form.append("file", blob, "cj-image.jpg");
+        form.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+        const uploadRes = await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+            { method: "POST", body: form }
+        );
+        if (!uploadRes.ok) return null;
+
+        const data = await uploadRes.json();
+        return data.secure_url || null;
+    } catch {
+        return null;
+    }
+}
+
+async function rehostImages(urls) {
+    const result = [];
+    for (const url of (urls || []).slice(0, REHOST_IMAGES_MAX)) {
+        const hosted = await rehostImage(url);
+        result.push(hosted || url); // à défaut, garde l'URL CJ d'origine
+    }
+    return result;
+}
+
 const IMPORT_LIMIT = Number(process.env.CJ_IMPORT_LIMIT || 15);
 const MARGIN_PERCENT = Number(process.env.CJ_MARGIN_PERCENT || 20);
 const MARGIN_FIXED_EUR = Number(process.env.CJ_MARGIN_FIXED_EUR || 1);
@@ -152,7 +192,12 @@ async function importTheme(theme, knownSlugs) {
 
         const categorie = refineCategory(product.category, theme.categorie, knownSlugs);
         const prix = priceFor(cost);
-        const photosUrls = JSON.stringify(product.images || []);
+
+        // Le CDN CJ bloque le hotlinking direct (<img src> externe → 403) :
+        // on réhéberge les photos sur Cloudinary avant de les stocker.
+        const hostedImages = await rehostImages(product.images || []);
+        const mainImage = hostedImages[0] || null;
+        const photosUrls = JSON.stringify(hostedImages);
         const videos = JSON.stringify(product.videos || []);
         const variantes = JSON.stringify(product.variants || []);
 
@@ -200,7 +245,7 @@ async function importTheme(theme, knownSlugs) {
                 RETURNING id, titre
             `, [
                 product.title, categorie, product.description || `Produit importé depuis CJ Dropshipping.`,
-                `${prix} EUR`, product.main_image || null, photosUrls,
+                `${prix} EUR`, mainImage, photosUrls,
                 JSON.stringify({ source: "CJ", category: product.category, sku: product.sku }),
                 "fournisseur", "cj", "CJ Dropshipping", product.country || "Chine",
                 "CJ", String(product.cj_pid || pid), null, "chine",
@@ -214,7 +259,7 @@ async function importTheme(theme, knownSlugs) {
                 [String(result[0]?.id || ""), String(pid)]
             );
 
-            console.log(`   ✅ ${result[0]?.titre} (id=${result[0]?.id}, cat=${categorie}, photos=${product.images.length}, vidéos=${product.videos.length}, variantes=${product.variants.length})`);
+            console.log(`   ✅ ${result[0]?.titre} (id=${result[0]?.id}, cat=${categorie}, photos=${hostedImages.length}, vidéos=${product.videos.length}, variantes=${product.variants.length})`);
             imported++;
         } catch (err) {
             console.error(`   ❌ Insert échoué pour ${pid} :`, err.message);

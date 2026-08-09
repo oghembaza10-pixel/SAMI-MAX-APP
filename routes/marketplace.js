@@ -581,6 +581,7 @@ router.get("/", requireAuth, async (req, res) => {
                                                 src="${escapeHtml(photos[0])}"
                                                 alt="${titre}"
                                                 loading="lazy"
+                                                referrerpolicy="no-referrer"
                                                 class="product-main-img"
                                             >
                                           `
@@ -3139,6 +3140,7 @@ router.get(
                                                         <img
                                                             src="${escapeHtml(photos[0])}"
                                                             alt="${escapeHtml(annonce.titre)}"
+                                                            referrerpolicy="no-referrer"
                                                         >
                                                       `
                                                     : `
@@ -3738,6 +3740,7 @@ button {
                 <img
                     src="${escapeHtml(photos[0])}"
                     alt="${escapeHtml(produit.titre)}"
+                    referrerpolicy="no-referrer"
                 >
               `
             : ""
