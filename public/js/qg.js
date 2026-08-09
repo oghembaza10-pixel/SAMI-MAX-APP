@@ -372,10 +372,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             afficherGrade(data.stats.total_commandes);
             appliquerModule(canalActif || '');
+            renderActivite(data.journal);
 
         } catch (err) {
             console.error('❌ QG data :', err.message);
         }
+    }
+
+    function renderActivite(journal) {
+        const list = document.getElementById('activite-list');
+        if (!list) return;
+        if (!journal || journal.length === 0) {
+            list.innerHTML = '<li style="padding:12px;color:#888;font-size:.85rem;">Aucune activité pour le moment</li>';
+            return;
+        }
+        list.innerHTML = journal.map(j => `
+            <li style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.85rem;color:#ddd;">
+                <span style="color:#d4af37;">${new Date(j.created_at).toLocaleString('fr-FR')}</span>
+                — ${j.details || j.action || ''}
+            </li>
+        `).join('');
     }
 
     function renderCommandes(commandes) {
@@ -483,7 +499,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const socket = io();
         socket.on('connect', () => {
             const shop = document.body.getAttribute('data-shop');
+            const workspaceId = document.body.getAttribute('data-workspace-id');
             if (shop) socket.emit('join', shop);
+            if (workspaceId) socket.emit('join', workspaceId);
         });
         socket.on('nouvelle-commande', () => {
             afficherNotification('🛒 Nouvelle commande reçue');
@@ -495,6 +513,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         socket.on('commande-annulee', (d) => {
             afficherNotification(`❌ Commande #${d.id} annulée`);
+            loadQGData();
+        });
+        socket.on('nouveau-rdv', () => {
+            afficherNotification('📅 Nouveau rendez-vous reçu');
+            loadQGData();
+        });
+        socket.on('rdv-confirme', (d) => {
+            afficherNotification(`✅ Rendez-vous #${d.id} confirmé`);
+            loadQGData();
+        });
+        socket.on('rdv-annule', (d) => {
+            afficherNotification(`❌ Rendez-vous #${d.id} annulé`);
+            loadQGData();
+        });
+        socket.on('whatsapp.message', (d) => {
+            afficherNotification(`💬 WhatsApp — ${d.senderName || 'Client'}`);
             loadQGData();
         });
     }

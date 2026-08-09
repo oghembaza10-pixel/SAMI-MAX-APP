@@ -112,6 +112,20 @@ router.get("/qg-data", requireAuth, async (req, res) => {
     }
 });
 
+// ── Activité récente (journal) — alimente le panneau temps réel du QG ──
+async function getJournal(workspaceId) {
+    try {
+        const rows = await db.query(
+            `SELECT action, details, created_at FROM journal WHERE workspace_id = $1 ORDER BY created_at DESC LIMIT 15`,
+            [workspaceId]
+        );
+        return rows;
+    } catch (err) {
+        console.error("❌ getJournal :", err.message);
+        return [];
+    }
+}
+
 // ── Réponse QG — métiers produit (e-commerce, restaurant...) ──
 async function buildProduitResponse(res, workspace, workspaceId) {
     const commandesRows = await db.query(
@@ -175,6 +189,7 @@ async function buildProduitResponse(res, workspace, workspaceId) {
     const rev_mois = cmd_mois.reduce((s, c) => s + getMontant(c), 0);
     const rev_moisP = cmd_moisP.reduce((s, c) => s + getMontant(c), 0);
     const evolution = rev_moisP > 0 ? (((rev_mois - rev_moisP) / rev_moisP) * 100).toFixed(1) + "%" : "—";
+    const journal = await getJournal(workspaceId);
 
     res.json({
         success: true,
@@ -186,6 +201,7 @@ async function buildProduitResponse(res, workspace, workspaceId) {
         performance: { revenus_mois: rev_mois.toFixed(2), commandes_mois: cmd_mois.length, evolution },
         commandes,
         clients,
+        journal,
     });
 }
 
@@ -234,6 +250,7 @@ async function buildRdvResponse(res, workspace, workspaceId) {
     const evolution = rdv_moisP.length > 0
         ? (((rdv_mois.length - rdv_moisP.length) / rdv_moisP.length) * 100).toFixed(1) + "%"
         : "—";
+    const journal = await getJournal(workspaceId);
 
     res.json({
         success: true,
@@ -248,6 +265,7 @@ async function buildRdvResponse(res, workspace, workspaceId) {
         performance: { revenus_mois: "0.00", commandes_mois: rdv_mois.length, evolution },
         commandes,
         clients: [],
+        journal,
     });
 }
 

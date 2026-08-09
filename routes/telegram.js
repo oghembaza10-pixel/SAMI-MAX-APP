@@ -8,6 +8,7 @@ const orchestrator = require("../brain/orchestrator");
 const planner      = require("../brain/planner");
 const memory       = require("../brain/memory");
 const db           = require("../services/db");
+const socketService = require("../services/socketService");
 
 const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
@@ -328,6 +329,7 @@ async function handleOrderFlow(chatId, text, name, lang) {
                 [orderId, workspaceId, s.name || "Inconnu", s.telephone || "", text, s.produit || ""]
             );
             console.log(`✅ Commande ${orderId} créée avec succès sur workspace "${workspaceId}"`);
+            socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
         } catch (createErr) {
             console.error(`❌ Échec création commande ${orderId} :`, createErr.message);
         }
@@ -402,6 +404,7 @@ async function handleRdvFlow(chatId, text, name, lang) {
                 [workspaceId, s.name || "Inconnu", s.telephone, s.motif, s.dateRdv]
             );
             console.log(`✅ Rendez-vous ${rdvId} créé pour workspace "${workspaceId}"`);
+            socketService.emitToShop(workspaceId, "nouveau-rdv", { id: rdvId });
         } catch (err) {
             console.error(`❌ Échec création rendez-vous :`, err.message);
         }
@@ -456,27 +459,31 @@ router.post("/", async (req, res) => {
 
             if (data.startsWith("confirm_")) {
                 const orderId = data.replace("confirm_", "");
-                await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1`, [orderId]);
+                const rows = await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1 RETURNING workspace_id`, [orderId]);
                 await orchestrator.process({ type: "order.confirmed", shop: "", payload: { orderId, chatId } });
+                socketService.emitToShop(rows[0]?.workspace_id, "commande-confirmee", { id: orderId });
                 await reply(chatId, tr(lang, "commandeConfirmee", orderId));
                 return;
             }
             if (data.startsWith("cancel_")) {
                 const orderId = data.replace("cancel_", "");
-                await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [orderId]);
+                const rows = await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1 RETURNING workspace_id`, [orderId]);
                 await orchestrator.process({ type: "order.cancelled.telegram", shop: "", payload: { orderId, chatId } });
+                socketService.emitToShop(rows[0]?.workspace_id, "commande-annulee", { id: orderId });
                 await reply(chatId, tr(lang, "commandeAnnuleeId", orderId));
                 return;
             }
             if (data.startsWith("rdvconfirm_")) {
                 const rdvId = data.replace("rdvconfirm_", "");
-                await db.query(`UPDATE rendez_vous SET statut = 'confirmé' WHERE id = $1`, [rdvId.replace("RDV-", "")]);
+                const rows = await db.query(`UPDATE rendez_vous SET statut = 'confirmé' WHERE id = $1 RETURNING workspace_id`, [rdvId.replace("RDV-", "")]);
+                socketService.emitToShop(rows[0]?.workspace_id, "rdv-confirme", { id: rdvId });
                 await reply(chatId, tr(lang, "rdvConfirme", rdvId));
                 return;
             }
             if (data.startsWith("rdvcancel_")) {
                 const rdvId = data.replace("rdvcancel_", "");
-                await db.query(`UPDATE rendez_vous SET statut = 'annulé' WHERE id = $1`, [rdvId.replace("RDV-", "")]);
+                const rows = await db.query(`UPDATE rendez_vous SET statut = 'annulé' WHERE id = $1 RETURNING workspace_id`, [rdvId.replace("RDV-", "")]);
+                socketService.emitToShop(rows[0]?.workspace_id, "rdv-annule", { id: rdvId });
                 await reply(chatId, tr(lang, "rdvAnnule", rdvId));
                 return;
             }

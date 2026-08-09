@@ -22,7 +22,7 @@ const TOOLS = [
     { id: "tiktok",       label: "TikTok",                 icon: "music",          color: "#010101", available: true, mode: "impression" },
     { id: "gmail",        label: "Gmail",                  icon: "mail",           color: "#EA4335", available: true, mode: "impression" },
     { id: "google",       label: "Google",                 icon: "chrome",         color: "#4285F4", available: true, mode: "impression" },
-    { id: "whatsapp",     label: "WhatsApp Business",      icon: "message-circle", color: "#25D366", available: true, mode: "impression" },
+    { id: "whatsapp",     label: "WhatsApp Business",      icon: "message-circle", color: "#25D366", available: true, mode: "transporteur", emoji: "💬", purpose: "pour recevoir tes messages et commandes clients" },
     { id: "linkedin",     label: "LinkedIn",               icon: "linkedin",       color: "#0A66C2", available: true, mode: "impression" },
 
     { id: "yalidine",     label: "Yalidine",               icon: "truck", color: "#F5A623", available: true, mode: "transporteur" },
@@ -245,6 +245,7 @@ router.post("/discord", requireAuth, async (req, res) => {
 const TRANSPORTEUR_TOOLS = [
     "yalidine", "amana", "ctm", "dhl", "aramex",
     "colissimo", "chronopost", "mondialrelay", "dpd", "ups",
+    "whatsapp",
 ];
 
 TRANSPORTEUR_TOOLS.forEach(toolId => {
@@ -316,13 +317,12 @@ TRANSPORTEUR_TOOLS.forEach(toolId => {
 // ── MODE IMPRESSION — YouTube, TikTok, Gmail, Google, WhatsApp, LinkedIn ──
 // Pas de vraie API branchée : le client colle un identifiant simple,
 // juste pour l'affichage "connecté" en attendant les permissions officielles.
-const IMPRESSION_TOOLS = ["youtube", "tiktok", "gmail", "google", "whatsapp", "linkedin"];
+const IMPRESSION_TOOLS = ["youtube", "tiktok", "gmail", "google", "linkedin"];
 const IMPRESSION_FIELD_LABEL = {
     youtube: "Lien ou @pseudo de ta chaîne YouTube",
     tiktok: "@pseudo TikTok",
     gmail: "Adresse Gmail",
     google: "Adresse Gmail liée à Google",
-    whatsapp: "Numéro WhatsApp Business",
     linkedin: "Lien de ton profil ou page LinkedIn",
 };
 

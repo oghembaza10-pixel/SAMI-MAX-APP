@@ -12,7 +12,7 @@
     <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:460px;width:100%;">
 
       <div style="text-align:center;margin-bottom:24px;">
-        <div style="font-size:3rem;">🚚</div>
+        <div style="font-size:3rem;"><%= tool.emoji || "🚚" %></div>
         <h2 style="color:#fff;margin-top:10px;">Connecter <%= tool.label %></h2>
         <% if (actif) { %>
           <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ Ta clé perso est active</span>
@@ -20,7 +20,11 @@
       </div>
 
       <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:14px;margin-bottom:20px;font-size:0.8rem;color:#999;line-height:1.6;">
-        ℹ️ <b>Optionnel.</b> Sans clé perso, SAMII utilise automatiquement le compte <%= tool.label %> global d'OG Empire pour suivre tes colis. Ajoute ta propre clé uniquement si tu as ton propre compte <%= tool.label %> et que tu préfères qu'elle soit utilisée à la place.
+        <% if (tool.purpose) { %>
+          ℹ️ Connecte ton propre compte <%= tool.label %> <%= tool.purpose %>. Tes identifiants restent liés à ton espace, personne d'autre n'y a accès.
+        <% } else { %>
+          ℹ️ <b>Optionnel.</b> Sans clé perso, SAMII utilise automatiquement le compte <%= tool.label %> global d'OG Empire pour suivre tes colis. Ajoute ta propre clé uniquement si tu as ton propre compte <%= tool.label %> et que tu préfères qu'elle soit utilisée à la place.
+        <% } %>
       </div>
 
       <% if (error) { %>
@@ -38,7 +42,7 @@
 
         <button type="submit"
                 style="display:block;width:100%;padding:13px;background:<%= tool.color %>;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
-          🚚 Utiliser ma clé <%= tool.label %>
+          <%= tool.emoji || "🚚" %> Utiliser ma clé <%= tool.label %>
         </button>
       </form>
 

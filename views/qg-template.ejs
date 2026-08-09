@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/qg-style.css?v=2">
 </head>
-<body data-shop="<%= shop %>">
+<body data-shop="<%= shop %>" data-workspace-id="<%= workspaceId %>">
 <div class="qg-grade-bar">
     <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
     <span class="qg-grade-bar__nom" id="grade-nom">SOLDAT</span>
@@ -219,6 +219,15 @@
                 <span class="qg-card__value" id="perf-evolution">—</span>
                 <span class="qg-card__label" data-i18n="qg.performance.vsLastMonth">vs mois dernier</span>
             </article>
+        </section>
+        <div class="qg-section-title">
+            <i data-lucide="radio"></i>
+            <span>Activité en direct</span>
+        </div>
+        <section class="qg-table-section">
+            <ul id="activite-list" style="list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto;">
+                <li style="padding:12px;color:#888;font-size:.85rem;">Chargement...</li>
+            </ul>
         </section>
         <div class="qg-section-title">
             <i data-lucide="shopping-bag"></i>
