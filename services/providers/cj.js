@@ -89,8 +89,6 @@ async function getAccessToken() {
     }
 
     accessToken = token;
-
-    // On renouvelle avant expiration réelle
     accessTokenExpiresAt =
         Date.now() + 50 * 60 * 1000;
 
@@ -146,109 +144,211 @@ async function getCategories() {
 }
 
 // ============================================================================
-// PRODUITS — LISTE
+// PRODUITS — LISTE V2
 // ============================================================================
 
 async function listProducts({
-  page = 1,
-  size = 20,
-  keyword = '',
-  categoryId = '',
-  warehouse = '',
-  countryCode = '',
-  productType = '',
-  hasVideo = '',
-  sort = ''
+    page = 1,
+    size = 20,
+    keyword = "",
+    categoryId = "",
+    countryCode = "",
+    startSellPrice = "",
+    endSellPrice = "",
+    productType = "",
+    productFlag = "",
+    startWarehouseInventory = "",
+    endWarehouseInventory = "",
+    verifiedWarehouse = "",
+    zonePlatform = "",
+    hasCertification = "",
+    customization = "",
+    orderBy = 0,
+    sort = "desc"
 } = {}) {
 
-  const params = new URLSearchParams({
-    pageNum: String(page),
-    pageSize: String(size)
-  });
+    const params = new URLSearchParams({
+        page: String(page),
+        size: String(size),
+        orderBy: String(orderBy),
+        sort: sort,
+        features: [
+            "enable_description",
+            "enable_category",
+            "enable_combine",
+            "enable_video"
+        ].join(",")
+    });
 
-  if (keyword) params.set('productNameEn', keyword);
-  if (categoryId) params.set('categoryId', categoryId);
-  if (warehouse) params.set('warehouse', warehouse);
-  if (countryCode) params.set('countryCode', countryCode);
-  if (productType) params.set('productType', productType);
-  if (hasVideo !== '') params.set('hasVideo', String(hasVideo));
-  if (sort) params.set('sort', sort);
+    if (keyword) {
+        params.set("keyWord", keyword);
+    }
 
-  return request(`/product/listV2?${params.toString()}`);
+    if (categoryId) {
+        params.set("categoryId", categoryId);
+    }
+
+    if (countryCode) {
+        params.set("countryCode", countryCode);
+    }
+
+    if (startSellPrice !== "") {
+        params.set(
+            "startSellPrice",
+            String(startSellPrice)
+        );
+    }
+
+    if (endSellPrice !== "") {
+        params.set(
+            "endSellPrice",
+            String(endSellPrice)
+        );
+    }
+
+    if (productType !== "") {
+        params.set(
+            "productType",
+            String(productType)
+        );
+    }
+
+    if (productFlag !== "") {
+        params.set(
+            "productFlag",
+            String(productFlag)
+        );
+    }
+
+    if (startWarehouseInventory !== "") {
+        params.set(
+            "startWarehouseInventory",
+            String(startWarehouseInventory)
+        );
+    }
+
+    if (endWarehouseInventory !== "") {
+        params.set(
+            "endWarehouseInventory",
+            String(endWarehouseInventory)
+        );
+    }
+
+    if (verifiedWarehouse !== "") {
+        params.set(
+            "verifiedWarehouse",
+            String(verifiedWarehouse)
+        );
+    }
+
+    if (zonePlatform) {
+        params.set(
+            "zonePlatform",
+            zonePlatform
+        );
+    }
+
+    if (hasCertification !== "") {
+        params.set(
+            "hasCertification",
+            String(hasCertification)
+        );
+    }
+
+    if (customization !== "") {
+        params.set(
+            "customization",
+            String(customization)
+        );
+    }
+
+    return request(
+        `/product/listV2?${params.toString()}`
+    );
 }
 
 // ============================================================================
-// PRODUITS — TENDANCE / POPULAIRES
-// ============================================================================
-//
-// On garde plusieurs stratégies car CJ peut faire évoluer
-// les paramètres de tri.
-//
+// PRODUITS — TENDANCE
 // ============================================================================
 
 async function listTrendingProducts({
     page = 1,
     size = 20,
+    categoryId = "",
+    platform = ""
+} = {}) {
+
+    return listProducts({
+        page,
+        size,
+        categoryId,
+        productFlag: 0,
+        zonePlatform: platform,
+        orderBy: 0,
+        sort: "desc"
+    });
+}
+
+// ============================================================================
+// PRODUITS — TIKTOK
+// ============================================================================
+
+async function listTikTokProducts({
+    page = 1,
+    size = 20,
     categoryId = ""
 } = {}) {
 
-    const attempts = [
-        {
-            pageNum: page,
-            pageSize: size,
-            categoryId,
-            sort: "sales"
-        },
-        {
-            pageNum: page,
-            pageSize: size,
-            categoryId,
-            sort: "orders"
-        },
-        {
-            pageNum: page,
-            pageSize: size,
-            categoryId
-        }
-    ];
+    return listProducts({
+        page,
+        size,
+        categoryId,
+        zonePlatform: "tiktok",
+        orderBy: 0,
+        sort: "desc"
+    });
+}
 
-    let lastError = null;
+// ============================================================================
+// PRODUITS — VIDÉO
+// ============================================================================
 
-    for (const paramsObject of attempts) {
+async function listVideoProducts({
+    page = 1,
+    size = 20,
+    categoryId = ""
+} = {}) {
 
-        try {
+    return listProducts({
+        page,
+        size,
+        categoryId,
+        productType: 10,
+        orderBy: 0,
+        sort: "desc"
+    });
+}
 
-            const params = new URLSearchParams();
+// ============================================================================
+// PRODUITS — TENDANCE TIKTOK + VIDÉO
+// ============================================================================
 
-            Object.entries(paramsObject).forEach(
-                ([key, value]) => {
+async function listTrendingTikTokProducts({
+    page = 1,
+    size = 20,
+    categoryId = ""
+} = {}) {
 
-                    if (
-                        value !== undefined &&
-                        value !== null &&
-                        value !== ""
-                    ) {
-                        params.set(
-                            key,
-                            String(value)
-                        );
-                    }
-
-                }
-            );
-
-            const result = await request(
-                `/product/list?${params.toString()}`
-            );
-
-            return result;
-
-        } catch (error) {
-            lastError = error;
-        }
-    }
-
-    throw lastError;
+    return listProducts({
+        page,
+        size,
+        categoryId,
+        productFlag: 0,
+        zonePlatform: "tiktok",
+        productType: 10,
+        orderBy: 0,
+        sort: "desc"
+    });
 }
 
 // ============================================================================
@@ -265,6 +365,23 @@ async function getProduct(pid) {
 
     return request(
         `/product/query?pid=${encodeURIComponent(pid)}`
+    );
+}
+
+// ============================================================================
+// VIDÉOS PRODUIT
+// ============================================================================
+
+async function getProductVideos(pid) {
+
+    if (!pid) {
+        throw new Error(
+            "CJ getProductVideos: pid manquant"
+        );
+    }
+
+    return request(
+        `/product/queryVideosByProductId?pid=${encodeURIComponent(pid)}`
     );
 }
 
@@ -286,7 +403,7 @@ async function getVariant(vid) {
 }
 
 // ============================================================================
-// NORMALISATION DES PHOTOS
+// NORMALISATION PHOTOS
 // ============================================================================
 
 function normalizeImages(product) {
@@ -301,7 +418,8 @@ function normalizeImages(product) {
         product?.imageUrl,
         product?.images,
         product?.productImages,
-        product?.productImageList
+        product?.productImageList,
+        product?.imageList
     ];
 
     for (const source of sources) {
@@ -316,11 +434,13 @@ function normalizeImages(product) {
                     images.push(item);
                 } else if (item?.url) {
                     images.push(item.url);
+                } else if (item?.imageUrl) {
+                    images.push(item.imageUrl);
                 }
-
             }
 
         } else if (typeof source === "string") {
+
             images.push(source);
         }
     }
@@ -333,7 +453,7 @@ function normalizeImages(product) {
 }
 
 // ============================================================================
-// NORMALISATION DES VIDÉOS
+// NORMALISATION VIDÉOS
 // ============================================================================
 
 function normalizeVideos(product) {
@@ -345,7 +465,8 @@ function normalizeVideos(product) {
         product?.video,
         product?.videoUrlList,
         product?.videos,
-        product?.productVideo
+        product?.productVideo,
+        product?.videoList
     ];
 
     for (const source of sources) {
@@ -360,11 +481,13 @@ function normalizeVideos(product) {
                     videos.push(item);
                 } else if (item?.url) {
                     videos.push(item.url);
+                } else if (item?.videoUrl) {
+                    videos.push(item.videoUrl);
                 }
-
             }
 
         } else if (typeof source === "string") {
+
             videos.push(source);
         }
     }
@@ -386,6 +509,7 @@ async function getProductVariants(product) {
         product?.variants ||
         product?.variantList ||
         product?.productVariantList ||
+        product?.variantListData ||
         [];
 
     if (!Array.isArray(variants)) {
@@ -398,10 +522,13 @@ async function getProductVariants(product) {
 
         const vid =
             variant?.vid ||
-            variant?.variantId;
+            variant?.variantId ||
+            variant?.variantID;
 
         if (!vid) {
+
             result.push(variant);
+
             continue;
         }
 
@@ -417,13 +544,39 @@ async function getProductVariants(product) {
                     detail
             });
 
-        } catch {
+        } catch (error) {
 
-            result.push(variant);
+            result.push({
+                ...variant,
+                variant_error:
+                    error.message
+            });
         }
     }
 
     return result;
+}
+
+// ============================================================================
+// RÉCUPÉRATION DES VIDÉOS
+// ============================================================================
+
+async function getProductVideosSafe(pid) {
+
+    try {
+
+        const result =
+            await getProductVideos(pid);
+
+        return normalizeVideos(
+            result?.data ||
+            result
+        );
+
+    } catch {
+
+        return [];
+    }
 }
 
 // ============================================================================
@@ -444,16 +597,26 @@ async function normalizeProduct(product) {
     const images =
         normalizeImages(data);
 
-    const videos =
+    let videos =
         normalizeVideos(data);
+
+    if (pid && !videos.length) {
+
+        videos =
+            await getProductVideosSafe(pid);
+    }
 
     const variants =
         await getProductVariants(data);
 
     return {
 
-        // Identité CJ
-        cj_pid: pid || null,
+        // --------------------------------------------------------------------
+        // IDENTITÉ CJ
+        // --------------------------------------------------------------------
+
+        cj_pid:
+            pid || null,
 
         cj_spu:
             data?.spu ||
@@ -462,11 +625,14 @@ async function normalizeProduct(product) {
 
         cj_name:
             data?.productNameEn ||
-            data?.name ||
             data?.productName ||
+            data?.name ||
             "",
 
-        // Texte
+        // --------------------------------------------------------------------
+        // INFORMATIONS PRODUIT
+        // --------------------------------------------------------------------
+
         title:
             data?.productNameEn ||
             data?.productName ||
@@ -479,28 +645,10 @@ async function normalizeProduct(product) {
             data?.productDesc ||
             "",
 
-        // Médias
-        images,
-
-        main_image:
-            images[0] || null,
-
-        videos,
-
-        // Prix
-        price:
-            data?.sellPrice ||
-            data?.price ||
-            data?.productPrice ||
+        category:
+            data?.categoryName ||
             null,
 
-        cost_price:
-            data?.costPrice ||
-            data?.supplierPrice ||
-            data?.productPrice ||
-            null,
-
-        // Catégorie CJ
         cj_category_id:
             data?.categoryId ||
             null,
@@ -509,48 +657,126 @@ async function normalizeProduct(product) {
             data?.categoryName ||
             null,
 
-        // Logistique
+        // --------------------------------------------------------------------
+        // MÉDIAS
+        // --------------------------------------------------------------------
+
+        images,
+
+        main_image:
+            images[0] ||
+            null,
+
+        videos,
+
+        has_video:
+            videos.length > 0,
+
+        // --------------------------------------------------------------------
+        // PRIX
+        // --------------------------------------------------------------------
+
+        price:
+            data?.sellPrice ??
+            data?.price ??
+            data?.productPrice ??
+            null,
+
+        cost_price:
+            data?.costPrice ??
+            data?.supplierPrice ??
+            data?.productPrice ??
+            null,
+
+        // --------------------------------------------------------------------
+        // LOGISTIQUE
+        // --------------------------------------------------------------------
+
         weight:
-            data?.weight ||
+            data?.weight ??
             null,
 
         dimensions:
-            data?.dimensions ||
+            data?.dimensions ??
             null,
 
         stock:
-            data?.stock ||
-            data?.inventory ||
+            data?.stock ??
+            data?.inventory ??
+            data?.warehouseInventory ??
             null,
 
-        // Variantes
+        // --------------------------------------------------------------------
+        // VARIANTES
+        // --------------------------------------------------------------------
+
         variants,
 
-        // Fournisseur
+        variants_count:
+            variants.length,
+
+        // --------------------------------------------------------------------
+        // FOURNISSEUR
+        // --------------------------------------------------------------------
+
         supplier:
             data?.supplierName ||
             data?.supplier ||
             "CJ Dropshipping",
 
-        // Avis / statistiques si fournis par CJ
+        // --------------------------------------------------------------------
+        // STATISTIQUES
+        // --------------------------------------------------------------------
+
         rating:
-            data?.rating ||
-            data?.score ||
+            data?.rating ??
+            data?.score ??
             null,
 
         review_count:
-            data?.reviewCount ||
-            data?.reviews ||
+            data?.reviewCount ??
+            data?.reviews ??
             null,
 
         sales:
-            data?.sales ||
-            data?.salesVolume ||
-            data?.orderCount ||
+            data?.sales ??
+            data?.salesVolume ??
+            data?.orderCount ??
             null,
 
-        // Toutes les données originales restent conservées
-        raw: data
+        // --------------------------------------------------------------------
+        // INFORMATIONS SUPPLÉMENTAIRES
+        // --------------------------------------------------------------------
+
+        sku:
+            data?.sku ||
+            data?.productSku ||
+            null,
+
+        brand:
+            data?.brandName ||
+            data?.brand ||
+            null,
+
+        country:
+            data?.countryCode ||
+            data?.country ||
+            null,
+
+        warehouse:
+            data?.warehouse ||
+            null,
+
+        certification:
+            data?.certification ||
+            null,
+
+        // --------------------------------------------------------------------
+        // DONNÉES CJ ORIGINALES
+        // --------------------------------------------------------------------
+
+        raw:
+            data
     };
 }
 
@@ -564,6 +790,76 @@ async function getFullProduct(pid) {
         await getProduct(pid);
 
     return normalizeProduct(product);
+}
+
+// ============================================================================
+// EXTRACTION DES PRODUITS DE LA RÉPONSE V2
+// ============================================================================
+
+function extractProductRows(result) {
+
+    const content =
+        result?.data?.content;
+
+    if (Array.isArray(content)) {
+
+        const rows = [];
+
+        for (const item of content) {
+
+            if (
+                Array.isArray(
+                    item?.productList
+                )
+            ) {
+
+                rows.push(
+                    ...item.productList
+                );
+
+            } else if (
+                item?.pid ||
+                item?.productId ||
+                item?.id
+            ) {
+
+                rows.push(item);
+            }
+        }
+
+        if (rows.length) {
+            return rows;
+        }
+    }
+
+    if (
+        Array.isArray(
+            result?.data?.productList
+        )
+    ) {
+
+        return result.data.productList;
+    }
+
+    if (
+        Array.isArray(
+            result?.data?.list
+        )
+    ) {
+
+        return result.data.list;
+    }
+
+    if (
+        Array.isArray(
+            result?.data
+        )
+    ) {
+
+        return result.data;
+    }
+
+    return [];
 }
 
 // ============================================================================
@@ -586,14 +882,7 @@ async function getFullProductList({
         });
 
     const rows =
-        result?.data?.list ||
-        result?.data?.content ||
-        result?.data ||
-        [];
-
-    if (!Array.isArray(rows)) {
-        return [];
-    }
+        extractProductRows(result);
 
     const products = [];
 
@@ -616,23 +905,22 @@ async function getFullProductList({
         } catch (error) {
 
             products.push({
-                ...normalizeProduct(row),
-                detail_error: error.message
+                ...await normalizeProduct(row),
+                detail_error:
+                    error.message
             });
-
         }
     }
 
-    return products;
+    return {
+        success: true,
+        total: products.length,
+        products
+    };
 }
 
 // ============================================================================
 // IMPORT TENDANCE
-// ============================================================================
-//
-// Cette fonction est celle que ton futur endpoint d'import pourra appeler.
-// Elle récupère les produits puis les enrichit.
-//
 // ============================================================================
 
 async function importTrendingProducts({
@@ -649,18 +937,7 @@ async function importTrendingProducts({
         });
 
     const rows =
-        result?.data?.list ||
-        result?.data?.content ||
-        result?.data ||
-        [];
-
-    if (!Array.isArray(rows)) {
-        return {
-            success: true,
-            total: 0,
-            products: []
-        };
-    }
+        extractProductRows(result);
 
     const products = [];
 
@@ -688,7 +965,184 @@ async function importTrendingProducts({
             );
 
             products.push({
-                ...normalizeProduct(row),
+                ...await normalizeProduct(row),
+                detail_error:
+                    error.message
+            });
+        }
+    }
+
+    return {
+        success: true,
+        total: products.length,
+        products
+    };
+}
+
+// ============================================================================
+// IMPORT TIKTOK
+// ============================================================================
+
+async function importTikTokProducts({
+    page = 1,
+    size = 20,
+    categoryId = ""
+} = {}) {
+
+    const result =
+        await listTikTokProducts({
+            page,
+            size,
+            categoryId
+        });
+
+    const rows =
+        extractProductRows(result);
+
+    const products = [];
+
+    for (const row of rows) {
+
+        const pid =
+            row?.pid ||
+            row?.productId ||
+            row?.id;
+
+        if (!pid) continue;
+
+        try {
+
+            products.push(
+                await getFullProduct(pid)
+            );
+
+        } catch (error) {
+
+            console.warn(
+                `⚠️ CJ TikTok ${pid}:`,
+                error.message
+            );
+
+            products.push({
+                ...await normalizeProduct(row),
+                detail_error:
+                    error.message
+            });
+        }
+    }
+
+    return {
+        success: true,
+        total: products.length,
+        products
+    };
+}
+
+// ============================================================================
+// IMPORT PRODUITS VIDÉO
+// ============================================================================
+
+async function importVideoProducts({
+    page = 1,
+    size = 20,
+    categoryId = ""
+} = {}) {
+
+    const result =
+        await listVideoProducts({
+            page,
+            size,
+            categoryId
+        });
+
+    const rows =
+        extractProductRows(result);
+
+    const products = [];
+
+    for (const row of rows) {
+
+        const pid =
+            row?.pid ||
+            row?.productId ||
+            row?.id;
+
+        if (!pid) continue;
+
+        try {
+
+            products.push(
+                await getFullProduct(pid)
+            );
+
+        } catch (error) {
+
+            console.warn(
+                `⚠️ CJ vidéo ${pid}:`,
+                error.message
+            );
+
+            products.push({
+                ...await normalizeProduct(row),
+                detail_error:
+                    error.message
+            });
+        }
+    }
+
+    return {
+        success: true,
+        total: products.length,
+        products
+    };
+}
+
+// ============================================================================
+// IMPORT TENDANCE TIKTOK
+// ============================================================================
+
+async function importTrendingTikTokProducts({
+    page = 1,
+    size = 20,
+    categoryId = ""
+} = {}) {
+
+    const result =
+        await listTrendingTikTokProducts({
+            page,
+            size,
+            categoryId
+        });
+
+    const rows =
+        extractProductRows(result);
+
+    const products = [];
+
+    for (const row of rows) {
+
+        const pid =
+            row?.pid ||
+            row?.productId ||
+            row?.id;
+
+        if (!pid) continue;
+
+        try {
+
+            products.push(
+                await getFullProduct(pid)
+            );
+
+        } catch (error) {
+
+            console.warn(
+                `⚠️ CJ tendance TikTok ${pid}:`,
+                error.message
+            );
+
+            products.push({
+                ...await normalizeProduct(row),
                 detail_error:
                     error.message
             });
@@ -714,21 +1168,30 @@ module.exports = {
     // Catégories
     getCategories,
 
-    // Recherche / catalogue
+    // Catalogue V2
     listProducts,
     listTrendingProducts,
+    listTikTokProducts,
+    listVideoProducts,
+    listTrendingTikTokProducts,
 
-    // Produit
+    // Produits
     getProduct,
     getFullProduct,
     getFullProductList,
+
+    // Vidéos
+    getProductVideos,
 
     // Variantes
     getVariant,
     getProductVariants,
 
-    // Import
+    // Imports
     importTrendingProducts,
+    importTikTokProducts,
+    importVideoProducts,
+    importTrendingTikTokProducts,
 
     // Normalisation
     normalizeProduct,
