@@ -420,8 +420,52 @@ async function getVariant(vid) {
 }
 
 // ============================================================================
-// NORMALISATION PHOTOS
+// NORMALISATION PHOTOS / VIDÉOS — helpers communs
 // ============================================================================
+
+// CJ renvoie parfois un champ "liste d'URLs" comme un texte JSON
+// (ex: productImage = '["url1","url2"]') plutôt qu'un vrai tableau. Sans ce
+// décodage, ce texte entier était utilisé tel quel comme URL d'image/vidéo
+// (donc une URL invalide, image cassée côté navigateur).
+function collectUrlsFromSource(list, source, urlKeys) {
+
+    if (!source) return;
+
+    if (Array.isArray(source)) {
+
+        for (const item of source) {
+
+            if (typeof item === "string") {
+                list.push(item);
+            } else {
+                for (const key of urlKeys) {
+                    if (item?.[key]) { list.push(item[key]); break; }
+                }
+            }
+        }
+
+        return;
+    }
+
+    if (typeof source === "string") {
+
+        const trimmed = source.trim();
+
+        if (trimmed.startsWith("[")) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed)) {
+                    collectUrlsFromSource(list, parsed, urlKeys);
+                    return;
+                }
+            } catch {
+                // pas du JSON valide : on la traite comme une URL simple ci-dessous
+            }
+        }
+
+        list.push(source);
+    }
+}
 
 function normalizeImages(product) {
 
@@ -440,26 +484,7 @@ function normalizeImages(product) {
     ];
 
     for (const source of sources) {
-
-        if (!source) continue;
-
-        if (Array.isArray(source)) {
-
-            for (const item of source) {
-
-                if (typeof item === "string") {
-                    images.push(item);
-                } else if (item?.url) {
-                    images.push(item.url);
-                } else if (item?.imageUrl) {
-                    images.push(item.imageUrl);
-                }
-            }
-
-        } else if (typeof source === "string") {
-
-            images.push(source);
-        }
+        collectUrlsFromSource(images, source, ["url", "imageUrl"]);
     }
 
     return [
@@ -487,26 +512,7 @@ function normalizeVideos(product) {
     ];
 
     for (const source of sources) {
-
-        if (!source) continue;
-
-        if (Array.isArray(source)) {
-
-            for (const item of source) {
-
-                if (typeof item === "string") {
-                    videos.push(item);
-                } else if (item?.url) {
-                    videos.push(item.url);
-                } else if (item?.videoUrl) {
-                    videos.push(item.videoUrl);
-                }
-            }
-
-        } else if (typeof source === "string") {
-
-            videos.push(source);
-        }
+        collectUrlsFromSource(videos, source, ["url", "videoUrl"]);
     }
 
     return [
