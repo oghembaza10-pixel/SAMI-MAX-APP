@@ -32,6 +32,21 @@ try {
 }
 
 router.get("/", requireAuth, (req, res) => {
+    const stripeReady = !!stripe;
+    const ccpBlock = (plan) => `
+            <div class="bill-ccp">
+                <div class="bill-ccp-label">🏦 Payer par CCP</div>
+                <div class="bill-ccp-details">
+                    Titulaire : <b>${CCP_SAMII.titulaire}</b><br>
+                    Numéro CCP : <b>${CCP_SAMII.numero}</b><br>
+                    Clé RIP : <b>${CCP_SAMII.cle}</b>
+                </div>
+                <button class="bill-btn bill-btn--ccp" data-plan-ccp="${plan}">J'ai payé, préviens l'équipe</button>
+            </div>`;
+    const stripeBlock = (plan) => stripeReady
+        ? `<button class="bill-btn bill-btn--stripe" data-plan="${plan}">Payer par carte →</button>`
+        : "";
+
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -54,11 +69,12 @@ router.get("/", requireAuth, (req, res) => {
         .bill-card li::before { content: "✓ "; color: var(--cyan-tech); }
         .bill-btn { padding: 12px; border-radius: 10px; border: none; background: var(--gold-og); color: #000; font-weight: 700; cursor: pointer; }
         .bill-btn--free { background: rgba(255,255,255,0.08); color: var(--text-main); }
-        .bill-ccp { margin-top: 10px; padding: 12px; border-radius: 10px; background: rgba(245,166,35,0.08); border: 1px solid rgba(245,166,35,0.25); }
-        .bill-ccp summary { color: #F5A623; font-size: .8rem; font-weight: 600; cursor: pointer; }
-        .bill-ccp-details { margin-top: 10px; font-size: .78rem; color: var(--text-muted); line-height: 1.6; }
+        .bill-ccp { margin-top: auto; padding: 14px; border-radius: 12px; background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3); }
+        .bill-ccp-label { color: #F5A623; font-size: .8rem; font-weight: 700; margin-bottom: 8px; }
+        .bill-ccp-details { font-size: .78rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px; }
         .bill-ccp-details b { color: #fff; }
-        .bill-btn--ccp { margin-top: 10px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(245,166,35,0.4); background: transparent; color: #F5A623; font-weight: 600; font-size: .8rem; cursor: pointer; }
+        .bill-btn--ccp { width: 100%; background: #F5A623; color: #000; }
+        .bill-btn--stripe { width: 100%; margin-top: 8px; background: rgba(255,255,255,0.08); color: var(--text-main); }
     </style>
 </head>
 <body>
@@ -88,16 +104,8 @@ router.get("/", requireAuth, (req, res) => {
                 <li>1 Forteresse offerte chaque mois</li>
                 <li>Messages SAMII illimités</li>
             </ul>
-            <button class="bill-btn" data-plan="standard">S'abonner</button>
-            <details class="bill-ccp">
-                <summary>🏦 Payer par CCP</summary>
-                <div class="bill-ccp-details">
-                    Titulaire : <b>${CCP_SAMII.titulaire}</b><br>
-                    Numéro CCP : <b>${CCP_SAMII.numero}</b><br>
-                    Clé RIP : <b>${CCP_SAMII.cle}</b>
-                </div>
-                <button class="bill-btn--ccp" data-plan-ccp="standard">J'ai payé, préviens l'équipe</button>
-            </details>
+            ${ccpBlock("standard")}
+            ${stripeBlock("standard")}
         </div>
         <div class="bill-card bill-card--pro">
             <h2>👑 Souverain</h2>
@@ -109,16 +117,8 @@ router.get("/", requireAuth, (req, res) => {
                 <li>2 Forteresse + 1 Boost offerts chaque mois</li>
                 <li>Support prioritaire</li>
             </ul>
-            <button class="bill-btn" data-plan="pro">S'abonner</button>
-            <details class="bill-ccp">
-                <summary>🏦 Payer par CCP</summary>
-                <div class="bill-ccp-details">
-                    Titulaire : <b>${CCP_SAMII.titulaire}</b><br>
-                    Numéro CCP : <b>${CCP_SAMII.numero}</b><br>
-                    Clé RIP : <b>${CCP_SAMII.cle}</b>
-                </div>
-                <button class="bill-btn--ccp" data-plan-ccp="pro">J'ai payé, préviens l'équipe</button>
-            </details>
+            ${ccpBlock("pro")}
+            ${stripeBlock("pro")}
         </div>
     </div>
 
