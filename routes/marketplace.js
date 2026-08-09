@@ -749,6 +749,23 @@ router.get("/", requireAuth, async (req, res) => {
     --border: rgba(0,217,255,.16);
 }
 
+body.light {
+    --blue: #0090c8;
+    --blue2: #0059cc;
+    --bg: #f6f4ef;
+    --panel: #ffffff;
+    --panel2: #f0f2f5;
+    --text: #0b1220;
+    --muted: #5b6472;
+    --border: rgba(0,89,204,.14);
+}
+
+body.light .search,
+body.light .icon-btn,
+body.light .product-card {
+    box-shadow: 0 1px 3px rgba(20,30,50,.06);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -1128,10 +1145,13 @@ nav {
 .subnav,
 .region-row {
     display: flex;
+    flex-wrap: nowrap;
 
     gap: 8px;
 
     overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
 
     padding: 0 24px 13px;
 
@@ -1158,6 +1178,7 @@ nav {
     color: var(--muted);
 
     text-decoration: none;
+    white-space: nowrap;
 
     font-size: 10px;
     font-weight: 800;

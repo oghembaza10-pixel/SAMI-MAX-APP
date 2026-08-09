@@ -291,6 +291,9 @@ body {
     .qg-dashboard, .qg-arsenal { padding-left: 18px; padding-right: 18px; }
     .qg-dashboard { grid-template-columns: repeat(2, 1fr); }
     .qg-arsenal { grid-template-columns: repeat(2, 1fr); }
+
+    /* L'orb SAMII ne doit pas chevaucher la barre de navigation fixe en bas */
+    .samii-orb { bottom: 78px; right: 16px; width: 46px; height: 46px; }
 }
 /* TABLE */
 .qg-table-section { overflow-x: auto; margin-bottom: 2rem; }

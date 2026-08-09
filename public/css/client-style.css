@@ -241,4 +241,7 @@ body::before {
     .qg-hero { padding: 26px 18px; }
     .qg-section-title { margin: 24px 18px 14px; }
     .qg-dashboard { padding-left: 18px; padding-right: 18px; grid-template-columns: repeat(2, 1fr); }
+
+    /* L'orb SAMII ne doit pas chevaucher la barre de navigation fixe en bas */
+    .samii-orb { bottom: 78px; right: 16px; width: 48px; height: 48px; }
 }
