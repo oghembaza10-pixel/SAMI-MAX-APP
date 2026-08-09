@@ -4,6 +4,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
+const gradeService = require("../services/gradeService");
 
 function requireAuth(req, res, next) { if (!req.session?.loggedIn) return res.redirect("/login"); next(); }
 function escapeHtml(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
@@ -405,9 +406,7 @@ router.post("/publier", requireAuth, async (req, res) => {
         );
         const publicationId = insertRes[0]?.id;
 
-        try {
-            await db.query(`UPDATE utilisateurs SET score_grade = COALESCE(score_grade,0)+5 WHERE id=$1`, [req.session.userId]);
-        } catch (grErr) { console.warn("⚠️ points :", grErr.message); }
+        await gradeService.ajouterPoints(req.session.userId, 5, "Publication Communauté");
 
         try {
             await db.query(`INSERT INTO diffusion (contenu_type, contenu_id, module_cible, auteur_id) VALUES ('publication',$1,'community',$2)`, [publicationId, req.session.userId]);

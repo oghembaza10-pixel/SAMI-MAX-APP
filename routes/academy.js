@@ -4,6 +4,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
+const gradeService = require("../services/gradeService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) {
@@ -196,6 +197,9 @@ router.post("/partager", requireAuth, async (req, res) => {
                 true
             ]
         );
+        if (req.session.userId) {
+            await gradeService.ajouterPoints(req.session.userId, 10, "Publication Academy");
+        }
         return res.json({ success: true, message: estLive ? "🔴 Ton live est programmé et visible par la communauté !" : "✅ Ressource publiée avec succès dans l'Académie !" });
     } catch (err) {
         console.error("❌ POST /academie/partager :", err.message);

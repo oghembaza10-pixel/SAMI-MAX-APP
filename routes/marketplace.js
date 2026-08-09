@@ -6,6 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
+const gradeService = require("../services/gradeService");
 
 const {
     MARKETPLACE_NAME,
@@ -5084,6 +5085,10 @@ router.post(
                     nom
                 ]
             );
+
+            if (req.session.userId) {
+                await gradeService.ajouterPoints(req.session.userId, 10, "Publication Marketplace");
+            }
 
             return res.redirect(
                 "/marketplace"

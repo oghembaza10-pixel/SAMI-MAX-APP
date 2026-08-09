@@ -7,6 +7,7 @@
 const db = require("../services/db");
 const notificationEngine = require("../engines/notificationEngine");
 const tracking = require("../services/tracking");
+const gradeService = require("../services/gradeService");
 
 const STATUTS_LISIBLES = {
     "en préparation": "Ton colis est en préparation 📦",
@@ -74,6 +75,9 @@ async function runCheck() {
                         `UPDATE commandes SET dernier_statut_suivi = $1, statut = $2 WHERE id = $3`,
                         [nouveauStatut, statutQG, c.id]
                     );
+                    if (statutQG === "livrée" && c.workspace_id) {
+                        await gradeService.ajouterPointsParWorkspace(c.workspace_id, 20, `Livraison réussie #${c.id}`);
+                    }
                 } else {
                     await db.query(
                         `UPDATE commandes SET dernier_statut_suivi = $1 WHERE id = $2`,
