@@ -429,18 +429,6 @@ router.get("/", requireAuth, async (req, res) => {
             `)
             .join("");
 
-    const subnavHtml =
-        [{ id: "tous", label: "Tout" }, ...(CATEGORIES || [])]
-            .map(c => `
-                <a
-                    href="/marketplace${c.id === "tous" ? "" : `?categorie=${encodeURIComponent(c.id)}`}"
-                    class="${(!categorie && c.id === "tous") || categorie === c.id ? "active" : ""}"
-                >
-                    ${escapeHtml(c.label)}
-                </a>
-            `)
-            .join("");
-
     // ----------------------------------------------------------------------
     // CARDS
     // ----------------------------------------------------------------------
@@ -759,23 +747,6 @@ router.get("/", requireAuth, async (req, res) => {
     --text: #f5fbff;
     --muted: #7f96a8;
     --border: rgba(0,217,255,.16);
-}
-
-body.light {
-    --blue: #0090c8;
-    --blue2: #0059cc;
-    --bg: #f6f4ef;
-    --panel: #ffffff;
-    --panel2: #f0f2f5;
-    --text: #0b1220;
-    --muted: #5b6472;
-    --border: rgba(0,89,204,.14);
-}
-
-body.light .search,
-body.light .icon-btn,
-body.light .product-card {
-    box-shadow: 0 1px 3px rgba(20,30,50,.06);
 }
 
 * {
@@ -2277,10 +2248,6 @@ nav {
         </div>
 
     </div>
-
-    <nav class="subnav">
-        ${subnavHtml}
-    </nav>
 
     <div class="region-row">
 
