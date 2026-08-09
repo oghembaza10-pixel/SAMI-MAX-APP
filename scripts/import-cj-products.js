@@ -90,8 +90,7 @@ async function getCategorySlugs() {
 
 // Affine la catégorie du thème avec le nom de catégorie réel donné par CJ,
 // uniquement si ce nom matche clairement une autre catégorie officielle.
-function refineCategory(cjCategoryName, fallback, knownSlugs) {
-    const n = (cjCategoryName || "").toLowerCase();
+function refineCategory(title, cjCategoryName, fallback, knownSlugs) {
     const rules = [
         [/(earring|jewelry|jewellery|ring|necklace|bracelet)/, "bijoux-accessoires"],
         [/(watch|wearable)/, "montres-wearables"],
@@ -121,10 +120,23 @@ function refineCategory(cjCategoryName, fallback, knownSlugs) {
         [/(car|moto|automobile)/, "automobile-moto"],
         [/(phone|mobile case)/, "telephones-accessoires"],
     ];
-    for (const [regex, slug] of rules) {
-        if (regex.test(n) && knownSlugs.has(slug)) return slug;
+
+    // Le titre est spécifique au produit ; le nom de catégorie CJ regroupe
+    // parfois plusieurs types d'articles (ex: "Shoes & Bags") — on vérifie
+    // donc le titre en priorité, la catégorie CJ seulement en repli.
+    function matchAgainst(text) {
+        const n = (text || "").toLowerCase();
+        for (const [regex, slug] of rules) {
+            if (regex.test(n) && knownSlugs.has(slug)) return slug;
+        }
+        return null;
     }
-    return knownSlugs.has(fallback) ? fallback : "tendances-nouveautes";
+
+    return (
+        matchAgainst(title) ||
+        matchAgainst(cjCategoryName) ||
+        (knownSlugs.has(fallback) ? fallback : "tendances-nouveautes")
+    );
 }
 
 // CJ renvoie parfois le prix d'un produit à variantes sous forme de plage
@@ -190,7 +202,7 @@ async function importTheme(theme, knownSlugs) {
         const cost = parseCjPrice(product.cost_price ?? product.price);
         if (!product.title || cost === null) { skipped++; continue; }
 
-        const categorie = refineCategory(product.category, theme.categorie, knownSlugs);
+        const categorie = refineCategory(product.title, product.category, theme.categorie, knownSlugs);
         const prix = priceFor(cost);
 
         // Le CDN CJ bloque le hotlinking direct (<img src> externe → 403) :
