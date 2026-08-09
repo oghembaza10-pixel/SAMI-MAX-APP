@@ -597,6 +597,22 @@ body {
     margin: 0 auto;
 }
 
+.connect-create-shop-cta {
+    max-width: 1200px; margin: 0 auto 26px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--gold-og) 14%, transparent), var(--bg-panel));
+    border: var(--border-gold); border-radius: 18px;
+    padding: 26px 28px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+}
+.connect-create-shop-cta__text h2 { font-size: 1.15rem; color: #fff; margin-bottom: 6px; }
+.connect-create-shop-cta__text p { font-size: .85rem; color: var(--text-muted); max-width: 480px; }
+.connect-create-shop-cta__btn { white-space: nowrap; padding: 13px 24px; font-size: .92rem; }
+
+@media (max-width: 768px) {
+    .connect-create-shop-cta { padding: 20px; flex-direction: column; align-items: flex-start; }
+    .connect-create-shop-cta__btn { width: 100%; }
+}
+
 .connect-tool-card {
     position: relative;
     background: var(--bg-panel);
