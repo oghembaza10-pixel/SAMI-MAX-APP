@@ -218,7 +218,6 @@ async function getMetierWorkspace(workspaceId) {
 }
 
 function genOrderId() { return `TG-${Date.now().toString().slice(-6)}`; }
-function genRdvId() { return `RDV-${Date.now().toString().slice(-6)}`; }
 
 async function getProduitsDuWorkspace(workspaceId) {
     try {
@@ -391,22 +390,29 @@ async function handleRdvFlow(chatId, text, name, lang) {
     }
 
     if (step === "rdv_telephone") {
-        const rdvId = genRdvId();
         const s = { ...session, telephone: text };
         let workspaceId = await getClientWorkspace(chatId);
         if (!workspaceId) workspaceId = await getWorkspaceByChatId(chatId);
         const adminChatId = await getAdminChatId(workspaceId);
 
+        let rdvId = null;
         try {
-            await db.query(
+            const rows = await db.query(
                 `INSERT INTO rendez_vous (workspace_id, client_nom, client_telephone, motif, date_rdv, statut, source)
-                 VALUES ($1, $2, $3, $4, $5, 'en_attente', 'telegram')`,
+                 VALUES ($1, $2, $3, $4, $5, 'en_attente', 'telegram') RETURNING id`,
                 [workspaceId, s.name || "Inconnu", s.telephone, s.motif, s.dateRdv]
             );
+            rdvId = `RDV-${rows[0].id}`;
             console.log(`✅ Rendez-vous ${rdvId} créé pour workspace "${workspaceId}"`);
             socketService.emitToShop(workspaceId, "nouveau-rdv", { id: rdvId });
         } catch (err) {
             console.error(`❌ Échec création rendez-vous :`, err.message);
+        }
+
+        if (!rdvId) {
+            await reply(chatId, tr(lang, "rdvEnregistre", "?"));
+            memory.clear(chatId);
+            return true;
         }
 
         if (adminChatId) {
