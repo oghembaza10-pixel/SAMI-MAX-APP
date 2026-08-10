@@ -774,6 +774,12 @@ router.get("/", requireAuth, async (req, res) => {
     --text: #f5fbff;
     --muted: #7f96a8;
     --border: rgba(0,217,255,.16);
+
+    --gold: #D4A94A;
+    --gold-bright: #F2CC78;
+    --gold-soft: rgba(212,169,74,.09);
+    --gold-border: rgba(212,169,74,.35);
+    --silver-bright: #E8ECEF;
 }
 
 * {
@@ -1393,7 +1399,7 @@ nav {
 
     border:
         1px solid
-        rgba(0,217,255,.10);
+        var(--gold-border);
 
     border-radius: 17px;
 
@@ -1406,16 +1412,26 @@ nav {
         box-shadow .2s;
 }
 
+.product-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+    box-shadow: inset 0 0 0 1px rgba(212,169,74,.12);
+}
+
 .product-card:hover {
     transform:
         translateY(-3px);
 
     border-color:
-        rgba(0,217,255,.28);
+        var(--blue);
 
     box-shadow:
-        0 18px 50px
-        rgba(0,0,0,.22);
+        0 18px 50px rgba(0,0,0,.28),
+        0 0 26px rgba(0,217,255,.12);
 }
 
 .product-card.is-ai {
@@ -1491,7 +1507,8 @@ nav {
 }
 
 .product-category {
-    color: var(--text);
+    color: var(--gold-bright);
+    border: 1px solid var(--gold-border);
 }
 
 .product-ai {
@@ -1530,7 +1547,8 @@ nav {
 
 .favorite-btn.saved,
 .save-btn.saved {
-    color: var(--blue);
+    color: var(--gold-bright);
+    border-color: var(--gold-border);
 }
 
 .photo-dots {
@@ -1718,10 +1736,12 @@ nav {
 }
 
 .product-price {
-    color: var(--blue);
+    color: var(--gold-bright);
 
     font-size: 16px;
     font-weight: 950;
+
+    text-shadow: 0 0 16px rgba(212,169,74,.22);
 }
 
 .save-btn {
@@ -3341,7 +3361,7 @@ a {
 .product-card {
     border:
         1px solid
-        rgba(0,217,255,.16);
+        rgba(212,169,74,.35);
 
     border-radius: 16px;
 
@@ -3378,7 +3398,7 @@ a {
 }
 
 .product-price {
-    color: #00d9ff;
+    color: #F2CC78;
 
     font-weight: 800;
 }
