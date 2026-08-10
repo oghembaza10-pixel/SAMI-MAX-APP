@@ -26,6 +26,11 @@ router.get("/", (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Créer un compte — SAMII</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#070809">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="SAMII OS">
     <style>
         *{ box-sizing:border-box; margin:0; padding:0; }
         body{ background:#0b0b0b; font-family:Arial; display:flex; justify-content:center; align-items:center; min-height:100vh; color:white; padding:20px; }
