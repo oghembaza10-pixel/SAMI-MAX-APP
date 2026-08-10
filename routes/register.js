@@ -8,6 +8,7 @@ const router  = express.Router();
 const gmail   = require("../services/gmail");
 const CONFIG  = require("../config");
 const db      = require("../services/db");
+const gradeService = require("../services/gradeService");
 
 const TOKEN_VALIDITE_HEURES = 24;
 
@@ -182,8 +183,15 @@ router.get("/confirmer", async (req, res) => {
 
 // ── POST /register ───────────────────────────────────────────────
 router.post("/", async (req, res) => {
-    const { nom, prenom, email, telephone, metier, password, type_compte } = req.body;
+    const { nom, prenom, email, telephone, metier, password, type_compte, theme_visuel } = req.body;
     const typeCompte = type_compte === "marchand" ? "marchand" : "client";
+
+    // Un nouveau compte démarre toujours au grade Soldat : seuls les thèmes
+    // débloqués dès le départ sont acceptés à l'inscription (pas de triche
+    // possible en forçant "aventurier"/"gaming" via une requête directe).
+    const themeChoisi = gradeService.themeEstDebloque(theme_visuel, "Soldat")
+        ? theme_visuel
+        : "strategiste";
 
     if (!nom || !prenom || !email || !telephone || !password) {
         return res.json({ success: false, error: "Tous les champs sont obligatoires." });
@@ -244,13 +252,13 @@ router.post("/", async (req, res) => {
 
         await db.query(
             `INSERT INTO utilisateurs
-                (nom, prenom, email, telephone, metier, type_compte, password_hash, role, statut_acces, last_login, actif, email_verifie, token_verification, token_expire_le)
+                (nom, prenom, email, telephone, metier, type_compte, password_hash, role, statut_acces, last_login, actif, email_verifie, token_verification, token_expire_le, theme_visuel)
              VALUES
-                ($1, $2, $3, $4, $5, $6, $7, 'owner', 'actif', CURRENT_DATE, true, false, $8, $9)`,
+                ($1, $2, $3, $4, $5, $6, $7, 'owner', 'actif', CURRENT_DATE, true, false, $8, $9, $10)`,
             [
                 nom, prenom, email, telephone,
                 typeCompte === "marchand" ? (metier || "ecommerce") : "",
-                typeCompte, passwordHash, token, expireLe,
+                typeCompte, passwordHash, token, expireLe, themeChoisi,
             ]
         );
 

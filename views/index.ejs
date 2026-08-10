@@ -1685,9 +1685,9 @@
             background:
                 linear-gradient(
                     90deg,
-                    #D4A94A,
-                    #7f6b35 48%,
-                    #303022
+                    #8A9A5B,
+                    #6b7a4f 48%,
+                    #3a4230
                 );
         }
 
@@ -1695,9 +1695,9 @@
             background:
                 linear-gradient(
                     90deg,
-                    #4a6fa5,
-                    #9bb2cf 50%,
-                    #cfd8e8
+                    #D4A94A,
+                    #C5A059 50%,
+                    #7f6b35
                 );
         }
 
@@ -1760,6 +1760,29 @@
 
         .theme-card:has(input:checked) .theme-card__name {
             color: #fff;
+        }
+
+        .theme-card--locked {
+            cursor: not-allowed;
+            opacity: .5;
+        }
+
+        .theme-card--locked:hover {
+            transform: none;
+            border-color: rgba(255,255,255,.075);
+            background: rgba(255,255,255,.012);
+            box-shadow: none;
+        }
+
+        .theme-card--locked .theme-card__preview {
+            filter: grayscale(.6);
+        }
+
+        .theme-card__lock {
+            margin-top: 4px;
+            font-size: .58rem;
+            color: var(--text-dim);
+            font-weight: 700;
         }
 
         .btn-row {
@@ -2329,16 +2352,18 @@
                             <input type="radio" name="theme_visuel" value="sagesse">
                             <div class="theme-card__preview"></div><div class="theme-card__name">🕊️ Sagesse</div>
                         </label>
-                        <label class="theme-card theme-card--aventurier">
-                            <input type="radio" name="theme_visuel" value="aventurier">
+                        <label class="theme-card theme-card--aventurier theme-card--locked">
+                            <input type="radio" name="theme_visuel" value="aventurier" disabled>
                             <div class="theme-card__preview"></div><div class="theme-card__name">🧭 Aventurier</div>
+                            <div class="theme-card__lock">🔒 Grade Sergent</div>
                         </label>
-                        <label class="theme-card theme-card--gaming">
-                            <input type="radio" name="theme_visuel" value="gaming">
+                        <label class="theme-card theme-card--gaming theme-card--locked">
+                            <input type="radio" name="theme_visuel" value="gaming" disabled>
                             <div class="theme-card__preview"></div><div class="theme-card__name">🎮 Gaming</div>
+                            <div class="theme-card__lock">🔒 Grade Lieutenant</div>
                         </label>
                     </div>
-                    <p style="font-size:.66rem; color:var(--text-dim); margin:-6px 0 14px;">Modifiable à tout moment depuis ton espace.</p>
+                    <p style="font-size:.66rem; color:var(--text-dim); margin:-6px 0 14px;">Aventurier et Gaming se débloquent en progressant en grade — modifiable à tout moment depuis ton espace.</p>
 
                     <div class="btn-row">
                         <button type="button" class="auth-btn-back" id="btn-step2-back">← Retour</button>

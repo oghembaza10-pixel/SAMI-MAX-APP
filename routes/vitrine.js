@@ -6,6 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
+const gradeService = require("../services/gradeService");
 
 const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
 const CLOUDINARY_UPLOAD_PRESET = "MARKETPLACE OG";
@@ -283,6 +284,15 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
                 <option value="en" ${user.langue_preferee === "en" ? "selected" : ""}>Anglais</option>
             </select>
 
+            <label>Thème visuel du QG</label>
+            <select name="theme_visuel">
+                ${gradeService.THEMES.map(t => {
+                    const debloque = gradeService.themeEstDebloque(t.id, user.grade_actuel);
+                    const selected = user.theme_visuel === t.id ? "selected" : "";
+                    return `<option value="${t.id}" ${selected} ${debloque ? "" : "disabled"}>${t.emoji} ${t.label}${debloque ? "" : " — verrouillé"}</option>`;
+                }).join("")}
+            </select>
+
             <button type="submit">Enregistrer les modifications</button>
         </form>
         <div class="vm-msg" id="msg"></div>
@@ -349,11 +359,18 @@ document.getElementById("form-vitrine").addEventListener("submit", async (e) => 
 
 router.post("/modifier/moi", requireAuth, async (req, res) => {
     try {
-        const { photo_profil_url, banniere_url, bio_vitrine, pays, langue_preferee } = req.body;
+        const { photo_profil_url, banniere_url, bio_vitrine, pays, langue_preferee, theme_visuel } = req.body;
+
+        // Ne jamais faire confiance au client : un thème verrouillé envoyé
+        // via une requête forgée est ignoré, on revient au thème actuel.
+        const rows = await db.query(`SELECT grade_actuel, theme_visuel FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+        const grade = rows[0]?.grade_actuel || "Soldat";
+        const themeActuel = rows[0]?.theme_visuel || "strategiste";
+        const themeValide = gradeService.themeEstDebloque(theme_visuel, grade) ? theme_visuel : themeActuel;
 
         await db.query(
-            `UPDATE utilisateurs SET photo_profil_url = $1, banniere_url = $2, bio_vitrine = $3, pays = $4, langue_preferee = $5 WHERE id = $6`,
-            [photo_profil_url || "", banniere_url || "", bio_vitrine || "", pays || "", langue_preferee || "fr", req.session.userId]
+            `UPDATE utilisateurs SET photo_profil_url = $1, banniere_url = $2, bio_vitrine = $3, pays = $4, langue_preferee = $5, theme_visuel = $6 WHERE id = $7`,
+            [photo_profil_url || "", banniere_url || "", bio_vitrine || "", pays || "", langue_preferee || "fr", themeValide, req.session.userId]
         );
 
         res.json({ success: true });

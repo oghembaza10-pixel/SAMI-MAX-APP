@@ -27,6 +27,49 @@
     --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ==========================================================================
+   UNIVERS SAMII — 4 thèmes visuels (choisis à l'inscription, débloqués par
+   grade). Stratège = palette par défaut ci-dessus, inchangée. Les 3 autres
+   ne font que redéfinir la palette : tout le reste du fichier suit
+   automatiquement puisqu'il consomme déjà ces variables.
+   ========================================================================== */
+
+[data-theme="strategiste"] {
+    --gold-og: #8A9A5B;
+    --gold-hover: #A3B378;
+    --gold-glow: 0 0 24px rgba(138, 154, 91, 0.28);
+    --cyan-tech: #7FA8B3;
+    --cyan-glow: 0 0 22px rgba(127, 168, 179, 0.28);
+    --border-gold: 1px solid rgba(138, 154, 91, 0.25);
+}
+
+[data-theme="sagesse"] {
+    --gold-og: #C5A059;
+    --gold-hover: #E8C27A;
+    --gold-glow: 0 0 24px rgba(197, 160, 89, 0.25);
+    --cyan-tech: #5FD4FF;
+    --cyan-glow: 0 0 22px rgba(95, 212, 255, 0.28);
+    --border-gold: 1px solid rgba(197, 160, 89, 0.2);
+}
+
+[data-theme="aventurier"] {
+    --gold-og: #d8c39a;
+    --gold-hover: #e8d7b0;
+    --gold-glow: 0 0 24px rgba(216, 195, 154, 0.25);
+    --cyan-tech: #5FD4FF;
+    --cyan-glow: 0 0 22px rgba(95, 212, 255, 0.28);
+    --border-gold: 1px solid rgba(216, 195, 154, 0.22);
+}
+
+[data-theme="gaming"] {
+    --gold-og: #9d5cff;
+    --gold-hover: #b483ff;
+    --gold-glow: 0 0 24px rgba(157, 92, 255, 0.3);
+    --cyan-tech: #00e5ff;
+    --cyan-glow: 0 0 22px rgba(0, 229, 255, 0.32);
+    --border-gold: 1px solid rgba(157, 92, 255, 0.25);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body { max-width: 100%; overflow-x: hidden; }

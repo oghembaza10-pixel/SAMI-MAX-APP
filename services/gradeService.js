@@ -26,6 +26,26 @@ function gradeForScore(score) {
     return actuel;
 }
 
+// Thèmes visuels du QG — Stratège/Sagesse débloqués dès le départ (Soldat),
+// Aventurier au 3ème grade (Sergent), Gaming au 4ème grade (Lieutenant).
+const THEMES = [
+    { id: "strategiste", label: "Stratège",   emoji: "🪖", seuilIndex: 0 },
+    { id: "sagesse",     label: "Sagesse",    emoji: "🕊️", seuilIndex: 0 },
+    { id: "aventurier",  label: "Aventurier", emoji: "🧭", seuilIndex: 2 },
+    { id: "gaming",      label: "Gaming",     emoji: "🎮", seuilIndex: 3 },
+];
+
+function themeEstDebloque(themeId, grade) {
+    const theme = THEMES.find(t => t.id === themeId);
+    if (!theme) return false;
+    const idxGrade = SEUILS.findIndex(s => s.grade === (grade || "Soldat"));
+    return (idxGrade >= 0 ? idxGrade : 0) >= theme.seuilIndex;
+}
+
+function themesDebloques(grade) {
+    return THEMES.filter(t => themeEstDebloque(t.id, grade)).map(t => t.id);
+}
+
 // ── Ajoute des points à un utilisateur (par id) et recalcule son grade ──
 async function ajouterPoints(userId, points, raison) {
     if (!userId || !points) return null;
@@ -79,4 +99,12 @@ async function ajouterPointsParWorkspace(workspaceId, points, raison) {
     }
 }
 
-module.exports = { ajouterPoints, ajouterPointsParWorkspace, gradeForScore, SEUILS };
+module.exports = {
+    ajouterPoints,
+    ajouterPointsParWorkspace,
+    gradeForScore,
+    SEUILS,
+    THEMES,
+    themeEstDebloque,
+    themesDebloques,
+};

@@ -10,6 +10,7 @@ const http             = require("http");
 const { Server }       = require("socket.io");
 const CONFIG           = require("./config");
 const workspaceService = require("./services/workspaceService");
+const db                = require("./services/db");
 
 const app    = express();
 const server = http.createServer(app);
@@ -173,6 +174,14 @@ app.get("/qg", requireAuth, async (req, res) => {
             return clearWorkspaceSession(req, () => res.redirect("/hub"));
         }
 
+        let themeVisuel = "strategiste";
+        try {
+            const rows = await db.query(`SELECT theme_visuel FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+            themeVisuel = rows[0]?.theme_visuel || "strategiste";
+        } catch (err) {
+            console.error("❌ GET /qg (theme_visuel) :", err.message);
+        }
+
         res.render("qg-template", {
             workspaceId : workspace.workspaceId,
             nom         : workspace.nom,
@@ -185,6 +194,7 @@ app.get("/qg", requireAuth, async (req, res) => {
             samii       : workspace.samii       || { mode: "auto" },
             logo        : workspace.logo        || "",
             shop        : req.session.shop      || "",
+            themeVisuel,
             attente     : false,
         });
     } catch (err) {
