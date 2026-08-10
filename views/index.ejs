@@ -27,6 +27,12 @@
             --blue-glow: rgba(0,212,255,0.22);
             --blue-border: rgba(0,212,255,0.42);
 
+            --silver: #C7CDD3;
+            --silver-bright: #E8ECEF;
+            --silver-soft: rgba(199,205,211,0.08);
+            --silver-glow: rgba(199,205,211,0.18);
+            --silver-border: rgba(199,205,211,0.32);
+
             --green: #22c55e;
             --green-soft: rgba(34,197,94,0.10);
 
@@ -262,12 +268,13 @@
             border-radius: 9px;
             text-decoration: none;
             font-size: .77rem;
-            font-weight: 700;
-            color: var(--gold);
-            border: var(--border-gold);
-            background: rgba(212,169,74,.035);
+            font-weight: 800;
+            border: 1px solid var(--silver-border);
+            background-color: var(--silver-soft);
+            color: var(--silver-bright);
             cursor: pointer;
             font-family: var(--font-body);
+            text-shadow: 0 1px 0 rgba(255,255,255,.15), 0 0 16px rgba(199,205,211,.22);
         }
 
         .btn-login-top::before {
@@ -421,6 +428,24 @@
                 0 0 55px rgba(212,169,74,.07);
         }
 
+        /* Signature OG — écho du logo or/argent en miroir */
+        .hero-divider {
+            width: 92px;
+            height: 2px;
+            margin: 18px auto 20px;
+            border-radius: 2px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                var(--gold) 30%,
+                var(--silver-bright) 70%,
+                transparent
+            );
+            box-shadow:
+                0 0 14px rgba(212,169,74,.35),
+                0 0 14px rgba(199,205,211,.25);
+        }
+
         .hero-tagline {
             font-family: var(--font-mono);
             font-size: .91rem;
@@ -542,25 +567,28 @@
             position: relative;
             padding: 13px 23px;
             border-radius: 11px;
-            background: rgba(255,255,255,.018);
-            border: 1px solid rgba(212,169,74,.27);
-            color: var(--gold);
-            font-weight: 700;
+            background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012));
+            border: 1px solid var(--silver-border);
+            color: var(--silver-bright);
+            font-weight: 800;
             font-size: .84rem;
             text-decoration: none;
             cursor: pointer;
+            text-shadow: 0 1px 0 rgba(255,255,255,.15), 0 0 18px rgba(199,205,211,.22);
             box-shadow:
-                inset 0 1px 0 rgba(255,255,255,.025),
+                inset 0 1px 0 rgba(255,255,255,.06),
                 0 8px 24px rgba(0,0,0,.14);
+            transition: color .3s ease, border-color .35s ease, box-shadow .35s ease, transform .35s ease;
         }
 
         .btn-secondary:hover {
             color: var(--blue-bright);
             border-color: var(--blue-border);
             background: var(--blue-soft);
+            text-shadow: 0 0 18px rgba(0,212,255,.35);
             box-shadow:
-                0 0 22px rgba(0,212,255,.09),
-                inset 0 1px 0 rgba(255,255,255,.04);
+                0 0 22px rgba(0,212,255,.14),
+                inset 0 1px 0 rgba(255,255,255,.06);
             transform: translateY(-2px);
         }
 
@@ -2019,6 +2047,7 @@
     <section class="hero">
         <span class="hero-badge"><span class="dot"></span>SAMII OS · OPÉRATIONNEL</span>
         <h1>Bienvenue au <span class="accent">QG Mondial</span> 👋</h1>
+        <div class="hero-divider" aria-hidden="true"></div>
         <div class="hero-tagline"><b>Automatisez.</b> Développez. <b>Dominez.</b></div>
         <p class="desc">Une seule plateforme pour piloter ton commerce, connecter tes outils, et faire grandir ton empire — où que tu sois dans le monde.</p>
         <div class="hero-ctas">
