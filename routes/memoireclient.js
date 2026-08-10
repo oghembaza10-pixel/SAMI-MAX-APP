@@ -135,7 +135,7 @@ router.get("/", requireAuth, async (req, res) => {
         }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="mc-shell">
     <a href="/samii" class="mc-back">← Retour à SAMII</a>
 

@@ -144,7 +144,7 @@ router.get("/", requireAuth, async (req, res) => {
         }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="ars33-shell">
     <a href="/qg" class="ars33-back"><i data-lucide="arrow-left"></i> Retour au QG</a>
     <div class="og-lang-switch">

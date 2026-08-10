@@ -395,33 +395,33 @@ router.get("/", requireAuth, async (req, res) => {
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
 :root { 
-    --bg: #010409; 
-    --bg-2: #050d18; 
-    --panel: rgba(8, 17, 30, 0.9); 
-    --panel-2: rgba(12, 25, 42, 0.98); 
-    --text: #f0f6fc; 
-    --muted: #8b949e; 
-    --cyan: #00f0ff;
-    --cyan-glow: 0 0 25px rgba(0, 240, 255, 0.35); 
-    --gold: #f1c40f; 
-    --gold-glow: 0 0 25px rgba(241, 196, 15, 0.3);
-    --border: rgba(0, 240, 255, 0.18); 
-    --danger: #ff3366; 
-    --radius: 16px; 
-    --ease: cubic-bezier(.16, 1, .3, 1); 
+    --bg: #010409;
+    --bg-2: #050d18;
+    --panel: rgba(8, 17, 30, 0.9);
+    --panel-2: rgba(12, 25, 42, 0.98);
+    --text: #f0f6fc;
+    --muted: #8b949e;
+    --cyan: #C6CAD2;
+    --cyan-glow: 0 0 25px rgba(198, 202, 210, 0.35);
+    --gold: #D9B36C;
+    --gold-glow: 0 0 25px rgba(217, 179, 108, 0.3);
+    --border: rgba(198, 202, 210, 0.18);
+    --danger: #ff3366;
+    --radius: 16px;
+    --ease: cubic-bezier(.16, 1, .3, 1);
 }
-[data-theme="light"] { 
-    --bg: #f4f7fa; 
-    --bg-2: #e9edf2; 
-    --panel: rgba(255, 255, 255, 0.95); 
-    --panel-2: rgba(255, 255, 255, 1); 
-    --text: #0d1117; 
-    --muted: #57606a; 
-    --cyan: #0077ff;
-    --cyan-glow: 0 0 20px rgba(0, 119, 255, 0.2);
-    --gold: #b78103; 
+[data-theme="light"] {
+    --bg: #f4f7fa;
+    --bg-2: #e9edf2;
+    --panel: rgba(255, 255, 255, 0.95);
+    --panel-2: rgba(255, 255, 255, 1);
+    --text: #0d1117;
+    --muted: #57606a;
+    --cyan: #5B6470;
+    --cyan-glow: 0 0 20px rgba(91, 100, 112, 0.2);
+    --gold: #b78103;
     --gold-glow: 0 0 15px rgba(183, 129, 3, 0.2);
-    --border: rgba(0, 119, 255, 0.2); 
+    --border: rgba(91, 100, 112, 0.2);
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }

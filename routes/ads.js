@@ -41,7 +41,7 @@ router.get("/settings", requireAuth, async (req, res) => {
         .msg { text-align: center; margin-top: 14px; font-size: .85rem; color: #3ddc84; min-height: 20px; }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="shell">
     <h1>🔗 <span data-i18n="ads.settings.title">Connecter Meta Ads</span></h1>
     <p class="sub" data-i18n="ads.settings.subtitle">Ces identifiants sont propres à ce workspace.</p>
@@ -137,7 +137,7 @@ router.get("/create", requireAuth, async (req, res) => {
         .ads-note { display: flex; gap: 10px; align-items: flex-start; background: rgba(95,212,255,0.06); border: 1px solid rgba(95,212,255,0.2); border-radius: 12px; padding: 14px 16px; margin-top: 24px; font-size: .8rem; color: var(--text-muted); line-height: 1.6; }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="ads-shell">
     <a href="/qg" class="ads-back" data-i18n="ads.create.back">← Retour au QG</a>
     <div class="ads-hero">

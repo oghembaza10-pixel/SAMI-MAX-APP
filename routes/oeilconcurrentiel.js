@@ -153,7 +153,7 @@ router.get("/", requireAuth, async (req, res) => {
         }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="oeil-shell">
     <a href="/samii" class="oeil-back">← Retour à SAMII</a>
 

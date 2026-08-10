@@ -107,7 +107,7 @@ router.get("/", requireAuth, async (req, res) => {
         .me-btn-activer.done { background: #3ddc84; }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="me-shell">
     <a href="/samii" class="me-back">← Retour à SAMII</a>
 

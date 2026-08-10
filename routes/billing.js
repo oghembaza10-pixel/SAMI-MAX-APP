@@ -77,7 +77,7 @@ router.get("/", requireAuth, (req, res) => {
         .bill-btn--stripe { width: 100%; margin-top: 8px; background: rgba(255,255,255,0.08); color: var(--text-main); }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="bill-shell">
     <h1>👑 Choisis ton palier</h1>
     <p class="sub">Plus tu fais confiance à SAMII, plus il peut agir seul pour toi.</p>

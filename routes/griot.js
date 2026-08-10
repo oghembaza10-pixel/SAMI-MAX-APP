@@ -174,7 +174,7 @@ router.get("/", requireAuth, async (req, res) => {
         @media (max-width: 560px) { .griot-row { grid-template-columns: 1fr; } }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="griot-shell">
     <a href="/samii" class="griot-back">← Retour à SAMII</a>
 

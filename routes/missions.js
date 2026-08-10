@@ -168,7 +168,7 @@ router.get("/", requireAuth, async (req, res) => {
         .mission-item--done .mission-body span { color: var(--text-muted); text-decoration: line-through; }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="mission-shell">
     <a href="/samii" class="mission-back">← Retour à SAMII</a>
 

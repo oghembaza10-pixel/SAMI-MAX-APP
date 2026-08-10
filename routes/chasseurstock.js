@@ -179,7 +179,7 @@ router.get("/", requireAuth, async (req, res) => {
         }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="cs-shell">
     <a href="/samii" class="cs-back">← Retour à SAMII</a>
 

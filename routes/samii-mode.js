@@ -70,7 +70,7 @@ router.get("/mode", requireAuth, async (req, res) => {
         .mode-msg { text-align: center; margin-top: 14px; font-size: .85rem; color: #3ddc84; min-height: 20px; }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="mode-shell">
     <a href="/qg" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);text-decoration:none;font-size:.82rem;margin-bottom:16px;">← Retour au QG</a>
     <h1>Mode de SAMII</h1>

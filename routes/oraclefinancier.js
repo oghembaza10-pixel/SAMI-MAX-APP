@@ -140,7 +140,7 @@ router.get("/", requireAuth, async (req, res) => {
         }
     </style>
 </head>
-<body>
+<body data-theme="og">
 <div class="oracle-shell">
     <a href="/samii" class="oracle-back">← Retour à SAMII</a>
 
