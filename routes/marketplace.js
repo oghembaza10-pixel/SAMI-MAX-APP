@@ -507,6 +507,11 @@ router.get("/", requireAuth, async (req, res) => {
                     a.type_vendeur ===
                     "ia_marchand";
 
+                const vendeurLink =
+                    (!isAI && a.vendeur_id && a.vendeur_id !== "marchand_verified_1")
+                        ? `/vitrine/${vendeurId}`
+                        : null;
+
                 const isReal =
                     typeof id === "number" ||
                     /^\d+$/.test(
@@ -667,7 +672,7 @@ router.get("/", requireAuth, async (req, res) => {
                                 <div class="seller-info">
 
                                     <strong>
-                                        ${vendeur}
+                                        ${vendeurLink ? `<a href="${vendeurLink}" style="color:inherit;text-decoration:none;">${vendeur}</a>` : vendeur}
                                     </strong>
 
                                     <span>

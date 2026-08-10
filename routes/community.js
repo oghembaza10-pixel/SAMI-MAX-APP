@@ -84,9 +84,9 @@ router.get("/", requireAuth, async (req, res) => {
         return `
         <article class="post-card" data-post-id="${p.id}">
             <div class="post-head">
-                <div class="post-avatar">${initiales(p.prenom,p.nom)}</div>
+                <a class="post-avatar" href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${initiales(p.prenom,p.nom)}</a>
                 <div class="post-authorblock">
-                    <div class="post-author">${nomAuteur} ${p.epingle?'<i data-lucide="pin" class="pin-ic"></i>':""}</div>
+                    <div class="post-author"><a href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${nomAuteur}</a> ${p.epingle?'<i data-lucide="pin" class="pin-ic"></i>':""}</div>
                     <div class="post-meta"><span class="grade-chip ${isMarchand?"grade-chip--gold":""}">${isMarchand?"🏪":"👤"} ${grade}</span><span class="dot-sep">·</span><span>${timeAgo(p.created_at)}</span></div>
                 </div>
                 <span class="cat-badge" style="--cat-color:${cat.couleur};"><i data-lucide="${cat.icon}"></i> ${cat.label}</span>
@@ -108,8 +108,8 @@ router.get("/", requireAuth, async (req, res) => {
     }).join("") : `<div class="empty-feed"><i data-lucide="message-square-dashed"></i><h3>Aucune publication pour l'instant</h3><p>Sois le premier à partager avec la communauté SAMII.</p></div>`;
 
     const classementHtml = classement.length ? classement.map((u,i) => `
-        <div class="rank-item"><span class="rank-num rank-${i+1}">${i+1}</span><div class="rank-avatar">${initiales(u.prenom,u.nom)}</div>
-        <div class="rank-info"><strong>${escapeHtml(`${u.prenom||"Membre"} ${u.nom||""}`)}</strong><span>${escapeHtml(u.grade_actuel||"Soldat")} · ${u.score_grade||0} pts</span></div></div>`).join("") : `<p class="rank-empty">Le classement se remplira bientôt.</p>`;
+        <a class="rank-item" href="/vitrine/${encodeURIComponent(u.id)}"><span class="rank-num rank-${i+1}">${i+1}</span><div class="rank-avatar">${initiales(u.prenom,u.nom)}</div>
+        <div class="rank-info"><strong>${escapeHtml(`${u.prenom||"Membre"} ${u.nom||""}`)}</strong><span>${escapeHtml(u.grade_actuel||"Soldat")} · ${u.score_grade||0} pts</span></div></a>`).join("") : `<p class="rank-empty">Le classement se remplira bientôt.</p>`;
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -193,9 +193,11 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .post-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
 .post-card:hover{border-color:rgba(0,217,255,.3);}
 .post-head{display:flex;align-items:center;gap:11px;margin-bottom:12px;}
-.post-avatar{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:13px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;}
+.post-avatar{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:13px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;text-decoration:none;}
 .post-authorblock{flex:1;min-width:0;}
 .post-author{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.post-author a,.rank-item{color:inherit;text-decoration:none;}
+.post-author a:hover{color:var(--blue);}
 .pin-ic{width:12px;height:12px;color:var(--gold);}
 .post-meta{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);margin-top:2px;}
 .grade-chip{font-family:"JetBrains Mono";padding:2px 8px;border-radius:20px;background:rgba(0,217,255,.08);border:1px solid rgba(0,217,255,.2);color:var(--blue);}

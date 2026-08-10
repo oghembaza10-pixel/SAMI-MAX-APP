@@ -45,6 +45,7 @@ router.get("/:userId", async (req, res) => {
     const userId = req.params.userId;
     let user = null;
     let annonces = [];
+    let publications = [];
     let stats = { totalAnnonces: 0, noteMoyenne: 0, totalAvis: 0 };
 
     try {
@@ -63,6 +64,11 @@ router.get("/:userId", async (req, res) => {
         );
         stats.totalAnnonces = annonces.length;
 
+        publications = await db.query(
+            `SELECT * FROM publications WHERE auteur_id = $1 ORDER BY created_at DESC LIMIT 12`,
+            [userId]
+        );
+
         const noteRows = await db.query(
             `SELECT ROUND(AVG(note)::numeric, 1) AS moyenne, COUNT(*) AS total FROM avis WHERE cible_type = 'vendeur' AND cible_id = $1`,
             [userId]
@@ -75,6 +81,8 @@ router.get("/:userId", async (req, res) => {
         console.error("❌ GET /vitrine/:userId :", err.message);
         return res.status(404).send("Vitrine introuvable.");
     }
+
+    const estMoi = req.session?.userId === userId;
 
     const nomComplet = `${user.prenom || ""} ${user.nom || ""}`.trim() || "Membre SAMII";
     const estPremium = user.abonnement === "premium";
@@ -96,6 +104,12 @@ router.get("/:userId", async (req, res) => {
             </div>
         </a>`;
     }).join("") : `<div class="vt-empty"><i data-lucide="package-search"></i><p>Aucune annonce publiée pour le moment.</p></div>`;
+
+    const publicationsHtml = publications.length ? publications.map(p => `
+        <div class="vt-post">
+            ${p.image_url ? `<img src="${escapeHtml(p.image_url)}" alt="" loading="lazy">` : ""}
+            ${p.contenu ? `<p>${escapeHtml(p.contenu)}</p>` : ""}
+        </div>`).join("") : `<div class="vt-empty"><i data-lucide="message-square"></i><p>Aucune publication pour le moment.</p></div>`;
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -141,6 +155,12 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 .vt-empty svg { width:36px; height:36px; color:var(--blue); margin-bottom:12px; }
 .back-link { display:inline-flex; align-items:center; gap:8px; color:var(--muted); text-decoration:none; font-size:13px; padding:16px 20px 0; }
 .back-link:hover { color:var(--blue); }
+.edit-vitrine-btn { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:10px; border:1px solid var(--border); background:rgba(0,217,255,.08); color:var(--blue); text-decoration:none; font-size:12.5px; font-weight:700; margin:16px 0 0; }
+.edit-vitrine-btn:hover { background:rgba(0,217,255,.16); }
+.vt-posts { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+.vt-post { border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--panel); padding:14px; }
+.vt-post img { width:100%; border-radius:10px; margin-bottom:10px; aspect-ratio:16/10; object-fit:cover; }
+.vt-post p { font-size:12.5px; color:var(--text); line-height:1.6; margin:0; }
 </style>
 </head>
 <body>
@@ -168,8 +188,13 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 
     ${user.bio_vitrine ? `<p class="bio-text">${escapeHtml(user.bio_vitrine)}</p>` : ""}
 
+    ${estMoi ? `<a href="/vitrine/modifier/moi" class="edit-vitrine-btn"><i data-lucide="pencil"></i> Modifier ma vitrine</a>` : ""}
+
     <div class="section-title"><i data-lucide="store"></i> Annonces actives</div>
     <div class="vt-grid">${annoncesHtml}</div>
+
+    <div class="section-title"><i data-lucide="message-square"></i> Publications Communauté</div>
+    <div class="vt-posts">${publicationsHtml}</div>
 </div>
 <script>if (typeof lucide !== "undefined") lucide.createIcons();</script>
 </body>
