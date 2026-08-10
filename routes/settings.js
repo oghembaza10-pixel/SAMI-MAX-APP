@@ -179,7 +179,7 @@ router.post("/", async (req, res) => {
         // via une requête forgée est ignoré, on revient au thème actuel.
         const rows = await db.query(`SELECT grade_actuel, theme_visuel FROM utilisateurs WHERE id = $1`, [req.session.userId]);
         const grade = rows[0]?.grade_actuel || "Soldat";
-        const themeActuel = rows[0]?.theme_visuel || "strategiste";
+        const themeActuel = rows[0]?.theme_visuel || "og";
         const themeValide = gradeService.themeEstDebloque(theme_visuel, grade) ? theme_visuel : themeActuel;
 
         await db.query(

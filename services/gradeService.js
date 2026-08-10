@@ -27,15 +27,16 @@ function gradeForScore(score) {
 }
 
 // Thèmes visuels du QG — Stratège/Sagesse débloqués dès le départ (Soldat),
-// Aventurier au 3ème grade (Sergent), Gaming au 4ème grade (Lieutenant),
-// Mode OG (noir/or/gris métal, identité de la marque) réservé au grade
-// maximal (Général) — la récompense ultime.
+// Aventurier au 3ème grade (Sergent), Gaming au 4ème grade (Lieutenant).
+// Mode OG (noir/or/gris métal, identité de la marque) débloqué pour tout
+// le monde dès le départ — c'est l'identité de la plateforme, pas une
+// récompense à gagner.
 const THEMES = [
     { id: "strategiste", label: "Stratège",   emoji: "🪖", seuilIndex: 0 },
     { id: "sagesse",     label: "Sagesse",    emoji: "🕊️", seuilIndex: 0 },
     { id: "aventurier",  label: "Aventurier", emoji: "🧭", seuilIndex: 2 },
     { id: "gaming",      label: "Gaming",     emoji: "🎮", seuilIndex: 3 },
-    { id: "og",          label: "Mode OG",    emoji: "👑", seuilIndex: 5 },
+    { id: "og",          label: "Mode OG",    emoji: "👑", seuilIndex: 0 },
 ];
 
 function themeEstDebloque(themeId, grade) {

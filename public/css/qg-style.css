@@ -70,17 +70,29 @@
     --border-gold: 1px solid rgba(157, 92, 255, 0.25);
 }
 
-/* Mode OG — noir / or / gris métal, extrait des vraies couleurs du logo
-   og.png (dégradé or #f0d878→#c89830, dégradé argent #d8d8d0→#787068).
-   L'accent secondaire (slot --cyan-tech) devient argent métallique au
-   lieu de cyan, pour coller à l'identité du logo plutôt qu'à la tech. */
+/* Mode OG — identité par défaut de la plateforme : noir / or / gris métal,
+   extrait des vraies couleurs du logo og.png (dégradé or #f0d878→#c89830,
+   dégradé argent #d8d8d0→#787068), avec plus de contraste et un glow plus
+   marqué pour un rendu haute gamme / tech plutôt que plat. L'accent
+   secondaire (slot --cyan-tech) devient un platine froid — plus "métal
+   technologique" qu'un gris chaud — au lieu du cyan des autres thèmes. */
 [data-theme="og"] {
     --gold-og: #D9B36C;
-    --gold-hover: #F2D68A;
-    --gold-glow: 0 0 24px rgba(217, 179, 108, 0.3);
-    --cyan-tech: #B8B4AA;
-    --cyan-glow: 0 0 20px rgba(184, 180, 170, 0.25);
-    --border-gold: 1px solid rgba(217, 179, 108, 0.25);
+    --gold-hover: #F5DA92;
+    --gold-glow: 0 0 30px rgba(217, 179, 108, 0.4);
+    --cyan-tech: #C6CAD2;
+    --cyan-glow: 0 0 26px rgba(198, 202, 210, 0.3);
+    --border-gold: 1px solid rgba(217, 179, 108, 0.28);
+}
+
+/* Signature du Mode OG : le wordmark reprend le dégradé or→argent du
+   logo lui-même, au lieu d'une couleur plate. */
+[data-theme="og"] .qg-logo__text {
+    background: linear-gradient(135deg, var(--gold-hover) 0%, var(--gold-og) 45%, var(--cyan-tech) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

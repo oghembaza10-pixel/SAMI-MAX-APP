@@ -174,10 +174,10 @@ app.get("/qg", requireAuth, async (req, res) => {
             return clearWorkspaceSession(req, () => res.redirect("/hub"));
         }
 
-        let themeVisuel = "strategiste";
+        let themeVisuel = "og";
         try {
             const rows = await db.query(`SELECT theme_visuel FROM utilisateurs WHERE id = $1`, [req.session.userId]);
-            themeVisuel = rows[0]?.theme_visuel || "strategiste";
+            themeVisuel = rows[0]?.theme_visuel || "og";
         } catch (err) {
             console.error("❌ GET /qg (theme_visuel) :", err.message);
         }
