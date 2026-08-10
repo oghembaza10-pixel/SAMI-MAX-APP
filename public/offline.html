@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAMII — Hors-ligne</title>
+<style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; text-align: center;
+        background: #0a0a0a; color: #f5f5f5;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        padding: 24px;
+    }
+    .badge {
+        width: 72px; height: 72px; border-radius: 50%;
+        background: linear-gradient(135deg, #C5A059, #8a8a8a);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 32px; margin-bottom: 20px;
+    }
+    h1 { font-size: 1.3rem; margin: 0 0 8px; letter-spacing: .02em; }
+    p { color: #9a9a9a; font-size: .92rem; max-width: 320px; line-height: 1.5; margin: 0 0 22px; }
+    button {
+        background: linear-gradient(135deg, #C5A059, #A3824B);
+        color: #0a0a0a; border: none; border-radius: 10px;
+        padding: 12px 24px; font-size: .9rem; font-weight: 600;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+    <div class="badge">📡</div>
+    <h1>SAMII est hors-ligne</h1>
+    <p>Pas de connexion internet pour le moment. Reconnecte-toi pour reprendre — tes données t'attendent, rien n'est perdu.</p>
+    <button onclick="location.reload()">Réessayer</button>
+</body>
+</html>

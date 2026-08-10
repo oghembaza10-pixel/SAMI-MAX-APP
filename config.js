@@ -152,4 +152,14 @@ module.exports = {
         VOICE_ID : process.env.ELEVENLABS_VOICE_ID || "",
     },
 
+    // ==================================================
+    // VAPID (Notifications push PWA — désactivé tant que pas de clés)
+    // ==================================================
+
+    VAPID: {
+        PUBLIC_KEY  : process.env.VAPID_PUBLIC_KEY  || "",
+        PRIVATE_KEY : process.env.VAPID_PRIVATE_KEY || "",
+        SUBJECT     : process.env.VAPID_SUBJECT     || "https://samii.souverain-store.com",
+    },
+
 };

@@ -443,4 +443,40 @@ router.get("/debug-session", requireAuth, (req, res) => {
     });
 });
 
+// ── NOTIFICATIONS PUSH (PWA) ─────────────────────────────
+router.get("/push/public-key", (req, res) => {
+    const CONFIG = require("../config");
+    res.json({ publicKey: CONFIG.VAPID?.PUBLIC_KEY || "" });
+});
+
+router.post("/push/subscribe", requireAuth, async (req, res) => {
+    try {
+        const { endpoint, keys } = req.body || {};
+        if (!endpoint || !keys?.p256dh || !keys?.auth) {
+            return res.status(400).json({ success: false, error: "Abonnement invalide." });
+        }
+        await db.query(
+            `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+             VALUES ($1,$2,$3,$4)
+             ON CONFLICT (endpoint) DO UPDATE SET user_id = $1, p256dh = $3, auth = $4`,
+            [req.session.userId, endpoint, keys.p256dh, keys.auth]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /api/push/subscribe :", err.message);
+        res.status(500).json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/push/unsubscribe", requireAuth, async (req, res) => {
+    try {
+        const { endpoint } = req.body || {};
+        if (endpoint) await db.query(`DELETE FROM push_subscriptions WHERE endpoint = $1`, [endpoint]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /api/push/unsubscribe :", err.message);
+        res.status(500).json({ success: false, error: "Erreur serveur." });
+    }
+});
+
 module.exports = router;

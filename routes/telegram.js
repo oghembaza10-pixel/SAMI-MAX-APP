@@ -9,6 +9,7 @@ const planner      = require("../brain/planner");
 const memory       = require("../brain/memory");
 const db           = require("../services/db");
 const socketService = require("../services/socketService");
+const notify        = require("../services/notify");
 
 const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
@@ -329,6 +330,11 @@ async function handleOrderFlow(chatId, text, name, lang) {
             );
             console.log(`✅ Commande ${orderId} créée avec succès sur workspace "${workspaceId}"`);
             socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
+            notify.notifyWorkspace(workspaceId, {
+                title: "🛒 Nouvelle commande",
+                body: `${s.name || "Client"} — ${s.produit || "commande"}`,
+                url: "/qg",
+            });
         } catch (createErr) {
             console.error(`❌ Échec création commande ${orderId} :`, createErr.message);
         }
