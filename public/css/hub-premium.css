@@ -4,18 +4,22 @@
    ========================================================================== */
 
 :root {
+    /* Mode OG — même identité noir/or/platine que le QG et le Marketplace :
+       l'accent secondaire (slots --blue-accent/--cyan-tech) passe du
+       bleu/cyan tech à un platine froid, l'or aligné sur la même teinte
+       partout dans l'app. */
     --bg-deep: #000000;
     --bg-panel: #0a0a0c;
-    --gold-og: #C5A059;
-    --gold-hover: #E8C27A;
-    --gold-dim: rgba(197, 160, 89, 0.35);
-    --gold-glow: 0 0 40px rgba(197, 160, 89, 0.35);
-    --blue-accent: #2F7FFF;
-    --cyan-tech: #5FD4FF;
-    --cyan-glow: 0 0 22px rgba(95, 212, 255, 0.45);
+    --gold-og: #D9B36C;
+    --gold-hover: #F5DA92;
+    --gold-dim: rgba(217, 179, 108, 0.35);
+    --gold-glow: 0 0 40px rgba(217, 179, 108, 0.35);
+    --blue-accent: #C6CAD2;
+    --cyan-tech: #C6CAD2;
+    --cyan-glow: 0 0 22px rgba(198, 202, 210, 0.4);
     --text-main: #F5F1E8;
     --text-muted: #86807A;
-    --border-gold: 1px solid rgba(197, 160, 89, 0.22);
+    --border-gold: 1px solid rgba(217, 179, 108, 0.22);
 
     --font-display: 'Cinzel', serif;
     --font-body: 'Inter', sans-serif;
