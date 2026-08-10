@@ -7,6 +7,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
+const { mobileNav } = require("../views/partials/mobileNav");
 
 const {
     MARKETPLACE_NAME,
@@ -2531,32 +2532,7 @@ nav {
     id="toast"
 ></div>
 
-<nav class="mobile-nav">
-
-    <a href="/qg">
-        <i data-lucide="layout-dashboard"></i>
-        QG
-    </a>
-
-    <a
-        href="/marketplace"
-        class="active"
-    >
-        <i data-lucide="store"></i>
-        Marché
-    </a>
-
-    <a href="/community">
-        <i data-lucide="users"></i>
-        Communauté
-    </a>
-
-    <a href="/arsenal">
-        <i data-lucide="shield-check"></i>
-        Arsenal
-    </a>
-
-</nav>
+${mobileNav("/marketplace")}
 
 <script>
 

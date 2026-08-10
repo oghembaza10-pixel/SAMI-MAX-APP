@@ -5,6 +5,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
+const { mobileNav } = require("../views/partials/mobileNav");
 
 function requireAuth(req, res, next) { if (!req.session?.loggedIn) return res.redirect("/login"); next(); }
 function escapeHtml(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
@@ -327,12 +328,7 @@ ${storiesBarHtml}
 </div>
 </div>
 <div class="toast" id="toast"></div>
-<nav class="mobile-nav">
-<a href="/qg"><i data-lucide="layout-dashboard"></i> QG</a>
-<a href="/marketplace"><i data-lucide="store"></i> Marché</a>
-<a href="/community" class="active"><i data-lucide="users"></i> Communauté</a>
-<a href="/arsenal"><i data-lucide="shield-check"></i> Arsenal</a>
-</nav>
+${mobileNav("/community")}
 <script>
 if (typeof lucide!=="undefined") lucide.createIcons();
 const savedTheme=localStorage.getItem("samii_community_theme"); if(savedTheme==="light") document.body.classList.add("light");

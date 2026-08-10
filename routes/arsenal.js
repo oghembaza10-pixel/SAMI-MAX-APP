@@ -2,6 +2,7 @@ const express = require("express");
 const router   = express.Router();
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
+const { mobileNav } = require("../views/partials/mobileNav");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -122,10 +123,26 @@ router.get("/", requireAuth, async (req, res) => {
         .og-lang-switch span { cursor: pointer; color: var(--text-muted); padding: 4px 8px; border-radius: 4px; transition: color .2s ease; }
         .og-lang-switch span:hover { color: var(--cyan-tech); }
         .og-lang-switch span.active { color: var(--cyan-tech); font-weight: 600; }
+        .ars33-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: .82rem; margin-bottom: 16px; transition: color .2s ease; }
+        .ars33-back:hover { color: var(--cyan-tech); }
+        .mobile-nav { display: none; }
+        @media (max-width: 900px) {
+            .ars33-shell { padding-bottom: 90px; }
+            .mobile-nav {
+                position: fixed; left: 0; right: 0; bottom: 0;
+                display: flex; justify-content: space-around;
+                padding: 9px; background: rgba(3,6,11,.95);
+                border-top: var(--border-soft); z-index: 30;
+            }
+            .mobile-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-muted); text-decoration: none; font-size: 8px; font-weight: 800; }
+            .mobile-nav a.active { color: var(--cyan-tech); }
+            .mobile-nav svg { width: 17px; }
+        }
     </style>
 </head>
 <body>
 <div class="ars33-shell">
+    <a href="/qg" class="ars33-back"><i data-lucide="arrow-left"></i> Retour au QG</a>
     <div class="og-lang-switch">
         <span data-lang-btn="fr">FR</span>
         <span data-lang-btn="en">EN</span>
@@ -136,6 +153,7 @@ router.get("/", requireAuth, async (req, res) => {
     <p class="sub" data-i18n="arsenal.subtitle">33 pouvoirs, chacun ancré dans une loi de SAMII. Débloqués progressivement.</p>
     <div class="ars33-grid">${cardsHtml}</div>
 </div>
+${mobileNav("/arsenal")}
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="/js/i18n.js"></script>
 <script>

@@ -87,6 +87,7 @@ const coffre = workspace.coffre || { forteresse: {}, boost: {} };
 </head>
 <body>
 <div class="coffre-shell">
+    <a href="/qg" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);text-decoration:none;font-size:.82rem;margin-bottom:16px;">← Retour au QG</a>
     <h1>🗝️ Coffre OG</h1>
     <p class="sub">Tes objets stratégiques — activables quand tu en as besoin.</p>
     <div class="coffre-grid">${cardsHtml}</div>

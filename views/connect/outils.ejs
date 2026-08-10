@@ -8,6 +8,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/qg-style.css">
+    <style>
+        /* 2 connecteurs par ligne, toujours (desktop et mobile) — plus pro qu'un seul par ligne */
+        .qg-connectors { grid-template-columns: repeat(2, 1fr) !important; }
+        @media (max-width: 560px) {
+            .qg-connectors { grid-template-columns: 1fr !important; }
+        }
+    </style>
 </head>
 <body data-shop="<%= shop %>">
 
@@ -100,7 +107,7 @@
             <span>Mes canaux</span>
         </div>
 
-        <section class="qg-dashboard">
+        <section class="qg-dashboard qg-connectors">
 
             <!-- SHOPIFY -->
             <article class="qg-card qg-card--tilt">

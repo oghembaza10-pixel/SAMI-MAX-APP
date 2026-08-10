@@ -5,6 +5,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
+const { mobileNav } = require("../views/partials/mobileNav");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) {
@@ -662,12 +663,7 @@ a { color: inherit; text-decoration: none; }
     </div>
 </div>
 <div class="toast" id="toast"></div>
-<nav class="mobile-nav">
-    <a href="/qg"><i data-lucide="layout-dashboard"></i>QG</a>
-    <a href="/marketplace"><i data-lucide="shopping-bag"></i>Store</a>
-    <a href="/academie" class="active"><i data-lucide="graduation-cap"></i>Flux</a>
-    <a href="/community"><i data-lucide="users"></i>Chat</a>
-</nav>
+${mobileNav("/academy")}
 <script>
 lucide.createIcons();
 

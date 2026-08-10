@@ -72,6 +72,7 @@ router.get("/mode", requireAuth, async (req, res) => {
 </head>
 <body>
 <div class="mode-shell">
+    <a href="/qg" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);text-decoration:none;font-size:.82rem;margin-bottom:16px;">← Retour au QG</a>
     <h1>Mode de SAMII</h1>
     <p class="sub">Toi seul décides du niveau d'autonomie de SAMII. Il ne peut jamais changer ce réglage lui-même.</p>
 
