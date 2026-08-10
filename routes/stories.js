@@ -45,7 +45,7 @@ button[type="submit"]:disabled { opacity:.5; cursor:not-allowed; }
 <body>
 <div class="story-box">
     <h1>✨ Nouvelle story</h1>
-    <p class="hint">Visible 24h par tout le monde. Vidéo limitée à ${STORY_MAX_DUREE_SEC} secondes.</p>
+    <p class="hint">Visible 24h par tout le monde. Vidéo : seules les ${STORY_MAX_DUREE_SEC} premières secondes seront gardées.</p>
     <div class="drop-zone" id="dropZone">📷 Touche pour choisir une photo ou une vidéo</div>
     <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;">
     <div class="status" id="status"></div>
@@ -78,9 +78,7 @@ fileInput.addEventListener("change", async () => {
             v.src = URL.createObjectURL(file);
         });
         if (duree > ${STORY_MAX_DUREE_SEC}) {
-            statusEl.className = "status err";
-            statusEl.textContent = "❌ Vidéo trop longue (" + Math.round(duree) + "s) — max ${STORY_MAX_DUREE_SEC}s sur le plan gratuit.";
-            return;
+            statusEl.textContent = "✂️ Vidéo de " + Math.round(duree) + "s — seules les ${STORY_MAX_DUREE_SEC} premières secondes seront gardées.";
         }
     }
 
@@ -94,7 +92,10 @@ fileInput.addEventListener("change", async () => {
         const json = await res.json();
         if (!json.secure_url) throw new Error("Échec upload");
 
-        mediaUrl = json.secure_url;
+        // La vidéo entière est envoyée telle quelle (pas de rejet) ; Cloudinary
+        // ne sert que les ${STORY_MAX_DUREE_SEC} premières secondes à la lecture
+        // (transformation à la volée, aucun retraitement serveur nécessaire).
+        mediaUrl = isVideo ? json.secure_url.replace("/upload/", "/upload/du_${STORY_MAX_DUREE_SEC}/") : json.secure_url;
         mediaType = isVideo ? "video" : "photo";
 
         dropZone.classList.add("has-media");
