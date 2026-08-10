@@ -787,6 +787,29 @@ router.get("/", requireAuth, async (req, res) => {
     --silver-bright: #E8ECEF;
 }
 
+/* Mode jour — le bouton lune/soleil (#themeBtn) est déjà câblé en JS
+   (toggle de body.light + persistance localStorage), mais aucune règle
+   CSS ne consommait la classe : le clic ne changeait donc rien à
+   l'écran. On redéfinit les mêmes tokens que le reste de la page utilise
+   déjà partout (var(--bg), var(--panel)...), donc tout se réadapte. */
+body.light {
+    --bg: #f4f7fa;
+    --panel: #ffffff;
+    --panel2: #eef2f6;
+    --text: #0d1117;
+    --muted: #57606a;
+    --border: rgba(0,119,255,.18);
+
+    --blue: #0077ff;
+    --blue2: #0056c7;
+
+    --gold: #b78103;
+    --gold-bright: #8a6102;
+    --gold-soft: rgba(183,129,3,.08);
+    --gold-border: rgba(183,129,3,.3);
+    --silver-bright: #3a4552;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -816,6 +839,8 @@ body {
         BlinkMacSystemFont,
         "Segoe UI",
         sans-serif;
+
+    transition: background .4s ease, color .4s ease;
 }
 
 a {
@@ -1056,9 +1081,10 @@ nav {
 }
 
 .search select {
-    width: 160px;
+    flex: 0 1 160px;
+    min-width: 90px;
 
-    padding: 12px;
+    padding: 12px 8px;
 
     border: none;
 
@@ -1071,6 +1097,10 @@ nav {
     color: var(--muted);
 
     outline: none;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .search input {
