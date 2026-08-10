@@ -243,6 +243,7 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 <a href="/qg" class="side-link"><i data-lucide="layout-dashboard"></i> QG Central</a>
 <a href="/marketplace" class="side-link"><i data-lucide="store"></i> Marketplace</a>
 <a href="/community" class="side-link active"><i data-lucide="users"></i> Communauté</a>
+<a href="/discussions" class="side-link"><i data-lucide="message-circle"></i> Discussions</a>
 <a href="/arsenal" class="side-link"><i data-lucide="shield-check"></i> Arsenal</a>
 <a href="/academy" class="side-link"><i data-lucide="graduation-cap"></i> Academy</a>
 </nav></div>

@@ -2192,6 +2192,14 @@ nav {
             </a>
 
             <a
+                href="/discussions"
+                class="side-link"
+            >
+                <i data-lucide="message-circle"></i>
+                Discussions
+            </a>
+
+            <a
                 href="/arsenal"
                 class="side-link"
             >
