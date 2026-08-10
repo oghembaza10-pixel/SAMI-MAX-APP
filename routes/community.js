@@ -395,18 +395,54 @@ function sharePost(id){const url=window.location.origin+"/community#post-"+id;if
 </body></html>`);
 });
 
+// Crée réellement l'annonce Marketplace correspondant à une publication
+// "produit"/"service" — n'utilise que des données réelles (contenu de la
+// publication, pays du profil) ; laisse prix/catégorie vides plutôt que
+// d'inventer une valeur (affichage "Sur devis"/"Autre" déjà géré ailleurs).
+async function diffuserVersMarketplace(pub, userId, nomAuteur) {
+    const titre = (pub.contenu || "Service proposé").slice(0, 180) || "Service proposé";
+    const categorieAnnonce = pub.categorie === "service" ? "service-autre" : null;
+
+    let pays = null;
+    try {
+        const u = await db.query(`SELECT pays FROM utilisateurs WHERE id = $1`, [userId]);
+        pays = u[0]?.pays || null;
+    } catch { /* pays optionnel */ }
+
+    const rows = await db.query(
+        `INSERT INTO annonces (titre, categorie, prix, pays, description, photo_url, vendeur_id, vendeur_nom, type_vendeur, actif)
+         VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,'particulier',true) RETURNING id`,
+        [titre, categorieAnnonce, pays, pub.contenu || "", pub.image_url || null, userId, nomAuteur]
+    );
+    return rows[0]?.id || null;
+}
+
+// Idem pour Academy — academie_cours n'a aucune colonne obligatoire hors id,
+// donc pas besoin d'inventer de données manquantes (prix/durée restent NULL).
+async function diffuserVersAcademy(pub, userId, nomAuteur) {
+    const titre = (pub.contenu || "Formation").slice(0, 180) || "Formation";
+    const rows = await db.query(
+        `INSERT INTO academie_cours (titre, description, photo_url, video_url, formateur_id, formateur_nom, type_formateur, actif)
+         VALUES ($1,$2,$3,$4,$5,$6,'communaute',true) RETURNING id`,
+        [titre, pub.contenu || "", pub.image_url || null, pub.video_url || null, userId, nomAuteur]
+    );
+    return rows[0]?.id || null;
+}
+
 router.post("/publier", requireAuth, async (req, res) => {
     try {
         const { contenu, image_url, video_url, categorie, diffusion } = req.body;
         if (!contenu && !image_url && !video_url) return res.json({ success:false, error:"Ajoute du texte ou un fichier." });
 
         const cat = CATEGORIES[categorie] ? categorie : "publication";
+        const nomAuteur = (req.session.nom || "Membre SAMII").trim();
 
         const insertRes = await db.query(
             `INSERT INTO publications (auteur_id, contenu, image_url, video_url, categorie, type) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
             [req.session.userId, contenu||"", image_url||null, video_url||null, cat, video_url?"video":image_url?"image":"texte"]
         );
         const publicationId = insertRes[0]?.id;
+        const pub = { contenu, image_url, video_url, categorie: cat };
 
         await gradeService.ajouterPoints(req.session.userId, 5, "Publication Communauté");
 
@@ -414,9 +450,23 @@ router.post("/publier", requireAuth, async (req, res) => {
             await db.query(`INSERT INTO diffusion (contenu_type, contenu_id, module_cible, auteur_id) VALUES ('publication',$1,'community',$2)`, [publicationId, req.session.userId]);
             if (Array.isArray(diffusion)) {
                 for (const module of diffusion) {
-                    if (["marketplace","academy"].includes(module)) {
-                        await db.query(`INSERT INTO diffusion (contenu_type, contenu_id, module_cible, auteur_id) VALUES ('publication',$1,$2,$3)`, [publicationId, module, req.session.userId]);
+                    if (!["marketplace","academy"].includes(module)) continue;
+
+                    let resultatId = null;
+                    try {
+                        if (module === "marketplace" && ["produit","service"].includes(cat)) {
+                            resultatId = await diffuserVersMarketplace(pub, req.session.userId, nomAuteur);
+                        } else if (module === "academy" && cat === "formation") {
+                            resultatId = await diffuserVersAcademy(pub, req.session.userId, nomAuteur);
+                        }
+                    } catch (creationErr) {
+                        console.warn(`⚠️ Création ${module} depuis publication ${publicationId} :`, creationErr.message);
                     }
+
+                    await db.query(
+                        `INSERT INTO diffusion (contenu_type, contenu_id, module_cible, auteur_id, resultat_id) VALUES ('publication',$1,$2,$3,$4)`,
+                        [publicationId, module, req.session.userId, resultatId]
+                    );
                 }
             }
         } catch (dErr) { console.warn("⚠️ diffusion :", dErr.message); }
