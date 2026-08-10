@@ -5,7 +5,30 @@ const axios = require("axios");
 const CONFIG = require("../config");
 const SAMII_PROMPT = require("../brain/prompts/index");
 const MODEL = "gemini-2.5-flash";
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${CONFIG.GEMINI.API_KEY}`;
+const KEYS  = CONFIG.GEMINI.API_KEYS.length > 0 ? CONFIG.GEMINI.API_KEYS : [CONFIG.GEMINI.API_KEY];
+
+function urlFor(key) {
+    return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
+}
+
+// Essaie chaque clé Gemini disponible tour à tour : dès qu'une clé répond
+// 429 (quota dépassé), bascule sur la suivante. Une autre erreur (400, réseau...)
+// remonte immédiatement — inutile d'essayer les autres clés, ce ne serait pas un
+// problème de quota.
+async function postWithRotation(body) {
+    let lastErr;
+    for (let i = 0; i < KEYS.length; i++) {
+        try {
+            return await axios.post(urlFor(KEYS[i]), body);
+        } catch (err) {
+            lastErr = err;
+            const isQuotaError = err.response?.data?.error?.code === 429;
+            if (!isQuotaError) throw err;
+            if (i < KEYS.length - 1) console.warn(`⏳ Clé Gemini #${i + 1} en quota dépassé, bascule sur la clé #${i + 2}...`);
+        }
+    }
+    throw lastErr;
+}
 
 const TOOLS = [
     {
@@ -77,7 +100,7 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
             ],
         };
         if (useTools) body.tools = TOOLS;
-        const response = await axios.post(API_URL, body);
+        const response = await postWithRotation(body);
         const candidate = response.data.candidates?.[0];
         const parts = candidate?.content?.parts || [];
         const functionCallPart = parts.find(p => p.functionCall);
@@ -112,7 +135,7 @@ async function chatWithSearch({ message, context = {} }) {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             tools: [{ google_search: {} }],
         };
-        const response = await axios.post(API_URL, body);
+        const response = await postWithRotation(body);
         const candidate = response.data.candidates?.[0];
         const parts = candidate?.content?.parts || [];
         const textPart = parts.find(p => p.text);
@@ -144,7 +167,7 @@ async function chatWithFunctionResult({ message, context = {}, functionName, fun
             ],
             tools: TOOLS,
         };
-        const response = await axios.post(API_URL, body);
+        const response = await postWithRotation(body);
         const parts = response.data.candidates?.[0]?.content?.parts || [];
         const textPart = parts.find(p => p.text);
         return textPart?.text || "C'est fait ✅";
@@ -166,7 +189,7 @@ async function summarize(transcript) {
                 }],
             }],
         };
-        const response = await axios.post(API_URL, body);
+        const response = await postWithRotation(body);
         const parts = response.data.candidates?.[0]?.content?.parts || [];
         const textPart = parts.find(p => p.text);
         return textPart?.text || "";

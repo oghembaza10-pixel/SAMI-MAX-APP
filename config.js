@@ -133,6 +133,13 @@ module.exports = {
 
     GEMINI: {
         API_KEY: process.env.GEMINI_API_KEY,
+        // Rotation de clés : le plan gratuit Gemini plafonne à 20 req/min par clé.
+        // GEMINI_API_KEY_2, _3, _4... (jusqu'à 20) sont des clés de secours facultatives —
+        // dès qu'une clé tombe en quota (429), SAMII bascule automatiquement sur la suivante.
+        API_KEYS: [
+            process.env.GEMINI_API_KEY,
+            ...Array.from({ length: 19 }, (_, i) => process.env[`GEMINI_API_KEY_${i + 2}`]),
+        ].filter(Boolean),
     },
 
     // ==================================================
