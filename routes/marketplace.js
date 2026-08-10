@@ -1199,6 +1199,9 @@ nav {
     padding: 0 24px 13px;
 
     scrollbar-width: none;
+
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent);
 }
 
 .subnav::-webkit-scrollbar,
@@ -1257,6 +1260,9 @@ nav {
     padding: 0 24px 16px;
 
     scrollbar-width: none;
+
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent);
 }
 
 .services-row::-webkit-scrollbar {
