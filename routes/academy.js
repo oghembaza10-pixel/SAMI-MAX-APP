@@ -387,6 +387,10 @@ router.get("/", requireAuth, async (req, res) => {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>SAMII OS — The Sovereign Academy</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#070809">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
@@ -900,6 +904,7 @@ function shareContent(title) {
     }
 }
 </script>
+<script src="/js/pwa-register.js"></script>
 </body>
 </html>`);
 });

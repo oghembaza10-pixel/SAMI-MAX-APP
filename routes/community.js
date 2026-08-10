@@ -136,6 +136,10 @@ router.get("/", requireAuth, async (req, res) => {
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Community — SAMII OS</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#070809">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
@@ -419,6 +423,7 @@ async function postComment(id){
 }
 function sharePost(id){const url=window.location.origin+"/community#post-"+id;if(navigator.share)navigator.share({url}).catch(()=>{});else{navigator.clipboard.writeText(url);showToast("🔗 Lien copié !");}}
 </script>
+<script src="/js/pwa-register.js"></script>
 </body></html>`);
 });
 

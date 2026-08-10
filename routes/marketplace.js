@@ -761,6 +761,10 @@ router.get("/", requireAuth, async (req, res) => {
 <title>
     ${escapeHtml(MARKETPLACE_NAME || "SAMII Marketplace")}
 </title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#070809">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
 
 <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -3037,6 +3041,7 @@ updateCartBadge();
 </script>
 
 <script src="/js/i18n.js"></script>
+<script src="/js/pwa-register.js"></script>
 
 </body>
 </html>

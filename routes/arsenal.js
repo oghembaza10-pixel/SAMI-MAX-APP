@@ -98,6 +98,10 @@ router.get("/", requireAuth, async (req, res) => {
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Arsenal — SAMII</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#070809">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/qg-style.css?v=2">
     <style>
@@ -156,6 +160,7 @@ router.get("/", requireAuth, async (req, res) => {
 ${mobileNav("/arsenal")}
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="/js/i18n.js"></script>
+<script src="/js/pwa-register.js"></script>
 <script>
     if (typeof lucide !== "undefined") lucide.createIcons();
 
