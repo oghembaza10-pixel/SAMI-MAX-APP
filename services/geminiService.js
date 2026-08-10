@@ -43,10 +43,11 @@ async function send({ to, message }) {
 
 async function chat({ message, context = {}, useTools = false, history = [] }, retryCount = 0) {
     try {
+        const prompt = await SAMII_PROMPT(message, context);
         const body = {
             contents: [
                 ...history.map(h => ({ role: h.role, parts: [{ text: h.message }] })),
-                { role: "user", parts: [{ text: SAMII_PROMPT(message, context) }] },
+                { role: "user", parts: [{ text: prompt }] },
             ],
         };
         if (useTools) body.tools = TOOLS;
@@ -80,8 +81,9 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
 
 async function chatWithSearch({ message, context = {} }) {
     try {
+        const prompt = await SAMII_PROMPT(message, context);
         const body = {
-            contents: [{ role: "user", parts: [{ text: SAMII_PROMPT(message, context) }] }],
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
             tools: [{ google_search: {} }],
         };
         const response = await axios.post(API_URL, body);
@@ -107,9 +109,10 @@ async function chatWithSearch({ message, context = {} }) {
 
 async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult }) {
     try {
+        const prompt = await SAMII_PROMPT(message, context);
         const body = {
             contents: [
-                { role: "user", parts: [{ text: SAMII_PROMPT(message, context) }] },
+                { role: "user", parts: [{ text: prompt }] },
                 { role: "model", parts: [{ functionCall: { name: functionName, args: functionArgs } }] },
                 { role: "function", parts: [{ functionResponse: { name: functionName, response: functionResult } }] },
             ],

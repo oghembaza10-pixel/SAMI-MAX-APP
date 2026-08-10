@@ -5,8 +5,8 @@
 const PERSONALITY = require("../personality");
 const { getTables } = require("./sovereign/tables");
 
-function SAMII_PROMPT(message, context = {}) {
-    const tables = getTables(message);
+async function SAMII_PROMPT(message, context = {}) {
+    const tables = await getTables(message);
     const grade = context.grade || "Soldat";
 
     return `
