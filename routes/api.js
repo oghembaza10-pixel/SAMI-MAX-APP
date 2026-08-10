@@ -66,13 +66,13 @@ async function getSamiiHistory(userId) {
         const estGratuit = (userRows[0]?.abonnement || "gratuit") === "gratuit";
         const rows = estGratuit
             ? await db.query(
-                  `SELECT role, message FROM samii_conversations
+                  `SELECT role, contenu AS message FROM samii_conversations
                    WHERE user_id = $1 AND created_at > now() - interval '24 hours'
                    ORDER BY created_at ASC LIMIT 30`,
                   [userId]
               )
             : await db.query(
-                  `SELECT role, message FROM samii_conversations
+                  `SELECT role, contenu AS message FROM samii_conversations
                    WHERE user_id = $1
                    ORDER BY created_at DESC LIMIT 150`,
                   [userId]
@@ -91,7 +91,7 @@ router.post("/samii-resume", requireAuth, async (req, res) => {
     try {
         const userId = req.session.userId;
         const rows = await db.query(
-            `SELECT role, message FROM samii_conversations
+            `SELECT role, contenu AS message FROM samii_conversations
              WHERE user_id = $1 AND created_at > now() - interval '7 days'
              ORDER BY created_at ASC`,
             [userId]
@@ -112,7 +112,7 @@ router.post("/samii-resume", requireAuth, async (req, res) => {
 async function saveSamiiTurn(userId, message, reply) {
     try {
         await db.query(
-            `INSERT INTO samii_conversations (user_id, role, message) VALUES ($1,'user',$2), ($1,'model',$3)`,
+            `INSERT INTO samii_conversations (user_id, role, contenu, source) VALUES ($1,'user',$2,'web'), ($1,'model',$3,'web')`,
             [userId, message, reply || ""]
         );
     } catch (err) {
