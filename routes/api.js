@@ -41,6 +41,7 @@ router.post("/chat", async (req, res) => {
             page: req.body.page || "",
             lastAction: req.body.lastAction || "",
             grade: grade.actuel,
+            audience: "souverain",
         };
 
         const userId = req.session?.userId;

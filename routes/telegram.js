@@ -564,7 +564,7 @@ router.post("/", async (req, res) => {
         }
 
         await orchestrator.process({ type: "telegram.message", shop: "", payload: { chatId, text, message } });
-        const geminiReply = await planner.ask(text, { source: "telegram", chatId, name, lang });
+        const geminiReply = await planner.ask(text, { source: "telegram", chatId, name, lang, audience: "client" });
         await reply(chatId, geminiReply);
     } catch (err) {
         console.error("❌ Telegram webhook :", err.message);

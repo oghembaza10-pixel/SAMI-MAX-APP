@@ -308,7 +308,7 @@ router.post("/", async (req, res) => {
             return;
         }
 
-        const geminiReply = await planner.ask(text, { source: "whatsapp", chatId: sender, name: senderName });
+        const geminiReply = await planner.ask(text, { source: "whatsapp", chatId: sender, name: senderName, audience: "client" });
         await reply(sender, workspaceId, geminiReply);
 
     } catch (err) {

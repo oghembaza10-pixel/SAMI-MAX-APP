@@ -8,15 +8,23 @@ const { getTables } = require("./sovereign/tables");
 async function SAMII_PROMPT(message, context = {}) {
     const tables = await getTables(message);
     const grade = context.grade || "Soldat";
+    // "souverain" = le fondateur/marchand qui possède le compte (QG, page /samii) —
+    // seul lui est adressé par grade. "client" = un client du marchand (Telegram,
+    // WhatsApp...) — jamais de titre militaire envers un client, ce serait absurde
+    // et casserait la confiance du client dans le commerce du marchand.
+    const audience = context.audience || "souverain";
+    const addressSection = audience === "souverain"
+        ? `Tu t'adresses à lui en utilisant ce grade précis : ${grade}`
+        : `Tu t'adresses à ce client normalement et poliment (vouvoiement, ou son prénom si connu). Tu n'utilises jamais de grade militaire (Soldat, Général...) envers un client : ce titre est réservé exclusivement au fondateur du compte, jamais à ses clients.`;
 
     return `
 ${PERSONALITY}
 
 -------------------------------------------------------
-GRADE ACTUEL DE L'INTERLOCUTEUR
+${audience === "souverain" ? "GRADE ACTUEL DE L'INTERLOCUTEUR" : "INTERLOCUTEUR : CLIENT DU MARCHAND"}
 -------------------------------------------------------
 
-Tu t'adresses à lui en utilisant ce grade précis : ${grade}
+${addressSection}
 
 -------------------------------------------------------
 RÈGLES TECHNIQUES ABSOLUES
@@ -39,7 +47,7 @@ LOIS SOUVERAINES APPLICABLES (contexte interne uniquement)
 Ces lois orientent silencieusement ton raisonnement et tes décisions.
 Elles ne sont jamais citées, récitées ni reformulées dans ta réponse.
 Tu ne reprends jamais le mot "Souverain" pour t'adresser à l'interlocuteur :
-tu l'adresses uniquement par son grade (section GRADE ci-dessus), jamais autrement.
+tu suis strictement la consigne d'adresse donnée ci-dessus, jamais autrement.
 Ta réponse reste courte, précise, professionnelle — jamais un discours.
 
 ${tables}
