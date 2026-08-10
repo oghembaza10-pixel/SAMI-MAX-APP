@@ -138,6 +138,7 @@ app.use("/connect",   require("./routes/connector"));
 app.use("/academy",     require("./routes/academy"));
 app.use("/community",   require("./routes/community"));
 app.use("/discussions", require("./routes/discussions"));
+app.use("/stories",     require("./routes/stories"));
 app.use("/marketplace", require("./routes/marketplace"));
 app.use("/drivers",     require("./routes/drivers"));
 app.use("/api",         require("./routes/api"));

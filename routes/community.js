@@ -57,6 +57,17 @@ router.get("/", requireAuth, async (req, res) => {
         classement = await db.query(`SELECT id, prenom, nom, grade_actuel, score_grade, type_compte FROM utilisateurs ORDER BY score_grade DESC NULLS LAST LIMIT 5`);
     } catch (err) { console.warn("⚠️ classement :", err.message); }
 
+    let stories = [];
+    try {
+        stories = await db.query(`
+            SELECT DISTINCT ON (s.auteur_id) s.auteur_id, u.prenom, u.nom, s.created_at,
+                EXISTS(SELECT 1 FROM stories_vues sv WHERE sv.story_id=s.id AND sv.user_id=$1) AS vue
+            FROM stories s LEFT JOIN utilisateurs u ON u.id=s.auteur_id
+            WHERE s.actif = true AND s.expires_at > now()
+            ORDER BY s.auteur_id, s.created_at DESC
+        `, [req.session.userId || ""]);
+    } catch (err) { console.warn("⚠️ stories :", err.message); }
+
     try {
         const cRows = await db.query(`SELECT COUNT(*) AS total FROM utilisateurs`); stats.membres = parseInt(cRows[0]?.total||0,10);
         const pRows = await db.query(`SELECT COUNT(*) AS total FROM publications`); stats.publications = parseInt(pRows[0]?.total||0,10);
@@ -65,6 +76,14 @@ router.get("/", requireAuth, async (req, res) => {
 
     const catButtonsHtml = Object.entries(CATEGORIES).map(([key,c]) => `
         <button type="button" class="cat-btn" data-cat="${key}" style="--cat-color:${c.couleur};"><i data-lucide="${c.icon}"></i> ${c.label}</button>`).join("");
+
+    const storiesBarHtml = stories.map(s => {
+        const nomS = `${s.prenom||"Membre"} ${s.nom||""}`.trim();
+        return `<a class="story-circle" href="/stories/${encodeURIComponent(s.auteur_id)}">
+            <div class="story-ring ${s.vue ? "story-ring--vue" : ""}">${initiales(s.prenom,s.nom)}</div>
+            <span>${escapeHtml((s.prenom||"Membre").slice(0,10))}</span>
+        </a>`;
+    }).join("");
 
     const tendancesHtml = tendances.length ? tendances.map(t => { const info=catInfo(t.categorie);
         return `<div class="stat-row"><span><i data-lucide="${info.icon}" style="width:13px;height:13px;color:${info.couleur};"></i> ${info.label}</span><strong>${t.total}</strong></div>`; }).join("") : "";
@@ -149,6 +168,13 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .side-panel h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 14px;display:flex;align-items:center;gap:6px;}
 .side-panel h3 svg{width:14px;height:14px;color:var(--blue);}
 .stat-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.stories-bar{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 16px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.stories-bar::-webkit-scrollbar{display:none;}
+.story-circle{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:5px;text-decoration:none;width:62px;}
+.story-ring{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:900;color:#fff;background:var(--panel);border:2.5px solid var(--blue);box-shadow:0 0 0 2px var(--bg);}
+.story-ring--vue{border-color:rgba(127,150,168,.35);}
+.story-ring--add{background:rgba(0,217,255,.08);border-style:dashed;color:var(--blue);}
+.story-circle span{font-size:10.5px;color:var(--muted);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .stat-row span{display:flex;align-items:center;gap:6px;}
 .stat-row:last-child{border:none;} .stat-row strong{color:var(--blue);font-family:"JetBrains Mono";}
 .eco-link-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px;}
@@ -269,6 +295,10 @@ ${tendancesHtml}
 </div></div>
 
 <div class="col-feed">
+<div class="stories-bar">
+<a class="story-circle story-circle--add" href="/stories/publier"><div class="story-ring story-ring--add"><i data-lucide="plus"></i></div><span>Ta story</span></a>
+${storiesBarHtml}
+</div>
 <div class="composer">
 <div class="composer-top">
 <div class="composer-avatar">${initiales(req.session.nom?.split(" ")[1], req.session.nom?.split(" ")[0])}</div>
