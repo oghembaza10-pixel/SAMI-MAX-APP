@@ -41,10 +41,13 @@ async function send({ to, message }) {
     return { success: true };
 }
 
-async function chat({ message, context = {}, useTools = false }, retryCount = 0) {
+async function chat({ message, context = {}, useTools = false, history = [] }, retryCount = 0) {
     try {
         const body = {
-            contents: [{ role: "user", parts: [{ text: SAMII_PROMPT(message, context) }] }],
+            contents: [
+                ...history.map(h => ({ role: h.role, parts: [{ text: h.message }] })),
+                { role: "user", parts: [{ text: SAMII_PROMPT(message, context) }] },
+            ],
         };
         if (useTools) body.tools = TOOLS;
         const response = await axios.post(API_URL, body);
@@ -68,7 +71,7 @@ async function chat({ message, context = {}, useTools = false }, retryCount = 0)
         if (isQuotaError && retryCount < 1) {
             console.warn("⏳ Quota Gemini atteint, nouvel essai dans 5s...");
             await new Promise(resolve => setTimeout(resolve, 5000));
-            return chat({ message, context, useTools }, retryCount + 1);
+            return chat({ message, context, useTools, history }, retryCount + 1);
         }
         console.error("❌ Gemini :", err.response?.data || err.message);
         return { type: "text", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
@@ -122,8 +125,30 @@ async function chatWithFunctionResult({ message, context = {}, functionName, fun
     }
 }
 
+// Résumé de semaine (mémoire "gratuit") — texte compact que l'utilisateur peut
+// recoller dans une nouvelle conversation pour repartir de là, pas de zéro.
+async function summarize(transcript) {
+    try {
+        const body = {
+            contents: [{
+                role: "user",
+                parts: [{
+                    text: `Résume cet historique de conversation en un paragraphe dense (6-10 phrases), en gardant les faits, décisions et sujets importants évoqués. Ce résumé sera recollé par l'utilisateur au début d'une future conversation pour que SAMII reparte de là au lieu de zéro — écris-le donc à la première personne, comme si SAMII se le disait à lui-même :\n\n${transcript}`,
+                }],
+            }],
+        };
+        const response = await axios.post(API_URL, body);
+        const parts = response.data.candidates?.[0]?.content?.parts || [];
+        const textPart = parts.find(p => p.text);
+        return textPart?.text || "";
+    } catch (err) {
+        console.error("❌ Gemini (summarize) :", err.response?.data || err.message);
+        return "";
+    }
+}
+
 async function receive(msg) {
     console.log("📥 Gemini receive :", msg);
 }
 
-module.exports = { send, chat, chatWithFunctionResult, chatWithSearch, receive, TOOLS };
+module.exports = { send, chat, chatWithFunctionResult, chatWithSearch, summarize, receive, TOOLS };

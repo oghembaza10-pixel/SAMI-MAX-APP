@@ -18,10 +18,10 @@ class SamiiPlanner {
         }
     }
 
-    async ask(message, context = {}) {
+    async ask(message, context = {}, history = []) {
         try {
             const useTools = context.allowActions !== false;
-            const result = await gemini.chat({ message, context, useTools });
+            const result = await gemini.chat({ message, context, useTools, history });
 
             if (result.type === "function_call") {
                 console.log(`⚙️ SAMII exécute : ${result.name}`, result.args);
@@ -45,9 +45,9 @@ class SamiiPlanner {
         }
     }
 
-    async build(objective = {}, context = {}) {
+    async build(objective = {}, context = {}, history = []) {
         if (objective.goal) {
-            const reply = await this.ask(objective.goal, context);
+            const reply = await this.ask(objective.goal, context, history);
             return { success: true, reply };
         }
         return { success: false, reply: "Objectif manquant." };

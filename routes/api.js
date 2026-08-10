@@ -42,13 +42,83 @@ router.post("/chat", async (req, res) => {
             lastAction: req.body.lastAction || "",
             grade: grade.actuel,
         };
-        const result = await planner.build({ goal: message }, context);
+
+        const userId = req.session?.userId;
+        const history = await getSamiiHistory(userId);
+
+        const result = await planner.build({ goal: message }, context, history);
+
+        if (userId) await saveSamiiTurn(userId, message, result.reply);
+
         res.json(result);
     } catch (err) {
         console.error("❌ API chat :", err.message);
         res.json({ success: false, reply: "SAMII démarre. Réessaie dans quelques instants." });
     }
 });
+
+// ── Mémoire de conversation SAMII (gratuit = 24h glissantes, payant = illimité
+// dans le temps mais plafonné aux 150 derniers messages pour rester léger) ──
+async function getSamiiHistory(userId) {
+    if (!userId) return [];
+    try {
+        const userRows = await db.query(`SELECT abonnement FROM utilisateurs WHERE id = $1`, [userId]);
+        const estGratuit = (userRows[0]?.abonnement || "gratuit") === "gratuit";
+        const rows = estGratuit
+            ? await db.query(
+                  `SELECT role, message FROM samii_conversations
+                   WHERE user_id = $1 AND created_at > now() - interval '24 hours'
+                   ORDER BY created_at ASC LIMIT 30`,
+                  [userId]
+              )
+            : await db.query(
+                  `SELECT role, message FROM samii_conversations
+                   WHERE user_id = $1
+                   ORDER BY created_at DESC LIMIT 150`,
+                  [userId]
+              );
+        return estGratuit ? rows : rows.reverse();
+    } catch (err) {
+        console.error("❌ getSamiiHistory :", err.message);
+        return [];
+    }
+}
+
+// ── Résumé de la semaine (surtout utile en gratuit : mémoire 24h glissantes,
+// donc l'utilisateur peut coller ce résumé au début d'une nouvelle conversation
+// pour que SAMII reparte de là plutôt que de zéro) ──
+router.post("/samii-resume", requireAuth, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const rows = await db.query(
+            `SELECT role, message FROM samii_conversations
+             WHERE user_id = $1 AND created_at > now() - interval '7 days'
+             ORDER BY created_at ASC`,
+            [userId]
+        );
+        if (!rows.length) {
+            return res.json({ success: false, resume: "", message: "Pas encore d'historique cette semaine." });
+        }
+        const transcript = rows.map(r => `${r.role === "user" ? "Toi" : "SAMII"} : ${r.message}`).join("\n");
+        const gemini = require("../services/geminiService");
+        const resume = await gemini.summarize(transcript);
+        res.json({ success: !!resume, resume });
+    } catch (err) {
+        console.error("❌ API samii-resume :", err.message);
+        res.status(500).json({ success: false, resume: "" });
+    }
+});
+
+async function saveSamiiTurn(userId, message, reply) {
+    try {
+        await db.query(
+            `INSERT INTO samii_conversations (user_id, role, message) VALUES ($1,'user',$2), ($1,'model',$3)`,
+            [userId, message, reply || ""]
+        );
+    } catch (err) {
+        console.error("❌ saveSamiiTurn :", err.message);
+    }
+}
 
 router.post("/speak", async (req, res) => {
     try {

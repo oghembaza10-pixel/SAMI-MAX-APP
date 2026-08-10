@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const photoInput   = document.getElementById('samii-photo-input');
     const docInput     = document.getElementById('samii-doc-input');
     const attachPreview = document.getElementById('samii-attach-preview');
+    const resumeBtn     = document.getElementById('samii-resume-btn');
 
     if (!form || !input || !feed) return;
 
@@ -269,5 +270,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+    }
+
+    // ── RÉSUMÉ DE LA SEMAINE : copiable pour repartir de là, pas de zéro ──
+    if (resumeBtn) {
+        resumeBtn.addEventListener('click', async () => {
+            resumeBtn.disabled = true;
+            toast('📋 Génération du résumé...');
+            try {
+                const res = await fetch('/api/samii-resume', { method: 'POST' });
+                const data = await res.json();
+                if (!data.success || !data.resume) {
+                    toast(data.message || 'Impossible de générer le résumé pour le moment');
+                    return;
+                }
+                addMessage('bot', `📋 Résumé de ta semaine (colle-le au début d'une nouvelle conversation pour repartir de là) :\n\n${data.resume}`);
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(data.resume).then(() => toast('✅ Résumé copié dans le presse-papier'));
+                }
+            } catch (err) {
+                console.error(err);
+                toast('⚠️ Erreur pendant la génération du résumé');
+            } finally {
+                resumeBtn.disabled = false;
+            }
+        });
     }
 });
