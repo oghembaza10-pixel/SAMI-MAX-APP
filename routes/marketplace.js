@@ -771,20 +771,25 @@ router.get("/", requireAuth, async (req, res) => {
 <style>
 
 :root {
-    --blue: #00d9ff;
-    --blue2: #0077ff;
+    /* Mode OG : même identité noir/or/gris métal que le QG. Le slot --blue
+       (accent secondaire, utilisé pour boutons/icônes/bordures partout
+       dans ce fichier) devient un platine froid au lieu du cyan tech —
+       les 33 catégories/cartes qui consomment var(--blue) suivent
+       automatiquement, sans toucher à chaque règle une par une. */
+    --blue: #C6CAD2;
+    --blue2: #9AA0AA;
     --bg: #03060b;
     --panel: #09121d;
     --panel2: #0c1825;
     --text: #f5fbff;
     --muted: #7f96a8;
-    --border: rgba(0,217,255,.16);
+    --border: rgba(198,202,210,.16);
 
-    --gold: #D4A94A;
-    --gold-bright: #F2CC78;
-    --gold-soft: rgba(212,169,74,.09);
-    --gold-border: rgba(212,169,74,.35);
-    --silver-bright: #E8ECEF;
+    --gold: #D9B36C;
+    --gold-bright: #F5DA92;
+    --gold-soft: rgba(217,179,108,.09);
+    --gold-border: rgba(217,179,108,.35);
+    --silver-bright: #C6CAD2;
 }
 
 /* Mode jour — le bouton lune/soleil (#themeBtn) est déjà câblé en JS
@@ -798,10 +803,10 @@ body.light {
     --panel2: #eef2f6;
     --text: #0d1117;
     --muted: #57606a;
-    --border: rgba(0,119,255,.18);
+    --border: rgba(91,100,112,.18);
 
-    --blue: #0077ff;
-    --blue2: #0056c7;
+    --blue: #5B6470;
+    --blue2: #3F4750;
 
     --gold: #b78103;
     --gold-bright: #8a6102;
