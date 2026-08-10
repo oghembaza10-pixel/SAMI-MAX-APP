@@ -70,6 +70,19 @@
     --border-gold: 1px solid rgba(157, 92, 255, 0.25);
 }
 
+/* Mode OG — noir / or / gris métal, extrait des vraies couleurs du logo
+   og.png (dégradé or #f0d878→#c89830, dégradé argent #d8d8d0→#787068).
+   L'accent secondaire (slot --cyan-tech) devient argent métallique au
+   lieu de cyan, pour coller à l'identité du logo plutôt qu'à la tech. */
+[data-theme="og"] {
+    --gold-og: #D9B36C;
+    --gold-hover: #F2D68A;
+    --gold-glow: 0 0 24px rgba(217, 179, 108, 0.3);
+    --cyan-tech: #B8B4AA;
+    --cyan-glow: 0 0 20px rgba(184, 180, 170, 0.25);
+    --border-gold: 1px solid rgba(217, 179, 108, 0.25);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body { max-width: 100%; overflow-x: hidden; }
