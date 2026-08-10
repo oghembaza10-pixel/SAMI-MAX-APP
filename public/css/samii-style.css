@@ -143,6 +143,17 @@
     .samii-space { padding: 28px 20px 20px; }
     .samii-float-grid { grid-template-columns: repeat(2, 1fr); }
     .samii-chat { padding: 20px 16px 24px; }
+
+    /* La barre de saisie reste toujours visible et joignable au-dessus de la
+       barre de navigation fixe en bas (au lieu de dépendre du défilement),
+       comme une vraie appli de chat (WhatsApp, Messenger). */
+    .samii-chat__form {
+        position: sticky;
+        bottom: 84px;
+        z-index: 40;
+        margin-top: 12px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+    }
 }
 .samii-mode-link {
     display: inline-flex; align-items: center; gap: 8px;
