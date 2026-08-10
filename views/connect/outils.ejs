@@ -33,42 +33,42 @@
         </div>
 
         <nav class="qg-nav">
-            <a href="/hub" class="qg-nav__item">
+            <a href="/hub" class="qg-nav__item qg-nav__item--core">
                 <i data-lucide="layout-grid"></i><span>Hub</span>
             </a>
-            <a href="/marketplace" class="qg-nav__item">
+            <a href="/marketplace" class="qg-nav__item qg-nav__item--core">
                 <i data-lucide="store"></i><span>Marketplace</span>
             </a>
-            <a href="/community" class="qg-nav__item">
+            <a href="/community" class="qg-nav__item qg-nav__item--core">
                 <i data-lucide="users"></i><span>Community</span>
             </a>
-            <a href="/academy" class="qg-nav__item">
+            <a href="/academy" class="qg-nav__item qg-nav__item--core">
                 <i data-lucide="graduation-cap"></i><span>Academy</span>
             </a>
-            <div class="qg-nav__divider"></div>
-            <a href="/qg/<%= metier %>" class="qg-nav__item">
+            <button type="button" id="qg-more-toggle" class="qg-nav__item qg-nav__item--core qg-nav__item--more-toggle">
+                <i data-lucide="more-horizontal"></i><span>Plus</span>
+            </button>
+            <div class="qg-nav__divider qg-nav__item--more"></div>
+            <a href="/qg" class="qg-nav__item qg-nav__item--more">
                 <i data-lucide="briefcase"></i><span>Mes affaires</span>
             </a>
-            <a href="/qg/<%= metier %>/connecter" class="qg-nav__item active">
+            <a href="/connect/tools" class="qg-nav__item qg-nav__item--more active">
                 <i data-lucide="plug-zap"></i><span>Connecter mes outils</span>
             </a>
-            <a href="/qg/<%= metier %>/outils" class="qg-nav__item">
-                <i data-lucide="wrench"></i><span>Mes outils</span>
-            </a>
-            <a href="/arsenal" class="qg-nav__item">
+            <a href="/arsenal" class="qg-nav__item qg-nav__item--more">
                 <i data-lucide="sword"></i><span>Arsenal</span>
             </a>
-            <a href="/coffre" class="qg-nav__item">
+            <a href="/coffre" class="qg-nav__item qg-nav__item--more">
                 <i data-lucide="vault"></i><span>Coffre OG</span>
             </a>
-            <div class="qg-nav__divider"></div>
-            <a href="/samii" class="qg-nav__item qg-nav__item--samii">
+            <div class="qg-nav__divider qg-nav__item--more"></div>
+            <a href="/samii" class="qg-nav__item qg-nav__item--more qg-nav__item--samii">
                 <i data-lucide="bot"></i><span>SAMII</span>
                 <span class="qg-status-dot qg-status-dot--on"></span>
             </a>
         </nav>
 
-        <div class="qg-sidebar__bottom">
+        <div class="qg-sidebar__bottom qg-nav__item--more">
             <a href="/settings" class="qg-nav__item">
                 <i data-lucide="settings"></i><span>Paramètres</span>
             </a>
@@ -77,6 +77,7 @@
             </a>
         </div>
     </aside>
+    <div class="qg-nav-overlay" id="qg-nav-overlay"></div>
 
     <main class="qg-main">
 

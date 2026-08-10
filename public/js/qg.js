@@ -22,6 +22,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Bouton "Plus" mobile : ouvre le panneau avec Arsenal/Coffre/Connecteurs/
+    // SAMII/Paramètres... au lieu de les laisser hors-écran sans indice.
+    const moreToggle = document.getElementById('qg-more-toggle');
+    const navOverlay = document.getElementById('qg-nav-overlay');
+    function closeMorePanel() {
+        if (sidebar) sidebar.classList.remove('qg-sidebar--expanded');
+        if (moreToggle) moreToggle.classList.remove('active');
+    }
+    if (sidebar && moreToggle) {
+        moreToggle.addEventListener('click', () => {
+            const isOpen = sidebar.classList.toggle('qg-sidebar--expanded');
+            moreToggle.classList.toggle('active', isOpen);
+        });
+        if (navOverlay) navOverlay.addEventListener('click', closeMorePanel);
+        sidebar.querySelectorAll('.qg-nav__item--more').forEach((link) => {
+            link.addEventListener('click', closeMorePanel);
+        });
+    }
+
     let canalActif  = null;
     let allData     = null;
     let parcoursActuel = 'produit';

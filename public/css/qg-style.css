@@ -306,20 +306,50 @@ body {
         width: 100%; min-width: 0; height: auto;
         position: fixed; left: 0; top: auto; bottom: 0;
         flex-direction: row; align-items: center;
-        overflow-x: auto; overflow-y: hidden;
+        overflow-x: hidden; overflow-y: hidden;
         border-right: none; border-top: var(--border-soft);
         padding: 8px 10px;
         gap: 4px;
+        justify-content: space-around;
     }
     .qg-sidebar.collapsed { width: 100%; min-width: 0; padding: 8px 10px; }
 
     .qg-sidebar__top { display: none; }
     .qg-sidebar__bottom { margin-top: 0; padding-top: 0; border-top: none; }
 
-    .qg-nav { flex-direction: row; gap: 4px; flex: none; }
+    .qg-nav { flex-direction: row; gap: 4px; flex: 1; justify-content: space-around; }
     .qg-nav__item { flex-direction: column; gap: 2px; padding: 6px 10px; font-size: .62rem; }
     .qg-nav__item span { opacity: 1 !important; width: auto !important; }
     .qg-nav__divider { width: 1px; height: 24px; margin: 0 4px; }
+
+    /* Seuls les 4 modules essentiels + le bouton "Plus" restent visibles dans
+       la barre du bas — tout le reste (Arsenal, Coffre, Connecteurs, SAMII,
+       Paramètres...) était avant entassé dans une rangée qui débordait hors
+       écran sans aucun indice, on ne pouvait pas savoir qu'il fallait scroller. */
+    .qg-nav__item--more { display: none; }
+    .qg-nav__item--more-toggle { background: none; border: none; cursor: pointer; color: var(--text-muted); font-family: inherit; }
+    .qg-nav__item--more-toggle.active { color: var(--gold-og); }
+
+    .qg-nav-overlay { display: none; }
+
+    .qg-sidebar--expanded {
+        flex-direction: column; align-items: stretch; justify-content: flex-start;
+        height: auto; max-height: 74vh; bottom: 64px;
+        overflow-y: auto; padding: 14px;
+        border-radius: 18px 18px 0 0; border-top: var(--border-gold);
+        box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
+    }
+    .qg-sidebar--expanded .qg-nav,
+    .qg-sidebar--expanded .qg-sidebar__bottom { flex-direction: column; width: 100%; flex: none; justify-content: flex-start; }
+    .qg-sidebar--expanded .qg-nav__item { flex-direction: row; font-size: .82rem; padding: 11px 10px; }
+    .qg-sidebar--expanded .qg-nav__item--more { display: flex; }
+    .qg-sidebar--expanded .qg-nav__divider.qg-nav__item--more { display: block; width: auto; height: 1px; margin: 6px 0; }
+    .qg-sidebar--expanded .qg-nav__item--core:not(.qg-nav__item--more-toggle) { display: none; }
+    .qg-sidebar--expanded ~ .qg-nav-overlay,
+    body:has(.qg-sidebar--expanded) .qg-nav-overlay {
+        display: block; position: fixed; inset: 0; z-index: 25;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+    }
 
     .qg-main, .qg-sidebar.collapsed ~ .qg-main {
         margin-left: 0 !important;
@@ -337,6 +367,10 @@ body {
 
     /* L'orb SAMII ne doit pas chevaucher la barre de navigation fixe en bas */
     .samii-orb { bottom: 78px; right: 16px; width: 46px; height: 46px; }
+}
+.qg-nav-overlay { display: none; }
+@media (min-width: 901px) {
+    .qg-nav__item--more-toggle, .qg-nav-overlay { display: none !important; }
 }
 /* TABLE */
 .qg-table-section { overflow-x: auto; margin-bottom: 2rem; }

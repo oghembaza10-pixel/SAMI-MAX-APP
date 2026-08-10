@@ -35,39 +35,42 @@
             </button>
         </div>
         <nav class="qg-nav">
-            <a href="/hub" class="qg-nav__item">
+            <a href="/hub" class="qg-nav__item qg-nav__item--core">
                 <i data-lucide="layout-grid"></i><span data-i18n="qg.nav.hub">Hub</span>
             </a>
-            <a href="/marketplace" class="qg-nav__item">
+            <a href="/marketplace" class="qg-nav__item qg-nav__item--core">
                 <i data-lucide="store"></i><span data-i18n="qg.nav.marketplace">Marketplace</span>
             </a>
-            <a href="/community" class="qg-nav__item">
+            <a href="/community" class="qg-nav__item qg-nav__item--core">
                 <i data-lucide="users"></i><span data-i18n="qg.nav.community">Community</span>
             </a>
-            <a href="/academy" class="qg-nav__item">
+            <a href="/academy" class="qg-nav__item qg-nav__item--core">
                 <i data-lucide="graduation-cap"></i><span data-i18n="qg.nav.academy">Academy</span>
             </a>
-            <div class="qg-nav__divider"></div>
-            <a href="/qg" class="qg-nav__item active">
+            <button type="button" id="qg-more-toggle" class="qg-nav__item qg-nav__item--core qg-nav__item--more-toggle">
+                <i data-lucide="more-horizontal"></i><span>Plus</span>
+            </button>
+            <div class="qg-nav__divider qg-nav__item--more"></div>
+            <a href="/qg" class="qg-nav__item qg-nav__item--more active">
                 <i data-lucide="briefcase"></i><span data-i18n="qg.nav.myBusiness">Mes affaires</span>
             </a>
-           <a href="/connect/tools" class="qg-nav__item">
+           <a href="/connect/tools" class="qg-nav__item qg-nav__item--more">
     <i data-lucide="plug-zap"></i><span data-i18n="qg.nav.connectTools">Connecter mes outils</span>
-</a> 
-           
-            <a href="/arsenal" class="qg-nav__item">
+</a>
+
+            <a href="/arsenal" class="qg-nav__item qg-nav__item--more">
                 <i data-lucide="sword"></i><span data-i18n="qg.nav.arsenal">Arsenal</span>
             </a>
-            <a href="/coffre" class="qg-nav__item">
+            <a href="/coffre" class="qg-nav__item qg-nav__item--more">
                 <i data-lucide="vault"></i><span data-i18n="qg.nav.vault">Coffre OG</span>
             </a>
-            <div class="qg-nav__divider"></div>
-            <a href="/samii" class="qg-nav__item qg-nav__item--samii">
+            <div class="qg-nav__divider qg-nav__item--more"></div>
+            <a href="/samii" class="qg-nav__item qg-nav__item--more qg-nav__item--samii">
                 <i data-lucide="bot"></i><span data-i18n="qg.nav.samii">SAMII</span>
                 <span class="qg-status-dot qg-status-dot--on" id="samii-status-dot" title="SAMII actif"></span>
-            </a> 
+            </a>
         </nav>
-        <div class="qg-sidebar__bottom">
+        <div class="qg-sidebar__bottom qg-nav__item--more">
           <a href="/vitrine/<%= userId %>" class="qg-nav__item" target="_blank">
     <i data-lucide="user-circle"></i><span>Ma Vitrine</span>
 </a>
@@ -85,6 +88,7 @@
             </div>
         </div>
     </aside>
+    <div class="qg-nav-overlay" id="qg-nav-overlay"></div>
     <main class="qg-main">
         <header class="qg-topbar">
             <div class="qg-topbar__breadcrumb">
