@@ -11,6 +11,7 @@ const gradeService = require("../services/gradeService");
 const {
     MARKETPLACE_NAME,
     CATEGORIES,
+    SERVICES_RAPIDES,
     SUPPLIER_REGIONS,
     categoryLabel,
     supplierRegionLabel
@@ -45,6 +46,11 @@ function escapeHtml(value) {
 }
 
 function getCategoryLabel(id) {
+    if (typeof id === "string" && id.startsWith("service-")) {
+        const service = (SERVICES_RAPIDES || []).find(s => `service-${s.id}` === id);
+        if (service) return `${service.emoji} ${service.label}`;
+    }
+
     if (typeof categoryLabel === "function") {
         return categoryLabel(id);
     }
@@ -133,6 +139,18 @@ const REGION_CHIPS_HTML = (SUPPLIER_REGIONS || [])
         >
             <i data-lucide="${escapeHtml(region.icon || "globe")}"></i>
             ${escapeHtml(region.label)}
+        </a>
+    `)
+    .join("");
+
+const SERVICES_CHIPS_HTML = (SERVICES_RAPIDES || [])
+    .map(service => `
+        <a
+            href="/marketplace/publier?service=${encodeURIComponent(service.id)}"
+            class="service-chip"
+        >
+            <span class="service-chip__emoji">${service.emoji}</span>
+            ${escapeHtml(service.label)}
         </a>
     `)
     .join("");
@@ -1186,6 +1204,65 @@ nav {
 
 .region-row {
     padding-bottom: 14px;
+}
+
+.services-row {
+    display: flex;
+    flex-wrap: nowrap;
+
+    gap: 8px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+
+    padding: 0 24px 16px;
+
+    scrollbar-width: none;
+}
+
+.services-row::-webkit-scrollbar {
+    display: none;
+}
+
+.service-chip {
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 8px 14px;
+
+    border-radius: 999px;
+
+    border:
+        1px solid
+        rgba(197,160,89,.25);
+
+    background:
+        rgba(197,160,89,.06);
+
+    color: var(--text);
+
+    text-decoration: none;
+    white-space: nowrap;
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.service-chip:hover {
+    border-color:
+        rgba(197,160,89,.5);
+
+    background:
+        rgba(197,160,89,.12);
+}
+
+.service-chip__emoji {
+    font-size: 14px;
+    line-height: 1;
 }
 
 .content {
@@ -2251,6 +2328,12 @@ nav {
         </a>
 
         ${regionChipsHtml}
+
+    </div>
+
+    <div class="services-row">
+
+        ${SERVICES_CHIPS_HTML}
 
     </div>
 
@@ -3991,6 +4074,20 @@ router.get(
     requireAuth,
     async (req, res) => {
 
+        const serviceQuery =
+            (SERVICES_RAPIDES || [])
+                .find(s => s.id === req.query.service);
+
+        const preselectedCategorie =
+            serviceQuery
+                ? `service-${serviceQuery.id}`
+                : "";
+
+        const preselectedTitre =
+            serviceQuery
+                ? `${serviceQuery.label} — `
+                : "";
+
         const opts =
             (CATEGORIES || [])
                 .filter(
@@ -4005,6 +4102,20 @@ router.get(
                             ${escapeHtml(
                                 category.label
                             )}
+                        </option>
+                    `
+                )
+                .join("");
+
+        const optsServices =
+            (SERVICES_RAPIDES || [])
+                .map(
+                    service => `
+                        <option
+                            value="service-${escapeHtml(service.id)}"
+                            ${preselectedCategorie === `service-${service.id}` ? "selected" : ""}
+                        >
+                            ${service.emoji} ${escapeHtml(service.label)}
                         </option>
                     `
                 )
@@ -4306,6 +4417,7 @@ select option {
                 name="titre"
                 required
                 maxlength="180"
+                value="${escapeHtml(preselectedTitre)}"
             >
 
         </div>
@@ -4325,7 +4437,13 @@ select option {
                     Sélectionner...
                 </option>
 
-                ${opts}
+                <optgroup label="🧰 Services">
+                    ${optsServices}
+                </optgroup>
+
+                <optgroup label="📦 Produits">
+                    ${opts}
+                </optgroup>
 
             </select>
 
@@ -4931,6 +5049,12 @@ router.post(
                     .some(
                         category =>
                             category.id ===
+                            cleanCategorie
+                    ) ||
+                (SERVICES_RAPIDES || [])
+                    .some(
+                        service =>
+                            `service-${service.id}` ===
                             cleanCategorie
                     );
 

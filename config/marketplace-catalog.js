@@ -43,6 +43,15 @@ const CATEGORIES = [
   { id: 'tendances-nouveautes', label: 'Tendances & Nouveautés', segment: 'tendance' },
 ];
 
+// Raccourcis "Services" — volontairement séparés des 33 catégories produits
+// ci-dessus (annonces.categorie = 'service', le libellé précis reste dans le titre).
+const SERVICES_RAPIDES = [
+  { id: 'nounou',       emoji: '👶', label: 'Nounou' },
+  { id: 'plat-semaine', emoji: '🍲', label: 'Plat de la semaine' },
+  { id: 'chambre',      emoji: '🛏️', label: 'Louer une chambre' },
+  { id: 'autre',        emoji: '🧰', label: 'Autre service' },
+];
+
 const SUPPLIER_REGIONS = [
   { id: 'local', icon: 'map-pin', label: 'Fournisseurs Locaux', countries: ['DZ', 'MA', 'TN', 'SN', 'CI', 'CM'] },
   { id: 'europe', icon: 'landmark', label: 'Fournisseurs Européens', countries: ['FR', 'ES', 'IT', 'DE', 'NL', 'BE', 'PL'] },
@@ -76,6 +85,7 @@ function supplierRegionLabel(id) {
 module.exports = {
   MARKETPLACE_NAME,
   CATEGORIES,
+  SERVICES_RAPIDES,
   SUPPLIER_REGIONS,
   PRODUCT_SEGMENTS,
   SUPPLIERS,
