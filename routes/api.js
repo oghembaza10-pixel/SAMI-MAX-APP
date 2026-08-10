@@ -103,14 +103,28 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         const parcours = typeParcours(workspace.metier);
 
         if (parcours === "rdv") {
-            return await buildRdvResponse(res, workspace, workspaceId);
+            return await buildRdvResponse(res, workspace, workspaceId, req.session.userId);
         }
-        return await buildProduitResponse(res, workspace, workspaceId);
+        return await buildProduitResponse(res, workspace, workspaceId, req.session.userId);
     } catch (err) {
         console.error("❌ API qg-data :", err.message);
         res.status(500).json({ error: "Erreur chargement données." });
     }
 });
+
+// ── Grade réel du compte (utilisateurs.grade_actuel/score_grade) — le QG
+// affichait avant un grade recalculé localement à partir du nombre de
+// commandes de la boutique, déconnecté du vrai grade (Arsenal, thèmes...).
+async function getGrade(userId) {
+    if (!userId) return { actuel: "Soldat", score: 0 };
+    try {
+        const rows = await db.query(`SELECT grade_actuel, score_grade FROM utilisateurs WHERE id = $1`, [userId]);
+        return { actuel: rows[0]?.grade_actuel || "Soldat", score: rows[0]?.score_grade || 0 };
+    } catch (err) {
+        console.error("❌ getGrade :", err.message);
+        return { actuel: "Soldat", score: 0 };
+    }
+}
 
 // ── Activité récente (journal) — alimente le panneau temps réel du QG ──
 async function getJournal(workspaceId) {
@@ -127,7 +141,7 @@ async function getJournal(workspaceId) {
 }
 
 // ── Réponse QG — métiers produit (e-commerce, restaurant...) ──
-async function buildProduitResponse(res, workspace, workspaceId) {
+async function buildProduitResponse(res, workspace, workspaceId, userId) {
     const commandesRows = await db.query(
         `SELECT * FROM commandes WHERE workspace_id = $1 ORDER BY date_commande DESC LIMIT 100`,
         [workspaceId]
@@ -190,6 +204,7 @@ async function buildProduitResponse(res, workspace, workspaceId) {
     const rev_moisP = cmd_moisP.reduce((s, c) => s + getMontant(c), 0);
     const evolution = rev_moisP > 0 ? (((rev_mois - rev_moisP) / rev_moisP) * 100).toFixed(1) + "%" : "—";
     const journal = await getJournal(workspaceId);
+    const grade = await getGrade(userId);
 
     res.json({
         success: true,
@@ -202,11 +217,12 @@ async function buildProduitResponse(res, workspace, workspaceId) {
         commandes,
         clients,
         journal,
+        grade,
     });
 }
 
 // ── Réponse QG — métiers rendez-vous (dentiste, avocat...) ──
-async function buildRdvResponse(res, workspace, workspaceId) {
+async function buildRdvResponse(res, workspace, workspaceId, userId) {
     const rdvRows = await db.query(
         `SELECT * FROM rendez_vous WHERE workspace_id = $1 ORDER BY created_at DESC LIMIT 100`,
         [workspaceId]
@@ -251,6 +267,7 @@ async function buildRdvResponse(res, workspace, workspaceId) {
         ? (((rdv_mois.length - rdv_moisP.length) / rdv_moisP.length) * 100).toFixed(1) + "%"
         : "—";
     const journal = await getJournal(workspaceId);
+    const grade = await getGrade(userId);
 
     res.json({
         success: true,
@@ -266,6 +283,7 @@ async function buildRdvResponse(res, workspace, workspaceId) {
         commandes,
         clients: [],
         journal,
+        grade,
     });
 }
 

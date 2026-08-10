@@ -26,36 +26,40 @@ document.addEventListener('DOMContentLoaded', () => {
     let allData     = null;
     let parcoursActuel = 'produit';
 
+    // Mêmes paliers que services/gradeService.js (SEUILS) — le nom doit
+    // correspondre exactement à utilisateurs.grade_actuel.
     const GRADES = [
-        { nom: 'SOLDAT',     icon: '🪖',  seuil: 0   },
-        { nom: 'CAPORAL',    icon: '🎖️',  seuil: 10  },
-        { nom: 'SERGENT',    icon: '⭐',   seuil: 25  },
-        { nom: 'LIEUTENANT', icon: '🌟',   seuil: 50  },
-        { nom: 'CAPITAINE',  icon: '🏅',   seuil: 100 },
-        { nom: 'GÉNÉRAL',    icon: '🎗️',  seuil: 200 },
+        { nom: 'Soldat',     icon: '🪖',  seuil: 0   },
+        { nom: 'Caporal',    icon: '🎖️',  seuil: 10  },
+        { nom: 'Sergent',    icon: '⭐',   seuil: 25  },
+        { nom: 'Lieutenant', icon: '🌟',   seuil: 50  },
+        { nom: 'Capitaine',  icon: '🏅',   seuil: 100 },
+        { nom: 'Général',    icon: '🎗️',  seuil: 200 },
     ];
 
-    function afficherGrade(totalCommandes) {
-        let actuel  = GRADES[0];
-        let suivant = GRADES[1];
-        for (let i = 0; i < GRADES.length; i++) {
-            if (totalCommandes >= GRADES[i].seuil) {
-                actuel  = GRADES[i];
-                suivant = GRADES[i + 1] || null;
-            }
-        }
+    // Affiche le vrai grade du compte (utilisateurs.grade_actuel/score_grade,
+    // renvoyé par /api/qg-data) — avant, ce grade était recalculé ici à partir
+    // du nombre de commandes de la boutique, déconnecté du grade réel utilisé
+    // par l'Arsenal et les thèmes visuels.
+    function afficherGrade(gradeActuel, score) {
+        const scoreNum = score || 0;
+        let index = GRADES.findIndex(g => g.nom === gradeActuel);
+        if (index < 0) index = 0;
+        const actuel  = GRADES[index];
+        const suivant = GRADES[index + 1] || null;
+
         const iconEl = document.getElementById('grade-icon');
         const nomEl  = document.getElementById('grade-nom');
         const fillEl = document.getElementById('grade-fill');
         const nextEl = document.getElementById('grade-next');
         if (iconEl) iconEl.textContent = actuel.icon;
-        if (nomEl)  nomEl.textContent  = actuel.nom;
+        if (nomEl)  nomEl.textContent  = actuel.nom.toUpperCase();
         if (suivant) {
             const pct = Math.min(Math.round(
-                ((totalCommandes - actuel.seuil) /
+                ((scoreNum - actuel.seuil) /
                 (suivant.seuil - actuel.seuil)) * 100), 100);
             if (fillEl) fillEl.style.width = pct + '%';
-            if (nextEl) nextEl.textContent = `→ ${suivant.nom}`;
+            if (nextEl) nextEl.textContent = `→ ${suivant.nom.toUpperCase()}`;
         } else {
             if (fillEl) fillEl.style.width = '100%';
             if (nextEl) nextEl.textContent = '👑 MAX';
@@ -370,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const evolEl = document.getElementById('perf-evolution');
             if (evolEl) evolEl.textContent = data.performance.evolution;
 
-            afficherGrade(data.stats.total_commandes);
+            afficherGrade(data.grade?.actuel, data.grade?.score);
             appliquerModule(canalActif || '');
             renderActivite(data.journal);
 

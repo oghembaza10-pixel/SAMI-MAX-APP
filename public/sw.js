@@ -5,7 +5,7 @@
 // dynamique (QG, commandes, sessions, données) part toujours au réseau,
 // pour ne jamais servir de contenu périmé.
 // ==========================================================================
-const CACHE_NAME = "samii-static-v1";
+const CACHE_NAME = "samii-static-v2";
 const STATIC_EXTENSIONS = [".css", ".js", ".png", ".jpg", ".jpeg", ".svg", ".woff", ".woff2", ".ico"];
 
 self.addEventListener("install", (event) => {
