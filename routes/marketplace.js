@@ -2142,11 +2142,12 @@ nav {
         right: 0;
         bottom: 0;
 
-        display: flex;
+        height: 64px;
 
-        justify-content: space-around;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
 
-        padding: 9px;
+        padding: 8px 4px;
 
         background:
             rgba(3,6,11,.95);
@@ -2162,11 +2163,17 @@ nav {
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         gap: 3px;
+
+        min-width: 0;
 
         color: var(--muted);
 
         text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
 
         font-size: 8px;
         font-weight: 800;
