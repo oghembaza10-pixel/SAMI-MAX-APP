@@ -17,26 +17,6 @@ const METIERS = [
     { id: "tourisme",    icon: "plane",           mood: "mood-tourisme" },
 ];
 
-const PLATFORMS = [
-    { id: "instagram", label: "Instagram", icon: "instagram",      color: "#E1306C", connectRoute: "/connect/instagram" },
-    { id: "tiktok",    label: "TikTok",    icon: "music-2",        color: "#25F4EE", connectRoute: "/connect/tiktok" },
-    { id: "facebook",  label: "Facebook",  icon: "facebook",       color: "#1877F2", connectRoute: "/connect/facebook" },
-    { id: "whatsapp",  label: "WhatsApp",  icon: "message-circle", color: "#25D366", connectRoute: "/connect/whatsapp" },
-    { id: "youtube",   label: "YouTube",   icon: "youtube",        color: "#FF0000", connectRoute: "/connect/youtube" },
-    { id: "linkedin",  label: "LinkedIn",  icon: "linkedin",       color: "#0A66C2", connectRoute: "/connect/linkedin" },
-    { id: "x",         label: "X",         icon: "twitter",        color: "#E7E9EA", connectRoute: "/connect/x" },
-    { id: "pinterest", label: "Pinterest", icon: "image",          color: "#E60023", connectRoute: "/connect/pinterest" },
-    { id: "shopify",   label: "Shopify",   icon: "shopping-bag",   color: "#95BF47", connectRoute: "/connect/shopify" },
-    { id: "discord",   label: "Discord",   icon: "message-square", color: "#5865F2", connectRoute: "/connect/discord" },
-    { id: "telegram",  label: "Telegram",  icon: "send",           color: "#229ED9", connectRoute: "/connect/telegram" },
-    { id: "stripe",    label: "Stripe",    icon: "credit-card",    color: "#635BFF", connectRoute: "/connect/stripe" },
-    { id: "paypal",    label: "PayPal",    icon: "wallet",         color: "#00457C", connectRoute: "/connect/paypal" },
-    { id: "google",    label: "Google",    icon: "chrome",         color: "#4285F4", connectRoute: "/connect/google" },
-    { id: "notion",    label: "Notion",    icon: "file-text",      color: "#EDEDED", connectRoute: "/connect/notion" },
-    { id: "openai",    label: "OpenAI",    icon: "sparkles",       color: "#10A37F", connectRoute: "/connect/openai" },
-    { id: "claude",    label: "Claude",    icon: "bot",            color: "#D97757", connectRoute: "/connect/claude" },
-];
-
 // Traductions de secours si i18n.js n'est pas encore chargé
 const FALLBACK_METIER_TEXT = {
     ecommerce:   { label: "E-commerce",   desc: "Commerce en ligne" },
@@ -100,39 +80,6 @@ function renderMetierGrid() {
     `;
     if (typeof lucide !== "undefined") lucide.createIcons();
 }
-function renderSidebarPlatforms() {
-    const wrap = document.getElementById("og-sidebar-platforms");
-    if (!wrap) return;
-    const connected = window.OG_CONNECTED_PLATFORMS || [];
-
-    wrap.innerHTML = PLATFORMS.map(p => {
-        const isConnected = connected.includes(p.id);
-        return `
-            <button
-                class="og-platform${isConnected ? " connected" : ""}"
-                type="button"
-                style="--brand-color:${p.color}"
-                data-platform="${p.id}"
-                data-connect-route="${p.connectRoute}"
-                title="${p.label}${isConnected ? " — connecté" : " — cliquer pour connecter"}"
-                aria-label="${p.label}"
-            >
-                <i data-lucide="${p.icon}"></i>
-                ${isConnected ? '<span class="og-platform__dot"></span>' : ""}
-            </button>
-        `;
-    }).join("");
-
-    wrap.querySelectorAll(".og-platform").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const alreadyConnected = btn.classList.contains("connected");
-            window.location.href = alreadyConnected ? "/settings#connexions" : btn.dataset.connectRoute;
-        });
-    });
-
-    if (typeof lucide !== "undefined") lucide.createIcons();
-}
-
 // ── Toast simple pour "bientôt disponible" ──────────────────────────
 function showHubToast(message) {
     let toast = document.getElementById("hub-toast");
@@ -209,7 +156,6 @@ function initSearchPanel() {
 
 document.addEventListener("DOMContentLoaded", () => {
     renderMetierGrid();
-    renderSidebarPlatforms();
     initSearchPanel();
 
     if (typeof lucide !== "undefined") {

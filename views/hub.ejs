@@ -185,7 +185,6 @@
 <!-- ✅ Données serveur → frontend -->
 <script>
     window.OG_WORKSPACES = <%- JSON.stringify(typeof workspaces !== "undefined" ? workspaces : []) %>;
-    window.OG_CONNECTED_PLATFORMS = <%- JSON.stringify(typeof connectedPlatforms !== "undefined" ? connectedPlatforms : []) %>;
     window.OG_WORKSPACE_ID = "<%= typeof workspaceId !== 'undefined' ? workspaceId : '' %>";
 </script>
 
