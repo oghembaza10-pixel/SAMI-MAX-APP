@@ -777,9 +777,12 @@ router.get("/", requireAuth, async (req, res) => {
        les 33 catégories/cartes qui consomment var(--blue) suivent
        automatiquement, sans toucher à chaque règle une par une. */
     --blue: #C6CAD2;
+    --blue-rgb: 198,202,210;
     --blue2: #9AA0AA;
     --bg: #03060b;
+    --bg-rgb: 3,6,11;
     --panel: #09121d;
+    --panel-rgb: 9,18,29;
     --panel2: #0c1825;
     --text: #f5fbff;
     --muted: #7f96a8;
@@ -799,13 +802,16 @@ router.get("/", requireAuth, async (req, res) => {
    déjà partout (var(--bg), var(--panel)...), donc tout se réadapte. */
 body.light {
     --bg: #f4f7fa;
+    --bg-rgb: 244,247,250;
     --panel: #ffffff;
+    --panel-rgb: 255,255,255;
     --panel2: #eef2f6;
     --text: #0d1117;
     --muted: #57606a;
     --border: rgba(91,100,112,.18);
 
     --blue: #5B6470;
+    --blue-rgb: 91,100,112;
     --blue2: #3F4750;
 
     --gold: #b78103;
@@ -830,7 +836,7 @@ body {
     background:
         radial-gradient(
             circle at top right,
-            rgba(0,217,255,.08),
+            rgba(var(--blue-rgb),.08),
             transparent 35%
         ),
         var(--bg);
@@ -874,7 +880,7 @@ select {
 
     border-right:
         1px solid
-        rgba(0,217,255,.12);
+        rgba(var(--blue-rgb),.12);
 
     background:
         rgba(3,7,13,.94);
@@ -957,13 +963,13 @@ nav {
     color: var(--text);
 
     background:
-        rgba(0,217,255,.08);
+        rgba(var(--blue-rgb),.08);
 }
 
 .side-link.active {
     border:
         1px solid
-        rgba(0,217,255,.14);
+        rgba(var(--blue-rgb),.14);
 }
 
 .side-link svg {
@@ -1030,7 +1036,7 @@ nav {
 .og-lang-switch span:hover,
 .og-lang-switch span.active {
     color: var(--blue);
-    background: rgba(0,217,255,.08);
+    background: rgba(var(--blue-rgb),.08);
 }
 
 .main {
@@ -1044,13 +1050,13 @@ nav {
     z-index: 15;
 
     background:
-        rgba(3,6,11,.90);
+        rgba(var(--bg-rgb),.90);
 
     backdrop-filter: blur(20px);
 
     border-bottom:
         1px solid
-        rgba(0,217,255,.08);
+        rgba(var(--blue-rgb),.08);
 }
 
 .header-top {
@@ -1078,7 +1084,7 @@ nav {
         var(--border);
 
     background:
-        rgba(9,18,29,.9);
+        rgba(var(--panel-rgb),.9);
 
     border-radius: 12px;
 
@@ -1156,7 +1162,7 @@ nav {
     border-radius: 10px;
 
     background:
-        rgba(9,18,29,.8);
+        rgba(var(--panel-rgb),.8);
 
     color: var(--text);
 
@@ -1254,7 +1260,7 @@ nav {
 
     border:
         1px solid
-        rgba(0,217,255,.10);
+        rgba(var(--blue-rgb),.10);
 
     color: var(--muted);
 
@@ -1272,10 +1278,10 @@ nav {
     color: var(--blue);
 
     border-color:
-        rgba(0,217,255,.3);
+        rgba(var(--blue-rgb),.3);
 
     background:
-        rgba(0,217,255,.07);
+        rgba(var(--blue-rgb),.07);
 }
 
 .region-row {
@@ -1416,7 +1422,7 @@ nav {
     border-radius: 10px;
 
     background:
-        rgba(9,18,29,.8);
+        rgba(var(--panel-rgb),.8);
 
     color: var(--text);
 
@@ -1450,7 +1456,7 @@ nav {
     border-radius: 17px;
 
     background:
-        rgba(9,18,29,.88);
+        rgba(var(--panel-rgb),.88);
 
     transition:
         transform .2s,
@@ -1477,12 +1483,12 @@ nav {
 
     box-shadow:
         0 18px 50px rgba(0,0,0,.28),
-        0 0 26px rgba(0,217,255,.12);
+        0 0 26px rgba(var(--blue-rgb),.12);
 }
 
 .product-card.is-ai {
     border-color:
-        rgba(0,217,255,.18);
+        rgba(var(--blue-rgb),.18);
 }
 
 .product-media {
@@ -1544,7 +1550,7 @@ nav {
     border-radius: 999px;
 
     background:
-        rgba(3,6,11,.78);
+        rgba(var(--bg-rgb),.78);
 
     backdrop-filter: blur(10px);
 
@@ -1584,7 +1590,7 @@ nav {
     border-radius: 50%;
 
     background:
-        rgba(3,6,11,.72);
+        rgba(var(--bg-rgb),.72);
 
     color: var(--text);
 
@@ -1692,7 +1698,7 @@ nav {
     border-radius: 8px;
 
     background:
-        rgba(0,217,255,.08);
+        rgba(var(--blue-rgb),.08);
 
     color: var(--blue);
 
@@ -1778,7 +1784,7 @@ nav {
 
 .cart-mini-btn:hover {
     color: var(--blue);
-    border-color: rgba(0,217,255,.3);
+    border-color: rgba(var(--blue-rgb),.3);
 }
 
 .product-price {
@@ -1946,7 +1952,7 @@ nav {
 
     border-bottom:
         1px solid
-        rgba(0,217,255,.08);
+        rgba(var(--blue-rgb),.08);
 }
 
 .cart-item img {
@@ -2150,7 +2156,7 @@ nav {
         padding: 8px 4px;
 
         background:
-            rgba(3,6,11,.95);
+            rgba(var(--bg-rgb),.95);
 
         border-top:
             1px solid
