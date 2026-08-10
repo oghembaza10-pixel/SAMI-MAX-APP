@@ -343,8 +343,11 @@ document.getElementById("form-vitrine").addEventListener("submit", async (e) => 
         });
         const json = await res.json();
         if (json.success) {
-            msg.textContent = "✅ Vitrine mise à jour !";
+            msg.textContent = "✅ Vitrine mise à jour ! Redirection...";
             msg.className = "vm-msg ok";
+            setTimeout(() => {
+                window.location.href = document.querySelector(".back").getAttribute("href");
+            }, 900);
         } else {
             msg.textContent = json.error || "Erreur.";
         }
