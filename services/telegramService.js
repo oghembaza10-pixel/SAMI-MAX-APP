@@ -5,9 +5,42 @@
 const axios        = require("axios");
 const CONFIG       = require("../config");
 const orchestrator = require("../brain/orchestrator");
+const db           = require("./db");
 
 const TOKEN = CONFIG.TELEGRAM.BOT_TOKEN;
 const BASE  = `https://api.telegram.org/bot${TOKEN}`;
+
+// ── CHAT ID DU MARCHAND CONNECTÉ SUR UN WORKSPACE ──────────────────────────
+async function getAdminChatId(workspaceId) {
+    try {
+        if (!workspaceId) return null;
+        const rows = await db.query(
+            `SELECT config FROM connecteurs WHERE type = 'telegram' AND actif = true AND workspace_id = $1`,
+            [workspaceId]
+        );
+        if (!rows[0]) return null;
+        const config = JSON.parse(rows[0].config || "{}");
+        return config.chatId || null;
+    } catch { return null; }
+}
+
+// ── NOTIFIER LE MARCHAND AVEC BOUTONS INLINE (confirmer/annuler) ──────────
+async function notifyAdmin(workspaceId, message, inlineKeyboard) {
+    const chatId = await getAdminChatId(workspaceId);
+    if (!chatId) return { success: false };
+    try {
+        await axios.post(`${BASE}/sendMessage`, {
+            chat_id     : chatId,
+            text        : message,
+            parse_mode  : "Markdown",
+            ...(inlineKeyboard ? { reply_markup: { inline_keyboard: inlineKeyboard } } : {}),
+        });
+        return { success: true };
+    } catch (err) {
+        console.error("❌ Telegram notifyAdmin :", err.response?.data || err.message);
+        return { success: false, error: err.message };
+    }
+}
 
 // ── ENVOYER MESSAGE ────────────────────────────────────────────────────────
 async function send(chatId, message) {
@@ -121,6 +154,8 @@ async function receive(msg) {
 
 module.exports = {
     send,
+    getAdminChatId,
+    notifyAdmin,
     demanderConfirmation,
     notifyCommande,
     notifyExpedition,

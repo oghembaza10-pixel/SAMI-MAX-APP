@@ -5,13 +5,19 @@ const gemini = require("../services/geminiService");
 const commerceEngine = require("../engines/commerceEngine");
 
 class SamiiPlanner {
-    async executeFunction(name, args) {
+    async executeFunction(name, args, context = {}) {
         switch (name) {
             case "confirmer_commande":
                 return await commerceEngine.confirmTelegramOrder({ payload: { orderId: args.orderId } });
 
             case "annuler_commande":
                 return await commerceEngine.cancelTelegramOrder({ payload: { orderId: args.orderId } });
+
+            case "prendre_rendez_vous":
+                return await commerceEngine.createRdvFromChat(context, args);
+
+            case "passer_commande":
+                return await commerceEngine.createOrderFromChat(context, args);
 
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
@@ -25,7 +31,7 @@ class SamiiPlanner {
 
             if (result.type === "function_call") {
                 console.log(`⚙️ SAMII exécute : ${result.name}`, result.args);
-                const functionResult = await this.executeFunction(result.name, result.args);
+                const functionResult = await this.executeFunction(result.name, result.args, context);
 
                 const finalReply = await gemini.chatWithFunctionResult({
                     message,

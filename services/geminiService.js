@@ -32,6 +32,32 @@ const TOOLS = [
                     required: ["orderId"],
                 },
             },
+            {
+                name: "prendre_rendez_vous",
+                description: "Enregistre une demande de rendez-vous pour le client, uniquement une fois que le motif, la date/heure souhaitée et son numéro de téléphone sont clairement connus dans la conversation.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        motif: { type: "STRING", description: "Le motif du rendez-vous." },
+                        date_rdv: { type: "STRING", description: "La date et l'heure souhaitées, telles que données par le client." },
+                        telephone: { type: "STRING", description: "Le numéro de téléphone du client." },
+                    },
+                    required: ["motif", "date_rdv", "telephone"],
+                },
+            },
+            {
+                name: "passer_commande",
+                description: "Enregistre une commande pour le client, uniquement une fois que le produit (choisi EXACTEMENT parmi le catalogue réel fourni dans le contexte — jamais inventé), l'adresse de livraison et le numéro de téléphone sont connus.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        produit: { type: "STRING", description: "Le nom exact du produit choisi, tel qu'il apparaît dans le catalogue fourni dans le contexte." },
+                        telephone: { type: "STRING", description: "Le numéro de téléphone du client." },
+                        adresse: { type: "STRING", description: "L'adresse de livraison du client." },
+                    },
+                    required: ["produit", "telephone", "adresse"],
+                },
+            },
         ],
     },
 ];

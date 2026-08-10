@@ -9,6 +9,10 @@ const airtable           = require("../services/airtable");
 const notificationEngine = require("../engines/notificationEngine");
 const automationEngine   = require("../engines/automationEngine");
 const db = require("../services/db");
+const notify = require("../services/notify");
+// require() tardif (dans les méthodes) : telegramService requiert brain/orchestrator,
+// qui requiert ce fichier — un require en tête de fichier créerait un cycle où
+// telegramService capterait un orchestrator encore vide au chargement.
 
 class CommerceEngine {
     // ── HELPER : Boutique ────────────────────────────────────
@@ -361,6 +365,96 @@ class CommerceEngine {
             return { success: false, error: err.message };
         }
     }
+
+    // =========================================================
+    // CRÉATION COMMANDE / RENDEZ-VOUS — VIA RAISONNEMENT SAMII (chat)
+    // Utilisé par le function-calling Gemini (Telegram, WhatsApp...),
+    // remplace les anciens parcours pas-à-pas figés par métier.
+    // =========================================================
+    async createOrderFromChat(context, args) {
+        try {
+            const { workspaceId, name, source } = context || {};
+            if (!workspaceId) return { success: false, error: "Impossible d'identifier le workspace de ce client." };
+
+            // Anti-invention : si un vrai catalogue est fourni, le produit doit en faire partie.
+            if (Array.isArray(context.produits) && context.produits.length > 0) {
+                const existe = context.produits.some(
+                    p => (p.nom || "").toLowerCase() === (args.produit || "").toLowerCase()
+                );
+                if (!existe) {
+                    return { success: false, error: "Ce produit ne fait pas partie du catalogue réel du marchand. Redemande au client de choisir un produit exact de la liste fournie." };
+                }
+            }
+
+            const orderId = `${source === "whatsapp" ? "WA" : "TG"}-${Date.now().toString().slice(-6)}`;
+            await db.query(
+                `INSERT INTO commandes (id, workspace_id, nom_client, telephone, adresse, produit, statut, source, montant)
+                 VALUES ($1, $2, $3, $4, $5, $6, 'en attente', $7, 0)`,
+                [orderId, workspaceId, name || "Client", args.telephone || "", args.adresse || "", args.produit || "", source || "chat"]
+            );
+            await db.query(
+                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                [`order.created.${source || "chat"}`, `#${orderId} — ${name || "Client"}`, workspaceId]
+            );
+            socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
+            notify.notifyWorkspace(workspaceId, {
+                title: "🛒 Nouvelle commande",
+                body : `${name || "Client"} — ${args.produit}`,
+                url  : "/qg",
+            });
+
+            if (source === "telegram") {
+                await require("../services/telegramService").notifyAdmin(
+                    workspaceId,
+                    `🛎️ *Nouvelle commande !*\n\n🆔 *Numéro :* \`${orderId}\`\n👤 *Client :* ${name || "Client"}\n📞 *Tél :* ${args.telephone}\n📦 *Produit :* ${args.produit}\n📍 *Adresse :* ${args.adresse}`,
+                    [[{ text: "✅", callback_data: `confirm_${orderId}` }, { text: "❌", callback_data: `cancel_${orderId}` }]]
+                );
+            }
+
+            return { success: true, orderId };
+        } catch (err) {
+            console.error("❌ CommerceEngine.createOrderFromChat :", err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
+    async createRdvFromChat(context, args) {
+        try {
+            const { workspaceId, name, source } = context || {};
+            if (!workspaceId) return { success: false, error: "Impossible d'identifier le workspace de ce client." };
+
+            const rows = await db.query(
+                `INSERT INTO rendez_vous (workspace_id, client_nom, client_telephone, motif, date_rdv, statut, source)
+                 VALUES ($1, $2, $3, $4, $5, 'en_attente', $6) RETURNING id`,
+                [workspaceId, name || "Client", args.telephone || "", args.motif || "", args.date_rdv || "", source || "chat"]
+            );
+            const rdvId = `RDV-${rows[0].id}`;
+            await db.query(
+                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                [`rdv.created.${source || "chat"}`, `#${rdvId} — ${name || "Client"}`, workspaceId]
+            );
+            socketService.emitToShop(workspaceId, "nouveau-rdv", { id: rdvId });
+            notify.notifyWorkspace(workspaceId, {
+                title: "📅 Nouveau rendez-vous",
+                body : `${name || "Client"} — ${args.motif}`,
+                url  : "/qg",
+            });
+
+            if (source === "telegram") {
+                await require("../services/telegramService").notifyAdmin(
+                    workspaceId,
+                    `📅 *Nouvelle demande de rendez-vous !*\n\n🆔 *Numéro :* \`${rdvId}\`\n👤 *Client :* ${name || "Client"}\n📞 *Tél :* ${args.telephone}\n📝 *Motif :* ${args.motif}\n🗓️ *Date souhaitée :* ${args.date_rdv}`,
+                    [[{ text: "✅", callback_data: `rdvconfirm_${rdvId}` }, { text: "❌", callback_data: `rdvcancel_${rdvId}` }]]
+                );
+            }
+
+            return { success: true, rdvId };
+        } catch (err) {
+            console.error("❌ CommerceEngine.createRdvFromChat :", err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
     // =========================================================
     // STOCK FAIBLE
     // =========================================================

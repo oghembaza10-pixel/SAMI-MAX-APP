@@ -65,9 +65,5 @@ function clear(chatId) {
     delete sessions[chatId];
 }
 
-function getStep(chatId) {
-    return sessions[chatId]?.step || null;
-}
-
-module.exports = { get, set, clear, getStep };
+module.exports = { get, set, clear };
 
