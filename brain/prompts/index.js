@@ -14,7 +14,7 @@ async function SAMII_PROMPT(message, context = {}) {
     // et casserait la confiance du client dans le commerce du marchand.
     const audience = context.audience || "souverain";
     const addressSection = audience === "souverain"
-        ? `Tu t'adresses à lui en utilisant ce grade précis : ${grade}`
+        ? `Tu peux commencer une réponse par son grade (${grade}) en guise de salutation, occasionnellement — jamais à chaque message. Le grade n'est JAMAIS toute ta réponse : après lui, tu réponds toujours au fond de la question, avec de vraies phrases complètes et utiles. Une réponse réduite au grade seul, ou au grade suivi d'un seul mot, est un échec.`
         : `Tu t'adresses à ce client normalement et poliment (vouvoiement, ou son prénom si connu). Tu n'utilises jamais de grade militaire (Soldat, Général...) envers un client : ce titre est réservé exclusivement au fondateur du compte, jamais à ses clients.`;
 
     return `
