@@ -32,6 +32,7 @@ router.post("/chat", async (req, res) => {
     try {
         const message = req.body.message;
         if (!message) return res.json({ success: false, reply: "Écris un message." });
+        const grade = await getGrade(req.session?.userId);
         const context = {
             user: { lang: req.body.lang || "" },
             workspaceId: req.session?.workspaceId || req.body.workspaceId || "",
@@ -39,6 +40,7 @@ router.post("/chat", async (req, res) => {
             commande: req.body.commande || "",
             page: req.body.page || "",
             lastAction: req.body.lastAction || "",
+            grade: grade.actuel,
         };
         const result = await planner.build({ goal: message }, context);
         res.json(result);

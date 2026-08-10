@@ -78,52 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return el;
     }
 
-    // ── VOIX (synthèse) — choisit la meilleure voix dispo pour la langue ──
-    function pickBestVoice(langPrefix) {
-        const voices = window.speechSynthesis.getVoices();
-        if (!voices.length) return null;
-        const exact = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix) && /google/i.test(v.name));
-        if (exact) return exact;
-        const anyMatch = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix));
-        return anyMatch || voices[0];
-    }
-
-   async function speak(text) {
-    if (!text) return;
-
-    try {
-        const res = await fetch('/api/speak', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text }),
-        });
-        const data = await res.json();
-
-        if (data.success && data.audio) {
-            const audio = new Audio(data.audio);
-            audio.play();
-            return;
-        }
-    } catch (err) {
-        console.warn('ElevenLabs indisponible, repli sur la voix native.');
-    }
-
-    // Repli automatique : voix native du navigateur (comportement actuel)
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const currentLang = (langSelect?.value || 'fr-FR').split('-')[0];
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voice = pickBestVoice(currentLang);
-    if (voice) utterance.voice = voice;
-    utterance.lang = langSelect?.value || 'fr-FR';
-    utterance.rate = 1.02;
-    window.speechSynthesis.speak(utterance);
-}
-    // Certaines voix ne sont dispo qu'après cet event
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.onvoiceschanged = () => {};
-    }
-
     // ── ENVOI ─────────────────────────────────────────────
     async function sendMessage(message) {
         const attachment = pendingAttachment;
@@ -155,13 +109,11 @@ document.addEventListener('DOMContentLoaded', () => {
             typingEl.remove();
             const reply = data.reply || "Je n'ai pas de réponse pour l'instant.";
             addMessage('bot', reply);
-            speak(reply);
         } catch (err) {
             console.error(err);
             typingEl.remove();
             const errMsg = 'SAMII réfléchit un peu plus longtemps que prévu. Réessaie dans un instant.';
             addMessage('bot', errMsg);
-            speak(errMsg);
         }
     }
 
