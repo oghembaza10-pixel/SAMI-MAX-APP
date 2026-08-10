@@ -4,36 +4,81 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SAMII — Hors-ligne</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-    :root { color-scheme: dark; }
+    :root {
+        color-scheme: dark;
+        --bg-deep: #05070c;
+        --bg-glass: rgba(255, 255, 255, 0.035);
+        --gold-og: #C5A059;
+        --gold-hover: #E8C27A;
+        --gold-glow: 0 0 32px rgba(197, 160, 89, 0.25);
+        --silver-bright: #E8ECEF;
+        --silver-border: rgba(199, 205, 211, 0.32);
+        --cyan-tech: #5FD4FF;
+        --text-main: #F1F0EC;
+        --text-muted: #7d8390;
+        --border-gold: 1px solid rgba(197, 160, 89, 0.25);
+        --font-display: 'Cinzel', serif;
+        --font-body: 'Inter', sans-serif;
+    }
     * { box-sizing: border-box; }
     body {
         margin: 0; min-height: 100vh; display: flex; flex-direction: column;
         align-items: center; justify-content: center; text-align: center;
-        background: #0a0a0a; color: #f5f5f5;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background:
+            radial-gradient(circle at 50% 0%, rgba(197,160,89,0.08), transparent 55%),
+            var(--bg-deep);
+        color: var(--text-main);
+        font-family: var(--font-body);
         padding: 24px;
     }
-    .badge {
-        width: 72px; height: 72px; border-radius: 50%;
-        background: linear-gradient(135deg, #C5A059, #8a8a8a);
+    .offline-badge {
+        width: 84px; height: 84px; border-radius: 50%;
+        background: var(--bg-glass);
+        border: var(--border-gold);
+        box-shadow: var(--gold-glow);
         display: flex; align-items: center; justify-content: center;
-        font-size: 32px; margin-bottom: 20px;
+        font-size: 34px; margin-bottom: 26px;
+        position: relative; overflow: hidden;
     }
-    h1 { font-size: 1.3rem; margin: 0 0 8px; letter-spacing: .02em; }
-    p { color: #9a9a9a; font-size: .92rem; max-width: 320px; line-height: 1.5; margin: 0 0 22px; }
+    .offline-badge::before {
+        content: ""; position: absolute; inset: 0;
+        background: linear-gradient(180deg, var(--gold-og) 0%, var(--gold-og) 48%, var(--silver-bright) 52%, var(--silver-bright) 100%);
+        opacity: .14;
+    }
+    .offline-badge span { position: relative; }
+    h1 {
+        font-family: var(--font-display);
+        font-weight: 700; letter-spacing: .03em;
+        font-size: 1.4rem; margin: 0 0 10px;
+        background: linear-gradient(90deg, var(--gold-hover), var(--silver-bright));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    p {
+        color: var(--text-muted); font-size: .92rem; max-width: 320px;
+        line-height: 1.6; margin: 0 0 26px;
+    }
     button {
-        background: linear-gradient(135deg, #C5A059, #A3824B);
-        color: #0a0a0a; border: none; border-radius: 10px;
-        padding: 12px 24px; font-size: .9rem; font-weight: 600;
-        cursor: pointer;
+        background: linear-gradient(135deg, var(--gold-og), var(--gold-hover));
+        color: #14100a; border: none; border-radius: 10px;
+        padding: 13px 28px; font-size: .88rem; font-weight: 600;
+        font-family: var(--font-body); letter-spacing: .02em;
+        cursor: pointer; box-shadow: var(--gold-glow);
+        transition: transform .15s ease;
+    }
+    button:active { transform: scale(.97); }
+    .offline-signature {
+        margin-top: 34px; font-size: .7rem; letter-spacing: .12em;
+        text-transform: uppercase; color: var(--text-muted); opacity: .6;
     }
 </style>
 </head>
 <body>
-    <div class="badge">📡</div>
+    <div class="offline-badge"><span>📡</span></div>
     <h1>SAMII est hors-ligne</h1>
-    <p>Pas de connexion internet pour le moment. Reconnecte-toi pour reprendre — tes données t'attendent, rien n'est perdu.</p>
+    <p>Pas de connexion pour le moment. Reconnecte-toi pour reprendre — rien n'est perdu, tes données t'attendent.</p>
     <button onclick="location.reload()">Réessayer</button>
+    <div class="offline-signature">OG · EMPIRE</div>
 </body>
 </html>

@@ -7,7 +7,7 @@
 // exception : si le réseau échoue en pleine navigation, on sert la page
 // hors-ligne au lieu de l'erreur brute du navigateur.
 // ==========================================================================
-const CACHE_NAME = "samii-static-v4";
+const CACHE_NAME = "samii-static-v5";
 const OFFLINE_URL = "/offline.html";
 const STATIC_EXTENSIONS = [".css", ".js", ".png", ".jpg", ".jpeg", ".svg", ".woff", ".woff2", ".ico"];
 
