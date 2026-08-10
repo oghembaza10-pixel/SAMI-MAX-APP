@@ -161,3 +161,5 @@ router.get("/", requireAuth, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.CARDS = CARDS;
+module.exports.PALIER_MAX_GRATUIT = PALIER_MAX_GRATUIT;

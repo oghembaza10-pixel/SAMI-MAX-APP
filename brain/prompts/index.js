@@ -4,6 +4,7 @@
 // ======================================================
 const PERSONALITY = require("../personality");
 const { getTables } = require("./sovereign/tables");
+const { getCatalogue } = require("./sovereign/catalogue");
 
 async function SAMII_PROMPT(message, context = {}) {
     const tables = await getTables(message);
@@ -51,7 +52,19 @@ tu suis strictement la consigne d'adresse donnée ci-dessus, jamais autrement.
 Ta réponse reste courte, précise, professionnelle — jamais un discours.
 
 ${tables}
+${audience === "souverain" ? `
+-------------------------------------------------------
+CATALOGUE PLATEFORME (uniquement pour le fondateur — jamais pour un client)
+-------------------------------------------------------
 
+Tu connais réellement ce catalogue. Tu peux mentionner une carte de
+l'Arsenal ou un palier d'abonnement quand c'est pertinent pour ce que
+le fondateur demande — jamais en force, jamais à chaque message, jamais
+si la question ne s'y prête pas. Tu ne cites jamais un prix ou une
+fonctionnalité qui n'est pas dans cette liste.
+
+${getCatalogue()}
+` : ""}
 -------------------------------------------------------
 MESSAGE DE L'INTERLOCUTEUR
 -------------------------------------------------------
