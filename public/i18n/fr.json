@@ -1,14 +1,23 @@
 {
-  "topbar": { "enter": "REJOINDRE MON QG" },
+  "topbar": {
+    "enter": "REJOINDRE MON QG"
+  },
   "hero": {
     "eyebrow": "EMPIRE • ÉCOSYSTÈME MONDIAL",
     "title": "Construisez votre Empire.",
     "description": "Une seule plateforme.\nUne seule identité.\nUn seul Quartier Général.\n\nTravaillez.\nDéveloppez-vous.\nCréez votre Empire."
   },
-  "buttons": { "enter": "ENTRER DANS MON QG" },
+  "buttons": {
+    "enter": "ENTRER DANS MON QG"
+  },
   "sidebar": {
-    "hub": "Accueil", "marketplace": "Marketplace", "academy": "Academy",
-    "community": "Community", "arsenal": "Arsenal", "settings": "Paramètres", "profile": "Profil"
+    "hub": "Accueil",
+    "marketplace": "Marketplace",
+    "academy": "Academy",
+    "community": "Community",
+    "arsenal": "Arsenal",
+    "settings": "Paramètres",
+    "profile": "Profil"
   },
   "hub": {
     "hero": {
@@ -17,54 +26,142 @@
       "subtitle": "SAMII vous aide à lancer votre QG et à connecter votre écosystème.",
       "searchPlaceholder": "Construisez votre prochain empire..."
     },
-    "section": { "choose": "Choisis ton métier" },
+    "section": {
+      "choose": "Choisis ton métier"
+    },
     "metierMore": "Plus de métiers",
-    "footer": { "quote": "Chaque général commence soldat.", "version": "v1.0 · SOLDAT" },
+    "footer": {
+      "quote": "Chaque général commence soldat.",
+      "version": "v1.0 · SOLDAT"
+    },
     "metiers": {
-      "ecommerce":   { "label": "E-commerce",   "desc": "Commerce en ligne" },
-      "restaurant":  { "label": "Restaurant",   "desc": "Restauration & food" },
-      "immobilier":  { "label": "Immobilier",   "desc": "Biens & propriétés" },
-      "livreur":     { "label": "Livreur",      "desc": "Livraison & logistique" },
-      "sante":       { "label": "Santé",        "desc": "Santé & bien-être" },
-      "finance":     { "label": "Finance",      "desc": "Finance & invest." },
-      "education":   { "label": "Éducation",    "desc": "Formation & savoir" },
-      "technologie": { "label": "Technologie",  "desc": "Tech & innovation" },
-      "agriculture": { "label": "Agriculture",  "desc": "Culture & agriculture" },
-      "industrie":   { "label": "Industrie",    "desc": "Production & usine" },
-      "services":    { "label": "Services",     "desc": "Services pro" },
-      "tourisme":    { "label": "Tourisme",     "desc": "Voyage & tourisme" }
+      "ecommerce": {
+        "label": "E-commerce",
+        "desc": "Commerce en ligne"
+      },
+      "restaurant": {
+        "label": "Restaurant",
+        "desc": "Restauration & food"
+      },
+      "immobilier": {
+        "label": "Immobilier",
+        "desc": "Biens & propriétés"
+      },
+      "livreur": {
+        "label": "Livreur",
+        "desc": "Livraison & logistique"
+      },
+      "sante": {
+        "label": "Santé",
+        "desc": "Santé & bien-être"
+      },
+      "finance": {
+        "label": "Finance",
+        "desc": "Finance & invest."
+      },
+      "education": {
+        "label": "Éducation",
+        "desc": "Formation & savoir"
+      },
+      "technologie": {
+        "label": "Technologie",
+        "desc": "Tech & innovation"
+      },
+      "agriculture": {
+        "label": "Agriculture",
+        "desc": "Culture & agriculture"
+      },
+      "industrie": {
+        "label": "Industrie",
+        "desc": "Production & usine"
+      },
+      "services": {
+        "label": "Services",
+        "desc": "Services pro"
+      },
+      "tourisme": {
+        "label": "Tourisme",
+        "desc": "Voyage & tourisme"
+      }
     }
   },
   "qg": {
     "topbar": "QG",
     "nav": {
-      "hub": "Hub", "marketplace": "Marketplace", "community": "Community", "academy": "Academy",
-      "myBusiness": "Mes affaires", "connectTools": "Connecter mes outils", "myTools": "Mes outils",
-      "arsenal": "Arsenal", "vault": "Coffre OG", "samii": "SAMII", "settings": "Paramètres", "backToQG": "Mon QG",
+      "hub": "Hub",
+      "marketplace": "Marketplace",
+      "community": "Community",
+      "academy": "Academy",
+      "myBusiness": "Mes affaires",
+      "connectTools": "Connecter mes outils",
+      "myTools": "Mes outils",
+      "arsenal": "Arsenal",
+      "vault": "Coffre OG",
+      "samii": "SAMII",
+      "settings": "Paramètres",
+      "backToQG": "Mon QG",
       "logout": "Déconnexion"
     },
-    "hero": { "eyebrow": "Centre de commandement", "titlePrefix": "Votre QG", "subtitle": "Pilotez votre activité, vos outils et vos missions depuis un seul endroit." },
+    "hero": {
+      "eyebrow": "Centre de commandement",
+      "titlePrefix": "Votre QG",
+      "subtitle": "Pilotez votre activité, vos outils et vos missions depuis un seul endroit."
+    },
     "section": {
-      "overview": "Vue d'ensemble", "arsenal": "Arsenal", "delivery": "Livraison temps réel 🚚",
-      "missionToday": "Mission du jour 🎯", "performance": "Performance du mois 📈",
-      "recentOrders": "Dernières commandes", "vipClients": "Clients VIP 👑", "blacklist": "Blacklist 🚫"
+      "overview": "Vue d'ensemble",
+      "arsenal": "Arsenal",
+      "delivery": "Livraison temps réel 🚚",
+      "missionToday": "Mission du jour 🎯",
+      "performance": "Performance du mois 📈",
+      "recentOrders": "Dernières commandes",
+      "vipClients": "Clients VIP 👑",
+      "blacklist": "Blacklist 🚫"
     },
     "cards2": {
-      "revenue": "Revenus", "orders": "Commandes", "pending": "En attente", "confirmed": "Confirmées",
-      "cancelled": "Annulées", "vip": "Clients VIP", "blacklist": "Blacklist"
+      "revenue": "Revenus",
+      "orders": "Commandes",
+      "pending": "En attente",
+      "confirmed": "Confirmées",
+      "cancelled": "Annulées",
+      "vip": "Clients VIP",
+      "blacklist": "Blacklist"
     },
-    "delivery": { "delivered": "Livrées", "inProgress": "En cours", "failed": "Échecs" },
+    "delivery": {
+      "delivered": "Livrées",
+      "inProgress": "En cours",
+      "failed": "Échecs"
+    },
     "mission": {
-      "objective": "Objectif du jour", "ordersToday": "Commandes aujourd'hui",
-      "revenueToday": "Revenus aujourd'hui", "progressLabel": "Progression vers objectif (10 cmd)"
+      "objective": "Objectif du jour",
+      "ordersToday": "Commandes aujourd'hui",
+      "revenueToday": "Revenus aujourd'hui",
+      "progressLabel": "Progression vers objectif (10 cmd)"
     },
-    "performance": { "revenueMonth": "Revenus ce mois", "ordersMonth": "Commandes ce mois", "vsLastMonth": "vs mois dernier" },
-    "table": { "client": "Client", "phone": "Téléphone", "product": "Produit", "total": "Total", "status": "Statut" },
+    "performance": {
+      "revenueMonth": "Revenus ce mois",
+      "ordersMonth": "Commandes ce mois",
+      "vsLastMonth": "vs mois dernier"
+    },
+    "table": {
+      "client": "Client",
+      "phone": "Téléphone",
+      "product": "Produit",
+      "total": "Total",
+      "status": "Statut"
+    },
     "loading": "Chargement...",
-    "modules": { "all": "Tout" },
-    "arsenal": { "boostMarketing": "Boost Marketing", "radar": "Radar Opportunités", "fortress": "Forteresse", "level": "Niveau", "seeMore": "Voir l'Arsenal" }
+    "modules": {
+      "all": "Tout"
+    },
+    "arsenal": {
+      "boostMarketing": "Boost Marketing",
+      "radar": "Radar Opportunités",
+      "fortress": "Forteresse",
+      "level": "Niveau",
+      "seeMore": "Voir l'Arsenal"
+    }
   },
- "samii": {
+  "samii": {
     "topbar": "Stratège IA",
     "status": "OPÉRATIONNEL",
     "title": "Votre centre de vie stratégique.",
@@ -77,24 +174,110 @@
       "attachDoc": "Document"
     },
     "cards": {
-      "marketing": { "label": "Marketing", "value": "Lancer une publicité →" },
-      "messagerEclair": { "label": "Messager Éclair", "value": "Activer un suivi →" },
-      "miroir": { "label": "Miroir", "value": "Voir mon diagnostic →" },
-      "griot": { "label": "Griot", "value": "Créer un pack de contenu →" },
-      "diplomate": { "label": "Diplomate", "value": "Répondre à un client →" },
-      "missions": { "label": "Missions", "value": "Voir mes tâches →" },
-      "oeilConcurrentiel": { "label": "Œil Concurrentiel", "value": "Analyser un prix →" },
-      "memoireClient": { "label": "Mémoire Client", "value": "Chercher un client →" },
-      "oracleFinancier": { "label": "Oracle Financier", "value": "Voir mes projections →" },
-      "topProduits": { "label": "Top Produits", "value": "Voir le classement →" },
-      "automatisations": { "label": "Automatisations", "value": "Gérer mes automatisations →" },
-      "chasseurStock": { "label": "Chasseur de Stock", "value": "Trouver un fournisseur →" }
+      "marketing": {
+        "label": "Marketing",
+        "value": "Lancer une publicité →"
+      },
+      "messagerEclair": {
+        "label": "Messager Éclair",
+        "value": "Activer un suivi →"
+      },
+      "miroir": {
+        "label": "Miroir",
+        "value": "Voir mon diagnostic →"
+      },
+      "griot": {
+        "label": "Griot",
+        "value": "Créer un pack de contenu →"
+      },
+      "diplomate": {
+        "label": "Diplomate",
+        "value": "Répondre à un client →"
+      },
+      "missions": {
+        "label": "Missions",
+        "value": "Voir mes tâches →"
+      },
+      "oeilConcurrentiel": {
+        "label": "Œil Concurrentiel",
+        "value": "Analyser un prix →"
+      },
+      "memoireClient": {
+        "label": "Mémoire Client",
+        "value": "Chercher un client →"
+      },
+      "oracleFinancier": {
+        "label": "Oracle Financier",
+        "value": "Voir mes projections →"
+      },
+      "topProduits": {
+        "label": "Top Produits",
+        "value": "Voir le classement →"
+      },
+      "automatisations": {
+        "label": "Automatisations",
+        "value": "Gérer mes automatisations →"
+      },
+      "chasseurStock": {
+        "label": "Chasseur de Stock",
+        "value": "Trouver un fournisseur →"
+      }
     }
   },
-  
-  "arsenal": { "title": "L'Arsenal", "subtitle": "33 pouvoirs, chacun ancré dans une loi de SAMII.", "available": "Disponible", "soon": "Bientôt disponible" },
+  "arsenal": {
+    "title": "L'Arsenal",
+    "subtitle": "33 pouvoirs, chacun ancré dans une loi de SAMII.",
+    "available": "Disponible",
+    "soon": "Bientôt disponible"
+  },
   "ads": {
-    "settings": { "title": "Connecter Meta Ads", "subtitle": "Ces identifiants sont propres à ce workspace.", "accessToken": "Access Token", "adAccountId": "Ad Account ID", "pageId": "Page ID", "save": "Enregistrer" },
-    "create": { "back": "← Retour au QG", "eyebrow": "Arsenal · Boost Marketing", "title": "Lancer une publicité", "connectedAccount": "Compte pub connecté :", "campaignName": "Nom de la campagne", "objective": "Objectif", "objectiveTraffic": "Trafic", "objectiveEngagement": "Engagement", "objectiveSales": "Ventes", "dailyBudget": "Budget journalier (centimes)", "headline": "Titre de l'annonce", "message": "Message", "imageUrl": "URL de l'image", "link": "Lien vers ta boutique/produit", "submit": "Créer la campagne", "note": "Selon ton mode SAMII actuel, la campagne peut être créée en pause ou activée directement." }
+    "settings": {
+      "title": "Connecter Meta Ads",
+      "subtitle": "Ces identifiants sont propres à ce workspace.",
+      "accessToken": "Access Token",
+      "adAccountId": "Ad Account ID",
+      "pageId": "Page ID",
+      "save": "Enregistrer"
+    },
+    "create": {
+      "back": "← Retour au QG",
+      "eyebrow": "Arsenal · Boost Marketing",
+      "title": "Lancer une publicité",
+      "connectedAccount": "Compte pub connecté :",
+      "campaignName": "Nom de la campagne",
+      "objective": "Objectif",
+      "objectiveTraffic": "Trafic",
+      "objectiveEngagement": "Engagement",
+      "objectiveSales": "Ventes",
+      "dailyBudget": "Budget journalier (centimes)",
+      "headline": "Titre de l'annonce",
+      "message": "Message",
+      "imageUrl": "URL de l'image",
+      "link": "Lien vers ta boutique/produit",
+      "submit": "Créer la campagne",
+      "note": "Selon ton mode SAMII actuel, la campagne peut être créée en pause ou activée directement."
+    }
+  },
+  "marketplace": {
+    "nav": {
+      "qg": "QG Central",
+      "marketplace": "Marketplace",
+      "community": "Communauté",
+      "services": "Demandes de service",
+      "discussions": "Discussions",
+      "arsenal": "Arsenal",
+      "academy": "Academy"
+    },
+    "sideAi": "SAMII ENGINE ACTIVE",
+    "sideText": "Marketplace synchronisée avec l'écosystème SAMII.",
+    "searchPlaceholder": "Rechercher...",
+    "favoris": "Mes favoris",
+    "publish": "Publier",
+    "allRegions": "Toutes régions",
+    "live": "SAMII MARKETPLACE · LIVE",
+    "heroTitle1": "Découvrez.",
+    "heroTitle2": "Achetez.",
+    "heroTitle3": "Connectez.",
+    "emptyTitle": "Aucun produit trouvé"
   }
 }

@@ -1,14 +1,23 @@
 {
-  "topbar": { "enter": "加入我的总部" },
+  "topbar": {
+    "enter": "加入我的总部"
+  },
   "hero": {
     "eyebrow": "帝国 • 全球生态系统",
     "title": "打造你的帝国。",
     "description": "一个平台。\n一个身份。\n一个总部。\n\n工作。\n成长。\n打造你的帝国。"
   },
-  "buttons": { "enter": "进入我的总部" },
+  "buttons": {
+    "enter": "进入我的总部"
+  },
   "sidebar": {
-    "hub": "首页", "marketplace": "市场", "academy": "学院",
-    "community": "社区", "arsenal": "军械库", "settings": "设置", "profile": "个人资料"
+    "hub": "首页",
+    "marketplace": "市场",
+    "academy": "学院",
+    "community": "社区",
+    "arsenal": "军械库",
+    "settings": "设置",
+    "profile": "个人资料"
   },
   "hub": {
     "hero": {
@@ -17,54 +26,142 @@
       "subtitle": "SAMII帮助您启动总部并连接您的生态系统。",
       "searchPlaceholder": "打造你的下一个帝国..."
     },
-    "section": { "choose": "选择你的行业" },
+    "section": {
+      "choose": "选择你的行业"
+    },
     "metierMore": "更多行业",
-    "footer": { "quote": "每位将军都始于士兵。", "version": "v1.0 · 士兵" },
+    "footer": {
+      "quote": "每位将军都始于士兵。",
+      "version": "v1.0 · 士兵"
+    },
     "metiers": {
-      "ecommerce":   { "label": "电子商务", "desc": "在线零售" },
-      "restaurant":  { "label": "餐厅",     "desc": "餐饮" },
-      "immobilier":  { "label": "房地产",   "desc": "物业资产" },
-      "livreur":     { "label": "快递",     "desc": "物流配送" },
-      "sante":       { "label": "健康",     "desc": "健康与养生" },
-      "finance":     { "label": "金融",     "desc": "金融与投资" },
-      "education":   { "label": "教育",     "desc": "培训与知识" },
-      "technologie": { "label": "科技",     "desc": "技术与创新" },
-      "agriculture": { "label": "农业",     "desc": "农作物种植" },
-      "industrie":   { "label": "工业",     "desc": "生产制造" },
-      "services":    { "label": "服务",     "desc": "专业服务" },
-      "tourisme":    { "label": "旅游",     "desc": "旅行观光" }
+      "ecommerce": {
+        "label": "电子商务",
+        "desc": "在线零售"
+      },
+      "restaurant": {
+        "label": "餐厅",
+        "desc": "餐饮"
+      },
+      "immobilier": {
+        "label": "房地产",
+        "desc": "物业资产"
+      },
+      "livreur": {
+        "label": "快递",
+        "desc": "物流配送"
+      },
+      "sante": {
+        "label": "健康",
+        "desc": "健康与养生"
+      },
+      "finance": {
+        "label": "金融",
+        "desc": "金融与投资"
+      },
+      "education": {
+        "label": "教育",
+        "desc": "培训与知识"
+      },
+      "technologie": {
+        "label": "科技",
+        "desc": "技术与创新"
+      },
+      "agriculture": {
+        "label": "农业",
+        "desc": "农作物种植"
+      },
+      "industrie": {
+        "label": "工业",
+        "desc": "生产制造"
+      },
+      "services": {
+        "label": "服务",
+        "desc": "专业服务"
+      },
+      "tourisme": {
+        "label": "旅游",
+        "desc": "旅行观光"
+      }
     }
   },
   "qg": {
     "topbar": "总部",
     "nav": {
-      "hub": "中心", "marketplace": "市场", "community": "社区", "academy": "学院",
-      "myBusiness": "我的业务", "connectTools": "连接我的工具", "myTools": "我的工具",
-      "arsenal": "军械库", "vault": "OG金库", "samii": "SAMII", "settings": "设置", "backToQG": "我的总部",
+      "hub": "中心",
+      "marketplace": "市场",
+      "community": "社区",
+      "academy": "学院",
+      "myBusiness": "我的业务",
+      "connectTools": "连接我的工具",
+      "myTools": "我的工具",
+      "arsenal": "军械库",
+      "vault": "OG金库",
+      "samii": "SAMII",
+      "settings": "设置",
+      "backToQG": "我的总部",
       "logout": "退出登录"
     },
-    "hero": { "eyebrow": "指挥中心", "titlePrefix": "你的总部", "subtitle": "在一个地方管理你的业务、工具和任务。" },
+    "hero": {
+      "eyebrow": "指挥中心",
+      "titlePrefix": "你的总部",
+      "subtitle": "在一个地方管理你的业务、工具和任务。"
+    },
     "section": {
-      "overview": "概览", "arsenal": "军械库", "delivery": "实时配送 🚚",
-      "missionToday": "今日任务 🎯", "performance": "月度表现 📈",
-      "recentOrders": "最新订单", "vipClients": "VIP客户 👑", "blacklist": "黑名单 🚫"
+      "overview": "概览",
+      "arsenal": "军械库",
+      "delivery": "实时配送 🚚",
+      "missionToday": "今日任务 🎯",
+      "performance": "月度表现 📈",
+      "recentOrders": "最新订单",
+      "vipClients": "VIP客户 👑",
+      "blacklist": "黑名单 🚫"
     },
     "cards2": {
-      "revenue": "收入", "orders": "订单", "pending": "待处理", "confirmed": "已确认",
-      "cancelled": "已取消", "vip": "VIP客户", "blacklist": "黑名单"
+      "revenue": "收入",
+      "orders": "订单",
+      "pending": "待处理",
+      "confirmed": "已确认",
+      "cancelled": "已取消",
+      "vip": "VIP客户",
+      "blacklist": "黑名单"
     },
-    "delivery": { "delivered": "已送达", "inProgress": "配送中", "failed": "失败" },
+    "delivery": {
+      "delivered": "已送达",
+      "inProgress": "配送中",
+      "failed": "失败"
+    },
     "mission": {
-      "objective": "今日目标", "ordersToday": "今日订单",
-      "revenueToday": "今日收入", "progressLabel": "目标进度（10个订单）"
+      "objective": "今日目标",
+      "ordersToday": "今日订单",
+      "revenueToday": "今日收入",
+      "progressLabel": "目标进度（10个订单）"
     },
-    "performance": { "revenueMonth": "本月收入", "ordersMonth": "本月订单", "vsLastMonth": "对比上月" },
-    "table": { "client": "客户", "phone": "电话", "product": "产品", "total": "总计", "status": "状态" },
+    "performance": {
+      "revenueMonth": "本月收入",
+      "ordersMonth": "本月订单",
+      "vsLastMonth": "对比上月"
+    },
+    "table": {
+      "client": "客户",
+      "phone": "电话",
+      "product": "产品",
+      "total": "总计",
+      "status": "状态"
+    },
     "loading": "加载中...",
-    "modules": { "all": "全部" },
-    "arsenal": { "boostMarketing": "营销加速", "radar": "机会雷达", "fortress": "堡垒", "level": "等级", "seeMore": "查看军械库" }
+    "modules": {
+      "all": "全部"
+    },
+    "arsenal": {
+      "boostMarketing": "营销加速",
+      "radar": "机会雷达",
+      "fortress": "堡垒",
+      "level": "等级",
+      "seeMore": "查看军械库"
+    }
   },
- "samii": {
+  "samii": {
     "topbar": "AI 战略顾问",
     "status": "运行中",
     "title": "您的战略生活中心。",
@@ -77,23 +174,110 @@
       "attachDoc": "文档"
     },
     "cards": {
-      "marketing": { "label": "营销", "value": "投放广告 →" },
-      "messagerEclair": { "label": "闪电信使", "value": "启用追踪 →" },
-      "miroir": { "label": "镜子", "value": "查看我的诊断 →" },
-      "griot": { "label": "格里奥", "value": "创建内容包 →" },
-      "diplomate": { "label": "外交官", "value": "回复客户 →" },
-      "missions": { "label": "任务", "value": "查看我的任务 →" },
-      "oeilConcurrentiel": { "label": "竞品监察", "value": "分析价格 →" },
-      "memoireClient": { "label": "客户记忆", "value": "搜索客户 →" },
-      "oracleFinancier": { "label": "财务预言家", "value": "查看我的预测 →" },
-      "topProduits": { "label": "热门产品", "value": "查看排行榜 →" },
-      "automatisations": { "label": "自动化", "value": "管理我的自动化 →" },
-      "chasseurStock": { "label": "库存猎手", "value": "寻找供应商 →" }
+      "marketing": {
+        "label": "营销",
+        "value": "投放广告 →"
+      },
+      "messagerEclair": {
+        "label": "闪电信使",
+        "value": "启用追踪 →"
+      },
+      "miroir": {
+        "label": "镜子",
+        "value": "查看我的诊断 →"
+      },
+      "griot": {
+        "label": "格里奥",
+        "value": "创建内容包 →"
+      },
+      "diplomate": {
+        "label": "外交官",
+        "value": "回复客户 →"
+      },
+      "missions": {
+        "label": "任务",
+        "value": "查看我的任务 →"
+      },
+      "oeilConcurrentiel": {
+        "label": "竞品监察",
+        "value": "分析价格 →"
+      },
+      "memoireClient": {
+        "label": "客户记忆",
+        "value": "搜索客户 →"
+      },
+      "oracleFinancier": {
+        "label": "财务预言家",
+        "value": "查看我的预测 →"
+      },
+      "topProduits": {
+        "label": "热门产品",
+        "value": "查看排行榜 →"
+      },
+      "automatisations": {
+        "label": "自动化",
+        "value": "管理我的自动化 →"
+      },
+      "chasseurStock": {
+        "label": "库存猎手",
+        "value": "寻找供应商 →"
+      }
     }
   },
-  "arsenal": { "title": "军械库", "subtitle": "33种力量，每一种都源自SAMII的一条法则。", "available": "可用", "soon": "即将推出" },
+  "arsenal": {
+    "title": "军械库",
+    "subtitle": "33种力量，每一种都源自SAMII的一条法则。",
+    "available": "可用",
+    "soon": "即将推出"
+  },
   "ads": {
-    "settings": { "title": "连接Meta广告", "subtitle": "这些凭证专属于此工作区。", "accessToken": "访问令牌", "adAccountId": "广告账户ID", "pageId": "主页ID", "save": "保存" },
-    "create": { "back": "← 返回总部", "eyebrow": "军械库 · 营销加速", "title": "发布广告", "connectedAccount": "已连接广告账户：", "campaignName": "广告系列名称", "objective": "目标", "objectiveTraffic": "流量", "objectiveEngagement": "互动", "objectiveSales": "销售", "dailyBudget": "每日预算（分）", "headline": "广告标题", "message": "文案", "imageUrl": "图片链接", "link": "商店/产品链接", "submit": "创建广告系列", "note": "根据当前SAMII模式，广告系列可能创建为暂停状态或直接激活。" }
+    "settings": {
+      "title": "连接Meta广告",
+      "subtitle": "这些凭证专属于此工作区。",
+      "accessToken": "访问令牌",
+      "adAccountId": "广告账户ID",
+      "pageId": "主页ID",
+      "save": "保存"
+    },
+    "create": {
+      "back": "← 返回总部",
+      "eyebrow": "军械库 · 营销加速",
+      "title": "发布广告",
+      "connectedAccount": "已连接广告账户：",
+      "campaignName": "广告系列名称",
+      "objective": "目标",
+      "objectiveTraffic": "流量",
+      "objectiveEngagement": "互动",
+      "objectiveSales": "销售",
+      "dailyBudget": "每日预算（分）",
+      "headline": "广告标题",
+      "message": "文案",
+      "imageUrl": "图片链接",
+      "link": "商店/产品链接",
+      "submit": "创建广告系列",
+      "note": "根据当前SAMII模式，广告系列可能创建为暂停状态或直接激活。"
+    }
+  },
+  "marketplace": {
+    "nav": {
+      "qg": "指挥中心",
+      "marketplace": "市场",
+      "community": "社区",
+      "services": "服务请求",
+      "discussions": "讨论",
+      "arsenal": "军械库",
+      "academy": "学院"
+    },
+    "sideAi": "SAMII 引擎运行中",
+    "sideText": "市场已与 SAMII 生态系统同步。",
+    "searchPlaceholder": "搜索...",
+    "favoris": "我的收藏",
+    "publish": "发布",
+    "allRegions": "所有地区",
+    "live": "SAMII 市场 · 直播",
+    "heroTitle1": "发现。",
+    "heroTitle2": "购买。",
+    "heroTitle3": "连接。",
+    "emptyTitle": "未找到商品"
   }
 }

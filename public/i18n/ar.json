@@ -1,14 +1,23 @@
 {
-  "topbar": { "enter": "انضم إلى مقري" },
+  "topbar": {
+    "enter": "انضم إلى مقري"
+  },
   "hero": {
     "eyebrow": "إمبراطورية • نظام عالمي",
     "title": "ابنِ إمبراطوريتك.",
     "description": "منصة واحدة.\nهوية واحدة.\nمقر واحد.\n\nاعمل.\nتطوّر.\nابنِ إمبراطوريتك."
   },
-  "buttons": { "enter": "ادخل إلى مقري" },
+  "buttons": {
+    "enter": "ادخل إلى مقري"
+  },
   "sidebar": {
-    "hub": "الرئيسية", "marketplace": "المتجر", "academy": "الأكاديمية",
-    "community": "المجتمع", "arsenal": "الترسانة", "settings": "الإعدادات", "profile": "الملف الشخصي"
+    "hub": "الرئيسية",
+    "marketplace": "المتجر",
+    "academy": "الأكاديمية",
+    "community": "المجتمع",
+    "arsenal": "الترسانة",
+    "settings": "الإعدادات",
+    "profile": "الملف الشخصي"
   },
   "hub": {
     "hero": {
@@ -17,54 +26,142 @@
       "subtitle": "سامي يساعدك على إطلاق مقرك وربط منظومتك.",
       "searchPlaceholder": "ابنِ إمبراطوريتك القادمة..."
     },
-    "section": { "choose": "اختر مجالك" },
+    "section": {
+      "choose": "اختر مجالك"
+    },
     "metierMore": "المزيد من المجالات",
-    "footer": { "quote": "كل جنرال يبدأ جنديًا.", "version": "الإصدار 1.0 · جندي" },
+    "footer": {
+      "quote": "كل جنرال يبدأ جنديًا.",
+      "version": "الإصدار 1.0 · جندي"
+    },
     "metiers": {
-      "ecommerce":   { "label": "التجارة الإلكترونية", "desc": "التجارة عبر الإنترنت" },
-      "restaurant":  { "label": "مطعم",                 "desc": "المطاعم والطعام" },
-      "immobilier":  { "label": "عقارات",               "desc": "الممتلكات والأصول" },
-      "livreur":     { "label": "توصيل",                "desc": "الشحن واللوجستيات" },
-      "sante":       { "label": "الصحة",                "desc": "الصحة والعافية" },
-      "finance":     { "label": "المالية",              "desc": "المالية والاستثمار" },
-      "education":   { "label": "التعليم",              "desc": "التدريب والمعرفة" },
-      "technologie": { "label": "التكنولوجيا",          "desc": "التقنية والابتكار" },
-      "agriculture": { "label": "الزراعة",              "desc": "الزراعة والمحاصيل" },
-      "industrie":   { "label": "الصناعة",              "desc": "الإنتاج والمصانع" },
-      "services":    { "label": "الخدمات",              "desc": "الخدمات المهنية" },
-      "tourisme":    { "label": "السياحة",              "desc": "السفر والسياحة" }
+      "ecommerce": {
+        "label": "التجارة الإلكترونية",
+        "desc": "التجارة عبر الإنترنت"
+      },
+      "restaurant": {
+        "label": "مطعم",
+        "desc": "المطاعم والطعام"
+      },
+      "immobilier": {
+        "label": "عقارات",
+        "desc": "الممتلكات والأصول"
+      },
+      "livreur": {
+        "label": "توصيل",
+        "desc": "الشحن واللوجستيات"
+      },
+      "sante": {
+        "label": "الصحة",
+        "desc": "الصحة والعافية"
+      },
+      "finance": {
+        "label": "المالية",
+        "desc": "المالية والاستثمار"
+      },
+      "education": {
+        "label": "التعليم",
+        "desc": "التدريب والمعرفة"
+      },
+      "technologie": {
+        "label": "التكنولوجيا",
+        "desc": "التقنية والابتكار"
+      },
+      "agriculture": {
+        "label": "الزراعة",
+        "desc": "الزراعة والمحاصيل"
+      },
+      "industrie": {
+        "label": "الصناعة",
+        "desc": "الإنتاج والمصانع"
+      },
+      "services": {
+        "label": "الخدمات",
+        "desc": "الخدمات المهنية"
+      },
+      "tourisme": {
+        "label": "السياحة",
+        "desc": "السفر والسياحة"
+      }
     }
   },
   "qg": {
     "topbar": "المقر",
     "nav": {
-      "hub": "المحور", "marketplace": "المتجر", "community": "المجتمع", "academy": "الأكاديمية",
-      "myBusiness": "أعمالي", "connectTools": "ربط أدواتي", "myTools": "أدواتي",
-      "arsenal": "الترسانة", "vault": "خزنة OG", "samii": "سامي", "settings": "الإعدادات", "backToQG": "مقري",
+      "hub": "المحور",
+      "marketplace": "المتجر",
+      "community": "المجتمع",
+      "academy": "الأكاديمية",
+      "myBusiness": "أعمالي",
+      "connectTools": "ربط أدواتي",
+      "myTools": "أدواتي",
+      "arsenal": "الترسانة",
+      "vault": "خزنة OG",
+      "samii": "سامي",
+      "settings": "الإعدادات",
+      "backToQG": "مقري",
       "logout": "تسجيل الخروج"
     },
-    "hero": { "eyebrow": "مركز القيادة", "titlePrefix": "مقرك", "subtitle": "أدر نشاطك وأدواتك ومهامك من مكان واحد." },
+    "hero": {
+      "eyebrow": "مركز القيادة",
+      "titlePrefix": "مقرك",
+      "subtitle": "أدر نشاطك وأدواتك ومهامك من مكان واحد."
+    },
     "section": {
-      "overview": "نظرة عامة", "arsenal": "الترسانة", "delivery": "التوصيل الفوري 🚚",
-      "missionToday": "مهمة اليوم 🎯", "performance": "أداء الشهر 📈",
-      "recentOrders": "أحدث الطلبات", "vipClients": "عملاء VIP 👑", "blacklist": "القائمة السوداء 🚫"
+      "overview": "نظرة عامة",
+      "arsenal": "الترسانة",
+      "delivery": "التوصيل الفوري 🚚",
+      "missionToday": "مهمة اليوم 🎯",
+      "performance": "أداء الشهر 📈",
+      "recentOrders": "أحدث الطلبات",
+      "vipClients": "عملاء VIP 👑",
+      "blacklist": "القائمة السوداء 🚫"
     },
     "cards2": {
-      "revenue": "الإيرادات", "orders": "الطلبات", "pending": "قيد الانتظار", "confirmed": "مؤكدة",
-      "cancelled": "ملغاة", "vip": "عملاء VIP", "blacklist": "القائمة السوداء"
+      "revenue": "الإيرادات",
+      "orders": "الطلبات",
+      "pending": "قيد الانتظار",
+      "confirmed": "مؤكدة",
+      "cancelled": "ملغاة",
+      "vip": "عملاء VIP",
+      "blacklist": "القائمة السوداء"
     },
-    "delivery": { "delivered": "تم التوصيل", "inProgress": "قيد التوصيل", "failed": "فشل" },
+    "delivery": {
+      "delivered": "تم التوصيل",
+      "inProgress": "قيد التوصيل",
+      "failed": "فشل"
+    },
     "mission": {
-      "objective": "هدف اليوم", "ordersToday": "طلبات اليوم",
-      "revenueToday": "إيرادات اليوم", "progressLabel": "التقدم نحو الهدف (10 طلبات)"
+      "objective": "هدف اليوم",
+      "ordersToday": "طلبات اليوم",
+      "revenueToday": "إيرادات اليوم",
+      "progressLabel": "التقدم نحو الهدف (10 طلبات)"
     },
-    "performance": { "revenueMonth": "إيرادات هذا الشهر", "ordersMonth": "طلبات هذا الشهر", "vsLastMonth": "مقارنة بالشهر الماضي" },
-    "table": { "client": "العميل", "phone": "الهاتف", "product": "المنتج", "total": "المجموع", "status": "الحالة" },
+    "performance": {
+      "revenueMonth": "إيرادات هذا الشهر",
+      "ordersMonth": "طلبات هذا الشهر",
+      "vsLastMonth": "مقارنة بالشهر الماضي"
+    },
+    "table": {
+      "client": "العميل",
+      "phone": "الهاتف",
+      "product": "المنتج",
+      "total": "المجموع",
+      "status": "الحالة"
+    },
     "loading": "جاري التحميل...",
-    "modules": { "all": "الكل" },
-    "arsenal": { "boostMarketing": "تعزيز التسويق", "radar": "رادار الفرص", "fortress": "الحصن", "level": "المستوى", "seeMore": "عرض الترسانة" }
+    "modules": {
+      "all": "الكل"
+    },
+    "arsenal": {
+      "boostMarketing": "تعزيز التسويق",
+      "radar": "رادار الفرص",
+      "fortress": "الحصن",
+      "level": "المستوى",
+      "seeMore": "عرض الترسانة"
+    }
   },
- "samii": {
+  "samii": {
     "topbar": "المستشار الذكي",
     "status": "قيد التشغيل",
     "title": "مركز حياتك الاستراتيجي.",
@@ -77,24 +174,110 @@
       "attachDoc": "مستند"
     },
     "cards": {
-      "marketing": { "label": "التسويق", "value": "إطلاق إعلان ←" },
-      "messagerEclair": { "label": "الرسول السريع", "value": "تفعيل التتبع ←" },
-      "miroir": { "label": "المرآة", "value": "عرض تشخيصي ←" },
-      "griot": { "label": "الراوي", "value": "إنشاء حزمة محتوى ←" },
-      "diplomate": { "label": "الدبلوماسي", "value": "الرد على عميل ←" },
-      "missions": { "label": "المهام", "value": "عرض مهامي ←" },
-      "oeilConcurrentiel": { "label": "عين المنافسة", "value": "تحليل سعر ←" },
-      "memoireClient": { "label": "ذاكرة العميل", "value": "البحث عن عميل ←" },
-      "oracleFinancier": { "label": "العرّاف المالي", "value": "عرض توقعاتي ←" },
-      "topProduits": { "label": "أفضل المنتجات", "value": "عرض التصنيف ←" },
-      "automatisations": { "label": "الأتمتة", "value": "إدارة الأتمتة ←" },
-      "chasseurStock": { "label": "صائد المخزون", "value": "البحث عن مورّد ←" }
+      "marketing": {
+        "label": "التسويق",
+        "value": "إطلاق إعلان ←"
+      },
+      "messagerEclair": {
+        "label": "الرسول السريع",
+        "value": "تفعيل التتبع ←"
+      },
+      "miroir": {
+        "label": "المرآة",
+        "value": "عرض تشخيصي ←"
+      },
+      "griot": {
+        "label": "الراوي",
+        "value": "إنشاء حزمة محتوى ←"
+      },
+      "diplomate": {
+        "label": "الدبلوماسي",
+        "value": "الرد على عميل ←"
+      },
+      "missions": {
+        "label": "المهام",
+        "value": "عرض مهامي ←"
+      },
+      "oeilConcurrentiel": {
+        "label": "عين المنافسة",
+        "value": "تحليل سعر ←"
+      },
+      "memoireClient": {
+        "label": "ذاكرة العميل",
+        "value": "البحث عن عميل ←"
+      },
+      "oracleFinancier": {
+        "label": "العرّاف المالي",
+        "value": "عرض توقعاتي ←"
+      },
+      "topProduits": {
+        "label": "أفضل المنتجات",
+        "value": "عرض التصنيف ←"
+      },
+      "automatisations": {
+        "label": "الأتمتة",
+        "value": "إدارة الأتمتة ←"
+      },
+      "chasseurStock": {
+        "label": "صائد المخزون",
+        "value": "البحث عن مورّد ←"
+      }
     }
   },
-  
-  "arsenal": { "title": "الترسانة", "subtitle": "33 قوة، كل واحدة مرتبطة بقانون من قوانين سامي.", "available": "متاح", "soon": "قريباً" },
+  "arsenal": {
+    "title": "الترسانة",
+    "subtitle": "33 قوة، كل واحدة مرتبطة بقانون من قوانين سامي.",
+    "available": "متاح",
+    "soon": "قريباً"
+  },
   "ads": {
-    "settings": { "title": "ربط إعلانات ميتا", "subtitle": "هذه البيانات خاصة بهذا المساحة.", "accessToken": "رمز الوصول", "adAccountId": "معرف الحساب الإعلاني", "pageId": "معرف الصفحة", "save": "حفظ" },
-    "create": { "back": "← العودة إلى المقر", "eyebrow": "الترسانة · تعزيز التسويق", "title": "إطلاق إعلان", "connectedAccount": "الحساب الإعلاني المتصل:", "campaignName": "اسم الحملة", "objective": "الهدف", "objectiveTraffic": "الزيارات", "objectiveEngagement": "التفاعل", "objectiveSales": "المبيعات", "dailyBudget": "الميزانية اليومية (سنتات)", "headline": "عنوان الإعلان", "message": "الرسالة", "imageUrl": "رابط الصورة", "link": "رابط متجرك/منتجك", "submit": "إنشاء الحملة", "note": "حسب وضع سامي الحالي، يمكن إنشاء الحملة متوقفة أو تفعيلها مباشرة." }
+    "settings": {
+      "title": "ربط إعلانات ميتا",
+      "subtitle": "هذه البيانات خاصة بهذا المساحة.",
+      "accessToken": "رمز الوصول",
+      "adAccountId": "معرف الحساب الإعلاني",
+      "pageId": "معرف الصفحة",
+      "save": "حفظ"
+    },
+    "create": {
+      "back": "← العودة إلى المقر",
+      "eyebrow": "الترسانة · تعزيز التسويق",
+      "title": "إطلاق إعلان",
+      "connectedAccount": "الحساب الإعلاني المتصل:",
+      "campaignName": "اسم الحملة",
+      "objective": "الهدف",
+      "objectiveTraffic": "الزيارات",
+      "objectiveEngagement": "التفاعل",
+      "objectiveSales": "المبيعات",
+      "dailyBudget": "الميزانية اليومية (سنتات)",
+      "headline": "عنوان الإعلان",
+      "message": "الرسالة",
+      "imageUrl": "رابط الصورة",
+      "link": "رابط متجرك/منتجك",
+      "submit": "إنشاء الحملة",
+      "note": "حسب وضع سامي الحالي، يمكن إنشاء الحملة متوقفة أو تفعيلها مباشرة."
+    }
+  },
+  "marketplace": {
+    "nav": {
+      "qg": "المقر المركزي",
+      "marketplace": "المتجر",
+      "community": "المجتمع",
+      "services": "طلبات الخدمة",
+      "discussions": "المحادثات",
+      "arsenal": "الترسانة",
+      "academy": "الأكاديمية"
+    },
+    "sideAi": "محرك سامي نشط",
+    "sideText": "المتجر متصل بمنظومة سامي.",
+    "searchPlaceholder": "بحث...",
+    "favoris": "المفضلة",
+    "publish": "نشر",
+    "allRegions": "كل المناطق",
+    "live": "متجر سامي · مباشر",
+    "heroTitle1": "اكتشف.",
+    "heroTitle2": "اشترِ.",
+    "heroTitle3": "تواصل.",
+    "emptyTitle": "لا توجد منتجات"
   }
 }

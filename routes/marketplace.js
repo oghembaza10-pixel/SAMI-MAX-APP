@@ -970,6 +970,28 @@ nav {
     margin-top: 8px;
 }
 
+.og-lang-switch {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.og-lang-switch span {
+    cursor: pointer;
+    color: var(--muted);
+    padding: 3px 6px;
+    border-radius: 6px;
+    transition: color .2s ease;
+}
+
+.og-lang-switch span:hover,
+.og-lang-switch span.active {
+    color: var(--blue);
+    background: rgba(0,217,255,.08);
+}
+
 .main {
     margin-left: 250px;
 }
@@ -1311,7 +1333,7 @@ nav {
     letter-spacing: -1.8px;
 }
 
-.hero h1 span {
+.hero h1 .hero-accent {
     color: var(--blue);
 }
 
@@ -2164,7 +2186,7 @@ nav {
                 class="side-link"
             >
                 <i data-lucide="layout-dashboard"></i>
-                QG Central
+                <span data-i18n="marketplace.nav.qg">QG Central</span>
             </a>
 
             <a
@@ -2172,7 +2194,7 @@ nav {
                 class="side-link active"
             >
                 <i data-lucide="store"></i>
-                Marketplace
+                <span data-i18n="marketplace.nav.marketplace">Marketplace</span>
             </a>
 
             <a
@@ -2180,7 +2202,7 @@ nav {
                 class="side-link"
             >
                 <i data-lucide="users"></i>
-                Communauté
+                <span data-i18n="marketplace.nav.community">Communauté</span>
             </a>
 
             <a
@@ -2188,7 +2210,7 @@ nav {
                 class="side-link"
             >
                 <i data-lucide="concierge-bell"></i>
-                Demandes de service
+                <span data-i18n="marketplace.nav.services">Demandes de service</span>
             </a>
 
             <a
@@ -2196,7 +2218,7 @@ nav {
                 class="side-link"
             >
                 <i data-lucide="message-circle"></i>
-                Discussions
+                <span data-i18n="marketplace.nav.discussions">Discussions</span>
             </a>
 
             <a
@@ -2204,7 +2226,7 @@ nav {
                 class="side-link"
             >
                 <i data-lucide="shield-check"></i>
-                Arsenal
+                <span data-i18n="marketplace.nav.arsenal">Arsenal</span>
             </a>
 
             <a
@@ -2212,7 +2234,7 @@ nav {
                 class="side-link"
             >
                 <i data-lucide="graduation-cap"></i>
-                Academy
+                <span data-i18n="marketplace.nav.academy">Academy</span>
             </a>
 
         </nav>
@@ -2223,12 +2245,19 @@ nav {
 
         <div class="side-ai">
             <span class="side-ai-dot"></span>
-            SAMII ENGINE ACTIVE
+            <span data-i18n="marketplace.sideAi">SAMII ENGINE ACTIVE</span>
         </div>
 
-        <div class="side-text">
+        <div class="side-text" data-i18n="marketplace.sideText">
             Marketplace synchronisée avec
             l'écosystème SAMII.
+        </div>
+
+        <div class="og-lang-switch">
+            <span data-lang-btn="fr">FR</span>
+            <span data-lang-btn="en">EN</span>
+            <span data-lang-btn="ar">AR</span>
+            <span data-lang-btn="zh">ZH</span>
         </div>
 
     </div>
@@ -2272,6 +2301,7 @@ nav {
                     type="search"
                     name="recherche"
                     placeholder="Rechercher..."
+                    data-i18n-placeholder="marketplace.searchPlaceholder"
                     value="${escapeHtml(recherche || "")}"
                 >
 
@@ -2323,7 +2353,7 @@ nav {
                 class="publish-btn"
             >
                 <i data-lucide="plus"></i>
-                <span>Publier</span>
+                <span data-i18n="marketplace.publish">Publier</span>
             </a>
 
         </div>
@@ -2337,7 +2367,7 @@ nav {
             class="region-chip ${!region ? "active" : ""}"
         >
             <i data-lucide="globe"></i>
-            Toutes régions
+            <span data-i18n="marketplace.allRegions">Toutes régions</span>
         </a>
 
         ${regionChipsHtml}
@@ -2362,14 +2392,14 @@ nav {
 
                 <span class="live-dot"></span>
 
-                SAMII MARKETPLACE · LIVE
+                <span data-i18n="marketplace.live">SAMII MARKETPLACE · LIVE</span>
 
             </div>
 
             <h1>
-                Découvrez.
-                <span>Achetez.</span>
-                Connectez.
+                <span data-i18n="marketplace.heroTitle1">Découvrez.</span>
+                <span class="hero-accent" data-i18n="marketplace.heroTitle2">Achetez.</span>
+                <span data-i18n="marketplace.heroTitle3">Connectez.</span>
             </h1>
 
             <p>
@@ -2388,7 +2418,7 @@ nav {
                 class="filter-btn"
             >
                 <i data-lucide="heart"></i>
-                Mes favoris
+                <span data-i18n="marketplace.favoris">Mes favoris</span>
             </a>
 
         </div>
@@ -2405,7 +2435,7 @@ nav {
 
                         <i data-lucide="package-search"></i>
 
-                        <h3>
+                        <h3 data-i18n="marketplace.emptyTitle">
                             Aucun produit trouvé
                         </h3>
 
@@ -3009,6 +3039,8 @@ renderCart();
 updateCartBadge();
 
 </script>
+
+<script src="/js/i18n.js"></script>
 
 </body>
 </html>
