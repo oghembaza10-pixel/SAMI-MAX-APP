@@ -538,7 +538,7 @@ a { color: inherit; text-decoration: none; }
     .header-top { padding: 8px 12px; flex-wrap: wrap; }
     .search { order: 3; flex-basis: 100%; max-width: none; }
     .content { padding: 16px 10px 90px; }
-    .mobile-nav { position: fixed; left: 8px; right: 8px; bottom: 8px; height: 58px; z-index: 400; display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border: 1px solid var(--border); border-radius: 16px; background: var(--panel-2); backdrop-filter: blur(20px); box-shadow: 0 10px 40px rgba(0,0,0,0.5), var(--cyan-glow); }
+    .mobile-nav { position: fixed; left: 8px; right: 8px; bottom: 8px; height: 58px; z-index: 400; display: grid; grid-template-columns: repeat(5, 1fr); padding: 4px; border: 1px solid var(--border); border-radius: 16px; background: var(--panel-2); backdrop-filter: blur(20px); box-shadow: 0 10px 40px rgba(0,0,0,0.5), var(--cyan-glow); }
     .mobile-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: var(--muted); font-size: 8px; font-weight: 700; border-radius: 12px; }
     .mobile-nav a svg { width: 16px; height: 16px; }
     .mobile-nav a.active { color: var(--cyan); background: rgba(0, 240, 255, 0.12); }
