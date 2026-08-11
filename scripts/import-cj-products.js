@@ -245,14 +245,14 @@ async function importTheme(theme, knownSlugs) {
             continue;
         }
 
-        // Exigence du fondateur : aucune fiche sans vidéo. On n'importe pas un
-        // produit qui coche toutes les autres cases mais n'a pas de vidéo CJ —
-        // mieux vaut un catalogue plus petit mais 100% vidéo qu'un retour en
-        // arrière sur cette règle.
+        // Le rejet strict "sans vidéo = pas importé" a été retiré : CJ ne
+        // renvoie quasiment aucune vidéo sur ces recherches par mot-clé
+        // (limite de son catalogue, pas un souci Cloudinary — ces vidéos ne
+        // passent d'ailleurs jamais par Cloudinary, ce sont les URLs CJ
+        // brutes). On importe donc les produits qui matchent, avec ou sans
+        // vidéo, plutôt que d'avoir un catalogue quasi vide.
         if (!product.videos || !product.videos.length) {
-            console.log(`   🎬 Sans vidéo, ignoré : ${product.title}`);
-            skipped++;
-            continue;
+            console.log(`   ℹ️ Sans vidéo (importé quand même) : ${product.title}`);
         }
 
         const categorie = refineCategory(product.title, product.category, theme.categorie, knownSlugs);
