@@ -4,6 +4,7 @@
 // Compte Cloudinary en plan gratuit : vidéos plafonnées à 19 secondes.
 // ==========================================================================
 const express = require("express");
+const multer = require("multer");
 const router = express.Router();
 const db = require("../services/db");
 
@@ -11,6 +12,11 @@ const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
 const CLOUDINARY_UPLOAD_PRESET = "MARKETPLACE OG";
 const STORY_MAX_DUREE_SEC = 19;
 const STORY_DUREE_MS = 24 * 60 * 60 * 1000;
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 },
+});
 
 function requireAuth(req, res, next) { if (!req.session?.loggedIn) return res.redirect("/login"); next(); }
 function escapeHtml(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
@@ -122,22 +128,21 @@ async function uploadAndFinalize(file, isVideo, trimStart) {
     try {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("upload_preset", "${CLOUDINARY_UPLOAD_PRESET}");
-        const endpoint = isVideo ? "video" : "image";
-        const res = await fetch("https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/" + endpoint + "/upload", { method:"POST", body:formData });
+        // L'upload passe par notre serveur (/stories/upload), pas directement
+        // vers Cloudinary depuis le navigateur — certains bloqueurs de pub,
+        // extensions ou pare-feux réseau bloquent silencieusement les requêtes
+        // directes vers cloudinary.com (juste "Failed to fetch", sans détail).
+        const res = await fetch("/stories/upload", { method:"POST", body:formData });
         const json = await res.json();
-        if (!json.secure_url) {
-            // Cloudinary renvoie toujours une raison précise en cas d'échec — on
-            // l'affiche telle quelle au lieu d'un message générique, pour pouvoir
-            // enfin savoir POURQUOI ça bloque si ça se reproduit.
-            throw new Error(json.error?.message || "Réponse Cloudinary invalide.");
+        if (!json.success) {
+            throw new Error(json.error || "Échec de l'envoi.");
         }
 
         if (isVideo) {
             const transform = trimStart > 0 ? "so_" + trimStart.toFixed(1) + ",du_${STORY_MAX_DUREE_SEC}" : "du_${STORY_MAX_DUREE_SEC}";
-            mediaUrl = json.secure_url.replace("/upload/", "/upload/" + transform + "/");
+            mediaUrl = json.url.replace("/upload/", "/upload/" + transform + "/");
         } else {
-            mediaUrl = json.secure_url;
+            mediaUrl = json.url;
         }
         mediaType = isVideo ? "video" : "photo";
 
@@ -215,6 +220,44 @@ submitBtn.addEventListener("click", async (e) => {
 </script>
 </body>
 </html>`);
+});
+
+// ==========================================================================
+// UPLOAD RELAYÉ PAR LE SERVEUR — le navigateur uploadait jusqu'ici direct
+// vers Cloudinary depuis le client, bloqué chez certains utilisateurs
+// (bloqueur de pub, extension, pare-feu réseau) avec un simple "Failed to
+// fetch" sans aucun détail exploitable. Le serveur ne subit pas ce genre de
+// blocage : le fichier transite par nous, on l'envoie à Cloudinary nous-mêmes.
+// ==========================================================================
+router.post("/upload", requireAuth, upload.single("file"), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.json({ success: false, error: "Aucun fichier reçu." });
+        }
+
+        const isVideo = req.file.mimetype.startsWith("video/");
+        const endpoint = isVideo ? "video" : "image";
+
+        const cloudForm = new FormData();
+        cloudForm.append("file", new Blob([req.file.buffer], { type: req.file.mimetype }), req.file.originalname || "upload");
+        cloudForm.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+        const cloudRes = await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${endpoint}/upload`,
+            { method: "POST", body: cloudForm }
+        );
+        const cloudJson = await cloudRes.json();
+
+        if (!cloudJson.secure_url) {
+            console.error("❌ Upload Cloudinary (story) :", cloudJson.error || cloudJson);
+            return res.json({ success: false, error: cloudJson.error?.message || "Échec de l'envoi vers Cloudinary." });
+        }
+
+        res.json({ success: true, url: cloudJson.secure_url, isVideo });
+    } catch (err) {
+        console.error("❌ POST /stories/upload :", err.message);
+        res.json({ success: false, error: "Erreur serveur pendant l'envoi." });
+    }
 });
 
 router.post("/publier", requireAuth, async (req, res) => {
