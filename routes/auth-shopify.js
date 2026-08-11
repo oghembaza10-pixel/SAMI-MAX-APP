@@ -70,7 +70,9 @@ async function getFreshAccessToken(shop) {
 
     const f = record.fields;
     const expiresAt = f.token_expires_at ? new Date(f.token_expires_at) : null;
-    const isExpiringSoon = !expiresAt || expiresAt.getTime() - Date.now() < 5 * 60 * 1000;
+    // Un token d'app custom (connexion manuelle) n'a pas de date d'expiration : on ne
+    // le considère "expirant bientôt" que s'il en a réellement une qui approche.
+    const isExpiringSoon = expiresAt ? expiresAt.getTime() - Date.now() < 5 * 60 * 1000 : false;
 
     if (!isExpiringSoon) return f.access_token;
     if (!f.refresh_token) throw new Error(`Pas de refresh_token pour ${shop} — réauthentification nécessaire.`);
@@ -94,8 +96,9 @@ async function upsertBoutique(shop, tokenData, shopInfo, currentUserEmail) {
     const search = await axios.get(searchUrl, { headers });
     const record = search.data.records[0];
 
-    const tokenExpiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
-    const refreshTokenExpiresAt = new Date(Date.now() + tokenData.refresh_token_expires_in * 1000).toISOString();
+    // tokenData.expires_in absent = token d'app custom (connexion manuelle), qui n'expire pas.
+    const tokenExpiresAt = tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : null;
+    const refreshTokenExpiresAt = tokenData.refresh_token_expires_in ? new Date(Date.now() + tokenData.refresh_token_expires_in * 1000).toISOString() : null;
 
     let workspaceId = record?.fields?.workspace_id || null;
 
@@ -231,6 +234,58 @@ router.get("/auth/shopify/callback", requireAuth, async (req, res) => {
     } catch (err) {
         console.error("❌ Erreur OAuth:", err.response?.data || err.message);
         res.status(500).send("Erreur connexion Shopify. Vérifie les logs.");
+    }
+});
+
+// ── CONNEXION MANUELLE PAR TOKEN (app custom, sans passer par la review Shopify) ──
+router.post("/auth/shopify/token", requireAuth, async (req, res) => {
+    try {
+        let { shop, token } = req.body;
+        shop = (shop || "").trim().toLowerCase();
+        token = (token || "").trim();
+
+        if (!shop.includes(".myshopify.com")) shop += ".myshopify.com";
+        if (!shop.match(/^[a-zA-Z0-9-]+\.myshopify\.com$/)) {
+            return res.json({ success: false, error: "URL de boutique invalide (ex: monshop.myshopify.com)." });
+        }
+        if (!token) {
+            return res.json({ success: false, error: "Token manquant." });
+        }
+
+        // On vérifie que le token fonctionne vraiment avant de créer quoi que ce soit.
+        let shopInfo;
+        try {
+            const shopRes = await axios.get(`https://${shop}/admin/api/2026-07/shop.json`, {
+                headers: { "X-Shopify-Access-Token": token },
+            });
+            shopInfo = shopRes.data.shop;
+        } catch (err) {
+            const status = err.response?.status;
+            if (status === 401 || status === 403) {
+                return res.json({ success: false, error: "Token refusé par Shopify — vérifie qu'il est bien copié en entier et que l'app est installée." });
+            }
+            return res.json({ success: false, error: "Impossible de joindre cette boutique — vérifie l'URL." });
+        }
+
+        const tokenData = { access_token: token, refresh_token: null };
+        const boutique = await upsertBoutique(shop, tokenData, shopInfo, req.session.email);
+        await upsertUser(shop, shopInfo.email);
+        await registerWebhooks(shop, token);
+
+        await orchestrator.process({ type: E.SHOP_CONNECTED, shop, payload: { accessToken: token, scopes: "custom" } });
+
+        req.session.shop = shop;
+        req.session.boutiqueId = boutique.id;
+        req.session.workspaceId = boutique.workspaceId;
+
+        req.session.save((err) => {
+            if (err) { console.error("❌ Session save :", err.message); return res.json({ success: false, error: "Erreur session." }); }
+            res.json({ success: true, shop, boutique: shopInfo.name || shop });
+        });
+
+    } catch (err) {
+        console.error("❌ POST /auth/shopify/token :", err.response?.data || err.message);
+        res.json({ success: false, error: "Erreur serveur." });
     }
 });
 

@@ -9,6 +9,63 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/hub-premium.css">
+    <style>
+        .shopify-token-toggle {
+            display: block; width: 100%; background: none; border: none; text-align: center;
+            color: #95BF47; font-size: .78rem; margin-top: 10px; cursor: pointer; text-decoration: underline;
+        }
+        .shopify-token-form { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #262626; }
+        .shopify-guide-toggle {
+            display: block; width: 100%; background: none; border: none; text-align: center;
+            color: #8a8a8a; font-size: .74rem; margin-top: 8px; cursor: pointer;
+        }
+        .shopify-guide-toggle:hover { color: #95BF47; }
+
+        .shopify-guide-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 999;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .shopify-guide-overlay.open { display: flex; }
+        .shopify-guide-modal {
+            background: #111; border: 1px solid #262626; border-radius: 18px;
+            max-width: 560px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 28px;
+        }
+        .shopify-guide-modal h2 { color: #fff; font-size: 1.25rem; margin-bottom: 6px; }
+        .shopify-guide-modal p.sub { color: #888; font-size: .82rem; margin-bottom: 22px; }
+        .shopify-guide-close {
+            float: right; background: none; border: none; color: #666; font-size: 1.3rem; cursor: pointer;
+        }
+        .shopify-guide-step {
+            display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid #1a1a1a;
+        }
+        .shopify-guide-step:last-of-type { border-bottom: none; }
+        .shopify-guide-step__num {
+            flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+            background: rgba(149,191,71,.14); color: #95BF47; font-weight: 800; font-size: .85rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .shopify-guide-step__body h3 { color: #fff; font-size: .88rem; margin-bottom: 4px; }
+        .shopify-guide-step__body p { color: #999; font-size: .78rem; line-height: 1.55; }
+        .shopify-guide-step__path {
+            display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap;
+            margin-top: 8px; font-family: monospace; font-size: .72rem;
+        }
+        .shopify-guide-step__path span {
+            background: #1a1a1a; border: 1px solid #262626; border-radius: 6px; padding: 3px 8px; color: #ccc;
+        }
+        .shopify-guide-step__path i { color: #555; width: 12px; height: 12px; }
+        .shopify-guide-scopes {
+            display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+        }
+        .shopify-guide-scopes span {
+            background: rgba(149,191,71,.1); border: 1px solid rgba(149,191,71,.25); color: #95BF47;
+            border-radius: 20px; padding: 3px 10px; font-size: .68rem;
+        }
+        .shopify-guide-warn {
+            margin-top: 18px; padding: 12px 14px; background: rgba(245,166,35,.08);
+            border: 1px solid rgba(245,166,35,.25); border-radius: 10px; color: #F5A623; font-size: .76rem; line-height: 1.5;
+        }
+    </style>
 </head>
 <body>
 
@@ -103,6 +160,15 @@
                                     <button type="submit" class="connect-btn connect-btn--primary">
                                         Connecter Shopify →
                                     </button>
+                                </form>
+                                <button type="button" class="shopify-token-toggle" id="shopify-token-toggle">
+                                    Pas de bouton d'installation chez toi ? Connecte-toi avec un token →
+                                </button>
+                                <form class="connect-inline-form shopify-token-form" id="shopify-token-form" data-tool="shopify" data-action="shopify-token" style="display:none;">
+                                    <input type="text" name="shop" placeholder="monshop.myshopify.com" class="connect-input" autocomplete="off">
+                                    <input type="text" name="token" placeholder="shpat_xxxxxxxxxxxxxxxxxxxx" class="connect-input" autocomplete="off">
+                                    <button type="submit" class="connect-btn connect-btn--primary">Connecter avec le token →</button>
+                                    <button type="button" class="shopify-guide-toggle" id="shopify-guide-toggle">📖 Comment obtenir mon token ?</button>
                                 </form>
                             <% } %>
 
@@ -241,6 +307,67 @@
 
     </main>
 
+</div>
+
+<!-- GUIDE : OBTENIR SON TOKEN SHOPIFY -->
+<div class="shopify-guide-overlay" id="shopify-guide-overlay">
+    <div class="shopify-guide-modal">
+        <button type="button" class="shopify-guide-close" id="shopify-guide-close">✕</button>
+        <h2>🛍️ Obtenir ton token Shopify</h2>
+        <p class="sub">5 minutes, directement depuis l'admin de ta boutique — aucune validation externe requise.</p>
+
+        <div class="shopify-guide-step">
+            <div class="shopify-guide-step__num">1</div>
+            <div class="shopify-guide-step__body">
+                <h3>Ouvre les réglages de ta boutique</h3>
+                <p>Connecte-toi sur ton admin Shopify, puis va dans :</p>
+                <div class="shopify-guide-step__path">
+                    <span>Paramètres</span><i data-lucide="chevron-right"></i>
+                    <span>Apps et canaux de vente</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="shopify-guide-step">
+            <div class="shopify-guide-step__num">2</div>
+            <div class="shopify-guide-step__body">
+                <h3>Développe une app</h3>
+                <p>En haut à droite, clique sur <b>« Développer des apps »</b>, puis <b>« Créer une app »</b>. Donne-lui un nom, par exemple « SAMII OS ».</p>
+            </div>
+        </div>
+
+        <div class="shopify-guide-step">
+            <div class="shopify-guide-step__num">3</div>
+            <div class="shopify-guide-step__body">
+                <h3>Configure les permissions</h3>
+                <p>Dans l'onglet <b>« Configuration »</b>, clique sur <b>« Configurer »</b> sous « Admin API integration », puis coche ces permissions (lecture + écriture) :</p>
+                <div class="shopify-guide-scopes">
+                    <span>Produits</span><span>Commandes</span><span>Clients</span>
+                    <span>Inventaire</span><span>Expédition</span><span>Exécution des commandes</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="shopify-guide-step">
+            <div class="shopify-guide-step__num">4</div>
+            <div class="shopify-guide-step__body">
+                <h3>Installe l'app</h3>
+                <p>Sauvegarde, va dans l'onglet <b>« Identifiants API »</b>, puis clique sur <b>« Installer l'app »</b> en haut à droite (confirme l'installation).</p>
+            </div>
+        </div>
+
+        <div class="shopify-guide-step">
+            <div class="shopify-guide-step__num">5</div>
+            <div class="shopify-guide-step__body">
+                <h3>Copie ton token</h3>
+                <p>Toujours dans « Identifiants API », sous <b>« Admin API access token »</b>, clique sur <b>« Révéler le token une fois »</b> et copie-le immédiatement — Shopify ne le réaffichera plus jamais.</p>
+            </div>
+        </div>
+
+        <div class="shopify-guide-warn">
+            ⚠️ Ce token donne accès à ta boutique — ne le partage qu'avec SAMII, et si tu le perds, réinstalle l'app pour en générer un nouveau.
+        </div>
+    </div>
 </div>
 
 <script>

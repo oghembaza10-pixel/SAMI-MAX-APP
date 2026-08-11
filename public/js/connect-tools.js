@@ -108,6 +108,34 @@ document.querySelectorAll(".connect-inline-form").forEach(form => {
                 return;
             }
 
+            // ── Token manuel Shopify (app custom, sans OAuth) ──
+            if (action === "shopify-token") {
+                const shop  = form.querySelector('input[name="shop"]')?.value?.trim() || "";
+                const token = form.querySelector('input[name="token"]')?.value?.trim() || "";
+
+                if (!shop || !token) {
+                    showError("Renseigne l'URL de ta boutique et le token.");
+                    if (btn) { btn.disabled = false; btn.textContent = "Connecter avec le token →"; }
+                    return;
+                }
+
+                const res = await fetch("/auth/shopify/token", {
+                    method : "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body   : JSON.stringify({ shop, token }),
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showSuccess(`✅ Shopify connecté : ${data.boutique}`);
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    showError(data.error || "Erreur. Réessaye.");
+                    if (btn) { btn.disabled = false; btn.textContent = "Connecter avec le token →"; }
+                }
+                return;
+            }
+
             // ── Save direct (Telegram, etc.) ──────────
             if (action === "save") {
                 const fieldName = input?.name || "value";
@@ -189,3 +217,31 @@ async function handleDisconnect(e) {
 document.querySelectorAll("[data-action='disconnect']").forEach(btn => {
     btn.addEventListener("click", handleDisconnect);
 });
+
+// ── Shopify : basculer vers le formulaire "token manuel" ─
+const shopifyTokenToggle = document.getElementById("shopify-token-toggle");
+const shopifyTokenForm   = document.getElementById("shopify-token-form");
+if (shopifyTokenToggle && shopifyTokenForm) {
+    shopifyTokenToggle.addEventListener("click", () => {
+        const isOpen = shopifyTokenForm.style.display !== "none";
+        shopifyTokenForm.style.display = isOpen ? "none" : "block";
+        shopifyTokenToggle.textContent = isOpen
+            ? "Pas de bouton d'installation chez toi ? Connecte-toi avec un token →"
+            : "← Revenir à la connexion en un clic";
+    });
+}
+
+// ── Shopify : guide "comment obtenir mon token" ──────────
+const shopifyGuideOverlay = document.getElementById("shopify-guide-overlay");
+const shopifyGuideToggle  = document.getElementById("shopify-guide-toggle");
+const shopifyGuideClose   = document.getElementById("shopify-guide-close");
+if (shopifyGuideOverlay && shopifyGuideToggle) {
+    shopifyGuideToggle.addEventListener("click", () => {
+        shopifyGuideOverlay.classList.add("open");
+        if (typeof lucide !== "undefined") lucide.createIcons();
+    });
+    shopifyGuideClose?.addEventListener("click", () => shopifyGuideOverlay.classList.remove("open"));
+    shopifyGuideOverlay.addEventListener("click", (e) => {
+        if (e.target === shopifyGuideOverlay) shopifyGuideOverlay.classList.remove("open");
+    });
+}
