@@ -151,6 +151,15 @@ module.exports = {
     },
 
     // ==================================================
+    // CHARGILY PAY (paiement en ligne — Edahabia / CIB)
+    // ==================================================
+
+    CHARGILY: {
+        API_KEY: process.env.CHARGILY_API_KEY || "",
+        MODE: process.env.CHARGILY_MODE || "test",
+    },
+
+    // ==================================================
     // ELEVENLABS (Voix IA — désactivé tant que pas de clé)
     // ==================================================
 

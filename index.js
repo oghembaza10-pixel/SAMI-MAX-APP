@@ -93,6 +93,7 @@ app.use(require("./routes/webhook-woocommerce").router);
 app.use("/webhook", require("./routes/webhook-compliance"));
 app.use("/webhook", require("./routes/webhook"));
 app.use("/webhook/whatsapp", require("./routes/webhook-whatsapp"));
+app.use("/webhook/chargily", require("./routes/webhook-chargily"));
 app.use("/telegram", require("./routes/telegram"));
 
 // ══════════════════════════════════════════════════════
