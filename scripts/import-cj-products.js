@@ -69,55 +69,71 @@ const SHIP_COUNTRIES = (process.env.CJ_SHIP_COUNTRIES || "")
     .filter(Boolean);
 
 // --------------------------------------------------------------------------
-// THÈMES — 4 piliers du dossier de sourcing (11/08/2026), élargis ensuite à
-// la demande du fondateur : plus d'électronique, montres connectées,
-// ensembles survêtement, trottinettes électriques.
-// Explicitement exclus (demande du fondateur) : articles pour animaux,
-// objets à connotation religieuse chrétienne (croix, etc.) — voir
-// estExclu() plus bas. Vélos restent exclus (jamais redemandés), trottinettes
-// électriques réintégrées (demande explicite). Aucun mot-clé de marque de
-// luxe (contrefaçon).
+// THÈMES — dossier de sourcing (11/08/2026) + élargissements successifs du
+// fondateur : électronique/robotique (bureau + cuisine), montres connectées,
+// mode homme/femme, sacs & chaussures femme, vélos, trottinettes, téléphones.
+// Explicitement exclus : articles pour animaux, objets à connotation
+// religieuse chrétienne — voir estExclu() plus bas.
+// Marques de sport/luxe (Nike, Adidas, Asics, Gucci, etc.) volontairement
+// absentes des mots-clés ET filtrées si elles apparaissent quand même dans
+// un titre CJ (contrefaçon — CJ n'est pas revendeur agréé de ces marques) :
+// voir MARQUES_EXCLUES plus bas.
 // --------------------------------------------------------------------------
 const THEMES = [
-    // Pilier 1 — Gadgets électroniques & compagnons robotisés
-    { label: "Robot compagnon de bureau",     keyword: "mini robot companion",       categorie: "electronique-tech",      video: true },
-    { label: "Animal électronique",           keyword: "smart robot pet toy",        categorie: "electronique-tech",      video: true },
-    { label: "Gadget IA de bureau",           keyword: "AI desktop robot gadget",    categorie: "electronique-tech",      video: true },
-    { label: "Gadget viral",                  keyword: "viral electronic gadget",    categorie: "tendances-nouveautes",   video: true, tiktok: true },
-    { label: "Électronique grand public",     keyword: "consumer electronics gadget",categorie: "electronique-tech",      video: true },
-    { label: "Trottinette électrique",        keyword: "electric scooter",           categorie: "velos-mobilite-electrique", video: true },
+    // Électronique, robotique & high-tech quotidien
+    { label: "Robot compagnon de bureau",     keyword: "mini robot companion",        categorie: "electronique-tech",      video: true },
+    { label: "Animal électronique",           keyword: "smart robot pet toy",         categorie: "electronique-tech",      video: true },
+    { label: "Gadget IA de bureau",           keyword: "AI desktop robot gadget",     categorie: "electronique-tech",      video: true },
+    { label: "Gadget viral",                  keyword: "viral electronic gadget",     categorie: "tendances-nouveautes",   video: true, tiktok: true },
+    { label: "Électronique grand public",     keyword: "consumer electronics gadget", categorie: "electronique-tech",      video: true },
+    { label: "Robotique cuisine",             keyword: "smart kitchen robot gadget",  categorie: "cuisine-electromenager", video: true },
+    { label: "Téléphones & Accessoires",      keyword: "phone accessories gadget",    categorie: "telephones-accessoires", video: true },
 
-    // Pilier 2 — Mode & vêtement haut de gamme
-    { label: "T-shirt premium minimaliste",   keyword: "premium minimalist tshirt",  categorie: "mode-homme",             video: true },
-    { label: "Ensemble coordonné streetwear", keyword: "matching set streetwear",    categorie: "mode-homme",             video: true },
-    { label: "Ensemble survêtement",          keyword: "tracksuit set matching",     categorie: "sport-fitness",          video: true },
-    { label: "Oversize premium",              keyword: "oversized premium tee",      categorie: "mode-femme",             video: true },
-    { label: "Mode femme tendance",           keyword: "women fashion trendy",       categorie: "mode-femme",             video: true },
+    // Mobilité
+    { label: "Trottinette électrique",        keyword: "electric scooter",            categorie: "velos-mobilite-electrique", video: true },
+    { label: "Vélo électrique",               keyword: "electric bike ebike",         categorie: "velos-mobilite-electrique", video: true },
 
-    // Pilier 3 — Horlogerie premium
-    { label: "Montre minimaliste premium",    keyword: "minimalist watch premium",   categorie: "montres-wearables",      video: true },
-    { label: "Montre look luxe homme",        keyword: "luxury look watch men",      categorie: "montres-wearables",      video: true },
-    { label: "Montre connectée premium",      keyword: "smart watch premium design", categorie: "montres-wearables",      video: true },
-    { label: "Montre connectée",              keyword: "smart watch connected",      categorie: "montres-wearables",      video: true },
+    // Mode & accessoires
+    { label: "T-shirt premium minimaliste",   keyword: "premium minimalist tshirt",   categorie: "mode-homme",             video: true },
+    { label: "Ensemble coordonné streetwear", keyword: "matching set streetwear",     categorie: "mode-homme",             video: true },
+    { label: "Ensemble survêtement",          keyword: "tracksuit set matching",      categorie: "sport-fitness",          video: true },
+    { label: "Oversize premium",              keyword: "oversized premium tee",       categorie: "mode-femme",             video: true },
+    { label: "Mode femme tendance",           keyword: "women fashion trendy",        categorie: "mode-femme",             video: true },
+    { label: "Sacs femme",                    keyword: "women handbag fashion",       categorie: "sacs-bagagerie",         video: true },
+    { label: "Chaussures femme",              keyword: "women shoes fashion",         categorie: "chaussures",             video: true },
+    { label: "Baskets sport",                 keyword: "sneakers sport shoes",        categorie: "chaussures",             video: true },
 
-    // Pilier 4 — Lifestyle & utilitaires "coup de cœur"
-    { label: "Gadget qui règle un problème",  keyword: "problem solving gadget home",categorie: "entretien-organisation", video: true },
-    { label: "Astuce maison en objet",        keyword: "life hack gadget",           categorie: "entretien-organisation", video: true },
-    { label: "Outil multifonction",           keyword: "multifunction daily tool",   categorie: "bricolage-outillage",    video: true },
+    // Horlogerie premium
+    { label: "Montre minimaliste premium",    keyword: "minimalist watch premium",    categorie: "montres-wearables",      video: true },
+    { label: "Montre look luxe homme",        keyword: "luxury look watch men",       categorie: "montres-wearables",      video: true },
+    { label: "Montre connectée premium",      keyword: "smart watch premium design",  categorie: "montres-wearables",      video: true },
+    { label: "Montre connectée",              keyword: "smart watch connected",       categorie: "montres-wearables",      video: true },
+
+    // Lifestyle & utilitaires "coup de cœur"
+    { label: "Gadget qui règle un problème",  keyword: "problem solving gadget home", categorie: "entretien-organisation", video: true },
+    { label: "Astuce maison en objet",        keyword: "life hack gadget",            categorie: "entretien-organisation", video: true },
+    { label: "Outil multifonction",           keyword: "multifunction daily tool",    categorie: "bricolage-outillage",    video: true },
 ];
 
 // Filtre appliqué à CHAQUE produit avant import, indépendamment du thème —
 // un mot-clé exclu bloque l'import même s'il apparaît dans un thème générique
 // ("Tendances TikTok" par exemple pourrait remonter n'importe quoi).
 const MOTS_EXCLUS = [
-    /\b(bike|bicycle)\b/i,
     /\b(dog|cat|pet|puppy|kitten|animal)\b/i,
     /\b(cross|crucifix|jesus|christ|christian|church|bible|catholic|rosary)\b/i,
 ];
 
+// Marques protégées jamais recherchées comme mot-clé, mais filtrées si elles
+// apparaissent quand même dans un titre CJ (contrefaçon quasi systématique
+// sur ce type de plateforme — CJ n'est revendeur agréé d'aucune d'entre elles).
+const MARQUES_EXCLUES = [
+    /\b(nike|adidas|asics|puma|new\s?balance|reebok)\b/i,
+    /\b(gucci|louis\s?vuitton|lv|chanel|dior|prada|versace|balenciaga|hermes|rolex)\b/i,
+];
+
 function estExclu(title, description) {
     const texte = `${title || ""} ${description || ""}`;
-    return MOTS_EXCLUS.some((regex) => regex.test(texte));
+    return [...MOTS_EXCLUS, ...MARQUES_EXCLUES].some((regex) => regex.test(texte));
 }
 
 // --------------------------------------------------------------------------
