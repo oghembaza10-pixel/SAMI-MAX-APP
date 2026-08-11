@@ -32,25 +32,84 @@ router.get("/", (req, res) => {
         .msg.ok{ color:#4caf50; }
         small{ display:block; margin-top:18px; text-align:center; color:#666; font-size:.8rem; }
         a{ color:#d4af37; text-decoration:none; }
+        .lang-switch{ display:flex; gap:4px; justify-content:center; margin-bottom:20px; font-size:.68rem; }
+        .lang-switch span{ padding:5px 10px; border-radius:6px; cursor:pointer; color:#777; border:1px solid #333; transition:.2s ease; }
+        .lang-switch span.active, .lang-switch span:hover{ color:#d4af37; border-color:#d4af37; background:rgba(212,175,55,.08); }
     </style>
 </head>
 <body>
 <div class="box">
-    <h1>🔑 Mot de passe oublié</h1>
-    <p class="sub">On t'envoie un lien pour en choisir un nouveau.</p>
+    <div class="lang-switch">
+        <span data-lang="fr" class="active">FR</span>
+        <span data-lang="en">EN</span>
+        <span data-lang="ar">AR</span>
+        <span data-lang="zh">中</span>
+    </div>
+    <h1 data-i18n="reset.title">🔑 Mot de passe oublié</h1>
+    <p class="sub" data-i18n="reset.subtitle">On t'envoie un lien pour en choisir un nouveau.</p>
     <form id="form-forgot">
-        <input name="email" type="email" placeholder="Ton adresse email" required>
-        <button type="submit">Envoyer le lien</button>
+        <input name="email" type="email" placeholder="Ton adresse email" data-i18n-ph="reset.ph.email" required>
+        <button type="submit" data-i18n="reset.send">Envoyer le lien</button>
     </form>
     <div class="msg" id="msg"></div>
-    <small><a href="/login">← Retour à la connexion</a></small>
+    <small><a href="/login" data-i18n="reset.back">← Retour à la connexion</a></small>
 </div>
 <script>
+const I18N = {
+    fr: {
+        'reset.title': '🔑 Mot de passe oublié', 'reset.subtitle': "On t'envoie un lien pour en choisir un nouveau.",
+        'reset.ph.email': 'Ton adresse email', 'reset.send': 'Envoyer le lien', 'reset.back': '← Retour à la connexion',
+        'msg.sending': '⏳ Envoi en cours...',
+    },
+    en: {
+        'reset.title': '🔑 Forgot password', 'reset.subtitle': "We'll send you a link to choose a new one.",
+        'reset.ph.email': 'Your email address', 'reset.send': 'Send link', 'reset.back': '← Back to login',
+        'msg.sending': '⏳ Sending...',
+    },
+    ar: {
+        'reset.title': '🔑 نسيت كلمة المرور', 'reset.subtitle': 'سنرسل لك رابطًا لاختيار كلمة مرور جديدة.',
+        'reset.ph.email': 'بريدك الإلكتروني', 'reset.send': 'إرسال الرابط', 'reset.back': '← العودة إلى تسجيل الدخول',
+        'msg.sending': '⏳ جارٍ الإرسال...',
+    },
+    zh: {
+        'reset.title': '🔑 忘记密码', 'reset.subtitle': '我们会给您发送一个链接，用于设置新密码。',
+        'reset.ph.email': '您的电子邮箱', 'reset.send': '发送链接', 'reset.back': '← 返回登录',
+        'msg.sending': '⏳ 发送中...',
+    },
+};
+
+let currentLang = localStorage.getItem('samii_lang') || 'fr';
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    localStorage.setItem('samii_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+    });
+    document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+}
+
+document.querySelectorAll('.lang-switch span').forEach(span => {
+    span.addEventListener('click', () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
+
 document.getElementById('form-forgot').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg  = document.getElementById('msg');
     const data = Object.fromEntries(new FormData(e.target));
-    msg.textContent = '⏳ Envoi en cours...';
+    msg.textContent = t('msg.sending');
     msg.className   = 'msg';
     const res  = await fetch('/password-reset/demande', {
         method : 'POST',
@@ -135,29 +194,100 @@ router.get("/nouveau", async (req, res) => {
         button{ width:100%; padding:13px; margin-top:22px; background:#d4af37; border:none; border-radius:8px; font-weight:bold; font-size:1rem; cursor:pointer; color:#000; }
         .msg{ margin-top:14px; text-align:center; font-size:.88rem; color:#e55; min-height:20px; }
         .msg.ok{ color:#4caf50; }
+        .lang-switch{ display:flex; gap:4px; justify-content:center; margin-bottom:20px; font-size:.68rem; }
+        .lang-switch span{ padding:5px 10px; border-radius:6px; cursor:pointer; color:#777; border:1px solid #333; transition:.2s ease; }
+        .lang-switch span.active, .lang-switch span:hover{ color:#d4af37; border-color:#d4af37; background:rgba(212,175,55,.08); }
     </style>
 </head>
 <body>
 <div class="box">
-    <h1>🔑 Nouveau mot de passe</h1>
+    <div class="lang-switch">
+        <span data-lang="fr" class="active">FR</span>
+        <span data-lang="en">EN</span>
+        <span data-lang="ar">AR</span>
+        <span data-lang="zh">中</span>
+    </div>
+    <h1 data-i18n="newpwd.title">🔑 Nouveau mot de passe</h1>
     <form id="form-reset">
         <input type="hidden" name="token" value="${token}">
-        <input name="password" type="password" placeholder="Nouveau mot de passe" required minlength="6">
-        <input name="confirm"  type="password" placeholder="Confirme le mot de passe" required minlength="6">
-        <button type="submit">Valider</button>
+        <input name="password" type="password" placeholder="Nouveau mot de passe" data-i18n-ph="newpwd.ph.password" required minlength="6">
+        <input name="confirm"  type="password" placeholder="Confirme le mot de passe" data-i18n-ph="newpwd.ph.confirm" required minlength="6">
+        <button type="submit" data-i18n="newpwd.submit">Valider</button>
     </form>
     <div class="msg" id="msg"></div></div>
 <script>
+const I18N = {
+    fr: {
+        'newpwd.title': '🔑 Nouveau mot de passe',
+        'newpwd.ph.password': 'Nouveau mot de passe', 'newpwd.ph.confirm': 'Confirme le mot de passe',
+        'newpwd.submit': 'Valider',
+        'msg.mismatch': '❌ Les mots de passe ne correspondent pas.',
+        'msg.saving': '⏳ Enregistrement...', 'msg.changed_redirect': '✅ Mot de passe changé ! Redirection...',
+        'msg.error_default': '❌ Erreur.',
+    },
+    en: {
+        'newpwd.title': '🔑 New password',
+        'newpwd.ph.password': 'New password', 'newpwd.ph.confirm': 'Confirm password',
+        'newpwd.submit': 'Confirm',
+        'msg.mismatch': '❌ Passwords do not match.',
+        'msg.saving': '⏳ Saving...', 'msg.changed_redirect': '✅ Password changed! Redirecting...',
+        'msg.error_default': '❌ Error.',
+    },
+    ar: {
+        'newpwd.title': '🔑 كلمة مرور جديدة',
+        'newpwd.ph.password': 'كلمة المرور الجديدة', 'newpwd.ph.confirm': 'أكّد كلمة المرور',
+        'newpwd.submit': 'تأكيد',
+        'msg.mismatch': '❌ كلمتا المرور غير متطابقتين.',
+        'msg.saving': '⏳ جارٍ الحفظ...', 'msg.changed_redirect': '✅ تم تغيير كلمة المرور! جارٍ التحويل...',
+        'msg.error_default': '❌ خطأ.',
+    },
+    zh: {
+        'newpwd.title': '🔑 设置新密码',
+        'newpwd.ph.password': '新密码', 'newpwd.ph.confirm': '确认密码',
+        'newpwd.submit': '确认',
+        'msg.mismatch': '❌ 两次输入的密码不一致。',
+        'msg.saving': '⏳ 正在保存...', 'msg.changed_redirect': '✅ 密码已修改！正在跳转...',
+        'msg.error_default': '❌ 错误。',
+    },
+};
+
+let currentLang = localStorage.getItem('samii_lang') || 'fr';
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    localStorage.setItem('samii_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+    });
+    document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+}
+
+document.querySelectorAll('.lang-switch span').forEach(span => {
+    span.addEventListener('click', () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
+
 document.getElementById('form-reset').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg  = document.getElementById('msg');
     const data = Object.fromEntries(new FormData(e.target));
     if (data.password !== data.confirm) {
-        msg.textContent = '❌ Les mots de passe ne correspondent pas.';
+        msg.textContent = t('msg.mismatch');
         msg.className   = 'msg';
         return;
     }
-    msg.textContent = '⏳ Enregistrement...';
+    msg.textContent = t('msg.saving');
     msg.className   = 'msg';
     const res  = await fetch('/password-reset/nouveau', {
         method : 'POST',
@@ -166,11 +296,11 @@ document.getElementById('form-reset').addEventListener('submit', async (e) => {
     });
     const json = await res.json();
     if (json.success) {
-        msg.textContent = '✅ Mot de passe changé ! Redirection...';
+        msg.textContent = t('msg.changed_redirect');
         msg.className   = 'msg ok';
         setTimeout(() => window.location.href = '/login', 1200);
     } else {
-        msg.textContent = json.error || '❌ Erreur.';
+        msg.textContent = json.error || t('msg.error_default');
         msg.className   = 'msg';
     }
 });

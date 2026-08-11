@@ -45,7 +45,7 @@
                     <div class="hero-search">
                         <i data-lucide="search"></i>
                         <input type="text" id="hero-search"
-                               data-i18n-placeholder="hub.hero.searchPlaceholder"
+                               data-i18n-ph="hub.hero.searchPlaceholder"
                                placeholder="Construisez votre prochain empire..." autocomplete="off">
                         <button type="button" class="hero-search__btn" id="hero-search-btn">
                             <i data-lucide="arrow-right"></i>
@@ -55,22 +55,22 @@
                         <button class="hero-search__option" data-action="create">
                             <i data-lucide="plus-circle"></i>
                             <div>
-                                <strong>Créer mon QG</strong>
-                                <span>Nouveau workspace pour votre activité</span>
+                                <strong data-i18n="hub.search.create.title">Créer mon QG</strong>
+                                <span data-i18n="hub.search.create.desc">Nouveau workspace pour votre activité</span>
                             </div>
                         </button>
                         <button class="hero-search__option" data-action="invite">
                             <i data-lucide="user-plus"></i>
                             <div>
-                                <strong>Inviter un collaborateur</strong>
-                                <span>Bientôt disponible</span>
+                                <strong data-i18n="hub.search.invite.title">Inviter un collaborateur</strong>
+                                <span data-i18n="hub.search.comingSoon">Bientôt disponible</span>
                             </div>
                         </button>
                         <button class="hero-search__option" data-action="find">
                             <i data-lucide="search"></i>
                             <div>
-                                <strong>Chercher un QG</strong>
-                                <span>Bientôt disponible</span>
+                                <strong data-i18n="hub.search.find.title">Chercher un QG</strong>
+                                <span data-i18n="hub.search.comingSoon">Bientôt disponible</span>
                             </div>
                         </button>
                     </div>
@@ -97,8 +97,8 @@
             <div class="hub-banner__glow"></div>
             <div class="hub-banner__content">
                 <span class="hero-eyebrow">OG Empire</span>
-                <h2>Construisez un empire mondial.</h2>
-                <p>Une seule plateforme. Des possibilités illimitées.</p>
+                <h2 data-i18n="hub.banner.title">Construisez un empire mondial.</h2>
+                <p data-i18n="hub.banner.subtitle">Une seule plateforme. Des possibilités illimitées.</p>
             </div>
         </section>
 
@@ -123,7 +123,7 @@
 
 <!-- SAMII — sphère flottante -->
 <div class="samii-widget" id="samii-widget" data-open="false">
-    <button class="samii-widget__trigger" id="samii-widget-trigger" aria-label="Ouvrir SAMII">
+    <button class="samii-widget__trigger" id="samii-widget-trigger" aria-label="Ouvrir SAMII" data-i18n-aria="hub.samii.openAria">
         <span class="samii-widget__aura"></span>
         <span class="samii-widget__aura samii-widget__aura--2"></span>
         <svg class="samii-widget__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -133,7 +133,7 @@
             <path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
         </svg>
     </button>
-    <div class="samii-widget__panel" id="samii-widget-panel" role="dialog" aria-label="Assistant SAMII">
+    <div class="samii-widget__panel" id="samii-widget-panel" role="dialog" aria-label="Assistant SAMII" data-i18n-aria="hub.samii.dialogAria">
         <header class="samii-widget__header">
             <div class="samii-widget__id">
                 <div class="samii-widget__avatar">
@@ -147,12 +147,12 @@
                 <div>
                     <p class="samii-widget__name">SAMII</p>
                     <p class="samii-widget__status">
-                        <span class="og-badge og-badge--live">OPÉRATIONNEL</span>
+                        <span class="og-badge og-badge--live" data-i18n="hub.status.operational">OPÉRATIONNEL</span>
                     </p>
                 </div>
             </div>
             <div class="samii-widget__actions">
-                <button class="samii-widget__close" id="samii-widget-close" aria-label="Fermer">
+                <button class="samii-widget__close" id="samii-widget-close" aria-label="Fermer" data-i18n-aria="hub.samii.closeAria">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
                          stroke="currentColor" stroke-width="1.8">
                         <path d="M18 6 6 18M6 6l12 12"/>
@@ -163,15 +163,15 @@
         <div class="samii-widget__feed" id="samii-widget-feed">
             <div class="samii-msg samii-msg--bot">
                 <div class="samii-msg__bubble">
-                    Bienvenue, Général. Je suis <b>SAMII</b>, votre stratège.<br>
-                    Comment puis-je vous aider aujourd'hui ?
+                    <span data-i18n="hub.samii.welcome1">Bienvenue, Général. Je suis</span> <b>SAMII</b>, <span data-i18n="hub.samii.welcome2">votre stratège.</span><br>
+                    <span data-i18n="hub.samii.welcome3">Comment puis-je vous aider aujourd'hui ?</span>
                 </div>
             </div>
         </div>
         <form class="samii-widget__form" id="samii-widget-form">
             <input type="text" id="samii-widget-input"
-                   placeholder="Parler à SAMII…" autocomplete="off">
-            <button type="submit" aria-label="Envoyer">
+                   placeholder="Parler à SAMII…" autocomplete="off" data-i18n-ph="hub.samii.inputPlaceholder">
+            <button type="submit" aria-label="Envoyer" data-i18n-aria="hub.samii.sendAria">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
                      stroke="currentColor" stroke-width="1.8"
                      stroke-linecap="round" stroke-linejoin="round">
@@ -189,7 +189,222 @@
 </script>
 
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="/js/i18n.js"></script>
+<script>
+    // ==========================================================================
+    // SAMII OS — I18N (autonome, même mécanisme que views/index.ejs)
+    // ==========================================================================
+    const I18N = {
+        fr: {
+            'sidebar.hub': 'Accueil', 'sidebar.marketplace': 'Marketplace', 'sidebar.academy': 'Academy',
+            'sidebar.community': 'Community', 'sidebar.discussions': 'Discussions', 'sidebar.arsenal': 'Arsenal',
+            'sidebar.profile': 'Profil', 'sidebar.settings': 'Paramètres',
+            'hub.hero.eyebrow': 'OG Empire', 'hub.hero.title': 'Quel empire voulez-vous construire ?',
+            'hub.hero.subtitle': 'SAMII vous aide à lancer votre QG et à connecter votre écosystème.',
+            'hub.hero.searchPlaceholder': 'Construisez votre prochain empire...',
+            'hub.section.choose': 'Choisis ton métier',
+            'hub.search.create.title': 'Créer mon QG', 'hub.search.create.desc': 'Nouveau workspace pour votre activité',
+            'hub.search.invite.title': 'Inviter un collaborateur', 'hub.search.find.title': 'Chercher un QG',
+            'hub.search.comingSoon': 'Bientôt disponible',
+            'hub.banner.title': 'Construisez un empire mondial.', 'hub.banner.subtitle': 'Une seule plateforme. Des possibilités illimitées.',
+            'hub.footer.quote': 'Chaque général commence soldat.', 'hub.footer.version': 'v1.0 · SOLDAT',
+            'hub.status.operational': 'OPÉRATIONNEL',
+            'hub.samii.welcome1': 'Bienvenue, Général. Je suis', 'hub.samii.welcome2': 'votre stratège.',
+            'hub.samii.welcome3': 'Comment puis-je vous aider aujourd’hui ?',
+            'hub.samii.inputPlaceholder': 'Parler à SAMII…',
+            'hub.samii.openAria': 'Ouvrir SAMII', 'hub.samii.closeAria': 'Fermer',
+            'hub.samii.dialogAria': 'Assistant SAMII', 'hub.samii.sendAria': 'Envoyer',
+            'hub.toast.inviteSoon': 'Inviter un collaborateur — bientôt disponible',
+            'hub.toast.searchSoon': 'Chercher un QG — bientôt disponible',
+        },
+        en: {
+            'sidebar.hub': 'Home', 'sidebar.marketplace': 'Marketplace', 'sidebar.academy': 'Academy',
+            'sidebar.community': 'Community', 'sidebar.discussions': 'Discussions', 'sidebar.arsenal': 'Arsenal',
+            'sidebar.profile': 'Profile', 'sidebar.settings': 'Settings',
+            'hub.hero.eyebrow': 'OG Empire', 'hub.hero.title': 'What empire will you build?',
+            'hub.hero.subtitle': 'SAMII helps you launch your HQ and connect your ecosystem.',
+            'hub.hero.searchPlaceholder': 'Build your next empire...',
+            'hub.section.choose': 'Choose your business',
+            'hub.search.create.title': 'Create my HQ', 'hub.search.create.desc': 'New workspace for your business',
+            'hub.search.invite.title': 'Invite a collaborator', 'hub.search.find.title': 'Search for an HQ',
+            'hub.search.comingSoon': 'Coming soon',
+            'hub.banner.title': 'Build a global empire.', 'hub.banner.subtitle': 'One platform. Unlimited possibilities.',
+            'hub.footer.quote': 'Every general starts as a soldier.', 'hub.footer.version': 'v1.0 · SOLDIER',
+            'hub.status.operational': 'OPERATIONAL',
+            'hub.samii.welcome1': 'Welcome, General. I am', 'hub.samii.welcome2': 'your strategist.',
+            'hub.samii.welcome3': 'How can I help you today?',
+            'hub.samii.inputPlaceholder': 'Talk to SAMII…',
+            'hub.samii.openAria': 'Open SAMII', 'hub.samii.closeAria': 'Close',
+            'hub.samii.dialogAria': 'SAMII Assistant', 'hub.samii.sendAria': 'Send',
+            'hub.toast.inviteSoon': 'Invite a collaborator — coming soon',
+            'hub.toast.searchSoon': 'Search for an HQ — coming soon',
+        },
+        ar: {
+            'sidebar.hub': 'الرئيسية', 'sidebar.marketplace': 'Marketplace', 'sidebar.academy': 'الأكاديمية',
+            'sidebar.community': 'المجتمع', 'sidebar.discussions': 'نقاشات', 'sidebar.arsenal': 'الترسانة',
+            'sidebar.profile': 'الملف الشخصي', 'sidebar.settings': 'الإعدادات',
+            'hub.hero.eyebrow': 'إمبراطورية OG', 'hub.hero.title': 'أي إمبراطورية ستبني؟',
+            'hub.hero.subtitle': 'سامي يساعدك على إطلاق مقرك وربط منظومتك.',
+            'hub.hero.searchPlaceholder': 'ابنِ إمبراطوريتك القادمة...',
+            'hub.section.choose': 'اختر مجالك',
+            'hub.search.create.title': 'إنشاء مقري', 'hub.search.create.desc': 'مساحة عمل جديدة لنشاطك',
+            'hub.search.invite.title': 'دعوة متعاون', 'hub.search.find.title': 'البحث عن مقر',
+            'hub.search.comingSoon': 'قريبًا',
+            'hub.banner.title': 'ابنِ إمبراطورية عالمية.', 'hub.banner.subtitle': 'منصة واحدة. إمكانيات لا محدودة.',
+            'hub.footer.quote': 'كل جنرال يبدأ جنديًا.', 'hub.footer.version': 'الإصدار 1.0 · جندي',
+            'hub.status.operational': 'تعمل الآن',
+            'hub.samii.welcome1': 'مرحبًا أيها الجنرال. أنا', 'hub.samii.welcome2': 'استراتيجيك.',
+            'hub.samii.welcome3': 'كيف يمكنني مساعدتك اليوم؟',
+            'hub.samii.inputPlaceholder': 'تحدث إلى SAMII…',
+            'hub.samii.openAria': 'فتح SAMII', 'hub.samii.closeAria': 'إغلاق',
+            'hub.samii.dialogAria': 'مساعد SAMII', 'hub.samii.sendAria': 'إرسال',
+            'hub.toast.inviteSoon': 'دعوة متعاون — قريبًا',
+            'hub.toast.searchSoon': 'البحث عن مقر — قريبًا',
+        },
+        zh: {
+            'sidebar.hub': '首页', 'sidebar.marketplace': 'Marketplace', 'sidebar.academy': '学院',
+            'sidebar.community': '社区', 'sidebar.discussions': '讨论', 'sidebar.arsenal': '军械库',
+            'sidebar.profile': '个人资料', 'sidebar.settings': '设置',
+            'hub.hero.eyebrow': 'OG帝国', 'hub.hero.title': '你将建立怎样的帝国？',
+            'hub.hero.subtitle': 'SAMII帮助您启动总部并连接您的生态系统。',
+            'hub.hero.searchPlaceholder': '打造你的下一个帝国...',
+            'hub.section.choose': '选择你的行业',
+            'hub.search.create.title': '创建我的总部', 'hub.search.create.desc': '为您的业务创建新工作区',
+            'hub.search.invite.title': '邀请协作者', 'hub.search.find.title': '搜索总部',
+            'hub.search.comingSoon': '即将推出',
+            'hub.banner.title': '打造一个全球帝国。', 'hub.banner.subtitle': '一个平台，无限可能。',
+            'hub.footer.quote': '每位将军都始于士兵。', 'hub.footer.version': 'v1.0 · 士兵',
+            'hub.status.operational': '运行中',
+            'hub.samii.welcome1': '欢迎，将军。我是', 'hub.samii.welcome2': '你的战略顾问。',
+            'hub.samii.welcome3': '今天我能帮你什么？',
+            'hub.samii.inputPlaceholder': '与 SAMII 对话…',
+            'hub.samii.openAria': '打开 SAMII', 'hub.samii.closeAria': '关闭',
+            'hub.samii.dialogAria': 'SAMII 助手', 'hub.samii.sendAria': '发送',
+            'hub.toast.inviteSoon': '邀请协作者 — 即将推出',
+            'hub.toast.searchSoon': '搜索总部 — 即将推出',
+        },
+    };
+
+    // Dictionnaire des métiers du Hub (utilisé par /js/hub.js pour construire
+    // dynamiquement la grille de cartes — pont de compatibilité "Language" ci-dessous).
+    const HUB_METIERS = {
+        fr: {
+            metiers: {
+                ecommerce: { label: 'E-commerce', desc: 'Commerce en ligne' },
+                restaurant: { label: 'Restaurant', desc: 'Restauration & food' },
+                immobilier: { label: 'Immobilier', desc: 'Biens & propriétés' },
+                livreur: { label: 'Livreur', desc: 'Livraison & logistique' },
+                sante: { label: 'Santé', desc: 'Santé & bien-être' },
+                finance: { label: 'Finance', desc: 'Finance & invest.' },
+                education: { label: 'Éducation', desc: 'Formation & savoir' },
+                technologie: { label: 'Technologie', desc: 'Tech & innovation' },
+                agriculture: { label: 'Agriculture', desc: 'Culture & agriculture' },
+                industrie: { label: 'Industrie', desc: 'Production & usine' },
+                services: { label: 'Services', desc: 'Services pro' },
+                tourisme: { label: 'Tourisme', desc: 'Voyage & tourisme' },
+            },
+            metierMore: 'Plus de métiers',
+        },
+        en: {
+            metiers: {
+                ecommerce: { label: 'E-commerce', desc: 'Online retail' },
+                restaurant: { label: 'Restaurant', desc: 'Food & dining' },
+                immobilier: { label: 'Real Estate', desc: 'Properties & assets' },
+                livreur: { label: 'Delivery', desc: 'Shipping & logistics' },
+                sante: { label: 'Health', desc: 'Health & wellness' },
+                finance: { label: 'Finance', desc: 'Finance & investing' },
+                education: { label: 'Education', desc: 'Training & knowledge' },
+                technologie: { label: 'Technology', desc: 'Tech & innovation' },
+                agriculture: { label: 'Agriculture', desc: 'Farming & crops' },
+                industrie: { label: 'Industry', desc: 'Production & factory' },
+                services: { label: 'Services', desc: 'Professional services' },
+                tourisme: { label: 'Tourism', desc: 'Travel & tourism' },
+            },
+            metierMore: 'More businesses',
+        },
+        ar: {
+            metiers: {
+                ecommerce: { label: 'التجارة الإلكترونية', desc: 'التجارة عبر الإنترنت' },
+                restaurant: { label: 'مطعم', desc: 'المطاعم والطعام' },
+                immobilier: { label: 'عقارات', desc: 'الممتلكات والأصول' },
+                livreur: { label: 'توصيل', desc: 'الشحن واللوجستيات' },
+                sante: { label: 'الصحة', desc: 'الصحة والعافية' },
+                finance: { label: 'المالية', desc: 'المالية والاستثمار' },
+                education: { label: 'التعليم', desc: 'التدريب والمعرفة' },
+                technologie: { label: 'التكنولوجيا', desc: 'التقنية والابتكار' },
+                agriculture: { label: 'الزراعة', desc: 'الزراعة والمحاصيل' },
+                industrie: { label: 'الصناعة', desc: 'الإنتاج والمصانع' },
+                services: { label: 'الخدمات', desc: 'الخدمات المهنية' },
+                tourisme: { label: 'السياحة', desc: 'السفر والسياحة' },
+            },
+            metierMore: 'المزيد من المجالات',
+        },
+        zh: {
+            metiers: {
+                ecommerce: { label: '电子商务', desc: '在线零售' },
+                restaurant: { label: '餐厅', desc: '餐饮' },
+                immobilier: { label: '房地产', desc: '物业资产' },
+                livreur: { label: '快递', desc: '物流配送' },
+                sante: { label: '健康', desc: '健康与养生' },
+                finance: { label: '金融', desc: '金融与投资' },
+                education: { label: '教育', desc: '培训与知识' },
+                technologie: { label: '科技', desc: '技术与创新' },
+                agriculture: { label: '农业', desc: '农作物种植' },
+                industrie: { label: '工业', desc: '生产制造' },
+                services: { label: '服务', desc: '专业服务' },
+                tourisme: { label: '旅游', desc: '旅行观光' },
+            },
+            metierMore: '更多行业',
+        },
+    };
+
+    let currentLang = localStorage.getItem('samii_lang') || 'fr';
+    function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+    window.t = t;
+
+    // Pont de compatibilité pour /js/hub.js (attend un objet global `Language`
+    // avec getDict()/onChange() — reste inchangé, on ne fait que le brancher
+    // sur le nouveau moteur I18N ci-dessus).
+    const languageListeners = [];
+    window.Language = {
+        getDict: () => ({ hub: HUB_METIERS[currentLang] || HUB_METIERS.fr }),
+        onChange: (cb) => { languageListeners.push(cb); },
+        getLang: () => currentLang,
+    };
+
+    function applyLang(lang) {
+        if (!I18N[lang]) lang = 'fr';
+        currentLang = lang;
+        localStorage.setItem('samii_lang', lang);
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+        });
+        document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+            const key = el.getAttribute('data-i18n-ph');
+            if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const key = el.getAttribute('data-i18n-title');
+            if (I18N[lang][key] !== undefined) el.title = I18N[lang][key];
+        });
+        document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+            const key = el.getAttribute('data-i18n-aria');
+            if (I18N[lang][key] !== undefined) el.setAttribute('aria-label', I18N[lang][key]);
+        });
+        document.querySelectorAll('[data-lang-btn]').forEach(s => s.classList.toggle('active', s.dataset.langBtn === lang));
+
+        languageListeners.forEach(cb => { try { cb(lang); } catch (e) {} });
+    }
+
+    document.querySelectorAll('[data-lang-btn]').forEach(btn => {
+        btn.addEventListener('click', () => applyLang(btn.dataset.langBtn));
+    });
+
+    applyLang(currentLang);
+</script>
 <script src="/js/hub.js"></script>
 </body>
 </html>

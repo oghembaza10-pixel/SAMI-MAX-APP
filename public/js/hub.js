@@ -124,10 +124,10 @@ function initSearchPanel() {
                     : `/inscription`;
                 window.location.href = url;
             } else if (action === "invite") {
-                showHubToast("Inviter un collaborateur — bientôt disponible");
+                showHubToast(typeof t === "function" ? t("hub.toast.inviteSoon") : "Inviter un collaborateur — bientôt disponible");
                 closePanel();
             } else if (action === "find") {
-                showHubToast("Chercher un QG — bientôt disponible");
+                showHubToast(typeof t === "function" ? t("hub.toast.searchSoon") : "Chercher un QG — bientôt disponible");
                 closePanel();
             }
         });

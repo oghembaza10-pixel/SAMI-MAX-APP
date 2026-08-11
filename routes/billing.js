@@ -57,22 +57,22 @@ router.get("/", requireAuth, async (req, res) => {
     const { reduit } = await referralService.appliquerReductionFilleul(req.session.userId, 1);
     const prixHtml = (plan) => {
         const base = PRIX_AFFICHE[plan];
-        if (!reduit) return `${base.toFixed(2)}$ <span>/mois</span>`;
+        if (!reduit) return `${base.toFixed(2)}$ <span data-i18n="billing.permonth">/mois</span>`;
         const remise = Math.round(base * (1 - referralService.TAUX_REDUCTION_FILLEUL) * 100) / 100;
-        return `<s style="opacity:.5;font-size:.6em;">${base.toFixed(2)}$</s> ${remise.toFixed(2)}$ <span>/mois — filleul -5%</span>`;
+        return `<s style="opacity:.5;font-size:.6em;">${base.toFixed(2)}$</s> ${remise.toFixed(2)}$ <span data-i18n="billing.permonth_filleul">/mois — filleul -5%</span>`;
     };
     const ccpBlock = (plan) => `
             <div class="bill-ccp">
-                <div class="bill-ccp-label">🏦 Payer par CCP</div>
+                <div class="bill-ccp-label" data-i18n="billing.ccp.label">🏦 Payer par CCP</div>
                 <div class="bill-ccp-details">
-                    Titulaire : <b>${CCP_SAMII.titulaire}</b><br>
-                    Numéro CCP : <b>${CCP_SAMII.numero}</b><br>
-                    Clé RIP : <b>${CCP_SAMII.cle}</b>
+                    <span data-i18n="billing.ccp.titulaire">Titulaire :</span> <b>${CCP_SAMII.titulaire}</b><br>
+                    <span data-i18n="billing.ccp.numero">Numéro CCP :</span> <b>${CCP_SAMII.numero}</b><br>
+                    <span data-i18n="billing.ccp.cle">Clé RIP :</span> <b>${CCP_SAMII.cle}</b>
                 </div>
-                <button class="bill-btn bill-btn--ccp" data-plan-ccp="${plan}">J'ai payé, préviens l'équipe</button>
+                <button class="bill-btn bill-btn--ccp" data-plan-ccp="${plan}" data-i18n="billing.ccp.btn">J'ai payé, préviens l'équipe</button>
             </div>`;
     const stripeBlock = (plan) => stripeReady
-        ? `<button class="bill-btn bill-btn--stripe" data-plan="${plan}">Payer par carte →</button>`
+        ? `<button class="bill-btn bill-btn--stripe" data-plan="${plan}" data-i18n="billing.stripe.btn">Payer par carte →</button>`
         : "";
 
     res.send(`<!DOCTYPE html>
@@ -103,47 +103,60 @@ router.get("/", requireAuth, async (req, res) => {
         .bill-ccp-details b { color: #fff; }
         .bill-btn--ccp { width: 100%; background: #F5A623; color: #000; }
         .bill-btn--stripe { width: 100%; margin-top: 8px; background: rgba(255,255,255,0.08); color: var(--text-main); }
+        .bill-topbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+        .lang-switch { display: flex; gap: 2px; font-family: var(--font-mono); font-size: .64rem; padding: 3px; border: var(--border-soft); border-radius: 9px; background: var(--bg-glass); }
+        .lang-switch span { padding: 5px 7px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: .2s ease; }
+        .lang-switch span.active, .lang-switch span:hover { color: var(--gold-og); background: rgba(197,160,89,0.12); }
+        html[dir="rtl"] .bill-topbar { justify-content: flex-start; }
     </style>
 </head>
 <body data-theme="og">
 <div class="bill-shell">
-    <h1>👑 Choisis ton palier</h1>
-    <p class="sub">Plus tu fais confiance à SAMII, plus il peut agir seul pour toi.</p>
+    <div class="bill-topbar">
+        <div class="lang-switch">
+            <span data-lang="fr" class="active">FR</span>
+            <span data-lang="en">EN</span>
+            <span data-lang="ar">AR</span>
+            <span data-lang="zh">中</span>
+        </div>
+    </div>
+    <h1 data-i18n="billing.title">👑 Choisis ton palier</h1>
+    <p class="sub" data-i18n="billing.subtitle">Plus tu fais confiance à SAMII, plus il peut agir seul pour toi.</p>
     <div class="bill-grid">
         <div class="bill-card">
-            <h2>🌑 Découverte</h2>
-            <div class="bill-price">Gratuit</div>
+            <h2 data-i18n="billing.free.title">🌑 Découverte</h2>
+            <div class="bill-price" data-i18n="billing.free.price">Gratuit</div>
             <ul>
-                <li>10 confirmations/jour</li>
-                <li>Mode Ombre + Copilote (SAMII propose, tu valides)</li>
-                <li>10 messages stratégie SAMII/mois</li>
-                <li>Suivi de colis basique</li>
+                <li data-i18n="billing.free.li1">10 confirmations/jour</li>
+                <li data-i18n="billing.free.li2">Mode Ombre + Copilote (SAMII propose, tu valides)</li>
+                <li data-i18n="billing.free.li3">10 messages stratégie SAMII/mois</li>
+                <li data-i18n="billing.free.li4">Suivi de colis basique</li>
             </ul>
-            <button class="bill-btn bill-btn--free" disabled>Plan actuel</button>
+            <button class="bill-btn bill-btn--free" disabled data-i18n="billing.free.btn">Plan actuel</button>
         </div>
         <div class="bill-card">
-            <h2>🚀 Actif</h2>
+            <h2 data-i18n="billing.standard.title">🚀 Actif</h2>
             <div class="bill-price">${prixHtml("standard")}</div>
             <ul>
-                <li>100 confirmations/jour</li>
-                <li>WhatsApp + Telegram + Shopify connectés</li>
-                <li>Mode Stratège débloqué (SAMII agit dans tes limites)</li>
-                <li>Pubs Meta illimitées, créées par SAMII</li>
-                <li>1 Forteresse offerte chaque mois</li>
-                <li>Messages SAMII illimités</li>
+                <li data-i18n="billing.standard.li1">100 confirmations/jour</li>
+                <li data-i18n="billing.standard.li2">WhatsApp + Telegram + Shopify connectés</li>
+                <li data-i18n="billing.standard.li3">Mode Stratège débloqué (SAMII agit dans tes limites)</li>
+                <li data-i18n="billing.standard.li4">Pubs Meta illimitées, créées par SAMII</li>
+                <li data-i18n="billing.standard.li5">1 Forteresse offerte chaque mois</li>
+                <li data-i18n="billing.standard.li6">Messages SAMII illimités</li>
             </ul>
             ${ccpBlock("standard")}
             ${stripeBlock("standard")}
         </div>
         <div class="bill-card bill-card--pro">
-            <h2>👑 Souverain</h2>
+            <h2 data-i18n="billing.pro.title">👑 Souverain</h2>
             <div class="bill-price">${prixHtml("pro")}</div>
             <ul>
-                <li>1000 confirmations/jour</li>
-                <li>Tout le plan Actif, en illimité</li>
-                <li>Modes Autonome + Souverain (SAMII active seul tes pubs)</li>
-                <li>2 Forteresse + 1 Boost offerts chaque mois</li>
-                <li>Support prioritaire</li>
+                <li data-i18n="billing.pro.li1">1000 confirmations/jour</li>
+                <li data-i18n="billing.pro.li2">Tout le plan Actif, en illimité</li>
+                <li data-i18n="billing.pro.li3">Modes Autonome + Souverain (SAMII active seul tes pubs)</li>
+                <li data-i18n="billing.pro.li4">2 Forteresse + 1 Boost offerts chaque mois</li>
+                <li data-i18n="billing.pro.li5">Support prioritaire</li>
             </ul>
             ${ccpBlock("pro")}
             ${stripeBlock("pro")}
@@ -152,10 +165,172 @@ router.get("/", requireAuth, async (req, res) => {
 
 </div>
 <script>
+const I18N = {
+    fr: {
+        'billing.title': '👑 Choisis ton palier',
+        'billing.subtitle': 'Plus tu fais confiance à SAMII, plus il peut agir seul pour toi.',
+        'billing.free.title': '🌑 Découverte', 'billing.free.price': 'Gratuit',
+        'billing.free.li1': '10 confirmations/jour',
+        'billing.free.li2': 'Mode Ombre + Copilote (SAMII propose, tu valides)',
+        'billing.free.li3': '10 messages stratégie SAMII/mois',
+        'billing.free.li4': 'Suivi de colis basique',
+        'billing.free.btn': 'Plan actuel',
+        'billing.standard.title': '🚀 Actif',
+        'billing.standard.li1': '100 confirmations/jour',
+        'billing.standard.li2': 'WhatsApp + Telegram + Shopify connectés',
+        'billing.standard.li3': 'Mode Stratège débloqué (SAMII agit dans tes limites)',
+        'billing.standard.li4': 'Pubs Meta illimitées, créées par SAMII',
+        'billing.standard.li5': '1 Forteresse offerte chaque mois',
+        'billing.standard.li6': 'Messages SAMII illimités',
+        'billing.pro.title': '👑 Souverain',
+        'billing.pro.li1': '1000 confirmations/jour',
+        'billing.pro.li2': 'Tout le plan Actif, en illimité',
+        'billing.pro.li3': 'Modes Autonome + Souverain (SAMII active seul tes pubs)',
+        'billing.pro.li4': '2 Forteresse + 1 Boost offerts chaque mois',
+        'billing.pro.li5': 'Support prioritaire',
+        'billing.permonth': '/mois', 'billing.permonth_filleul': '/mois — filleul -5%',
+        'billing.ccp.label': '🏦 Payer par CCP',
+        'billing.ccp.titulaire': 'Titulaire :', 'billing.ccp.numero': 'Numéro CCP :', 'billing.ccp.cle': 'Clé RIP :',
+        'billing.ccp.btn': "J'ai payé, préviens l'équipe",
+        'billing.stripe.btn': 'Payer par carte →',
+        'billing.msg.redirecting': 'Redirection...',
+        'billing.msg.error_generic': 'Erreur, réessaye.',
+        'billing.msg.subscribe': "S'abonner",
+        'billing.msg.sending': 'Envoi...',
+        'billing.msg.ccp_success': '✅ Équipe prévenue, activation sous 24h',
+    },
+    en: {
+        'billing.title': '👑 Choose your tier',
+        'billing.subtitle': 'The more you trust SAMII, the more it can act on its own for you.',
+        'billing.free.title': '🌑 Discovery', 'billing.free.price': 'Free',
+        'billing.free.li1': '10 confirmations/day',
+        'billing.free.li2': 'Shadow Mode + Copilot (SAMII suggests, you approve)',
+        'billing.free.li3': '10 SAMII strategy messages/month',
+        'billing.free.li4': 'Basic package tracking',
+        'billing.free.btn': 'Current plan',
+        'billing.standard.title': '🚀 Active',
+        'billing.standard.li1': '100 confirmations/day',
+        'billing.standard.li2': 'WhatsApp + Telegram + Shopify connected',
+        'billing.standard.li3': 'Strategist Mode unlocked (SAMII acts within your limits)',
+        'billing.standard.li4': 'Unlimited Meta ads, created by SAMII',
+        'billing.standard.li5': '1 Fortress granted every month',
+        'billing.standard.li6': 'Unlimited SAMII messages',
+        'billing.pro.title': '👑 Sovereign',
+        'billing.pro.li1': '1000 confirmations/day',
+        'billing.pro.li2': 'Everything in the Active plan, unlimited',
+        'billing.pro.li3': 'Autonomous + Sovereign Modes (SAMII activates your ads on its own)',
+        'billing.pro.li4': '2 Fortresses + 1 Boost granted every month',
+        'billing.pro.li5': 'Priority support',
+        'billing.permonth': '/month', 'billing.permonth_filleul': '/month — referral -5%',
+        'billing.ccp.label': '🏦 Pay by CCP',
+        'billing.ccp.titulaire': 'Account holder:', 'billing.ccp.numero': 'CCP number:', 'billing.ccp.cle': 'RIP key:',
+        'billing.ccp.btn': "I've paid, notify the team",
+        'billing.stripe.btn': 'Pay by card →',
+        'billing.msg.redirecting': 'Redirecting...',
+        'billing.msg.error_generic': 'Error, try again.',
+        'billing.msg.subscribe': 'Subscribe',
+        'billing.msg.sending': 'Sending...',
+        'billing.msg.ccp_success': '✅ Team notified, activation within 24h',
+    },
+    ar: {
+        'billing.title': '👑 اختر باقتك',
+        'billing.subtitle': 'كلما زادت ثقتك بـ SAMII، زادت قدرته على التصرف بمفرده من أجلك.',
+        'billing.free.title': '🌑 الاكتشاف', 'billing.free.price': 'مجاني',
+        'billing.free.li1': '10 تأكيدات/يوم',
+        'billing.free.li2': 'وضع الظل + المساعد (SAMII يقترح، أنت توافق)',
+        'billing.free.li3': '10 رسائل استراتيجية SAMII/شهر',
+        'billing.free.li4': 'تتبع أساسي للطرود',
+        'billing.free.btn': 'الباقة الحالية',
+        'billing.standard.title': '🚀 نشط',
+        'billing.standard.li1': '100 تأكيد/يوم',
+        'billing.standard.li2': 'ربط WhatsApp + Telegram + Shopify',
+        'billing.standard.li3': 'فتح وضع الاستراتيجي (SAMII يتصرف ضمن حدودك)',
+        'billing.standard.li4': 'إعلانات Meta غير محدودة، ينشئها SAMII',
+        'billing.standard.li5': 'حصن واحد مجانًا كل شهر',
+        'billing.standard.li6': 'رسائل SAMII غير محدودة',
+        'billing.pro.title': '👑 سيادي',
+        'billing.pro.li1': '1000 تأكيد/يوم',
+        'billing.pro.li2': 'كل مزايا باقة نشط، بدون حدود',
+        'billing.pro.li3': 'وضعا مستقل + سيادي (SAMII يفعّل إعلاناتك بمفرده)',
+        'billing.pro.li4': 'حصنان + تعزيز واحد مجانًا كل شهر',
+        'billing.pro.li5': 'دعم ذو أولوية',
+        'billing.permonth': '/شهر', 'billing.permonth_filleul': '/شهر — خصم الإحالة 5%-',
+        'billing.ccp.label': '🏦 الدفع عبر CCP',
+        'billing.ccp.titulaire': 'صاحب الحساب:', 'billing.ccp.numero': 'رقم CCP:', 'billing.ccp.cle': 'مفتاح RIP:',
+        'billing.ccp.btn': 'لقد دفعت، أبلغ الفريق',
+        'billing.stripe.btn': 'الدفع بالبطاقة ←',
+        'billing.msg.redirecting': 'جارٍ التحويل...',
+        'billing.msg.error_generic': 'خطأ، حاول مجددًا.',
+        'billing.msg.subscribe': 'اشترك',
+        'billing.msg.sending': 'جارٍ الإرسال...',
+        'billing.msg.ccp_success': '✅ تم إبلاغ الفريق، التفعيل خلال 24 ساعة',
+    },
+    zh: {
+        'billing.title': '👑 选择你的方案',
+        'billing.subtitle': '你对 SAMII 的信任度越高，它就能为你独立完成越多操作。',
+        'billing.free.title': '🌑 探索版', 'billing.free.price': '免费',
+        'billing.free.li1': '每日10次确认',
+        'billing.free.li2': '影子模式 + 副驾驶模式（SAMII 提议，你来确认）',
+        'billing.free.li3': '每月10条 SAMII 策略消息',
+        'billing.free.li4': '基础包裹跟踪',
+        'billing.free.btn': '当前方案',
+        'billing.standard.title': '🚀 活跃版',
+        'billing.standard.li1': '每日100次确认',
+        'billing.standard.li2': '已连接 WhatsApp + Telegram + Shopify',
+        'billing.standard.li3': '解锁策略师模式（SAMII 在你设定的范围内自主行动）',
+        'billing.standard.li4': '无限 Meta 广告，由 SAMII 创建',
+        'billing.standard.li5': '每月赠送1座堡垒',
+        'billing.standard.li6': '无限 SAMII 消息',
+        'billing.pro.title': '👑 至尊版',
+        'billing.pro.li1': '每日1000次确认',
+        'billing.pro.li2': '活跃版全部功能，无限量',
+        'billing.pro.li3': '自主模式 + 至尊模式（SAMII 独立启动你的广告）',
+        'billing.pro.li4': '每月赠送2座堡垒 + 1次加速',
+        'billing.pro.li5': '优先支持',
+        'billing.permonth': '/月', 'billing.permonth_filleul': '/月 — 推荐折扣 -5%',
+        'billing.ccp.label': '🏦 通过 CCP 支付',
+        'billing.ccp.titulaire': '账户持有人：', 'billing.ccp.numero': 'CCP 账号：', 'billing.ccp.cle': 'RIP 密钥：',
+        'billing.ccp.btn': '我已付款，通知团队',
+        'billing.stripe.btn': '银行卡支付 →',
+        'billing.msg.redirecting': '正在跳转...',
+        'billing.msg.error_generic': '出错了，请重试。',
+        'billing.msg.subscribe': '订阅',
+        'billing.msg.sending': '发送中...',
+        'billing.msg.ccp_success': '✅ 已通知团队，24小时内完成激活',
+    },
+};
+
+let currentLang = localStorage.getItem('samii_lang') || 'fr';
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    localStorage.setItem('samii_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+    });
+    document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+}
+
+document.querySelectorAll('.lang-switch span').forEach(span => {
+    span.addEventListener('click', () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
+
 document.querySelectorAll(".bill-btn[data-plan]").forEach(btn => {
     btn.addEventListener("click", async () => {
         btn.disabled = true;
-        btn.textContent = "Redirection...";
+        btn.textContent = t('billing.msg.redirecting');
         const res = await fetch("/billing/checkout", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ plan: btn.dataset.plan }),
@@ -164,22 +339,22 @@ document.querySelectorAll(".bill-btn[data-plan]").forEach(btn => {
         if (json.url) {
             window.location.href = json.url;
         } else {
-            alert(json.error || "Erreur, réessaye.");
+            alert(json.error || t('billing.msg.error_generic'));
             btn.disabled = false;
-            btn.textContent = "S'abonner";
+            btn.textContent = t('billing.msg.subscribe');
         }
     });
 });
 document.querySelectorAll("[data-plan-ccp]").forEach(btn => {
     btn.addEventListener("click", async () => {
         btn.disabled = true;
-        btn.textContent = "Envoi...";
+        btn.textContent = t('billing.msg.sending');
         const res = await fetch("/billing/ccp-request", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ plan: btn.dataset.planCcp }),
         });
         const json = await res.json();
-        btn.textContent = json.success ? "✅ Équipe prévenue, activation sous 24h" : (json.error || "Erreur, réessaye.");
+        btn.textContent = json.success ? t('billing.msg.ccp_success') : (json.error || t('billing.msg.error_generic'));
         if (!json.success) btn.disabled = false;
     });
 });
@@ -252,7 +427,25 @@ router.post("/ccp-request", requireAuth, async (req, res) => {
 
 router.get("/success", requireAuth, (req, res) => {
     res.send(`<!DOCTYPE html><html><body style="background:#050505;color:white;font-family:Arial;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;">
-        <div><h1 style="color:#3ddc84;">✅ Abonnement activé !</h1><p><a href="/qg" style="color:#C5A059;">Retour au QG</a></p></div>
+        <div><h1 style="color:#3ddc84;" data-i18n="billing.success.title">✅ Abonnement activé !</h1><p><a href="/qg" style="color:#C5A059;" data-i18n="billing.success.back">Retour au QG</a></p></div>
+        <script>
+        (function () {
+            var I18N = {
+                fr: { 'billing.success.title': '✅ Abonnement activé !', 'billing.success.back': 'Retour au QG' },
+                en: { 'billing.success.title': '✅ Subscription activated!', 'billing.success.back': 'Back to HQ' },
+                ar: { 'billing.success.title': '✅ تم تفعيل الاشتراك!', 'billing.success.back': 'العودة إلى المقر' },
+                zh: { 'billing.success.title': '✅ 订阅已激活！', 'billing.success.back': '返回指挥部' },
+            };
+            var lang = localStorage.getItem('samii_lang') || 'fr';
+            if (!I18N[lang]) lang = 'fr';
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.querySelectorAll('[data-i18n]').forEach(function (el) {
+                var key = el.getAttribute('data-i18n');
+                if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+            });
+        })();
+        </script>
     </body></html>`);
 });
 

@@ -29,8 +29,13 @@ router.get("/", requireAuth, (req, res) => {
     <link rel="stylesheet" href="/css/client-style.css">
     <style>
         .pl-shell { max-width: 700px; margin: 0 auto; padding: 40px 24px 80px; text-align: center; }
-        .pl-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: .82rem; margin-bottom: 24px; float: left; }
+        .pl-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; }
+        .pl-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: .82rem; }
         .pl-back:hover { color: var(--cyan-tech); }
+        .lang-switch { display: flex; gap: 2px; font-family: var(--font-mono); font-size: .64rem; padding: 3px; border: var(--border-soft); border-radius: 9px; background: var(--bg-glass); }
+        .lang-switch span { padding: 5px 7px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: .2s ease; }
+        .lang-switch span.active, .lang-switch span:hover { color: var(--cyan-tech); background: rgba(95,212,255,0.12); }
+        html[dir="rtl"] .pl-topbar { flex-direction: row-reverse; }
 
         .pl-title { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 6px; margin-top: 50px; }
         .pl-icon-box {
@@ -101,22 +106,30 @@ router.get("/", requireAuth, (req, res) => {
 </head>
 <body>
 <div class="pl-shell">
-    <a href="/client-qg" class="pl-back">← Retour à mon espace</a>
+    <div class="pl-topbar">
+        <a href="/client-qg" class="pl-back" data-i18n="plans.back">← Retour à mon espace</a>
+        <div class="lang-switch">
+            <span data-lang="fr" class="active">FR</span>
+            <span data-lang="en">EN</span>
+            <span data-lang="ar">AR</span>
+            <span data-lang="zh">中</span>
+        </div>
+    </div>
 
     <div class="pl-title">
         <div class="pl-icon-box">🎁</div>
-        <h1>Meilleurs Plans</h1>
+        <h1 data-i18n="plans.title">Meilleurs Plans</h1>
     </div>
-    <p class="sub">Une nouvelle surprise à chaque fois, adaptée à ta ville — clique et découvre.</p>
+    <p class="sub" data-i18n="plans.subtitle">Une nouvelle surprise à chaque fois, adaptée à ta ville — clique et découvre.</p>
 
     <div class="pl-ville-wrap">
-        <span class="pl-ville-label">📍 Ta ville</span>
-        <input type="text" id="input-ville" placeholder="Ex : Oran">
+        <span class="pl-ville-label" data-i18n="plans.ville.label">📍 Ta ville</span>
+        <input type="text" id="input-ville" placeholder="Ex : Oran" data-i18n-ph="plans.ville.ph">
     </div>
 
     <div class="pl-mystery-btn" id="btn-mystery">
         <div class="emoji" id="mystery-emoji">🎲</div>
-        <div class="text" id="mystery-text">Découvrir</div>
+        <div class="text" id="mystery-text" data-i18n="plans.mystery.text">Découvrir</div>
     </div>
     <div class="pl-msg" id="msg"></div>
 
@@ -128,11 +141,97 @@ router.get("/", requireAuth, (req, res) => {
         <div class="pl-result-ville" id="result-ville"></div>
         <div class="pl-result-body" id="result-body"></div>
         <div class="pl-sources" id="result-sources"></div>
-        <button type="button" class="pl-again-btn" id="btn-again">🔁 Une autre surprise</button>
+        <button type="button" class="pl-again-btn" id="btn-again" data-i18n="plans.again">🔁 Une autre surprise</button>
     </div>
 </div>
 
 <script>
+const I18N = {
+    fr: {
+        'plans.back': '← Retour à mon espace',
+        'plans.title': 'Meilleurs Plans',
+        'plans.subtitle': 'Une nouvelle surprise à chaque fois, adaptée à ta ville — clique et découvre.',
+        'plans.ville.label': '📍 Ta ville', 'plans.ville.ph': 'Ex : Oran',
+        'plans.mystery.text': 'Découvrir', 'plans.mystery.searching': 'Recherche...',
+        'plans.again': '🔁 Une autre surprise',
+        'plans.msg.need_city': "📍 Indique ta ville d'abord.",
+        'plans.msg.error_retry': '❌ Erreur. Réessaie.',
+        'plans.msg.error_network': '❌ Erreur réseau.',
+        'plans.cat.weekend': 'Week-end pas cher', 'plans.cat.resto': 'Bon plan resto',
+        'plans.cat.produit': 'Deal produit', 'plans.cat.sortie': 'Sortie du moment',
+        'plans.cat.voyage': 'Voyage abordable', 'plans.cat.loisir': 'Loisir/Activité',
+    },
+    en: {
+        'plans.back': '← Back to my space',
+        'plans.title': 'Best Deals',
+        'plans.subtitle': 'A new surprise every time, tailored to your city — click and discover.',
+        'plans.ville.label': '📍 Your city', 'plans.ville.ph': 'E.g.: Oran',
+        'plans.mystery.text': 'Discover', 'plans.mystery.searching': 'Searching...',
+        'plans.again': '🔁 Another surprise',
+        'plans.msg.need_city': '📍 Enter your city first.',
+        'plans.msg.error_retry': '❌ Error. Try again.',
+        'plans.msg.error_network': '❌ Network error.',
+        'plans.cat.weekend': 'Cheap weekend getaway', 'plans.cat.resto': 'Restaurant deal',
+        'plans.cat.produit': 'Product deal', 'plans.cat.sortie': 'Trending outing',
+        'plans.cat.voyage': 'Affordable trip', 'plans.cat.loisir': 'Leisure/Activity',
+    },
+    ar: {
+        'plans.back': '← العودة إلى مساحتي',
+        'plans.title': 'أفضل العروض',
+        'plans.subtitle': 'مفاجأة جديدة في كل مرة، مخصصة لمدينتك — اضغط واكتشف.',
+        'plans.ville.label': '📍 مدينتك', 'plans.ville.ph': 'مثال: وهران',
+        'plans.mystery.text': 'اكتشف', 'plans.mystery.searching': 'جارٍ البحث...',
+        'plans.again': '🔁 مفاجأة أخرى',
+        'plans.msg.need_city': '📍 أدخل مدينتك أولاً.',
+        'plans.msg.error_retry': '❌ خطأ. حاول مجددًا.',
+        'plans.msg.error_network': '❌ خطأ في الشبكة.',
+        'plans.cat.weekend': 'عطلة نهاية أسبوع رخيصة', 'plans.cat.resto': 'عرض مطعم مميز',
+        'plans.cat.produit': 'عرض على منتج', 'plans.cat.sortie': 'خرجة اللحظة',
+        'plans.cat.voyage': 'رحلة ميسورة التكلفة', 'plans.cat.loisir': 'ترفيه / نشاط',
+    },
+    zh: {
+        'plans.back': '← 返回我的空间',
+        'plans.title': '超值优惠',
+        'plans.subtitle': '每次都有新惊喜，为你的城市量身定制 —— 点击探索。',
+        'plans.ville.label': '📍 你的城市', 'plans.ville.ph': '例如：奥兰',
+        'plans.mystery.text': '探索', 'plans.mystery.searching': '搜索中...',
+        'plans.again': '🔁 换一个惊喜',
+        'plans.msg.need_city': '📍 请先输入你的城市。',
+        'plans.msg.error_retry': '❌ 出错了，请重试。',
+        'plans.msg.error_network': '❌ 网络错误。',
+        'plans.cat.weekend': '平价周末游', 'plans.cat.resto': '餐厅优惠',
+        'plans.cat.produit': '产品优惠', 'plans.cat.sortie': '当下热门活动',
+        'plans.cat.voyage': '实惠旅行', 'plans.cat.loisir': '休闲/活动',
+    },
+};
+
+let currentLang = localStorage.getItem('samii_lang') || 'fr';
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    localStorage.setItem('samii_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+    });
+    document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+}
+
+document.querySelectorAll('.lang-switch span').forEach(span => {
+    span.addEventListener('click', () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
+
 const mysteryBtn   = document.getElementById('btn-mystery');
 const mysteryEmoji = document.getElementById('mystery-emoji');
 const mysteryText  = document.getElementById('mystery-text');
@@ -148,14 +247,14 @@ async function decouvrir() {
     const ville = inputVille.value.trim();
     if (!ville) {
         inputVille.focus();
-        msgEl.textContent = "📍 Indique ta ville d'abord.";
+        msgEl.textContent = t('plans.msg.need_city');
         return;
     }
     localStorage.setItem('samii-ville', ville);
 
     mysteryBtn.classList.add('spinning');
     mysteryEmoji.textContent = '✨';
-    mysteryText.textContent = 'Recherche...';
+    mysteryText.textContent = t('plans.mystery.searching');
     msgEl.textContent = '';
     resultEl.style.display = 'none';
 
@@ -169,11 +268,11 @@ async function decouvrir() {
 
         mysteryBtn.classList.remove('spinning');
         mysteryEmoji.textContent = '🎲';
-        mysteryText.textContent = 'Découvrir';
+        mysteryText.textContent = t('plans.mystery.text');
 
         if (json.success) {
             document.getElementById('result-icon').textContent = json.icon;
-            document.getElementById('result-label').textContent = json.label;
+            document.getElementById('result-label').textContent = t('plans.cat.' + json.id) !== 'plans.cat.' + json.id ? t('plans.cat.' + json.id) : json.label;
             document.getElementById('result-ville').textContent = '📍 ' + ville;
             document.getElementById('result-body').textContent = json.reponse;
             const srcEl = document.getElementById('result-sources');
@@ -182,13 +281,13 @@ async function decouvrir() {
                 : '';
             resultEl.style.display = 'block';
         } else {
-            msgEl.textContent = json.error || '❌ Erreur. Réessaie.';
+            msgEl.textContent = json.error || t('plans.msg.error_retry');
         }
     } catch (err) {
         mysteryBtn.classList.remove('spinning');
         mysteryEmoji.textContent = '🎲';
-        mysteryText.textContent = 'Découvrir';
-        msgEl.textContent = '❌ Erreur réseau.';
+        mysteryText.textContent = t('plans.mystery.text');
+        msgEl.textContent = t('plans.msg.error_network');
     }
 }
 
@@ -219,6 +318,7 @@ router.post("/decouvrir", requireAuth, async (req, res) => {
 
         res.json({
             success: true,
+            id: categorie.id,
             icon: categorie.icon,
             label: categorie.label,
             reponse: result.text,

@@ -7,6 +7,172 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
+    // ==========================================================================
+    // I18N — traductions des textes générés dynamiquement (labels de cartes par
+    // canal, messages vides, notifications temps réel). Lit directement
+    // localStorage('samii_lang') pour rester en phase avec le sélecteur de
+    // langue de qg-template.ejs, sans dépendance d'ordre de chargement de script.
+    // ==========================================================================
+    function qgLang() {
+        const l = localStorage.getItem('samii_lang');
+        return ['fr', 'en', 'ar', 'zh'].includes(l) ? l : 'fr';
+    }
+
+    const STAT_LABELS = {
+        produit: {
+            total_revenus:   { fr: 'Revenus (DZD)',     en: 'Revenue (DZD)',        ar: 'الإيرادات (DZD)',        zh: '收入 (DZD)' },
+            total_commandes: { fr: 'Commandes',         en: 'Orders',               ar: 'الطلبات',                zh: '订单' },
+            en_attente:      { fr: 'En attente',        en: 'Pending',              ar: 'قيد الانتظار',           zh: '待处理' },
+            confirmees:      { fr: 'Confirmées',        en: 'Confirmed',            ar: 'مؤكدة',                  zh: '已确认' },
+            annulees:        { fr: 'Annulées',          en: 'Cancelled',            ar: 'ملغاة',                  zh: '已取消' },
+            vip:             { fr: 'Clients VIP',       en: 'VIP Clients',          ar: 'عملاء VIP',              zh: 'VIP客户' },
+            blacklist:       { fr: 'Blacklist',         en: 'Blacklist',            ar: 'القائمة السوداء',        zh: '黑名单' },
+        },
+        rdv: {
+            total_revenus:   { fr: 'Rendez-vous ce mois', en: 'Appointments this month', ar: 'مواعيد هذا الشهر',   zh: '本月预约' },
+            total_commandes: { fr: 'Rendez-vous',         en: 'Appointments',            ar: 'مواعيد',              zh: '预约' },
+            en_attente:      { fr: 'À confirmer',         en: 'To confirm',              ar: 'بانتظار التأكيد',    zh: '待确认' },
+            confirmees:      { fr: 'Confirmés',           en: 'Confirmed',               ar: 'مؤكدة',               zh: '已确认' },
+            annulees:        { fr: 'Annulés',             en: 'Cancelled',               ar: 'ملغاة',               zh: '已取消' },
+            vip:             { fr: 'Clients fidèles',     en: 'Loyal clients',           ar: 'عملاء أوفياء',       zh: '忠实客户' },
+            blacklist:       { fr: 'Indésirables',        en: 'Unwanted',                ar: 'غير مرغوب فيهم',     zh: '黑名单客户' },
+        },
+        shopify: {
+            total_revenus:   { fr: 'CA Shopify (DZD)',  en: 'Shopify revenue (DZD)', ar: 'إيرادات Shopify (DZD)', zh: 'Shopify 营收 (DZD)' },
+            total_commandes: { fr: 'Commandes',         en: 'Orders',               ar: 'الطلبات',                zh: '订单' },
+            en_attente:      { fr: 'En attente',        en: 'Pending',              ar: 'قيد الانتظار',           zh: '待处理' },
+            confirmees:      { fr: 'Confirmées',        en: 'Confirmed',            ar: 'مؤكدة',                  zh: '已确认' },
+            annulees:        { fr: 'Annulées',          en: 'Cancelled',            ar: 'ملغاة',                  zh: '已取消' },
+            vip:             { fr: 'Clients Shopify',   en: 'Shopify clients',      ar: 'عملاء Shopify',          zh: 'Shopify 客户' },
+            blacklist:       { fr: 'Abandons panier',   en: 'Cart abandonments',    ar: 'سلات مهجورة',            zh: '弃购购物车' },
+        },
+        telegram: {
+            total_revenus:   { fr: 'Revenus Telegram',  en: 'Telegram revenue',     ar: 'إيرادات Telegram',       zh: 'Telegram 收入' },
+            total_commandes: { fr: 'Commandes',         en: 'Orders',               ar: 'الطلبات',                zh: '订单' },
+            en_attente:      { fr: 'En attente',        en: 'Pending',              ar: 'قيد الانتظار',           zh: '待处理' },
+            confirmees:      { fr: 'Confirmées',        en: 'Confirmed',            ar: 'مؤكدة',                  zh: '已确认' },
+            annulees:        { fr: 'Annulées',          en: 'Cancelled',            ar: 'ملغاة',                  zh: '已取消' },
+            vip:             { fr: 'Clients Telegram',  en: 'Telegram clients',     ar: 'عملاء Telegram',         zh: 'Telegram 客户' },
+            blacklist:       { fr: 'Réponses IA',       en: 'AI replies',           ar: 'ردود الذكاء الاصطناعي',  zh: 'AI 回复' },
+        },
+        whatsapp: {
+            total_revenus:   { fr: 'Revenus WhatsApp',  en: 'WhatsApp revenue',     ar: 'إيرادات WhatsApp',       zh: 'WhatsApp 收入' },
+            total_commandes: { fr: 'Commandes',         en: 'Orders',               ar: 'الطلبات',                zh: '订单' },
+            en_attente:      { fr: 'En attente',        en: 'Pending',              ar: 'قيد الانتظار',           zh: '待处理' },
+            confirmees:      { fr: 'Confirmées',        en: 'Confirmed',            ar: 'مؤكدة',                  zh: '已确认' },
+            annulees:        { fr: 'Annulées',          en: 'Cancelled',            ar: 'ملغاة',                  zh: '已取消' },
+            vip:             { fr: 'Clients WhatsApp',  en: 'WhatsApp clients',     ar: 'عملاء WhatsApp',         zh: 'WhatsApp 客户' },
+            blacklist:       { fr: 'Diffusions',        en: 'Broadcasts',           ar: 'البث الجماعي',           zh: '群发消息' },
+        },
+        instagram: {
+            total_revenus:   { fr: 'Revenus Instagram', en: 'Instagram revenue',    ar: 'إيرادات Instagram',      zh: 'Instagram 收入' },
+            total_commandes: { fr: 'Commandes',         en: 'Orders',               ar: 'الطلبات',                zh: '订单' },
+            en_attente:      { fr: 'Messages',          en: 'Messages',             ar: 'الرسائل',                zh: '消息' },
+            confirmees:      { fr: 'Leads',             en: 'Leads',                ar: 'العملاء المحتملون',      zh: '潜在客户' },
+            annulees:        { fr: 'Annulées',          en: 'Cancelled',            ar: 'ملغاة',                  zh: '已取消' },
+            vip:             { fr: 'Clients Instagram', en: 'Instagram clients',    ar: 'عملاء Instagram',        zh: 'Instagram 客户' },
+            blacklist:       { fr: 'Blacklist',         en: 'Blacklist',            ar: 'القائمة السوداء',        zh: '黑名单' },
+        },
+        tiktok: {
+            total_revenus:   { fr: 'Vues / Portée',     en: 'Views / Reach',        ar: 'المشاهدات / الوصول',     zh: '观看量/触达' },
+            total_commandes: { fr: 'Conversions',       en: 'Conversions',          ar: 'التحويلات',              zh: '转化' },
+            en_attente:      { fr: 'Vidéos Actives',    en: 'Active videos',        ar: 'فيديوهات نشطة',          zh: '活跃视频' },
+            confirmees:      { fr: 'Leads TikTok',      en: 'TikTok leads',         ar: 'عملاء TikTok المحتملون', zh: 'TikTok 潜在客户' },
+            annulees:        { fr: 'Signalements',      en: 'Reports',              ar: 'البلاغات',               zh: '举报' },
+            vip:             { fr: 'Abonnés VIP',       en: 'VIP followers',        ar: 'متابعون VIP',            zh: 'VIP 粉丝' },
+            blacklist:       { fr: 'Engagement',        en: 'Engagement',           ar: 'التفاعل',                zh: '互动率' },
+        },
+        youtube: {
+            total_revenus:   { fr: 'Vues Totales',      en: 'Total views',          ar: 'إجمالي المشاهدات',       zh: '总观看量' },
+            total_commandes: { fr: 'Clics Tunnel',      en: 'Funnel clicks',        ar: 'نقرات القمع التسويقي',   zh: '漏斗点击' },
+            en_attente:      { fr: 'Impressions',       en: 'Impressions',          ar: 'مرات الظهور',            zh: '展示次数' },
+            confirmees:      { fr: 'Abonnés Gagnés',    en: 'Subscribers gained',   ar: 'مشتركون جدد',            zh: '新增订阅者' },
+            annulees:        { fr: 'Désabonnements',    en: 'Unsubscribes',         ar: 'إلغاء الاشتراك',         zh: '取消订阅' },
+            vip:             { fr: 'Membres Actifs',    en: 'Active members',       ar: 'أعضاء نشطون',            zh: '活跃成员' },
+            blacklist:       { fr: 'Rétention',         en: 'Retention',            ar: 'معدل الاحتفاظ',          zh: '留存率' },
+        },
+        google: {
+            total_revenus:   { fr: 'Trafic Organique',  en: 'Organic traffic',      ar: 'الزيارات العضوية',       zh: '自然流量' },
+            total_commandes: { fr: 'Conversions SEO',   en: 'SEO conversions',      ar: 'تحويلات SEO',            zh: 'SEO 转化' },
+            en_attente:      { fr: 'Indexation',        en: 'Indexing',             ar: 'الفهرسة',                zh: '索引' },
+            confirmees:      { fr: 'Position Top 3',    en: 'Top 3 ranking',        ar: 'مركز ضمن أفضل 3',        zh: '前3名排名' },
+            annulees:        { fr: 'Erreurs Crawl',     en: 'Crawl errors',         ar: 'أخطاء الزحف',            zh: '抓取错误' },
+            vip:             { fr: 'Leads Web',         en: 'Web leads',            ar: 'عملاء الويب المحتملون',  zh: '网站潜在客户' },
+            blacklist:       { fr: 'Performance Ads',   en: 'Ads performance',      ar: 'أداء الإعلانات',         zh: '广告表现' },
+        },
+        gmail: {
+            total_revenus:   { fr: 'Emails Envoyés',    en: 'Emails sent',          ar: 'الرسائل المرسلة',        zh: '已发送邮件' },
+            total_commandes: { fr: 'Commandes Mail',    en: 'Email orders',         ar: 'طلبات عبر البريد',       zh: '邮件订单' },
+            en_attente:      { fr: 'Non lus',           en: 'Unread',               ar: 'غير مقروءة',             zh: '未读' },
+            confirmees:      { fr: 'Traités par IA',    en: 'Handled by AI',        ar: 'تمت معالجتها بالذكاء الاصطناعي', zh: 'AI 已处理' },
+            annulees:        { fr: 'Spams / Rejets',    en: 'Spam / Rejected',      ar: 'رسائل مزعجة / مرفوضة',   zh: '垃圾邮件/已拒收' },
+            vip:             { fr: 'Contacts Pro',      en: 'Pro contacts',         ar: 'جهات اتصال احترافية',    zh: '专业联系人' },
+            blacklist:       { fr: 'Blacklist Mails',   en: 'Email blacklist',      ar: 'القائمة السوداء للبريد', zh: '邮件黑名单' },
+        },
+        discord: {
+            total_revenus:   { fr: 'Membres QG',        en: 'HQ members',           ar: 'أعضاء المقر',            zh: '总部成员' },
+            total_commandes: { fr: 'Notifications',     en: 'Notifications',        ar: 'الإشعارات',              zh: '通知' },
+            en_attente:      { fr: 'Tickets Support',   en: 'Support tickets',      ar: 'تذاكر الدعم',            zh: '支持工单' },
+            confirmees:      { fr: 'Vérifiés',          en: 'Verified',             ar: 'موثقون',                 zh: '已验证' },
+            annulees:        { fr: 'Bannis',            en: 'Banned',               ar: 'محظورون',                zh: '已封禁' },
+            vip:             { fr: 'Rôles VIP',         en: 'VIP roles',            ar: 'أدوار VIP',              zh: 'VIP 身份组' },
+            blacklist:       { fr: 'Bots Actifs',       en: 'Active bots',          ar: 'بوتات نشطة',             zh: '活跃机器人' },
+        },
+    };
+
+    const MISC_LABELS = {
+        all:              { fr: 'Tout',                        en: 'All',                          ar: 'الكل',                       zh: '全部' },
+        noActivity:       { fr: 'Aucune activité pour le moment', en: 'No activity for now',        ar: 'لا يوجد نشاط حاليًا',        zh: '暂无活动' },
+        noAppointments:   { fr: 'Aucun rendez-vous pour le moment', en: 'No appointments for now',  ar: 'لا توجد مواعيد حاليًا',      zh: '暂无预约' },
+        noOrders:         { fr: 'Aucune commande pour le moment', en: 'No orders for now',          ar: 'لا توجد طلبات حاليًا',       zh: '暂无订单' },
+        noClients:        { fr: 'Aucun client',                en: 'No clients',                    ar: 'لا يوجد عملاء',              zh: '暂无客户' },
+        actionError:      { fr: "Erreur lors de l'action.",    en: 'An error occurred.',             ar: 'حدث خطأ أثناء تنفيذ الإجراء.', zh: '操作出错。' },
+        confirmTitle:     { fr: 'Confirmer',                   en: 'Confirm',                        ar: 'تأكيد',                      zh: '确认' },
+        cancelTitle:      { fr: 'Annuler',                     en: 'Cancel',                         ar: 'إلغاء',                      zh: '取消' },
+        notifCommission:  { fr: '💰 Nouvelle commission de parrainage', en: '💰 New referral commission', ar: '💰 عمولة إحالة جديدة',  zh: '💰 新推荐佣金' },
+        notifNewOrder:    { fr: '🛒 Nouvelle commande reçue',  en: '🛒 New order received',          ar: '🛒 طلب جديد',                zh: '🛒 收到新订单' },
+        notifNewAppt:     { fr: '📅 Nouveau rendez-vous reçu', en: '📅 New appointment received',    ar: '📅 موعد جديد',               zh: '📅 收到新预约' },
+        notifClient:      { fr: 'Client',                      en: 'Client',                         ar: 'عميل',                       zh: '客户' },
+    };
+
+    // Notifications avec ID/nom interpolé — phrase complète par langue (les
+    // ordres de mots diffèrent trop entre fr/en/ar/zh pour une concaténation
+    // préfixe + suffixe générique).
+    const MISC_TEMPLATES = {
+        notifOrderConfirmed: {
+            fr: (id) => `✅ Commande #${id} confirmée`, en: (id) => `✅ Order #${id} confirmed`,
+            ar: (id) => `✅ تم تأكيد الطلب #${id}`,      zh: (id) => `✅ 订单 #${id} 已确认`,
+        },
+        notifOrderCancelled: {
+            fr: (id) => `❌ Commande #${id} annulée`, en: (id) => `❌ Order #${id} cancelled`,
+            ar: (id) => `❌ تم إلغاء الطلب #${id}`,    zh: (id) => `❌ 订单 #${id} 已取消`,
+        },
+        notifApptConfirmed: {
+            fr: (id) => `✅ Rendez-vous #${id} confirmé`, en: (id) => `✅ Appointment #${id} confirmed`,
+            ar: (id) => `✅ تم تأكيد الموعد #${id}`,       zh: (id) => `✅ 预约 #${id} 已确认`,
+        },
+        notifApptCancelled: {
+            fr: (id) => `❌ Rendez-vous #${id} annulé`, en: (id) => `❌ Appointment #${id} cancelled`,
+            ar: (id) => `❌ تم إلغاء الموعد #${id}`,     zh: (id) => `❌ 预约 #${id} 已取消`,
+        },
+        notifWhatsapp: {
+            fr: (name) => `💬 WhatsApp — ${name}`, en: (name) => `💬 WhatsApp — ${name}`,
+            ar: (name) => `💬 WhatsApp — ${name}`, zh: (name) => `💬 WhatsApp — ${name}`,
+        },
+    };
+
+    function qm(key) {
+        const lang = qgLang();
+        return (MISC_LABELS[key] && (MISC_LABELS[key][lang] || MISC_LABELS[key].fr)) || key;
+    }
+
+    function qmt(key, arg) {
+        const lang = qgLang();
+        const tpl  = MISC_TEMPLATES[key];
+        if (!tpl) return key;
+        return (tpl[lang] || tpl.fr)(arg);
+    }
+
     fetch('/parrainage/resume')
         .then(r => r.json())
         .then(data => {
@@ -56,6 +222,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mêmes paliers que services/gradeService.js (SEUILS) — le nom doit
     // correspondre exactement à utilisateurs.grade_actuel.
+    // ⚠️ `nom` doit rester exactement identique à utilisateurs.grade_actuel
+    // (services/gradeService.js) — c'est une clé métier, pas un texte
+    // d'affichage. La traduction du libellé affiché se fait séparément
+    // via GRADE_LABELS, sans toucher à cette valeur.
     const GRADES = [
         { nom: 'Soldat',     icon: '🪖',  seuil: 0   },
         { nom: 'Caporal',    icon: '🎖️',  seuil: 10  },
@@ -64,6 +234,19 @@ document.addEventListener('DOMContentLoaded', () => {
         { nom: 'Capitaine',  icon: '🏅',   seuil: 100 },
         { nom: 'Général',    icon: '🎗️',  seuil: 200 },
     ];
+
+    const GRADE_LABELS = {
+        Soldat:     { fr: 'SOLDAT',     en: 'SOLDIER',    ar: 'جندي',   zh: '士兵' },
+        Caporal:    { fr: 'CAPORAL',    en: 'CORPORAL',   ar: 'عريف',   zh: '下士' },
+        Sergent:    { fr: 'SERGENT',    en: 'SERGEANT',   ar: 'رقيب',   zh: '中士' },
+        Lieutenant: { fr: 'LIEUTENANT', en: 'LIEUTENANT', ar: 'ملازم',  zh: '中尉' },
+        Capitaine:  { fr: 'CAPITAINE',  en: 'CAPTAIN',    ar: 'نقيب',   zh: '上尉' },
+        Général:    { fr: 'GÉNÉRAL',    en: 'GENERAL',    ar: 'جنرال',  zh: '将军' },
+    };
+    function gradeLabel(nom) {
+        const lang = qgLang();
+        return (GRADE_LABELS[nom] && (GRADE_LABELS[nom][lang] || GRADE_LABELS[nom].fr)) || (nom || '').toUpperCase();
+    }
 
     // Affiche le vrai grade du compte (utilisateurs.grade_actuel/score_grade,
     // renvoyé par /api/qg-data) — avant, ce grade était recalculé ici à partir
@@ -81,13 +264,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const fillEl = document.getElementById('grade-fill');
         const nextEl = document.getElementById('grade-next');
         if (iconEl) iconEl.textContent = actuel.icon;
-        if (nomEl)  nomEl.textContent  = actuel.nom.toUpperCase();
+        if (nomEl)  nomEl.textContent  = gradeLabel(actuel.nom);
         if (suivant) {
             const pct = Math.min(Math.round(
                 ((scoreNum - actuel.seuil) /
                 (suivant.seuil - actuel.seuil)) * 100), 100);
             if (fillEl) fillEl.style.width = pct + '%';
-            if (nextEl) nextEl.textContent = `→ ${suivant.nom.toUpperCase()}`;
+            if (nextEl) nextEl.textContent = `→ ${gradeLabel(suivant.nom)}`;
         } else {
             if (fillEl) fillEl.style.width = '100%';
             if (nextEl) nextEl.textContent = '👑 MAX';
@@ -259,15 +442,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateCarteLabels(canal) {
         let module = MODULES[canal] || MODULES[''];
+        let groupe = canal || 'produit';
         if (!canal && parcoursActuel === 'rdv') {
             module = { label: 'Tout', cartes: CARTES_RDV };
+            groupe = 'rdv';
         }
+        const lang = qgLang();
+        const labels = STAT_LABELS[groupe] || STAT_LABELS.produit;
         module.cartes.forEach(carte => {
             const card  = document.getElementById(carte.id)?.closest('.qg-card');
             if (!card) return;
             const label = card.querySelector('.qg-card__label');
             const icon  = card.querySelector('.qg-card__icon i');
-            if (label) label.textContent = carte.label;
+            const traduit = labels[carte.key] && (labels[carte.key][lang] || labels[carte.key].fr);
+            if (label) label.textContent = traduit || carte.label;
             if (icon)  icon.setAttribute('data-lucide', carte.icon);
         });
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -349,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .filter(([, v]) => v.actif);
 
             el.innerHTML = `
-                <button class="qg-module-btn active" data-canal="">📊 Tout</button>
+                <button class="qg-module-btn active" data-canal="">📊 ${qm('all')}</button>
                 ${actifs.map(([type]) => `
                     <button class="qg-module-btn" data-canal="${type}">
                         ${icones[type] || '🔌'} ${type.charAt(0).toUpperCase() + type.slice(1)}
@@ -415,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = document.getElementById('activite-list');
         if (!list) return;
         if (!journal || journal.length === 0) {
-            list.innerHTML = '<li style="padding:12px;color:#888;font-size:.85rem;">Aucune activité pour le moment</li>';
+            list.innerHTML = `<li style="padding:12px;color:#888;font-size:.85rem;">${qm('noActivity')}</li>`;
             return;
         }
         list.innerHTML = journal.map(j => `
@@ -430,7 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tbody = document.getElementById('commandes-tbody');
         if (!tbody) return;
         if (!commandes || commandes.length === 0) {
-            const texteVide = parcoursActuel === 'rdv' ? 'Aucun rendez-vous pour le moment' : 'Aucune commande pour le moment';
+            const texteVide = parcoursActuel === 'rdv' ? qm('noAppointments') : qm('noOrders');
             tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">${texteVide}</td></tr>`;
             return;
         }
@@ -445,8 +633,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td style="padding: 12px; color: #d4af37; font-weight: 600;">${c['DateRdv'] || '—'}</td>
                     <td style="padding: 12px;"><span class="qg-badge qg-badge--${statutClass(c['Statut'])}">${c['Statut'] || 'en_attente'}</span></td>
                     <td style="padding: 12px; text-align: center;">
-                        <button onclick="agirCommande('${c.airtableId}', 'confirmer')" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-right: 5px;" title="Confirmer">✅</button>
-                        <button onclick="agirCommande('${c.airtableId}', 'annuler')" style="background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 6px; cursor: pointer;" title="Annuler">❌</button>
+                        <button onclick="agirCommande('${c.airtableId}', 'confirmer')" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-right: 5px;" title="${qm('confirmTitle')}">✅</button>
+                        <button onclick="agirCommande('${c.airtableId}', 'annuler')" style="background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 6px; cursor: pointer;" title="${qm('cancelTitle')}">❌</button>
                     </td>
                 </tr>
             `).join('');
@@ -462,8 +650,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td style="padding: 12px; color: #d4af37; font-weight: 600;">${parseFloat(c['montant'] || c['Total'] || 0).toFixed(2)} ${c['Devise'] || 'DZD'}</td>
                 <td style="padding: 12px;"><span class="qg-badge qg-badge--${statutClass(c['Statut'])}">${c['Statut'] || 'en attente'}</span></td>
                 <td style="padding: 12px; text-align: center;">
-                    <button onclick="agirCommande('${c.airtableId}', 'confirmer')" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-right: 5px;" title="Confirmer">✅</button>
-                    <button onclick="agirCommande('${c.airtableId}', 'annuler')" style="background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 6px; cursor: pointer;" title="Annuler">❌</button>
+                    <button onclick="agirCommande('${c.airtableId}', 'confirmer')" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; padding: 5px 10px; border-radius: 6px; cursor: pointer; margin-right: 5px;" title="${qm('confirmTitle')}">✅</button>
+                    <button onclick="agirCommande('${c.airtableId}', 'annuler')" style="background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 6px; cursor: pointer;" title="${qm('cancelTitle')}">❌</button>
                 </td>
             </tr>
         `).join('');
@@ -476,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 loadQGData();
             } else {
-                alert("Erreur lors de l'action.");
+                alert(qm('actionError'));
             }
         } catch (e) {
             console.error(e);
@@ -503,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById(containerId);
         if (!el) return;
         if (!clients || clients.length === 0) {
-            el.innerHTML = `<p style="color:#888;font-size:.85rem;">Aucun client</p>`;
+            el.innerHTML = `<p style="color:#888;font-size:.85rem;">${qm('noClients')}</p>`;
             return;
         }
         el.innerHTML = clients.map(c => `
@@ -543,34 +731,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!badge) return;
             const actuel = parseFloat((badge.textContent.match(/[\d.]+/) || [0])[0]) || 0;
             badge.textContent = ' (+' + (actuel + parseFloat(gain.commission_montant)).toFixed(2) + '$)';
-            afficherNotification('💰 Nouvelle commission de parrainage');
+            afficherNotification(qm('notifCommission'));
         });
         socket.on('nouvelle-commande', () => {
-            afficherNotification('🛒 Nouvelle commande reçue');
+            afficherNotification(qm('notifNewOrder'));
             loadQGData();
         });
         socket.on('commande-confirmee', (d) => {
-            afficherNotification(`✅ Commande #${d.id} confirmée`);
+            afficherNotification(qmt('notifOrderConfirmed', d.id));
             loadQGData();
         });
         socket.on('commande-annulee', (d) => {
-            afficherNotification(`❌ Commande #${d.id} annulée`);
+            afficherNotification(qmt('notifOrderCancelled', d.id));
             loadQGData();
         });
         socket.on('nouveau-rdv', () => {
-            afficherNotification('📅 Nouveau rendez-vous reçu');
+            afficherNotification(qm('notifNewAppt'));
             loadQGData();
         });
         socket.on('rdv-confirme', (d) => {
-            afficherNotification(`✅ Rendez-vous #${d.id} confirmé`);
+            afficherNotification(qmt('notifApptConfirmed', d.id));
             loadQGData();
         });
         socket.on('rdv-annule', (d) => {
-            afficherNotification(`❌ Rendez-vous #${d.id} annulé`);
+            afficherNotification(qmt('notifApptCancelled', d.id));
             loadQGData();
         });
         socket.on('whatsapp.message', (d) => {
-            afficherNotification(`💬 WhatsApp — ${d.senderName || 'Client'}`);
+            afficherNotification(qmt('notifWhatsapp', d.senderName || qm('notifClient')));
             loadQGData();
         });
     }
@@ -589,5 +777,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadModules();
     loadQGData();
+
+    // Ré-applique les labels traduits des cartes quand la langue change
+    // (déclenché par le sélecteur de langue dans qg-template.ejs).
+    document.addEventListener('samii:langchange', () => {
+        updateCarteLabels(canalActif || '');
+    });
 
 });

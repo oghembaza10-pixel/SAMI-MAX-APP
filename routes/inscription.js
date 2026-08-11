@@ -41,7 +41,7 @@ router.get("/", requireAuth, async (req, res) => {
 
     const metier = req.query.metier || "";
     const paysOptions = Object.entries(PAYS_DEVISE)
-        .map(([code, p]) => `<option value="${code}" data-devise="${p.devise}">${p.label}</option>`)
+        .map(([code, p]) => `<option value="${code}" data-devise="${p.devise}" data-i18n="pays.${code}">${p.label}</option>`)
         .join("");
 
     res.send(`<!DOCTYPE html>
@@ -86,44 +86,146 @@ router.get("/", requireAuth, async (req, res) => {
         button:hover{ opacity:.9; }
         .msg{ margin-top:14px; text-align:center; font-size:.88rem; color:#e55; min-height:20px; }
         .msg.ok{ color:#4caf50; }
+        .lang-switch{ display:flex; gap:4px; justify-content:center; margin-bottom:18px; font-size:.68rem; }
+        .lang-switch span{ padding:5px 10px; border-radius:6px; cursor:pointer; color:#86807A; border:1px solid rgba(197,160,89,.25); transition:.2s ease; }
+        .lang-switch span.active, .lang-switch span:hover{ color:#C5A059; border-color:#C5A059; background:rgba(197,160,89,.08); }
     </style>
 </head>
 <body>
 <div class="box">
+    <div class="lang-switch">
+        <span data-lang="fr" class="active">FR</span>
+        <span data-lang="en">EN</span>
+        <span data-lang="ar">AR</span>
+        <span data-lang="zh">中</span>
+    </div>
     <div class="samii-line">
         <div class="samii-avatar">🤖</div>
-        <div class="samii-bubble">
+        <div class="samii-bubble" id="samii-bubble" data-metier="${metier}">
             Bonjour Général ! Je suis <b>SAMII</b>. Avant de construire votre QG${metier ? ` <b>${metier}</b>` : ""},
             j'ai besoin de quelques infos pour bien l'adapter à votre réalité.
         </div>
     </div>
 
     <form id="form-inscription">
-        <label>Nom de votre boutique / entreprise</label>
-        <input name="boutique" placeholder="Ex : Le Souverain Store" required>
+        <label data-i18n="onb.label.boutique">Nom de votre boutique / entreprise</label>
+        <input name="boutique" placeholder="Ex : Le Souverain Store" data-i18n-ph="onb.ph.boutique" required>
 
-        <label>Votre nom</label>
-        <input name="nom" placeholder="Votre nom" required>
+        <label data-i18n="onb.label.nom">Votre nom</label>
+        <input name="nom" placeholder="Votre nom" data-i18n-ph="onb.ph.nom" required>
 
-        <label>Numéro WhatsApp</label>
+        <label data-i18n="onb.label.whatsapp">Numéro WhatsApp</label>
         <input name="whatsapp" placeholder="+213..." required>
 
-        <label>Votre pays</label>
+        <label data-i18n="onb.label.pays">Votre pays</label>
         <select name="pays" id="select-pays">
-            <option value="">Choisissez votre pays</option>
+            <option value="" data-i18n="onb.select_default">Choisissez votre pays</option>
             ${paysOptions}
         </select>
 
-        <label>Devise</label>
-        <input name="devise" id="input-devise" placeholder="Sera pré-remplie selon le pays" readonly>
+        <label data-i18n="onb.label.devise">Devise</label>
+        <input name="devise" id="input-devise" placeholder="Sera pré-remplie selon le pays" data-i18n-ph="onb.ph.devise" readonly>
 
         <input type="hidden" name="metier" value="${metier}">
 
-        <button type="submit">Créer mon QG</button>
+        <button type="submit" data-i18n="onb.submit">Créer mon QG</button>
     </form>
     <div class="msg" id="msg"></div>
 </div>
 <script>
+const I18N = {
+    fr: {
+        'onb.bubble_default': "Bonjour Général ! Je suis <b>SAMII</b>. Avant de construire votre QG, j'ai besoin de quelques infos pour bien l'adapter à votre réalité.",
+        'onb.bubble_metier': "Bonjour Général ! Je suis <b>SAMII</b>. Avant de construire votre QG {metier}, j'ai besoin de quelques infos pour bien l'adapter à votre réalité.",
+        'onb.label.boutique': 'Nom de votre boutique / entreprise', 'onb.ph.boutique': 'Ex : Le Souverain Store',
+        'onb.label.nom': 'Votre nom', 'onb.ph.nom': 'Votre nom',
+        'onb.label.whatsapp': 'Numéro WhatsApp',
+        'onb.label.pays': 'Votre pays', 'onb.select_default': 'Choisissez votre pays',
+        'onb.label.devise': 'Devise', 'onb.ph.devise': 'Sera pré-remplie selon le pays',
+        'onb.submit': 'Créer mon QG',
+        'pays.DZ': 'Algérie', 'pays.FR': 'France', 'pays.MA': 'Maroc', 'pays.TN': 'Tunisie',
+        'pays.US': 'États-Unis', 'pays.CA': 'Canada', 'pays.SA': 'Arabie Saoudite', 'pays.AE': 'Émirats arabes unis', 'pays.autre': 'Autre',
+        'msg.preparing': '⏳ SAMII prépare votre QG...', 'msg.created_redirect': '✅ QG créé ! Redirection...',
+        'msg.error_default': '❌ Erreur. Réessayez.',
+    },
+    en: {
+        'onb.bubble_default': "Hello General! I'm <b>SAMII</b>. Before building your HQ, I need a few details to tailor it to your reality.",
+        'onb.bubble_metier': "Hello General! I'm <b>SAMII</b>. Before building your {metier} HQ, I need a few details to tailor it to your reality.",
+        'onb.label.boutique': 'Name of your store / business', 'onb.ph.boutique': 'E.g.: The Sovereign Store',
+        'onb.label.nom': 'Your name', 'onb.ph.nom': 'Your name',
+        'onb.label.whatsapp': 'WhatsApp number',
+        'onb.label.pays': 'Your country', 'onb.select_default': 'Choose your country',
+        'onb.label.devise': 'Currency', 'onb.ph.devise': 'Auto-filled based on country',
+        'onb.submit': 'Create my HQ',
+        'pays.DZ': 'Algeria', 'pays.FR': 'France', 'pays.MA': 'Morocco', 'pays.TN': 'Tunisia',
+        'pays.US': 'United States', 'pays.CA': 'Canada', 'pays.SA': 'Saudi Arabia', 'pays.AE': 'United Arab Emirates', 'pays.autre': 'Other',
+        'msg.preparing': '⏳ SAMII is preparing your HQ...', 'msg.created_redirect': '✅ HQ created! Redirecting...',
+        'msg.error_default': '❌ Error. Please try again.',
+    },
+    ar: {
+        'onb.bubble_default': 'مرحبًا أيها الجنرال! أنا <b>SAMII</b>. قبل بناء مقرّك، أحتاج إلى بعض المعلومات لتكييفه مع واقعك.',
+        'onb.bubble_metier': 'مرحبًا أيها الجنرال! أنا <b>SAMII</b>. قبل بناء مقرّك الخاص بـ{metier}، أحتاج إلى بعض المعلومات لتكييفه مع واقعك.',
+        'onb.label.boutique': 'اسم متجرك / شركتك', 'onb.ph.boutique': 'مثال: Le Souverain Store',
+        'onb.label.nom': 'اسمك', 'onb.ph.nom': 'اسمك',
+        'onb.label.whatsapp': 'رقم WhatsApp',
+        'onb.label.pays': 'بلدك', 'onb.select_default': 'اختر بلدك',
+        'onb.label.devise': 'العملة', 'onb.ph.devise': 'تُملأ تلقائيًا حسب البلد',
+        'onb.submit': 'إنشاء مقري',
+        'pays.DZ': 'الجزائر', 'pays.FR': 'فرنسا', 'pays.MA': 'المغرب', 'pays.TN': 'تونس',
+        'pays.US': 'الولايات المتحدة', 'pays.CA': 'كندا', 'pays.SA': 'المملكة العربية السعودية', 'pays.AE': 'الإمارات العربية المتحدة', 'pays.autre': 'أخرى',
+        'msg.preparing': '⏳ SAMII يُجهّز مقرّك...', 'msg.created_redirect': '✅ تم إنشاء المقر! جارٍ التحويل...',
+        'msg.error_default': '❌ خطأ. حاول مرة أخرى.',
+    },
+    zh: {
+        'onb.bubble_default': '将军您好！我是 <b>SAMII</b>。在搭建您的总部之前，我需要了解一些信息以便为您量身定制。',
+        'onb.bubble_metier': '将军您好！我是 <b>SAMII</b>。在搭建您的{metier}总部之前，我需要了解一些信息以便为您量身定制。',
+        'onb.label.boutique': '您的店铺/企业名称', 'onb.ph.boutique': '例如：至尊商店',
+        'onb.label.nom': '您的姓名', 'onb.ph.nom': '您的姓名',
+        'onb.label.whatsapp': 'WhatsApp 号码',
+        'onb.label.pays': '您所在的国家', 'onb.select_default': '请选择您的国家',
+        'onb.label.devise': '货币', 'onb.ph.devise': '将根据国家自动填写',
+        'onb.submit': '创建我的总部',
+        'pays.DZ': '阿尔及利亚', 'pays.FR': '法国', 'pays.MA': '摩洛哥', 'pays.TN': '突尼斯',
+        'pays.US': '美国', 'pays.CA': '加拿大', 'pays.SA': '沙特阿拉伯', 'pays.AE': '阿拉伯联合酋长国', 'pays.autre': '其他',
+        'msg.preparing': '⏳ SAMII 正在为您搭建总部...', 'msg.created_redirect': '✅ 总部创建成功！正在跳转...',
+        'msg.error_default': '❌ 错误，请重试。',
+    },
+};
+
+let currentLang = localStorage.getItem('samii_lang') || 'fr';
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    localStorage.setItem('samii_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+    });
+    document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+
+    const bubble = document.getElementById('samii-bubble');
+    if (bubble) {
+        const bm = bubble.dataset.metier;
+        const key = bm ? 'onb.bubble_metier' : 'onb.bubble_default';
+        bubble.innerHTML = t(key).replace('{metier}', bm ? '<b>' + bm + '</b>' : '');
+    }
+}
+
+document.querySelectorAll('.lang-switch span').forEach(span => {
+    span.addEventListener('click', () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
+
 document.getElementById('select-pays').addEventListener('change', (e) => {
     const opt = e.target.selectedOptions[0];
     document.getElementById('input-devise').value = opt?.dataset.devise || "";
@@ -133,7 +235,7 @@ document.getElementById('form-inscription').addEventListener('submit', async (e)
     e.preventDefault();
     const msg  = document.getElementById('msg');
     const data = Object.fromEntries(new FormData(e.target));
-    msg.textContent = '⏳ SAMII prépare votre QG...';
+    msg.textContent = t('msg.preparing');
     msg.className   = 'msg';
 
     const res  = await fetch('/inscription', {
@@ -144,11 +246,11 @@ document.getElementById('form-inscription').addEventListener('submit', async (e)
     const json = await res.json();
 
     if (json.success) {
-        msg.textContent = '✅ QG créé ! Redirection...';
+        msg.textContent = t('msg.created_redirect');
         msg.className   = 'msg ok';
         window.location.href = json.redirect || '/qg';
     } else {
-        msg.textContent = json.error || '❌ Erreur. Réessayez.';
+        msg.textContent = json.error || t('msg.error_default');
     }
 });
 </script>

@@ -12,11 +12,11 @@
 <body data-telephone="<%= telephone || '' %>" data-user-id="<%= userId || '' %>">
 <div class="qg-grade-bar">
     <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
-    <span class="qg-grade-bar__nom" id="grade-nom">SOLDAT</span>
+    <span class="qg-grade-bar__nom" id="grade-nom" data-i18n="grade.soldat">SOLDAT</span>
     <div class="qg-grade-bar__batterie">
         <div class="qg-grade-bar__fill" id="grade-fill" style="width:5%"></div>
     </div>
-    <span class="qg-grade-bar__next" id="grade-next">→ CAPORAL</span>
+    <span class="qg-grade-bar__next" id="grade-next" data-i18n="grade.next.caporal">→ CAPORAL</span>
 </div>
 <div class="qg-shell">
     <aside class="qg-sidebar" id="og-sidebar">
@@ -25,22 +25,22 @@
                 <img src="/og.png" alt="OG">
                 <span class="qg-logo__text">OG · EMPIRE</span>
             </a>
-            <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar">
+            <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar" data-i18n-aria="nav.collapse">
                 <i data-lucide="chevrons-left"></i>
             </button>
         </div>
         <nav class="qg-nav">
             <a href="/client-qg" class="qg-nav__item active">
-                <i data-lucide="home"></i><span>Mon Espace</span>
+                <i data-lucide="home"></i><span data-i18n="nav.monespace">Mon Espace</span>
             </a>
             <a href="/marketplace" class="qg-nav__item">
-                <i data-lucide="store"></i><span>Marketplace</span>
+                <i data-lucide="store"></i><span data-i18n="nav.marketplace">Marketplace</span>
             </a>
             <a href="/community" class="qg-nav__item">
-                <i data-lucide="users"></i><span>Community</span>
+                <i data-lucide="users"></i><span data-i18n="nav.community">Community</span>
             </a>
             <a href="/academy" class="qg-nav__item">
-                <i data-lucide="graduation-cap"></i><span>Academy</span>
+                <i data-lucide="graduation-cap"></i><span data-i18n="nav.academy">Academy</span>
             </a>
             <a href="/client-qg/samii" class="qg-nav__item qg-nav__item--samii">
     <img src="/samii-os-icon.png" alt="SAMII" style="width:20px;height:20px;border-radius:6px;object-fit:cover;">
@@ -50,33 +50,39 @@
         </nav>
         <div class="qg-sidebar__bottom">
             <a href="/settings" class="qg-nav__item">
-                <i data-lucide="settings"></i><span>Paramètres</span>
+                <i data-lucide="settings"></i><span data-i18n="nav.settings">Paramètres</span>
             </a>
             <a href="/logout" class="qg-nav__item" style="color:#e55;">
-                <i data-lucide="log-out"></i><span>Déconnexion</span>
+                <i data-lucide="log-out"></i><span data-i18n="nav.logout">Déconnexion</span>
             </a>
+            <div class="og-lang-switch">
+                <span data-lang-btn="fr">FR</span>
+                <span data-lang-btn="en">EN</span>
+                <span data-lang-btn="ar">AR</span>
+                <span data-lang-btn="zh">ZH</span>
+            </div>
         </div>
     </aside>
 
     <main class="qg-main">
         <header class="qg-topbar">
             <div class="qg-topbar__breadcrumb">
-                <span class="qg-mono">MON ESPACE</span>
+                <span class="qg-mono" data-i18n="topbar.title">MON ESPACE</span>
             </div>
         </header>
 
         <section class="qg-hero">
             <div class="qg-hero__content">
-                <span class="qg-eyebrow">BIENVENUE</span>
-                <h1>Bonjour <%= nom || 'Général' %> 👋</h1>
-                <p>SAMII t'aide au quotidien — transport, services, plans, et bien plus.</p>
+                <span class="qg-eyebrow" data-i18n="hero.eyebrow">BIENVENUE</span>
+                <h1><span data-i18n="hero.greeting">Bonjour</span> <%= nom || 'Général' %> 👋</h1>
+                <p data-i18n="hero.subtitle">SAMII t'aide au quotidien — transport, services, plans, et bien plus.</p>
             </div>
         </section>
 
         <% if (commandes && commandes.length) { %>
         <div class="qg-section-title">
             <i data-lucide="truck"></i>
-            <span>Mes commandes</span>
+            <span data-i18n="section.commandes">Mes commandes</span>
         </div>
         <section class="qg-dashboard" id="mes-commandes">
             <% commandes.forEach(function(c) { %>
@@ -92,7 +98,7 @@
                 </div>
                 <% if (c.numero_suivi) { %>
                 <p style="color:var(--text-muted);font-size:.78rem;margin-top:8px;">
-                    📦 Suivi : <%= c.numero_suivi %> (<%= c.transporteur || '' %>)
+                    📦 <span data-i18n="track.label">Suivi :</span> <%= c.numero_suivi %> (<%= c.transporteur || '' %>)
                 </p>
                 <% } %>
             </article>
@@ -102,48 +108,48 @@
 
         <div class="qg-section-title">
             <i data-lucide="sparkles"></i>
-            <span>Aujourd'hui</span>
+            <span data-i18n="section.today">Aujourd'hui</span>
         </div>
         <section class="qg-dashboard">
             <a href="/client-qg/transport" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
                 <div class="qg-card__icon"><i data-lucide="bus"></i></div>
-                <span class="qg-card__value" style="font-size:1rem;">🚌 Transport</span>
-                <span class="qg-card__label">Trouver un trajet →</span>
+                <span class="qg-card__value" style="font-size:1rem;" data-i18n="card.transport.title">🚌 Transport</span>
+                <span class="qg-card__label" data-i18n="card.transport.label">Trouver un trajet →</span>
             </a>
             <a href="/client-qg/traducteur" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
                 <div class="qg-card__icon"><i data-lucide="languages"></i></div>
-                <span class="qg-card__value" style="font-size:1rem;">🌐 Traducteur</span>
-                <span class="qg-card__label">Traduire un texte →</span>
+                <span class="qg-card__value" style="font-size:1rem;" data-i18n="card.traducteur.title">🌐 Traducteur</span>
+                <span class="qg-card__label" data-i18n="card.traducteur.label">Traduire un texte →</span>
             </a>
             <a href="/client-qg/services" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
                 <div class="qg-card__icon"><i data-lucide="hand-helping"></i></div>
-                <span class="qg-card__value" style="font-size:1rem;">🛎️ Services</span>
-                <span class="qg-card__label">Livraison, garde, plus →</span>
+                <span class="qg-card__value" style="font-size:1rem;" data-i18n="card.services.title">🛎️ Services</span>
+                <span class="qg-card__label" data-i18n="card.services.label">Livraison, garde, plus →</span>
             </a>
             <a href="/client-qg/plans" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
                 <div class="qg-card__icon"><i data-lucide="gift"></i></div>
-                <span class="qg-card__value" style="font-size:1rem;">🎁 Meilleurs Plans</span>
-                <span class="qg-card__label">Découvrir la surprise →</span>
+                <span class="qg-card__value" style="font-size:1rem;" data-i18n="card.plans.title">🎁 Meilleurs Plans</span>
+                <span class="qg-card__label" data-i18n="card.plans.label">Découvrir la surprise →</span>
             </a>
             <a href="/client-qg/academie" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
                 <div class="qg-card__icon"><i data-lucide="graduation-cap"></i></div>
-                <span class="qg-card__value" style="font-size:1rem;">🎓 Technologie</span>
-                <span class="qg-card__label">Devenir Marchand →</span>
+                <span class="qg-card__value" style="font-size:1rem;" data-i18n="card.academie.title">🎓 Technologie</span>
+                <span class="qg-card__label" data-i18n="card.academie.label">Devenir Marchand →</span>
             </a>
 <a href="/client-qg/emploi" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
     <div class="qg-card__icon"><i data-lucide="briefcase"></i></div>
-    <span class="qg-card__value" style="font-size:1rem;">💼 Missions & Emploi</span>
-    <span class="qg-card__label">Trouver un poste →</span>
+    <span class="qg-card__value" style="font-size:1rem;" data-i18n="card.emploi.title">💼 Missions & Emploi</span>
+    <span class="qg-card__label" data-i18n="card.emploi.label">Trouver un poste →</span>
 </a>
 <a href="/client-qg/premium" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;background:linear-gradient(135deg, rgba(197,160,89,0.1), rgba(157,92,255,0.1));">
     <div class="qg-card__icon"><i data-lucide="crown"></i></div>
-    <span class="qg-card__value" style="font-size:1rem;">👑 SAMII Premium</span>
-    <span class="qg-card__label">Débloquer tout →</span>
+    <span class="qg-card__value" style="font-size:1rem;" data-i18n="card.premium.title">👑 SAMII Premium</span>
+    <span class="qg-card__label" data-i18n="card.premium.label">Débloquer tout →</span>
 </a>
 <a href="/client-qg/connect" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
     <div class="qg-card__icon"><i data-lucide="plug-zap"></i></div>
-    <span class="qg-card__value" style="font-size:1rem;">🔗 Connecter mes réseaux</span>
-    <span class="qg-card__label">Telegram, WhatsApp, plus →</span>
+    <span class="qg-card__value" style="font-size:1rem;" data-i18n="card.connect.title">🔗 Connecter mes réseaux</span>
+    <span class="qg-card__label" data-i18n="card.connect.label">Telegram, WhatsApp, plus →</span>
 </a>
         </section>
 
@@ -154,27 +160,27 @@
         <section class="qg-dashboard">
             <article class="qg-card" style="grid-column:1/-1;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <span style="color:#9d5cff;font-weight:700;font-size:.95rem;">Messages restants aujourd'hui</span>
+                    <span style="color:#9d5cff;font-weight:700;font-size:.95rem;" data-i18n="samii.quotaLabel">Messages restants aujourd'hui</span>
                     <span class="qg-mono" id="quota-texte" style="color:#5FD4FF;">50 / 50</span>
                 </div>
                 <div style="background:rgba(255,255,255,0.06);border-radius:8px;height:8px;margin-bottom:12px;">
                     <div id="quota-bar" style="height:8px;border-radius:8px;background:linear-gradient(90deg,#9d5cff,#5FD4FF);width:100%;transition:width .6s ease;"></div>
                 </div>
-                <p style="color:var(--text-muted);font-size:.8rem;">
+                <p style="color:var(--text-muted);font-size:.8rem;" data-i18n="samii.referralInfo">
                     💡 Invite tes proches : tu gagnes 20% sur leurs paiements pendant 12 mois, et ils ont 5% de réduction sur les leurs.
                 </p>
-                <button id="btn-copier-lien" style="margin-top:10px;padding:10px 16px;background:#9d5cff;border:none;border-radius:8px;font-weight:700;cursor:pointer;color:#fff;">
+                <button id="btn-copier-lien" style="margin-top:10px;padding:10px 16px;background:#9d5cff;border:none;border-radius:8px;font-weight:700;cursor:pointer;color:#fff;" data-i18n="samii.copyLink">
                     🔗 Copier mon lien de parrainage
                 </button>
                 <a href="/parrainage" style="display:inline-block;margin-top:10px;margin-left:8px;padding:10px 16px;background:rgba(255,255,255,0.08);border-radius:8px;font-weight:700;color:#fff;text-decoration:none;">
-                    Voir mes gains<span id="badge-gains" style="color:#3ddc84;"></span> →
+                    <span data-i18n="samii.seeGains">Voir mes gains</span><span id="badge-gains" style="color:#3ddc84;"></span> →
                 </a>
             </article>
         </section>
     </main>
 </div>
 
-<a href="/client-qg/samii" class="samii-orb" aria-label="Ouvrir SAMII">
+<a href="/client-qg/samii" class="samii-orb" aria-label="Ouvrir SAMII" data-i18n-aria="samii.openAria">
     <span class="samii-orb__aura"></span>
     <span class="samii-orb__aura samii-orb__aura--2"></span>
     <img src="/samii-os-icon.png" alt="SAMII" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
@@ -189,7 +195,7 @@ document.getElementById('btn-copier-lien')?.addEventListener('click', () => {
     navigator.clipboard.writeText(lien).then(() => {
         const btn = document.getElementById('btn-copier-lien');
         const original = btn.textContent;
-        btn.textContent = '✅ Lien copié !';
+        btn.textContent = t('samii.linkCopied');
         setTimeout(() => { btn.textContent = original; }, 2000);
     });
 });
@@ -240,10 +246,148 @@ if (typeof io !== 'undefined') {
                 suivi.style.cssText = 'color:var(--text-muted);font-size:.78rem;margin-top:8px;';
                 card.appendChild(suivi);
             }
-            suivi.textContent = '📦 Suivi : ' + d.numero_suivi + ' (' + (d.transporteur || '') + ')';
+            suivi.textContent = '📦 ' + t('track.label') + ' ' + d.numero_suivi + ' (' + (d.transporteur || '') + ')';
         }
     });
 }
+</script>
+<script>
+    // ==========================================================================
+    // SAMII OS — I18N (autonome, même mécanisme que views/index.ejs)
+    // ==========================================================================
+    const I18N = {
+        fr: {
+            'nav.collapse': 'Réduire la sidebar',
+            'nav.monespace': 'Mon Espace', 'nav.marketplace': 'Marketplace', 'nav.community': 'Community',
+            'nav.academy': 'Academy', 'nav.settings': 'Paramètres', 'nav.logout': 'Déconnexion',
+            'topbar.title': 'MON ESPACE',
+            'hero.eyebrow': 'BIENVENUE', 'hero.greeting': 'Bonjour',
+            'hero.subtitle': "SAMII t'aide au quotidien — transport, services, plans, et bien plus.",
+            'section.commandes': 'Mes commandes', 'section.today': "Aujourd'hui",
+            'track.label': 'Suivi :',
+            'card.transport.title': '🚌 Transport', 'card.transport.label': 'Trouver un trajet →',
+            'card.traducteur.title': '🌐 Traducteur', 'card.traducteur.label': 'Traduire un texte →',
+            'card.services.title': '🛎️ Services', 'card.services.label': 'Livraison, garde, plus →',
+            'card.plans.title': '🎁 Meilleurs Plans', 'card.plans.label': 'Découvrir la surprise →',
+            'card.academie.title': '🎓 Technologie', 'card.academie.label': 'Devenir Marchand →',
+            'card.emploi.title': '💼 Missions & Emploi', 'card.emploi.label': 'Trouver un poste →',
+            'card.premium.title': '👑 SAMII Premium', 'card.premium.label': 'Débloquer tout →',
+            'card.connect.title': '🔗 Connecter mes réseaux', 'card.connect.label': 'Telegram, WhatsApp, plus →',
+            'samii.quotaLabel': "Messages restants aujourd'hui",
+            'samii.referralInfo': '💡 Invite tes proches : tu gagnes 20% sur leurs paiements pendant 12 mois, et ils ont 5% de réduction sur les leurs.',
+            'samii.copyLink': '🔗 Copier mon lien de parrainage',
+            'samii.linkCopied': '✅ Lien copié !',
+            'samii.seeGains': 'Voir mes gains',
+            'samii.openAria': 'Ouvrir SAMII',
+            'grade.soldat': 'SOLDAT', 'grade.next.caporal': '→ CAPORAL',
+        },
+        en: {
+            'nav.collapse': 'Collapse sidebar',
+            'nav.monespace': 'My Space', 'nav.marketplace': 'Marketplace', 'nav.community': 'Community',
+            'nav.academy': 'Academy', 'nav.settings': 'Settings', 'nav.logout': 'Log out',
+            'topbar.title': 'MY SPACE',
+            'hero.eyebrow': 'WELCOME', 'hero.greeting': 'Hello',
+            'hero.subtitle': 'SAMII helps you every day — transport, services, deals, and much more.',
+            'section.commandes': 'My orders', 'section.today': 'Today',
+            'track.label': 'Tracking:',
+            'card.transport.title': '🚌 Transport', 'card.transport.label': 'Find a ride →',
+            'card.traducteur.title': '🌐 Translator', 'card.traducteur.label': 'Translate a text →',
+            'card.services.title': '🛎️ Services', 'card.services.label': 'Delivery, care, more →',
+            'card.plans.title': '🎁 Best Deals', 'card.plans.label': 'Discover the surprise →',
+            'card.academie.title': '🎓 Technology', 'card.academie.label': 'Become a Merchant →',
+            'card.emploi.title': '💼 Jobs & Missions', 'card.emploi.label': 'Find a position →',
+            'card.premium.title': '👑 SAMII Premium', 'card.premium.label': 'Unlock everything →',
+            'card.connect.title': '🔗 Connect my accounts', 'card.connect.label': 'Telegram, WhatsApp, more →',
+            'samii.quotaLabel': 'Messages left today',
+            'samii.referralInfo': '💡 Invite your friends: you earn 20% on their payments for 12 months, and they get 5% off theirs.',
+            'samii.copyLink': '🔗 Copy my referral link',
+            'samii.linkCopied': '✅ Link copied!',
+            'samii.seeGains': 'See my earnings',
+            'samii.openAria': 'Open SAMII',
+            'grade.soldat': 'SOLDIER', 'grade.next.caporal': '→ CORPORAL',
+        },
+        ar: {
+            'nav.collapse': 'طي الشريط الجانبي',
+            'nav.monespace': 'مساحتي', 'nav.marketplace': 'Marketplace', 'nav.community': 'المجتمع',
+            'nav.academy': 'الأكاديمية', 'nav.settings': 'الإعدادات', 'nav.logout': 'تسجيل الخروج',
+            'topbar.title': 'مساحتي',
+            'hero.eyebrow': 'مرحبًا', 'hero.greeting': 'مرحبًا',
+            'hero.subtitle': 'سامي يساعدك يوميًا — النقل، الخدمات، العروض، وأكثر من ذلك بكثير.',
+            'section.commandes': 'طلباتي', 'section.today': 'اليوم',
+            'track.label': 'التتبع:',
+            'card.transport.title': '🚌 النقل', 'card.transport.label': 'ابحث عن رحلة ←',
+            'card.traducteur.title': '🌐 المترجم', 'card.traducteur.label': 'ترجمة نص ←',
+            'card.services.title': '🛎️ خدمات', 'card.services.label': 'توصيل، رعاية، والمزيد ←',
+            'card.plans.title': '🎁 أفضل العروض', 'card.plans.label': 'اكتشف المفاجأة ←',
+            'card.academie.title': '🎓 التكنولوجيا', 'card.academie.label': 'كن تاجرًا ←',
+            'card.emploi.title': '💼 وظائف ومهام', 'card.emploi.label': 'ابحث عن منصب ←',
+            'card.premium.title': '👑 SAMII Premium', 'card.premium.label': 'افتح كل شيء ←',
+            'card.connect.title': '🔗 ربط حساباتي', 'card.connect.label': 'Telegram وWhatsApp والمزيد ←',
+            'samii.quotaLabel': 'الرسائل المتبقية اليوم',
+            'samii.referralInfo': '💡 ادعُ أصدقاءك: تربح 20% من مدفوعاتهم لمدة 12 شهرًا، ويحصلون هم على خصم 5% على مدفوعاتهم.',
+            'samii.copyLink': '🔗 نسخ رابط الإحالة الخاص بي',
+            'samii.linkCopied': '✅ تم نسخ الرابط!',
+            'samii.seeGains': 'عرض أرباحي',
+            'samii.openAria': 'فتح SAMII',
+            'grade.soldat': 'جندي', 'grade.next.caporal': '← عريف',
+        },
+        zh: {
+            'nav.collapse': '收起侧边栏',
+            'nav.monespace': '我的空间', 'nav.marketplace': 'Marketplace', 'nav.community': '社区',
+            'nav.academy': '学院', 'nav.settings': '设置', 'nav.logout': '退出登录',
+            'topbar.title': '我的空间',
+            'hero.eyebrow': '欢迎', 'hero.greeting': '你好',
+            'hero.subtitle': 'SAMII 每天为你提供帮助——交通、服务、优惠等等。',
+            'section.commandes': '我的订单', 'section.today': '今天',
+            'track.label': '跟踪：',
+            'card.transport.title': '🚌 交通', 'card.transport.label': '寻找路线 →',
+            'card.traducteur.title': '🌐 翻译', 'card.traducteur.label': '翻译文本 →',
+            'card.services.title': '🛎️ 服务', 'card.services.label': '配送、看护及更多 →',
+            'card.plans.title': '🎁 精选优惠', 'card.plans.label': '发现惊喜 →',
+            'card.academie.title': '🎓 技术', 'card.academie.label': '成为商家 →',
+            'card.emploi.title': '💼 任务与就业', 'card.emploi.label': '寻找职位 →',
+            'card.premium.title': '👑 SAMII Premium', 'card.premium.label': '解锁全部 →',
+            'card.connect.title': '🔗 连接我的账号', 'card.connect.label': 'Telegram、WhatsApp 等 →',
+            'samii.quotaLabel': '今日剩余消息数',
+            'samii.referralInfo': '💡 邀请你的朋友：你可获得他们付款金额 20% 的收益，为期 12 个月，他们也能获得 5% 的折扣。',
+            'samii.copyLink': '🔗 复制我的推荐链接',
+            'samii.linkCopied': '✅ 链接已复制！',
+            'samii.seeGains': '查看我的收益',
+            'samii.openAria': '打开 SAMII',
+            'grade.soldat': '士兵', 'grade.next.caporal': '→ 下士',
+        },
+    };
+
+    let currentLang = localStorage.getItem('samii_lang') || 'fr';
+    function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+    function applyLang(lang) {
+        if (!I18N[lang]) lang = 'fr';
+        currentLang = lang;
+        localStorage.setItem('samii_lang', lang);
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+        });
+        document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+            const key = el.getAttribute('data-i18n-ph');
+            if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+        });
+        document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+            const key = el.getAttribute('data-i18n-aria');
+            if (I18N[lang][key] !== undefined) el.setAttribute('aria-label', I18N[lang][key]);
+        });
+        document.querySelectorAll('[data-lang-btn]').forEach(s => s.classList.toggle('active', s.dataset.langBtn === lang));
+    }
+
+    document.querySelectorAll('[data-lang-btn]').forEach(btn => {
+        btn.addEventListener('click', () => applyLang(btn.dataset.langBtn));
+    });
+
+    applyLang(currentLang);
 </script>
 </body>
 </html>

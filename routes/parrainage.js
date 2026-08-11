@@ -58,26 +58,27 @@ router.get("/", requireAuth, async (req, res) => {
     const retourHref = req.session.typeCompte === "client" ? "/client-qg" : "/qg";
 
     const filleulsHtml = resume.filleuls.length ? resume.filleuls.map(f => {
-        const nomComplet = `${f.prenom || ""} ${f.nom || ""}`.trim() || f.email || "Filleul";
+        const nomComplet = `${f.prenom || ""} ${f.nom || ""}`.trim() || f.email || "";
+        const nomAffiche = nomComplet ? escapeHtml(nomComplet) : `<span data-i18n="parrainage.filleul_default">Filleul</span>`;
         const commissionsFilleul = resume.commissions.filter(c => c.filleul_id === f.id);
         const totalFilleul = commissionsFilleul.reduce((s, c) => s + (parseFloat(c.commission_montant) || 0), 0);
         return `
         <div class="pr-filleul">
             <div class="pr-filleul-avatar">${escapeHtml((f.prenom || f.email || "?").charAt(0).toUpperCase())}</div>
             <div class="pr-filleul-info">
-                <strong>${escapeHtml(nomComplet)}</strong>
-                <span>${commissionsFilleul.length} paiement${commissionsFilleul.length > 1 ? "s" : ""} généré${commissionsFilleul.length > 1 ? "s" : ""}</span>
+                <strong>${nomAffiche}</strong>
+                <span><span class="pr-count">${commissionsFilleul.length}</span> <span data-i18n="parrainage.payments_word">paiement(s) généré(s)</span></span>
             </div>
             <div class="pr-filleul-gain">+${totalFilleul.toFixed(2)}</div>
         </div>`;
-    }).join("") : `<div class="pr-empty"><i data-lucide="users"></i><p>Aucun filleul pour l'instant. Partage ton lien !</p></div>`;
+    }).join("") : `<div class="pr-empty"><i data-lucide="users"></i><p data-i18n="parrainage.empty.filleuls">Aucun filleul pour l'instant. Partage ton lien !</p></div>`;
 
     const gainsHtml = resume.commissions.length ? resume.commissions.slice(0, 30).map(c => `
         <div class="pr-gain-row" data-id="${c.id}">
-            <span class="pr-gain-plan">${escapeHtml(c.plan || "abonnement")} · mois ${c.mois_numero}/12</span>
-            <span class="pr-gain-statut pr-gain-statut--${c.statut === "confirmee" ? "ok" : "attente"}">${c.statut === "confirmee" ? "Confirmé" : "En attente"}</span>
+            <span class="pr-gain-plan">${c.plan ? escapeHtml(c.plan) : `<span data-i18n="parrainage.plan_default">abonnement</span>`} · <span data-i18n="parrainage.month_word">mois</span> ${c.mois_numero}/12</span>
+            <span class="pr-gain-statut pr-gain-statut--${c.statut === "confirmee" ? "ok" : "attente"}" data-i18n="${c.statut === "confirmee" ? "parrainage.status.confirmed" : "parrainage.status.pending"}">${c.statut === "confirmee" ? "Confirmé" : "En attente"}</span>
             <span class="pr-gain-montant">+${devise(c.commission_montant, c.devise)}</span>
-        </div>`).join("") : `<div class="pr-empty"><i data-lucide="sparkles"></i><p>Tes gains apparaîtront ici dès qu'un filleul paiera son abonnement.</p></div>`;
+        </div>`).join("") : `<div class="pr-empty"><i data-lucide="sparkles"></i><p data-i18n="parrainage.empty.gains">Tes gains apparaîtront ici dès qu'un filleul paiera son abonnement.</p></div>`;
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -91,8 +92,12 @@ router.get("/", requireAuth, async (req, res) => {
 * { box-sizing:border-box; }
 body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,sans-serif; padding:0 0 70px; }
 .pr-wrap { max-width:720px; margin:0 auto; padding:0 20px; }
-.back-link { display:inline-flex; align-items:center; gap:8px; color:var(--muted); text-decoration:none; font-size:13px; padding:20px 0 0; }
+.pr-top-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:20px 0 0; }
+.back-link { display:inline-flex; align-items:center; gap:8px; color:var(--muted); text-decoration:none; font-size:13px; }
 .back-link:hover { color:var(--blue); }
+.lang-switch { display:flex; gap:2px; font-family:"JetBrains Mono"; font-size:10.5px; padding:3px; border:1px solid var(--border); border-radius:9px; background:rgba(0,217,255,.04); }
+.lang-switch span { padding:5px 8px; border-radius:6px; cursor:pointer; color:var(--muted); transition:.2s ease; }
+.lang-switch span.active, .lang-switch span:hover { color:var(--blue); background:rgba(0,217,255,.1); box-shadow:inset 0 0 0 1px rgba(0,217,255,.18); }
 h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10px; }
 .pr-sub { color:var(--muted); font-size:13.5px; margin-bottom:24px; }
 .pr-link-card { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:18px; }
@@ -130,49 +135,184 @@ h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10
 </style>
 </head>
 <body>
-<a href="${retourHref}" class="back-link"><i data-lucide="arrow-left"></i> Retour</a>
+<div class="pr-top-row">
+    <a href="${retourHref}" class="back-link"><i data-lucide="arrow-left"></i> <span data-i18n="nav.back">Retour</span></a>
+    <div class="lang-switch">
+        <span data-lang="fr" class="active">FR</span>
+        <span data-lang="en">EN</span>
+        <span data-lang="ar">AR</span>
+        <span data-lang="zh">中</span>
+    </div>
+</div>
 <div class="pr-wrap">
-    <h1>🤝 Parrainage</h1>
-    <p class="pr-sub">Invite tes proches. Toi et eux gagnez, pendant 12 mois.</p>
+    <h1>🤝 <span data-i18n="parrainage.title">Parrainage</span></h1>
+    <p class="pr-sub" data-i18n="parrainage.subtitle">Invite tes proches. Toi et eux gagnez, pendant 12 mois.</p>
 
     <div class="pr-link-card">
-        <label>Ton lien de parrainage</label>
+        <label data-i18n="parrainage.link.label">Ton lien de parrainage</label>
         <div class="pr-link-row">
             <input id="lien-parrainage" readonly value="${escapeHtml(lienParrainage)}">
-            <button class="pr-copy-btn" id="btn-copier">Copier</button>
+            <button class="pr-copy-btn" id="btn-copier" data-i18n="parrainage.copy">Copier</button>
         </div>
         <div class="pr-terms">
-            <div class="pr-term"><strong>20%</strong><span>Toi, sur chaque paiement de ton filleul — 12 mois</span></div>
-            <div class="pr-term"><strong>5%</strong><span>Ton filleul, sur son propre abonnement — 12 mois</span></div>
+            <div class="pr-term"><strong>20%</strong><span data-i18n="parrainage.term1.desc">Toi, sur chaque paiement de ton filleul — 12 mois</span></div>
+            <div class="pr-term"><strong>5%</strong><span data-i18n="parrainage.term2.desc">Ton filleul, sur son propre abonnement — 12 mois</span></div>
         </div>
     </div>
 
     <div class="pr-stats-bar">
-        <div class="pr-stat"><strong id="stat-confirme">${resume.confirme.toFixed(2)}</strong><span>Gains confirmés</span></div>
-        <div class="pr-stat"><strong class="attente" id="stat-attente">${resume.enAttente.toFixed(2)}</strong><span>En attente</span></div>
-        <div class="pr-stat"><strong id="stat-filleuls">${resume.filleuls.length}</strong><span>Filleuls</span></div>
+        <div class="pr-stat"><strong id="stat-confirme">${resume.confirme.toFixed(2)}</strong><span data-i18n="parrainage.stat.confirmed">Gains confirmés</span></div>
+        <div class="pr-stat"><strong class="attente" id="stat-attente">${resume.enAttente.toFixed(2)}</strong><span data-i18n="parrainage.stat.pending">En attente</span></div>
+        <div class="pr-stat"><strong id="stat-filleuls">${resume.filleuls.length}</strong><span data-i18n="parrainage.stat.filleuls">Filleuls</span></div>
     </div>
 
-    <div class="section-title"><i data-lucide="users"></i> Tes filleuls</div>
+    <div class="section-title"><i data-lucide="users"></i> <span data-i18n="parrainage.section.filleuls">Tes filleuls</span></div>
     <div id="liste-filleuls">${filleulsHtml}</div>
 
-    <div class="section-title"><i data-lucide="wallet"></i> Historique des gains</div>
+    <div class="section-title"><i data-lucide="wallet"></i> <span data-i18n="parrainage.section.gains">Historique des gains</span></div>
     <div id="liste-gains">${gainsHtml}</div>
 </div>
 
-<div class="pr-flash" id="flash">💰 Nouveau gain reçu !</div>
+<div class="pr-flash" id="flash" data-i18n="parrainage.flash.gain">💰 Nouveau gain reçu !</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 if (typeof lucide !== "undefined") lucide.createIcons();
+
+const I18N = {
+    fr: {
+        "nav.back": "Retour",
+        "parrainage.title": "Parrainage",
+        "parrainage.subtitle": "Invite tes proches. Toi et eux gagnez, pendant 12 mois.",
+        "parrainage.link.label": "Ton lien de parrainage",
+        "parrainage.copy": "Copier",
+        "parrainage.copied": "Copié !",
+        "parrainage.term1.desc": "Toi, sur chaque paiement de ton filleul — 12 mois",
+        "parrainage.term2.desc": "Ton filleul, sur son propre abonnement — 12 mois",
+        "parrainage.stat.confirmed": "Gains confirmés",
+        "parrainage.stat.pending": "En attente",
+        "parrainage.stat.filleuls": "Filleuls",
+        "parrainage.section.filleuls": "Tes filleuls",
+        "parrainage.section.gains": "Historique des gains",
+        "parrainage.empty.filleuls": "Aucun filleul pour l'instant. Partage ton lien !",
+        "parrainage.empty.gains": "Tes gains apparaîtront ici dès qu'un filleul paiera son abonnement.",
+        "parrainage.filleul_default": "Filleul",
+        "parrainage.payments_word": "paiement(s) généré(s)",
+        "parrainage.plan_default": "abonnement",
+        "parrainage.month_word": "mois",
+        "parrainage.status.confirmed": "Confirmé",
+        "parrainage.status.pending": "En attente",
+        "parrainage.flash.gain": "💰 Nouveau gain reçu !"
+    },
+    en: {
+        "nav.back": "Back",
+        "parrainage.title": "Referral program",
+        "parrainage.subtitle": "Invite your friends. You both earn, for 12 months.",
+        "parrainage.link.label": "Your referral link",
+        "parrainage.copy": "Copy",
+        "parrainage.copied": "Copied!",
+        "parrainage.term1.desc": "You, on every payment made by your referral — 12 months",
+        "parrainage.term2.desc": "Your referral, on their own subscription — 12 months",
+        "parrainage.stat.confirmed": "Confirmed earnings",
+        "parrainage.stat.pending": "Pending",
+        "parrainage.stat.filleuls": "Referrals",
+        "parrainage.section.filleuls": "Your referrals",
+        "parrainage.section.gains": "Earnings history",
+        "parrainage.empty.filleuls": "No referrals yet. Share your link!",
+        "parrainage.empty.gains": "Your earnings will show up here as soon as a referral pays for their subscription.",
+        "parrainage.filleul_default": "Referral",
+        "parrainage.payments_word": "payment(s) generated",
+        "parrainage.plan_default": "subscription",
+        "parrainage.month_word": "month",
+        "parrainage.status.confirmed": "Confirmed",
+        "parrainage.status.pending": "Pending",
+        "parrainage.flash.gain": "💰 New earning received!"
+    },
+    ar: {
+        "nav.back": "رجوع",
+        "parrainage.title": "برنامج الإحالة",
+        "parrainage.subtitle": "ادعُ أصدقاءك. تربحان معًا، لمدة 12 شهرًا.",
+        "parrainage.link.label": "رابط الإحالة الخاص بك",
+        "parrainage.copy": "نسخ",
+        "parrainage.copied": "تم النسخ!",
+        "parrainage.term1.desc": "أنت، على كل دفعة يقوم بها من أحلته — 12 شهرًا",
+        "parrainage.term2.desc": "من أحلته، على اشتراكه الخاص — 12 شهرًا",
+        "parrainage.stat.confirmed": "أرباح مؤكدة",
+        "parrainage.stat.pending": "قيد الانتظار",
+        "parrainage.stat.filleuls": "الإحالات",
+        "parrainage.section.filleuls": "إحالاتك",
+        "parrainage.section.gains": "سجل الأرباح",
+        "parrainage.empty.filleuls": "لا توجد إحالات بعد. شارك رابطك!",
+        "parrainage.empty.gains": "ستظهر أرباحك هنا بمجرد أن تدفع إحالة اشتراكها.",
+        "parrainage.filleul_default": "إحالة",
+        "parrainage.payments_word": "دفعات تم إنشاؤها",
+        "parrainage.plan_default": "اشتراك",
+        "parrainage.month_word": "شهر",
+        "parrainage.status.confirmed": "مؤكد",
+        "parrainage.status.pending": "قيد الانتظار",
+        "parrainage.flash.gain": "💰 تم استلام ربح جديد!"
+    },
+    zh: {
+        "nav.back": "返回",
+        "parrainage.title": "推荐计划",
+        "parrainage.subtitle": "邀请你的朋友。你们都能获得收益，为期12个月。",
+        "parrainage.link.label": "你的推荐链接",
+        "parrainage.copy": "复制",
+        "parrainage.copied": "已复制！",
+        "parrainage.term1.desc": "你，从被推荐人的每笔付款中获得 — 12个月",
+        "parrainage.term2.desc": "被推荐人，在其自身订阅上获得 — 12个月",
+        "parrainage.stat.confirmed": "已确认收益",
+        "parrainage.stat.pending": "待确认",
+        "parrainage.stat.filleuls": "被推荐人",
+        "parrainage.section.filleuls": "你的被推荐人",
+        "parrainage.section.gains": "收益记录",
+        "parrainage.empty.filleuls": "暂无被推荐人。分享你的链接吧！",
+        "parrainage.empty.gains": "一旦有被推荐人支付订阅费用，你的收益将显示在这里。",
+        "parrainage.filleul_default": "被推荐人",
+        "parrainage.payments_word": "笔付款已生成",
+        "parrainage.plan_default": "订阅",
+        "parrainage.month_word": "月",
+        "parrainage.status.confirmed": "已确认",
+        "parrainage.status.pending": "待确认",
+        "parrainage.flash.gain": "💰 收到新收益！"
+    }
+};
+
+let currentLang = localStorage.getItem("samii_lang") || "fr";
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = "fr";
+    currentLang = lang;
+    localStorage.setItem("samii_lang", lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+    });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+        const key = el.getAttribute("data-i18n-ph");
+        if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+    });
+    document.querySelectorAll(".lang-switch span").forEach(s => s.classList.toggle("active", s.dataset.lang === lang));
+}
+
+document.querySelectorAll(".lang-switch span").forEach(span => {
+    span.addEventListener("click", () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
 
 document.getElementById("btn-copier").addEventListener("click", () => {
     const input = document.getElementById("lien-parrainage");
     input.select();
     navigator.clipboard?.writeText(input.value);
     const btn = document.getElementById("btn-copier");
-    btn.textContent = "Copié !";
-    setTimeout(() => btn.textContent = "Copier", 1500);
+    btn.removeAttribute("data-i18n");
+    btn.textContent = t("parrainage.copied");
+    setTimeout(() => { btn.textContent = t("parrainage.copy"); btn.setAttribute("data-i18n", "parrainage.copy"); }, 1500);
 });
 
 const socket = io();
@@ -195,10 +335,11 @@ socket.on("parrainage:gain", (gain) => {
     if (vide) vide.remove();
     const row = document.createElement("div");
     row.className = "pr-gain-row";
-    row.innerHTML = \`
-        <span class="pr-gain-plan">\${gain.plan || "abonnement"} · mois \${gain.mois_numero}/12</span>
-        <span class="pr-gain-statut pr-gain-statut--\${gain.statut === "confirmee" ? "ok" : "attente"}">\${gain.statut === "confirmee" ? "Confirmé" : "En attente"}</span>
-        <span class="pr-gain-montant">+\${parseFloat(gain.commission_montant).toFixed(2)} \${gain.devise}</span>\`;
+    const planTexte = gain.plan ? gain.plan : t("parrainage.plan_default");
+    const statutOk = gain.statut === "confirmee";
+    row.innerHTML = "<span class=\\"pr-gain-plan\\">" + planTexte + " · " + t("parrainage.month_word") + " " + gain.mois_numero + "/12</span>" +
+        "<span class=\\"pr-gain-statut pr-gain-statut--" + (statutOk ? "ok" : "attente") + "\\">" + (statutOk ? t("parrainage.status.confirmed") : t("parrainage.status.pending")) + "</span>" +
+        "<span class=\\"pr-gain-montant\\">+" + parseFloat(gain.commission_montant).toFixed(2) + " " + gain.devise + "</span>";
     liste.prepend(row);
 });
 </script>

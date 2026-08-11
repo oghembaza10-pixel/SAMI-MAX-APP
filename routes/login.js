@@ -12,14 +12,24 @@ router.get("/", (req, res) => {
 
     const { error, verified } = req.query;
 
-    const messages = {
-        token_manquant : "❌ Lien de confirmation invalide.",
-        token_invalide  : "❌ Ce lien de confirmation n'est plus valide.",
-        token_expire    : "⌛ Ce lien a expiré. Réinscris-toi ou contacte le support.",
-        erreur_serveur  : "❌ Une erreur est survenue. Réessaie.",
+    // Clés i18n (le texte FR ci-dessous est affiché avant que le script
+    // n'applique la langue sauvegardée par l'utilisateur, cf. data-i18n).
+    const msgKeys = {
+        token_manquant: "msg.token_manquant",
+        token_invalide: "msg.token_invalide",
+        token_expire  : "msg.token_expire",
+        erreur_serveur: "msg.erreur_serveur",
     };
-    const preMsg = error ? messages[error] || "" : (verified ? "✅ Email confirmé ! Tu peux te connecter." : "");
-    const preMsgClass = verified ? "ok" : "";
+    const preMsgTextFr = {
+        "msg.token_manquant": "❌ Lien de confirmation invalide.",
+        "msg.token_invalide": "❌ Ce lien de confirmation n'est plus valide.",
+        "msg.token_expire"  : "⌛ Ce lien a expiré. Réinscris-toi ou contacte le support.",
+        "msg.erreur_serveur": "❌ Une erreur est survenue. Réessaie.",
+        "msg.verified"      : "✅ Email confirmé ! Tu peux te connecter.",
+    };
+    const preMsgKey    = error ? (msgKeys[error] || "") : (verified ? "msg.verified" : "");
+    const preMsg       = preMsgTextFr[preMsgKey] || "";
+    const preMsgClass  = verified ? "ok" : "";
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -47,26 +57,117 @@ router.get("/", (req, res) => {
         small{ display:block; margin-top:18px; text-align:center; color:#666; font-size:.8rem; }
         a{ color:#d4af37; text-decoration:none; }
         .forgot{ display:block; text-align:right; margin-top:8px; font-size:.8rem; }
+        .lang-switch{ display:flex; gap:4px; justify-content:center; margin-bottom:20px; font-size:.68rem; }
+        .lang-switch span{ padding:5px 10px; border-radius:6px; cursor:pointer; color:#777; border:1px solid #333; transition:.2s ease; }
+        .lang-switch span.active, .lang-switch span:hover{ color:#d4af37; border-color:#d4af37; background:rgba(212,175,55,.08); }
     </style>
 </head>
 <body>
 <div class="box">
-    <h1>👑 Connexion</h1>
+    <div class="lang-switch">
+        <span data-lang="fr" class="active">FR</span>
+        <span data-lang="en">EN</span>
+        <span data-lang="ar">AR</span>
+        <span data-lang="zh">中</span>
+    </div>
+    <h1 data-i18n="login.title">👑 Connexion</h1>
     <form id="form-login">
-        <input name="email"    type="email"    placeholder="Adresse e-mail" required>
-        <input name="password" type="password" placeholder="Mot de passe"   required>
-        <a href="/password-reset" class="forgot">Mot de passe oublié ?</a>
-        <button type="submit">Se connecter</button>
+        <input name="email"    type="email"    placeholder="Adresse e-mail" data-i18n-ph="login.ph.email" required>
+        <input name="password" type="password" placeholder="Mot de passe"   data-i18n-ph="login.ph.password" required>
+        <a href="/password-reset" class="forgot" data-i18n="login.forgot">Mot de passe oublié ?</a>
+        <button type="submit" data-i18n="login.submit">Se connecter</button>
     </form>
-    <div class="msg ${preMsgClass}" id="msg">${preMsg}</div>
-    <small>Pas encore de compte ? <a href="/register">Créer un compte</a></small>
+    <div class="msg ${preMsgClass}" id="msg"${preMsgKey ? ` data-i18n="${preMsgKey}"` : ""}>${preMsg}</div>
+    <small><span data-i18n="login.noaccount">Pas encore de compte ?</span> <a href="/register" data-i18n="login.create_link">Créer un compte</a></small>
 </div>
 <script>
+const I18N = {
+    fr: {
+        'login.title': '👑 Connexion',
+        'login.ph.email': 'Adresse e-mail', 'login.ph.password': 'Mot de passe',
+        'login.forgot': 'Mot de passe oublié ?', 'login.submit': 'Se connecter',
+        'login.noaccount': 'Pas encore de compte ?', 'login.create_link': 'Créer un compte',
+        'msg.token_manquant': '❌ Lien de confirmation invalide.',
+        'msg.token_invalide': "❌ Ce lien de confirmation n'est plus valide.",
+        'msg.token_expire'  : '⌛ Ce lien a expiré. Réinscris-toi ou contacte le support.',
+        'msg.erreur_serveur': '❌ Une erreur est survenue. Réessaie.',
+        'msg.verified'      : '✅ Email confirmé ! Tu peux te connecter.',
+        'msg.connecting': '⏳ Connexion...', 'msg.connected_redirect': '✅ Connecté ! Redirection...',
+        'msg.error_default': '❌ Erreur. Réessayez.',
+    },
+    en: {
+        'login.title': '👑 Log in',
+        'login.ph.email': 'Email address', 'login.ph.password': 'Password',
+        'login.forgot': 'Forgot password?', 'login.submit': 'Log in',
+        'login.noaccount': "Don't have an account yet?", 'login.create_link': 'Create an account',
+        'msg.token_manquant': '❌ Invalid confirmation link.',
+        'msg.token_invalide': '❌ This confirmation link is no longer valid.',
+        'msg.token_expire'  : '⌛ This link has expired. Sign up again or contact support.',
+        'msg.erreur_serveur': '❌ Something went wrong. Please try again.',
+        'msg.verified'      : '✅ Email confirmed! You can now log in.',
+        'msg.connecting': '⏳ Signing in...', 'msg.connected_redirect': '✅ Signed in! Redirecting...',
+        'msg.error_default': '❌ Error. Please try again.',
+    },
+    ar: {
+        'login.title': '👑 تسجيل الدخول',
+        'login.ph.email': 'البريد الإلكتروني', 'login.ph.password': 'كلمة المرور',
+        'login.forgot': 'نسيت كلمة المرور؟', 'login.submit': 'تسجيل الدخول',
+        'login.noaccount': 'ليس لديك حساب بعد؟', 'login.create_link': 'إنشاء حساب',
+        'msg.token_manquant': '❌ رابط التأكيد غير صالح.',
+        'msg.token_invalide': '❌ رابط التأكيد هذا لم يعد صالحًا.',
+        'msg.token_expire'  : '⌛ انتهت صلاحية هذا الرابط. أعد التسجيل أو تواصل مع الدعم.',
+        'msg.erreur_serveur': '❌ حدث خطأ ما. حاول مرة أخرى.',
+        'msg.verified'      : '✅ تم تأكيد البريد الإلكتروني! يمكنك الآن تسجيل الدخول.',
+        'msg.connecting': '⏳ جارٍ تسجيل الدخول...', 'msg.connected_redirect': '✅ تم تسجيل الدخول! جارٍ التحويل...',
+        'msg.error_default': '❌ خطأ. حاول مرة أخرى.',
+    },
+    zh: {
+        'login.title': '👑 登录',
+        'login.ph.email': '电子邮箱', 'login.ph.password': '密码',
+        'login.forgot': '忘记密码？', 'login.submit': '登录',
+        'login.noaccount': '还没有账号？', 'login.create_link': '创建账号',
+        'msg.token_manquant': '❌ 确认链接无效。',
+        'msg.token_invalide': '❌ 此确认链接已失效。',
+        'msg.token_expire'  : '⌛ 此链接已过期。请重新注册或联系客服。',
+        'msg.erreur_serveur': '❌ 出现错误，请重试。',
+        'msg.verified'      : '✅ 邮箱已确认！现在可以登录了。',
+        'msg.connecting': '⏳ 正在登录...', 'msg.connected_redirect': '✅ 登录成功！正在跳转...',
+        'msg.error_default': '❌ 错误，请重试。',
+    },
+};
+
+let currentLang = localStorage.getItem('samii_lang') || 'fr';
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    localStorage.setItem('samii_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+    });
+    document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+}
+
+document.querySelectorAll('.lang-switch span').forEach(span => {
+    span.addEventListener('click', () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
+
 document.getElementById('form-login').addEventListener('submit', async (e) => {
     e.preventDefault();
     const msg  = document.getElementById('msg');
     const data = Object.fromEntries(new FormData(e.target));
-    msg.textContent = '⏳ Connexion...';
+    msg.textContent = t('msg.connecting');
     msg.className   = 'msg';
 
     const res  = await fetch('/login', {
@@ -77,11 +178,11 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
     const json = await res.json();
 
     if (json.success) {
-        msg.textContent = '✅ Connecté ! Redirection...';
+        msg.textContent = t('msg.connected_redirect');
         msg.className   = 'msg ok';
         window.location.href = json.redirect || '/hub';
     } else {
-        msg.textContent = json.error || '❌ Erreur. Réessayez.';
+        msg.textContent = json.error || t('msg.error_default');
         msg.className   = 'msg';
     }
 });

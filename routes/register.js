@@ -51,27 +51,39 @@ router.get("/", (req, res) => {
         .type-choice label{ flex:1; display:flex; align-items:center; gap:8px; padding:12px; border:1px solid #333; border-radius:8px; cursor:pointer; font-size:.85rem; }
         .type-choice input{ width:auto; margin:0; }
         .type-label{ display:block; margin-top:14px; font-size:.78rem; color:#888; }
+        .lang-switch{ display:flex; gap:4px; justify-content:center; margin-bottom:20px; font-size:.68rem; }
+        .lang-switch span{ padding:5px 10px; border-radius:6px; cursor:pointer; color:#777; border:1px solid #333; transition:.2s ease; }
+        .lang-switch span.active, .lang-switch span:hover{ color:#d4af37; border-color:#d4af37; background:rgba(212,175,55,.08); }
     </style>
 </head>
 <body>
 <div class="box">
-    <h1>👑 Créer mon compte</h1>
-    <p class="sub">${metier ? `Pour votre activité <b>${metier}</b>` : "Rejoignez OG Empire"}</p>
+    <div class="lang-switch">
+        <span data-lang="fr" class="active">FR</span>
+        <span data-lang="en">EN</span>
+        <span data-lang="ar">AR</span>
+        <span data-lang="zh">中</span>
+    </div>
+    <h1 data-i18n="register.title">👑 Créer mon compte</h1>
+    <p class="sub">${metier
+        ? `<span data-i18n="register.sub.metier_prefix">Pour votre activité</span> <b>${metier}</b>`
+        : `<span data-i18n="register.sub.default">Rejoignez OG Empire</span>`
+    }</p>
     <form id="form-register">
-        <input name="nom"       placeholder="Nom"         required>
-        <input name="prenom"    placeholder="Prénom"      required>
-        <input name="email"     type="email" placeholder="Email" required>
-        <input name="telephone" placeholder="Téléphone"   required>
+        <input name="nom"       placeholder="Nom"       data-i18n-ph="register.ph.nom" required>
+        <input name="prenom"    placeholder="Prénom"    data-i18n-ph="register.ph.prenom" required>
+        <input name="email"     type="email" placeholder="Email" data-i18n-ph="register.ph.email" required>
+        <input name="telephone" placeholder="Téléphone" data-i18n-ph="register.ph.telephone" required>
 
-        <label class="type-label">Je m'inscris en tant que :</label>
+        <label class="type-label" data-i18n="register.type_label">Je m'inscris en tant que :</label>
         <div class="type-choice">
             <label>
                 <input type="radio" name="type_compte" value="client" checked>
-                <span>👤 Particulier</span>
+                <span class="icon">👤</span><span data-i18n="register.type.client">Particulier</span>
             </label>
             <label>
                 <input type="radio" name="type_compte" value="marchand">
-                <span>🏪 Marchand</span>
+                <span class="icon">🏪</span><span data-i18n="register.type.marchand">Marchand</span>
             </label>
         </div>
 
@@ -79,23 +91,105 @@ router.get("/", (req, res) => {
             ${metier
                 ? `<input type="hidden" name="metier" value="${metier}">`
                 : `<select name="metier">
-                    <option value="ecommerce">E-commerçant</option>
-                    <option value="restaurant">Restaurateur</option>
-                    <option value="immobilier">Immobilier</option>
-                    <option value="livreur"     disabled>Livreur (bientôt)</option>
-                    <option value="fournisseur" disabled>Fournisseur (bientôt)</option>
+                    <option value="ecommerce" data-i18n="register.metier.ecommerce">E-commerçant</option>
+                    <option value="restaurant" data-i18n="register.metier.restaurant">Restaurateur</option>
+                    <option value="immobilier" data-i18n="register.metier.immobilier">Immobilier</option>
+                    <option value="livreur"     disabled data-i18n="register.metier.livreur">Livreur (bientôt)</option>
+                    <option value="fournisseur" disabled data-i18n="register.metier.fournisseur">Fournisseur (bientôt)</option>
                   </select>`
             }
         </div>
 
-        <input name="password" type="password" placeholder="Mot de passe" required minlength="6">
+        <input name="password" type="password" placeholder="Mot de passe" data-i18n-ph="register.ph.password" required minlength="6">
         <input type="hidden" name="ref" value="${refCode}">
-        <button type="submit">Créer mon compte</button>
+        <button type="submit" data-i18n="register.submit">Créer mon compte</button>
     </form>
     <div class="msg" id="msg"></div>
-    <small>Déjà un compte ? <a href="/login">Se connecter</a></small>
+    <small><span data-i18n="register.hasaccount">Déjà un compte ?</span> <a href="/login" data-i18n="login.submit">Se connecter</a></small>
 </div>
 <script>
+const I18N = {
+    fr: {
+        'register.title': '👑 Créer mon compte',
+        'register.sub.metier_prefix': 'Pour votre activité', 'register.sub.default': 'Rejoignez OG Empire',
+        'register.ph.nom': 'Nom', 'register.ph.prenom': 'Prénom', 'register.ph.email': 'Email', 'register.ph.telephone': 'Téléphone',
+        'register.type_label': "Je m'inscris en tant que :",
+        'register.type.client': 'Particulier', 'register.type.marchand': 'Marchand',
+        'register.metier.ecommerce': 'E-commerçant', 'register.metier.restaurant': 'Restaurateur', 'register.metier.immobilier': 'Immobilier',
+        'register.metier.livreur': 'Livreur (bientôt)', 'register.metier.fournisseur': 'Fournisseur (bientôt)',
+        'register.ph.password': 'Mot de passe', 'register.submit': 'Créer mon compte',
+        'register.hasaccount': 'Déjà un compte ?', 'login.submit': 'Se connecter',
+        'msg.creating': '⏳ Création en cours...', 'msg.created_default': '✅ Compte créé !',
+        'msg.error_default': '❌ Erreur. Réessayez.',
+    },
+    en: {
+        'register.title': '👑 Create my account',
+        'register.sub.metier_prefix': 'For your business', 'register.sub.default': 'Join OG Empire',
+        'register.ph.nom': 'Last name', 'register.ph.prenom': 'First name', 'register.ph.email': 'Email', 'register.ph.telephone': 'Phone',
+        'register.type_label': 'I am signing up as:',
+        'register.type.client': 'Individual', 'register.type.marchand': 'Merchant',
+        'register.metier.ecommerce': 'E-commerce seller', 'register.metier.restaurant': 'Restaurant owner', 'register.metier.immobilier': 'Real estate',
+        'register.metier.livreur': 'Delivery (coming soon)', 'register.metier.fournisseur': 'Supplier (coming soon)',
+        'register.ph.password': 'Password', 'register.submit': 'Create my account',
+        'register.hasaccount': 'Already have an account?', 'login.submit': 'Log in',
+        'msg.creating': '⏳ Creating account...', 'msg.created_default': '✅ Account created!',
+        'msg.error_default': '❌ Error. Please try again.',
+    },
+    ar: {
+        'register.title': '👑 إنشاء حسابي',
+        'register.sub.metier_prefix': 'من أجل نشاطك', 'register.sub.default': 'انضم إلى OG Empire',
+        'register.ph.nom': 'اللقب', 'register.ph.prenom': 'الاسم', 'register.ph.email': 'البريد الإلكتروني', 'register.ph.telephone': 'الهاتف',
+        'register.type_label': 'أسجّل بصفتي:',
+        'register.type.client': 'فرد', 'register.type.marchand': 'تاجر',
+        'register.metier.ecommerce': 'تاجر إلكتروني', 'register.metier.restaurant': 'صاحب مطعم', 'register.metier.immobilier': 'عقارات',
+        'register.metier.livreur': 'موصل (قريبًا)', 'register.metier.fournisseur': 'مورّد (قريبًا)',
+        'register.ph.password': 'كلمة المرور', 'register.submit': 'إنشاء حسابي',
+        'register.hasaccount': 'لديك حساب بالفعل؟', 'login.submit': 'تسجيل الدخول',
+        'msg.creating': '⏳ جارٍ إنشاء الحساب...', 'msg.created_default': '✅ تم إنشاء الحساب!',
+        'msg.error_default': '❌ خطأ. حاول مرة أخرى.',
+    },
+    zh: {
+        'register.title': '👑 创建我的账号',
+        'register.sub.metier_prefix': '为您的', 'register.sub.default': '加入 OG Empire',
+        'register.ph.nom': '姓', 'register.ph.prenom': '名', 'register.ph.email': '电子邮箱', 'register.ph.telephone': '电话号码',
+        'register.type_label': '我要以以下身份注册：',
+        'register.type.client': '个人', 'register.type.marchand': '商家',
+        'register.metier.ecommerce': '电商卖家', 'register.metier.restaurant': '餐饮业主', 'register.metier.immobilier': '房地产',
+        'register.metier.livreur': '配送员（即将推出）', 'register.metier.fournisseur': '供应商（即将推出）',
+        'register.ph.password': '密码', 'register.submit': '创建我的账号',
+        'register.hasaccount': '已有账号？', 'login.submit': '登录',
+        'msg.creating': '⏳ 正在创建账号...', 'msg.created_default': '✅ 账号创建成功！',
+        'msg.error_default': '❌ 错误，请重试。',
+    },
+};
+
+let currentLang = localStorage.getItem('samii_lang') || 'fr';
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    localStorage.setItem('samii_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+    });
+    document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+}
+
+document.querySelectorAll('.lang-switch span').forEach(span => {
+    span.addEventListener('click', () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
+
 document.querySelectorAll('input[name="type_compte"]').forEach(radio => {
     radio.addEventListener('change', () => {
         document.getElementById('bloc-metier').style.display =
@@ -108,7 +202,7 @@ document.getElementById('form-register').addEventListener('submit', async (e) =>
     e.preventDefault();
     const msg  = document.getElementById('msg');
     const data = Object.fromEntries(new FormData(e.target));
-    msg.textContent = '⏳ Création en cours...';
+    msg.textContent = t('msg.creating');
     msg.className   = 'msg';
 
     const res  = await fetch('/register', {
@@ -119,11 +213,11 @@ document.getElementById('form-register').addEventListener('submit', async (e) =>
     const json = await res.json();
 
     if (json.success) {
-        msg.textContent = json.message || '✅ Compte créé !';
+        msg.textContent = json.message || t('msg.created_default');
         msg.className   = 'msg ok';
         if (json.redirect) setTimeout(() => window.location.href = json.redirect, 1200);
     } else {
-        msg.textContent = json.error || '❌ Erreur. Réessayez.';
+        msg.textContent = json.error || t('msg.error_default');
     }
 });
 </script>
@@ -146,14 +240,73 @@ router.get("/en-attente", (req, res) => {
         .icon{ font-size:3rem; margin-bottom:16px; }
         h1{ color:#d4af37; font-size:1.3rem; margin-bottom:10px; }
         p{ color:#999; font-size:.88rem; line-height:1.6; }
+        .lang-switch{ display:flex; gap:4px; justify-content:center; margin-bottom:20px; font-size:.68rem; }
+        .lang-switch span{ padding:5px 10px; border-radius:6px; cursor:pointer; color:#777; border:1px solid #333; transition:.2s ease; }
+        .lang-switch span.active, .lang-switch span:hover{ color:#d4af37; border-color:#d4af37; background:rgba(212,175,55,.08); }
     </style>
 </head>
 <body>
 <div class="box">
+    <div class="lang-switch">
+        <span data-lang="fr" class="active">FR</span>
+        <span data-lang="en">EN</span>
+        <span data-lang="ar">AR</span>
+        <span data-lang="zh">中</span>
+    </div>
     <div class="icon">📬</div>
-    <h1>Vérifie ta boîte mail</h1>
-    <p>On t'a envoyé un lien de confirmation. Clique dessus pour activer ton compte.<br><br>Le lien expire dans ${TOKEN_VALIDITE_HEURES}h — si tu ne le vois pas, regarde tes spams.</p>
+    <h1 data-i18n="enattente.title">Vérifie ta boîte mail</h1>
+    <p><span data-i18n="enattente.line1">On t'a envoyé un lien de confirmation. Clique dessus pour activer ton compte.</span><br><br><span data-i18n="enattente.line2_prefix">Le lien expire dans</span> ${TOKEN_VALIDITE_HEURES}h <span data-i18n="enattente.line2_suffix">— si tu ne le vois pas, regarde tes spams.</span></p>
 </div>
+<script>
+const I18N = {
+    fr: {
+        'enattente.title': 'Vérifie ta boîte mail',
+        'enattente.line1': "On t'a envoyé un lien de confirmation. Clique dessus pour activer ton compte.",
+        'enattente.line2_prefix': 'Le lien expire dans',
+        'enattente.line2_suffix': '— si tu ne le vois pas, regarde tes spams.',
+    },
+    en: {
+        'enattente.title': 'Check your inbox',
+        'enattente.line1': 'We sent you a confirmation link. Click it to activate your account.',
+        'enattente.line2_prefix': 'The link expires in',
+        'enattente.line2_suffix': "— if you don't see it, check your spam folder.",
+    },
+    ar: {
+        'enattente.title': 'تحقق من بريدك الإلكتروني',
+        'enattente.line1': 'أرسلنا لك رابط تأكيد. اضغط عليه لتفعيل حسابك.',
+        'enattente.line2_prefix': 'تنتهي صلاحية الرابط خلال',
+        'enattente.line2_suffix': '— إذا لم تجده، تحقق من مجلد الرسائل غير المرغوب فيها.',
+    },
+    zh: {
+        'enattente.title': '请查收您的邮箱',
+        'enattente.line1': '我们已向您发送确认链接，点击即可激活账号。',
+        'enattente.line2_prefix': '链接将在',
+        'enattente.line2_suffix': '后失效 — 如果没有看到邮件，请检查垃圾邮件文件夹。',
+    },
+};
+
+let currentLang = localStorage.getItem('samii_lang') || 'fr';
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    localStorage.setItem('samii_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+    });
+    document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+}
+
+document.querySelectorAll('.lang-switch span').forEach(span => {
+    span.addEventListener('click', () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
+</script>
 </body>
 </html>`);
 });
@@ -292,7 +445,7 @@ router.post("/", async (req, res) => {
         <p style="color:#888;font-size:.85rem;">Ce lien expire dans ${TOKEN_VALIDITE_HEURES} heures.</p>
     </div>
 `,
-            
+
         });
 
         console.log(`✅ Nouveau compte PostgreSQL (${typeCompte}) : ${email}`);
