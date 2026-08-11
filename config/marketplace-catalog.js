@@ -70,7 +70,7 @@ const PRODUCT_SEGMENTS = [
 
 const SUPPLIERS = [
   { id: 'cj', code: 'CJ', label: 'CJ Dropshipping', region: 'chine', verified: true, status: 'active' },
-  { id: 'bigbuy', code: 'BIGBUY', label: 'BigBuy', region: 'europe', verified: true, status: 'planned' },
+  { id: 'bigbuy', code: 'BIGBUY', label: 'BigBuy', region: 'europe', verified: true, status: 'active' },
   { id: 'local', code: 'LOCAL', label: 'Fournisseur local', region: 'local', verified: false, status: 'planned' },
 ];
 

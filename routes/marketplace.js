@@ -4,6 +4,7 @@
 // ==========================================================================
 
 const express = require("express");
+const crypto = require("crypto");
 const router = express.Router();
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
@@ -1925,6 +1926,31 @@ nav {
     padding: 15px;
 }
 
+.cart-delivery {
+    padding: 0 15px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+
+.cart-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,.3);
+    color: #f5fbff;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+}
+
+.cart-input:focus {
+    border-color: var(--blue);
+}
+
 .cart-empty {
     min-height: 300px;
 
@@ -2560,6 +2586,16 @@ nav {
         class="cart-items"
     ></div>
 
+    <div class="cart-delivery" id="cartDelivery" style="display:none;">
+        <input id="ci-nom" class="cart-input" placeholder="Nom complet">
+        <input id="ci-telephone" class="cart-input" placeholder="Téléphone">
+        <input id="ci-adresse" class="cart-input" placeholder="Adresse de livraison">
+        <div style="display:flex;gap:8px;">
+            <input id="ci-ville" class="cart-input" placeholder="Ville" style="flex:1;">
+            <input id="ci-pays" class="cart-input" placeholder="Pays" style="flex:1;">
+        </div>
+    </div>
+
     <div class="cart-foot">
 
         <div class="cart-total">
@@ -2977,6 +3013,8 @@ function renderCart() {
         return;
     }
 
+    const delivery = document.getElementById("cartDelivery");
+
     if (!cart.length) {
 
         container.innerHTML =
@@ -2988,6 +3026,8 @@ function renderCart() {
         total.textContent =
             "0";
 
+        if (delivery) delivery.style.display = "none";
+
         if (
             typeof lucide !== "undefined"
         ) {
@@ -2996,6 +3036,8 @@ function renderCart() {
 
         return;
     }
+
+    if (delivery) delivery.style.display = "flex";
 
     let html = "";
 
@@ -3073,20 +3115,50 @@ function renderCart() {
     }
 }
 
-function checkout() {
+async function checkout() {
 
     if (!cart.length) {
-
-        showToast(
-            "Panier vide."
-        );
-
+        showToast("Panier vide.");
         return;
     }
 
-    showToast(
-        "🚀 Redirection vers la commande..."
-    );
+    const nom       = document.getElementById("ci-nom")?.value.trim() || "";
+    const telephone = document.getElementById("ci-telephone")?.value.trim() || "";
+    const adresse   = document.getElementById("ci-adresse")?.value.trim() || "";
+    const ville     = document.getElementById("ci-ville")?.value.trim() || "";
+    const pays      = document.getElementById("ci-pays")?.value.trim() || "";
+
+    if (!nom || !telephone || !adresse) {
+        showToast("Renseigne ton nom, téléphone et adresse.");
+        return;
+    }
+
+    const btn = document.querySelector(".checkout");
+    if (btn) { btn.disabled = true; btn.textContent = "Envoi..."; }
+
+    try {
+        const res = await fetch("/marketplace/commander", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: cart, nom_client: nom, telephone, adresse, ville, pays }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            cart = [];
+            saveCart();
+            renderCart();
+            updateCartBadge();
+            showToast("✅ Commande envoyée ! On te contacte pour confirmer.");
+            toggleCart();
+        } else {
+            showToast(data.error || "Erreur, réessaye.");
+        }
+    } catch (err) {
+        showToast("Erreur réseau, réessaye.");
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = "Commander"; }
+    }
 }
 
 renderCart();
@@ -3101,6 +3173,58 @@ updateCartBadge();
 </html>
 `);
 });
+
+// ==========================================================================
+// COMMANDE — panier réel (jusque-là "Commander" n'envoyait rien)
+// ==========================================================================
+
+function parseMontantEtDevise(prixStr) {
+    const match = String(prixStr || "").match(/^([\d.,]+)\s*([A-Z]{2,4})?/);
+    if (!match) return { montant: 0, devise: "DZD" };
+    const montant = Number(match[1].replace(",", ".")) || 0;
+    return { montant, devise: match[2] || "DZD" };
+}
+
+router.post(
+    "/commander",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const { items, nom_client, telephone, adresse, ville, pays } = req.body;
+
+            if (!Array.isArray(items) || !items.length) {
+                return res.json({ success: false, error: "Panier vide." });
+            }
+            if (!nom_client?.trim() || !telephone?.trim() || !adresse?.trim()) {
+                return res.json({ success: false, error: "Nom, téléphone et adresse sont obligatoires." });
+            }
+
+            let montantTotal = 0;
+            let devise = "DZD";
+            const lignes = items.map((it) => {
+                const qty = Number(it.quantity) || 1;
+                const { montant, devise: d } = parseMontantEtDevise(it.prix);
+                montantTotal += montant * qty;
+                devise = d;
+                return `${it.titre || "Produit"}${it.variante ? ` (${it.variante})` : ""} x${qty}`;
+            });
+
+            const id = crypto.randomUUID();
+
+            await db.query(
+                `INSERT INTO commandes
+                    (id, nom_client, telephone, adresse, pays, ville, produit, montant, devise, statut, source)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'en attente','marketplace')`,
+                [id, nom_client.trim(), telephone.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(), lignes.join(" · "), montantTotal, devise]
+            );
+
+            res.json({ success: true, id });
+        } catch (err) {
+            console.error("❌ POST /marketplace/commander :", err.message);
+            res.json({ success: false, error: "Erreur serveur." });
+        }
+    }
+);
 
 // ==========================================================================
 // FAVORITES TOGGLE
@@ -3694,6 +3818,33 @@ router.get(
                 produit.photos_urls
             );
 
+        function parseJsonColumn(value) {
+            if (!value) return [];
+            if (Array.isArray(value)) return value;
+            try {
+                const parsed = typeof value === "string" ? JSON.parse(value) : value;
+                return Array.isArray(parsed) ? parsed : [];
+            } catch {
+                return [];
+            }
+        }
+
+        const videos = parseJsonColumn(produit.videos);
+        const variantesBrutes = parseJsonColumn(produit.variantes);
+
+        // Les variantes CJ n'ont pas un format fixe (variant/variantName/variantKey...) —
+        // on ne garde que ce qui est exploitable pour un sélecteur (nom + éventuel prix/image).
+        const variantes = variantesBrutes.map((v, i) => {
+            const nom =
+                v.variantNameEn || v.variantName || v.variantKey || v.name ||
+                [v.variantKey1, v.variantKey2].filter(Boolean).join(" / ") ||
+                `Option ${i + 1}`;
+            const prix = v.variantSellPrice ?? v.sellPrice ?? v.price ?? null;
+            const image = v.variantImage || v.image || null;
+            const vid = v.vid || v.variantId || v.variantID || String(i);
+            return { vid: String(vid), nom: String(nom), prix, image };
+        }).filter(v => v.nom);
+
         const avisHtml =
             avisListe.length
 
@@ -3862,6 +4013,19 @@ button {
     margin-top: 10px;
 }
 
+.pd-thumbs { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.pd-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; cursor: pointer; opacity: .6; border: 2px solid transparent; }
+.pd-thumb.active, .pd-thumb:hover { opacity: 1; border-color: #00d9ff; }
+
+.pd-videos { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+.pd-videos video { width: 100%; border-radius: 16px; background: #000; max-height: 480px; }
+
+.pd-variants { margin: 16px 0; }
+.pd-variants label { display: block; font-size: 12px; color: #7f96a8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.pd-variant-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.pd-variant-btn { margin: 0; padding: 9px 14px; border-radius: 10px; border: 1px solid rgba(0,217,255,.16); background: rgba(0,217,255,.06); color: #f5fbff; font-weight: 600; font-size: 13px; cursor: pointer; }
+.pd-variant-btn.active { background: #00d9ff; color: #001018; border-color: #00d9ff; }
+
 </style>
 
 </head>
@@ -3882,25 +4046,56 @@ button {
     ${
         photos.length
             ? `
-                <img
+                <img id="pd-main-image"
                     src="${escapeHtml(photos[0])}"
                     alt="${escapeHtml(produit.titre)}"
                     referrerpolicy="no-referrer"
                 >
+                ${photos.length > 1 ? `
+                <div class="pd-thumbs">
+                    ${photos.map((p, i) => `
+                        <img src="${escapeHtml(p)}" referrerpolicy="no-referrer"
+                             class="pd-thumb ${i === 0 ? "active" : ""}"
+                             onclick="document.getElementById('pd-main-image').src=this.src;document.querySelectorAll('.pd-thumb').forEach(t=>t.classList.remove('active'));this.classList.add('active');">
+                    `).join("")}
+                </div>` : ""}
               `
             : ""
     }
+
+    ${videos.length ? `
+    <div class="pd-videos">
+        ${videos.slice(0, 2).map(v => `
+            <video controls preload="metadata" playsinline referrerpolicy="no-referrer">
+                <source src="${escapeHtml(v)}">
+            </video>
+        `).join("")}
+    </div>` : ""}
 
     <h1>
         ${escapeHtml(produit.titre)}
     </h1>
 
-    <div class="price">
+    <div class="price" id="pd-price">
         ${escapeHtml(
             produit.prix ||
             "Sur devis"
         )}
     </div>
+
+    ${variantes.length ? `
+    <div class="pd-variants">
+        <label>Choisis une option :</label>
+        <div class="pd-variant-list">
+            ${variantes.map((v, i) => `
+                <button type="button" class="pd-variant-btn ${i === 0 ? "active" : ""}"
+                        data-vid="${escapeHtml(v.vid)}" data-nom="${escapeHtml(v.nom)}"
+                        onclick="selectVariant(this)">
+                    ${escapeHtml(v.nom)}
+                </button>
+            `).join("")}
+        </div>
+    </div>` : ""}
 
     <p
         style="
@@ -3939,29 +4134,42 @@ button {
             : ""
     }
 
-    <button
-        type="button"
-        onclick="
-            fetch(
-                '/marketplace/favoris/toggle',
-                {
-                    method:'POST',
-                    headers:{
-                        'Content-Type':
-                            'application/json'
-                    },
-                    body:JSON.stringify({
-                        annonce_id:${id}
-                    })
-                }
-            )
-            .then(() =>
-                location.reload()
-            )
-        "
-    >
-        ❤️ Favori
-    </button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button
+            type="button"
+            id="pd-add-cart"
+            onclick="ajouterAuPanier()"
+        >
+            🛒 Ajouter au panier
+        </button>
+
+        <button
+            type="button"
+            style="background:#1a2530;color:#f5fbff;"
+            onclick="
+                fetch(
+                    '/marketplace/favoris/toggle',
+                    {
+                        method:'POST',
+                        headers:{
+                            'Content-Type':
+                                'application/json'
+                        },
+                        body:JSON.stringify({
+                            annonce_id:${id}
+                        })
+                    }
+                )
+                .then(() =>
+                    location.reload()
+                )
+            "
+        >
+            ❤️ Favori
+        </button>
+    </div>
+
+    <div id="pd-cart-msg" style="margin-top:10px;color:#3ddc84;font-size:14px;"></div>
 
     <h2
         style="
@@ -3974,6 +4182,42 @@ button {
     ${avisHtml}
 
 </div>
+
+<script>
+let selectedVariant = ${variantes.length ? `"${escapeHtml(variantes[0].nom)}"` : "null"};
+
+function selectVariant(btn) {
+    document.querySelectorAll(".pd-variant-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedVariant = btn.dataset.nom;
+}
+
+function ajouterAuPanier() {
+    const cart = JSON.parse(localStorage.getItem("samii_market_cart") || "[]");
+    const titre = ${JSON.stringify(produit.titre || "")};
+    const prix = ${JSON.stringify(produit.prix || "Sur devis")};
+    const photo = ${JSON.stringify(photos[0] || "")};
+    const cartId = selectedVariant ? "${id}-" + selectedVariant : "${id}";
+
+    const existing = cart.find(item => String(item.id) === cartId);
+    if (existing) {
+        existing.quantity = Number(existing.quantity || 1) + 1;
+    } else {
+        cart.push({
+            id: cartId,
+            titre: titre + (selectedVariant ? " (" + selectedVariant + ")" : ""),
+            prix,
+            photo,
+            variante: selectedVariant,
+            quantity: 1,
+        });
+    }
+    localStorage.setItem("samii_market_cart", JSON.stringify(cart));
+
+    const msg = document.getElementById("pd-cart-msg");
+    msg.innerHTML = '✅ Ajouté au panier — <a href="/marketplace" style="color:#00d9ff;">voir mon panier →</a>';
+}
+</script>
 
 </body>
 

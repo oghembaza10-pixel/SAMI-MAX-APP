@@ -60,7 +60,7 @@ async function rehostImages(urls) {
     return result;
 }
 
-const IMPORT_LIMIT = Number(process.env.CJ_IMPORT_LIMIT || 15);
+const IMPORT_LIMIT = Number(process.env.CJ_IMPORT_LIMIT || 25);
 const MARGIN_PERCENT = Number(process.env.CJ_MARGIN_PERCENT || 20);
 const MARGIN_FIXED_EUR = Number(process.env.CJ_MARGIN_FIXED_EUR || 1);
 const SHIP_COUNTRIES = (process.env.CJ_SHIP_COUNTRIES || "")
@@ -69,14 +69,22 @@ const SHIP_COUNTRIES = (process.env.CJ_SHIP_COUNTRIES || "")
     .filter(Boolean);
 
 // --------------------------------------------------------------------------
-// THÈMES — mode / technologie / téléphones / tendance TikTok
+// THÈMES — priorité aux catégories "achat impulsif" (gadgets, lumière,
+// tendances) : ce sont elles qui convertissent le mieux en achat spontané.
+// Aucun mot-clé de marque de luxe (contrefaçon) — uniquement des catégories
+// génériques.
 // --------------------------------------------------------------------------
 const THEMES = [
-    { label: "Téléphones & Accessoires", keyword: "phone accessories",  categorie: "telephones-accessoires", video: false },
+    { label: "Gadgets Électriques",       keyword: "electric gadget",   categorie: "electronique-tech",       video: true },
+    { label: "Éclairage & Smart Home",    keyword: "led light",         categorie: "eclairage-smart-home",    video: true },
+    { label: "Tendances TikTok",          keyword: "",                  categorie: "tendances-nouveautes",    video: true, tiktok: true },
+    { label: "Produits Vidéo Tendance",   keyword: "",                  categorie: "tendances-nouveautes",    video: true },
+    { label: "Téléphones & Accessoires",  keyword: "phone accessories", categorie: "telephones-accessoires",  video: false },
     { label: "Mode Femme",                keyword: "women fashion",     categorie: "mode-femme",              video: false },
     { label: "Mode Homme",                keyword: "men fashion",       categorie: "mode-homme",              video: false },
-    { label: "Technologie & Gadgets",     keyword: "electronic gadget", categorie: "electronique-tech",       video: false },
-    { label: "Tendances TikTok",          keyword: "",                  categorie: "tendances-nouveautes",    video: true, tiktok: true },
+    { label: "Sport & Fitness",           keyword: "fitness gadget",    categorie: "sport-fitness",           video: true },
+    { label: "Beauté & Cosmétiques",      keyword: "beauty tool",       categorie: "beaute-cosmetiques",      video: true },
+    { label: "Cuisine & Électroménager",  keyword: "kitchen gadget",    categorie: "cuisine-electromenager",  video: true },
 ];
 
 // --------------------------------------------------------------------------
