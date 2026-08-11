@@ -3,6 +3,7 @@
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
+const db = require("../services/db");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -10,10 +11,28 @@ function requireAuth(req, res, next) {
 }
 
 // ── PAGE PRINCIPALE ────────────────────────────────────
-router.get("/", requireAuth, (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
+    let telephone = "";
+    let commandes = [];
+    try {
+        const rows = await db.query(`SELECT telephone FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+        telephone = rows[0]?.telephone || "";
+        if (telephone) {
+            commandes = await db.query(
+                `SELECT id, produit, statut, numero_suivi, transporteur, dernier_statut_suivi, date_commande
+                 FROM commandes WHERE telephone = $1 ORDER BY date_commande DESC LIMIT 20`,
+                [telephone]
+            );
+        }
+    } catch (err) {
+        console.error("❌ GET /client-qg (commandes) :", err.message);
+    }
+
     res.render("client-qg", {
         nom: req.session.nom || "",
         codeParrainage: req.session.userId || "",
+        telephone,
+        commandes,
     });
 });
 

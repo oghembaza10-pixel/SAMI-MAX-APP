@@ -8,6 +8,8 @@ const db = require("../services/db");
 const notificationEngine = require("../engines/notificationEngine");
 const tracking = require("../services/tracking");
 const gradeService = require("../services/gradeService");
+const socketService = require("../services/socketService");
+const notify = require("../services/notify");
 
 const STATUTS_LISIBLES = {
     "en préparation": "Ton colis est en préparation 📦",
@@ -84,6 +86,30 @@ async function runCheck() {
                         [nouveauStatut, c.id]
                     );
                 }
+
+                // Client (sur son QG, room = son téléphone) et marchand (room = workspace)
+                // reçoivent la même mise à jour en direct — qu'ils soient connectés ou non.
+                socketService.emitToShop(telephone, "commande-suivi-maj", {
+                    id: c.id, statut: statutQG || c.statut, numero_suivi: numeroSuivi, transporteur,
+                });
+                if (c.workspace_id) {
+                    socketService.emitToShop(c.workspace_id, "commande-suivi-maj", {
+                        id: c.id, statut: statutQG || c.statut, numero_suivi: numeroSuivi, transporteur,
+                    });
+                    notify.notifyWorkspace(c.workspace_id, {
+                        title: "🚚 Suivi mis à jour",
+                        body : `Commande #${c.id} — ${messageLisible(nouveauStatut)}`,
+                        url  : "/qg",
+                    }).catch(() => {});
+                }
+
+                db.query(`SELECT id FROM utilisateurs WHERE telephone = $1`, [telephone])
+                    .then(rows => rows[0] && notify.notifyUser(rows[0].id, {
+                        title: "🚚 Ton colis a bougé",
+                        body : messageLisible(nouveauStatut),
+                        url  : "/client-qg",
+                    }))
+                    .catch(() => {});
 
                 console.log(`✅ Client notifié — commande ${c.id} → ${nouveauStatut} (${transporteur})`);
             } catch (err) {

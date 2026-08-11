@@ -3,8 +3,10 @@
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
-const airtable = require("../services/airtable");
+const db = require("../services/db");
 const workspaceService = require("../services/workspaceService");
+const notificationEngine = require("../engines/notificationEngine");
+const socketService = require("../services/socketService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -18,19 +20,19 @@ router.get("/", requireAuth, async (req, res) => {
     const workspace = await workspaceService.getById(workspaceId);
     if (!workspace) return res.redirect("/hub");
 
-    const commandes = await airtable.find(
-        "COMMANDES",
-        `AND({Boutique}="${workspaceId}", {Statut}="confirmée", {numero_suivi}="")`,
-        30
+    const commandes = await db.query(
+        `SELECT id, nom_client FROM commandes
+         WHERE workspace_id = $1 AND statut = 'confirmée' AND (numero_suivi IS NULL OR numero_suivi = '')
+         ORDER BY date_commande DESC LIMIT 30`,
+        [workspaceId]
     );
 
     const rowsHtml = commandes.map(c => {
-        const f = c.fields;
         return `
         <div class="me-row">
             <div class="me-row__info">
-                <div class="me-row__id">#${f["ID Commande"] || c.id}</div>
-                <div class="me-row__client">${f["nom client"] || f["Nom Client"] || "Client"}</div>
+                <div class="me-row__id">#${c.id}</div>
+                <div class="me-row__client">${c.nom_client || "Client"}</div>
             </div>
             <select class="me-transporteur" data-cmd="${c.id}">
                 <option value="yalidine">Yalidine (Algérie)</option>
@@ -178,14 +180,44 @@ document.querySelectorAll('.me-btn-activer').forEach(function(btn) {
 router.post("/activer", requireAuth, async (req, res) => {
     try {
         const { commandeId, numero, transporteur } = req.body;
+        const workspaceId = req.session.workspaceId;
+        if (!workspaceId) return res.json({ success: false, error: "Workspace introuvable." });
         if (!commandeId || !numero || !transporteur) {
             return res.json({ success: false, error: "Numéro de suivi et transporteur requis." });
         }
 
-        await airtable.update("COMMANDES", commandeId, {
-            numero_suivi: numero,
-            transporteur: transporteur,
-        });
+        const rows = await db.query(
+            `UPDATE commandes SET numero_suivi = $1, transporteur = $2, statut = 'en cours'
+             WHERE id = $3 AND workspace_id = $4
+             RETURNING telephone, nom_client`,
+            [numero, transporteur, commandeId, workspaceId]
+        );
+        if (!rows[0]) return res.json({ success: false, error: "Commande introuvable." });
+
+        const { telephone } = rows[0];
+
+        await db.query(
+            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+            ["tracking.activated", `Suivi activé pour #${commandeId} (${transporteur} — ${numero})`, workspaceId]
+        );
+
+        if (telephone) {
+            notificationEngine.send({
+                channel: "telegram",
+                to: telephone,
+                message:
+                    `📬 *SAMII — Suivi de commande*\n\n` +
+                    `Ton colis #${commandeId} est en route ! 🚚\n\n` +
+                    `_Numéro de suivi : ${numero}_ (${transporteur})`,
+                shop: workspaceId,
+            }).catch(err => console.warn("⚠️ Notif activation suivi :", err.message));
+
+            socketService.emitToShop(telephone, "commande-suivi-maj", {
+                id: commandeId, numero_suivi: numero, transporteur, statut: "en cours",
+            });
+        }
+
+        socketService.emitToShop(workspaceId, "commande-suivi-active", { id: commandeId, numero_suivi: numero });
 
         res.json({ success: true });
     } catch (err) {

@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/client-style.css">
 </head>
-<body>
+<body data-telephone="<%= telephone || '' %>">
 <div class="qg-grade-bar">
     <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
     <span class="qg-grade-bar__nom" id="grade-nom">SOLDAT</span>
@@ -72,6 +72,33 @@
                 <p>SAMII t'aide au quotidien — transport, services, plans, et bien plus.</p>
             </div>
         </section>
+
+        <% if (commandes && commandes.length) { %>
+        <div class="qg-section-title">
+            <i data-lucide="truck"></i>
+            <span>Mes commandes</span>
+        </div>
+        <section class="qg-dashboard" id="mes-commandes">
+            <% commandes.forEach(function(c) { %>
+            <article class="qg-card" style="grid-column:1/-1;" data-commande-id="<%= c.id %>">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <div>
+                        <span style="color:#fff;font-weight:700;font-size:.9rem;">#<%= c.id %></span>
+                        <span style="color:var(--text-muted);font-size:.82rem;margin-left:8px;"><%= c.produit || '' %></span>
+                    </div>
+                    <span class="commande-statut-badge" style="padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700;background:rgba(95,212,255,0.12);color:#5FD4FF;">
+                        <%= c.dernier_statut_suivi || c.statut || 'en attente' %>
+                    </span>
+                </div>
+                <% if (c.numero_suivi) { %>
+                <p style="color:var(--text-muted);font-size:.78rem;margin-top:8px;">
+                    📦 Suivi : <%= c.numero_suivi %> (<%= c.transporteur || '' %>)
+                </p>
+                <% } %>
+            </article>
+            <% }); %>
+        </section>
+        <% } %>
 
         <div class="qg-section-title">
             <i data-lucide="sparkles"></i>
@@ -150,6 +177,7 @@
     <img src="/samii-os-icon.png" alt="SAMII" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
 </a>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="/socket.io/socket.io.js"></script>
 <script>
 if (typeof lucide !== "undefined") lucide.createIcons();
 
@@ -172,6 +200,29 @@ fetch('/client-qg/quota')
         document.getElementById('quota-bar').style.width = pct + '%';
     })
     .catch(() => {});
+
+if (typeof io !== 'undefined') {
+    const socket = io();
+    const telephone = document.body.getAttribute('data-telephone');
+    socket.on('connect', () => {
+        if (telephone) socket.emit('join', telephone);
+    });
+    socket.on('commande-suivi-maj', function (d) {
+        const card = document.querySelector('[data-commande-id="' + d.id + '"]');
+        if (!card) return;
+        const badge = card.querySelector('.commande-statut-badge');
+        if (badge && d.statut) badge.textContent = d.statut;
+        if (d.numero_suivi) {
+            let suivi = card.querySelector('p');
+            if (!suivi) {
+                suivi = document.createElement('p');
+                suivi.style.cssText = 'color:var(--text-muted);font-size:.78rem;margin-top:8px;';
+                card.appendChild(suivi);
+            }
+            suivi.textContent = '📦 Suivi : ' + d.numero_suivi + ' (' + (d.transporteur || '') + ')';
+        }
+    });
+}
 </script>
 </body>
 </html>
