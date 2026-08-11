@@ -1503,6 +1503,71 @@
             font-size: 1.2rem;
         }
 
+        .pa-intro {
+            font-size: .79rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .partner-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        @media (min-width: 480px) {
+            .partner-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .partner-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 14px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,.075);
+            background: rgba(255,255,255,.018);
+            font-size: .73rem;
+            color: var(--text-dim);
+            text-align: center;
+            transition: .25s ease;
+        }
+
+        .partner-card:hover {
+            border-color: rgba(0,212,255,.28);
+            background: var(--blue-soft);
+            color: #fff;
+            box-shadow: 0 0 18px rgba(0,212,255,.06);
+        }
+
+        .partner-card input {
+            display: none;
+        }
+
+        .partner-card:has(input:checked) {
+            border-color: var(--blue-border);
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(0,212,255,.085),
+                    rgba(212,169,74,.045)
+                );
+            color: #fff;
+            box-shadow:
+                0 0 20px rgba(0,212,255,.07),
+                inset 0 1px 0 rgba(255,255,255,.035);
+        }
+
+        .partner-card .icon {
+            font-size: 1.25rem;
+        }
+
         .field-group {
             margin-bottom: 13px;
         }
@@ -1524,7 +1589,8 @@
         }
 
         .auth-card input,
-        .auth-card select {
+        .auth-card select,
+        .auth-card textarea {
             width: 100%;
             padding: 12px 13px;
             border-radius: 10px;
@@ -1549,7 +1615,8 @@
                 transform .25s ease;
         }
 
-        .auth-card input::placeholder {
+        .auth-card input::placeholder,
+        .auth-card textarea::placeholder {
             color: #474c4f;
         }
 
@@ -1557,13 +1624,21 @@
             background: #0a0a0a;
         }
 
+        .auth-card textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: var(--font-body);
+        }
+
         .auth-card input:hover,
-        .auth-card select:hover {
+        .auth-card select:hover,
+        .auth-card textarea:hover {
             border-color: rgba(0,212,255,.18);
         }
 
         .auth-card input:focus,
-        .auth-card select:focus {
+        .auth-card select:focus,
+        .auth-card textarea:focus {
             outline: none;
             border-color: var(--blue);
             background:
@@ -2261,6 +2336,7 @@
         <div class="auth-tabs">
             <button type="button" class="auth-tab active" data-tab="register" data-i18n="auth.tab.register">Créer un compte</button>
             <button type="button" class="auth-tab" data-tab="login" data-i18n="auth.tab.login">Se connecter</button>
+            <button type="button" class="auth-tab" data-tab="partenariat" data-i18n="auth.tab.partenariat">🤝 Partenariat</button>
         </div>
 
         <div class="auth-card">
@@ -2384,6 +2460,26 @@
                 <button type="submit" class="auth-submit" data-i18n="nav.login">Se connecter</button>
             </form>
 
+            <div id="form-partenariat" style="display:none;">
+                <p class="pa-intro" data-i18n="partenariat.intro">Investisseur, créateur de contenu, développeur, fournisseur... Dis-nous comment tu veux construire l'Empire avec nous.</p>
+                <div class="partner-grid" id="partner-grid">
+                    <label class="partner-card"><input type="radio" name="partner_categorie" value="investisseur"><span class="icon">💰</span><span data-i18n="partenariat.cat.investisseur">Investisseur</span></label>
+                    <label class="partner-card"><input type="radio" name="partner_categorie" value="createur"><span class="icon">🎥</span><span data-i18n="partenariat.cat.createur">Créateur de contenu</span></label>
+                    <label class="partner-card"><input type="radio" name="partner_categorie" value="developpeur"><span class="icon">💻</span><span data-i18n="partenariat.cat.developpeur">Développeur</span></label>
+                    <label class="partner-card"><input type="radio" name="partner_categorie" value="fournisseur"><span class="icon">📦</span><span data-i18n="partenariat.cat.fournisseur">Fournisseur / Logistique</span></label>
+                    <label class="partner-card"><input type="radio" name="partner_categorie" value="marketing"><span class="icon">📣</span><span data-i18n="partenariat.cat.marketing">Affilié / Marketing</span></label>
+                    <label class="partner-card"><input type="radio" name="partner_categorie" value="autre"><span class="icon">✍️</span><span data-i18n="partenariat.cat.autre">Autre</span></label>
+                </div>
+
+                <div id="partner-details" style="display:none;">
+                    <div class="field-group"><label data-i18n="auth.field.email">Email</label><input id="partner-email" type="email" placeholder="ton@email.com" required></div>
+                    <div class="field-group"><label data-i18n="partenariat.field.telephone">Téléphone (optionnel)</label><input id="partner-telephone" placeholder="+213..."></div>
+                    <div class="field-group"><label data-i18n="partenariat.field.description">Ta proposition</label><textarea id="partner-description" rows="4" placeholder="Explique-nous ton idée en quelques lignes..." data-i18n-ph="partenariat.ph.description" required></textarea></div>
+                    <button type="button" class="auth-submit" id="btn-partner-submit" data-i18n="partenariat.submit">Envoyer ma candidature →</button>
+                </div>
+                <div class="auth-msg" id="partner-msg"></div>
+            </div>
+
             <div class="auth-msg" id="auth-msg"></div>
         </div>
     </section>
@@ -2443,8 +2539,16 @@
                 'pills.grandir.title': 'Bâti pour grandir', 'pills.grandir.desc': 'De Soldat à Général',
                 'pills.confrerie.title': 'Une confrérie', 'pills.confrerie.desc': 'Ensemble, on bâtit plus loin',
                 'auth.title': 'Rejoins OG Empire', 'auth.subtitle': "Ton commandement t'attend — inscription gratuite, en 2 minutes.",
-                'auth.tab.register': 'Créer un compte', 'auth.tab.login': 'Se connecter',
+                'auth.tab.register': 'Créer un compte', 'auth.tab.login': 'Se connecter', 'auth.tab.partenariat': '🤝 Partenariat',
                 'auth.step1.label': 'Étape 1 sur 2 — Ton profil', 'auth.step2.label': 'Étape 2 sur 2 — Sécurité & style',
+                'partenariat.intro': "Investisseur, créateur de contenu, développeur, fournisseur... Dis-nous comment tu veux construire l'Empire avec nous.",
+                'partenariat.cat.investisseur': 'Investisseur', 'partenariat.cat.createur': 'Créateur de contenu',
+                'partenariat.cat.developpeur': 'Développeur', 'partenariat.cat.fournisseur': 'Fournisseur / Logistique',
+                'partenariat.cat.marketing': 'Affilié / Marketing', 'partenariat.cat.autre': 'Autre',
+                'partenariat.field.telephone': 'Téléphone (optionnel)', 'partenariat.field.description': 'Ta proposition',
+                'partenariat.ph.description': 'Explique-nous ton idée en quelques lignes...',
+                'partenariat.submit': 'Envoyer ma candidature →',
+                'partenariat.sent': '✅ Candidature envoyée ! On te recontacte vite.',
                 'auth.type.client': 'Particulier', 'auth.type.marchand': 'Marchand',
                 'auth.field.nom': 'Nom', 'auth.ph.nom': 'Ton nom',
                 'auth.field.prenom': 'Prénom', 'auth.ph.prenom': 'Ton prénom',
@@ -2499,8 +2603,16 @@
                 'pills.grandir.title': 'Built to grow', 'pills.grandir.desc': 'From Soldier to General',
                 'pills.confrerie.title': 'A brotherhood', 'pills.confrerie.desc': 'Together, we build further',
                 'auth.title': 'Join OG Empire', 'auth.subtitle': 'Your command awaits — free signup, 2 minutes.',
-                'auth.tab.register': 'Create an account', 'auth.tab.login': 'Log in',
+                'auth.tab.register': 'Create an account', 'auth.tab.login': 'Log in', 'auth.tab.partenariat': '🤝 Partnership',
                 'auth.step1.label': 'Step 1 of 2 — Your profile', 'auth.step2.label': 'Step 2 of 2 — Security & style',
+                'partenariat.intro': "Investor, content creator, developer, supplier... Tell us how you want to build the Empire with us.",
+                'partenariat.cat.investisseur': 'Investor', 'partenariat.cat.createur': 'Content creator',
+                'partenariat.cat.developpeur': 'Developer', 'partenariat.cat.fournisseur': 'Supplier / Logistics',
+                'partenariat.cat.marketing': 'Affiliate / Marketing', 'partenariat.cat.autre': 'Other',
+                'partenariat.field.telephone': 'Phone (optional)', 'partenariat.field.description': 'Your proposal',
+                'partenariat.ph.description': 'Tell us about your idea in a few lines...',
+                'partenariat.submit': 'Send my application →',
+                'partenariat.sent': "✅ Application sent! We'll get back to you soon.",
                 'auth.type.client': 'Individual', 'auth.type.marchand': 'Merchant',
                 'auth.field.nom': 'Last name', 'auth.ph.nom': 'Your last name',
                 'auth.field.prenom': 'First name', 'auth.ph.prenom': 'Your first name',
@@ -2555,8 +2667,16 @@
                 'pills.grandir.title': 'مصمم للنمو', 'pills.grandir.desc': 'من جندي إلى جنرال',
                 'pills.confrerie.title': 'أخوّة', 'pills.confrerie.desc': 'معًا، نبني أبعد',
                 'auth.title': 'انضم إلى OG Empire', 'auth.subtitle': 'قيادتك في انتظارك — تسجيل مجاني، خلال دقيقتين.',
-                'auth.tab.register': 'إنشاء حساب', 'auth.tab.login': 'تسجيل الدخول',
+                'auth.tab.register': 'إنشاء حساب', 'auth.tab.login': 'تسجيل الدخول', 'auth.tab.partenariat': '🤝 شراكة',
                 'auth.step1.label': 'الخطوة 1 من 2 — ملفك الشخصي', 'auth.step2.label': 'الخطوة 2 من 2 — الأمان والمظهر',
+                'partenariat.intro': 'مستثمر، صانع محتوى، مطوّر، مورّد... أخبرنا كيف تريد بناء الإمبراطورية معنا.',
+                'partenariat.cat.investisseur': 'مستثمر', 'partenariat.cat.createur': 'صانع محتوى',
+                'partenariat.cat.developpeur': 'مطوّر', 'partenariat.cat.fournisseur': 'مورّد / لوجستيك',
+                'partenariat.cat.marketing': 'مسوّق بالعمولة', 'partenariat.cat.autre': 'أخرى',
+                'partenariat.field.telephone': 'الهاتف (اختياري)', 'partenariat.field.description': 'اقتراحك',
+                'partenariat.ph.description': 'اشرح لنا فكرتك في بضعة أسطر...',
+                'partenariat.submit': 'إرسال طلبي ←',
+                'partenariat.sent': '✅ تم إرسال الطلب! سنتواصل معك قريبًا.',
                 'auth.type.client': 'فرد', 'auth.type.marchand': 'تاجر',
                 'auth.field.nom': 'اللقب', 'auth.ph.nom': 'لقبك',
                 'auth.field.prenom': 'الاسم', 'auth.ph.prenom': 'اسمك',
@@ -2616,11 +2736,61 @@
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                const isRegister = tab.dataset.tab === 'register';
-                document.getElementById('form-register').style.display = isRegister ? 'block' : 'none';
-                document.getElementById('form-login').style.display = isRegister ? 'none' : 'block';
+                const target = tab.dataset.tab;
+                document.getElementById('form-register').style.display = target === 'register' ? 'block' : 'none';
+                document.getElementById('form-login').style.display = target === 'login' ? 'block' : 'none';
+                document.getElementById('form-partenariat').style.display = target === 'partenariat' ? 'block' : 'none';
                 document.getElementById('auth-msg').textContent = '';
             });
+        });
+
+        document.querySelectorAll('input[name="partner_categorie"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('partner-details').style.display = 'block';
+            });
+        });
+
+        document.getElementById('btn-partner-submit').addEventListener('click', async () => {
+            const msg = document.getElementById('partner-msg');
+            const categorie = document.querySelector('input[name="partner_categorie"]:checked')?.value;
+            const email = document.getElementById('partner-email').value.trim();
+            const telephone = document.getElementById('partner-telephone').value.trim();
+            const description = document.getElementById('partner-description').value.trim();
+
+            if (!categorie || !email || !description) {
+                msg.textContent = t('msg.error_default');
+                msg.className = 'auth-msg';
+                return;
+            }
+
+            const btn = document.getElementById('btn-partner-submit');
+            btn.disabled = true;
+            msg.textContent = t('msg.creating');
+            msg.className = 'auth-msg';
+
+            try {
+                const res = await fetch('/partenariat', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ categorie, email, telephone, description }),
+                });
+                const json = await res.json();
+                if (json.success) {
+                    msg.textContent = t('partenariat.sent');
+                    msg.className = 'auth-msg ok';
+                    document.getElementById('partner-email').value = '';
+                    document.getElementById('partner-telephone').value = '';
+                    document.getElementById('partner-description').value = '';
+                    document.querySelectorAll('input[name="partner_categorie"]').forEach(r => r.checked = false);
+                    document.getElementById('partner-details').style.display = 'none';
+                    btn.disabled = false;
+                } else {
+                    msg.textContent = json.error || t('msg.error_default');
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                msg.textContent = t('msg.error_network');
+                btn.disabled = false;
+            }
         });
 
         document.querySelectorAll('input[name="type_compte"]').forEach(radio => {
