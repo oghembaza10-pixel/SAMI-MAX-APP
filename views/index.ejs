@@ -2051,7 +2051,7 @@
             <img src="/og.png" alt="OG">
             <div>
                 <div class="brand__text">SAMII OS</div>
-                <div class="brand__sub">LE QG MONDIAL</div>
+                <div class="brand__sub" data-i18n="brand.sub">LE QG MONDIAL</div>
             </div>
         </div>
         <div class="top-bar__right">
@@ -2060,36 +2060,36 @@
                 <span data-lang="en">EN</span>
                 <span data-lang="ar">AR</span>
             </div>
-            <a href="#auth" class="btn-login-top">Se connecter</a>
+            <a href="#auth" class="btn-login-top" data-i18n="nav.login">Se connecter</a>
         </div>
     </header>
 
     <% if (typeof loggedIn !== 'undefined' && loggedIn) { %>
     <div style="max-width:1180px; margin:16px auto 0; padding:0 16px;">
         <div style="background:var(--gold-soft); border:var(--border-gold); border-radius:14px; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-            <div style="font-size:.85rem;">Content de te revoir, <strong style="color:var(--gold);"><%= nom || 'Général' %></strong> 👋</div>
-            <a href="<%= typeCompte === 'client' ? '/client-qg' : '/qg' %>" class="btn-primary" style="text-decoration:none;">Continuer vers mon QG →</a>
+            <div style="font-size:.85rem;"><span data-i18n="banner.welcome">Content de te revoir,</span> <strong style="color:var(--gold);"><%= nom || 'Général' %></strong> 👋</div>
+            <a href="<%= typeCompte === 'client' ? '/client-qg' : '/qg' %>" class="btn-primary" style="text-decoration:none;" data-i18n="banner.continue">Continuer vers mon QG →</a>
         </div>
     </div>
     <% } %>
 
     <section class="hero">
-        <span class="hero-badge"><span class="dot"></span>SAMII OS · OPÉRATIONNEL</span>
-        <h1>Prends le commandement de ton <span class="accent">Empire Digital</span> 👑</h1>
+        <span class="hero-badge"><span class="dot"></span><span data-i18n="hero.badge">SAMII OS · OPÉRATIONNEL</span></span>
+        <h1><span data-i18n="hero.title1">Prends le commandement de ton</span> <span class="accent" data-i18n="hero.title2">Empire Digital</span> 👑</h1>
         <div class="hero-divider" aria-hidden="true"></div>
-        <div class="hero-tagline"><b>Automatisez.</b> Développez. <b>Dominez.</b></div>
-        <p class="desc">La plateforme des bâtisseurs d'empire : pilote ton commerce, connecte tes outils, et règne sur ton marché — où que tu sois dans le monde.</p>
+        <div class="hero-tagline"><b data-i18n="hero.tag1">Automatisez.</b> <span data-i18n="hero.tag2">Développez.</span> <b data-i18n="hero.tag3">Dominez.</b></div>
+        <p class="desc" data-i18n="hero.desc">La plateforme des bâtisseurs d'empire : pilote ton commerce, connecte tes outils, et règne sur ton marché — où que tu sois dans le monde.</p>
         <div class="hero-ctas">
-            <a href="#auth" class="btn-primary">👑 Créer mon compte</a>
-            <a href="#preview" class="btn-secondary">Découvrir SAMII ↓</a>
+            <a href="#auth" class="btn-primary" data-i18n="hero.cta1">👑 Créer mon compte</a>
+            <a href="#preview" class="btn-secondary" data-i18n="hero.cta2">Découvrir SAMII ↓</a>
         </div>
     </section>
 
     <section class="preview-section" id="preview">
         <div class="section-head">
             <span class="section-head__icon">🖥️</span>
-            <span class="section-head__title">Aperçu de ton QG</span>
-            <span class="section-head__sub">CE QUI T'ATTEND</span>
+            <span class="section-head__title" data-i18n="preview.title">Aperçu de ton QG</span>
+            <span class="section-head__sub" data-i18n="preview.sub">CE QUI T'ATTEND</span>
         </div>
         <div class="preview-grid">
             <div class="p-card">
@@ -2097,12 +2097,12 @@
                     <div class="p-card__badge p-card__badge--gold">🧠</div>
                     <div>
                         <div class="p-card__title">IA SAMII</div>
-                        <div class="p-card__desc">Ton stratège personnel</div>
+                        <div class="p-card__desc" data-i18n="preview.samii.desc">Ton stratège personnel</div>
                     </div>
                 </div>
                 <div class="p-card__stat">50 <span>/ 50</span></div>
-                <div class="p-card__statlabel">messages disponibles chaque jour</div>
-                <a href="#auth" class="p-card-btn">Discuter avec SAMII →</a>
+                <div class="p-card__statlabel" data-i18n="preview.samii.stat">messages disponibles chaque jour</div>
+                <a href="#auth" class="p-card-btn" data-i18n="preview.samii.btn">Discuter avec SAMII →</a>
             </div>
 
             <div class="p-card">
@@ -2110,12 +2110,12 @@
                     <div class="p-card__badge p-card__badge--shopify">🛍️</div>
                     <div>
                         <div class="p-card__title">Shopify</div>
-                        <div class="p-card__desc">Connecte ta boutique</div>
+                        <div class="p-card__desc" data-i18n="preview.shopify.desc">Connecte ta boutique</div>
                     </div>
                 </div>
-                <div class="p-card__status"><span class="sdot"></span> Non connecté</div>
+                <div class="p-card__status"><span class="sdot"></span> <span data-i18n="preview.notconnected">Non connecté</span></div>
                 <div style="height:26px;"></div>
-                <a href="#auth" class="p-card-btn">Connecter Shopify →</a>
+                <a href="#auth" class="p-card-btn" data-i18n="preview.shopify.btn">Connecter Shopify →</a>
             </div>
 
             <div class="p-card">
@@ -2123,25 +2123,25 @@
                     <div class="p-card__badge p-card__badge--whatsapp">💬</div>
                     <div>
                         <div class="p-card__title">WhatsApp Business</div>
-                        <div class="p-card__desc">Connecte ton numéro</div>
+                        <div class="p-card__desc" data-i18n="preview.whatsapp.desc">Connecte ton numéro</div>
                     </div>
                 </div>
-                <div class="p-card__status"><span class="sdot"></span> Non connecté</div>
+                <div class="p-card__status"><span class="sdot"></span> <span data-i18n="preview.notconnected">Non connecté</span></div>
                 <div style="height:26px;"></div>
-                <a href="#auth" class="p-card-btn">Connecter WhatsApp →</a>
+                <a href="#auth" class="p-card-btn" data-i18n="preview.whatsapp.btn">Connecter WhatsApp →</a>
             </div>
 
             <div class="p-card p-card--globe">
                 <div class="p-card__top">
                     <div class="p-card__badge p-card__badge--dash">📊</div>
                     <div>
-                        <div class="p-card__title">Tableau de bord</div>
-                        <div class="p-card__desc">Vue d'ensemble</div>
+                        <div class="p-card__title" data-i18n="preview.dash.title">Tableau de bord</div>
+                        <div class="p-card__desc" data-i18n="preview.dash.desc">Vue d'ensemble</div>
                     </div>
                 </div>
                 <div class="p-card__stat">0</div>
-                <div class="p-card__statlabel">commandes aujourd'hui</div>
-                <a href="#auth" class="p-card-btn" style="position:relative; z-index:2;">Voir les statistiques →</a>
+                <div class="p-card__statlabel" data-i18n="preview.dash.stat">commandes aujourd'hui</div>
+                <a href="#auth" class="p-card-btn" style="position:relative; z-index:2;" data-i18n="preview.dash.btn">Voir les statistiques →</a>
                 <svg class="globe-mini" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(212,169,74,0.35)" stroke-width="1"/>
                     <circle cx="100" cy="100" r="65" fill="none" stroke="rgba(212,169,74,0.25)" stroke-width="1"/>
@@ -2159,47 +2159,52 @@
     <section class="modules-section">
         <div class="section-head">
             <span class="section-head__icon">◎</span>
-            <span class="section-head__title">Ton arsenal, déjà prêt</span>
+            <span class="section-head__title" data-i18n="modules.title">Ton arsenal, déjà prêt</span>
         </div>
         <div class="modules-grid">
             <div class="m-card">
                 <div class="m-card__icon">🧠</div>
-                <div><div class="m-card__name">IA SAMII</div><div class="m-card__desc">Assistant intelligent</div></div>
+                <div><div class="m-card__name">IA SAMII</div><div class="m-card__desc" data-i18n="modules.samii">Assistant intelligent</div></div>
                 <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
             <div class="m-card">
                 <div class="m-card__icon">📊</div>
-                <div><div class="m-card__name">Dashboard</div><div class="m-card__desc">Tableau de bord</div></div>
+                <div><div class="m-card__name" data-i18n="modules.dashboard.name">Dashboard</div><div class="m-card__desc" data-i18n="modules.dashboard.desc">Tableau de bord</div></div>
                 <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
             <div class="m-card">
                 <div class="m-card__icon">🛍️</div>
-                <div><div class="m-card__name">Shopify</div><div class="m-card__desc">E-commerce</div></div>
+                <div><div class="m-card__name">Shopify</div><div class="m-card__desc" data-i18n="modules.shopify">E-commerce</div></div>
                 <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
             <div class="m-card">
                 <div class="m-card__icon">💬</div>
-                <div><div class="m-card__name">WhatsApp</div><div class="m-card__desc">Messagerie</div></div>
+                <div><div class="m-card__name">WhatsApp</div><div class="m-card__desc" data-i18n="modules.whatsapp">Messagerie</div></div>
                 <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
             <div class="m-card">
                 <div class="m-card__icon">✈️</div>
-                <div><div class="m-card__name">Telegram</div><div class="m-card__desc">Commandes en direct</div></div>
+                <div><div class="m-card__name">Telegram</div><div class="m-card__desc" data-i18n="modules.telegram">Commandes en direct</div></div>
                 <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
             <div class="m-card">
                 <div class="m-card__icon">🏪</div>
-                <div><div class="m-card__name">Marketplace</div><div class="m-card__desc">Achète & vends</div></div>
+                <div><div class="m-card__name" data-i18n="modules.marketplace.name">Marketplace</div><div class="m-card__desc" data-i18n="modules.marketplace.desc">Achète & vends</div></div>
                 <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
             <div class="m-card">
                 <div class="m-card__icon">🛎️</div>
-                <div><div class="m-card__name">Services</div><div class="m-card__desc">Livraison, garde...</div></div>
+                <div><div class="m-card__name" data-i18n="modules.services.name">Services</div><div class="m-card__desc" data-i18n="modules.services.desc">Livraison, garde...</div></div>
                 <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
             <div class="m-card">
                 <div class="m-card__icon">💼</div>
-                <div><div class="m-card__name">Emploi</div><div class="m-card__desc">Missions & postes</div></div>
+                <div><div class="m-card__name" data-i18n="modules.emploi.name">Emploi</div><div class="m-card__desc" data-i18n="modules.emploi.desc">Missions & postes</div></div>
+                <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            </div>
+            <div class="m-card">
+                <div class="m-card__icon">🤝</div>
+                <div><div class="m-card__name" data-i18n="modules.parrainage.name">Parrainage</div><div class="m-card__desc" data-i18n="modules.parrainage.desc">20% + 5%, pendant 12 mois</div></div>
                 <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
         </div>
@@ -2208,27 +2213,27 @@
     <section class="soon-section">
         <div class="section-head">
             <span class="section-head__icon">🔒</span>
-            <span class="section-head__title">Bientôt disponible</span>
+            <span class="section-head__title" data-i18n="soon.title">Bientôt disponible</span>
         </div>
         <div class="soon-grid">
             <div class="s-card">
                 <div class="s-card__icon">🌍</div>
-                <div><div class="s-card__name">Réseau Mondial</div><div class="s-card__desc">Connectez-vous</div></div>
+                <div><div class="s-card__name" data-i18n="soon.reseau.name">Réseau Mondial</div><div class="s-card__desc" data-i18n="soon.reseau.desc">Connectez-vous</div></div>
                 <span class="s-lock">🔒</span>
             </div>
             <div class="s-card">
                 <div class="s-card__icon">🚚</div>
-                <div><div class="s-card__name">Logistique</div><div class="s-card__desc">Livraison & suivi</div></div>
+                <div><div class="s-card__name" data-i18n="soon.logistique.name">Logistique</div><div class="s-card__desc" data-i18n="soon.logistique.desc">Livraison & suivi</div></div>
                 <span class="s-lock">🔒</span>
             </div>
             <div class="s-card">
                 <div class="s-card__icon">💳</div>
-                <div><div class="s-card__name">Finance</div><div class="s-card__desc">Paiements & compta</div></div>
+                <div><div class="s-card__name" data-i18n="soon.finance.name">Finance</div><div class="s-card__desc" data-i18n="soon.finance.desc">Paiements & compta</div></div>
                 <span class="s-lock">🔒</span>
             </div>
             <div class="s-card">
                 <div class="s-card__icon">🔌</div>
-                <div><div class="s-card__name">API & Intégrations</div><div class="s-card__desc">Connecte tout</div></div>
+                <div><div class="s-card__name" data-i18n="soon.api.name">API & Intégrations</div><div class="s-card__desc" data-i18n="soon.api.desc">Connecte tout</div></div>
                 <span class="s-lock">🔒</span>
             </div>
         </div>
@@ -2236,26 +2241,26 @@
 
     <div class="soon-banner">
         <span class="soon-banner__icon">🚀</span>
-        <span class="soon-banner__text"><strong>L'Empire ne cesse de grandir.</strong> De nouveaux pouvoirs arrivent chaque semaine — prépare-toi à passer au niveau supérieur.</span>
+        <span class="soon-banner__text"><strong data-i18n="banner.soon1">L'Empire ne cesse de grandir.</strong> <span data-i18n="banner.soon2">De nouveaux pouvoirs arrivent chaque semaine — prépare-toi à passer au niveau supérieur.</span></span>
     </div>
 
     <div class="pills-bar">
-        <div class="pill"><span class="pill__icon">🛡️</span><div><div class="pill__title">Souveraineté totale</div><div class="pill__desc">Tes données t'appartiennent</div></div></div>
-        <div class="pill"><span class="pill__icon">⚡</span><div><div class="pill__title">Intelligence suprême</div><div class="pill__desc">Propulsée par Gemini</div></div></div>
-        <div class="pill"><span class="pill__icon">🔗</span><div><div class="pill__title">Un seul commandement</div><div class="pill__desc">Toutes tes plateformes réunies</div></div></div>
-        <div class="pill"><span class="pill__icon">📈</span><div><div class="pill__title">Bâti pour grandir</div><div class="pill__desc">De Soldat à Général</div></div></div>
-        <div class="pill"><span class="pill__icon">👥</span><div><div class="pill__title">Une confrérie</div><div class="pill__desc">Ensemble, on bâtit plus loin</div></div></div>
+        <div class="pill"><span class="pill__icon">🛡️</span><div><div class="pill__title" data-i18n="pills.souverainete.title">Souveraineté totale</div><div class="pill__desc" data-i18n="pills.souverainete.desc">Tes données t'appartiennent</div></div></div>
+        <div class="pill"><span class="pill__icon">⚡</span><div><div class="pill__title" data-i18n="pills.intelligence.title">Intelligence suprême</div><div class="pill__desc" data-i18n="pills.intelligence.desc">Propulsée par Gemini</div></div></div>
+        <div class="pill"><span class="pill__icon">🔗</span><div><div class="pill__title" data-i18n="pills.commandement.title">Un seul commandement</div><div class="pill__desc" data-i18n="pills.commandement.desc">Toutes tes plateformes réunies</div></div></div>
+        <div class="pill"><span class="pill__icon">📈</span><div><div class="pill__title" data-i18n="pills.grandir.title">Bâti pour grandir</div><div class="pill__desc" data-i18n="pills.grandir.desc">De Soldat à Général</div></div></div>
+        <div class="pill"><span class="pill__icon">👥</span><div><div class="pill__title" data-i18n="pills.confrerie.title">Une confrérie</div><div class="pill__desc" data-i18n="pills.confrerie.desc">Ensemble, on bâtit plus loin</div></div></div>
     </div>
 
     <section class="auth-section" id="auth">
         <div class="auth-header">
-            <h2>Rejoins OG Empire</h2>
-            <p>Ton commandement t'attend — inscription gratuite, en 2 minutes.</p>
+            <h2 data-i18n="auth.title">Rejoins OG Empire</h2>
+            <p data-i18n="auth.subtitle">Ton commandement t'attend — inscription gratuite, en 2 minutes.</p>
         </div>
 
         <div class="auth-tabs">
-            <button type="button" class="auth-tab active" data-tab="register">Créer un compte</button>
-            <button type="button" class="auth-tab" data-tab="login">Se connecter</button>
+            <button type="button" class="auth-tab active" data-tab="register" data-i18n="auth.tab.register">Créer un compte</button>
+            <button type="button" class="auth-tab" data-tab="login" data-i18n="auth.tab.login">Se connecter</button>
         </div>
 
         <div class="auth-card">
@@ -2264,31 +2269,31 @@
                     <div class="step-dot done" data-step-dot="1"></div>
                     <div class="step-dot" data-step-dot="2"></div>
                 </div>
-                <div class="step-label" id="step-label">Étape 1 sur 2 — Ton profil</div>
+                <div class="step-label" id="step-label" data-i18n="auth.step1.label">Étape 1 sur 2 — Ton profil</div>
 
                 <div class="form-step active" data-step="1">
                     <div class="type-choice">
                         <label>
                             <input type="radio" name="type_compte" value="client" checked>
-                            <span class="icon">👤</span><span>Particulier</span>
+                            <span class="icon">👤</span><span data-i18n="auth.type.client">Particulier</span>
                         </label>
                         <label>
                             <input type="radio" name="type_compte" value="marchand">
-                            <span class="icon">🏪</span><span>Marchand</span>
+                            <span class="icon">🏪</span><span data-i18n="auth.type.marchand">Marchand</span>
                         </label>
                     </div>
 
                     <div class="field-row">
-                        <div class="field-group"><label>Nom</label><input name="nom" placeholder="Ton nom" required></div>
-                        <div class="field-group"><label>Prénom</label><input name="prenom" placeholder="Ton prénom" required></div>
+                        <div class="field-group"><label data-i18n="auth.field.nom">Nom</label><input name="nom" placeholder="Ton nom" data-i18n-ph="auth.ph.nom" required></div>
+                        <div class="field-group"><label data-i18n="auth.field.prenom">Prénom</label><input name="prenom" placeholder="Ton prénom" data-i18n-ph="auth.ph.prenom" required></div>
                     </div>
 
-                    <div class="field-group"><label>Email</label><input name="email" type="email" placeholder="ton@email.com" required></div>
+                    <div class="field-group"><label data-i18n="auth.field.email">Email</label><input name="email" type="email" placeholder="ton@email.com" required></div>
 
                     <div class="field-row">
-                        <div class="field-group"><label>Téléphone</label><input name="telephone" placeholder="+213..." required></div>
+                        <div class="field-group"><label data-i18n="auth.field.telephone">Téléphone</label><input name="telephone" placeholder="+213..." required></div>
                         <div class="field-group">
-                            <label>Pays</label>
+                            <label data-i18n="auth.field.pays">Pays</label>
                             <select name="pays" id="select-pays">
                                 <optgroup label="🌍 Maghreb">
                                     <option value="DZ">Algérie</option><option value="MA">Maroc</option><option value="TN">Tunisie</option>
@@ -2316,67 +2321,67 @@
                                 </optgroup>
                                 <option value="autre">🌐 Autre pays...</option>
                             </select>
-                            <input type="text" id="champ-autre-pays" name="pays_autre" placeholder="Nom de ton pays">
+                            <input type="text" id="champ-autre-pays" name="pays_autre" placeholder="Nom de ton pays" data-i18n-ph="auth.ph.pays_autre">
                         </div>
                     </div>
 
                     <div id="bloc-metier" style="display:none;">
                         <div class="field-group">
-                            <label>Ton métier</label>
+                            <label data-i18n="auth.field.metier">Ton métier</label>
                             <select name="metier">
-                                <option value="ecommerce">E-commerçant</option>
-                                <option value="restaurant">Restaurateur</option>
-                                <option value="immobilier">Immobilier</option>
+                                <option value="ecommerce" data-i18n="auth.metier.ecommerce">E-commerçant</option>
+                                <option value="restaurant" data-i18n="auth.metier.restaurant">Restaurateur</option>
+                                <option value="immobilier" data-i18n="auth.metier.immobilier">Immobilier</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="grade-preview">
                         <span class="grade-preview__icon">🪖</span>
-                        <span class="grade-preview__text">Tu prends du service au grade de <strong>Soldat</strong> — chaque action te rapproche du sommet.</span>
+                        <span class="grade-preview__text"><span data-i18n="auth.grade1">Tu prends du service au grade de</span> <strong data-i18n="auth.grade2">Soldat</strong> <span data-i18n="auth.grade3">— chaque action te rapproche du sommet.</span></span>
                     </div>
 
-                    <button type="button" class="auth-submit" id="btn-step1-next">Continuer →</button>
+                    <button type="button" class="auth-submit" id="btn-step1-next" data-i18n="auth.continue">Continuer →</button>
                 </div>
 
                 <div class="form-step" data-step="2">
-                    <div class="field-group"><label>Mot de passe</label><input name="password" type="password" placeholder="Minimum 6 caractères" required minlength="6"></div>
+                    <div class="field-group"><label data-i18n="auth.field.password">Mot de passe</label><input name="password" type="password" placeholder="Minimum 6 caractères" data-i18n-ph="auth.ph.password" required minlength="6"></div>
 
-                    <label style="display:block; font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:8px;">Choisis l'univers de SAMII</label>
+                    <label style="display:block; font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:8px;" data-i18n="auth.theme.choose">Choisis l'univers de SAMII</label>
                     <div class="theme-picker">
                         <label class="theme-card theme-card--strategiste">
                             <input type="radio" name="theme_visuel" value="strategiste" checked>
-                            <div class="theme-card__preview"></div><div class="theme-card__name">🪖 Stratège</div>
+                            <div class="theme-card__preview"></div><div class="theme-card__name" data-i18n="auth.theme.strategiste">🪖 Stratège</div>
                         </label>
                         <label class="theme-card theme-card--sagesse">
                             <input type="radio" name="theme_visuel" value="sagesse">
-                            <div class="theme-card__preview"></div><div class="theme-card__name">🕊️ Sagesse</div>
+                            <div class="theme-card__preview"></div><div class="theme-card__name" data-i18n="auth.theme.sagesse">🕊️ Sagesse</div>
                         </label>
                         <label class="theme-card theme-card--aventurier theme-card--locked">
                             <input type="radio" name="theme_visuel" value="aventurier" disabled>
-                            <div class="theme-card__preview"></div><div class="theme-card__name">🧭 Aventurier</div>
-                            <div class="theme-card__lock">🔒 Grade Sergent</div>
+                            <div class="theme-card__preview"></div><div class="theme-card__name" data-i18n="auth.theme.aventurier">🧭 Aventurier</div>
+                            <div class="theme-card__lock" data-i18n="auth.theme.lock1">🔒 Grade Sergent</div>
                         </label>
                         <label class="theme-card theme-card--gaming theme-card--locked">
                             <input type="radio" name="theme_visuel" value="gaming" disabled>
-                            <div class="theme-card__preview"></div><div class="theme-card__name">🎮 Gaming</div>
-                            <div class="theme-card__lock">🔒 Grade Lieutenant</div>
+                            <div class="theme-card__preview"></div><div class="theme-card__name" data-i18n="auth.theme.gaming">🎮 Gaming</div>
+                            <div class="theme-card__lock" data-i18n="auth.theme.lock2">🔒 Grade Lieutenant</div>
                         </label>
                     </div>
-                    <p style="font-size:.66rem; color:var(--text-dim); margin:-6px 0 14px;">Aventurier et Gaming se débloquent en progressant en grade — modifiable à tout moment depuis ton espace.</p>
+                    <p style="font-size:.66rem; color:var(--text-dim); margin:-6px 0 14px;" data-i18n="auth.theme.note">Aventurier et Gaming se débloquent en progressant en grade — modifiable à tout moment depuis ton espace.</p>
 
                     <div class="btn-row">
-                        <button type="button" class="auth-btn-back" id="btn-step2-back">← Retour</button>
-                        <button type="submit" class="auth-submit">👑 Créer mon compte</button>
+                        <button type="button" class="auth-btn-back" id="btn-step2-back" data-i18n="auth.back">← Retour</button>
+                        <button type="submit" class="auth-submit" data-i18n="hero.cta1">👑 Créer mon compte</button>
                     </div>
                 </div>
             </form>
 
             <form id="form-login" style="display:none;">
-                <div class="field-group"><label>Email</label><input name="email" type="email" placeholder="ton@email.com" required></div>
-                <div class="field-group"><label>Mot de passe</label><input name="password" type="password" placeholder="Ton mot de passe" required></div>
-                <a href="/password-reset" class="forgot-link">Mot de passe oublié ?</a>
-                <button type="submit" class="auth-submit">Se connecter</button>
+                <div class="field-group"><label data-i18n="auth.field.email">Email</label><input name="email" type="email" placeholder="ton@email.com" required></div>
+                <div class="field-group"><label data-i18n="auth.field.password">Mot de passe</label><input name="password" type="password" placeholder="Ton mot de passe" data-i18n-ph="auth.ph.password_login" required></div>
+                <a href="/password-reset" class="forgot-link" data-i18n="auth.forgot">Mot de passe oublié ?</a>
+                <button type="submit" class="auth-submit" data-i18n="nav.login">Se connecter</button>
             </form>
 
             <div class="auth-msg" id="auth-msg"></div>
@@ -2384,7 +2389,7 @@
     </section>
 
     <footer class="site-footer">
-        <span class="site-footer__quote">OG · EMPIRE — Construis sans limite.</span>
+        <span class="site-footer__quote" data-i18n="footer.quote">OG · EMPIRE — Construis sans limite.</span>
         <div class="social-links">
             <a href="https://www.instagram.com/og20250/" target="_blank" rel="noopener" aria-label="Instagram">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
@@ -2403,6 +2408,210 @@
     </footer>
 
     <script>
+        const I18N = {
+            fr: {
+                'brand.sub': 'LE QG MONDIAL', 'nav.login': 'Se connecter',
+                'banner.welcome': 'Content de te revoir,', 'banner.continue': 'Continuer vers mon QG →',
+                'hero.badge': 'SAMII OS · OPÉRATIONNEL',
+                'hero.title1': 'Prends le commandement de ton', 'hero.title2': 'Empire Digital',
+                'hero.tag1': 'Automatisez.', 'hero.tag2': 'Développez.', 'hero.tag3': 'Dominez.',
+                'hero.desc': "La plateforme des bâtisseurs d'empire : pilote ton commerce, connecte tes outils, et règne sur ton marché — où que tu sois dans le monde.",
+                'hero.cta1': '👑 Créer mon compte', 'hero.cta2': 'Découvrir SAMII ↓',
+                'preview.title': 'Aperçu de ton QG', 'preview.sub': "CE QUI T'ATTEND",
+                'preview.samii.desc': 'Ton stratège personnel', 'preview.samii.stat': 'messages disponibles chaque jour', 'preview.samii.btn': 'Discuter avec SAMII →',
+                'preview.shopify.desc': 'Connecte ta boutique', 'preview.shopify.btn': 'Connecter Shopify →',
+                'preview.whatsapp.desc': 'Connecte ton numéro', 'preview.whatsapp.btn': 'Connecter WhatsApp →',
+                'preview.notconnected': 'Non connecté',
+                'preview.dash.title': 'Tableau de bord', 'preview.dash.desc': "Vue d'ensemble", 'preview.dash.stat': "commandes aujourd'hui", 'preview.dash.btn': 'Voir les statistiques →',
+                'modules.title': 'Ton arsenal, déjà prêt',
+                'modules.samii': 'Assistant intelligent',
+                'modules.dashboard.name': 'Dashboard', 'modules.dashboard.desc': 'Tableau de bord',
+                'modules.shopify': 'E-commerce', 'modules.whatsapp': 'Messagerie', 'modules.telegram': 'Commandes en direct',
+                'modules.marketplace.name': 'Marketplace', 'modules.marketplace.desc': 'Achète & vends',
+                'modules.services.name': 'Services', 'modules.services.desc': 'Livraison, garde...',
+                'modules.emploi.name': 'Emploi', 'modules.emploi.desc': 'Missions & postes',
+                'modules.parrainage.name': 'Parrainage', 'modules.parrainage.desc': '20% + 5%, pendant 12 mois',
+                'soon.title': 'Bientôt disponible',
+                'soon.reseau.name': 'Réseau Mondial', 'soon.reseau.desc': 'Connectez-vous',
+                'soon.logistique.name': 'Logistique', 'soon.logistique.desc': 'Livraison & suivi',
+                'soon.finance.name': 'Finance', 'soon.finance.desc': 'Paiements & compta',
+                'soon.api.name': 'API & Intégrations', 'soon.api.desc': 'Connecte tout',
+                'banner.soon1': "L'Empire ne cesse de grandir.", 'banner.soon2': 'De nouveaux pouvoirs arrivent chaque semaine — prépare-toi à passer au niveau supérieur.',
+                'pills.souverainete.title': 'Souveraineté totale', 'pills.souverainete.desc': "Tes données t'appartiennent",
+                'pills.intelligence.title': 'Intelligence suprême', 'pills.intelligence.desc': 'Propulsée par Gemini',
+                'pills.commandement.title': 'Un seul commandement', 'pills.commandement.desc': 'Toutes tes plateformes réunies',
+                'pills.grandir.title': 'Bâti pour grandir', 'pills.grandir.desc': 'De Soldat à Général',
+                'pills.confrerie.title': 'Une confrérie', 'pills.confrerie.desc': 'Ensemble, on bâtit plus loin',
+                'auth.title': 'Rejoins OG Empire', 'auth.subtitle': "Ton commandement t'attend — inscription gratuite, en 2 minutes.",
+                'auth.tab.register': 'Créer un compte', 'auth.tab.login': 'Se connecter',
+                'auth.step1.label': 'Étape 1 sur 2 — Ton profil', 'auth.step2.label': 'Étape 2 sur 2 — Sécurité & style',
+                'auth.type.client': 'Particulier', 'auth.type.marchand': 'Marchand',
+                'auth.field.nom': 'Nom', 'auth.ph.nom': 'Ton nom',
+                'auth.field.prenom': 'Prénom', 'auth.ph.prenom': 'Ton prénom',
+                'auth.field.email': 'Email', 'auth.field.telephone': 'Téléphone', 'auth.field.pays': 'Pays',
+                'auth.ph.pays_autre': 'Nom de ton pays',
+                'auth.field.metier': 'Ton métier', 'auth.metier.ecommerce': 'E-commerçant', 'auth.metier.restaurant': 'Restaurateur', 'auth.metier.immobilier': 'Immobilier',
+                'auth.grade1': 'Tu prends du service au grade de', 'auth.grade2': 'Soldat', 'auth.grade3': '— chaque action te rapproche du sommet.',
+                'auth.continue': 'Continuer →',
+                'auth.field.password': 'Mot de passe', 'auth.ph.password': 'Minimum 6 caractères',
+                'auth.theme.choose': "Choisis l'univers de SAMII",
+                'auth.theme.strategiste': '🪖 Stratège', 'auth.theme.sagesse': '🕊️ Sagesse',
+                'auth.theme.aventurier': '🧭 Aventurier', 'auth.theme.lock1': '🔒 Grade Sergent',
+                'auth.theme.gaming': '🎮 Gaming', 'auth.theme.lock2': '🔒 Grade Lieutenant',
+                'auth.theme.note': 'Aventurier et Gaming se débloquent en progressant en grade — modifiable à tout moment depuis ton espace.',
+                'auth.back': '← Retour', 'auth.ph.password_login': 'Ton mot de passe', 'auth.forgot': 'Mot de passe oublié ?',
+                'footer.quote': 'OG · EMPIRE — Construis sans limite.',
+                'msg.creating': '⏳ Création en cours...', 'msg.created_default': '✅ Compte créé !',
+                'msg.error_default': '❌ Erreur.', 'msg.error_network': '❌ Erreur réseau.',
+                'msg.connecting': '⏳ Connexion...', 'msg.connected': '✅ Connecté !',
+            },
+            en: {
+                'brand.sub': 'THE GLOBAL HQ', 'nav.login': 'Log in',
+                'banner.welcome': 'Welcome back,', 'banner.continue': 'Go to my HQ →',
+                'hero.badge': 'SAMII OS · OPERATIONAL',
+                'hero.title1': 'Take command of your', 'hero.title2': 'Digital Empire',
+                'hero.tag1': 'Automate.', 'hero.tag2': 'Grow.', 'hero.tag3': 'Dominate.',
+                'hero.desc': "The platform for empire builders: run your business, connect your tools, and rule your market — wherever you are in the world.",
+                'hero.cta1': '👑 Create my account', 'hero.cta2': 'Discover SAMII ↓',
+                'preview.title': 'A preview of your HQ', 'preview.sub': 'WHAT AWAITS YOU',
+                'preview.samii.desc': 'Your personal strategist', 'preview.samii.stat': 'messages available every day', 'preview.samii.btn': 'Chat with SAMII →',
+                'preview.shopify.desc': 'Connect your store', 'preview.shopify.btn': 'Connect Shopify →',
+                'preview.whatsapp.desc': 'Connect your number', 'preview.whatsapp.btn': 'Connect WhatsApp →',
+                'preview.notconnected': 'Not connected',
+                'preview.dash.title': 'Dashboard', 'preview.dash.desc': 'Overview', 'preview.dash.stat': 'orders today', 'preview.dash.btn': 'View statistics →',
+                'modules.title': 'Your arsenal, already ready',
+                'modules.samii': 'Smart assistant',
+                'modules.dashboard.name': 'Dashboard', 'modules.dashboard.desc': 'Overview panel',
+                'modules.shopify': 'E-commerce', 'modules.whatsapp': 'Messaging', 'modules.telegram': 'Live orders',
+                'modules.marketplace.name': 'Marketplace', 'modules.marketplace.desc': 'Buy & sell',
+                'modules.services.name': 'Services', 'modules.services.desc': 'Delivery, care...',
+                'modules.emploi.name': 'Jobs', 'modules.emploi.desc': 'Missions & positions',
+                'modules.parrainage.name': 'Referral program', 'modules.parrainage.desc': '20% + 5%, for 12 months',
+                'soon.title': 'Coming soon',
+                'soon.reseau.name': 'Global Network', 'soon.reseau.desc': 'Connect',
+                'soon.logistique.name': 'Logistics', 'soon.logistique.desc': 'Delivery & tracking',
+                'soon.finance.name': 'Finance', 'soon.finance.desc': 'Payments & accounting',
+                'soon.api.name': 'API & Integrations', 'soon.api.desc': 'Connect everything',
+                'banner.soon1': 'The Empire keeps growing.', 'banner.soon2': 'New powers arrive every week — get ready to level up.',
+                'pills.souverainete.title': 'Total sovereignty', 'pills.souverainete.desc': 'Your data belongs to you',
+                'pills.intelligence.title': 'Supreme intelligence', 'pills.intelligence.desc': 'Powered by Gemini',
+                'pills.commandement.title': 'A single command center', 'pills.commandement.desc': 'All your platforms, united',
+                'pills.grandir.title': 'Built to grow', 'pills.grandir.desc': 'From Soldier to General',
+                'pills.confrerie.title': 'A brotherhood', 'pills.confrerie.desc': 'Together, we build further',
+                'auth.title': 'Join OG Empire', 'auth.subtitle': 'Your command awaits — free signup, 2 minutes.',
+                'auth.tab.register': 'Create an account', 'auth.tab.login': 'Log in',
+                'auth.step1.label': 'Step 1 of 2 — Your profile', 'auth.step2.label': 'Step 2 of 2 — Security & style',
+                'auth.type.client': 'Individual', 'auth.type.marchand': 'Merchant',
+                'auth.field.nom': 'Last name', 'auth.ph.nom': 'Your last name',
+                'auth.field.prenom': 'First name', 'auth.ph.prenom': 'Your first name',
+                'auth.field.email': 'Email', 'auth.field.telephone': 'Phone', 'auth.field.pays': 'Country',
+                'auth.ph.pays_autre': 'Name of your country',
+                'auth.field.metier': 'Your business', 'auth.metier.ecommerce': 'E-commerce seller', 'auth.metier.restaurant': 'Restaurant owner', 'auth.metier.immobilier': 'Real estate',
+                'auth.grade1': 'You enlist at the rank of', 'auth.grade2': 'Soldier', 'auth.grade3': '— every action brings you closer to the top.',
+                'auth.continue': 'Continue →',
+                'auth.field.password': 'Password', 'auth.ph.password': 'Minimum 6 characters',
+                'auth.theme.choose': "Choose SAMII's universe",
+                'auth.theme.strategiste': '🪖 Strategist', 'auth.theme.sagesse': '🕊️ Wisdom',
+                'auth.theme.aventurier': '🧭 Adventurer', 'auth.theme.lock1': '🔒 Sergeant rank',
+                'auth.theme.gaming': '🎮 Gaming', 'auth.theme.lock2': '🔒 Lieutenant rank',
+                'auth.theme.note': 'Adventurer and Gaming unlock as you level up — changeable anytime from your space.',
+                'auth.back': '← Back', 'auth.ph.password_login': 'Your password', 'auth.forgot': 'Forgot password?',
+                'footer.quote': 'OG · EMPIRE — Build without limits.',
+                'msg.creating': '⏳ Creating account...', 'msg.created_default': '✅ Account created!',
+                'msg.error_default': '❌ Error.', 'msg.error_network': '❌ Network error.',
+                'msg.connecting': '⏳ Signing in...', 'msg.connected': '✅ Signed in!',
+            },
+            ar: {
+                'brand.sub': 'المقر العالمي', 'nav.login': 'تسجيل الدخول',
+                'banner.welcome': 'سعداء بعودتك،', 'banner.continue': 'الذهاب إلى مقري ←',
+                'hero.badge': 'SAMII OS · تعمل الآن',
+                'hero.title1': 'تولَّ قيادة', 'hero.title2': 'إمبراطوريتك الرقمية',
+                'hero.tag1': 'أتمتة.', 'hero.tag2': 'تطوير.', 'hero.tag3': 'هيمنة.',
+                'hero.desc': 'منصة بناة الإمبراطوريات: أدر تجارتك، اربط أدواتك، واحكم سوقك — أينما كنت في العالم.',
+                'hero.cta1': '👑 إنشاء حسابي', 'hero.cta2': 'اكتشف SAMII ↓',
+                'preview.title': 'لمحة عن مقرك', 'preview.sub': 'ما ينتظرك',
+                'preview.samii.desc': 'استراتيجيك الشخصي', 'preview.samii.stat': 'رسائل متاحة يوميًا', 'preview.samii.btn': 'تحدث مع SAMII ←',
+                'preview.shopify.desc': 'اربط متجرك', 'preview.shopify.btn': 'ربط Shopify ←',
+                'preview.whatsapp.desc': 'اربط رقمك', 'preview.whatsapp.btn': 'ربط WhatsApp ←',
+                'preview.notconnected': 'غير متصل',
+                'preview.dash.title': 'لوحة التحكم', 'preview.dash.desc': 'نظرة عامة', 'preview.dash.stat': 'طلبات اليوم', 'preview.dash.btn': 'عرض الإحصائيات ←',
+                'modules.title': 'ترسانتك جاهزة بالفعل',
+                'modules.samii': 'مساعد ذكي',
+                'modules.dashboard.name': 'لوحة التحكم', 'modules.dashboard.desc': 'نظرة عامة',
+                'modules.shopify': 'تجارة إلكترونية', 'modules.whatsapp': 'مراسلة', 'modules.telegram': 'طلبات مباشرة',
+                'modules.marketplace.name': 'السوق', 'modules.marketplace.desc': 'اشترِ وبِع',
+                'modules.services.name': 'خدمات', 'modules.services.desc': 'توصيل، رعاية...',
+                'modules.emploi.name': 'وظائف', 'modules.emploi.desc': 'مهام ومناصب',
+                'modules.parrainage.name': 'برنامج الإحالة', 'modules.parrainage.desc': '20% + 5%، لمدة 12 شهرًا',
+                'soon.title': 'قريبًا',
+                'soon.reseau.name': 'شبكة عالمية', 'soon.reseau.desc': 'تواصل',
+                'soon.logistique.name': 'الخدمات اللوجستية', 'soon.logistique.desc': 'توصيل وتتبع',
+                'soon.finance.name': 'المالية', 'soon.finance.desc': 'مدفوعات ومحاسبة',
+                'soon.api.name': 'API وتكاملات', 'soon.api.desc': 'اربط كل شيء',
+                'banner.soon1': 'الإمبراطورية لا تتوقف عن النمو.', 'banner.soon2': 'قدرات جديدة تصل كل أسبوع — استعد للانتقال إلى المستوى التالي.',
+                'pills.souverainete.title': 'سيادة تامة', 'pills.souverainete.desc': 'بياناتك ملك لك',
+                'pills.intelligence.title': 'ذكاء فائق', 'pills.intelligence.desc': 'مدعوم بواسطة Gemini',
+                'pills.commandement.title': 'قيادة واحدة موحدة', 'pills.commandement.desc': 'جميع منصاتك في مكان واحد',
+                'pills.grandir.title': 'مصمم للنمو', 'pills.grandir.desc': 'من جندي إلى جنرال',
+                'pills.confrerie.title': 'أخوّة', 'pills.confrerie.desc': 'معًا، نبني أبعد',
+                'auth.title': 'انضم إلى OG Empire', 'auth.subtitle': 'قيادتك في انتظارك — تسجيل مجاني، خلال دقيقتين.',
+                'auth.tab.register': 'إنشاء حساب', 'auth.tab.login': 'تسجيل الدخول',
+                'auth.step1.label': 'الخطوة 1 من 2 — ملفك الشخصي', 'auth.step2.label': 'الخطوة 2 من 2 — الأمان والمظهر',
+                'auth.type.client': 'فرد', 'auth.type.marchand': 'تاجر',
+                'auth.field.nom': 'اللقب', 'auth.ph.nom': 'لقبك',
+                'auth.field.prenom': 'الاسم', 'auth.ph.prenom': 'اسمك',
+                'auth.field.email': 'البريد الإلكتروني', 'auth.field.telephone': 'الهاتف', 'auth.field.pays': 'البلد',
+                'auth.ph.pays_autre': 'اسم بلدك',
+                'auth.field.metier': 'مهنتك', 'auth.metier.ecommerce': 'تاجر إلكتروني', 'auth.metier.restaurant': 'صاحب مطعم', 'auth.metier.immobilier': 'عقارات',
+                'auth.grade1': 'تلتحق بالخدمة برتبة', 'auth.grade2': 'جندي', 'auth.grade3': '— كل إجراء يقربك من القمة.',
+                'auth.continue': 'متابعة ←',
+                'auth.field.password': 'كلمة المرور', 'auth.ph.password': '6 أحرف على الأقل',
+                'auth.theme.choose': 'اختر عالم SAMII',
+                'auth.theme.strategiste': '🪖 استراتيجي', 'auth.theme.sagesse': '🕊️ حكمة',
+                'auth.theme.aventurier': '🧭 مغامر', 'auth.theme.lock1': '🔒 رتبة رقيب',
+                'auth.theme.gaming': '🎮 ألعاب', 'auth.theme.lock2': '🔒 رتبة ملازم',
+                'auth.theme.note': 'يُفتح مغامر وألعاب مع تقدمك في الرتبة — قابل للتغيير في أي وقت من مساحتك.',
+                'auth.back': '← رجوع', 'auth.ph.password_login': 'كلمة مرورك', 'auth.forgot': 'نسيت كلمة المرور؟',
+                'footer.quote': 'OG · EMPIRE — ابنِ بلا حدود.',
+                'msg.creating': '⏳ جارٍ إنشاء الحساب...', 'msg.created_default': '✅ تم إنشاء الحساب!',
+                'msg.error_default': '❌ خطأ.', 'msg.error_network': '❌ خطأ في الشبكة.',
+                'msg.connecting': '⏳ جارٍ تسجيل الدخول...', 'msg.connected': '✅ تم تسجيل الدخول!',
+            },
+        };
+
+        let currentLang = localStorage.getItem('samii_lang') || 'fr';
+        function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+        function applyLang(lang) {
+            if (!I18N[lang]) lang = 'fr';
+            currentLang = lang;
+            localStorage.setItem('samii_lang', lang);
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (I18N[lang][key] !== undefined) el.textContent = I18N[lang][key];
+            });
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                const key = el.getAttribute('data-i18n-ph');
+                if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+            });
+            document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+
+            const activeStep = document.querySelector('.form-step.active');
+            if (activeStep) {
+                const stepN = activeStep.dataset.step;
+                document.getElementById('step-label').textContent = stepN === '2' ? t('auth.step2.label') : t('auth.step1.label');
+            }
+        }
+
+        document.querySelectorAll('.lang-switch span').forEach(span => {
+            span.addEventListener('click', () => applyLang(span.dataset.lang));
+        });
+
+        applyLang(currentLang);
+
         document.querySelectorAll('.auth-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -2424,12 +2633,11 @@
             document.getElementById('champ-autre-pays').style.display = this.value === 'autre' ? 'block' : 'none';
         });
 
-        const stepLabels = { 1: 'Étape 1 sur 2 — Ton profil', 2: 'Étape 2 sur 2 — Sécurité & style' };
         function goToStep(n) {
             document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
             document.querySelector('.form-step[data-step="' + n + '"]').classList.add('active');
             document.querySelectorAll('.step-dot').forEach(d => d.classList.toggle('done', parseInt(d.dataset.stepDot, 10) <= n));
-            document.getElementById('step-label').textContent = stepLabels[n];
+            document.getElementById('step-label').textContent = n === 2 ? t('auth.step2.label') : t('auth.step1.label');
         }
         document.getElementById('btn-step1-next').addEventListener('click', () => {
             const form = document.getElementById('form-register');
@@ -2448,22 +2656,22 @@
             delete data.pays_autre;
 
             btn.disabled = true;
-            msg.textContent = '⏳ Création en cours...';
+            msg.textContent = t('msg.creating');
             msg.className = 'auth-msg';
 
             try {
                 const res = await fetch('/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 const json = await res.json();
                 if (json.success) {
-                    msg.textContent = json.message || '✅ Compte créé !';
+                    msg.textContent = json.message || t('msg.created_default');
                     msg.className = 'auth-msg ok';
                     if (json.redirect) setTimeout(() => window.location.href = json.redirect, 1200);
                 } else {
-                    msg.textContent = json.error || '❌ Erreur.';
+                    msg.textContent = json.error || t('msg.error_default');
                     btn.disabled = false;
                 }
             } catch (err) {
-                msg.textContent = '❌ Erreur réseau.';
+                msg.textContent = t('msg.error_network');
                 btn.disabled = false;
             }
         });
@@ -2475,22 +2683,22 @@
             const data = Object.fromEntries(new FormData(e.target));
 
             btn.disabled = true;
-            msg.textContent = '⏳ Connexion...';
+            msg.textContent = t('msg.connecting');
             msg.className = 'auth-msg';
 
             try {
                 const res = await fetch('/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 const json = await res.json();
                 if (json.success) {
-                    msg.textContent = '✅ Connecté !';
+                    msg.textContent = t('msg.connected');
                     msg.className = 'auth-msg ok';
                     window.location.href = json.redirect || '/';
                 } else {
-                    msg.textContent = json.error || '❌ Erreur.';
+                    msg.textContent = json.error || t('msg.error_default');
                     btn.disabled = false;
                 }
             } catch (err) {
-                msg.textContent = '❌ Erreur réseau.';
+                msg.textContent = t('msg.error_network');
                 btn.disabled = false;
             }
         });
