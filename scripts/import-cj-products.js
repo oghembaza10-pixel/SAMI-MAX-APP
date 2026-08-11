@@ -69,23 +69,41 @@ const SHIP_COUNTRIES = (process.env.CJ_SHIP_COUNTRIES || "")
     .filter(Boolean);
 
 // --------------------------------------------------------------------------
-// THÈMES — priorité aux catégories "achat impulsif" (gadgets, lumière,
-// tendances) : ce sont elles qui convertissent le mieux en achat spontané.
-// Aucun mot-clé de marque de luxe (contrefaçon) — uniquement des catégories
-// génériques.
+// THÈMES — recentrés sur le marché maghrébin (Algérie/Maroc/Tunisie) d'après
+// recherche marché : accessoires téléphone, gadgets électroniques/robotique,
+// montres, mode tendance (homme/femme) et beauté sont les catégories qui
+// convertissent le mieux dans la région (COD dominant, achat impulsif).
+// Explicitement exclus (demande du fondateur) : vélos/trottinettes, articles
+// pour animaux, objets à connotation religieuse chrétienne (croix, etc.) —
+// voir estExclu() plus bas, qui filtre ces produits quel que soit le thème.
+// Aucun mot-clé de marque de luxe (contrefaçon).
 // --------------------------------------------------------------------------
 const THEMES = [
-    { label: "Gadgets Électriques",       keyword: "electric gadget",   categorie: "electronique-tech",       video: true },
-    { label: "Éclairage & Smart Home",    keyword: "led light",         categorie: "eclairage-smart-home",    video: true },
-    { label: "Tendances TikTok",          keyword: "",                  categorie: "tendances-nouveautes",    video: true, tiktok: true },
-    { label: "Produits Vidéo Tendance",   keyword: "",                  categorie: "tendances-nouveautes",    video: true },
-    { label: "Téléphones & Accessoires",  keyword: "phone accessories", categorie: "telephones-accessoires",  video: false },
-    { label: "Mode Femme",                keyword: "women fashion",     categorie: "mode-femme",              video: false },
-    { label: "Mode Homme",                keyword: "men fashion",       categorie: "mode-homme",              video: false },
-    { label: "Sport & Fitness",           keyword: "fitness gadget",    categorie: "sport-fitness",           video: true },
-    { label: "Beauté & Cosmétiques",      keyword: "beauty tool",       categorie: "beaute-cosmetiques",      video: true },
-    { label: "Cuisine & Électroménager",  keyword: "kitchen gadget",    categorie: "cuisine-electromenager",  video: true },
+    { label: "Gadgets Électroniques & Robotique", keyword: "smart electronic gadget", categorie: "electronique-tech",      video: true },
+    { label: "Montres",                    keyword: "smart watch fashion",     categorie: "montres-wearables",       video: true },
+    { label: "Téléphones & Accessoires",   keyword: "phone accessories",       categorie: "telephones-accessoires",  video: false },
+    { label: "Mode Femme Tendance",        keyword: "women fashion trendy",    categorie: "mode-femme",              video: true },
+    { label: "Mode Homme",                 keyword: "men fashion",             categorie: "mode-homme",              video: false },
+    { label: "Éclairage & Smart Home",     keyword: "led light",               categorie: "eclairage-smart-home",    video: true },
+    { label: "Tendances TikTok",           keyword: "",                        categorie: "tendances-nouveautes",    video: true, tiktok: true },
+    { label: "Sport & Fitness",            keyword: "fitness gadget",          categorie: "sport-fitness",           video: true },
+    { label: "Beauté & Cosmétiques",       keyword: "beauty tool",             categorie: "beaute-cosmetiques",      video: true },
+    { label: "Cuisine & Électroménager",   keyword: "kitchen gadget",          categorie: "cuisine-electromenager",  video: true },
 ];
+
+// Filtre appliqué à CHAQUE produit avant import, indépendamment du thème —
+// un mot-clé exclu bloque l'import même s'il apparaît dans un thème générique
+// ("Tendances TikTok" par exemple pourrait remonter n'importe quoi).
+const MOTS_EXCLUS = [
+    /\b(bike|bicycle|scooter|e-?bike|kick\s?scooter)\b/i,
+    /\b(dog|cat|pet|puppy|kitten|animal)\b/i,
+    /\b(cross|crucifix|jesus|christ|christian|church|bible|catholic|rosary)\b/i,
+];
+
+function estExclu(title, description) {
+    const texte = `${title || ""} ${description || ""}`;
+    return MOTS_EXCLUS.some((regex) => regex.test(texte));
+}
 
 // --------------------------------------------------------------------------
 // Catégories officielles réellement en base (categories_produits) — la
@@ -209,6 +227,12 @@ async function importTheme(theme, knownSlugs) {
 
         const cost = parseCjPrice(product.cost_price ?? product.price);
         if (!product.title || cost === null) { skipped++; continue; }
+
+        if (estExclu(product.title, product.description)) {
+            console.log(`   ⛔ Exclu (hors périmètre) : ${product.title}`);
+            skipped++;
+            continue;
+        }
 
         const categorie = refineCategory(product.title, product.category, theme.categorie, knownSlugs);
         const prix = priceFor(cost);
