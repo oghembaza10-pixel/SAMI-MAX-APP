@@ -69,26 +69,37 @@ const SHIP_COUNTRIES = (process.env.CJ_SHIP_COUNTRIES || "")
     .filter(Boolean);
 
 // --------------------------------------------------------------------------
-// THÈMES — recentrés sur le marché maghrébin (Algérie/Maroc/Tunisie) d'après
-// recherche marché : accessoires téléphone, gadgets électroniques/robotique,
-// montres, mode tendance (homme/femme) et beauté sont les catégories qui
-// convertissent le mieux dans la région (COD dominant, achat impulsif).
+// THÈMES — 4 piliers exacts demandés par le fondateur (dossier de sourcing
+// du 11/08/2026) : gadgets électroniques/robotique viraux, mode haut de
+// gamme design épuré, horlogerie premium, lifestyle/utilitaires "coup de
+// cœur". Vidéo obligatoire à 100% — voir le filtre plus bas qui rejette
+// tout produit sans vidéo, quel que soit le thème.
 // Explicitement exclus (demande du fondateur) : vélos/trottinettes, articles
 // pour animaux, objets à connotation religieuse chrétienne (croix, etc.) —
-// voir estExclu() plus bas, qui filtre ces produits quel que soit le thème.
-// Aucun mot-clé de marque de luxe (contrefaçon).
+// voir estExclu() plus bas. Aucun mot-clé de marque de luxe (contrefaçon).
 // --------------------------------------------------------------------------
 const THEMES = [
-    { label: "Gadgets Électroniques & Robotique", keyword: "smart electronic gadget", categorie: "electronique-tech",      video: true },
-    { label: "Montres",                    keyword: "smart watch fashion",     categorie: "montres-wearables",       video: true },
-    { label: "Téléphones & Accessoires",   keyword: "phone accessories",       categorie: "telephones-accessoires",  video: false },
-    { label: "Mode Femme Tendance",        keyword: "women fashion trendy",    categorie: "mode-femme",              video: true },
-    { label: "Mode Homme",                 keyword: "men fashion",             categorie: "mode-homme",              video: false },
-    { label: "Éclairage & Smart Home",     keyword: "led light",               categorie: "eclairage-smart-home",    video: true },
-    { label: "Tendances TikTok",           keyword: "",                        categorie: "tendances-nouveautes",    video: true, tiktok: true },
-    { label: "Sport & Fitness",            keyword: "fitness gadget",          categorie: "sport-fitness",           video: true },
-    { label: "Beauté & Cosmétiques",       keyword: "beauty tool",             categorie: "beaute-cosmetiques",      video: true },
-    { label: "Cuisine & Électroménager",   keyword: "kitchen gadget",          categorie: "cuisine-electromenager",  video: true },
+    // Pilier 1 — Gadgets électroniques & compagnons robotisés
+    { label: "Robot compagnon de bureau",     keyword: "mini robot companion",       categorie: "electronique-tech",      video: true },
+    { label: "Animal électronique",           keyword: "smart robot pet toy",        categorie: "electronique-tech",      video: true },
+    { label: "Gadget IA de bureau",           keyword: "AI desktop robot gadget",    categorie: "electronique-tech",      video: true },
+    { label: "Gadget viral",                  keyword: "viral electronic gadget",    categorie: "tendances-nouveautes",   video: true, tiktok: true },
+
+    // Pilier 2 — Mode & vêtement haut de gamme
+    { label: "T-shirt premium minimaliste",   keyword: "premium minimalist tshirt",  categorie: "mode-homme",             video: true },
+    { label: "Ensemble coordonné streetwear", keyword: "matching set streetwear",    categorie: "mode-homme",             video: true },
+    { label: "Oversize premium",              keyword: "oversized premium tee",      categorie: "mode-femme",             video: true },
+    { label: "Mode femme tendance",           keyword: "women fashion trendy",       categorie: "mode-femme",             video: true },
+
+    // Pilier 3 — Horlogerie premium
+    { label: "Montre minimaliste premium",    keyword: "minimalist watch premium",   categorie: "montres-wearables",      video: true },
+    { label: "Montre look luxe homme",        keyword: "luxury look watch men",      categorie: "montres-wearables",      video: true },
+    { label: "Montre connectée premium",      keyword: "smart watch premium design", categorie: "montres-wearables",      video: true },
+
+    // Pilier 4 — Lifestyle & utilitaires "coup de cœur"
+    { label: "Gadget qui règle un problème",  keyword: "problem solving gadget home",categorie: "entretien-organisation", video: true },
+    { label: "Astuce maison en objet",        keyword: "life hack gadget",           categorie: "entretien-organisation", video: true },
+    { label: "Outil multifonction",           keyword: "multifunction daily tool",   categorie: "bricolage-outillage",    video: true },
 ];
 
 // Filtre appliqué à CHAQUE produit avant import, indépendamment du thème —
@@ -230,6 +241,16 @@ async function importTheme(theme, knownSlugs) {
 
         if (estExclu(product.title, product.description)) {
             console.log(`   ⛔ Exclu (hors périmètre) : ${product.title}`);
+            skipped++;
+            continue;
+        }
+
+        // Exigence du fondateur : aucune fiche sans vidéo. On n'importe pas un
+        // produit qui coche toutes les autres cases mais n'a pas de vidéo CJ —
+        // mieux vaut un catalogue plus petit mais 100% vidéo qu'un retour en
+        // arrière sur cette règle.
+        if (!product.videos || !product.videos.length) {
+            console.log(`   🎬 Sans vidéo, ignoré : ${product.title}`);
             skipped++;
             continue;
         }
