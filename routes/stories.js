@@ -40,14 +40,28 @@ p.hint { color:var(--muted); font-size:12px; margin:0 0 18px; }
 button[type="submit"] { width:100%; margin-top:16px; padding:14px; border:none; border-radius:12px; background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:#001018; font-weight:800; cursor:pointer; }
 button[type="submit"]:disabled { opacity:.5; cursor:not-allowed; }
 .back { display:inline-block; margin-top:14px; color:var(--muted); text-decoration:none; font-size:12.5px; }
+.trim-box { display:none; margin-top:14px; }
+.trim-box.show { display:block; }
+.trim-preview { width:100%; max-height:340px; border-radius:14px; background:#000; display:block; }
+.trim-label { display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); margin:10px 0 4px; font-family:monospace; }
+.trim-slider { width:100%; accent-color:var(--blue); }
+.trim-confirm { width:100%; margin-top:10px; padding:11px; border:none; border-radius:10px; background:rgba(0,217,255,.12); color:var(--blue); font-weight:700; cursor:pointer; border:1px solid var(--border); }
 </style>
 </head>
 <body>
 <div class="story-box">
     <h1>✨ Nouvelle story</h1>
-    <p class="hint">Visible 24h par tout le monde. Vidéo : seules les ${STORY_MAX_DUREE_SEC} premières secondes seront gardées.</p>
+    <p class="hint">Visible 24h par tout le monde. Vidéo : ${STORY_MAX_DUREE_SEC} secondes max — choisis le bon passage si elle est plus longue.</p>
     <div class="drop-zone" id="dropZone">📷 Touche pour choisir une photo ou une vidéo</div>
     <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;">
+
+    <div class="trim-box" id="trimBox">
+        <video class="trim-preview" id="trimPreview" muted playsinline></video>
+        <div class="trim-label"><span>Début : <span id="trimStartLabel">0</span>s</span><span>${STORY_MAX_DUREE_SEC}s sélectionnées</span></div>
+        <input type="range" class="trim-slider" id="trimSlider" min="0" max="0" step="0.1" value="0">
+        <button type="button" class="trim-confirm" id="trimConfirm">✅ Utiliser ce passage</button>
+    </div>
+
     <div class="status" id="status"></div>
     <button type="submit" id="submitBtn" disabled>Publier ma story</button>
     <a href="/community" class="back">← Annuler</a>
@@ -57,31 +71,53 @@ const dropZone = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
 const statusEl = document.getElementById("status");
 const submitBtn = document.getElementById("submitBtn");
+const trimBox = document.getElementById("trimBox");
+const trimPreview = document.getElementById("trimPreview");
+const trimSlider = document.getElementById("trimSlider");
+const trimStartLabel = document.getElementById("trimStartLabel");
+const trimConfirm = document.getElementById("trimConfirm");
+
+let currentFile = null;
 let mediaUrl = null, mediaType = null;
+let trimLoopHandler = null;
 
 dropZone.addEventListener("click", () => fileInput.click());
 
-fileInput.addEventListener("change", async () => {
-    const file = fileInput.files[0];
-    if (!file) return;
-    statusEl.className = "status"; statusEl.textContent = "";
-    mediaUrl = null; submitBtn.disabled = true;
+function resetTrimUI() {
+    trimBox.classList.remove("show");
+    if (trimLoopHandler) { trimPreview.removeEventListener("timeupdate", trimLoopHandler); trimLoopHandler = null; }
+    trimPreview.pause();
+    trimPreview.removeAttribute("src");
+}
 
-    const isVideo = file.type.startsWith("video/");
+function setupTrim(objectUrl, duree) {
+    trimBox.classList.add("show");
+    trimPreview.src = objectUrl;
+    trimSlider.max = Math.max(0, (duree - ${STORY_MAX_DUREE_SEC}).toFixed(1));
+    trimSlider.value = 0;
+    trimStartLabel.textContent = "0";
 
-    if (isVideo) {
-        const duree = await new Promise((resolve) => {
-            const v = document.createElement("video");
-            v.preload = "metadata";
-            v.onloadedmetadata = () => resolve(v.duration);
-            v.onerror = () => resolve(0);
-            v.src = URL.createObjectURL(file);
-        });
-        if (duree > ${STORY_MAX_DUREE_SEC}) {
-            statusEl.textContent = "✂️ Vidéo de " + Math.round(duree) + "s — seules les ${STORY_MAX_DUREE_SEC} premières secondes seront gardées.";
-        }
+    function seekAndPlay(start) {
+        trimPreview.currentTime = start;
+        trimPreview.play().catch(() => {});
     }
 
+    if (trimLoopHandler) trimPreview.removeEventListener("timeupdate", trimLoopHandler);
+    trimLoopHandler = () => {
+        const start = Number(trimSlider.value);
+        if (trimPreview.currentTime >= start + ${STORY_MAX_DUREE_SEC}) seekAndPlay(start);
+    };
+    trimPreview.addEventListener("timeupdate", trimLoopHandler);
+    trimPreview.addEventListener("loadedmetadata", () => seekAndPlay(0), { once: true });
+
+    trimSlider.addEventListener("input", () => {
+        trimStartLabel.textContent = Number(trimSlider.value).toFixed(1);
+        seekAndPlay(Number(trimSlider.value));
+    });
+}
+
+async function uploadAndFinalize(file, isVideo, trimStart) {
+    statusEl.className = "status";
     statusEl.textContent = "⏳ Envoi en cours...";
     try {
         const formData = new FormData();
@@ -90,14 +126,22 @@ fileInput.addEventListener("change", async () => {
         const endpoint = isVideo ? "video" : "image";
         const res = await fetch("https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/" + endpoint + "/upload", { method:"POST", body:formData });
         const json = await res.json();
-        if (!json.secure_url) throw new Error("Échec upload");
+        if (!json.secure_url) {
+            // Cloudinary renvoie toujours une raison précise en cas d'échec — on
+            // l'affiche telle quelle au lieu d'un message générique, pour pouvoir
+            // enfin savoir POURQUOI ça bloque si ça se reproduit.
+            throw new Error(json.error?.message || "Réponse Cloudinary invalide.");
+        }
 
-        // La vidéo entière est envoyée telle quelle (pas de rejet) ; Cloudinary
-        // ne sert que les ${STORY_MAX_DUREE_SEC} premières secondes à la lecture
-        // (transformation à la volée, aucun retraitement serveur nécessaire).
-        mediaUrl = isVideo ? json.secure_url.replace("/upload/", "/upload/du_${STORY_MAX_DUREE_SEC}/") : json.secure_url;
+        if (isVideo) {
+            const transform = trimStart > 0 ? "so_" + trimStart.toFixed(1) + ",du_${STORY_MAX_DUREE_SEC}" : "du_${STORY_MAX_DUREE_SEC}";
+            mediaUrl = json.secure_url.replace("/upload/", "/upload/" + transform + "/");
+        } else {
+            mediaUrl = json.secure_url;
+        }
         mediaType = isVideo ? "video" : "photo";
 
+        resetTrimUI();
         dropZone.classList.add("has-media");
         dropZone.innerHTML = isVideo
             ? '<video src="' + mediaUrl + '" muted playsinline autoplay loop></video>'
@@ -107,8 +151,45 @@ fileInput.addEventListener("change", async () => {
         submitBtn.disabled = false;
     } catch (err) {
         statusEl.className = "status err";
-        statusEl.textContent = "❌ Erreur d'envoi, réessaie.";
+        statusEl.textContent = "❌ " + err.message;
     }
+}
+
+fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    statusEl.className = "status"; statusEl.textContent = "";
+    mediaUrl = null; submitBtn.disabled = true;
+    currentFile = file;
+    resetTrimUI();
+
+    const isVideo = file.type.startsWith("video/");
+
+    if (isVideo) {
+        const objectUrl = URL.createObjectURL(file);
+        const duree = await new Promise((resolve) => {
+            const v = document.createElement("video");
+            v.preload = "metadata";
+            v.onloadedmetadata = () => resolve(v.duration);
+            v.onerror = () => resolve(0);
+            v.src = objectUrl;
+        });
+
+        if (duree > ${STORY_MAX_DUREE_SEC}) {
+            // Comme sur Instagram/Facebook : on montre la vidéo qui joue, et on
+            // choisit les ${STORY_MAX_DUREE_SEC} secondes à garder avant d'envoyer quoi que ce soit.
+            setupTrim(objectUrl, duree);
+            statusEl.textContent = "🎬 Choisis les ${STORY_MAX_DUREE_SEC} secondes à garder, puis valide.";
+            return;
+        }
+    }
+
+    await uploadAndFinalize(file, isVideo, 0);
+});
+
+trimConfirm.addEventListener("click", () => {
+    if (!currentFile) return;
+    uploadAndFinalize(currentFile, true, Number(trimSlider.value));
 });
 
 submitBtn.addEventListener("click", async (e) => {
@@ -116,13 +197,20 @@ submitBtn.addEventListener("click", async (e) => {
     if (!mediaUrl) return;
     submitBtn.disabled = true;
     submitBtn.textContent = "Publication...";
-    const res = await fetch("/stories/publier", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ media_url: mediaUrl, type: mediaType })
-    });
-    const json = await res.json();
-    if (json.success) window.location.href = "/community";
-    else { statusEl.className = "status err"; statusEl.textContent = json.error || "Erreur."; submitBtn.disabled = false; submitBtn.textContent = "Publier ma story"; }
+    try {
+        const res = await fetch("/stories/publier", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ media_url: mediaUrl, type: mediaType })
+        });
+        const json = await res.json();
+        if (json.success) window.location.href = "/community";
+        else { statusEl.className = "status err"; statusEl.textContent = json.error || "Erreur."; submitBtn.disabled = false; submitBtn.textContent = "Publier ma story"; }
+    } catch (err) {
+        statusEl.className = "status err";
+        statusEl.textContent = "❌ Erreur réseau, réessaie.";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Publier ma story";
+    }
 });
 </script>
 </body>
