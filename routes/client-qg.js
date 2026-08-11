@@ -4,6 +4,7 @@
 const express = require("express");
 const router  = express.Router();
 const db = require("../services/db");
+const referralService = require("../services/referralService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -14,9 +15,11 @@ function requireAuth(req, res, next) {
 router.get("/", requireAuth, async (req, res) => {
     let telephone = "";
     let commandes = [];
+    let codeParrainage = "";
     try {
         const rows = await db.query(`SELECT telephone FROM utilisateurs WHERE id = $1`, [req.session.userId]);
         telephone = rows[0]?.telephone || "";
+        codeParrainage = await referralService.assurerCodeParrainage(req.session.userId);
         if (telephone) {
             commandes = await db.query(
                 `SELECT id, produit, statut, numero_suivi, transporteur, dernier_statut_suivi, date_commande
@@ -30,7 +33,7 @@ router.get("/", requireAuth, async (req, res) => {
 
     res.render("client-qg", {
         nom: req.session.nom || "",
-        codeParrainage: req.session.userId || "",
+        codeParrainage,
         telephone,
         commandes,
     });

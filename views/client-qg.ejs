@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/client-style.css">
 </head>
-<body data-telephone="<%= telephone || '' %>">
+<body data-telephone="<%= telephone || '' %>" data-user-id="<%= userId || '' %>">
 <div class="qg-grade-bar">
     <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
     <span class="qg-grade-bar__nom" id="grade-nom">SOLDAT</span>
@@ -161,11 +161,14 @@
                     <div id="quota-bar" style="height:8px;border-radius:8px;background:linear-gradient(90deg,#9d5cff,#5FD4FF);width:100%;transition:width .6s ease;"></div>
                 </div>
                 <p style="color:var(--text-muted);font-size:.8rem;">
-                    💡 Invite 3 amis avec ton lien pour débloquer plus de messages chaque jour.
+                    💡 Invite tes proches : tu gagnes 20% sur leurs paiements pendant 12 mois, et ils ont 5% de réduction sur les leurs.
                 </p>
                 <button id="btn-copier-lien" style="margin-top:10px;padding:10px 16px;background:#9d5cff;border:none;border-radius:8px;font-weight:700;cursor:pointer;color:#fff;">
-                    🔗 Copier mon lien d'invitation
+                    🔗 Copier mon lien de parrainage
                 </button>
+                <a href="/parrainage" style="display:inline-block;margin-top:10px;margin-left:8px;padding:10px 16px;background:rgba(255,255,255,0.08);border-radius:8px;font-weight:700;color:#fff;text-decoration:none;">
+                    Voir mes gains<span id="badge-gains" style="color:#3ddc84;"></span> →
+                </a>
             </article>
         </section>
     </main>
@@ -201,11 +204,29 @@ fetch('/client-qg/quota')
     })
     .catch(() => {});
 
+fetch('/parrainage/resume')
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+        const badge = document.getElementById('badge-gains');
+        if (badge && data.confirme > 0) badge.textContent = ' (+' + data.confirme.toFixed(2) + '$)';
+    })
+    .catch(() => {});
+
 if (typeof io !== 'undefined') {
     const socket = io();
     const telephone = document.body.getAttribute('data-telephone');
+    const userId = document.body.getAttribute('data-user-id');
     socket.on('connect', () => {
         if (telephone) socket.emit('join', telephone);
+        if (userId) socket.emit('join', userId);
+    });
+    socket.on('parrainage:gain', function (gain) {
+        if (gain.statut !== 'confirmee') return;
+        const badge = document.getElementById('badge-gains');
+        if (!badge) return;
+        const actuel = parseFloat((badge.textContent.match(/[\d.]+/) || [0])[0]) || 0;
+        badge.textContent = ' (+' + (actuel + parseFloat(gain.commission_montant)).toFixed(2) + '$)';
     });
     socket.on('commande-suivi-maj', function (d) {
         const card = document.querySelector('[data-commande-id="' + d.id + '"]');

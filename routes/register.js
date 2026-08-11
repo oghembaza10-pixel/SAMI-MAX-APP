@@ -9,6 +9,7 @@ const gmail   = require("../services/gmail");
 const CONFIG  = require("../config");
 const db      = require("../services/db");
 const gradeService = require("../services/gradeService");
+const referralService = require("../services/referralService");
 
 const TOKEN_VALIDITE_HEURES = 24;
 
@@ -20,6 +21,7 @@ router.get("/", (req, res) => {
     }
 
     const metier = req.query.metier || "";
+    const refCode = (req.query.ref || "").trim();
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -87,6 +89,7 @@ router.get("/", (req, res) => {
         </div>
 
         <input name="password" type="password" placeholder="Mot de passe" required minlength="6">
+        <input type="hidden" name="ref" value="${refCode}">
         <button type="submit">Créer mon compte</button>
     </form>
     <div class="msg" id="msg"></div>
@@ -188,7 +191,7 @@ router.get("/confirmer", async (req, res) => {
 
 // ── POST /register ───────────────────────────────────────────────
 router.post("/", async (req, res) => {
-    const { nom, prenom, email, telephone, metier, password, type_compte, theme_visuel } = req.body;
+    const { nom, prenom, email, telephone, metier, password, type_compte, theme_visuel, ref } = req.body;
     const typeCompte = type_compte === "marchand" ? "marchand" : "client";
 
     // Un nouveau compte démarre toujours au grade Soldat : seuls les thèmes
@@ -255,17 +258,22 @@ router.post("/", async (req, res) => {
         const token = crypto.randomBytes(32).toString("hex");
         const expireLe = new Date(Date.now() + TOKEN_VALIDITE_HEURES * 60 * 60 * 1000);
 
-        await db.query(
+        const nouveauRows = await db.query(
             `INSERT INTO utilisateurs
                 (nom, prenom, email, telephone, metier, type_compte, password_hash, role, statut_acces, last_login, actif, email_verifie, token_verification, token_expire_le, theme_visuel)
              VALUES
-                ($1, $2, $3, $4, $5, $6, $7, 'owner', 'actif', CURRENT_DATE, true, false, $8, $9, $10)`,
+                ($1, $2, $3, $4, $5, $6, $7, 'owner', 'actif', CURRENT_DATE, true, false, $8, $9, $10)
+             RETURNING id`,
             [
                 nom, prenom, email, telephone,
                 typeCompte === "marchand" ? (metier || "ecommerce") : "",
                 typeCompte, passwordHash, token, expireLe, themeChoisi,
             ]
         );
+
+        if (ref && nouveauRows[0]?.id) {
+            await referralService.enregistrerParrainage(nouveauRows[0].id, ref.trim().toUpperCase());
+        }
 
         const lienConfirmation = `${CONFIG.APP_URL}/register/confirmer?token=${token}`;
 

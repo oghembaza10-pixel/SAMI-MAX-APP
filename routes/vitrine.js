@@ -188,7 +188,8 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 
     ${user.bio_vitrine ? `<p class="bio-text">${escapeHtml(user.bio_vitrine)}</p>` : ""}
 
-    ${estMoi ? `<a href="/settings" class="edit-vitrine-btn"><i data-lucide="pencil"></i> Paramètres</a>` : ""}
+    ${estMoi ? `<a href="/settings" class="edit-vitrine-btn"><i data-lucide="pencil"></i> Paramètres</a>
+    <a href="/parrainage" class="edit-vitrine-btn" style="margin-left:8px;"><i data-lucide="handshake"></i> Parrainage</a>` : ""}
 
     <div class="section-title"><i data-lucide="store"></i> Annonces actives</div>
     <div class="vt-grid">${annoncesHtml}</div>

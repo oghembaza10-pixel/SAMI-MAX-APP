@@ -7,6 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
+    fetch('/parrainage/resume')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            const badge = document.getElementById('badge-gains-parrainage');
+            if (badge && data.confirme > 0) badge.textContent = ' (+' + data.confirme.toFixed(2) + '$)';
+        })
+        .catch(() => {});
+
     const qgBackLink = document.getElementById('qg-back-link');
     if (window.location.pathname.startsWith('/qg/')) {
         localStorage.setItem('ogLastQG', window.location.pathname);
@@ -523,8 +532,18 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.on('connect', () => {
             const shop = document.body.getAttribute('data-shop');
             const workspaceId = document.body.getAttribute('data-workspace-id');
+            const userId = document.body.getAttribute('data-user-id');
             if (shop) socket.emit('join', shop);
             if (workspaceId) socket.emit('join', workspaceId);
+            if (userId) socket.emit('join', userId);
+        });
+        socket.on('parrainage:gain', (gain) => {
+            if (gain.statut !== 'confirmee') return;
+            const badge = document.getElementById('badge-gains-parrainage');
+            if (!badge) return;
+            const actuel = parseFloat((badge.textContent.match(/[\d.]+/) || [0])[0]) || 0;
+            badge.textContent = ' (+' + (actuel + parseFloat(gain.commission_montant)).toFixed(2) + '$)';
+            afficherNotification('💰 Nouvelle commission de parrainage');
         });
         socket.on('nouvelle-commande', () => {
             afficherNotification('🛒 Nouvelle commande reçue');

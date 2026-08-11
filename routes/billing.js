@@ -10,6 +10,7 @@ const express = require("express");
 const router   = express.Router();
 const workspaceService = require("../services/workspaceService");
 const db = require("../services/db");
+const referralService = require("../services/referralService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -31,8 +32,35 @@ try {
     console.warn("⚠️ Module 'stripe' non installé — lance `npm install stripe` sur ton projet.");
 }
 
-router.get("/", requireAuth, (req, res) => {
+const COUPON_FILLEUL_ID = "samii-filleul-5pct-12m";
+
+// Coupon partagé -5%/12 mois pour les filleuls : créé une seule fois chez Stripe, réutilisé ensuite.
+async function assurerCouponFilleul() {
+    try {
+        await stripe.coupons.retrieve(COUPON_FILLEUL_ID);
+        return COUPON_FILLEUL_ID;
+    } catch {
+        await stripe.coupons.create({
+            id: COUPON_FILLEUL_ID,
+            percent_off: referralService.TAUX_REDUCTION_FILLEUL * 100,
+            duration: "repeating",
+            duration_in_months: referralService.FENETRE_MOIS,
+        });
+        return COUPON_FILLEUL_ID;
+    }
+}
+
+const PRIX_AFFICHE = { standard: 9.99, pro: 29.99 };
+
+router.get("/", requireAuth, async (req, res) => {
     const stripeReady = !!stripe;
+    const { reduit } = await referralService.appliquerReductionFilleul(req.session.userId, 1);
+    const prixHtml = (plan) => {
+        const base = PRIX_AFFICHE[plan];
+        if (!reduit) return `${base.toFixed(2)}$ <span>/mois</span>`;
+        const remise = Math.round(base * (1 - referralService.TAUX_REDUCTION_FILLEUL) * 100) / 100;
+        return `<s style="opacity:.5;font-size:.6em;">${base.toFixed(2)}$</s> ${remise.toFixed(2)}$ <span>/mois — filleul -5%</span>`;
+    };
     const ccpBlock = (plan) => `
             <div class="bill-ccp">
                 <div class="bill-ccp-label">🏦 Payer par CCP</div>
@@ -95,7 +123,7 @@ router.get("/", requireAuth, (req, res) => {
         </div>
         <div class="bill-card">
             <h2>🚀 Actif</h2>
-            <div class="bill-price">9,99$ <span>/mois</span></div>
+            <div class="bill-price">${prixHtml("standard")}</div>
             <ul>
                 <li>100 confirmations/jour</li>
                 <li>WhatsApp + Telegram + Shopify connectés</li>
@@ -109,7 +137,7 @@ router.get("/", requireAuth, (req, res) => {
         </div>
         <div class="bill-card bill-card--pro">
             <h2>👑 Souverain</h2>
-            <div class="bill-price">29,99$ <span>/mois</span></div>
+            <div class="bill-price">${prixHtml("pro")}</div>
             <ul>
                 <li>1000 confirmations/jour</li>
                 <li>Tout le plan Actif, en illimité</li>
@@ -171,10 +199,14 @@ router.post("/checkout", requireAuth, async (req, res) => {
         const workspace = await workspaceService.getById(req.session.workspaceId);
         if (!workspace) return res.json({ error: "Workspace introuvable." });
 
+        const { reduit } = await referralService.appliquerReductionFilleul(req.session.userId, 1);
+        const discounts = reduit ? [{ coupon: await assurerCouponFilleul() }] : undefined;
+
         const session = await stripe.checkout.sessions.create({
             mode: "subscription",
             payment_method_types: ["card"],
             line_items: [{ price: priceId, quantity: 1 }],
+            discounts,
             success_url: "https://samii.souverain-store.com/billing/success",
             cancel_url : "https://samii.souverain-store.com/billing",
             client_reference_id: workspace.workspaceId,
@@ -198,6 +230,18 @@ router.post("/ccp-request", requireAuth, async (req, res) => {
             `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
             ["abonnement.demande.ccp", `Demande d'activation ${plan} par virement CCP`, workspaceId]
         );
+
+        // Le plan lui-même n'est activé que manuellement par l'équipe (comme pour tout CCP) ;
+        // la commission suit le même circuit et reste "en_attente" jusqu'à cette validation.
+        const { montant } = await referralService.appliquerReductionFilleul(req.session.userId, PRIX_AFFICHE[plan]);
+        await referralService.crediterCommission({
+            filleulId: req.session.userId,
+            montantPaye: montant,
+            devise: "USD",
+            plan,
+            source: "ccp",
+            statut: "en_attente",
+        });
 
         res.json({ success: true });
     } catch (err) {
@@ -254,6 +298,19 @@ router.post("/webhook", async (req, res) => {
                     });
 
                     console.log(`✅ Abonnement ${plan} activé pour ${workspaceId}`);
+
+                    const acheteurRows = await db.query(`SELECT id FROM utilisateurs WHERE email = $1`, [workspace.owner]);
+                    const acheteurId = acheteurRows[0]?.id;
+                    if (acheteurId) {
+                        await referralService.crediterCommission({
+                            filleulId: acheteurId,
+                            montantPaye: (session.amount_total || 0) / 100,
+                            devise: (session.currency || "usd").toUpperCase(),
+                            plan,
+                            source: "stripe",
+                            statut: "confirmee",
+                        });
+                    }
                 }
             } catch (err) {
                 console.error("❌ Erreur mise à jour après paiement :", err.message);
