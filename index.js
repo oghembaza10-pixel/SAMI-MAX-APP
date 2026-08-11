@@ -117,6 +117,7 @@ app.use("/vitrine", require("./routes/vitrine"));
 app.use("/settings",  requireAuth, require("./routes/settings"));
 app.use("/parrainage", requireAuth, require("./routes/parrainage"));
 app.use("/partenariat", require("./routes/partenariat"));
+app.use("/admin", require("./routes/admin"));
 app.use("/ads",       requireAuth, require("./routes/ads"));
 app.use("/coffre",    requireAuth, require("./routes/coffre"));
 app.use("/arsenal",   requireAuth, require("./routes/arsenal"));
