@@ -69,14 +69,14 @@ const SHIP_COUNTRIES = (process.env.CJ_SHIP_COUNTRIES || "")
     .filter(Boolean);
 
 // --------------------------------------------------------------------------
-// THÈMES — 4 piliers exacts demandés par le fondateur (dossier de sourcing
-// du 11/08/2026) : gadgets électroniques/robotique viraux, mode haut de
-// gamme design épuré, horlogerie premium, lifestyle/utilitaires "coup de
-// cœur". Vidéo obligatoire à 100% — voir le filtre plus bas qui rejette
-// tout produit sans vidéo, quel que soit le thème.
-// Explicitement exclus (demande du fondateur) : vélos/trottinettes, articles
-// pour animaux, objets à connotation religieuse chrétienne (croix, etc.) —
-// voir estExclu() plus bas. Aucun mot-clé de marque de luxe (contrefaçon).
+// THÈMES — 4 piliers du dossier de sourcing (11/08/2026), élargis ensuite à
+// la demande du fondateur : plus d'électronique, montres connectées,
+// ensembles survêtement, trottinettes électriques.
+// Explicitement exclus (demande du fondateur) : articles pour animaux,
+// objets à connotation religieuse chrétienne (croix, etc.) — voir
+// estExclu() plus bas. Vélos restent exclus (jamais redemandés), trottinettes
+// électriques réintégrées (demande explicite). Aucun mot-clé de marque de
+// luxe (contrefaçon).
 // --------------------------------------------------------------------------
 const THEMES = [
     // Pilier 1 — Gadgets électroniques & compagnons robotisés
@@ -84,10 +84,13 @@ const THEMES = [
     { label: "Animal électronique",           keyword: "smart robot pet toy",        categorie: "electronique-tech",      video: true },
     { label: "Gadget IA de bureau",           keyword: "AI desktop robot gadget",    categorie: "electronique-tech",      video: true },
     { label: "Gadget viral",                  keyword: "viral electronic gadget",    categorie: "tendances-nouveautes",   video: true, tiktok: true },
+    { label: "Électronique grand public",     keyword: "consumer electronics gadget",categorie: "electronique-tech",      video: true },
+    { label: "Trottinette électrique",        keyword: "electric scooter",           categorie: "velos-mobilite-electrique", video: true },
 
     // Pilier 2 — Mode & vêtement haut de gamme
     { label: "T-shirt premium minimaliste",   keyword: "premium minimalist tshirt",  categorie: "mode-homme",             video: true },
     { label: "Ensemble coordonné streetwear", keyword: "matching set streetwear",    categorie: "mode-homme",             video: true },
+    { label: "Ensemble survêtement",          keyword: "tracksuit set matching",     categorie: "sport-fitness",          video: true },
     { label: "Oversize premium",              keyword: "oversized premium tee",      categorie: "mode-femme",             video: true },
     { label: "Mode femme tendance",           keyword: "women fashion trendy",       categorie: "mode-femme",             video: true },
 
@@ -95,6 +98,7 @@ const THEMES = [
     { label: "Montre minimaliste premium",    keyword: "minimalist watch premium",   categorie: "montres-wearables",      video: true },
     { label: "Montre look luxe homme",        keyword: "luxury look watch men",      categorie: "montres-wearables",      video: true },
     { label: "Montre connectée premium",      keyword: "smart watch premium design", categorie: "montres-wearables",      video: true },
+    { label: "Montre connectée",              keyword: "smart watch connected",      categorie: "montres-wearables",      video: true },
 
     // Pilier 4 — Lifestyle & utilitaires "coup de cœur"
     { label: "Gadget qui règle un problème",  keyword: "problem solving gadget home",categorie: "entretien-organisation", video: true },
@@ -106,7 +110,7 @@ const THEMES = [
 // un mot-clé exclu bloque l'import même s'il apparaît dans un thème générique
 // ("Tendances TikTok" par exemple pourrait remonter n'importe quoi).
 const MOTS_EXCLUS = [
-    /\b(bike|bicycle|scooter|e-?bike|kick\s?scooter)\b/i,
+    /\b(bike|bicycle)\b/i,
     /\b(dog|cat|pet|puppy|kitten|animal)\b/i,
     /\b(cross|crucifix|jesus|christ|christian|church|bible|catholic|rosary)\b/i,
 ];
