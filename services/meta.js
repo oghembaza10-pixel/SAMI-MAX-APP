@@ -140,6 +140,15 @@ async function publishPagePost(creds, { message, imageUrl, scheduledTime }) {
     return res.data;
 }
 
+async function sendMessage(pageAccessToken, recipientId, text) {
+    if (!pageAccessToken) throw new Error("pageAccessToken Meta manquant pour répondre à ce contact.");
+    const res = await axios.post(`${BASE_URL}/me/messages`, {
+        recipient: { id: recipientId },
+        message: { text },
+    }, { params: { access_token: pageAccessToken } });
+    return res.data;
+}
+
 module.exports = {
     getPages,
     getAdAccountInfo,
@@ -150,4 +159,5 @@ module.exports = {
     setStatus,
     getInsights,
     publishPagePost,
+    sendMessage,
 };

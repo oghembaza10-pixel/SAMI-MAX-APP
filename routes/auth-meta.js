@@ -5,6 +5,13 @@ const express = require("express");
 const axios = require("axios");
 const CONFIG = require("../config");
 const connectorService = require("../services/connectorService");
+const workspaceService = require("../services/workspaceService");
+const meta = require("../services/meta");
+const orchestrator = require("../brain/orchestrator");
+const planner = require("../brain/planner");
+const memory = require("../brain/memory");
+const socketService = require("../services/socketService");
+const db = require("../services/db");
 const router = express.Router();
 
 const APP_ID = CONFIG.META.APP_ID;
@@ -20,11 +27,49 @@ const SCOPES = [
     "ads_management",
     "ads_read",
     "pages_manage_ads",
+    "pages_messaging",
+    "instagram_basic",
+    "instagram_manage_messages",
 ].join(",");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
+}
+
+// ── Réponse automatique aux clients sur Messenger / Instagram DM ──────────
+// Miroir de routes/webhook-whatsapp.js et routes/telegram.js : SAMII raisonne
+// lui-même la conversation via function-calling (brain/planner), tous métiers.
+async function resolveConnecteur(canal, externalId) {
+    if (!externalId) return null;
+    try {
+        const idField = canal === "instagram" ? "igAccountId" : "pageId";
+        const rows = await db.query(
+            `SELECT workspace_id, config FROM connecteurs WHERE type = $1 AND actif = true AND config LIKE $2`,
+            [canal, `%"${idField}":"${externalId}"%`]
+        );
+        if (!rows[0]) return null;
+        const config = typeof rows[0].config === "string" ? JSON.parse(rows[0].config) : rows[0].config;
+        return { workspaceId: rows[0].workspace_id, config };
+    } catch {
+        return null;
+    }
+}
+
+async function getMetierWorkspace(workspaceId) {
+    try {
+        const rows = await db.query(`SELECT metier FROM workspaces WHERE id = $1`, [workspaceId]);
+        return rows[0]?.metier || "";
+    } catch { return ""; }
+}
+
+async function getProduitsDuWorkspace(workspaceId) {
+    try {
+        return await db.query(
+            `SELECT id, nom, prix, options FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom`,
+            [workspaceId]
+        );
+    } catch { return []; }
 }
 
 router.get("/webhook/meta", (req, res) => {
@@ -37,6 +82,71 @@ router.get("/webhook/meta", (req, res) => {
     } else {
         console.log("❌ Webhook Meta — token invalide");
         res.sendStatus(403);
+    }
+});
+
+router.post("/webhook/meta", async (req, res) => {
+    res.sendStatus(200);
+    try {
+        // Monté sous /webhook, où express.raw() laisse le body en Buffer brut.
+        const raw = req.body;
+        const body = Buffer.isBuffer(raw) ? JSON.parse(raw.toString("utf8") || "{}") : (raw || {});
+
+        if (!["page", "instagram"].includes(body.object)) return;
+        const canal = body.object === "instagram" ? "instagram" : "facebook";
+
+        for (const entry of body.entry || []) {
+            for (const event of entry.messaging || []) {
+                const text = event.message?.text;
+                const senderId = event.sender?.id;
+                if (!text || !senderId || event.message?.is_echo) continue;
+
+                const connecteur = await resolveConnecteur(canal, entry.id);
+                if (!connecteur) {
+                    console.log(`⚠️ Webhook Meta (${canal}) : aucun workspace connecté pour ${entry.id}`);
+                    continue;
+                }
+                const { workspaceId, config } = connecteur;
+
+                console.log(`💬 ${canal} [${senderId}] (workspace ${workspaceId}) : ${text}`);
+
+                await db.query(
+                    `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                    [`${canal}.message`, `${senderId}: ${text}`, workspaceId]
+                );
+
+                try {
+                    await orchestrator.process({
+                        type: `${canal}.message`,
+                        shop: workspaceId,
+                        payload: { senderName: senderId, sender: senderId, message: text },
+                    });
+                } catch (procErr) {
+                    console.error(`❌ ${canal} orchestrator :`, procErr.message);
+                }
+
+                socketService.emitToShop(workspaceId, `${canal}.message`, { senderId, message: text });
+
+                const key = `${canal}_${senderId}`;
+                const session = memory.get(key) || {};
+                const conversation = session.history || [];
+
+                const metier = await getMetierWorkspace(workspaceId);
+                const produits = await getProduitsDuWorkspace(workspaceId);
+
+                const geminiReply = await planner.ask(text, {
+                    source: canal, chatId: senderId, name: senderId, audience: "client",
+                    workspaceId, metier, produits,
+                }, conversation);
+
+                await meta.sendMessage(config.pageAccessToken, senderId, geminiReply);
+
+                const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-16);
+                memory.set(key, { ...session, history: nextHistory });
+            }
+        }
+    } catch (err) {
+        console.error("❌ Webhook Meta (messages) :", err.message);
     }
 });
 
@@ -72,22 +182,75 @@ router.get("/auth/meta/callback", requireAuth, async (req, res) => {
                 code,
             },
         });
-        const accessToken = tokenRes.data.access_token;
+        const shortLivedToken = tokenRes.data.access_token;
+
+        // Le token obtenu ci-dessus expire en 1-2h — on l'échange contre un
+        // token longue durée (~60 jours) pour que pubs et messages continuent
+        // de marcher après la session de connexion.
+        const longLivedRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/oauth/access_token`, {
+            params: {
+                grant_type: "fb_exchange_token",
+                client_id: APP_ID,
+                client_secret: APP_SECRET,
+                fb_exchange_token: shortLivedToken,
+            },
+        });
+        const accessToken = longLivedRes.data.access_token || shortLivedToken;
 
         const pagesRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/accounts`, {
-            params: { access_token: accessToken },
+            params: { fields: "id,name,access_token", access_token: accessToken },
         });
-        const pages = pagesRes.data.data || [];
+        const page = (pagesRes.data.data || [])[0] || null;
+
+        let igAccountId = "";
+        if (page) {
+            try {
+                const igRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${page.id}`, {
+                    params: { fields: "instagram_business_account", access_token: page.access_token },
+                });
+                igAccountId = igRes.data.instagram_business_account?.id || "";
+            } catch (igErr) {
+                console.warn("⚠️ Pas de compte Instagram lié à la page :", igErr.response?.data?.error?.message || igErr.message);
+            }
+        }
+
+        let adAccountId = "";
+        try {
+            const adAccountsRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/adaccounts`, {
+                params: { fields: "account_id,name", access_token: accessToken },
+            });
+            const firstAdAccount = (adAccountsRes.data.data || [])[0];
+            if (firstAdAccount) adAccountId = `act_${firstAdAccount.account_id}`;
+        } catch (adErr) {
+            console.warn("⚠️ Aucun compte pub Meta trouvé :", adErr.response?.data?.error?.message || adErr.message);
+        }
 
         await connectorService.save(workspaceId, "facebook", {
-            accessToken,
-            pages: pages.map(p => ({ id: p.id, name: p.name })),
+            pageId: page?.id || "",
+            pageName: page?.name || "",
+            pageAccessToken: page?.access_token || "",
             connectedAt: new Date().toISOString(),
         });
-        await connectorService.save(workspaceId, "instagram", {
-            accessToken,
-            connectedAt: new Date().toISOString(),
-        });
+        if (igAccountId) {
+            await connectorService.save(workspaceId, "instagram", {
+                igAccountId,
+                pageId: page?.id || "",
+                pageAccessToken: page?.access_token || "",
+                connectedAt: new Date().toISOString(),
+            });
+        }
+
+        // Alimente directement les réglages Ads (routes/ads.js) : "Connecter Meta"
+        // suffit désormais à lancer des campagnes, plus besoin de coller le
+        // token/ad account/page ID à la main dans /ads/settings.
+        const workspace = await workspaceService.getById(workspaceId);
+        if (workspace) {
+            await workspaceService.update(workspace.recordId, {
+                meta_access_token : accessToken,
+                meta_ad_account_id: adAccountId || workspace.metaAdAccountId || "",
+                meta_page_id      : page?.id || workspace.metaPageId || "",
+            });
+        }
 
         res.redirect("/connect/tools");
 
