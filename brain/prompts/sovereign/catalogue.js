@@ -1,6 +1,6 @@
 // ======================================================
 // brain/prompts/sovereign/catalogue.js
-// Connaissance réelle de la plateforme OG Empire (cartes Arsenal +
+// Connaissance réelle de la plateforme OG Technology (cartes Arsenal +
 // paliers d'abonnement) — pour que SAMII puisse orienter le FONDATEUR
 // vers les cartes/abonnements pertinents. Réutilise routes/arsenal.js
 // (source unique des 33 cartes), aucune donnée dupliquée ni inventée.

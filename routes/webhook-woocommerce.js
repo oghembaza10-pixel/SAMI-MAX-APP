@@ -1,5 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — WOOCOMMERCE : réception des commandes en temps réel
+// OG TECHNOLOGY — WOOCOMMERCE : réception des commandes en temps réel
 // ==========================================================================
 const express = require("express");
 const axios   = require("axios");

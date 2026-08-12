@@ -289,7 +289,7 @@ router.post("/", requireAuth, async (req, res) => {
             annonce: "annoncer une nouveauté ou une promotion",
         };
 
-        const prompt = `Tu es SAMII, diplomate et communicant pour OG Empire. Un marchand a besoin de ${typesLabel[type] || "rédiger un message client"}.
+        const prompt = `Tu es SAMII, diplomate et communicant pour OG Technology. Un marchand a besoin de ${typesLabel[type] || "rédiger un message client"}.
 
 Contexte : ${contexte}
 ${details ? `Précisions : ${details}` : ""}

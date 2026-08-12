@@ -332,7 +332,7 @@ router.post("/", requireAuth, async (req, res) => {
             maghreb: "des fournisseurs et grossistes basés au Maghreb (Algérie, Maroc, Tunisie)",
         };
 
-        const prompt = "Tu es SAMII, expert en approvisionnement pour OG Empire. Un marchand cherche des fournisseurs.\n\n"
+        const prompt = "Tu es SAMII, expert en approvisionnement pour OG Technology. Un marchand cherche des fournisseurs.\n\n"
             + `Produit recherché : ${produit}\n`
             + (quantite ? `Quantité souhaitée : ${quantite}\n` : "")
             + (budget ? `Budget max par unité : ${budget}\n` : "")

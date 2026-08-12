@@ -1,5 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — SAMII : logique de la page de chat dédiée (V3 : voix + fichiers)
+// OG TECHNOLOGY — SAMII : logique de la page de chat dédiée (V3 : voix + fichiers)
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const form        = document.getElementById('samii-page-form');

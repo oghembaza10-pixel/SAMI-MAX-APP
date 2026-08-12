@@ -1,5 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — HUB : Moteur front-end (vitrine premium, pas de dashboard)
+// OG TECHNOLOGY — HUB : Moteur front-end (vitrine premium, pas de dashboard)
 // ==========================================================================
 
 const METIERS = [

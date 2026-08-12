@@ -9,8 +9,8 @@ async function run() {
             ($1, $11, $12, $13, $14, $6)`,
             [
                 "WS-49f73e7f-bcc9-4f6f-9bd3-7f8cb9634bbe",
-                "T-shirt OG Empire Noir", "T-shirt premium coton, coupe moderne, logo brodé", 2500, 50, true,
-                "Casquette OG Empire", "Casquette ajustable, broderie or", 1800, 30,
+                "T-shirt OG Technology Noir", "T-shirt premium coton, coupe moderne, logo brodé", 2500, 50, true,
+                "Casquette OG Technology", "Casquette ajustable, broderie or", 1800, 30,
                 "Sweat à capuche OG", "Sweat épais, doublure polaire, logo dos", 4500, 20,
             ]
         );

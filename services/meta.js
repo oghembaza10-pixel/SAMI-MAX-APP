@@ -1,5 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — SERVICE META (Facebook / Instagram / Ads) — MULTI-COMPTES
+// OG TECHNOLOGY — SERVICE META (Facebook / Instagram / Ads) — MULTI-COMPTES
 // ==========================================================================
 const axios = require("axios");
 const GRAPH_VERSION = "v25.0";

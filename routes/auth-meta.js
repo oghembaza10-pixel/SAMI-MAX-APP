@@ -1,5 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — CONNEXION OAUTH META (Facebook + Instagram)
+// OG TECHNOLOGY — CONNEXION OAUTH META (Facebook + Instagram)
 // ==========================================================================
 const express = require("express");
 const axios = require("axios");

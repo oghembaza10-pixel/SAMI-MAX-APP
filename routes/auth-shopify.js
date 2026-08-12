@@ -1,5 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — CONNEXION OAUTH SHOPIFY (multi-boutiques) V7
+// OG TECHNOLOGY — CONNEXION OAUTH SHOPIFY (multi-boutiques) V7
 // ==========================================================================
 const express = require("express");
 const axios = require("axios");

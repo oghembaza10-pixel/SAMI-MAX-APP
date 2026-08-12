@@ -278,7 +278,7 @@ router.post("/", requireAuth, async (req, res) => {
 
         const devise = DEVISES[pays] || "USD";
 
-        const prompt = `Tu es SAMII, le stratège commercial de OG Empire. Analyse le marché e-commerce du pays suivant.
+        const prompt = `Tu es SAMII, le stratège commercial de OG Technology. Analyse le marché e-commerce du pays suivant.
 
 Pays : ${pays}
 ${secteur ? `Secteur ciblé : ${secteur}` : "Tous secteurs confondus."}

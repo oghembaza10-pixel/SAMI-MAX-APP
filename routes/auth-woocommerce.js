@@ -1,5 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — CONNEXION WOOCOMMERCE (Application Authentication — 1 clic)
+// OG TECHNOLOGY — CONNEXION WOOCOMMERCE (Application Authentication — 1 clic)
 // ==========================================================================
 const express = require("express");
 const axios   = require("axios");
@@ -18,7 +18,7 @@ router.get("/connect/woocommerce", requireAuth, (req, res) => {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Connecter WooCommerce — OG Empire</title>
+  <title>Connecter WooCommerce — OG Technology</title>
   <link rel="stylesheet" href="/css/hub-premium.css">
 </head>
 <body>
@@ -87,7 +87,7 @@ router.get("/auth/woocommerce/return", requireAuth, (req, res) => {
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Connexion WooCommerce — OG Empire</title>
+  <title>Connexion WooCommerce — OG Technology</title>
   <link rel="stylesheet" href="/css/hub-premium.css">
 </head>
 <body>

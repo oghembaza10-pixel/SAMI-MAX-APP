@@ -1,7 +1,7 @@
 {
   "name": "sami-app",
   "version": "1.0.0",
-  "description": "SAMII OS - Plateforme OG Empire",
+  "description": "SAMII OS - Plateforme OG Technology",
   "main": "index.js",
   "private": true,
   "scripts": {

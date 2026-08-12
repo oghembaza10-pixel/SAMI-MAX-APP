@@ -402,7 +402,7 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
         let prompt;
 
         if (reseau === "linkedin") {
-            prompt = "Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un post LinkedIn professionnel complet.\n\n"
+            prompt = "Tu es SAMII, storyteller de marque pour OG Technology. Un marchand a besoin d'un post LinkedIn professionnel complet.\n\n"
                 + `Objectif : ${objectifsLabel[objectif] || objectif}\n`
                 + `Sujet : ${sujet}\n`
                 + (ton ? `Ton souhaité : ${ton}\n` : "Ton : professionnel, crédible, engageant.\n")
@@ -410,7 +410,7 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
                 + '{\n  "hooks": ["accroche 1", "accroche 2", "accroche 3"],\n  "script": "le corps complet du post LinkedIn",\n  "legende": "une version courte alternative",\n  "hashtags": ["motcle1", "motcle2", "motcle3"],\n  "cta": ["cta 1", "cta 2", "cta 3"],\n  "meilleur_moment": "jour et heure recommandés"\n}';
 
         } else if (reseau === "email") {
-            prompt = "Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un email marketing complet.\n\n"
+            prompt = "Tu es SAMII, storyteller de marque pour OG Technology. Un marchand a besoin d'un email marketing complet.\n\n"
                 + `Objectif : ${objectifsLabel[objectif] || objectif}\n`
                 + `Sujet : ${sujet}\n`
                 + (ton ? `Ton souhaité : ${ton}\n` : "Ton : clair, persuasif, chaleureux.\n")
@@ -418,7 +418,7 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
                 + '{\n  "hooks": ["objet d\'email 1", "objet 2", "objet 3"],\n  "script": "le corps complet de l\'email",\n  "legende": "aperçu pré-header",\n  "hashtags": [],\n  "cta": ["cta 1", "cta 2", "cta 3"],\n  "meilleur_moment": "jour et heure recommandés"\n}';
 
         } else {
-            prompt = `Tu es SAMII, storyteller de marque pour OG Empire. Un marchand a besoin d'un pack de contenu ${type_creation || 'vidéo'} complet.\n\n`
+            prompt = `Tu es SAMII, storyteller de marque pour OG Technology. Un marchand a besoin d'un pack de contenu ${type_creation || 'vidéo'} complet.\n\n`
                 + `Réseau : ${reseau}\n`
                 + `Format : ${formatLabel}\n`
                 + `Durée ciblée : ${duree || '30s'}\n`

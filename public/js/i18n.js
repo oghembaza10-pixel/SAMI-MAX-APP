@@ -1,5 +1,5 @@
 // ==========================================================================
-// OG EMPIRE — SYSTÈME I18N (réutilisable sur tout le projet)
+// OG TECHNOLOGY — SYSTÈME I18N (réutilisable sur tout le projet)
 // ==========================================================================
 
 const Language = (function () {

@@ -20,7 +20,7 @@ const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
 const CCP_INFOS = {
     numero: "0000000000 00",
     cle: "00",
-    titulaire: "OG EMPIRE",
+    titulaire: "OG TECHNOLOGY",
 };
 
 const PRIX_PREMIUM = { montant: "1500", devise: "DZD", stripeAmountCents: 500 }; // ~5$ exemple

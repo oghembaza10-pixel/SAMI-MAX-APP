@@ -197,7 +197,7 @@ try {
     await notificationEngine.send({
         channel: "email",
         to: email,
-       message: `Bienvenue dans OG Empire, Soldat !\n\nVotre QG "${workspace.nom}" est prêt. SAMII est déjà à votre poste pour vous accompagner.\n\nAllez jeter un œil : https://samii.souverain-store.com/qg\n\nÀ votre conquête 👑`,
+       message: `Bienvenue dans OG Technology, Soldat !\n\nVotre QG "${workspace.nom}" est prêt. SAMII est déjà à votre poste pour vous accompagner.\n\nAllez jeter un œil : https://samii.souverain-store.com/qg\n\nÀ votre conquête 👑`,
     });
 } catch (mailErr) {
     console.warn("⚠️ Email de bienvenue non envoyé :", mailErr.message);

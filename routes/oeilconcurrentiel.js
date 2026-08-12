@@ -329,7 +329,7 @@ router.post("/", requireAuth, async (req, res) => {
             if (!question || !question.trim()) {
                 return res.json({ success: false, error: "Pose ta question." });
             }
-            prompt = "Tu es SAMII, spécialiste veille concurrentielle pour OG Empire. Un marchand pose cette question sur les prix :\n\n"
+            prompt = "Tu es SAMII, spécialiste veille concurrentielle pour OG Technology. Un marchand pose cette question sur les prix :\n\n"
                 + `"${question}"\n\n`
                 + "Utilise la recherche web pour répondre avec des informations concrètes et à jour.\n\n"
                 + "Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :\n"
@@ -351,7 +351,7 @@ router.post("/", requireAuth, async (req, res) => {
                 ? `Prix actuel du marchand : ${prix_actuel}`
                 : 'Le marchand n\'a pas encore de prix, ne fais pas de verdict de comparaison, mets "verdict": null.';
 
-            prompt = "Tu es SAMII, spécialiste veille concurrentielle pour OG Empire. Un marchand veut analyser le positionnement prix d'un produit.\n\n"
+            prompt = "Tu es SAMII, spécialiste veille concurrentielle pour OG Technology. Un marchand veut analyser le positionnement prix d'un produit.\n\n"
                 + `Produit : ${produit}\n`
                 + (marche ? `Marché : ${marche}\n` : "")
                 + `${prixLigne}\n\n`

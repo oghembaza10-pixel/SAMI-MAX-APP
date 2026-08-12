@@ -345,14 +345,14 @@ router.post("/", requireAuth, async (req, res) => {
         let prompt;
 
         if (mode === "propose") {
-            prompt = `Tu es SAMII, le stratège commercial de OG Empire. Un marchand ne sait pas encore quoi vendre et te demande de lui proposer des idées de produits.
+            prompt = `Tu es SAMII, le stratège commercial de OG Technology. Un marchand ne sait pas encore quoi vendre et te demande de lui proposer des idées de produits.
 
 Marché cible : ${marche}
 ${details ? `Précisions sur le marchand : ${details}` : ""}
 
 Utilise la recherche web pour identifier des tendances actuelles. Propose entre 3 et 5 catégories ou produits concrets qui pourraient bien marcher sur ce marché, adaptés à un marchand qui démarre.`;
         } else {
-            prompt = `Tu es SAMII, le stratège commercial de OG Empire. Un marchand te demande de repérer des opportunités produits.
+            prompt = `Tu es SAMII, le stratège commercial de OG Technology. Un marchand te demande de repérer des opportunités produits.
 
 Produit / secteur actuel : ${produit}
 Marché cible : ${marche}

@@ -32,7 +32,7 @@ router.get("/", (req, res) => {
     <meta name="theme-color" content="#070809">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="OG Empire">
+    <meta name="apple-mobile-web-app-title" content="OG Technology">
     <style>
         *{ box-sizing:border-box; margin:0; padding:0; }
         body{ background:#0b0b0b; font-family:Arial; display:flex; justify-content:center; align-items:center; min-height:100vh; color:white; padding:20px; }
@@ -67,7 +67,7 @@ router.get("/", (req, res) => {
     <h1 data-i18n="register.title">👑 Créer mon compte</h1>
     <p class="sub">${metier
         ? `<span data-i18n="register.sub.metier_prefix">Pour votre activité</span> <b>${metier}</b>`
-        : `<span data-i18n="register.sub.default">Rejoignez OG Empire</span>`
+        : `<span data-i18n="register.sub.default">Rejoignez OG Technology</span>`
     }</p>
     <form id="form-register">
         <input name="nom"       placeholder="Nom"       data-i18n-ph="register.ph.nom" required>
@@ -111,7 +111,7 @@ router.get("/", (req, res) => {
 const I18N = {
     fr: {
         'register.title': '👑 Créer mon compte',
-        'register.sub.metier_prefix': 'Pour votre activité', 'register.sub.default': 'Rejoignez OG Empire',
+        'register.sub.metier_prefix': 'Pour votre activité', 'register.sub.default': 'Rejoignez OG Technology',
         'register.ph.nom': 'Nom', 'register.ph.prenom': 'Prénom', 'register.ph.email': 'Email', 'register.ph.telephone': 'Téléphone',
         'register.type_label': "Je m'inscris en tant que :",
         'register.type.client': 'Particulier', 'register.type.marchand': 'Marchand',
@@ -124,7 +124,7 @@ const I18N = {
     },
     en: {
         'register.title': '👑 Create my account',
-        'register.sub.metier_prefix': 'For your business', 'register.sub.default': 'Join OG Empire',
+        'register.sub.metier_prefix': 'For your business', 'register.sub.default': 'Join OG Technology',
         'register.ph.nom': 'Last name', 'register.ph.prenom': 'First name', 'register.ph.email': 'Email', 'register.ph.telephone': 'Phone',
         'register.type_label': 'I am signing up as:',
         'register.type.client': 'Individual', 'register.type.marchand': 'Merchant',
@@ -137,7 +137,7 @@ const I18N = {
     },
     ar: {
         'register.title': '👑 إنشاء حسابي',
-        'register.sub.metier_prefix': 'من أجل نشاطك', 'register.sub.default': 'انضم إلى OG Empire',
+        'register.sub.metier_prefix': 'من أجل نشاطك', 'register.sub.default': 'انضم إلى OG Technology',
         'register.ph.nom': 'اللقب', 'register.ph.prenom': 'الاسم', 'register.ph.email': 'البريد الإلكتروني', 'register.ph.telephone': 'الهاتف',
         'register.type_label': 'أسجّل بصفتي:',
         'register.type.client': 'فرد', 'register.type.marchand': 'تاجر',
@@ -150,7 +150,7 @@ const I18N = {
     },
     zh: {
         'register.title': '👑 创建我的账号',
-        'register.sub.metier_prefix': '为您的', 'register.sub.default': '加入 OG Empire',
+        'register.sub.metier_prefix': '为您的', 'register.sub.default': '加入 OG Technology',
         'register.ph.nom': '姓', 'register.ph.prenom': '名', 'register.ph.email': '电子邮箱', 'register.ph.telephone': '电话号码',
         'register.type_label': '我要以以下身份注册：',
         'register.type.client': '个人', 'register.type.marchand': '商家',
@@ -435,7 +435,7 @@ router.post("/", async (req, res) => {
             subject: "Confirme ton compte SAMII OS",
             html: `
     <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
-        <h2 style="color:#C5A059;">Bienvenue chez OG Empire, ${prenom} 👑</h2>
+        <h2 style="color:#C5A059;">Bienvenue chez OG Technology, ${prenom} 👑</h2>
         <p>Clique sur le bouton ci-dessous pour confirmer ton adresse email et activer ton compte.</p>
         <a href="${lienConfirmation}" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;background:#C5A059;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;font-size:16px;">
             👉 Confirmer mon email maintenant
