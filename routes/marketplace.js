@@ -282,7 +282,7 @@ router.get("/", requireAuth, async (req, res) => {
             FROM annonces
             WHERE ${clauses.join(" AND ")}
             ORDER BY created_at DESC
-            LIMIT 50
+            LIMIT 400
             `,
             params
         );
