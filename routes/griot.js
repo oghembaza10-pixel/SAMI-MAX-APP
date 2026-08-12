@@ -6,6 +6,9 @@ const router  = express.Router();
 const multer  = require("multer");
 const gemini  = require("../services/geminiService");
 const workspaceService = require("../services/workspaceService");
+const connectorService = require("../services/connectorService");
+const meta = require("../services/meta");
+const db = require("../services/db");
 const CONFIG  = require("../config");
 
 const upload = multer({
@@ -133,6 +136,13 @@ router.get("/", requireAuth, async (req, res) => {
         }
         .griot-copy-btn:hover { color: var(--cyan-tech); border-color: var(--cyan-tech); }
         .griot-copy-btn.copied { color: #3ddc84; border-color: #3ddc84; }
+        .griot-publish-btn {
+            display: block; width: 100%; margin-top: 8px; padding: 9px 12px;
+            background: rgba(197,160,89,0.12); border: 1px solid var(--gold-og);
+            color: var(--gold-og); font-size: .78rem; font-weight: 700; border-radius: 8px;
+            cursor: pointer; font-family: var(--font-mono); transition: all .2s ease;
+        }
+        .griot-publish-btn:hover { background: var(--gold-og); color: #000; }
 
         .griot-block__body { color: var(--text-main); font-size: .85rem; line-height: 1.65; white-space: pre-wrap; }
 
@@ -291,7 +301,27 @@ function block(icon, title, bodyHtml, copyValue) {
         + copyBtn + '</div><div class="griot-block__body">' + bodyHtml + '</div></div>';
 }
 
+let dernierPack = null;
+
+async function publierSurReseau(url) {
+    const reseau = selectReseau.value;
+    const label = reseau === 'instagram' ? 'Instagram' : 'Facebook';
+    if (!confirm('Publier ce visuel maintenant sur ta page ' + label + ' connectée ?')) return;
+    try {
+        const res = await fetch('/samii/griot/publier', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reseau, legende: dernierPack?.legende || '', imageUrl: url }),
+        });
+        const json = await res.json();
+        alert(json.success ? '✅ Publié sur ' + label + ' !' : '❌ ' + (json.error || 'Erreur lors de la publication.'));
+    } catch (err) {
+        alert('❌ Erreur réseau.');
+    }
+}
+
 function renderPack(data) {
+    dernierPack = data;
     const container = document.getElementById('pack-content');
     let html = '';
 
@@ -311,14 +341,19 @@ function renderPack(data) {
     }
 
     if (data.medias && data.medias.length > 0) {
+        const reseauActuel = selectReseau.value;
+        const peutPublier = reseauActuel === 'facebook' || reseauActuel === 'instagram';
         let mediaHtml = '<div style="display:flex;flex-direction:column;gap:12px;">';
         data.medias.forEach((url, idx) => {
             if (url.endsWith('.mp4') || url.includes('video')) {
                 mediaHtml += '<div><p style="font-size:.75rem;color:var(--gold-og);margin-bottom:4px;">Variante vidéo #' + (idx + 1) + '</p>'
                     + '<video controls style="width:100%;border-radius:8px;"><source src="' + url + '" type="video/mp4">Ton navigateur ne supporte pas la vidéo.</video></div>';
             } else {
+                const publierBtn = peutPublier
+                    ? '<button type="button" class="griot-publish-btn" onclick="publierSurReseau(' + JSON.stringify(url) + ')">📤 Publier maintenant sur ' + (reseauActuel === 'instagram' ? 'Instagram' : 'Facebook') + '</button>'
+                    : '';
                 mediaHtml += '<div><p style="font-size:.75rem;color:var(--gold-og);margin-bottom:4px;">Variante image #' + (idx + 1) + '</p>'
-                    + '<img src="' + url + '" style="width:100%;border-radius:8px;" alt="Généré par Runware"></div>';
+                    + '<img src="' + url + '" style="width:100%;border-radius:8px;" alt="Généré par Runware">' + publierBtn + '</div>';
             }
         });
         mediaHtml += '</div>';
@@ -494,6 +529,47 @@ if (runwareData && Array.isArray(runwareData.data)) {
     } catch (err) {
         console.error("❌ POST /samii/griot :", err.message);
         res.json({ success: false, error: "Erreur lors de la génération. Réessaie." });
+    }
+});
+
+// ── Publie directement un visuel généré sur la page Facebook/Instagram
+// connectée du workspace (au lieu de laisser le marchand copier-coller).
+router.post("/publier", requireAuth, async (req, res) => {
+    try {
+        const { reseau, legende, imageUrl } = req.body;
+        if (!["facebook", "instagram"].includes(reseau)) {
+            return res.json({ success: false, error: "Publication directe disponible uniquement pour Facebook et Instagram." });
+        }
+        if (!imageUrl) return res.json({ success: false, error: "Choisis un visuel généré à publier." });
+
+        const workspaceId = req.session.workspaceId;
+        const connecteur = await connectorService.getOne(workspaceId, reseau);
+        if (!connecteur?.actif || !connecteur.config?.pageAccessToken) {
+            const label = reseau === "instagram" ? "Instagram" : "Facebook";
+            return res.json({ success: false, error: `Connecte d'abord ta page ${label} via /auth/meta.` });
+        }
+
+        if (reseau === "facebook") {
+            await meta.publishPagePost(
+                { pageId: connecteur.config.pageId, accessToken: connecteur.config.pageAccessToken },
+                { message: legende || "", imageUrl }
+            );
+        } else {
+            await meta.publishInstagramPost(
+                { igAccountId: connecteur.config.igAccountId, accessToken: connecteur.config.pageAccessToken },
+                { imageUrl, caption: legende || "" }
+            );
+        }
+
+        await db.query(
+            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+            [`${reseau}.publication`, `Post publié via Griot`, workspaceId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /samii/griot/publier :", err.response?.data || err.message);
+        res.json({ success: false, error: err.response?.data?.error?.message || "Erreur lors de la publication." });
     }
 });
 

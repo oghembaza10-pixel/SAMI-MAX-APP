@@ -140,6 +140,21 @@ async function publishPagePost(creds, { message, imageUrl, scheduledTime }) {
     return res.data;
 }
 
+async function publishInstagramPost(creds, { imageUrl, caption }) {
+    if (!creds?.igAccountId) throw new Error("Compte Instagram non connecté pour ce workspace.");
+    if (!creds?.accessToken) throw new Error("Token Meta manquant pour ce workspace.");
+
+    const containerRes = await axios.post(`${BASE_URL}/${creds.igAccountId}/media`, null, {
+        params: { image_url: imageUrl, caption, access_token: creds.accessToken },
+    });
+    const creationId = containerRes.data.id;
+
+    const publishRes = await axios.post(`${BASE_URL}/${creds.igAccountId}/media_publish`, null, {
+        params: { creation_id: creationId, access_token: creds.accessToken },
+    });
+    return publishRes.data;
+}
+
 async function sendMessage(pageAccessToken, recipientId, text) {
     if (!pageAccessToken) throw new Error("pageAccessToken Meta manquant pour répondre à ce contact.");
     const res = await axios.post(`${BASE_URL}/me/messages`, {
@@ -159,5 +174,6 @@ module.exports = {
     setStatus,
     getInsights,
     publishPagePost,
+    publishInstagramPost,
     sendMessage,
 };

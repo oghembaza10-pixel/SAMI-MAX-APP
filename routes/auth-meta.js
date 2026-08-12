@@ -28,8 +28,10 @@ const SCOPES = [
     "ads_read",
     "pages_manage_ads",
     "pages_messaging",
+    "pages_manage_posts",
     "instagram_basic",
     "instagram_manage_messages",
+    "instagram_content_publish",
 ].join(",");
 
 function requireAuth(req, res, next) {
