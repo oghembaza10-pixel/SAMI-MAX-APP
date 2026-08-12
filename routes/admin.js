@@ -8,6 +8,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const db = require("../services/db");
+const { confirmCcpAbonnement } = require("../services/orders");
 
 const ROOM_ADMIN = "partenariat-admin";
 
@@ -157,6 +158,7 @@ router.get("/logout", (req, res) => {
 router.get("/", requireAdmin, async (req, res) => {
     let stats = {};
     let candidatures = [];
+    let ccpDemandes = [];
 
     try {
         const [
@@ -170,7 +172,7 @@ router.get("/", requireAdmin, async (req, res) => {
             db.query(`SELECT COUNT(*)::int AS n FROM commandes`),
             db.query(`SELECT COUNT(*)::int AS n FROM commandes WHERE date_commande >= CURRENT_DATE`),
             db.query(`SELECT statut, COALESCE(SUM(commission_montant),0)::numeric AS total FROM commissions_parrainage GROUP BY statut`),
-            db.query(`SELECT COUNT(*)::int AS n FROM journal WHERE action = 'abonnement.demande.ccp'`),
+            db.query(`SELECT COUNT(*)::int AS n FROM abonnements WHERE statut = 'en attente' AND methode_paiement = 'ccp'`),
             db.query(`SELECT COUNT(*)::int AS n FROM candidatures_partenariat`),
             db.query(`SELECT COUNT(*)::int AS n FROM candidatures_partenariat WHERE statut = 'nouveau'`),
         ]);
@@ -190,6 +192,12 @@ router.get("/", requireAdmin, async (req, res) => {
         };
 
         candidatures = await db.query(`SELECT * FROM candidatures_partenariat ORDER BY created_at DESC LIMIT 200`);
+        ccpDemandes = await db.query(
+            `SELECT a.id, a.type AS plan, a.montant, a.devise, a.date_debut, w.id AS workspace_id, w.nom AS workspace_nom, w.owner AS workspace_owner
+             FROM abonnements a LEFT JOIN workspaces w ON w.id = a.workspace_id
+             WHERE a.statut = 'en attente' AND a.methode_paiement = 'ccp'
+             ORDER BY a.date_debut DESC LIMIT 100`
+        );
     } catch (err) {
         console.error("❌ GET /admin :", err.message);
     }
@@ -199,6 +207,16 @@ router.get("/", requireAdmin, async (req, res) => {
             <div class="ad-stat-icon">${icon}</div>
             <div class="ad-stat-value" style="color:${accent || "var(--text)"};">${valeur}</div>
             <div class="ad-stat-label">${label}</div>
+        </div>`;
+
+    const ligneCcpHtml = (a) => `
+        <div class="pa-row" data-ccp-id="${a.id}">
+            <div class="pa-row-top">
+                <span class="pa-cat">🏦 ${escapeHtml(a.plan)} — ${Number(a.montant).toLocaleString("fr-FR")} ${escapeHtml(a.devise)}</span>
+                <button class="ccp-confirm-btn" data-id="${a.id}">✅ Confirmer le paiement</button>
+            </div>
+            <div class="pa-contact">${escapeHtml(a.workspace_nom || a.workspace_id)} · ${escapeHtml(a.workspace_owner || "")}</div>
+            <span class="pa-date">Demandé le ${new Date(a.date_debut).toLocaleString("fr-FR")}</span>
         </div>`;
 
     const ligneHtml = (c) => `
@@ -244,6 +262,9 @@ router.get("/", requireAdmin, async (req, res) => {
         ${statCard("🆕", stats.candidaturesNouvelles, "Nouvelles candidatures", "var(--blue)")}
     </div>
 
+    <div class="section-title">🏦 Demandes CCP en attente</div>
+    <div id="ccp-list" style="margin-bottom:30px;">${ccpDemandes.length ? ccpDemandes.map(ligneCcpHtml).join("") : `<div class="pa-empty">Aucune demande CCP en attente.</div>`}</div>
+
     <div class="section-title">🤝 Candidatures Partenariat</div>
     <div class="pa-filters" id="pa-filters">
         <button data-filter="all" class="active">Toutes</button>
@@ -273,9 +294,37 @@ router.get("/", requireAdmin, async (req, res) => {
 .pa-desc { font-size:13px; line-height:1.6; margin:0 0 8px; white-space:pre-wrap; }
 .pa-date { font-size:10.5px; color:var(--muted); font-family:"JetBrains Mono"; }
 .pa-empty { text-align:center; padding:60px 20px; border:1px dashed var(--border); border-radius:16px; color:var(--muted); }
+.ccp-confirm-btn { padding:7px 13px; border-radius:8px; border:1px solid var(--green); background:rgba(61,220,132,.12); color:var(--green); font-size:11.5px; font-weight:700; cursor:pointer; font-family:"JetBrains Mono"; }
+.ccp-confirm-btn:disabled { opacity:.5; cursor:default; }
 </style>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+document.getElementById("ccp-list").addEventListener("click", async (e) => {
+    const btn = e.target.closest(".ccp-confirm-btn");
+    if (!btn) return;
+    if (!confirm("Confirmer que le virement CCP a bien été reçu ? Le palier sera activé immédiatement.")) return;
+    btn.disabled = true;
+    btn.textContent = "⏳ Activation...";
+    try {
+        const res = await fetch("/admin/ccp/" + btn.dataset.id + "/confirmer", { method: "POST" });
+        const json = await res.json();
+        if (json.success) {
+            btn.closest(".pa-row").remove();
+            if (!document.querySelector("#ccp-list .pa-row")) {
+                document.getElementById("ccp-list").innerHTML = '<div class="pa-empty">Aucune demande CCP en attente.</div>';
+            }
+        } else {
+            alert(json.error || "Erreur.");
+            btn.disabled = false;
+            btn.textContent = "✅ Confirmer le paiement";
+        }
+    } catch (err) {
+        alert("Erreur réseau.");
+        btn.disabled = false;
+        btn.textContent = "✅ Confirmer le paiement";
+    }
+});
+
 document.getElementById("pa-filters").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-filter]");
     if (!btn) return;
@@ -322,6 +371,17 @@ socket.on("partenariat:nouvelle", (c) => {
     document.getElementById("pa-list").prepend(div);
 });
 </script>`));
+});
+
+router.post("/ccp/:id/confirmer", requireAdmin, async (req, res) => {
+    try {
+        const result = await confirmCcpAbonnement(req.params.id);
+        if (!result.updated) return res.json({ success: false, error: "Demande introuvable ou déjà traitée." });
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /admin/ccp/:id/confirmer :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
 });
 
 router.post("/partenariat/:id/statut", requireAdmin, async (req, res) => {

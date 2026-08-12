@@ -563,10 +563,18 @@ router.post("/ccp-request", requireAuth, async (req, res) => {
         const { plan } = req.body;
         if (!["standard", "pro"].includes(plan)) return res.json({ success: false, error: "Plan invalide." });
         const workspaceId = req.session.workspaceId;
+        const montantDzd = Math.round(devises.depuisUSD(PRIX_AFFICHE[plan], "DZD"));
 
         await db.query(
             `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
             ["abonnement.demande.ccp", `Demande d'activation ${plan} par virement CCP`, workspaceId]
+        );
+        // Ligne "en attente" que l'équipe confirme d'un clic dans le Centre de
+        // contrôle une fois le virement CCP vérifié (pas d'API Algérie Poste).
+        await db.query(
+            `INSERT INTO abonnements (workspace_id, type, statut, methode_paiement, montant, devise, date_debut)
+             VALUES ($1,$2,'en attente','ccp',$3,'DZD',now())`,
+            [workspaceId, plan, montantDzd]
         );
 
         // Le plan lui-même n'est activé que manuellement par l'équipe (comme pour tout CCP) ;

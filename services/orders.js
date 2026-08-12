@@ -124,4 +124,55 @@ async function confirmChargilyAbonnement(checkoutId) {
     return { updated: true, workspaceId, plan };
 }
 
-module.exports = { confirmChargilyPayment, confirmChargilyCartePurchase, confirmChargilyAbonnement };
+// Confirmation manuelle d'un virement CCP par l'équipe (Centre de contrôle admin) :
+// il n'existe pas d'API Algérie Poste pour vérifier un virement automatiquement,
+// donc un humain vérifie le compte CCP puis déclenche cette activation.
+async function confirmCcpAbonnement(abonnementId) {
+    if (!abonnementId) return { updated: false };
+    const expireLe = new Date(Date.now() + abonnementService.DUREE_JOURS * 86400000);
+
+    const rows = await db.query(
+        `UPDATE abonnements SET statut = 'payée', date_fin = $2
+         WHERE id = $1 AND methode_paiement = 'ccp' AND statut != 'payée'
+         RETURNING workspace_id, type AS plan`,
+        [abonnementId, expireLe]
+    );
+    if (!rows[0]) return { updated: false };
+    const { workspace_id: workspaceId, plan } = rows[0];
+
+    await abonnementService.activerPalier(workspaceId, plan);
+
+    const workspaceRows = await db.query(`SELECT owner FROM workspaces WHERE id = $1`, [workspaceId]);
+    const ownerEmail = workspaceRows[0]?.owner;
+    if (ownerEmail) {
+        const userRows = await db.query(`SELECT id FROM utilisateurs WHERE email = $1`, [ownerEmail]);
+        const userId = userRows[0]?.id;
+        if (userId) {
+            const commissionRows = await db.query(
+                `SELECT id FROM commissions_parrainage
+                 WHERE filleul_id = $1 AND plan = $2 AND source = 'ccp' AND statut = 'en_attente'
+                 ORDER BY created_at DESC LIMIT 1`,
+                [userId, plan]
+            );
+            if (commissionRows[0]) {
+                await db.query(`UPDATE commissions_parrainage SET statut = 'confirmee' WHERE id = $1`, [commissionRows[0].id]);
+            }
+        }
+    }
+
+    await db.query(
+        `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+        ["abonnement.paye", `Abonnement "${plan}" activé 30 jours via CCP (confirmé manuellement)`, workspaceId]
+    );
+    socketService.emitToShop(workspaceId, "abonnement-active", { plan, expireLe });
+    notify.notifyWorkspace(workspaceId, {
+        title: "👑 Abonnement activé",
+        body: `Ton palier "${plan}" est actif pour 30 jours (paiement CCP confirmé).`,
+        url: "/qg",
+    });
+    console.log(`✅ Abonnement ${plan} activé 30j pour ${workspaceId} via CCP (admin)`);
+
+    return { updated: true, workspaceId, plan };
+}
+
+module.exports = { confirmChargilyPayment, confirmChargilyCartePurchase, confirmChargilyAbonnement, confirmCcpAbonnement };
