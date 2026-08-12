@@ -50,7 +50,20 @@ async function assurerCouponFilleul() {
     }
 }
 
-const PRIX_AFFICHE = { standard: 9.99, pro: 29.99 };
+const PRIX_AFFICHE = { standard: 9.99, pro: 39.99 };
+
+const gmail = require("../services/gmail");
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "ghembazao@gmail.com";
+
+// Nombre de cartes (config/cartes-catalog.js) débloquées d'office à chaque palier —
+// affiché sur cette page pour que le choix d'un palier soit concret, pas juste marketing.
+const { CARTES } = require("../config/cartes-catalog");
+const NB_CARTES_PAR_PALIER = {
+    free: CARTES.filter(c => c.palier === "free").length,
+    standard: CARTES.filter(c => ["free", "standard"].includes(c.palier)).length,
+    pro: CARTES.filter(c => ["free", "standard", "pro"].includes(c.palier)).length,
+    societe: CARTES.length,
+};
 
 router.get("/", requireAuth, async (req, res) => {
     const stripeReady = !!stripe;
@@ -89,6 +102,7 @@ router.get("/", requireAuth, async (req, res) => {
         .bill-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
         .bill-card { background: var(--bg-glass); backdrop-filter: blur(12px); border: var(--border-soft); border-radius: 18px; padding: 26px; display: flex; flex-direction: column; }
         .bill-card--pro { border-color: rgba(197,160,89,0.5); box-shadow: 0 0 30px rgba(197,160,89,0.12); }
+        .bill-card--societe { border-color: rgba(93,156,236,0.4); }
         .bill-card h2 { color: #fff; font-size: 1.1rem; }
         .bill-price { font-family: var(--font-display); font-size: 1.8rem; color: var(--gold-og); margin: 12px 0; }
         .bill-price span { font-size: .85rem; color: var(--text-muted); }
@@ -131,6 +145,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.free.li2">Mode Ombre + Copilote (SAMII propose, tu valides)</li>
                 <li data-i18n="billing.free.li3">10 messages stratégie SAMII/mois</li>
                 <li data-i18n="billing.free.li4">Suivi de colis basique</li>
+                <li>🃏 ${NB_CARTES_PAR_PALIER.free} cartes débloquées</li>
             </ul>
             <button class="bill-btn bill-btn--free" disabled data-i18n="billing.free.btn">Plan actuel</button>
         </div>
@@ -144,6 +159,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.standard.li4">Pubs Meta illimitées, créées par SAMII</li>
                 <li data-i18n="billing.standard.li5">1 Forteresse offerte chaque mois</li>
                 <li data-i18n="billing.standard.li6">Messages SAMII illimités</li>
+                <li>🃏 ${NB_CARTES_PAR_PALIER.standard} cartes débloquées</li>
             </ul>
             ${ccpBlock("standard")}
             ${stripeBlock("standard")}
@@ -157,11 +173,29 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.pro.li3">Modes Autonome + Souverain (SAMII active seul tes pubs)</li>
                 <li data-i18n="billing.pro.li4">2 Forteresse + 1 Boost offerts chaque mois</li>
                 <li data-i18n="billing.pro.li5">Support prioritaire</li>
+                <li>🃏 ${NB_CARTES_PAR_PALIER.pro} cartes débloquées</li>
             </ul>
             ${ccpBlock("pro")}
             ${stripeBlock("pro")}
         </div>
+        <div class="bill-card bill-card--societe">
+            <h2>🏛️ Société</h2>
+            <div class="bill-price">Sur devis</div>
+            <ul>
+                <li>Toutes les cartes débloquées (${NB_CARTES_PAR_PALIER.societe}/${NB_CARTES_PAR_PALIER.societe})</li>
+                <li>Multi-comptes, multi-boutiques</li>
+                <li>Contrat et facturation dédiés</li>
+                <li>Accompagnement personnalisé</li>
+            </ul>
+            <form id="societe-form" style="margin-top:auto;display:flex;flex-direction:column;gap:8px;">
+                <input type="email" name="email" placeholder="Ton email" required style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:.82rem;">
+                <textarea name="message" placeholder="Décris ton besoin (nombre de boutiques, volume...)" rows="2" style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:.82rem;resize:vertical;"></textarea>
+                <button type="submit" class="bill-btn" style="background:rgba(255,255,255,0.08);color:var(--text-main);">Nous contacter</button>
+                <div id="societe-msg" style="font-size:.78rem;color:var(--text-muted);min-height:16px;"></div>
+            </form>
+        </div>
     </div>
+    <p class="sub" style="margin-top:24px;"><a href="/cartes" style="color:var(--gold-og);">🃏 Voir le détail des cartes débloquées à chaque palier →</a></p>
 
 </div>
 <script>
@@ -345,6 +379,25 @@ document.querySelectorAll(".bill-btn[data-plan]").forEach(btn => {
         }
     });
 });
+document.getElementById("societe-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const btn = form.querySelector("button[type=submit]");
+    const msg = document.getElementById("societe-msg");
+    btn.disabled = true;
+    try {
+        const res = await fetch("/billing/contact-societe", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: form.email.value, message: form.message.value }),
+        });
+        const json = await res.json();
+        msg.textContent = json.success ? "✅ Reçu, on te recontacte sous 24h." : (json.error || t('billing.msg.error_generic'));
+        if (json.success) form.reset();
+    } catch {
+        msg.textContent = "Erreur réseau.";
+    }
+    btn.disabled = false;
+});
 document.querySelectorAll("[data-plan-ccp]").forEach(btn => {
     btn.addEventListener("click", async () => {
         btn.disabled = true;
@@ -361,6 +414,33 @@ document.querySelectorAll("[data-plan-ccp]").forEach(btn => {
 </script>
 </body>
 </html>`);
+});
+
+router.post("/contact-societe", requireAuth, async (req, res) => {
+    try {
+        const { email, message } = req.body;
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) return res.json({ success: false, error: "Email invalide." });
+
+        await db.query(
+            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+            ["abonnement.demande.societe", `Demande de contrat Société — ${email} — ${(message || "").trim()}`, req.session.workspaceId]
+        );
+
+        gmail.send({
+            to: ADMIN_EMAIL,
+            subject: "🏛️ Demande de contrat Société — SAMII",
+            html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
+                <h2 style="color:#C5A059;">Demande palier Société</h2>
+                <p><b>Email :</b> ${email}</p>
+                <p><b>Message :</b><br>${(message || "—")}</p>
+            </div>`,
+        }).catch(() => {});
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /billing/contact-societe :", err.message);
+        res.json({ success: false, error: "Erreur interne." });
+    }
 });
 
 router.post("/checkout", requireAuth, async (req, res) => {
@@ -489,6 +569,7 @@ router.post("/webhook", async (req, res) => {
                         }),
                         samii: JSON.stringify({ ...workspace.samii, plan }),
                     });
+                    await db.query(`UPDATE workspaces SET palier_abonnement = $1 WHERE id = $2`, [plan, workspace.recordId]);
 
                     console.log(`✅ Abonnement ${plan} activé pour ${workspaceId}`);
 

@@ -45,4 +45,38 @@ async function confirmChargilyPayment(checkoutId) {
     return { updated: true, orderId };
 }
 
-module.exports = { confirmChargilyPayment };
+// Confirme l'achat d'une carte SAMII à l'unité (config/cartes-catalog.js).
+// Même logique de vérification directe auprès de Chargily, idempotent.
+async function confirmChargilyCartePurchase(checkoutId) {
+    if (!checkoutId) return { updated: false };
+
+    const checkout = await chargily.getCheckout(checkoutId);
+    if (!checkout || checkout.status !== "paid") return { updated: false };
+
+    const { workspace_id: workspaceId, carte_id: carteId } = checkout.metadata || {};
+    if (!workspaceId || !carteId) return { updated: false };
+
+    const rows = await db.query(
+        `UPDATE cartes_achats SET statut = 'payée'
+         WHERE workspace_id = $1 AND carte_id = $2 AND statut != 'payée' RETURNING id`,
+        [workspaceId, carteId]
+    );
+
+    if (!rows[0]) return { updated: false };
+
+    await db.query(
+        `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+        ["carte.achetee", `Carte "${carteId}" débloquée via Chargily (${checkoutId})`, workspaceId]
+    );
+    socketService.emitToShop(workspaceId, "carte-debloquee", { carteId });
+    notify.notifyWorkspace(workspaceId, {
+        title: "🔓 Carte débloquée",
+        body: `Ta carte "${carteId}" est maintenant active.`,
+        url: "/cartes",
+    });
+    console.log(`✅ Carte ${carteId} débloquée pour ${workspaceId} via Chargily`);
+
+    return { updated: true, workspaceId, carteId };
+}
+
+module.exports = { confirmChargilyPayment, confirmChargilyCartePurchase };

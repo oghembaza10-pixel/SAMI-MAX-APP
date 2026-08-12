@@ -5,7 +5,7 @@
 // ==========================================================================
 const express    = require("express");
 const chargily   = require("../services/chargily");
-const { confirmChargilyPayment } = require("../services/orders");
+const { confirmChargilyPayment, confirmChargilyCartePurchase } = require("../services/orders");
 
 const router = express.Router();
 
@@ -23,7 +23,10 @@ router.post("/", async (req, res) => {
         const checkoutId = event.id || event.data?.id;
         if (!checkoutId) return res.sendStatus(200);
 
+        // Un seul des deux fera réellement quelque chose : chacun vérifie ses
+        // propres champs de metadata et ne touche rien s'ils sont absents.
         await confirmChargilyPayment(checkoutId);
+        await confirmChargilyCartePurchase(checkoutId);
 
         res.sendStatus(200);
     } catch (err) {

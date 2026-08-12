@@ -100,6 +100,7 @@ app.use("/telegram", require("./routes/telegram"));
 // ROUTES — Authentification / compte
 // ══════════════════════════════════════════════════════
 app.use("/billing", require("./routes/billing"));
+app.use("/cartes", require("./routes/cartes"));
 app.use("/login",    require("./routes/login"));
 app.use("/register", require("./routes/register"));
 app.use("/password-reset", require("./routes/password-reset"));
