@@ -160,6 +160,10 @@ module.exports = {
         // ci-dessus, côté serveur) — gardée pour un futur widget côté client.
         PUBLIC_KEY: process.env.CHARGILY_PUBLIC_KEY || "",
         MODE: process.env.CHARGILY_MODE || "test",
+        // Chargily n'accepte que le DZD. Les produits marketplace (import CJ)
+        // sont stockés en EUR — on convertit au moment du paiement avec ce
+        // taux. À ajuster via la variable d'env si le taux réel bouge.
+        EUR_TO_DZD_RATE: Number(process.env.CHARGILY_EUR_TO_DZD_RATE || 145),
     },
 
     // ==================================================

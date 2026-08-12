@@ -8,6 +8,8 @@ const crypto = require("crypto");
 const router = express.Router();
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
+const chargily = require("../services/chargily");
+const CONFIG = require("../config");
 const { mobileNav } = require("../views/partials/mobileNav");
 
 const {
@@ -3149,7 +3151,14 @@ async function checkout() {
             saveCart();
             renderCart();
             updateCartBadge();
-            showToast("✅ Commande envoyée ! On te contacte pour confirmer.");
+
+            if (data.checkoutUrl) {
+                showToast("✅ Redirection vers le paiement...");
+                window.location.href = data.checkoutUrl;
+                return;
+            }
+
+            showToast(data.paymentError || "✅ Commande envoyée ! On te contacte pour confirmer.");
             toggleCart();
         } else {
             showToast(data.error || "Erreur, réessaye.");
@@ -3217,6 +3226,35 @@ router.post(
                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'en attente','marketplace')`,
                 [id, nom_client.trim(), telephone.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(), lignes.join(" · "), montantTotal, devise]
             );
+
+            // Paiement en ligne réel (Chargily n'accepte que le DZD — nos prix
+            // marketplace sont en EUR, on convertit uniquement pour ce paiement,
+            // le montant/devise enregistrés en base restent ceux affichés au client).
+            if (chargily.isEnabled()) {
+                const montantDzd = devise === "DZD"
+                    ? Math.round(montantTotal)
+                    : Math.round(montantTotal * CONFIG.CHARGILY.EUR_TO_DZD_RATE);
+
+                const checkout = await chargily.createCheckout({
+                    amount: montantDzd,
+                    currency: "dzd",
+                    description: `Commande SAMII Marketplace #${id.slice(0, 8)}`,
+                    successUrl: `${CONFIG.APP_URL}/marketplace?commande=payee`,
+                    failureUrl: `${CONFIG.APP_URL}/marketplace?commande=echouee`,
+                    webhookUrl: `${CONFIG.APP_URL}/webhook/chargily`,
+                    metadata: { order_id: id },
+                });
+
+                if (checkout.success) {
+                    await db.query(`UPDATE commandes SET chargily_checkout_id = $1 WHERE id = $2`, [checkout.checkoutId, id]);
+                    return res.json({ success: true, id, checkoutUrl: checkout.checkoutUrl });
+                }
+
+                console.error("❌ Chargily checkout (commande marketplace) :", checkout.error);
+                // Le paiement en ligne a échoué à se créer, mais la commande existe déjà
+                // (statut "en attente") — on le signale au client plutôt que de la perdre.
+                return res.json({ success: true, id, paymentError: "Paiement en ligne indisponible pour le moment, on te contacte pour confirmer." });
+            }
 
             res.json({ success: true, id });
         } catch (err) {
