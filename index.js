@@ -8,6 +8,9 @@ const pgSession         = require("connect-pg-simple")(session);
 const { Pool }          = require("pg");
 const http             = require("http");
 const { Server }       = require("socket.io");
+const helmet           = require("helmet");
+const compression      = require("compression");
+const rateLimit        = require("express-rate-limit");
 const CONFIG           = require("./config");
 const workspaceService = require("./services/workspaceService");
 const db                = require("./services/db");
@@ -20,6 +23,14 @@ socketService.init(io);
 
 // ── MIDDLEWARES ───────────────────────────────────────
 app.set("trust proxy", 1);
+
+// CSP désactivée : l'app s'appuie massivement sur du <script> inline dans
+// les vues EJS (griot, marketplace, academy, community...). L'activer sans
+// audit préalable casserait ces pages. Les autres protections Helmet
+// (X-Frame-Options, HSTS, nosniff, referrer-policy...) restent actives.
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(compression());
+
 app.use("/billing/webhook", express.raw({ type: "application/json" }));
 app.use("/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
@@ -27,6 +38,43 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
+// ── RATE LIMITING ──────────────────────────────────────
+// Anti brute-force sur les routes d'authentification.
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Trop de tentatives. Réessaie dans quelques minutes." },
+});
+
+// Anti-abus sur l'API publique (le front n'y fait pas de polling, tout
+// passe par Socket.io — cette marge reste large pour un usage normal).
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Anti-flood sur les webhooks entrants — la signature (Stripe, Chargily)
+// est déjà vérifiée en aval, ceci protège juste contre un flood volumétrique.
+const webhookLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Appliqué tôt : certains routeurs webhook (ex. woocommerce) sont montés
+// à la racine avant la section "Webhooks entrants" plus bas.
+app.use(["/webhook", "/billing/webhook"], webhookLimiter);
+
+// ── HEALTHCHECK ─────────────────────────────────────────
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok", uptime: process.uptime() });
+});
 
 // ── SESSION (Supabase/Postgres — persiste aux redéploiements) ──
 const pgPool = new Pool({
@@ -101,6 +149,7 @@ app.use("/telegram", require("./routes/telegram"));
 // ══════════════════════════════════════════════════════
 app.use("/billing", require("./routes/billing"));
 app.use("/cartes", require("./routes/cartes"));
+app.use(["/login", "/register", "/password-reset"], authLimiter);
 app.use("/login",    require("./routes/login"));
 app.use("/register", require("./routes/register"));
 app.use("/password-reset", require("./routes/password-reset"));
@@ -147,7 +196,7 @@ app.use("/discussions", require("./routes/discussions"));
 app.use("/stories",     require("./routes/stories"));
 app.use("/marketplace", require("./routes/marketplace"));
 app.use("/drivers",     require("./routes/drivers"));
-app.use("/api",         require("./routes/api"));
+app.use("/api", apiLimiter, require("./routes/api"));
 
 app.get("/inscription", requireAuth, (req, res) => {
     const metier = req.query.metier || "";
