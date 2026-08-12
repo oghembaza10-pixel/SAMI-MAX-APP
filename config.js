@@ -156,6 +156,9 @@ module.exports = {
 
     CHARGILY: {
         API_KEY: process.env.CHARGILY_API_KEY || "",
+        // Non utilisée par le code aujourd'hui (tout passe par la clé secrète
+        // ci-dessus, côté serveur) — gardée pour un futur widget côté client.
+        PUBLIC_KEY: process.env.CHARGILY_PUBLIC_KEY || "",
         MODE: process.env.CHARGILY_MODE || "test",
     },
 
