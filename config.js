@@ -164,8 +164,6 @@ module.exports = {
         // sont stockés en EUR — on convertit au moment du paiement avec ce
         // taux. À ajuster via la variable d'env si le taux réel bouge.
         EUR_TO_DZD_RATE: Number(process.env.CHARGILY_EUR_TO_DZD_RATE || 145),
-        // Abonnements et cartes SAMII sont affichés en USD — même principe.
-        USD_TO_DZD_RATE: Number(process.env.CHARGILY_USD_TO_DZD_RATE || 135),
     },
 
     // ==================================================

@@ -9,6 +9,7 @@ const chargily = require("./chargily");
 const db = require("./db");
 const socketService = require("./socketService");
 const notify = require("./notify");
+const { CARTES } = require("../config/cartes-catalog");
 
 // Relit le statut réel du checkout chez Chargily et marque la commande payée
 // si besoin. Idempotent : ne fait rien si déjà "payée" ou si non payé.
@@ -56,25 +57,29 @@ async function confirmChargilyCartePurchase(checkoutId) {
     const { workspace_id: workspaceId, carte_id: carteId } = checkout.metadata || {};
     if (!workspaceId || !carteId) return { updated: false };
 
+    const carte = CARTES.find(c => c.id === carteId);
+    const dureeJours = carte?.dureeJours || 7;
+    const expireLe = new Date(Date.now() + dureeJours * 86400000);
+
     const rows = await db.query(
-        `UPDATE cartes_achats SET statut = 'payée'
+        `UPDATE cartes_achats SET statut = 'payée', expire_le = $3
          WHERE workspace_id = $1 AND carte_id = $2 AND statut != 'payée' RETURNING id`,
-        [workspaceId, carteId]
+        [workspaceId, carteId, expireLe]
     );
 
     if (!rows[0]) return { updated: false };
 
     await db.query(
         `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-        ["carte.achetee", `Carte "${carteId}" débloquée via Chargily (${checkoutId})`, workspaceId]
+        ["carte.achetee", `Carte "${carteId}" débloquée ${dureeJours} jours via Chargily (${checkoutId})`, workspaceId]
     );
-    socketService.emitToShop(workspaceId, "carte-debloquee", { carteId });
+    socketService.emitToShop(workspaceId, "carte-debloquee", { carteId, expireLe });
     notify.notifyWorkspace(workspaceId, {
         title: "🔓 Carte débloquée",
-        body: `Ta carte "${carteId}" est maintenant active.`,
+        body: `Ta carte "${carteId}" est active pour ${dureeJours} jours.`,
         url: "/cartes",
     });
-    console.log(`✅ Carte ${carteId} débloquée pour ${workspaceId} via Chargily`);
+    console.log(`✅ Carte ${carteId} débloquée ${dureeJours}j pour ${workspaceId} via Chargily`);
 
     return { updated: true, workspaceId, carteId };
 }

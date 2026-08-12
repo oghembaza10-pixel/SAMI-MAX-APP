@@ -24,15 +24,25 @@ async function chargerContexte(req) {
         : [];
     const userRows = await db.query(`SELECT grade_actuel FROM utilisateurs WHERE id = $1`, [req.session.userId]);
     const achatsRows = workspaceId
-        ? await db.query(`SELECT carte_id FROM cartes_achats WHERE workspace_id = $1 AND statut = 'payée'`, [workspaceId])
+        ? await db.query(`SELECT carte_id, expire_le FROM cartes_achats WHERE workspace_id = $1 AND statut = 'payée' AND expire_le > now()`, [workspaceId])
         : [];
+
+    const expirations = {};
+    achatsRows.forEach(r => { expirations[r.carte_id] = r.expire_le; });
 
     return {
         workspaceId,
         palierWorkspace: workspaceRows[0]?.palier_abonnement || "free",
         gradeClient: userRows[0]?.grade_actuel || "Soldat",
-        cartesAcheteesIds: achatsRows.map(r => r.carte_id),
+        cartesActivesIds: achatsRows.map(r => r.carte_id),
+        expirations,
     };
+}
+
+function joursRestants(expireLe) {
+    if (!expireLe) return null;
+    const ms = new Date(expireLe).getTime() - Date.now();
+    return Math.max(1, Math.ceil(ms / 86400000));
 }
 
 router.get("/", requireAuth, async (req, res) => {
@@ -54,15 +64,24 @@ router.get("/", requireAuth, async (req, res) => {
 
     const cartesHtml = CARTES.map(carte => {
         const debloquee = carteEstDebloquee(carte, ctx);
+        const achatActif = ctx.expirations[carte.id];
+        const restant = achatActif ? joursRestants(achatActif) : null;
+
+        let action;
+        if (debloquee && restant) {
+            action = `<a href="${carte.route}" class="carte-btn carte-btn--ouvrir">Ouvrir →</a><div class="carte-expire">⏳ expire dans ${restant} j</div>`;
+        } else if (debloquee) {
+            action = `<a href="${carte.route}" class="carte-btn carte-btn--ouvrir">Ouvrir →</a>`;
+        } else {
+            action = `<button class="carte-btn carte-btn--acheter" data-carte="${carte.id}">🔒 ${carte.dureeJours} jours — ${carte.prix.toFixed(2)}€</button>`;
+        }
+
         return `
         <div class="carte ${debloquee ? "carte--ouverte" : "carte--verrouillee"}">
             <div class="carte-icone">${carte.icone}</div>
             <h3>${carte.nom}</h3>
             <p>${carte.description}</p>
-            ${debloquee
-                ? `<a href="${carte.route}" class="carte-btn carte-btn--ouvrir">Ouvrir →</a>`
-                : `<button class="carte-btn carte-btn--acheter" data-carte="${carte.id}">🔒 Débloquer — $${carte.prix.toFixed(2)}</button>`
-            }
+            ${action}
         </div>`;
     }).join("");
 
@@ -86,13 +105,14 @@ router.get("/", requireAuth, async (req, res) => {
         .carte-btn { margin-top: 6px; padding: 10px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: .82rem; text-align: center; text-decoration: none; }
         .carte-btn--ouvrir { background: var(--gold-og); color: #000; }
         .carte-btn--acheter { background: rgba(255,255,255,0.08); color: var(--text-main); border: 1px solid rgba(255,255,255,0.15); }
+        .carte-expire { text-align: center; font-size: .72rem; color: var(--text-muted); margin-top: 4px; }
         .carte-msg { text-align: center; margin-top: 20px; font-size: .82rem; color: #e55; min-height: 18px; }
     </style>
 </head>
 <body data-theme="og">
 <div class="cartes-shell">
     <h1>🃏 Cartes SAMII</h1>
-    <p class="sub">Chaque carte est un outil stratégique. Débloque-les via ton abonnement, ta progression de grade, ou à l'unité.</p>
+    <p class="sub">Chaque carte est un outil stratégique. Débloque-les via ton abonnement, ta progression de grade, ou à l'unité pour une durée limitée.</p>
     <div class="cartes-grid">${cartesHtml}</div>
     <div class="carte-msg" id="msg"></div>
 </div>
@@ -134,14 +154,20 @@ router.post("/acheter/:carteId", requireAuth, async (req, res) => {
 
         if (!chargily.isEnabled()) return res.json({ success: false, error: "Paiement en ligne indisponible pour le moment." });
 
+        const active = await db.query(
+            `SELECT 1 FROM cartes_achats WHERE workspace_id = $1 AND carte_id = $2 AND statut = 'payée' AND expire_le > now()`,
+            [workspaceId, carte.id]
+        );
+        if (active[0]) return res.json({ success: false, error: "Carte déjà active — attends l'expiration pour la racheter." });
+
         await db.query(
-            `INSERT INTO cartes_achats (workspace_id, carte_id, prix_paye, devise, statut)
-             VALUES ($1,$2,$3,'USD','en attente')
-             ON CONFLICT (workspace_id, carte_id) DO UPDATE SET statut = 'en attente'`,
+            `INSERT INTO cartes_achats (workspace_id, carte_id, prix_paye, devise, statut, expire_le)
+             VALUES ($1,$2,$3,'EUR','en attente',NULL)
+             ON CONFLICT (workspace_id, carte_id) DO UPDATE SET statut = 'en attente', expire_le = NULL`,
             [workspaceId, carte.id, carte.prix]
         );
 
-        const montantDzd = Math.round(carte.prix * CONFIG.CHARGILY.USD_TO_DZD_RATE);
+        const montantDzd = Math.round(carte.prix * CONFIG.CHARGILY.EUR_TO_DZD_RATE);
         const checkout = await chargily.createCheckout({
             amount: montantDzd,
             currency: "dzd",
