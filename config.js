@@ -161,9 +161,17 @@ module.exports = {
         PUBLIC_KEY: process.env.CHARGILY_PUBLIC_KEY || "",
         MODE: process.env.CHARGILY_MODE || "test",
         // Chargily n'accepte que le DZD. Les produits marketplace (import CJ)
-        // sont stockés en EUR — on convertit au moment du paiement avec ce
-        // taux. À ajuster via la variable d'env si le taux réel bouge.
-        EUR_TO_DZD_RATE: Number(process.env.CHARGILY_EUR_TO_DZD_RATE || 145),
+        // et les cartes SAMII sont affichés en EUR — on convertit au moment
+        // du paiement avec ce taux.
+        // IMPORTANT : c'est le taux du MARCHÉ PARALLÈLE (marché noir), pas le
+        // taux officiel de la Banque d'Algérie (~153 DZD/€) — l'écart entre
+        // les deux dépasse 120 DZD/€. Le taux officiel ne reflète pas le
+        // pouvoir d'achat réel du dinar ; utiliser ce taux sous-évaluerait
+        // massivement (environ de moitié) tout ce qui est vendu en DZD.
+        // Le marché parallèle bouge en continu (~273-277 DZD/€ mi-août 2026,
+        // cf. forexalgerie.com / devisesalgerie.com) — cette valeur par
+        // défaut doit être mise à jour régulièrement via la variable d'env.
+        EUR_TO_DZD_RATE: Number(process.env.CHARGILY_EUR_TO_DZD_RATE || 275),
     },
 
     // ==================================================
