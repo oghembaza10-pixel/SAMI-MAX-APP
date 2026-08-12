@@ -10,6 +10,7 @@ const db = require("./db");
 const socketService = require("./socketService");
 const notify = require("./notify");
 const { CARTES } = require("../config/cartes-catalog");
+const abonnementService = require("./abonnementService");
 
 // Relit le statut réel du checkout chez Chargily et marque la commande payée
 // si besoin. Idempotent : ne fait rien si déjà "payée" ou si non payé.
@@ -84,4 +85,43 @@ async function confirmChargilyCartePurchase(checkoutId) {
     return { updated: true, workspaceId, carteId };
 }
 
-module.exports = { confirmChargilyPayment, confirmChargilyCartePurchase };
+// Confirme le paiement Chargily d'un abonnement (Edahabia/CIB — le seul moyen
+// de payer par carte qui marche vraiment en Algérie). Pas de prélèvement
+// récurrent possible côté Chargily : on pose une date_fin à 30 jours, et
+// c'est engines/abonnementEngine.js qui relance par lien avant expiration.
+async function confirmChargilyAbonnement(checkoutId) {
+    if (!checkoutId) return { updated: false };
+
+    const checkout = await chargily.getCheckout(checkoutId);
+    if (!checkout || checkout.status !== "paid") return { updated: false };
+
+    const { workspace_id: workspaceId, plan } = checkout.metadata || {};
+    if (!workspaceId || !plan) return { updated: false };
+
+    const expireLe = new Date(Date.now() + abonnementService.DUREE_JOURS * 86400000);
+
+    const rows = await db.query(
+        `UPDATE abonnements SET statut = 'payée', date_fin = $3
+         WHERE chargily_checkout_id = $1 AND workspace_id = $2 AND statut != 'payée' RETURNING id`,
+        [checkoutId, workspaceId, expireLe]
+    );
+    if (!rows[0]) return { updated: false };
+
+    await abonnementService.activerPalier(workspaceId, plan);
+
+    await db.query(
+        `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+        ["abonnement.paye", `Abonnement "${plan}" activé 30 jours via Chargily (${checkoutId})`, workspaceId]
+    );
+    socketService.emitToShop(workspaceId, "abonnement-active", { plan, expireLe });
+    notify.notifyWorkspace(workspaceId, {
+        title: "👑 Abonnement activé",
+        body: `Ton palier "${plan}" est actif pour 30 jours.`,
+        url: "/qg",
+    });
+    console.log(`✅ Abonnement ${plan} activé 30j pour ${workspaceId} via Chargily`);
+
+    return { updated: true, workspaceId, plan };
+}
+
+module.exports = { confirmChargilyPayment, confirmChargilyCartePurchase, confirmChargilyAbonnement };

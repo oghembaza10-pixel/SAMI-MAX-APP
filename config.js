@@ -175,6 +175,23 @@ module.exports = {
     },
 
     // ==================================================
+    // TAUX DE CHANGE (affichage multi-devises — abonnements + marketplace)
+    // ==================================================
+    // Vérifiés le 12/08/2026. Pour le dinar algérien : taux du MARCHÉ
+    // PARALLÈLE (marché noir), pas le taux officiel — voir CHARGILY ci-dessus.
+    // Pour le dirham marocain et le dinar tunisien : aucun écart marché noir
+    // significatif n'est documenté (change bien plus libéralisé qu'en
+    // Algérie — le Maroc poursuit d'ailleurs la libéralisation du dirham en
+    // 2026), donc taux de marché réel. À réévaluer périodiquement via les
+    // variables d'env — ces taux bougent en continu.
+    DEVISES: {
+        EUR_TO_USD: Number(process.env.TAUX_EUR_USD || 1.1524),
+        USD_TO_DZD: Number(process.env.TAUX_USD_DZD || 239),   // marché parallèle
+        USD_TO_MAD: Number(process.env.TAUX_USD_MAD || 9.30),  // marché réel
+        USD_TO_TND: Number(process.env.TAUX_USD_TND || 2.93),  // marché réel
+    },
+
+    // ==================================================
     // ELEVENLABS (Voix IA — désactivé tant que pas de clé)
     // ==================================================
 

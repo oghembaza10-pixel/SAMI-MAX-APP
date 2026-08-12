@@ -10,7 +10,27 @@ const db = require("../services/db");
 const gradeService = require("../services/gradeService");
 const chargily = require("../services/chargily");
 const { confirmChargilyPayment } = require("../services/orders");
+const devises = require("../services/devises");
 const CONFIG = require("../config");
+
+// Prix stockés en texte libre ("12.90 EUR", "8500 DZD"...). Pour les produits
+// CJ (toujours en EUR), on affiche en plus la conversion DZD + MAD — marché
+// parallèle pour le DZD (voir CONFIG.DEVISES), marché réel pour le MAD.
+// Retourne du HTML déjà échappé — ne PAS ré-échapper le résultat, contrairement
+// aux autres champs texte libre de ce fichier (le prix vient d'un formulaire
+// marchand, donc potentiellement non fiable dans la branche "pas de match").
+function prixAvecConversion(prixStr) {
+    const brut = prixStr || "Sur devis";
+    const match = String(brut).match(/^([\d.,]+)\s*(EUR|€)$/i);
+    if (!match) return escapeHtml(brut);
+
+    const montantEur = Number(match[1].replace(",", ".")) || 0;
+    if (!montantEur) return escapeHtml(brut);
+
+    const dzd = devises.formater(devises.depuisEUR(montantEur, "DZD"), "DZD");
+    const mad = devises.formater(devises.depuisEUR(montantEur, "MAD"), "MAD");
+    return `${montantEur.toFixed(2)}€ <span class="prix-converti">≈ ${escapeHtml(dzd)} / ${escapeHtml(mad)}</span>`;
+}
 const { mobileNav } = require("../views/partials/mobileNav");
 
 const {
@@ -495,11 +515,7 @@ router.get("/", requireAuth, async (req, res) => {
                         )
                     );
 
-                const prix =
-                    escapeHtml(
-                        a.prix ||
-                        "Sur devis"
-                    );
+                const prix = prixAvecConversion(a.prix);
 
                 const paysP =
                     escapeHtml(
@@ -3501,10 +3517,7 @@ router.get(
                                         <div
                                             class="product-price"
                                         >
-                                            ${escapeHtml(
-                                                annonce.prix ||
-                                                "Sur devis"
-                                            )}
+                                            ${prixAvecConversion(annonce.prix)}
                                         </div>
 
                                     </div>
@@ -4051,6 +4064,14 @@ img {
     margin: 14px 0;
 }
 
+.prix-converti {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #7f96a8;
+    margin-top: 2px;
+}
+
 button {
     padding: 12px 20px;
 
@@ -4133,10 +4154,7 @@ button {
     </h1>
 
     <div class="price" id="pd-price">
-        ${escapeHtml(
-            produit.prix ||
-            "Sur devis"
-        )}
+        ${prixAvecConversion(produit.prix)}
     </div>
 
     ${variantes.length ? `

@@ -5,7 +5,7 @@
 // ==========================================================================
 const express    = require("express");
 const chargily   = require("../services/chargily");
-const { confirmChargilyPayment, confirmChargilyCartePurchase } = require("../services/orders");
+const { confirmChargilyPayment, confirmChargilyCartePurchase, confirmChargilyAbonnement } = require("../services/orders");
 
 const router = express.Router();
 
@@ -27,6 +27,7 @@ router.post("/", async (req, res) => {
         // propres champs de metadata et ne touche rien s'ils sont absents.
         await confirmChargilyPayment(checkoutId);
         await confirmChargilyCartePurchase(checkoutId);
+        await confirmChargilyAbonnement(checkoutId);
 
         res.sendStatus(200);
     } catch (err) {

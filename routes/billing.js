@@ -11,6 +11,11 @@ const router   = express.Router();
 const workspaceService = require("../services/workspaceService");
 const db = require("../services/db");
 const referralService = require("../services/referralService");
+const abonnementService = require("../services/abonnementService");
+const devises = require("../services/devises");
+const chargily = require("../services/chargily");
+const { confirmChargilyAbonnement } = require("../services/orders");
+const CONFIG = require("../config");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -19,11 +24,6 @@ function requireAuth(req, res, next) {
 
 // Compte CCP officiel SAMII — paiement manuel en attendant Stripe.
 const CCP_SAMII = { titulaire: "GHEMBAZA OUAHID", numero: "0044766935", cle: "72" };
-
-const PLAN_GRANTS = {
-    standard: { forteresse: 1, boost: 0 },
-    pro      : { forteresse: 2, boost: 1 },
-};
 
 let stripe = null;
 try {
@@ -68,22 +68,38 @@ const NB_CARTES_PAR_PALIER = {
 router.get("/", requireAuth, async (req, res) => {
     const stripeReady = !!stripe;
     const { reduit } = await referralService.appliquerReductionFilleul(req.session.userId, 1);
+    const workspace = await workspaceService.getById(req.session.workspaceId);
+    const devise = devises.deviseAffichage(workspace?.devise);
+    const estAlgerie = devise === "DZD";
+
+    // Prix affiché toujours converti depuis le prix de référence en USD, dans
+    // la devise du marchand (marché parallèle pour le DZD, marché réel pour
+    // MAD/TND — voir CONFIG.DEVISES).
     const prixHtml = (plan) => {
         const base = PRIX_AFFICHE[plan];
-        if (!reduit) return `${base.toFixed(2)}$ <span data-i18n="billing.permonth">/mois</span>`;
+        const baseLocal = devises.formater(devises.depuisUSD(base, devise), devise);
+        if (!reduit) return `${baseLocal} <span data-i18n="billing.permonth">/mois</span>`;
         const remise = Math.round(base * (1 - referralService.TAUX_REDUCTION_FILLEUL) * 100) / 100;
-        return `<s style="opacity:.5;font-size:.6em;">${base.toFixed(2)}$</s> ${remise.toFixed(2)}$ <span data-i18n="billing.permonth_filleul">/mois — filleul -5%</span>`;
+        const remiseLocal = devises.formater(devises.depuisUSD(remise, devise), devise);
+        return `<s style="opacity:.5;font-size:.6em;">${baseLocal}</s> ${remiseLocal} <span data-i18n="billing.permonth_filleul">/mois — filleul -5%</span>`;
     };
-    const ccpBlock = (plan) => `
+    // CCP = virement postal algérien, n'a de sens que pour un marchand en Algérie.
+    const ccpBlock = (plan) => !estAlgerie ? "" : `
             <div class="bill-ccp">
                 <div class="bill-ccp-label" data-i18n="billing.ccp.label">🏦 Payer par CCP</div>
                 <div class="bill-ccp-details">
                     <span data-i18n="billing.ccp.titulaire">Titulaire :</span> <b>${CCP_SAMII.titulaire}</b><br>
                     <span data-i18n="billing.ccp.numero">Numéro CCP :</span> <b>${CCP_SAMII.numero}</b><br>
-                    <span data-i18n="billing.ccp.cle">Clé RIP :</span> <b>${CCP_SAMII.cle}</b>
+                    <span data-i18n="billing.ccp.cle">Clé RIP :</span> <b>${CCP_SAMII.cle}</b><br>
+                    <span data-i18n="billing.ccp.montant">Montant à virer :</span> <b>${devises.formater(devises.depuisUSD(PRIX_AFFICHE[plan], "DZD"), "DZD")}</b>
                 </div>
                 <button class="bill-btn bill-btn--ccp" data-plan-ccp="${plan}" data-i18n="billing.ccp.btn">J'ai payé, préviens l'équipe</button>
             </div>`;
+    // Chargily (Edahabia/CIB) : seul moyen de paiement carte qui marche vraiment
+    // en Algérie. Pas de prélèvement récurrent possible côté Chargily — chaque
+    // renouvellement est un nouveau paiement, relancé par lien (engines/abonnementEngine.js).
+    const chargilyBlock = (plan) => (!estAlgerie || !chargily.isEnabled()) ? "" : `
+            <button class="bill-btn bill-btn--chargily" data-plan-chargily="${plan}">💳 Payer par Edahabia/CIB (Chargily) →</button>`;
     const stripeBlock = (plan) => stripeReady
         ? `<button class="bill-btn bill-btn--stripe" data-plan="${plan}" data-i18n="billing.stripe.btn">Payer par carte →</button>`
         : "";
@@ -117,6 +133,7 @@ router.get("/", requireAuth, async (req, res) => {
         .bill-ccp-details b { color: #fff; }
         .bill-btn--ccp { width: 100%; background: #F5A623; color: #000; }
         .bill-btn--stripe { width: 100%; margin-top: 8px; background: rgba(255,255,255,0.08); color: var(--text-main); }
+        .bill-btn--chargily { width: 100%; margin-top: 8px; background: #2e7d32; color: #fff; }
         .bill-topbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
         .lang-switch { display: flex; gap: 2px; font-family: var(--font-mono); font-size: .64rem; padding: 3px; border: var(--border-soft); border-radius: 9px; background: var(--bg-glass); }
         .lang-switch span { padding: 5px 7px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: .2s ease; }
@@ -161,6 +178,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.standard.li6">Messages SAMII illimités</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.standard} cartes débloquées</li>
             </ul>
+            ${chargilyBlock("standard")}
             ${ccpBlock("standard")}
             ${stripeBlock("standard")}
         </div>
@@ -175,6 +193,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.pro.li5">Support prioritaire</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.pro} cartes débloquées</li>
             </ul>
+            ${chargilyBlock("pro")}
             ${ccpBlock("pro")}
             ${stripeBlock("pro")}
         </div>
@@ -379,6 +398,29 @@ document.querySelectorAll(".bill-btn[data-plan]").forEach(btn => {
         }
     });
 });
+document.querySelectorAll("[data-plan-chargily]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        btn.textContent = t('billing.msg.redirecting');
+        try {
+            const res = await fetch("/billing/checkout-chargily", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ plan: btn.dataset.planChargily }),
+            });
+            const json = await res.json();
+            if (json.url) {
+                window.location.href = json.url;
+            } else {
+                alert(json.error || t('billing.msg.error_generic'));
+                btn.disabled = false;
+                btn.textContent = "💳 Payer par Edahabia/CIB (Chargily) →";
+            }
+        } catch {
+            alert(t('billing.msg.error_generic'));
+            btn.disabled = false;
+        }
+    });
+});
 document.getElementById("societe-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -440,6 +482,47 @@ router.post("/contact-societe", requireAuth, async (req, res) => {
     } catch (err) {
         console.error("❌ POST /billing/contact-societe :", err.message);
         res.json({ success: false, error: "Erreur interne." });
+    }
+});
+
+router.post("/checkout-chargily", requireAuth, async (req, res) => {
+    try {
+        const { plan } = req.body;
+        if (!PRIX_AFFICHE[plan]) return res.json({ error: "Plan invalide." });
+        if (!chargily.isEnabled()) return res.json({ error: "Paiement Chargily indisponible pour le moment." });
+
+        const workspaceId = req.session.workspaceId;
+        const { reduit } = await referralService.appliquerReductionFilleul(req.session.userId, 1);
+        const montantUSD = reduit
+            ? Math.round(PRIX_AFFICHE[plan] * (1 - referralService.TAUX_REDUCTION_FILLEUL) * 100) / 100
+            : PRIX_AFFICHE[plan];
+        const montantDzd = Math.round(devises.depuisUSD(montantUSD, "DZD"));
+
+        const inserted = await db.query(
+            `INSERT INTO abonnements (workspace_id, type, statut, methode_paiement, montant, devise, date_debut)
+             VALUES ($1,$2,'en attente','chargily',$3,'DZD',now()) RETURNING id`,
+            [workspaceId, plan, montantDzd]
+        );
+        const abonnementId = inserted[0].id;
+
+        const checkout = await chargily.createCheckout({
+            amount: montantDzd,
+            currency: "dzd",
+            description: `Abonnement SAMII — ${plan}`,
+            successUrl: `${CONFIG.APP_URL}/billing/success?method=chargily`,
+            failureUrl: `${CONFIG.APP_URL}/billing?achat=echec`,
+            webhookUrl: `${CONFIG.APP_URL}/webhook/chargily`,
+            metadata: { type: "abonnement", workspace_id: workspaceId, plan, abonnement_id: String(abonnementId) },
+        });
+
+        if (!checkout.success) return res.json({ error: "Erreur lors de la création du paiement." });
+
+        await db.query(`UPDATE abonnements SET chargily_checkout_id = $1 WHERE id = $2`, [checkout.checkoutId, abonnementId]);
+
+        res.json({ url: checkout.checkoutUrl });
+    } catch (err) {
+        console.error("❌ POST /billing/checkout-chargily :", err.message);
+        res.json({ error: "Erreur lors de la création du paiement." });
     }
 });
 
@@ -505,7 +588,21 @@ router.post("/ccp-request", requireAuth, async (req, res) => {
     }
 });
 
-router.get("/success", requireAuth, (req, res) => {
+router.get("/success", requireAuth, async (req, res) => {
+    // Filet de sécurité pour Chargily : si le webhook n'est jamais arrivé, on
+    // revérifie activement au retour du client (même logique que /cartes et le marketplace).
+    if (req.query.method === "chargily" && req.session?.workspaceId) {
+        try {
+            const rows = await db.query(
+                `SELECT chargily_checkout_id FROM abonnements WHERE workspace_id = $1 AND statut != 'payée' ORDER BY date_debut DESC LIMIT 1`,
+                [req.session.workspaceId]
+            );
+            if (rows[0]?.chargily_checkout_id) await confirmChargilyAbonnement(rows[0].chargily_checkout_id);
+        } catch (err) {
+            console.error("❌ Vérification retour abonnement Chargily :", err.message);
+        }
+    }
+
     res.send(`<!DOCTYPE html><html><body style="background:#050505;color:white;font-family:Arial;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;">
         <div><h1 style="color:#3ddc84;" data-i18n="billing.success.title">✅ Abonnement activé !</h1><p><a href="/qg" style="color:#C5A059;" data-i18n="billing.success.back">Retour au QG</a></p></div>
         <script>
@@ -553,23 +650,14 @@ router.post("/webhook", async (req, res) => {
             try {
                 const workspace = await workspaceService.getById(workspaceId);
                 if (workspace) {
-                    const grant = PLAN_GRANTS[plan] || { forteresse: 0, boost: 0 };
-                    const currentCoffre = workspace.coffre || {};
-
-                    await workspaceService.update(workspace.recordId, {
-                        coffre: JSON.stringify({
-                            forteresse: {
-                                charges: (currentCoffre.forteresse?.charges || 0) + grant.forteresse,
-                                activeUntil: currentCoffre.forteresse?.activeUntil || null,
-                            },
-                            boost: {
-                                charges: (currentCoffre.boost?.charges || 0) + grant.boost,
-                                activeUntil: currentCoffre.boost?.activeUntil || null,
-                            },
-                        }),
-                        samii: JSON.stringify({ ...workspace.samii, plan }),
-                    });
-                    await db.query(`UPDATE workspaces SET palier_abonnement = $1 WHERE id = $2`, [plan, workspace.recordId]);
+                    await abonnementService.activerPalier(workspaceId, plan);
+                    // Stripe gère lui-même le renouvellement mensuel (mode "subscription") —
+                    // pas besoin de date_fin ni de rappel, contrairement à Chargily/CCP.
+                    await db.query(
+                        `INSERT INTO abonnements (workspace_id, type, statut, methode_paiement, montant, devise, date_debut)
+                         VALUES ($1,$2,'payée','stripe',$3,$4,now())`,
+                        [workspaceId, plan, (session.amount_total || 0) / 100, (session.currency || "usd").toUpperCase()]
+                    );
 
                     console.log(`✅ Abonnement ${plan} activé pour ${workspaceId}`);
 
