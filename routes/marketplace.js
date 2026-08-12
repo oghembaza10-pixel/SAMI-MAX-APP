@@ -9,6 +9,7 @@ const router = express.Router();
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
 const chargily = require("../services/chargily");
+const { confirmChargilyPayment } = require("../services/orders");
 const CONFIG = require("../config");
 const { mobileNav } = require("../views/partials/mobileNav");
 
@@ -211,6 +212,23 @@ router.get("/", requireAuth, async (req, res) => {
         ville,
         region
     } = req.query;
+
+    // Filet de sécurité : le webhook Chargily peut ne jamais arriver (mauvaise
+    // config côté dashboard, réseau...). Au retour du client sur cette page
+    // après paiement, on revérifie activement le statut auprès de Chargily.
+    if (req.query.commande === "payee" && req.query.order_id) {
+        try {
+            const rows = await db.query(
+                `SELECT chargily_checkout_id FROM commandes WHERE id = $1`,
+                [req.query.order_id]
+            );
+            if (rows[0]?.chargily_checkout_id) {
+                await confirmChargilyPayment(rows[0].chargily_checkout_id);
+            }
+        } catch (err) {
+            console.error("❌ Vérification retour paiement Chargily :", err.message);
+        }
+    }
 
     let annoncesDB = [];
 
@@ -3239,7 +3257,7 @@ router.post(
                     amount: montantDzd,
                     currency: "dzd",
                     description: `Commande SAMII Marketplace #${id.slice(0, 8)}`,
-                    successUrl: `${CONFIG.APP_URL}/marketplace?commande=payee`,
+                    successUrl: `${CONFIG.APP_URL}/marketplace?commande=payee&order_id=${id}`,
                     failureUrl: `${CONFIG.APP_URL}/marketplace?commande=echouee`,
                     webhookUrl: `${CONFIG.APP_URL}/webhook/chargily`,
                     metadata: { order_id: id },
