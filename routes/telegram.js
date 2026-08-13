@@ -30,6 +30,10 @@ const T = {
         adminErreur: "❌ Erreur de connexion. Réessaie depuis ton QG.",
         rdvConfirme: (id) => `✅ *Rendez-vous #${id} confirmé !*\n\nÀ bientôt 🙏`,
         rdvAnnule: (id) => `❌ *Rendez-vous #${id} annulé.*\n\nSi c'est une erreur, répondez-nous 😊`,
+        rdvChoisirHeure: "🕐 Choisis un créneau :",
+        rdvJourComplet: "😔 Ce jour est complet, choisis-en un autre.",
+        rdvExpire: "⏳ Ce calendrier a expiré, redemande un rendez-vous.",
+        rdvCree: (date) => `✅ *Rendez-vous confirmé !*\n\n🗓️ ${date}\n\nÀ bientôt 🙏`,
         commandeConfirmee: (id) => `✅ *Commande #${id} confirmée !*\n\nNous préparons le colis 📦\nMerci de votre confiance 🙏`,
         commandeAnnuleeId: (id) => `❌ *Commande #${id} annulée.*\n\nSi c'est une erreur, répondez-nous 😊`,
         idChat: (chatId) => `🆔 Chat ID : \`${chatId}\``,
@@ -41,6 +45,10 @@ const T = {
         adminErreur: "❌ Connection error. Try again from your QG.",
         rdvConfirme: (id) => `✅ *Appointment #${id} confirmed!*\n\nSee you soon 🙏`,
         rdvAnnule: (id) => `❌ *Appointment #${id} cancelled.*\n\nIf this is a mistake, reply to us 😊`,
+        rdvChoisirHeure: "🕐 Pick a time slot:",
+        rdvJourComplet: "😔 This day is fully booked, pick another one.",
+        rdvExpire: "⏳ This calendar has expired, ask for an appointment again.",
+        rdvCree: (date) => `✅ *Appointment confirmed!*\n\n🗓️ ${date}\n\nSee you soon 🙏`,
         commandeConfirmee: (id) => `✅ *Order #${id} confirmed!*\n\nWe're preparing your package 📦\nThank you for your trust 🙏`,
         commandeAnnuleeId: (id) => `❌ *Order #${id} cancelled.*\n\nIf this is a mistake, reply to us 😊`,
         idChat: (chatId) => `🆔 Chat ID: \`${chatId}\``,
@@ -52,6 +60,10 @@ const T = {
         adminErreur: "❌ خطأ في الاتصال. حاول مرة أخرى من مركز القيادة.",
         rdvConfirme: (id) => `✅ *تم تأكيد الموعد #${id}!*\n\nإلى اللقاء 🙏`,
         rdvAnnule: (id) => `❌ *تم إلغاء الموعد #${id}.*\n\nإذا كان هذا خطأ، يرجى الرد علينا 😊`,
+        rdvChoisirHeure: "🕐 اختر موعداً:",
+        rdvJourComplet: "😔 هذا اليوم محجوز بالكامل، اختر يوماً آخر.",
+        rdvExpire: "⏳ انتهت صلاحية هذا التقويم، اطلب موعداً من جديد.",
+        rdvCree: (date) => `✅ *تم تأكيد الموعد!*\n\n🗓️ ${date}\n\nإلى اللقاء 🙏`,
         commandeConfirmee: (id) => `✅ *تم تأكيد الطلب #${id}!*\n\nنحضّر طردك 📦\nشكراً لثقتك 🙏`,
         commandeAnnuleeId: (id) => `❌ *تم إلغاء الطلب #${id}.*\n\nإذا كان هذا خطأ، يرجى الرد علينا 😊`,
         idChat: (chatId) => `🆔 Chat ID: \`${chatId}\``,
@@ -194,6 +206,39 @@ router.post("/", async (req, res) => {
                 const rows = await db.query(`UPDATE rendez_vous SET statut = 'annulé' WHERE id = $1 RETURNING workspace_id`, [rdvId.replace("RDV-", "")]);
                 socketService.emitToShop(rows[0]?.workspace_id, "rdv-annule", { id: rdvId });
                 await reply(chatId, tr(lang, "rdvAnnule", rdvId));
+                return;
+            }
+
+            // ── Calendrier RDV interactif : choix du jour, puis du créneau ──
+            if (data.startsWith("rdvday_")) {
+                const [, draftId, dateISO] = data.match(/^rdvday_(\d+)_(\d{4}-\d{2}-\d{2})$/) || [];
+                if (!draftId) return;
+                const draftRows = await db.query(`SELECT workspace_id FROM rendez_vous WHERE id = $1 AND statut = 'brouillon'`, [draftId]);
+                const workspaceId = draftRows[0]?.workspace_id;
+                if (!workspaceId) { await reply(chatId, tr(lang, "rdvExpire")); return; }
+
+                const commerceEngine = require("../engines/commerceEngine");
+                const creneaux = await commerceEngine.creneauxLibresPourJour(workspaceId, dateISO);
+                if (!creneaux.length) { await reply(chatId, tr(lang, "rdvJourComplet")); return; }
+
+                const boutons = [];
+                for (let i = 0; i < creneaux.length; i += 3) {
+                    boutons.push(creneaux.slice(i, i + 3).map(c => ({
+                        text: c.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+                        callback_data: `rdvslot_${draftId}_${c.getFullYear()}-${String(c.getMonth() + 1).padStart(2, "0")}-${String(c.getDate()).padStart(2, "0")}T${String(c.getHours()).padStart(2, "0")}:${String(c.getMinutes()).padStart(2, "0")}:00`,
+                    })));
+                }
+                await require("../services/telegramService").sendWithKeyboard(chatId, tr(lang, "rdvChoisirHeure"), boutons);
+                return;
+            }
+
+            if (data.startsWith("rdvslot_")) {
+                const [, draftId, dateRdv] = data.match(/^rdvslot_(\d+)_(.+)$/) || [];
+                if (!draftId) return;
+                const commerceEngine = require("../engines/commerceEngine");
+                const rdv = await commerceEngine.finaliserCreneauRdv(draftId, dateRdv);
+                if (!rdv) { await reply(chatId, tr(lang, "rdvExpire")); return; }
+                await reply(chatId, tr(lang, "rdvCree", new Date(rdv.date_rdv).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })));
                 return;
             }
 

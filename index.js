@@ -1,6 +1,13 @@
 // ======================================================
 // SAMII OS V1 — Point d'entrée
 // ======================================================
+// Doit être la toute première ligne exécutée, avant tout require() : le
+// serveur (Render) tourne en UTC par défaut, alors que la clientèle et les
+// horaires d'ouverture (RDV, missions du jour...) sont en heure d'Algérie.
+// Fixer le fuseau ici rend correct tout new Date()/getHours()/getDay() du
+// reste du code sans avoir à convertir manuellement partout.
+process.env.TZ = "Africa/Algiers";
+
 const path             = require("path");
 const express          = require("express");
 const session          = require("express-session");

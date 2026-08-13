@@ -16,6 +16,9 @@ class SamiiPlanner {
             case "prendre_rendez_vous":
                 return await commerceEngine.createRdvFromChat(context, args);
 
+            case "proposer_creneaux_rdv":
+                return await commerceEngine.proposerCreneauxRdv(context, args);
+
             case "passer_commande":
                 return await commerceEngine.createOrderFromChat(context, args);
 

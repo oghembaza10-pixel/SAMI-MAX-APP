@@ -56,8 +56,20 @@ const TOOLS = [
                 },
             },
             {
+                name: "proposer_creneaux_rdv",
+                description: "PRIORITAIRE dès que le motif du rendez-vous et le téléphone du client sont connus, mais qu'il n'a PAS encore donné de date précise — envoie un calendrier interactif (jours et créneaux horaires libres) pour que le client choisisse lui-même, au lieu de lui demander une date en texte. Si cette fonction renvoie une erreur (canal non compatible), utilise alors prendre_rendez_vous en demandant sa date/heure préférée en texte.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        motif: { type: "STRING", description: "Le motif du rendez-vous." },
+                        telephone: { type: "STRING", description: "Le numéro de téléphone du client." },
+                    },
+                    required: ["motif", "telephone"],
+                },
+            },
+            {
                 name: "prendre_rendez_vous",
-                description: "Enregistre une demande de rendez-vous pour le client, uniquement une fois que le motif, la date/heure souhaitée et son numéro de téléphone sont clairement connus dans la conversation.",
+                description: "Repli uniquement : enregistre une demande de rendez-vous quand le client a lui-même donné une date/heure précise en texte, ou quand proposer_creneaux_rdv n'est pas utilisable sur ce canal.",
                 parameters: {
                     type: "OBJECT",
                     properties: {

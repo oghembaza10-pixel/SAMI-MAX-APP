@@ -42,6 +42,23 @@ async function notifyAdmin(workspaceId, message, inlineKeyboard) {
     }
 }
 
+// ── ENVOYER MESSAGE AVEC BOUTONS INLINE (calendrier RDV, choix...) ─────────
+async function sendWithKeyboard(chatId, message, inlineKeyboard) {
+    try {
+        if (!TOKEN) return { success: false, error: "TOKEN manquant" };
+        await axios.post(`${BASE}/sendMessage`, {
+            chat_id     : chatId,
+            text        : message,
+            parse_mode  : "Markdown",
+            reply_markup: { inline_keyboard: inlineKeyboard },
+        });
+        return { success: true };
+    } catch (err) {
+        console.error("❌ Telegram sendWithKeyboard :", err.response?.data || err.message);
+        return { success: false, error: err.message };
+    }
+}
+
 // ── ENVOYER MESSAGE ────────────────────────────────────────────────────────
 async function send(chatId, message) {
     try {
@@ -154,6 +171,7 @@ async function receive(msg) {
 
 module.exports = {
     send,
+    sendWithKeyboard,
     getAdminChatId,
     notifyAdmin,
     demanderConfirmation,

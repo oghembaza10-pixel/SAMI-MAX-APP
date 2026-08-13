@@ -445,6 +445,138 @@ class CommerceEngine {
     }
 
     // =========================================================
+    // CALENDRIER RDV — créneaux configurables par le marchand
+    // (disponible pour tout workspace, pas seulement les métiers
+    // "sur rendez-vous" — un e-commerçant peut aussi en recevoir).
+    // =========================================================
+
+    async getRdvConfig(workspaceId) {
+        const DEFAUT = { jours_fermes: [5], heure_debut: "09:00", heure_fin: "18:00", duree_creneau_min: 30 };
+        try {
+            const rows = await db.query(`SELECT rdv_config FROM workspaces WHERE id = $1`, [workspaceId]);
+            const config = rows[0]?.rdv_config;
+            return config ? { ...DEFAUT, ...config } : DEFAUT;
+        } catch {
+            return DEFAUT;
+        }
+    }
+
+    // process.env.TZ = "Africa/Algiers" (index.js) — new Date(y,m,d,h,mi) et
+    // les getters locaux (getDay, getHours...) sont donc déjà en heure d'Alger.
+    joursDisponibles(config, nbJours = 7) {
+        const jours = [];
+        const auj = new Date();
+        for (let i = 0; jours.length < nbJours && i < nbJours + 7; i++) {
+            const d = new Date(auj.getFullYear(), auj.getMonth(), auj.getDate() + i);
+            if (!(config.jours_fermes || []).includes(d.getDay())) jours.push(d);
+        }
+        return jours;
+    }
+
+    creneauxDuJour(config, date) {
+        const [hD, mD] = String(config.heure_debut || "09:00").split(":").map(Number);
+        const [hF, mF] = String(config.heure_fin || "18:00").split(":").map(Number);
+        const duree = config.duree_creneau_min || 30;
+        const creneaux = [];
+        let curseur = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hD, mD);
+        const fin = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hF, mF);
+        while (curseur < fin) {
+            creneaux.push(new Date(curseur));
+            curseur = new Date(curseur.getTime() + duree * 60000);
+        }
+        return creneaux;
+    }
+
+    // Ouvre le calendrier interactif Telegram — crée un rendez-vous "brouillon"
+    // (sans date) dont l'id sert de référence légère dans les callback_data
+    // des boutons, plutôt que de stocker l'état en mémoire (perdu au redémarrage).
+    async proposerCreneauxRdv(context, args) {
+        try {
+            const { workspaceId, name, source, chatId } = context || {};
+            if (!workspaceId) return { success: false, error: "Impossible d'identifier le workspace de ce client." };
+            if (source !== "telegram" || !chatId) {
+                return { success: false, error: "Calendrier interactif indisponible sur ce canal — demande la date/heure souhaitée directement au client, en texte." };
+            }
+
+            const rows = await db.query(
+                `INSERT INTO rendez_vous (workspace_id, client_nom, client_telephone, motif, date_rdv, statut, source)
+                 VALUES ($1, $2, $3, $4, NULL, 'brouillon', $5) RETURNING id`,
+                [workspaceId, name || "Client", args.telephone || "", args.motif || "", source]
+            );
+            const draftId = rows[0].id;
+
+            const config = await this.getRdvConfig(workspaceId);
+            const jours = this.joursDisponibles(config);
+            const boutons = jours.map(d => ([{
+                text: d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }),
+                callback_data: `rdvday_${draftId}_${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
+            }]));
+
+            await require("../services/telegramService").sendWithKeyboard(
+                chatId,
+                "📅 Choisis un jour pour ton rendez-vous :",
+                boutons
+            );
+
+            return { success: true, calendrierEnvoye: true };
+        } catch (err) {
+            console.error("❌ CommerceEngine.proposerCreneauxRdv :", err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
+    async creneauxLibresPourJour(workspaceId, dateISO) {
+        const config = await this.getRdvConfig(workspaceId);
+        const [an, mo, jr] = dateISO.split("-").map(Number);
+        const date = new Date(an, mo - 1, jr);
+        const tousLesCreneaux = this.creneauxDuJour(config, date);
+
+        const prisRows = await db.query(
+            `SELECT date_rdv FROM rendez_vous
+             WHERE workspace_id = $1 AND statut NOT IN ('annulé', 'brouillon')
+               AND date_rdv >= $2::date AND date_rdv < ($2::date + INTERVAL '1 day')`,
+            [workspaceId, dateISO]
+        );
+        const prisSet = new Set(prisRows.map(r => new Date(r.date_rdv).getTime()));
+
+        return tousLesCreneaux.filter(c => !prisSet.has(c.getTime()));
+    }
+
+    // Transforme le brouillon en vrai rendez-vous une fois le créneau choisi.
+    async finaliserCreneauRdv(draftId, dateRdv) {
+        try {
+            const rows = await db.query(
+                `UPDATE rendez_vous SET date_rdv = $1, statut = 'en_attente'
+                 WHERE id = $2 AND statut = 'brouillon' RETURNING *`,
+                [dateRdv, draftId]
+            );
+            const rdv = rows[0];
+            if (!rdv) return null;
+            const rdvId = `RDV-${rdv.id}`;
+
+            await db.query(
+                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                [`rdv.created.telegram`, `#${rdvId} — ${rdv.client_nom}`, rdv.workspace_id]
+            );
+            socketService.emitToShop(rdv.workspace_id, "nouveau-rdv", { id: rdvId });
+            notify.notifyWorkspace(rdv.workspace_id, {
+                title: "📅 Nouveau rendez-vous",
+                body : `${rdv.client_nom} — ${rdv.motif}`,
+                url  : "/qg",
+            });
+            await require("../services/telegramService").notifyAdmin(
+                rdv.workspace_id,
+                `📅 *Nouveau rendez-vous !*\n\n🆔 *Numéro :* \`${rdvId}\`\n👤 *Client :* ${rdv.client_nom}\n📞 *Tél :* ${rdv.client_telephone}\n📝 *Motif :* ${rdv.motif}\n🗓️ *Date :* ${new Date(rdv.date_rdv).toLocaleString("fr-FR")}`,
+                [[{ text: "✅", callback_data: `rdvconfirm_${rdvId}` }, { text: "❌", callback_data: `rdvcancel_${rdvId}` }]]
+            );
+            return rdv;
+        } catch (err) {
+            console.error("❌ CommerceEngine.finaliserCreneauRdv :", err.message);
+            return null;
+        }
+    }
+
+    // =========================================================
     // STOCK FAIBLE
     // =========================================================
     async lowStock(event) {

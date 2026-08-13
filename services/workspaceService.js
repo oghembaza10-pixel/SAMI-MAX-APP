@@ -153,7 +153,7 @@ async function update(recordId, fields) {
     try {
         const colonnesAutorisees = [
             "nom", "metier", "logo", "langue", "devise", "pays", "description",
-            "samii", "coffre", "automatisations", "missions",
+            "samii", "coffre", "automatisations", "missions", "rdv_config",
             "meta_access_token", "meta_ad_account_id", "meta_page_id",
             "timezone", "statut",
         ];

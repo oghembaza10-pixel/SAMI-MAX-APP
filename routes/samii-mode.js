@@ -139,6 +139,139 @@ router.post("/mode", requireAuth, async (req, res) => {
     }
 });
 
+const JOURS_SEMAINE = [
+    { id: 1, label: "Lundi" }, { id: 2, label: "Mardi" }, { id: 3, label: "Mercredi" },
+    { id: 4, label: "Jeudi" }, { id: 5, label: "Vendredi" }, { id: 6, label: "Samedi" }, { id: 0, label: "Dimanche" },
+];
+const RDV_CONFIG_DEFAUT = { jours_fermes: [5], heure_debut: "09:00", heure_fin: "18:00", duree_creneau_min: 30 };
+
+// Ouvert à tout workspace, quel que soit le métier — un e-commerçant peut
+// aussi recevoir des demandes de rendez-vous via le chat SAMII.
+router.get("/rdv-config", requireAuth, async (req, res) => {
+    const workspaceId = req.session.workspaceId;
+    if (!workspaceId) return res.redirect("/hub");
+
+    const workspace = await workspaceService.getById(workspaceId);
+    const config = { ...RDV_CONFIG_DEFAUT, ...(workspace?.rdv_config || {}) };
+
+    const joursHtml = JOURS_SEMAINE.map(j => `
+        <label class="jour-check">
+            <input type="checkbox" name="jours_fermes" value="${j.id}" ${(config.jours_fermes || []).includes(j.id) ? "checked" : ""}>
+            ${j.label}
+        </label>
+    `).join("");
+
+    res.send(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Calendrier RDV — SAMII</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/qg-style.css">
+    <style>
+        .rdv-shell { max-width: 520px; margin: 0 auto; padding: 40px 24px 80px; }
+        .rdv-shell h1 { font-family: var(--font-display); color: #fff; font-size: 1.5rem; margin-bottom: 6px; }
+        .rdv-shell p.sub { color: var(--text-muted); font-size: .88rem; margin-bottom: 26px; }
+        .rdv-field { margin-bottom: 20px; }
+        .rdv-field label.title { display:block; color: var(--gold-og); font-size: .82rem; font-weight:700; margin-bottom: 10px; }
+        .jours-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .jour-check {
+            display: flex; align-items: center; gap: 8px; background: var(--bg-glass); border: var(--border-soft);
+            border-radius: 10px; padding: 10px 12px; cursor: pointer; color: var(--text-main); font-size: .85rem;
+        }
+        .jour-check input { accent-color: var(--gold-og); }
+        .heures-row { display: flex; gap: 12px; }
+        .heures-row > div { flex: 1; }
+        input[type="time"], select {
+            width: 100%; padding: 10px 12px; border-radius: 10px; background: var(--bg-glass);
+            border: var(--border-soft); color: var(--text-main); font-size: .88rem;
+        }
+        .rdv-submit {
+            width: 100%; padding: 13px; margin-top: 10px; background: var(--gold-og);
+            border: none; border-radius: 10px; font-weight: 700; cursor: pointer; color: #000;
+        }
+        .rdv-msg { text-align: center; margin-top: 14px; font-size: .85rem; color: #3ddc84; min-height: 20px; }
+    </style>
+</head>
+<body data-theme="og">
+<div class="rdv-shell">
+    <a href="/samii" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);text-decoration:none;font-size:.82rem;margin-bottom:16px;">← Retour à SAMII</a>
+    <h1>📅 Calendrier des rendez-vous</h1>
+    <p class="sub">Configure tes jours et horaires d'ouverture — SAMII proposera automatiquement ces créneaux aux clients qui demandent un rendez-vous sur Telegram.</p>
+
+    <form id="form-rdv-config">
+        <div class="rdv-field">
+            <label class="title">Jours fermés</label>
+            <div class="jours-grid">${joursHtml}</div>
+        </div>
+        <div class="rdv-field">
+            <label class="title">Horaires d'ouverture</label>
+            <div class="heures-row">
+                <div><input type="time" name="heure_debut" value="${config.heure_debut}"></div>
+                <div><input type="time" name="heure_fin" value="${config.heure_fin}"></div>
+            </div>
+        </div>
+        <div class="rdv-field">
+            <label class="title">Durée d'un créneau</label>
+            <select name="duree_creneau_min">
+                <option value="15" ${config.duree_creneau_min === 15 ? "selected" : ""}>15 minutes</option>
+                <option value="30" ${config.duree_creneau_min === 30 ? "selected" : ""}>30 minutes</option>
+                <option value="45" ${config.duree_creneau_min === 45 ? "selected" : ""}>45 minutes</option>
+                <option value="60" ${config.duree_creneau_min === 60 ? "selected" : ""}>1 heure</option>
+            </select>
+        </div>
+        <button type="submit" class="rdv-submit">Enregistrer</button>
+    </form>
+    <div class="rdv-msg" id="msg"></div>
+</div>
+
+<script>
+document.getElementById('form-rdv-config').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const jours_fermes = Array.from(form.querySelectorAll('input[name="jours_fermes"]:checked')).map(el => Number(el.value));
+    const heure_debut = form.heure_debut.value || '09:00';
+    const heure_fin = form.heure_fin.value || '18:00';
+    const duree_creneau_min = Number(form.duree_creneau_min.value) || 30;
+
+    const msg = document.getElementById('msg');
+    msg.textContent = '⏳ Enregistrement...';
+
+    const res = await fetch('/samii/rdv-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jours_fermes, heure_debut, heure_fin, duree_creneau_min }),
+    });
+    const json = await res.json();
+    msg.textContent = json.success ? '✅ Enregistré !' : '❌ Erreur.';
+});
+</script>
+</body>
+</html>`);
+});
+
+router.post("/rdv-config", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session.workspaceId;
+        if (!workspaceId) return res.json({ success: false, error: "Workspace introuvable." });
+
+        const { jours_fermes, heure_debut, heure_fin, duree_creneau_min } = req.body;
+        const config = {
+            jours_fermes: Array.isArray(jours_fermes) ? jours_fermes.map(Number).filter(n => n >= 0 && n <= 6) : [],
+            heure_debut: /^\d{2}:\d{2}$/.test(heure_debut) ? heure_debut : "09:00",
+            heure_fin: /^\d{2}:\d{2}$/.test(heure_fin) ? heure_fin : "18:00",
+            duree_creneau_min: [15, 30, 45, 60].includes(Number(duree_creneau_min)) ? Number(duree_creneau_min) : 30,
+        };
+
+        await workspaceService.update(workspaceId, { rdv_config: config });
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /samii/rdv-config :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
 function canActAutonomously(mode) {
     return ["strategiste", "autonome", "souverain"].includes(mode);
 }

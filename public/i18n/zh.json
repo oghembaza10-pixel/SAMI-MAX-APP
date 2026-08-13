@@ -166,6 +166,7 @@
     "status": "运行中",
     "title": "您的战略生活中心。",
     "changeMode": "更改 SAMII 模式",
+    "rdvConfig": "设置我的预约日历",
     "connectTools": "连接我的工具",
     "chat": {
       "welcome": "欢迎，将军。我是 SAMII。今天我能帮您什么？",

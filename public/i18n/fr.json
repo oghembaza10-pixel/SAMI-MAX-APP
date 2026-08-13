@@ -166,6 +166,7 @@
     "status": "OPÉRATIONNEL",
     "title": "Votre centre de vie stratégique.",
     "changeMode": "Changer le mode de SAMII",
+    "rdvConfig": "Configurer mon calendrier RDV",
     "connectTools": "Connecter mes outils",
     "chat": {
       "welcome": "Bienvenue, Général. Je suis SAMII. Comment puis-je vous aider aujourd'hui ?",

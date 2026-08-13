@@ -166,6 +166,7 @@
     "status": "OPERATIONAL",
     "title": "Your strategic command center.",
     "changeMode": "Change SAMII's mode",
+    "rdvConfig": "Configure my appointments calendar",
     "connectTools": "Connect my tools",
     "chat": {
       "welcome": "Welcome, General. I'm SAMII. How can I help you today?",
