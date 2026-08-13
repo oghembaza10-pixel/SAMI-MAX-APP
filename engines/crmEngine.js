@@ -1,71 +1,90 @@
 /**
  * ============================================================
- * OG • CRM Engine V2 — VERSION DÉFINITIVE
- * Gère toutes les conversations, callbacks et canaux
+ * OG • CRM Engine V3 — Postgres réel
+ * Construit les fiches clients + fils de conversation à partir de
+ * l'activité multi-canal (Telegram, WhatsApp, Instagram, Messenger,
+ * Google, TikTok, Snapchat), écoutée via l'orchestrateur.
+ *
+ * V2 écrivait tout dans des tables Airtable ("CLIENTS", "CONVERSATIONS",
+ * "COMMANDES", "LOGS") qui ne sont plus la source réelle depuis longtemps —
+ * chaque écriture échouait silencieusement dès qu'Airtable n'était pas
+ * configuré, donc aucune fiche client ni conversation ne s'est jamais
+ * vraiment construite. Les logs applicatifs (LOGS) sont retirés : les
+ * routes webhook (whatsapp/telegram/auth-meta) écrivent déjà directement
+ * dans la table Postgres "journal" au moment du message — les dupliquer
+ * ici n'apportait rien.
  * ============================================================
  */
 
-const airtable = require("../services/airtable");
+const db = require("../services/db");
 const telegram = require("../services/telegramService");
 
 class CRMEngine {
 
-  // ── HELPER : Trouve ou crée un client ────────────────────
-async findOrCreateClient(data) {
-    const { name, phone, email, source } = data;
-    const formula = phone
-        ? `{Téléphone} = "${phone}"`
-        : email
-            ? `{Email} = "${email}"`
-            : `{Nom Client} = "${name}"`;
+    // ── HELPER : Trouve ou crée un client (Postgres) ──────────
+    // workspace_id est une clé étrangère vers workspaces(id) — sans
+    // workspaceId résolu (ex : Telegram avant liaison marchand/client), on
+    // n'écrit rien plutôt que de spammer les logs d'erreurs FK à chaque message.
+    async findOrCreateClient({ name, phone, workspaceId }) {
+        if (!workspaceId) return null;
+        try {
+            const existing = phone
+                ? await db.query(`SELECT id FROM clients WHERE telephone = $1 AND workspace_id = $2 LIMIT 1`, [phone, workspaceId || ""])
+                : await db.query(`SELECT id FROM clients WHERE nom = $1 AND workspace_id = $2 LIMIT 1`, [name || "Inconnu", workspaceId || ""]);
 
-    let client = await airtable.findOne("CLIENTS", formula);
-    if (!client) {
-        client = await airtable.create("CLIENTS", {
-            "Nom Client": name   || "Inconnu",
-            "Téléphone" : phone  || "",
-            "Email"     : email  || "",
-            "Source"    : source || "inconnu",
-            "Statut"    : "actif",
-        });
-        console.log(`✅ Nouveau client : ${name}`);
+            if (existing[0]) return existing[0];
+
+            const created = await db.query(
+                `INSERT INTO clients (workspace_id, nom, telephone, statut) VALUES ($1, $2, $3, 'actif') RETURNING id`,
+                [workspaceId || "", name || "Inconnu", phone || ""]
+            );
+            console.log(`✅ Nouveau client : ${name || "Inconnu"}`);
+            return created[0];
+        } catch (err) {
+            console.error("❌ CRM.findOrCreateClient :", err.message);
+            return null;
+        }
     }
-    return client;
-}
 
-// ── HELPER : Enregistre conversation ─────────────────────
-async saveConversation(data) {
-    const { client, message, source, shop, direction = "entrant" } = data;
-    return await airtable.create("CONVERSATIONS", {
-        "Client"   : client    || "Inconnu",
-        "Message"  : message   || "",
-        "Source"   : source    || "inconnu",
-        "Direction": direction,
-        "Boutique" : shop      || "",
-        "Lu"       : false,
-    });
-}
+    // ── HELPER : Enregistre/actualise le fil de conversation (Postgres) ──
+    async saveConversation({ client, phone, message, canal, workspaceId }) {
+        if (!workspaceId) return;
+        try {
+            const existing = phone
+                ? await db.query(`SELECT id FROM conversations WHERE client_telephone = $1 AND canal = $2 AND workspace_id = $3 LIMIT 1`, [phone, canal, workspaceId || ""])
+                : await db.query(`SELECT id FROM conversations WHERE client_nom = $1 AND canal = $2 AND workspace_id = $3 LIMIT 1`, [client || "Inconnu", canal, workspaceId || ""]);
 
-// ── HELPER : Répondre sur Telegram ───────────────────────
-async replyTelegram(chatId, text) {
-    const telegram = require("../services/telegramService");
-    await telegram.send(chatId, text);
-}
+            if (existing[0]) {
+                await db.query(
+                    `UPDATE conversations SET dernier_message = $1, updated_at = now() WHERE id = $2`,
+                    [message || "", existing[0].id]
+                );
+                return;
+            }
+
+            await db.query(
+                `INSERT INTO conversations (workspace_id, client_nom, client_telephone, canal, dernier_message, statut, updated_at, created_at)
+                 VALUES ($1, $2, $3, $4, $5, 'ouverte', now(), now())`,
+                [workspaceId || "", client || "Inconnu", phone || "", canal, message || ""]
+            );
+        } catch (err) {
+            console.error("❌ CRM.saveConversation :", err.message);
+        }
+    }
 
     // =========================================================
     // TELEGRAM — MESSAGE
     // =========================================================
     async telegram(event) {
         try {
-            const { chatId, text, message } = event.payload;
+            const { text, message } = event.payload;
             const shop = event.shop || "";
             const name = message?.from?.first_name || "Inconnu";
 
             console.log(`✈️ Telegram [${name}] : ${text}`);
 
-            await this.findOrCreateClient({ name, source: "telegram" });
-            await this.saveConversation({ client: name, message: text, source: "telegram", shop });
-            await airtable.log("telegram.message", `${name}: ${text}`, shop);
+            await this.findOrCreateClient({ name, workspaceId: shop });
+            await this.saveConversation({ client: name, message: text, canal: "telegram", workspaceId: shop });
 
             return { success: true };
         } catch (err) {
@@ -76,62 +95,48 @@ async replyTelegram(chatId, text) {
     // =========================================================
     // TELEGRAM — CALLBACK (bouton cliqué)
     // =========================================================
+    // NOTE : les callback_data "confirm_"/"cancel_" sont déjà interceptés et
+    // traités directement dans routes/telegram.js (Postgres) avant d'arriver
+    // ici — ces deux branches ne restent que par sécurité si jamais elles
+    // étaient un jour émises ailleurs. "ship_"/"details_" restent la
+    // responsabilité de ce handler.
     async telegramCallback(event) {
         try {
             const { chatId, data } = event.payload;
             const shop = event.shop || "";
 
             console.log(`🔘 Telegram callback : ${data}`);
-            const telegram = require("../services/telegramService");
             const [action, orderId] = data.split("_");
 
-            // ── CONFIRMER ────────────────────────────────────
             if (action === "confirm") {
-                await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
-                    "Statut": "confirmée"
-                });
-                await telegram.send(chatId,
-                    `✅ *Commande #${orderId} confirmée !*\nSAMII a mis à jour le statut.`
-                );
-                await airtable.log("order.confirmed", `Commande #${orderId} confirmée`, shop);
+                await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1`, [orderId]);
+                await telegram.send(chatId, `✅ *Commande #${orderId} confirmée !*\nSAMII a mis à jour le statut.`);
             }
 
-            // ── ANNULER ───────────────────────────────────────
             else if (action === "cancel") {
-                await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
-                    "Statut": "annulée"
-                });
-                await telegram.send(chatId,
-                    `❌ *Commande #${orderId} annulée.*`
-                );
-                await airtable.log("order.cancelled", `Commande #${orderId} annulée`, shop);
+                await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [orderId]);
+                await telegram.send(chatId, `❌ *Commande #${orderId} annulée.*`);
             }
 
-            // ── EXPÉDIER ──────────────────────────────────────
             else if (action === "ship") {
-                await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
-                    "Statut": "expédiée"
-                });
-                await telegram.send(chatId,
-                    `🚚 *Commande #${orderId} expédiée !*\nSAMII a notifié le client.`
-                );
-                await airtable.log("order.shipped", `Commande #${orderId} expédiée`, shop);
+                await db.query(`UPDATE commandes SET statut = 'expédiée' WHERE id = $1`, [orderId]);
+                await telegram.send(chatId, `🚚 *Commande #${orderId} expédiée !*\nSAMII a notifié le client.`);
             }
 
-            // ── DÉTAILS ───────────────────────────────────────
             else if (action === "details") {
-                const commande = await airtable.findOne("COMMANDES",
-                    `{ID Commande} = "${orderId}"`
+                const rows = await db.query(
+                    `SELECT nom_client, montant, adresse, telephone, statut FROM commandes WHERE id = $1`,
+                    [orderId]
                 );
-                if (commande) {
-                    const f = commande.fields;
+                const c = rows[0];
+                if (c) {
                     await telegram.send(chatId,
                         `📋 *Détails commande #${orderId}*\n\n` +
-                        `👤 Client : ${f["Client"] || "-"}\n` +
-                        `💰 Total : ${f["Total"] || "-"}\n` +
-                        `📍 Adresse : ${f["Adresse"] || "-"}\n` +
-                        `📞 Téléphone : ${f["Téléphone"] || "-"}\n` +
-                        `📦 Statut : ${f["Statut"] || "-"}`
+                        `👤 Client : ${c.nom_client || "-"}\n` +
+                        `💰 Total : ${c.montant || "-"}\n` +
+                        `📍 Adresse : ${c.adresse || "-"}\n` +
+                        `📞 Téléphone : ${c.telephone || "-"}\n` +
+                        `📦 Statut : ${c.statut || "-"}`
                     );
                 }
             }
@@ -152,9 +157,8 @@ async replyTelegram(chatId, text) {
 
             console.log(`💬 WhatsApp [${senderName}] : ${message}`);
 
-            await this.findOrCreateClient({ name: senderName, phone: sender, source: "whatsapp" });
-            await this.saveConversation({ client: senderName, message, source: "whatsapp", shop });
-            await airtable.log("whatsapp.message", `${senderName}: ${message}`, shop);
+            await this.findOrCreateClient({ name: senderName, phone: sender, workspaceId: shop });
+            await this.saveConversation({ client: senderName, phone: sender, message, canal: "whatsapp", workspaceId: shop });
 
             return { success: true };
         } catch (err) {
@@ -166,13 +170,8 @@ async replyTelegram(chatId, text) {
     // WHATSAPP — CALLBACK
     // =========================================================
     async whatsappCallback(event) {
-        try {
-            console.log(`🔘 WhatsApp callback :`, event.payload);
-            await airtable.log("whatsapp.callback", JSON.stringify(event.payload), event.shop);
-            return { success: true };
-        } catch (err) {
-            console.error("❌ CRM.whatsappCallback :", err.message);
-        }
+        console.log(`🔘 WhatsApp callback :`, event.payload);
+        return { success: true };
     }
 
     // =========================================================
@@ -186,9 +185,8 @@ async replyTelegram(chatId, text) {
 
             console.log(`📸 Instagram [${name}] : ${text}`);
 
-            await this.findOrCreateClient({ name, source: "instagram" });
-            await this.saveConversation({ client: name, message: text, source: "instagram", shop });
-            await airtable.log("instagram.message", `${name}: ${text}`, shop);
+            await this.findOrCreateClient({ name, workspaceId: shop });
+            await this.saveConversation({ client: name, message: text, canal: "instagram", workspaceId: shop });
 
             return { success: true };
         } catch (err) {
@@ -200,13 +198,8 @@ async replyTelegram(chatId, text) {
     // INSTAGRAM — CALLBACK
     // =========================================================
     async instagramCallback(event) {
-        try {
-            console.log(`🔘 Instagram callback :`, event.payload);
-            await airtable.log("instagram.callback", JSON.stringify(event.payload), event.shop);
-            return { success: true };
-        } catch (err) {
-            console.error("❌ CRM.instagramCallback :", err.message);
-        }
+        console.log(`🔘 Instagram callback :`, event.payload);
+        return { success: true };
     }
 
     // =========================================================
@@ -220,9 +213,8 @@ async replyTelegram(chatId, text) {
 
             console.log(`📘 Messenger [${name}] : ${text}`);
 
-            await this.findOrCreateClient({ name, source: "messenger" });
-            await this.saveConversation({ client: name, message: text, source: "messenger", shop });
-            await airtable.log("messenger.message", `${name}: ${text}`, shop);
+            await this.findOrCreateClient({ name, workspaceId: shop });
+            await this.saveConversation({ client: name, message: text, canal: "messenger", workspaceId: shop });
 
             return { success: true };
         } catch (err) {
@@ -234,13 +226,8 @@ async replyTelegram(chatId, text) {
     // MESSENGER — CALLBACK
     // =========================================================
     async messengerCallback(event) {
-        try {
-            console.log(`🔘 Messenger callback :`, event.payload);
-            await airtable.log("messenger.callback", JSON.stringify(event.payload), event.shop);
-            return { success: true };
-        } catch (err) {
-            console.error("❌ CRM.messengerCallback :", err.message);
-        }
+        console.log(`🔘 Messenger callback :`, event.payload);
+        return { success: true };
     }
 
     // =========================================================
@@ -258,11 +245,10 @@ async replyTelegram(chatId, text) {
 
                     if (!text) continue;
 
-                    const source = body.object === "instagram" ? "instagram" : "messenger";
+                    const canal = body.object === "instagram" ? "instagram" : "messenger";
 
-                    await this.findOrCreateClient({ name, source });
-                    await this.saveConversation({ client: name, message: text, source, shop });
-                    await airtable.log(`${source}.message`, `${name}: ${text}`, shop);
+                    await this.findOrCreateClient({ name, workspaceId: shop });
+                    await this.saveConversation({ client: name, message: text, canal, workspaceId: shop });
                 }
             }
 
@@ -277,14 +263,13 @@ async replyTelegram(chatId, text) {
     // =========================================================
     async googleLead(event) {
         try {
-            const { name, email, phone, source } = event.payload;
+            const { name, phone } = event.payload;
             const shop = event.shop || "";
 
             console.log(`🔍 Google Lead : ${name}`);
 
-            await this.findOrCreateClient({ name, email, phone, source: source || "google" });
-            await this.saveConversation({ client: name, message: "Lead Google", source: "google", shop });
-            await airtable.log("google.lead", `${name} — ${email}`, shop);
+            await this.findOrCreateClient({ name, phone, workspaceId: shop });
+            await this.saveConversation({ client: name, phone, message: "Lead Google", canal: "google", workspaceId: shop });
 
             return { success: true };
         } catch (err) {
@@ -296,17 +281,9 @@ async replyTelegram(chatId, text) {
     // GOOGLE — CONVERSION ADS
     // =========================================================
     async googleConversion(event) {
-        try {
-            const { orderId, value, currency } = event.payload;
-            const shop = event.shop || "";
-
-            console.log(`📊 Google Conversion : #${orderId} — ${value} ${currency}`);
-            await airtable.log("google.conversion", `#${orderId} — ${value} ${currency}`, shop);
-
-            return { success: true };
-        } catch (err) {
-            console.error("❌ CRM.googleConversion :", err.message);
-        }
+        const { orderId, value, currency } = event.payload;
+        console.log(`📊 Google Conversion : #${orderId} — ${value} ${currency}`);
+        return { success: true };
     }
 
     // =========================================================
@@ -319,9 +296,8 @@ async replyTelegram(chatId, text) {
 
             console.log(`🎵 TikTok [${name}] : ${text}`);
 
-            await this.findOrCreateClient({ name, source: "tiktok" });
-            await this.saveConversation({ client: name, message: text, source: "tiktok", shop });
-            await airtable.log("tiktok.message", `${name}: ${text}`, shop);
+            await this.findOrCreateClient({ name, workspaceId: shop });
+            await this.saveConversation({ client: name, message: text, canal: "tiktok", workspaceId: shop });
 
             return { success: true };
         } catch (err) {
@@ -339,9 +315,8 @@ async replyTelegram(chatId, text) {
 
             console.log(`👻 Snapchat [${name}] : ${text}`);
 
-            await this.findOrCreateClient({ name, source: "snapchat" });
-            await this.saveConversation({ client: name, message: text, source: "snapchat", shop });
-            await airtable.log("snapchat.message", `${name}: ${text}`, shop);
+            await this.findOrCreateClient({ name, workspaceId: shop });
+            await this.saveConversation({ client: name, message: text, canal: "snapchat", workspaceId: shop });
 
             return { success: true };
         } catch (err) {
