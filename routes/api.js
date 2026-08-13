@@ -5,6 +5,7 @@ const express = require("express");
 const router = express.Router();
 const planner = require("../brain/planner");
 const db = require("../services/db");
+const samiiQuota = require("../services/samiiQuota");
 
 const METIERS_RDV = [
     "dentiste", "medecin", "avocat", "comptable", "coiffeur", "kine",
@@ -32,7 +33,29 @@ router.post("/chat", async (req, res) => {
     try {
         const message = req.body.message;
         if (!message) return res.json({ success: false, reply: "Écris un message." });
-        const grade = await getGrade(req.session?.userId);
+
+        const userId = req.session?.userId;
+
+        // Le quota (gratuit = 30 messages/24h glissantes, payant = illimité) est le
+        // seul levier commercial — la mémoire, elle, ne dépend jamais du palier
+        // (voir getSamiiHistory ci-dessous) : un client gratuit qui revient demain
+        // doit retrouver SAMII qui se souvient de tout, sinon aucune raison de
+        // vouloir passer payant.
+        if (userId) {
+            const quota = await samiiQuota.getEtatQuota(userId);
+            if (!quota.illimite && quota.restant <= 0) {
+                return res.json({
+                    success: true,
+                    quotaExceeded: true,
+                    reply:
+                        `Tu as atteint tes ${quota.total} messages gratuits pour aujourd'hui — ` +
+                        `je garde tout ce qu'on s'est dit, on reprend dans quelques heures. ` +
+                        `Passe en abonnement payant pour discuter sans limite et avancer sur tes projets sans attendre.`,
+                });
+            }
+        }
+
+        const grade = await getGrade(userId);
         const context = {
             user: { lang: req.body.lang || "" },
             workspaceId: req.session?.workspaceId || req.body.workspaceId || "",
@@ -44,7 +67,6 @@ router.post("/chat", async (req, res) => {
             audience: "souverain",
         };
 
-        const userId = req.session?.userId;
         const history = await getSamiiHistory(userId);
 
         const result = await planner.build({ goal: message }, context, history);
@@ -58,27 +80,20 @@ router.post("/chat", async (req, res) => {
     }
 });
 
-// ── Mémoire de conversation SAMII (gratuit = 24h glissantes, payant = illimité
-// dans le temps mais plafonné aux 150 derniers messages pour rester léger) ──
+// ── Mémoire de conversation SAMII — toujours complète, quel que soit le
+// palier d'abonnement. Seul le NOMBRE de messages/jour est limité en
+// gratuit (voir samiiQuota) ; la profondeur de mémoire, elle, est la même
+// pour tout le monde.
 async function getSamiiHistory(userId) {
     if (!userId) return [];
     try {
-        const userRows = await db.query(`SELECT abonnement FROM utilisateurs WHERE id = $1`, [userId]);
-        const estGratuit = (userRows[0]?.abonnement || "gratuit") === "gratuit";
-        const rows = estGratuit
-            ? await db.query(
-                  `SELECT role, contenu AS message FROM samii_conversations
-                   WHERE user_id = $1 AND created_at > now() - interval '24 hours'
-                   ORDER BY created_at ASC LIMIT 30`,
-                  [userId]
-              )
-            : await db.query(
-                  `SELECT role, contenu AS message FROM samii_conversations
-                   WHERE user_id = $1
-                   ORDER BY created_at DESC LIMIT 150`,
-                  [userId]
-              );
-        return estGratuit ? rows : rows.reverse();
+        const rows = await db.query(
+            `SELECT role, contenu AS message FROM samii_conversations
+             WHERE user_id = $1
+             ORDER BY created_at DESC LIMIT 150`,
+            [userId]
+        );
+        return rows.reverse();
     } catch (err) {
         console.error("❌ getSamiiHistory :", err.message);
         return [];

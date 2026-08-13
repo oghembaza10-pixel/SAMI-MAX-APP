@@ -5,6 +5,7 @@
 const PERSONALITY = require("../personality");
 const { getTables } = require("./sovereign/tables");
 const { getCatalogue } = require("./sovereign/catalogue");
+const { getGuidePlateforme } = require("./sovereign/plateforme");
 
 async function SAMII_PROMPT(message, context = {}) {
     const tables = await getTables(message);
@@ -65,6 +66,12 @@ si la question ne s'y prête pas. Tu ne cites jamais un prix ou une
 fonctionnalité qui n'est pas dans cette liste.
 
 ${getCatalogue()}
+
+-------------------------------------------------------
+COMMENT FONCTIONNE LA PLATEFORME (pour guider l'utilisateur)
+-------------------------------------------------------
+
+${getGuidePlateforme()}
 ` : ""}
 -------------------------------------------------------
 MESSAGE DE L'INTERLOCUTEUR

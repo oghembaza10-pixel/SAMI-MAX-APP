@@ -204,6 +204,11 @@ fetch('/client-qg/quota')
     .then(r => r.json())
     .then(data => {
         if (!data.success) return;
+        if (data.illimite) {
+            document.getElementById('quota-texte').textContent = t('samii.quotaUnlimited') || 'Illimité';
+            document.getElementById('quota-bar').style.width = '100%';
+            return;
+        }
         document.getElementById('quota-texte').textContent = `${data.restant} / ${data.total}`;
         const pct = Math.round((data.restant / data.total) * 100);
         document.getElementById('quota-bar').style.width = pct + '%';

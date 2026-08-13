@@ -5,6 +5,7 @@ const express = require("express");
 const router  = express.Router();
 const db = require("../services/db");
 const referralService = require("../services/referralService");
+const samiiQuota = require("../services/samiiQuota");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -39,8 +40,14 @@ router.get("/", requireAuth, async (req, res) => {
     });
 });
 
-router.get("/quota", requireAuth, (req, res) => {
-    res.json({ success: true, restant: 50, total: 50 });
+router.get("/quota", requireAuth, async (req, res) => {
+    try {
+        const quota = await samiiQuota.getEtatQuota(req.session.userId);
+        res.json({ success: true, ...quota });
+    } catch (err) {
+        console.error("❌ GET /client-qg/quota :", err.message);
+        res.json({ success: false, illimite: false, restant: samiiQuota.QUOTA_GRATUIT_PAR_JOUR, total: samiiQuota.QUOTA_GRATUIT_PAR_JOUR });
+    }
 });
 
 // ── SOUS-ROUTES (chaque carte a son propre fichier) ────
