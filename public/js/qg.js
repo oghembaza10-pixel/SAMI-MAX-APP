@@ -506,16 +506,21 @@ document.addEventListener('DOMContentLoaded', () => {
         setCard('stat-vip',        stats.vip);
         setCard('stat-blacklist',  stats.blacklist);
 
-        if (parcoursActuel === 'rdv') {
-            commandesRdvComplet = commandes;
+        renderCommandes(commandes);
+
+        // Le calendrier s'affiche pour les métiers RDV (dentiste, avocat...)
+        // ET pour un métier "produit" (e-commerce...) dès qu'il a au moins un
+        // rendez-vous — un e-commerçant peut très bien recevoir des demandes
+        // de RDV via le chat SAMII sans être classé "métier RDV".
+        const rdvDisponibles = parcoursActuel === 'rdv' ? commandes : (allData.rendezVous || []);
+        commandesRdvComplet = rdvDisponibles;
+        const section = document.getElementById('rdv-calendar-section');
+        const title   = document.getElementById('rdv-calendar-title');
+        if (rdvDisponibles.length > 0) {
             renderCalendrierRdv();
-            renderCommandes(commandesDuJourFiltre());
         } else {
-            const section = document.getElementById('rdv-calendar-section');
-            const title   = document.getElementById('rdv-calendar-title');
             if (section) section.style.display = 'none';
             if (title)   title.style.display = 'none';
-            renderCommandes(commandes);
         }
 
         const titreEl = document.getElementById('qg-boutique-nom');
@@ -631,11 +636,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return v && v !== '—' && !isNaN(new Date(v).getTime());
     }
 
-    function commandesDuJourFiltre() {
-        if (!calendrierJourFiltre) return commandesRdvComplet;
-        return commandesRdvComplet.filter(c =>
-            dateValide(c['DateRdv']) && new Date(c['DateRdv']).toISOString().slice(0, 10) === calendrierJourFiltre
-        );
+    function renderAgendaJour(rdvsJour) {
+        if (!calendrierJourFiltre) return '';
+        if (!rdvsJour.length) {
+            return `<p class="rdv-cal-agenda-empty">${qm('noAppointments')}</p>`;
+        }
+        return `<div class="rdv-cal-agenda">${rdvsJour.map(c => `
+            <div class="rdv-cal-agenda-item">
+                <div>
+                    <strong>${c['Nom Client'] || '—'}</strong>
+                    <span class="rdv-cal-agenda-heure">${dateValide(c['DateRdv']) ? new Date(c['DateRdv']).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                    <span class="qg-badge qg-badge--${statutClass(c['Statut'])}">${c['Statut'] || 'en_attente'}</span>
+                    <p class="rdv-cal-agenda-motif">${c['Produit'] || ''} ${c['Téléphone'] ? '· ' + c['Téléphone'] : ''}</p>
+                </div>
+                <div class="rdv-cal-agenda-actions">
+                    <button onclick="agirCommande('${c.airtableId}', 'confirmer')" title="${qm('confirmTitle')}">✅</button>
+                    <button onclick="agirCommande('${c.airtableId}', 'annuler')" title="${qm('cancelTitle')}">❌</button>
+                </div>
+            </div>
+        `).join('')}</div>`;
     }
 
     function renderCalendrierRdv() {
@@ -691,7 +710,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
             </div>
             <div class="rdv-cal-grid">${cellsHtml}</div>
-            ${calendrierJourFiltre ? `<button type="button" id="rdv-cal-reset" class="rdv-cal-reset">✕ Voir tous les rendez-vous</button>` : ''}
+            ${calendrierJourFiltre ? renderAgendaJour(parDate[calendrierJourFiltre] || []) : ''}
+            ${calendrierJourFiltre ? `<button type="button" id="rdv-cal-reset" class="rdv-cal-reset">✕ Fermer</button>` : ''}
         `;
 
         document.getElementById('rdv-cal-prev').addEventListener('click', () => {
@@ -707,14 +727,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const key = cell.dataset.date;
                 calendrierJourFiltre = calendrierJourFiltre === key ? null : key;
                 renderCalendrierRdv();
-                renderCommandes(commandesDuJourFiltre());
             });
         });
         const resetBtn = document.getElementById('rdv-cal-reset');
         if (resetBtn) resetBtn.addEventListener('click', () => {
             calendrierJourFiltre = null;
             renderCalendrierRdv();
-            renderCommandes(commandesDuJourFiltre());
         });
     }
 

@@ -459,6 +459,18 @@ body {
     background: transparent; border: var(--border-soft); color: var(--text-muted); cursor: pointer; font-size: .78rem;
 }
 .rdv-cal-reset:hover { color: var(--gold-og); border-color: var(--gold-og); }
+.rdv-cal-agenda { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.rdv-cal-agenda-empty { text-align: center; color: var(--text-muted); font-size: .82rem; margin-top: 16px; }
+.rdv-cal-agenda-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--bg-glass); border: var(--border-soft); border-radius: 12px; padding: 10px 14px;
+}
+.rdv-cal-agenda-item strong { color: var(--text-main); font-size: .88rem; margin-right: 8px; }
+.rdv-cal-agenda-heure { color: var(--cyan-tech); font-family: var(--font-mono); font-size: .78rem; margin-right: 8px; }
+.rdv-cal-agenda-motif { margin: 4px 0 0; color: var(--text-muted); font-size: .8rem; }
+.rdv-cal-agenda-actions button {
+    background: transparent; border: none; cursor: pointer; font-size: 1rem; padding: 4px 6px;
+}
 
 /* BADGES STATUT */
 .qg-badge--green  { background: rgba(61,220,132,0.12);  color: var(--green-on);  border: 1px solid rgba(61,220,132,0.28);  padding: 3px 10px; border-radius: 20px; font-size:.76rem; font-family: var(--font-mono); }

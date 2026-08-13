@@ -360,6 +360,27 @@ async function buildProduitResponse(res, workspace, workspaceId, userId) {
     const journal = await getJournal(workspaceId);
     const grade = await getGrade(userId);
 
+    // Un métier "produit" (e-commerce...) peut quand même recevoir des
+    // rendez-vous (consultation, retrait en boutique...) via le chat SAMII —
+    // on ne les cache pas juste parce que le workspace n'est pas classé
+    // "métier RDV" (dentiste, avocat...). Le calendrier ne s'affiche côté
+    // frontend que s'il y a au moins un rendez-vous.
+    const rdvRows = await db.query(
+        `SELECT * FROM rendez_vous WHERE workspace_id = $1 ORDER BY created_at DESC LIMIT 100`,
+        [workspaceId]
+    );
+    const rendezVous = rdvRows.map(r => ({
+        "ID Commande": r.id,
+        "Nom Client": r.client_nom,
+        "Téléphone": r.client_telephone,
+        "Produit": r.motif,
+        "DateRdv": r.date_rdv,
+        "Statut": r.statut,
+        "Source": r.source,
+        "Date Commande": r.created_at,
+        airtableId: r.id,
+    }));
+
     res.json({
         success: true,
         parcours: "produit",
@@ -372,6 +393,7 @@ async function buildProduitResponse(res, workspace, workspaceId, userId) {
         clients,
         journal,
         grade,
+        rendezVous,
     });
 }
 
