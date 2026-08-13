@@ -405,10 +405,17 @@ class CommerceEngine {
             const { workspaceId, name, source } = context || {};
             if (!workspaceId) return { success: false, error: "Impossible d'identifier le workspace de ce client." };
 
+            // SAMII doit renvoyer une date ISO (voir le schéma de la fonction), mais on
+            // ne fait jamais confiance à un modèle IA à 100% — si le format reçu n'est
+            // pas une date valide, on garde quand même le rendez-vous (date à NULL,
+            // texte brut ajouté au motif) plutôt que de faire planter l'insertion.
+            const dateParsee = args.date_rdv && !isNaN(Date.parse(args.date_rdv)) ? new Date(args.date_rdv) : null;
+            const motif = dateParsee ? (args.motif || "") : `${args.motif || ""} (souhaité : ${args.date_rdv || "non précisé"})`;
+
             const rows = await db.query(
                 `INSERT INTO rendez_vous (workspace_id, client_nom, client_telephone, motif, date_rdv, statut, source)
                  VALUES ($1, $2, $3, $4, $5, 'en_attente', $6) RETURNING id`,
-                [workspaceId, name || "Client", args.telephone || "", args.motif || "", args.date_rdv || "", source || "chat"]
+                [workspaceId, name || "Client", args.telephone || "", motif, dateParsee, source || "chat"]
             );
             const rdvId = `RDV-${rows[0].id}`;
             await db.query(

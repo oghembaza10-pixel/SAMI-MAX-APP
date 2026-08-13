@@ -219,6 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let canalActif  = null;
     let allData     = null;
     let parcoursActuel = 'produit';
+    let calendrierMois = new Date();
+    let calendrierJourFiltre = null;
+    let commandesRdvComplet = [];
 
     // Mêmes paliers que services/gradeService.js (SEUILS) — le nom doit
     // correspondre exactement à utilisateurs.grade_actuel.
@@ -503,7 +506,17 @@ document.addEventListener('DOMContentLoaded', () => {
         setCard('stat-vip',        stats.vip);
         setCard('stat-blacklist',  stats.blacklist);
 
-        renderCommandes(commandes);
+        if (parcoursActuel === 'rdv') {
+            commandesRdvComplet = commandes;
+            renderCalendrierRdv();
+            renderCommandes(commandesDuJourFiltre());
+        } else {
+            const section = document.getElementById('rdv-calendar-section');
+            const title   = document.getElementById('rdv-calendar-title');
+            if (section) section.style.display = 'none';
+            if (title)   title.style.display = 'none';
+            renderCommandes(commandes);
+        }
 
         const titreEl = document.getElementById('qg-boutique-nom');
         if (titreEl) {
@@ -612,6 +625,97 @@ document.addEventListener('DOMContentLoaded', () => {
                 — ${j.details || j.action || ''}
             </li>
         `).join('');
+    }
+
+    function dateValide(v) {
+        return v && v !== '—' && !isNaN(new Date(v).getTime());
+    }
+
+    function commandesDuJourFiltre() {
+        if (!calendrierJourFiltre) return commandesRdvComplet;
+        return commandesRdvComplet.filter(c =>
+            dateValide(c['DateRdv']) && new Date(c['DateRdv']).toISOString().slice(0, 10) === calendrierJourFiltre
+        );
+    }
+
+    function renderCalendrierRdv() {
+        const section = document.getElementById('rdv-calendar-section');
+        const title   = document.getElementById('rdv-calendar-title');
+        const holder  = document.getElementById('rdv-calendar');
+        if (!section || !title || !holder) return;
+        section.style.display = '';
+        title.style.display = '';
+
+        const parDate = {};
+        commandesRdvComplet.forEach(c => {
+            if (!dateValide(c['DateRdv'])) return;
+            const key = new Date(c['DateRdv']).toISOString().slice(0, 10);
+            (parDate[key] = parDate[key] || []).push(c);
+        });
+
+        const annee = calendrierMois.getFullYear();
+        const mois  = calendrierMois.getMonth();
+        const premierJour = new Date(annee, mois, 1);
+        const nbJours = new Date(annee, mois + 1, 0).getDate();
+        let offset = premierJour.getDay() - 1;
+        if (offset < 0) offset = 6;
+
+        const todayKey = new Date().toISOString().slice(0, 10);
+        const nomMois  = calendrierMois.toLocaleDateString(qgLang() === 'ar' ? 'ar' : 'fr-FR', { month: 'long', year: 'numeric' });
+
+        let cellsHtml = '';
+        for (let i = 0; i < offset; i++) cellsHtml += `<div class="rdv-cal-cell rdv-cal-cell--empty"></div>`;
+        for (let jour = 1; jour <= nbJours; jour++) {
+            const key = `${annee}-${String(mois + 1).padStart(2, '0')}-${String(jour).padStart(2, '0')}`;
+            const rdvsJour = parDate[key] || [];
+            const classes = [
+                'rdv-cal-cell',
+                key === todayKey ? 'rdv-cal-cell--today' : '',
+                key === calendrierJourFiltre ? 'rdv-cal-cell--selected' : '',
+                rdvsJour.length ? 'rdv-cal-cell--has' : '',
+            ].filter(Boolean).join(' ');
+            cellsHtml += `
+                <div class="${classes}" data-date="${key}">
+                    <span class="rdv-cal-num">${jour}</span>
+                    ${rdvsJour.length ? `<span class="rdv-cal-dot">${rdvsJour.length}</span>` : ''}
+                </div>`;
+        }
+
+        holder.innerHTML = `
+            <div class="rdv-cal-header">
+                <button type="button" id="rdv-cal-prev" aria-label="Mois précédent">‹</button>
+                <strong style="text-transform:capitalize;">${nomMois}</strong>
+                <button type="button" id="rdv-cal-next" aria-label="Mois suivant">›</button>
+            </div>
+            <div class="rdv-cal-weekdays">
+                <span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span>
+            </div>
+            <div class="rdv-cal-grid">${cellsHtml}</div>
+            ${calendrierJourFiltre ? `<button type="button" id="rdv-cal-reset" class="rdv-cal-reset">✕ Voir tous les rendez-vous</button>` : ''}
+        `;
+
+        document.getElementById('rdv-cal-prev').addEventListener('click', () => {
+            calendrierMois = new Date(annee, mois - 1, 1);
+            renderCalendrierRdv();
+        });
+        document.getElementById('rdv-cal-next').addEventListener('click', () => {
+            calendrierMois = new Date(annee, mois + 1, 1);
+            renderCalendrierRdv();
+        });
+        holder.querySelectorAll('.rdv-cal-cell--has').forEach(cell => {
+            cell.addEventListener('click', () => {
+                const key = cell.dataset.date;
+                calendrierJourFiltre = calendrierJourFiltre === key ? null : key;
+                renderCalendrierRdv();
+                renderCommandes(commandesDuJourFiltre());
+            });
+        });
+        const resetBtn = document.getElementById('rdv-cal-reset');
+        if (resetBtn) resetBtn.addEventListener('click', () => {
+            calendrierJourFiltre = null;
+            renderCalendrierRdv();
+            renderCommandes(commandesDuJourFiltre());
+        });
     }
 
     function renderCommandes(commandes) {

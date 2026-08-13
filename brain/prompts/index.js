@@ -7,8 +7,16 @@ const { getTables } = require("./sovereign/tables");
 const { getCatalogue } = require("./sovereign/catalogue");
 const { getGuidePlateforme } = require("./sovereign/plateforme");
 
+function dateDuJour() {
+    const maintenant = new Date();
+    const jour = maintenant.toLocaleDateString("fr-FR", { timeZone: "Africa/Algiers", weekday: "long", year: "numeric", month: "long", day: "numeric" });
+    const iso = maintenant.toLocaleDateString("sv-SE", { timeZone: "Africa/Algiers" }); // format AAAA-MM-JJ
+    return { jour, iso };
+}
+
 async function SAMII_PROMPT(message, context = {}) {
     const tables = await getTables(message);
+    const { jour, iso } = dateDuJour();
     const grade = context.grade || "Soldat";
     // "souverain" = le fondateur/marchand qui possède le compte (QG, page /samii) —
     // seul lui est adressé par grade. "client" = un client du marchand (Telegram,
@@ -27,6 +35,14 @@ ${audience === "souverain" ? "GRADE ACTUEL DE L'INTERLOCUTEUR" : "INTERLOCUTEUR 
 -------------------------------------------------------
 
 ${addressSection}
+
+-------------------------------------------------------
+DATE ACTUELLE
+-------------------------------------------------------
+
+Nous sommes le ${jour} (${iso} au format AAAA-MM-JJ). Utilise cette date comme
+référence pour calculer toute date relative donnée par l'interlocuteur
+("demain", "jeudi prochain", "dans 3 jours"...).
 
 -------------------------------------------------------
 RÈGLES TECHNIQUES ABSOLUES

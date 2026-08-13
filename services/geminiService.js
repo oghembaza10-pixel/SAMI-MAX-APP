@@ -62,7 +62,7 @@ const TOOLS = [
                     type: "OBJECT",
                     properties: {
                         motif: { type: "STRING", description: "Le motif du rendez-vous." },
-                        date_rdv: { type: "STRING", description: "La date et l'heure souhaitées, telles que données par le client." },
+                        date_rdv: { type: "STRING", description: "La date et l'heure souhaitées, calculées par toi à partir de la date actuelle donnée dans le contexte et de ce que dit le client (ex: \"demain\", \"jeudi prochain\") — au format ISO strict AAAA-MM-JJTHH:MM:SS (ex: 2026-08-15T15:00:00). Jamais de texte libre, jamais la phrase du client telle quelle." },
                         telephone: { type: "STRING", description: "Le numéro de téléphone du client." },
                     },
                     required: ["motif", "date_rdv", "telephone"],
