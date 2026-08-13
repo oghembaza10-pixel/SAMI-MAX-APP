@@ -40,6 +40,12 @@ router.get("/", requireAuth, async (req, res) => {
     });
 });
 
+// Le bouton "SAMII" du QG client pointait vers cette URL sans qu'aucune
+// route n'existe (404 silencieux) — /samii est déjà le vrai chat SAMII
+// universel (même backend /api/chat, même mémoire complète), ouvert à
+// n'importe quel compte connecté, pas seulement aux marchands.
+router.get("/samii", requireAuth, (req, res) => res.redirect("/samii"));
+
 router.get("/quota", requireAuth, async (req, res) => {
     try {
         const quota = await samiiQuota.getEtatQuota(req.session.userId);
