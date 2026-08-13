@@ -131,6 +131,21 @@ const MARQUES_EXCLUES = [
     /\b(gucci|louis\s?vuitton|lv|chanel|dior|prada|versace|balenciaga|hermes|rolex)\b/i,
 ];
 
+// CJ renvoie des descriptions en HTML brut (balises <img>, mise en page) —
+// stocké tel quel, ça s'affiche comme du code source illisible côté client.
+function stripHtmlTags(value) {
+    return String(value ?? "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, "\"")
+        .replace(/&#0?39;/gi, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 function estExclu(title, description) {
     const texte = `${title || ""} ${description || ""}`;
     return [...MOTS_EXCLUS, ...MARQUES_EXCLUES].some((regex) => regex.test(texte));
@@ -334,7 +349,7 @@ async function importTheme(theme, knownSlugs) {
                     synced_at=NOW()
                 RETURNING id, titre
             `, [
-                product.title, categorie, product.description || `Produit importé depuis CJ Dropshipping.`,
+                product.title, categorie, stripHtmlTags(product.description) || `Produit importé depuis CJ Dropshipping.`,
                 `${prix} EUR`, mainImage, photosUrls,
                 JSON.stringify({ source: "CJ", category: product.category, sku: product.sku }),
                 "fournisseur", "cj", "CJ Dropshipping", product.country || "Chine",

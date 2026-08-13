@@ -58,6 +58,20 @@ const IMPORT_PAGES = Number(process.env.BIGBUY_IMPORT_PAGES || 5);
 const MARGIN_PERCENT = Number(process.env.BIGBUY_MARGIN_PERCENT || 25);
 const MARGIN_FIXED_EUR = Number(process.env.BIGBUY_MARGIN_FIXED_EUR || 1.5);
 
+// BigBuy renvoie aussi des descriptions en HTML brut — même souci que CJ.
+function stripHtmlTags(value) {
+    return String(value ?? "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, "\"")
+        .replace(/&#0?39;/gi, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 async function getCategorySlugs() {
     const rows = await db.query(`SELECT slug FROM categories_produits WHERE actif = true`);
     return new Set(rows.map(r => r.slug));
@@ -195,7 +209,7 @@ async function main() {
                         synced_at=NOW()
                     RETURNING id, titre
                 `, [
-                    product.title, categorie, product.description || `Produit importé depuis BigBuy.`,
+                    product.title, categorie, stripHtmlTags(product.description) || `Produit importé depuis BigBuy.`,
                     `${prix} EUR`, mainImage, photosUrls,
                     JSON.stringify({ source: "BIGBUY", category: product.category, sku: product.sku }),
                     "fournisseur", "bigbuy", "BigBuy", product.country || "Europe",

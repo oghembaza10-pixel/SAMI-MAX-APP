@@ -71,6 +71,22 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
+// Les descriptions importées depuis CJ/BigBuy contiennent du HTML brut
+// (balises <img>, mise en page fournisseur) — sans ça, escapeHtml() les
+// affiche telles quelles comme texte illisible (tout le code source visible).
+function stripHtmlTags(value) {
+    return String(value ?? "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, "\"")
+        .replace(/&#0?39;/gi, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 function getCategoryLabel(id) {
     if (typeof id === "string" && id.startsWith("service-")) {
         const service = (SERVICES_RAPIDES || []).find(s => `service-${s.id}` === id);
@@ -4360,7 +4376,7 @@ button {
                     "
                 >
                     ${escapeHtml(
-                        produit.description
+                        stripHtmlTags(produit.description)
                     )}
                 </p>
               `
