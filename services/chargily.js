@@ -33,13 +33,9 @@ async function createCheckout({ amount, currency = "dzd", successUrl, failureUrl
             currency,
             success_url: successUrl,
             failure_url: failureUrl,
-            // Le nom exact du champ varie selon les sources de doc Chargily
-            // (webhook_endpoint vs webhook_url) — on envoie les deux, l'API
-            // ignore simplement le champ qu'elle ne reconnaît pas. Le webhook
-            // global configuré dans le dashboard Chargily reste le filet de
-            // sécurité principal si aucun des deux n'est pris en compte.
+            // webhook_url fait planter l'appel entier ("Unknown parameter") —
+            // seul webhook_endpoint est un paramètre valide de l'API Chargily.
             webhook_endpoint: webhookUrl,
-            webhook_url: webhookUrl,
             description,
             metadata,
         }, { headers: headers() });

@@ -173,7 +173,7 @@ async function chatWithFunctionResult({ message, context = {}, functionName, fun
             contents: [
                 { role: "user", parts: [{ text: prompt }] },
                 { role: "model", parts: [{ functionCall: { name: functionName, args: functionArgs } }] },
-                { role: "function", parts: [{ functionResponse: { name: functionName, response: functionResult } }] },
+                { role: "user", parts: [{ functionResponse: { name: functionName, response: functionResult } }] },
             ],
             tools: TOOLS,
         };
