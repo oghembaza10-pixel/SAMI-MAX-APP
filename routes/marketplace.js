@@ -180,45 +180,6 @@ const SERVICES_CHIPS_HTML = (SERVICES_RAPIDES || [])
     `)
     .join("");
 
-// --------------------------------------------------------------------------
-// VIRTUAL PRODUCTS
-// --------------------------------------------------------------------------
-
-const ANNONCES_VIRTUELLES = [
-    {
-        id: "v_1",
-        titre: "Rolex Submariner Date — Édition Collector Or & Noir",
-        categorie: "luxe",
-        region_fournisseur: "europe",
-        prix: "8 500 €",
-        pays: "Suisse",
-        ville: "Genève",
-        photo_url:
-            "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1000&q=85",
-        photos_urls: null,
-        vendeur_id: "ai_agent_samii",
-        vendeur_nom: "Samii Core",
-        type_vendeur: "ia_marchand",
-        actif: true
-    },
-    {
-        id: "v_2",
-        titre: "MacBook Pro M3 Max — 64Go RAM / 2To SSD",
-        categorie: "electronique",
-        region_fournisseur: "europe",
-        prix: "3 490 $",
-        pays: "États-Unis",
-        ville: "New York",
-        photo_url:
-            "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1000&q=85",
-        photos_urls: null,
-        vendeur_id: "ai_agent_vaulta",
-        vendeur_nom: "Vaulta Automation",
-        type_vendeur: "ia_marchand",
-        actif: true
-    }
-];
-
 // ==========================================================================
 // MARKETPLACE
 // ==========================================================================
@@ -232,6 +193,16 @@ router.get("/", requireAuth, async (req, res) => {
         ville,
         region
     } = req.query;
+
+    // Espace principal de navigation : produits vendus/expédiés localement
+    // (region_fournisseur = 'local') vs catalogue d'import international
+    // (toutes les autres régions). Les deux univers étaient mélangés dans un
+    // seul flux trié par date — l'import (ajouté en masse par synchronisation
+    // fournisseur) noyait systématiquement les rares annonces locales.
+    const espace =
+        req.query.espace === "local" || req.query.espace === "international"
+            ? req.query.espace
+            : "";
 
     // Filet de sécurité : le webhook Chargily peut ne jamais arriver (mauvaise
     // config côté dashboard, réseau...). Au retour du client sur cette page
@@ -316,6 +287,12 @@ router.get("/", requireAuth, async (req, res) => {
             params.push(region);
         }
 
+        if (espace === "local") {
+            clauses.push(`region_fournisseur = 'local'`);
+        } else if (espace === "international") {
+            clauses.push(`(region_fournisseur IS DISTINCT FROM 'local')`);
+        }
+
         const rows = await db.query(
             `
             SELECT *
@@ -338,31 +315,10 @@ router.get("/", requireAuth, async (req, res) => {
     }
 
     // ----------------------------------------------------------------------
-    // MERGE
+    // LISTING (déjà filtrée en SQL — categorie/region/espace)
     // ----------------------------------------------------------------------
 
-    let toutesAnnonces = [
-        ...ANNONCES_VIRTUELLES,
-        ...annoncesDB
-    ];
-
-    if (
-        categorie &&
-        categorie !== "tous"
-    ) {
-        toutesAnnonces =
-            toutesAnnonces.filter(
-                a => a.categorie === categorie
-            );
-    }
-
-    if (region) {
-        toutesAnnonces =
-            toutesAnnonces.filter(
-                a =>
-                    a.region_fournisseur === region
-            );
-    }
+    let toutesAnnonces = annoncesDB;
 
     if (recherche) {
 
@@ -477,11 +433,14 @@ router.get("/", requireAuth, async (req, res) => {
             `)
             .join("");
 
+    // "local" a désormais son propre onglet d'espace (voir espaceRowHtml) —
+    // on ne le répète pas dans les chips de sous-filtre international.
     const regionChipsHtml =
         (SUPPLIER_REGIONS || [])
+            .filter(r => r.id !== "local")
             .map(r => `
                 <a
-                    href="/marketplace?region=${encodeURIComponent(r.id)}"
+                    href="/marketplace?region=${encodeURIComponent(r.id)}&espace=international"
                     class="region-chip ${region === r.id ? "active" : ""}"
                 >
                     <i data-lucide="${escapeHtml(r.icon || "globe")}"></i>
@@ -489,6 +448,28 @@ router.get("/", requireAuth, async (req, res) => {
                 </a>
             `)
             .join("");
+
+    const espaceRowHtml = `
+        <a
+            href="/marketplace"
+            class="espace-tab ${!espace ? "active" : ""}"
+        >
+            <i data-lucide="layout-grid"></i>
+            Tout voir
+        </a>
+        <a
+            href="/marketplace?espace=local"
+            class="espace-tab espace-tab--local ${espace === "local" ? "active" : ""}"
+        >
+            🇩🇿 Algérie &amp; Local
+        </a>
+        <a
+            href="/marketplace?espace=international"
+            class="espace-tab ${espace === "international" ? "active" : ""}"
+        >
+            🌍 Import International
+        </a>
+    `;
 
     // ----------------------------------------------------------------------
     // CARDS
@@ -1323,6 +1304,55 @@ nav {
 
 .region-row {
     padding-bottom: 14px;
+}
+
+.espace-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 4px 24px 16px;
+}
+
+.espace-row::-webkit-scrollbar {
+    display: none;
+}
+
+.espace-tab {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(var(--panel2-rgb, 12,24,37),.5);
+    color: var(--text);
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.espace-tab.active,
+.espace-tab:hover {
+    border-color: rgba(var(--blue-rgb),.4);
+    background: rgba(var(--blue-rgb),.1);
+    color: var(--blue);
+}
+
+.espace-tab--local {
+    border-color: var(--gold-border);
+    background: var(--gold-soft);
+}
+
+.espace-tab--local.active,
+.espace-tab--local:hover {
+    border-color: var(--gold);
+    background: rgba(217,179,108,.16);
+    color: var(--gold-bright);
 }
 
 .services-row {
@@ -2501,10 +2531,15 @@ nav {
 
     </div>
 
+    <div class="espace-row">
+        ${espaceRowHtml}
+    </div>
+
+    ${espace !== "local" ? `
     <div class="region-row">
 
         <a
-            href="/marketplace"
+            href="/marketplace${espace === "international" ? "?espace=international" : ""}"
             class="region-chip ${!region ? "active" : ""}"
         >
             <i data-lucide="globe"></i>
@@ -2514,6 +2549,7 @@ nav {
         ${regionChipsHtml}
 
     </div>
+    ` : ""}
 
     <div class="services-row">
 
@@ -2571,17 +2607,43 @@ nav {
         ${
             toutesAnnonces.length
                 ? cardsHtml
-                : `
-                    <div class="empty">
+                : espace === "local"
+                    ? `
+                        <div class="empty">
 
-                        <i data-lucide="package-search"></i>
+                            <i data-lucide="map-pin"></i>
 
-                        <h3 data-i18n="marketplace.emptyTitle">
-                            Aucun produit trouvé
-                        </h3>
+                            <h3>
+                                Aucune annonce locale pour l'instant
+                            </h3>
 
-                    </div>
-                  `
+                            <p style="color:var(--muted);font-size:12px;margin:8px 0 16px;">
+                                Vélo, chambre à louer, service, produit d'un grossiste algérien...
+                                sois le premier à publier ici.
+                            </p>
+
+                            <a
+                                href="/marketplace/publier"
+                                class="espace-tab espace-tab--local"
+                                style="display:inline-flex;"
+                            >
+                                <i data-lucide="plus"></i>
+                                Publier une annonce locale
+                            </a>
+
+                        </div>
+                      `
+                    : `
+                        <div class="empty">
+
+                            <i data-lucide="package-search"></i>
+
+                            <h3 data-i18n="marketplace.emptyTitle">
+                                Aucun produit trouvé
+                            </h3>
+
+                        </div>
+                      `
         }
 
     </section>
@@ -3901,18 +3963,68 @@ router.get(
         const videos = parseJsonColumn(produit.videos);
         const variantesBrutes = parseJsonColumn(produit.variantes);
 
-        // Les variantes CJ n'ont pas un format fixe (variant/variantName/variantKey...) —
-        // on ne garde que ce qui est exploitable pour un sélecteur (nom + éventuel prix/image).
+        // Les variantes CJ n'ont pas de format fixe. "variantNameEn" répète le
+        // titre entier du produit (ex: "Waist Trainer ... Skin1 Black1 XS S") —
+        // l'utiliser comme libellé de bouton affichait le nom complet du
+        // produit répété jusqu'à 77 fois. "variantKey" est le seul champ court
+        // et fiable ("Skin1 Black1-XS S", "Black set-4XL"...).
         const variantes = variantesBrutes.map((v, i) => {
             const nom =
-                v.variantNameEn || v.variantName || v.variantKey || v.name ||
+                v.variantKey || v.variantName ||
                 [v.variantKey1, v.variantKey2].filter(Boolean).join(" / ") ||
+                v.variantNameEn || v.name ||
                 `Option ${i + 1}`;
             const prix = v.variantSellPrice ?? v.sellPrice ?? v.price ?? null;
             const image = v.variantImage || v.image || null;
             const vid = v.vid || v.variantId || v.variantID || String(i);
-            return { vid: String(vid), nom: String(nom), prix, image };
+            return { vid: String(vid), nom: String(nom).trim(), prix, image };
         }).filter(v => v.nom);
+
+        // Beaucoup de produits CJ ont des dizaines de variantes brutes (une
+        // par combinaison couleur×taille) — un mur de boutons oblige à
+        // scroller longtemps avant de pouvoir choisir puis payer. Quand
+        // TOUTES les clés suivent le motif "A-B" (le cas standard CJ), on les
+        // scinde en deux sélecteurs courts (ex: 8 couleurs + 6 tailles au
+        // lieu de 48 boutons). Sinon on garde une liste plate.
+        const SIZE_TOKEN_RE = /^(xxs|xs|s|m|l|xl|xxl|xxxl|\d?xl|[2-9]xl|\d{2,3}|onesize|unique|standard)$/i;
+
+        function splitVariantKey(key) {
+            const idx = key.lastIndexOf("-");
+            if (idx <= 0 || idx >= key.length - 1) return null;
+            return [key.slice(0, idx).trim(), key.slice(idx + 1).trim()];
+        }
+
+        function looksLikeSizes(values) {
+            const hits = values.filter(v => SIZE_TOKEN_RE.test(v.replace(/\s+/g, ""))).length;
+            return hits >= Math.ceil(values.length / 2);
+        }
+
+        const splitPairs = variantes.map(v => splitVariantKey(v.nom));
+        const variantesSplit = variantes.length > 1 && splitPairs.every(Boolean);
+
+        let axis1Label = "Option 1";
+        let axis2Label = "Option 2";
+        let axis1Values = [];
+        let axis2Values = [];
+        const comboLookup = {};
+
+        if (variantesSplit) {
+            variantes.forEach((v, i) => {
+                const [a1, a2] = splitPairs[i];
+                comboLookup[`${a1}||${a2}`] = v;
+            });
+
+            axis1Values = [...new Set(splitPairs.map(p => p[0]))];
+            axis2Values = [...new Set(splitPairs.map(p => p[1]))];
+
+            if (looksLikeSizes(axis2Values) && !looksLikeSizes(axis1Values)) {
+                axis1Label = "Couleur";
+                axis2Label = "Taille";
+            } else if (looksLikeSizes(axis1Values) && !looksLikeSizes(axis2Values)) {
+                axis1Label = "Taille";
+                axis2Label = "Couleur";
+            }
+        }
 
         const avisHtml =
             avisListe.length
@@ -4098,10 +4210,24 @@ button {
 .pd-videos video { width: 100%; border-radius: 16px; background: #000; max-height: 480px; }
 
 .pd-variants { margin: 16px 0; }
+.pd-variant-group { margin-bottom: 14px; }
 .pd-variants label { display: block; font-size: 12px; color: #7f96a8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
 .pd-variant-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .pd-variant-btn { margin: 0; padding: 9px 14px; border-radius: 10px; border: 1px solid rgba(0,217,255,.16); background: rgba(0,217,255,.06); color: #f5fbff; font-weight: 600; font-size: 13px; cursor: pointer; }
 .pd-variant-btn.active { background: #00d9ff; color: #001018; border-color: #00d9ff; }
+.pd-variant-btn:disabled { opacity: .3; cursor: not-allowed; }
+.pd-variant-select { width: 100%; max-width: 420px; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(0,217,255,.16); background: rgba(0,217,255,.06); color: #f5fbff; font-size: 14px; font-family: inherit; }
+.pd-variant-select option { background: #061019; }
+.pd-variant-warn { color: #ff8c8c; font-size: 12px; margin-top: 6px; display: none; }
+
+.pd-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.pd-buy-now { background: linear-gradient(135deg,#3ddc84,#1fae63); color: #001a0d; }
+.pd-quick-checkout { display: none; margin-top: 16px; padding: 16px; border-radius: 14px; border: 1px solid rgba(61,220,132,.25); background: rgba(61,220,132,.05); }
+.pd-quick-checkout.open { display: block; }
+.pd-quick-checkout input { width: 100%; box-sizing: border-box; padding: 11px 12px; margin-bottom: 8px; border-radius: 9px; border: 1px solid rgba(0,217,255,.16); background: rgba(0,0,0,.3); color: #fff; font-family: inherit; font-size: 13px; }
+.pd-quick-row { display: flex; gap: 8px; }
+.pd-quick-row input { flex: 1; }
+.pd-quick-submit { width: 100%; margin-top: 4px; }
 
 </style>
 
@@ -4159,16 +4285,48 @@ button {
 
     ${variantes.length ? `
     <div class="pd-variants">
-        <label>Choisis une option :</label>
-        <div class="pd-variant-list">
-            ${variantes.map((v, i) => `
-                <button type="button" class="pd-variant-btn ${i === 0 ? "active" : ""}"
-                        data-vid="${escapeHtml(v.vid)}" data-nom="${escapeHtml(v.nom)}"
-                        onclick="selectVariant(this)">
-                    ${escapeHtml(v.nom)}
-                </button>
-            `).join("")}
-        </div>
+        ${variantesSplit ? `
+            <div class="pd-variant-group">
+                <label>${escapeHtml(axis1Label)}</label>
+                <div class="pd-variant-list" id="pd-axis1">
+                    ${axis1Values.map((val, i) => `
+                        <button type="button" class="pd-variant-btn ${i === 0 ? "active" : ""}"
+                                data-val="${escapeHtml(val)}" onclick="selectAxis(1, this)">
+                            ${escapeHtml(val)}
+                        </button>
+                    `).join("")}
+                </div>
+            </div>
+            <div class="pd-variant-group">
+                <label>${escapeHtml(axis2Label)}</label>
+                <div class="pd-variant-list" id="pd-axis2">
+                    ${axis2Values.map((val, i) => `
+                        <button type="button" class="pd-variant-btn ${i === 0 ? "active" : ""}"
+                                data-val="${escapeHtml(val)}" onclick="selectAxis(2, this)">
+                            ${escapeHtml(val)}
+                        </button>
+                    `).join("")}
+                </div>
+            </div>
+            <div class="pd-variant-warn" id="pd-combo-warn">Cette combinaison n'est pas disponible.</div>
+        ` : variantes.length > 8 ? `
+            <label>Choisis une option :</label>
+            <select class="pd-variant-select" id="pd-variant-select" onchange="selectVariantFlat(this.value)">
+                ${variantes.map((v, i) => `
+                    <option value="${escapeHtml(v.nom)}" ${i === 0 ? "selected" : ""}>${escapeHtml(v.nom)}</option>
+                `).join("")}
+            </select>
+        ` : `
+            <label>Choisis une option :</label>
+            <div class="pd-variant-list">
+                ${variantes.map((v, i) => `
+                    <button type="button" class="pd-variant-btn ${i === 0 ? "active" : ""}"
+                            data-nom="${escapeHtml(v.nom)}" onclick="selectVariantFlat(this.dataset.nom, this)">
+                        ${escapeHtml(v.nom)}
+                    </button>
+                `).join("")}
+            </div>
+        `}
     </div>` : ""}
 
     <p
@@ -4208,7 +4366,16 @@ button {
             : ""
     }
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <div class="pd-actions">
+        <button
+            type="button"
+            class="pd-buy-now"
+            id="pd-buy-now"
+            onclick="ouvrirAchatDirect()"
+        >
+            ⚡ Acheter maintenant
+        </button>
+
         <button
             type="button"
             id="pd-add-cart"
@@ -4245,6 +4412,22 @@ button {
 
     <div id="pd-cart-msg" style="margin-top:10px;color:#3ddc84;font-size:14px;"></div>
 
+    <div class="pd-quick-checkout" id="pd-quick-checkout">
+        <label style="display:block;font-size:11px;color:#7f96a8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">
+            Achat direct — pas besoin de passer par le panier
+        </label>
+        <input id="qc-nom" placeholder="Nom complet">
+        <input id="qc-telephone" placeholder="Téléphone">
+        <input id="qc-adresse" placeholder="Adresse de livraison">
+        <div class="pd-quick-row">
+            <input id="qc-ville" placeholder="Ville">
+            <input id="qc-pays" placeholder="Pays">
+        </div>
+        <button type="button" class="pd-quick-submit" id="pd-quick-submit" onclick="confirmerAchatDirect()">
+            Confirmer l'achat
+        </button>
+    </div>
+
     <h2
         style="
             margin-top:30px;
@@ -4258,30 +4441,79 @@ button {
 </div>
 
 <script>
-let selectedVariant = ${variantes.length ? `"${escapeHtml(variantes[0].nom)}"` : "null"};
+const PD_SPLIT = ${variantesSplit ? "true" : "false"};
+const PD_COMBOS = ${JSON.stringify(comboLookup)};
+const PD_BASE_PRIX = ${JSON.stringify(produit.prix || "Sur devis")};
 
-function selectVariant(btn) {
-    document.querySelectorAll(".pd-variant-btn").forEach(b => b.classList.remove("active"));
+let selectedAxis1 = ${variantesSplit && axis1Values.length ? JSON.stringify(axis1Values[0]) : "null"};
+let selectedAxis2 = ${variantesSplit && axis2Values.length ? JSON.stringify(axis2Values[0]) : "null"};
+let selectedVariant = ${variantes.length && !variantesSplit ? `"${escapeHtml(variantes[0].nom)}"` : "null"};
+
+function selectAxis(axisNum, btn) {
+    document.querySelectorAll("#pd-axis" + axisNum + " .pd-variant-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
-    selectedVariant = btn.dataset.nom;
+    if (axisNum === 1) selectedAxis1 = btn.dataset.val;
+    else selectedAxis2 = btn.dataset.val;
+    updateComboState();
+}
+
+function updateComboState() {
+    if (!PD_SPLIT) return;
+    const combo = PD_COMBOS[selectedAxis1 + "||" + selectedAxis2];
+    const warn = document.getElementById("pd-combo-warn");
+    const addBtn = document.getElementById("pd-add-cart");
+    const buyBtn = document.getElementById("pd-buy-now");
+    if (combo) {
+        selectedVariant = selectedAxis1 + " / " + selectedAxis2;
+        if (warn) warn.style.display = "none";
+        if (addBtn) addBtn.disabled = false;
+        if (buyBtn) buyBtn.disabled = false;
+        const priceEl = document.getElementById("pd-price");
+        if (priceEl && combo.prix) priceEl.textContent = Number(combo.prix).toFixed(2) + "€";
+    } else {
+        selectedVariant = null;
+        if (warn) warn.style.display = "block";
+        if (addBtn) addBtn.disabled = true;
+        if (buyBtn) buyBtn.disabled = true;
+    }
+}
+
+function selectVariantFlat(nom, btn) {
+    if (btn) {
+        document.querySelectorAll(".pd-variant-list .pd-variant-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+    }
+    selectedVariant = nom;
+}
+
+updateComboState();
+
+function currentItem() {
+    return {
+        titre: ${JSON.stringify(produit.titre || "")},
+        prix: PD_BASE_PRIX,
+        photo: ${JSON.stringify(photos[0] || "")},
+        variante: selectedVariant,
+        quantity: 1,
+    };
 }
 
 function ajouterAuPanier() {
+    if (PD_SPLIT && !selectedVariant) return;
+
     const cart = JSON.parse(localStorage.getItem("samii_market_cart") || "[]");
-    const titre = ${JSON.stringify(produit.titre || "")};
-    const prix = ${JSON.stringify(produit.prix || "Sur devis")};
-    const photo = ${JSON.stringify(photos[0] || "")};
+    const item = currentItem();
     const cartId = selectedVariant ? "${id}-" + selectedVariant : "${id}";
 
-    const existing = cart.find(item => String(item.id) === cartId);
+    const existing = cart.find(c => String(c.id) === cartId);
     if (existing) {
         existing.quantity = Number(existing.quantity || 1) + 1;
     } else {
         cart.push({
             id: cartId,
-            titre: titre + (selectedVariant ? " (" + selectedVariant + ")" : ""),
-            prix,
-            photo,
+            titre: item.titre + (selectedVariant ? " (" + selectedVariant + ")" : ""),
+            prix: item.prix,
+            photo: item.photo,
             variante: selectedVariant,
             quantity: 1,
         });
@@ -4290,6 +4522,58 @@ function ajouterAuPanier() {
 
     const msg = document.getElementById("pd-cart-msg");
     msg.innerHTML = '✅ Ajouté au panier — <a href="/marketplace" style="color:#00d9ff;">voir mon panier →</a>';
+}
+
+// Achat direct : évite le détour panier → page marketplace → ouvrir panier →
+// remplir livraison. Le formulaire s'ouvre ici, sur la fiche produit, et
+// poste directement à la même route que le panier (/marketplace/commander).
+function ouvrirAchatDirect() {
+    if (PD_SPLIT && !selectedVariant) return;
+    document.getElementById("pd-quick-checkout").classList.add("open");
+    document.getElementById("pd-quick-checkout").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+async function confirmerAchatDirect() {
+    const nom       = document.getElementById("qc-nom").value.trim();
+    const telephone = document.getElementById("qc-telephone").value.trim();
+    const adresse   = document.getElementById("qc-adresse").value.trim();
+    const ville     = document.getElementById("qc-ville").value.trim();
+    const pays      = document.getElementById("qc-pays").value.trim();
+
+    if (!nom || !telephone || !adresse) {
+        alert("Renseigne ton nom, téléphone et adresse.");
+        return;
+    }
+
+    const btn = document.getElementById("pd-quick-submit");
+    btn.disabled = true;
+    btn.textContent = "Envoi...";
+
+    try {
+        const res = await fetch("/marketplace/commander", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: [currentItem()], nom_client: nom, telephone, adresse, ville, pays }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            if (data.checkoutUrl) {
+                location.href = data.checkoutUrl;
+            } else {
+                document.getElementById("pd-quick-checkout").innerHTML =
+                    '<p style="color:#3ddc84;">✅ Commande envoyée' + (data.paymentError ? " — " + data.paymentError : "") + '</p>';
+            }
+        } else {
+            alert(data.error || "Erreur, réessaie.");
+            btn.disabled = false;
+            btn.textContent = "Confirmer l'achat";
+        }
+    } catch {
+        alert("Erreur réseau, réessaie.");
+        btn.disabled = false;
+        btn.textContent = "Confirmer l'achat";
+    }
 }
 </script>
 
