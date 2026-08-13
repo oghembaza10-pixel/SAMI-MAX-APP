@@ -3,7 +3,7 @@
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
-const airtable = require("../services/airtable");
+const db      = require("../services/db");
 const workspaceService = require("../services/workspaceService");
 
 function requireAuth(req, res, next) {
@@ -11,60 +11,44 @@ function requireAuth(req, res, next) {
     next();
 }
 
-function getMontant(c) {
-    return parseFloat(c.montant || c.Total || 0) || 0;
-}
-
+// Générait auparavant aussi une mission "client VIP sans offre récente" à
+// partir des champs Airtable {VIP} et derniere_offre_fidelite — aucun des
+// deux n'a jamais été réellement alimenté nulle part dans l'app (même côté
+// Airtable), donc cette mission ne reposait sur aucune vraie donnée. Retirée
+// plutôt que reconstruite sur un signal fictif.
 async function genererMissions(workspaceId) {
     const missions = [];
 
     // ── Commandes en attente depuis plus de 24h ──
+    // Lisait auparavant Airtable, qui n'est plus la source réelle des
+    // commandes — cette mission n'apparaissait donc jamais.
     try {
-        const commandes = await airtable.find("COMMANDES", `AND({Boutique}="${workspaceId}",{Statut}="en attente")`, 50);
+        const commandes = await db.query(
+            `SELECT id, nom_client, date_commande FROM commandes
+             WHERE workspace_id = $1 AND statut = 'en attente'
+             ORDER BY date_commande ASC LIMIT 50`,
+            [workspaceId]
+        );
         const maintenant = Date.now();
 
         for (const c of commandes) {
-            const f = c.fields;
-            const dateCmd = f["Date Commande"] ? new Date(f["Date Commande"]).getTime() : null;
+            const dateCmd = c.date_commande ? new Date(c.date_commande).getTime() : null;
             if (!dateCmd) continue;
             const heuresDepuis = (maintenant - dateCmd) / (1000 * 60 * 60);
             if (heuresDepuis < 24) continue;
 
-            const nomClient = f["nom client"] || f["Nom Client"] || "un client";
-            const idCmd = f["ID Commande"] || c.id;
+            const nomClient = c.nom_client || "un client";
 
             missions.push({
                 id: `cmd_${c.id}`,
                 type: "commande",
                 icon: "phone-call",
-                texte: `Appeler ${nomClient} pour confirmer la commande #${idCmd}`,
+                texte: `Appeler ${nomClient} pour confirmer la commande #${c.id}`,
                 fait: false,
             });
         }
     } catch (err) {
         console.warn("⚠️ Missions (commandes) :", err.message);
-    }
-
-    // ── Clients VIP sans offre depuis longtemps ──
-    try {
-        const vipClients = await airtable.find("CLIENTS", `AND({workspace_id}="${workspaceId}",{VIP}=1)`, 20);
-        for (const c of vipClients) {
-            const f = c.fields;
-            const nom = f["Nom"] || f["Nom Client"] || "un client VIP";
-            const derniereOffre = f.derniere_offre_fidelite ? new Date(f.derniere_offre_fidelite) : null;
-            const joursDepuis = derniereOffre ? (Date.now() - derniereOffre.getTime()) / (1000 * 60 * 60 * 24) : Infinity;
-            if (joursDepuis < 30) continue;
-
-            missions.push({
-                id: `vip_${c.id}`,
-                type: "vip",
-                icon: "crown",
-                texte: `Penser à récompenser ${nom}, client fidèle sans offre récente`,
-                fait: false,
-            });
-        }
-    } catch (err) {
-        console.warn("⚠️ Missions (VIP) :", err.message);
     }
 
     return missions;

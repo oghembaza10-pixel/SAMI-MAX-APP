@@ -3,17 +3,13 @@
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
-const airtable = require("../services/airtable");
+const db      = require("../services/db");
 const gemini  = require("../services/geminiService");
 const workspaceService = require("../services/workspaceService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
-}
-
-function getMontant(c) {
-    return parseFloat(c.montant || c.Total || 0) || 0;
 }
 
 router.get("/", requireAuth, async (req, res) => {
@@ -27,18 +23,30 @@ router.get("/", requireAuth, async (req, res) => {
     let stats = null;
 
     try {
-        const commandes = await airtable.find("COMMANDES", `{Boutique}="${workspaceId}"`, 300);
-        const clients = await airtable.find("CLIENTS", `{workspace_id}="${workspaceId}"`, 200);
+        // Lisait auparavant une table Airtable "COMMANDES" qui n'est plus la
+        // source réelle des commandes (celles-ci vivent dans Postgres depuis
+        // longtemps) — ce diagnostic affichait donc des stats vides même pour
+        // un marchand avec une vraie activité.
+        const commandes = await db.query(
+            `SELECT statut, montant FROM commandes WHERE workspace_id = $1 ORDER BY date_commande DESC LIMIT 300`,
+            [workspaceId]
+        );
+        const clients = await db.query(
+            `SELECT total_commandes FROM clients WHERE workspace_id = $1 LIMIT 200`,
+            [workspaceId]
+        );
 
         const total_commandes = commandes.length;
-        const confirmees = commandes.filter(c => c.fields.Statut === "confirmée").length;
-        const annulees = commandes.filter(c => c.fields.Statut === "annulée").length;
-        const enAttente = commandes.filter(c => c.fields.Statut === "en attente").length;
-        const total_revenus = commandes.reduce((s, c) => s + getMontant(c.fields), 0);
+        const confirmees = commandes.filter(c => c.statut === "confirmée").length;
+        const annulees = commandes.filter(c => c.statut === "annulée").length;
+        const enAttente = commandes.filter(c => c.statut === "en attente").length;
+        const total_revenus = commandes.reduce((s, c) => s + (Number(c.montant) || 0), 0);
         const tauxConfirmation = total_commandes > 0 ? ((confirmees / total_commandes) * 100).toFixed(0) : "—";
 
-        const vip = clients.filter(c => c.fields.VIP === true).length;
-        const blacklist = clients.filter(c => c.fields.Blacklist === true).length;
+        // Pas de statut VIP/Blacklist en base (jamais réellement alimenté,
+        // même côté Airtable) — un client fidèle est ici défini par un vrai
+        // signal existant : 3 commandes ou plus.
+        const vip = clients.filter(c => (c.total_commandes || 0) >= 3).length;
 
         const auto = workspace.automatisations || {};
         const autoActives = Object.values(auto).filter(Boolean).length;
@@ -49,7 +57,7 @@ router.get("/", requireAuth, async (req, res) => {
         stats = {
             total_commandes, confirmees, annulees, enAttente,
             total_revenus: total_revenus.toFixed(2),
-            tauxConfirmation, vip, blacklist,
+            tauxConfirmation, vip,
             autoActives, autoTotal, missionsEnCours,
         };
 
@@ -61,8 +69,7 @@ router.get("/", requireAuth, async (req, res) => {
                 + `En attente : ${enAttente}\n`
                 + `Taux de confirmation : ${tauxConfirmation}%\n`
                 + `Revenus totaux : ${total_revenus.toFixed(2)}\n`
-                + `Clients VIP : ${vip}\n`
-                + `Clients en blacklist : ${blacklist}\n`
+                + `Clients fidèles (3+ commandes) : ${vip}\n`
                 + `Automatisations actives : ${autoActives}/${autoTotal}\n`
                 + `Missions en attente : ${missionsEnCours}\n\n`
                 + "Donne un diagnostic en 3 à 4 points courts et concrets : ce qui va bien, ce qui doit être amélioré, et une recommandation prioritaire claire. Sois direct et honnête, pas complaisant. Réponds en texte simple, sans JSON, sans markdown, avec des tirets pour chaque point.";
@@ -141,7 +148,7 @@ router.get("/", requireAuth, async (req, res) => {
     <div class="miroir-stats">
         <div class="miroir-stat"><div class="val">${stats.total_commandes}</div><div class="lbl">Commandes</div></div>
         <div class="miroir-stat"><div class="val">${stats.tauxConfirmation}%</div><div class="lbl">Taux confirmation</div></div>
-        <div class="miroir-stat"><div class="val">${stats.vip}</div><div class="lbl">Clients VIP</div></div>
+        <div class="miroir-stat"><div class="val">${stats.vip}</div><div class="lbl">Clients fidèles</div></div>
         <div class="miroir-stat"><div class="val">${stats.autoActives}/${stats.autoTotal}</div><div class="lbl">Automatisations</div></div>
     </div>
     ` : ""}

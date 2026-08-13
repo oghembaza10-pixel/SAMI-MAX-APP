@@ -3,16 +3,12 @@
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
-const airtable = require("../services/airtable");
+const db      = require("../services/db");
 const workspaceService = require("../services/workspaceService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
-}
-
-function getMontant(c) {
-    return parseFloat(c.montant || c.Total || 0) || 0;
 }
 
 router.get("/", requireAuth, async (req, res) => {
@@ -25,7 +21,13 @@ router.get("/", requireAuth, async (req, res) => {
     let previsions = null;
 
     try {
-        const commandes = await airtable.find("COMMANDES", `{Boutique}="${workspaceId}"`, 500);
+        // Lisait auparavant une table Airtable "COMMANDES" qui n'est plus la
+        // source réelle des commandes — la projection était donc toujours
+        // vide, quelle que soit l'activité réelle du marchand.
+        const commandes = await db.query(
+            `SELECT montant, date_commande FROM commandes WHERE workspace_id = $1 ORDER BY date_commande DESC LIMIT 500`,
+            [workspaceId]
+        );
 
         // Regroupe les revenus par jour sur les 30 derniers jours
         const parJour = {};
@@ -33,13 +35,12 @@ router.get("/", requireAuth, async (req, res) => {
         const ilYa30Jours = maintenant - (30 * 24 * 60 * 60 * 1000);
 
         commandes.forEach(c => {
-            const dateStr = c.fields["Date Commande"];
-            if (!dateStr) return;
-            const date = new Date(dateStr).getTime();
+            if (!c.date_commande) return;
+            const date = new Date(c.date_commande).getTime();
             if (date < ilYa30Jours) return;
 
-            const jour = dateStr.slice(0, 10);
-            parJour[jour] = (parJour[jour] || 0) + getMontant(c.fields);
+            const jour = new Date(c.date_commande).toISOString().slice(0, 10);
+            parJour[jour] = (parJour[jour] || 0) + (Number(c.montant) || 0);
         });
 
         const joursAvecDonnees = Object.keys(parJour).length;
