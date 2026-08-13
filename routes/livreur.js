@@ -10,6 +10,7 @@ const express = require("express");
 const router  = express.Router();
 const db = require("../services/db");
 const socketService = require("../services/socketService");
+const verificationService = require("../services/verificationService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -35,6 +36,8 @@ async function getLivreur(userId) {
 // ── PAGE PRINCIPALE ────────────────────────────────────────
 router.get("/", requireAuth, async (req, res) => {
     const livreur = await getLivreur(req.session.userId);
+    const statutVerif = await verificationService.getStatut(req.session.userId);
+    const estVerifie = verificationService.estVerifie(statutVerif);
 
     const enCours = livreur ? await db.query(
         `SELECT * FROM livraisons WHERE livreur_id = $1 AND statut IN ('assignee', 'recuperee') ORDER BY assignee_le DESC LIMIT 1`,
@@ -115,7 +118,7 @@ router.get("/", requireAuth, async (req, res) => {
     ${!livreur ? `
     <div class="lv-card">
         <h3 style="color:#fff;margin-bottom:4px;">Devenir livreur</h3>
-        <p style="color:var(--text-muted);font-size:.82rem;">Renseigne tes infos, c'est immédiat — pas de validation à attendre.</p>
+        <p style="color:var(--text-muted);font-size:.82rem;">Inscription immédiate — il faudra ensuite vérifier ton identité avant de pouvoir passer en ligne et recevoir des courses.</p>
         <form id="form-inscription">
             <label>Véhicule</label>
             <select name="vehicule">
@@ -129,6 +132,18 @@ router.get("/", requireAuth, async (req, res) => {
             <button type="submit" class="lv-btn" style="margin-top:16px;width:100%;">Devenir livreur</button>
         </form>
         <div class="lv-msg" id="msg-inscription"></div>
+    </div>
+    ` : !estVerifie ? `
+    <div class="lv-card" style="border-color:rgba(245,166,35,0.35);background:rgba(245,166,35,0.06);">
+        <div style="font-weight:700;color:#f5a623;margin-bottom:6px;">🪪 Vérification d'identité requise</div>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:14px;">
+            ${statutVerif?.verification_statut === "en_attente"
+                ? "Ta pièce d'identité est en cours de vérification — tu pourras passer en ligne dès qu'elle sera validée."
+                : statutVerif?.verification_statut === "refuse"
+                    ? "Ta vérification a été refusée. Consulte la raison et soumets à nouveau."
+                    : "Pour la sécurité de tous (adresses clients, argent en espèces), il faut vérifier ton identité avant de recevoir des courses."}
+        </p>
+        <a href="/verification" class="lv-btn" style="display:block;text-align:center;text-decoration:none;">🪪 Vérifier mon identité</a>
     </div>
     ` : `
     <div class="lv-card">
@@ -301,6 +316,14 @@ router.post("/inscription", requireAuth, async (req, res) => {
 router.post("/statut", requireAuth, async (req, res) => {
     try {
         const enLigne = !!req.body.en_ligne;
+
+        if (enLigne) {
+            const statutVerif = await verificationService.getStatut(req.session.userId);
+            if (!verificationService.estVerifie(statutVerif)) {
+                return res.json({ success: false, error: "Identité non vérifiée." });
+            }
+        }
+
         await db.query(`UPDATE livreurs SET en_ligne = $1 WHERE id = $2`, [enLigne, req.session.userId]);
         res.json({ success: true });
     } catch (err) {
@@ -368,6 +391,13 @@ router.post("/demandes/:id/accepter", requireAuth, async (req, res) => {
         const livreur = await getLivreur(req.session.userId);
         if (!livreur) return res.json({ success: false, error: "Pas un livreur." });
         if (!livreur.en_ligne) return res.json({ success: false, error: "Passe en ligne d'abord." });
+
+        // Garde-fou serveur, même si /statut empêche déjà de passer en ligne
+        // sans être vérifié — on ne fait jamais confiance uniquement au client.
+        const statutVerif = await verificationService.getStatut(req.session.userId);
+        if (!verificationService.estVerifie(statutVerif)) {
+            return res.json({ success: false, error: "Identité non vérifiée." });
+        }
 
         const dejaEnCours = await db.query(
             `SELECT id FROM livraisons WHERE livreur_id = $1 AND statut IN ('assignee', 'recuperee')`,

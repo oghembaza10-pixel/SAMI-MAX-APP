@@ -9,6 +9,7 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const db = require("../services/db");
 const { confirmCcpAbonnement } = require("../services/orders");
+const verificationService = require("../services/verificationService");
 
 const ROOM_ADMIN = "partenariat-admin";
 
@@ -159,11 +160,12 @@ router.get("/", requireAdmin, async (req, res) => {
     let stats = {};
     let candidatures = [];
     let ccpDemandes = [];
+    let verifications = [];
 
     try {
         const [
             utilisateurs, marchands, clients, workspacesRows, commandesTotal, commandesJour,
-            commissionsRows, ccpDemandesRows, candidaturesRows, candidaturesNouvelles,
+            commissionsRows, ccpDemandesRows, candidaturesRows, candidaturesNouvelles, verifsRows,
         ] = await Promise.all([
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs`),
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE type_compte = 'marchand'`),
@@ -175,6 +177,7 @@ router.get("/", requireAdmin, async (req, res) => {
             db.query(`SELECT COUNT(*)::int AS n FROM abonnements WHERE statut = 'en attente' AND methode_paiement = 'ccp'`),
             db.query(`SELECT COUNT(*)::int AS n FROM candidatures_partenariat`),
             db.query(`SELECT COUNT(*)::int AS n FROM candidatures_partenariat WHERE statut = 'nouveau'`),
+            db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE verification_statut = 'en_attente'`),
         ]);
 
         stats = {
@@ -189,6 +192,7 @@ router.get("/", requireAdmin, async (req, res) => {
             ccpDemandes: ccpDemandesRows[0].n,
             candidaturesTotal: candidaturesRows[0].n,
             candidaturesNouvelles: candidaturesNouvelles[0].n,
+            verifsEnAttente: verifsRows[0].n,
         };
 
         candidatures = await db.query(`SELECT * FROM candidatures_partenariat ORDER BY created_at DESC LIMIT 200`);
@@ -197,6 +201,10 @@ router.get("/", requireAdmin, async (req, res) => {
              FROM abonnements a LEFT JOIN workspaces w ON w.id = a.workspace_id
              WHERE a.statut = 'en attente' AND a.methode_paiement = 'ccp'
              ORDER BY a.date_debut DESC LIMIT 100`
+        );
+        verifications = await db.query(
+            `SELECT id, nom, prenom, email, telephone, verification_document_url, verification_soumis_le
+             FROM utilisateurs WHERE verification_statut = 'en_attente' ORDER BY verification_soumis_le ASC LIMIT 100`
         );
     } catch (err) {
         console.error("❌ GET /admin :", err.message);
@@ -217,6 +225,20 @@ router.get("/", requireAdmin, async (req, res) => {
             </div>
             <div class="pa-contact">${escapeHtml(a.workspace_nom || a.workspace_id)} · ${escapeHtml(a.workspace_owner || "")}</div>
             <span class="pa-date">Demandé le ${new Date(a.date_debut).toLocaleString("fr-FR")}</span>
+        </div>`;
+
+    const ligneVerifHtml = (v) => `
+        <div class="pa-row" data-verif-id="${v.id}">
+            <div class="pa-row-top">
+                <span class="pa-cat">🪪 ${escapeHtml(`${v.prenom || ""} ${v.nom || ""}`.trim() || v.email)}</span>
+                <div style="display:flex;gap:8px;">
+                    <button class="verif-approuver-btn" data-id="${v.id}">✅ Approuver</button>
+                    <button class="verif-refuser-btn" data-id="${v.id}">❌ Refuser</button>
+                </div>
+            </div>
+            <div class="pa-contact">${escapeHtml(v.email || "")}${v.telephone ? ` · <a href="tel:${escapeHtml(v.telephone)}">${escapeHtml(v.telephone)}</a>` : ""}</div>
+            ${v.verification_document_url ? `<a href="${escapeHtml(v.verification_document_url)}" target="_blank" rel="noopener" style="display:inline-block;margin:6px 0;"><img src="${escapeHtml(v.verification_document_url)}" style="max-width:220px;max-height:140px;border-radius:8px;border:1px solid var(--border);"></a>` : ""}
+            <span class="pa-date">Soumis le ${v.verification_soumis_le ? new Date(v.verification_soumis_le).toLocaleString("fr-FR") : "-"}</span>
         </div>`;
 
     const ligneHtml = (c) => `
@@ -260,7 +282,11 @@ router.get("/", requireAdmin, async (req, res) => {
         ${statCard("🏦", stats.ccpDemandes, "Demandes CCP")}
         ${statCard("🤝", stats.candidaturesTotal, "Candidatures partenariat")}
         ${statCard("🆕", stats.candidaturesNouvelles, "Nouvelles candidatures", "var(--blue)")}
+        ${statCard("🪪", stats.verifsEnAttente, "Vérifications en attente", stats.verifsEnAttente ? "var(--gold)" : "var(--text)")}
     </div>
+
+    <div class="section-title">🪪 Vérifications d'identité en attente (livreurs / location)</div>
+    <div id="verif-list" style="margin-bottom:30px;">${verifications.length ? verifications.map(ligneVerifHtml).join("") : `<div class="pa-empty">Aucune vérification en attente.</div>`}</div>
 
     <div class="section-title">🏦 Demandes CCP en attente</div>
     <div id="ccp-list" style="margin-bottom:30px;">${ccpDemandes.length ? ccpDemandes.map(ligneCcpHtml).join("") : `<div class="pa-empty">Aucune demande CCP en attente.</div>`}</div>
@@ -296,6 +322,9 @@ router.get("/", requireAdmin, async (req, res) => {
 .pa-empty { text-align:center; padding:60px 20px; border:1px dashed var(--border); border-radius:16px; color:var(--muted); }
 .ccp-confirm-btn { padding:7px 13px; border-radius:8px; border:1px solid var(--green); background:rgba(61,220,132,.12); color:var(--green); font-size:11.5px; font-weight:700; cursor:pointer; font-family:"JetBrains Mono"; }
 .ccp-confirm-btn:disabled { opacity:.5; cursor:default; }
+.verif-approuver-btn { padding:7px 13px; border-radius:8px; border:1px solid var(--green); background:rgba(61,220,132,.12); color:var(--green); font-size:11.5px; font-weight:700; cursor:pointer; font-family:"JetBrains Mono"; }
+.verif-refuser-btn { padding:7px 13px; border-radius:8px; border:1px solid #e55; background:rgba(229,85,85,.12); color:#e55; font-size:11.5px; font-weight:700; cursor:pointer; font-family:"JetBrains Mono"; }
+.verif-approuver-btn:disabled, .verif-refuser-btn:disabled { opacity:.5; cursor:default; }
 </style>
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -322,6 +351,42 @@ document.getElementById("ccp-list").addEventListener("click", async (e) => {
         alert("Erreur réseau.");
         btn.disabled = false;
         btn.textContent = "✅ Confirmer le paiement";
+    }
+});
+
+document.getElementById("verif-list").addEventListener("click", async (e) => {
+    const btnApprouver = e.target.closest(".verif-approuver-btn");
+    const btnRefuser = e.target.closest(".verif-refuser-btn");
+    const btn = btnApprouver || btnRefuser;
+    if (!btn) return;
+
+    let note = "";
+    if (btnRefuser) {
+        note = prompt("Raison du refus (visible par la personne) :") || "";
+        if (note === null) return;
+    } else if (!confirm("Approuver cette vérification d'identité ? La personne pourra immédiatement recevoir des livraisons / publier une location.")) {
+        return;
+    }
+
+    btn.disabled = true;
+    const action = btnApprouver ? "approuver" : "refuser";
+    try {
+        const res = await fetch("/admin/verification/" + btn.dataset.id + "/" + action, {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note }),
+        });
+        const json = await res.json();
+        if (json.success) {
+            btn.closest(".pa-row").remove();
+            if (!document.querySelector("#verif-list .pa-row")) {
+                document.getElementById("verif-list").innerHTML = '<div class="pa-empty">Aucune vérification en attente.</div>';
+            }
+        } else {
+            alert(json.error || "Erreur.");
+            btn.disabled = false;
+        }
+    } catch {
+        alert("Erreur réseau.");
+        btn.disabled = false;
     }
 });
 
@@ -380,6 +445,28 @@ router.post("/ccp/:id/confirmer", requireAdmin, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error("❌ POST /admin/ccp/:id/confirmer :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/verification/:id/approuver", requireAdmin, async (req, res) => {
+    try {
+        const ok = await verificationService.approuver(req.params.id);
+        if (!ok) return res.json({ success: false, error: "Demande introuvable ou déjà traitée." });
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /admin/verification/:id/approuver :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/verification/:id/refuser", requireAdmin, async (req, res) => {
+    try {
+        const ok = await verificationService.refuser(req.params.id, req.body.note || "");
+        if (!ok) return res.json({ success: false, error: "Demande introuvable ou déjà traitée." });
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /admin/verification/:id/refuser :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
     }
 });

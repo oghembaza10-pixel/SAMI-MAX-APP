@@ -188,6 +188,7 @@ app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 app.use("/connect",   require("./routes/connector"));
 app.use("/livreur",    require("./routes/livreur"));
 app.use("/livraisons", require("./routes/livraisons"));
+app.use("/verification", require("./routes/verification"));
 
 // ══════════════════════════════════════════════════════
 // ROUTES — Vitrine (public)

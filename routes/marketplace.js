@@ -12,6 +12,7 @@ const chargily = require("../services/chargily");
 const { confirmChargilyPayment } = require("../services/orders");
 const devises = require("../services/devises");
 const CONFIG = require("../config");
+const verificationService = require("../services/verificationService");
 
 // Prix stockés en texte libre ("12.90 EUR", "8500 DZD"...). Pour les produits
 // CJ (toujours en EUR), on affiche en plus la conversion DZD + MAD — marché
@@ -5765,6 +5766,18 @@ router.post(
                 return res.redirect(
                     "/marketplace/publier?erreur=1"
                 );
+            }
+
+            // --------------------------------------------------------------
+            // VÉRIFICATION D'IDENTITÉ (location de chambre uniquement —
+            // accueil de clients chez soi, risque réel de confiance)
+            // --------------------------------------------------------------
+
+            if (cleanCategorie === "service-chambre") {
+                const statutVerif = await verificationService.getStatut(req.session.userId);
+                if (!verificationService.estVerifie(statutVerif)) {
+                    return res.redirect("/verification");
+                }
             }
 
             // --------------------------------------------------------------
