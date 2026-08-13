@@ -3,18 +3,14 @@
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
-const axios   = require("axios");
 const stripe  = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const CONFIG  = require("../config");
+const db      = require("../services/db");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
 }
-
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
 
 // ⚠️ À remplacer par tes vraies coordonnées CCP
 const CCP_INFOS = {
@@ -28,11 +24,8 @@ const PRIX_PREMIUM = { montant: "1500", devise: "DZD", stripeAmountCents: 500 };
 router.get("/", requireAuth, async (req, res) => {
     let abonnementActuel = "gratuit";
     try {
-        const search = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={email}="${req.session.email}"`,
-            { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` } }
-        );
-        abonnementActuel = search.data.records[0]?.fields?.abonnement || "gratuit";
+        const rows = await db.query(`SELECT abonnement FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+        abonnementActuel = rows[0]?.abonnement || "gratuit";
     } catch (err) {
         console.warn("⚠️ Lecture abonnement :", err.message);
     }
@@ -310,19 +303,21 @@ document.getElementById('form-ccp')?.addEventListener('submit', async (e) => {
 router.post("/ccp", requireAuth, async (req, res) => {
     try {
         const { preuve } = req.body;
+        const userId = req.session.userId;
 
-        const search = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={email}="${req.session.email}"`,
-            { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` } }
+        const updated = await db.query(
+            `UPDATE utilisateurs SET statut_paiement_ccp = 'en_attente', preuve_paiement_ccp = $1 WHERE id = $2 RETURNING id`,
+            [preuve || "Pas de preuve fournie", userId]
         );
-        const record = search.data.records[0];
-        if (!record) return res.json({ success: false, error: "Utilisateur introuvable." });
+        if (!updated[0]) return res.json({ success: false, error: "Utilisateur introuvable." });
 
-        await axios.patch(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-            { fields: { statut_paiement_ccp: "en_attente", preuve_paiement_ccp: preuve || "Pas de preuve fournie" } },
-            { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" } }
-        );
+        // Pas de file d'attente admin dédiée pour ce palier individuel (contrairement
+        // aux abonnements marchand — voir routes/admin.js) : au minimum, la demande
+        // reste visible dans le journal plutôt que de s'évaporer silencieusement.
+        await db.query(
+            `INSERT INTO journal (action, details) VALUES ($1, $2)`,
+            ["premium.ccp.demande", `Demande CCP Premium — utilisateur ${userId} — preuve: ${preuve || "aucune"}`]
+        ).catch(() => {});
 
         res.json({ success: true });
     } catch (err) {

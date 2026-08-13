@@ -3,7 +3,7 @@
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
-const airtable = require("../services/airtable");
+const db      = require("../services/db");
 const gemini  = require("../services/geminiService");
 const workspaceService = require("../services/workspaceService");
 
@@ -18,10 +18,6 @@ async function getWorkspaceOrRedirect(req, res) {
     const workspace = await workspaceService.getById(workspaceId);
     if (!workspace) { res.redirect("/hub"); return null; }
     return workspace;
-}
-
-function getMontant(c) {
-    return parseFloat(c.montant || c.Total || 0) || 0;
 }
 
 router.get("/", requireAuth, async (req, res) => {
@@ -167,8 +163,7 @@ function renderFiche(data) {
     const fiche = document.getElementById('fiche');
 
     const badges = [];
-    if (data.vip) badges.push('<span class="mc-badge mc-badge--vip">👑 VIP</span>');
-    if (data.blacklist) badges.push('<span class="mc-badge mc-badge--black">🚫 Blacklist</span>');
+    if (data.vip) badges.push('<span class="mc-badge mc-badge--vip">👑 Fidèle</span>');
 
     const historyItems = (data.historique || []).map(h => \`
         <div class="mc-history-item">
@@ -254,52 +249,51 @@ router.post("/", requireAuth, async (req, res) => {
         }
 
         const workspaceId = req.session.workspaceId;
-        const term = recherche.trim();
+        const term = `%${recherche.trim()}%`;
 
-        const clients = await airtable.find("CLIENTS",
-            `AND({workspace_id}="${workspaceId}", OR(SEARCH("${term}",{Nom}), SEARCH("${term}",{Nom Client}), SEARCH("${term}",{Téléphone})))`,
-            5
+        const clients = await db.query(
+            `SELECT nom, telephone FROM clients
+             WHERE workspace_id = $1 AND (nom ILIKE $2 OR telephone ILIKE $2)
+             LIMIT 5`,
+            [workspaceId, term]
         );
 
         if (!clients.length) {
             return res.json({ success: false, error: "Aucun client trouvé avec ce nom ou numéro." });
         }
 
-        const clientRecord = clients[0];
-        const cf = clientRecord.fields;
-        const nom = cf["Nom"] || cf["Nom Client"] || "Client";
-        const telephone = cf["Téléphone"] || "";
+        const nom = clients[0].nom || "Client";
+        const telephone = clients[0].telephone || "";
 
-        const commandes = await airtable.find("COMMANDES",
-            `AND({Boutique}="${workspaceId}", {Téléphone}="${telephone}")`,
-            50
+        const commandes = await db.query(
+            `SELECT produit, montant, date_commande FROM commandes
+             WHERE workspace_id = $1 AND telephone = $2
+             ORDER BY date_commande DESC LIMIT 50`,
+            [workspaceId, telephone]
         );
 
         const total_commandes = commandes.length;
-        const total_depense = commandes.reduce((s, c) => s + getMontant(c.fields), 0);
+        const total_depense = commandes.reduce((s, c) => s + (Number(c.montant) || 0), 0);
 
-        const dates = commandes
-            .map(c => c.fields["Date Commande"])
-            .filter(Boolean)
-            .sort();
+        const dates = commandes.map(c => new Date(c.date_commande)).filter(d => !isNaN(d)).sort((a, b) => a - b);
 
         let frequence = "—";
         if (dates.length >= 2) {
-            const first = new Date(dates[0]);
-            const last  = new Date(dates[dates.length - 1]);
-            const joursTotal = Math.max(1, (last - first) / (1000 * 60 * 60 * 24));
+            const joursTotal = Math.max(1, (dates[dates.length - 1] - dates[0]) / (1000 * 60 * 60 * 24));
             const moyenneJours = Math.round(joursTotal / (dates.length - 1));
             frequence = `~${moyenneJours}j`;
         }
 
-        const historique = commandes
-            .sort((a, b) => (b.fields["Date Commande"] || "").localeCompare(a.fields["Date Commande"] || ""))
-            .slice(0, 10)
-            .map(c => ({
-                produit: c.fields["Produit"] || "—",
-                date: (c.fields["Date Commande"] || "").slice(0, 10),
-                montant: getMontant(c.fields).toFixed(2),
-            }));
+        // commandes est déjà trié par date_commande DESC (le plus récent d'abord)
+        const historique = commandes.slice(0, 10).map(c => ({
+            produit: c.produit || "—",
+            date: c.date_commande ? new Date(c.date_commande).toISOString().slice(0, 10) : "",
+            montant: (Number(c.montant) || 0).toFixed(2),
+        }));
+
+        // Pas de statut VIP/Blacklist en base (voir Miroir/Missions/Ambassadeur,
+        // même choix) : "fidèle" est basé sur un vrai signal (3+ commandes).
+        const vip = total_commandes >= 3;
 
         let analyse = "Client sans historique suffisant pour une analyse.";
         if (total_commandes > 0) {
@@ -307,8 +301,7 @@ router.post("/", requireAuth, async (req, res) => {
                 + `Nombre de commandes : ${total_commandes}\n`
                 + `Total dépensé : ${total_depense.toFixed(2)}\n`
                 + `Fréquence d'achat moyenne : ${frequence}\n`
-                + `VIP : ${cf.VIP ? "oui" : "non"}\n`
-                + `Blacklist : ${cf.Blacklist ? "oui" : "non"}\n\n`
+                + `Client fidèle (3+ commandes) : ${vip ? "oui" : "non"}\n\n`
                 + "En 1 à 2 phrases courtes, donne ton analyse de ce profil client (fidèle, à risque, nouveau, à relancer, etc.) et une recommandation concrète pour le marchand. Réponds directement en texte, sans JSON, sans formatage markdown.";
 
             const result = await gemini.chat({
@@ -324,8 +317,7 @@ router.post("/", requireAuth, async (req, res) => {
             client: {
                 nom,
                 telephone,
-                vip: cf.VIP === true,
-                blacklist: cf.Blacklist === true,
+                vip,
                 total_commandes,
                 total_depense: total_depense.toFixed(2),
                 frequence,
