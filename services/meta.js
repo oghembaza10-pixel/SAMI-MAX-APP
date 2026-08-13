@@ -164,6 +164,27 @@ async function sendMessage(pageAccessToken, recipientId, text) {
     return res.data;
 }
 
+// Répond à un commentaire public sous un post de Page — crée un
+// sous-commentaire, visible par tout le monde (contrairement à sendMessage
+// qui répond en privé). Même endpoint pour commenter un post ou répondre à
+// un commentaire existant : POST /{comment-id}/comments.
+async function replyToFacebookComment(pageAccessToken, commentId, message) {
+    if (!pageAccessToken) throw new Error("pageAccessToken Meta manquant pour répondre à ce commentaire.");
+    const res = await axios.post(`${BASE_URL}/${commentId}/comments`, null, {
+        params: { message, access_token: pageAccessToken },
+    });
+    return res.data;
+}
+
+// Idem pour un commentaire Instagram (endpoint dédié /replies côté IG).
+async function replyToInstagramComment(pageAccessToken, commentId, message) {
+    if (!pageAccessToken) throw new Error("pageAccessToken Meta manquant pour répondre à ce commentaire.");
+    const res = await axios.post(`${BASE_URL}/${commentId}/replies`, null, {
+        params: { message, access_token: pageAccessToken },
+    });
+    return res.data;
+}
+
 module.exports = {
     getPages,
     getAdAccountInfo,
@@ -176,4 +197,6 @@ module.exports = {
     publishPagePost,
     publishInstagramPost,
     sendMessage,
+    replyToFacebookComment,
+    replyToInstagramComment,
 };

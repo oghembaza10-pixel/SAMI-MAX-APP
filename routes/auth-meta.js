@@ -29,9 +29,12 @@ const SCOPES = [
     "pages_manage_ads",
     "pages_messaging",
     "pages_manage_posts",
+    "pages_manage_engagement",
+    "pages_read_engagement",
     "instagram_basic",
     "instagram_manage_messages",
     "instagram_content_publish",
+    "instagram_manage_comments",
 ].join(",");
 
 function requireAuth(req, res, next) {
@@ -145,6 +148,102 @@ router.post("/webhook/meta", async (req, res) => {
 
                 const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-16);
                 memory.set(key, { ...session, history: nextHistory });
+            }
+
+            // ── Commentaires publics (posts) + avis de Page ────────────────
+            // Miroir du bloc messagerie ci-dessus, mais pour ce qui se passe
+            // publiquement sur Meta plutôt qu'en message privé. Nécessite que
+            // la Page (champ "feed"/"ratings") et le compte Instagram (champ
+            // "comments") soient abonnés à ces webhooks côté App Meta.
+            for (const change of entry.changes || []) {
+                try {
+                    if (canal === "facebook" && change.field === "feed") {
+                        const value = change.value || {};
+                        if (value.item !== "comment" || value.verb !== "add") continue;
+                        if (!value.message || !value.comment_id) continue;
+                        if (value.sender_id === entry.id) continue; // notre propre réponse (évite la boucle infinie)
+                        if (value.parent_id && value.post_id && value.parent_id !== value.post_id) continue; // réponse imbriquée, pas un commentaire de premier niveau
+
+                        const connecteur = await resolveConnecteur("facebook", entry.id);
+                        if (!connecteur) continue;
+                        const { workspaceId, config } = connecteur;
+
+                        console.log(`💬 [commentaire FB] workspace ${workspaceId} : ${value.message}`);
+
+                        await db.query(
+                            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                            ["facebook.comment", `${value.sender_name || value.sender_id}: ${value.message}`, workspaceId]
+                        );
+                        socketService.emitToShop(workspaceId, "facebook.comment", {
+                            senderId: value.sender_id, senderName: value.sender_name,
+                            message: value.message, postId: value.post_id,
+                        });
+
+                        const metier = await getMetierWorkspace(workspaceId);
+                        const produits = await getProduitsDuWorkspace(workspaceId);
+                        const reply = await planner.ask(value.message, {
+                            source: "facebook_comment", chatId: value.comment_id,
+                            name: value.sender_name || "client", audience: "client",
+                            workspaceId, metier, produits,
+                        }, []);
+
+                        await meta.replyToFacebookComment(config.pageAccessToken, value.comment_id, reply);
+                    }
+
+                    if (canal === "instagram" && change.field === "comments") {
+                        const value = change.value || {};
+                        if (!value.text || !value.id) continue;
+                        if (value.from?.id === entry.id) continue; // notre propre réponse
+
+                        const connecteur = await resolveConnecteur("instagram", entry.id);
+                        if (!connecteur) continue;
+                        const { workspaceId, config } = connecteur;
+
+                        console.log(`💬 [commentaire IG] workspace ${workspaceId} : ${value.text}`);
+
+                        await db.query(
+                            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                            ["instagram.comment", `${value.from?.username || value.from?.id}: ${value.text}`, workspaceId]
+                        );
+                        socketService.emitToShop(workspaceId, "instagram.comment", {
+                            senderId: value.from?.id, senderName: value.from?.username,
+                            message: value.text, mediaId: value.media?.id,
+                        });
+
+                        const metier = await getMetierWorkspace(workspaceId);
+                        const produits = await getProduitsDuWorkspace(workspaceId);
+                        const reply = await planner.ask(value.text, {
+                            source: "instagram_comment", chatId: value.id,
+                            name: value.from?.username || "client", audience: "client",
+                            workspaceId, metier, produits,
+                        }, []);
+
+                        await meta.replyToInstagramComment(config.pageAccessToken, value.id, reply);
+                    }
+
+                    if (canal === "facebook" && change.field === "ratings") {
+                        // Meta ne fournit aucun endpoint public pour répondre par API
+                        // à un avis/recommandation de Page (contrairement aux
+                        // commentaires) — seule une réponse manuelle via Meta
+                        // Business Suite est possible côté Meta. On notifie le
+                        // marchand en temps réel plutôt que de rester silencieux.
+                        const value = change.value || {};
+                        const connecteur = await resolveConnecteur("facebook", entry.id);
+                        if (!connecteur) continue;
+                        const { workspaceId } = connecteur;
+
+                        await db.query(
+                            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                            ["facebook.review", `${value.reviewer_name || value.reviewer_id} (${value.rating ?? "?"}/5) : ${value.review_text || ""}`, workspaceId]
+                        );
+                        socketService.emitToShop(workspaceId, "facebook.review", {
+                            reviewerName: value.reviewer_name, rating: value.rating, text: value.review_text,
+                        });
+                        console.log(`⭐ Nouvel avis Facebook (workspace ${workspaceId}) — réponse manuelle requise (Meta Business Suite).`);
+                    }
+                } catch (changeErr) {
+                    console.error("❌ Webhook Meta (changes) :", changeErr.response?.data || changeErr.message);
+                }
             }
         }
     } catch (err) {
