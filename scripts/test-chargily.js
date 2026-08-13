@@ -18,8 +18,8 @@ async function main() {
     console.log("Longueur clé:", key.length, key !== key.trim() ? "⚠️ espaces en trop détectés !" : "(pas d'espace superflu)");
     console.log("Début clé   :", key.slice(0, 8) + "…");
     console.log("Fin clé     :", "…" + key.slice(-4));
-    if (!key.startsWith("test_sk_") && !key.startsWith("sk_")) {
-        console.log("⚠️  Ta clé ne commence pas par test_sk_ ou sk_ — c'est peut-être la PUBLIC key (test_pk_) collée par erreur dans CHARGILY_API_KEY.");
+    if (!key.startsWith("test_sk_") && !key.startsWith("live_sk_") && !key.startsWith("sk_")) {
+        console.log("⚠️  Ta clé ne commence pas par test_sk_, live_sk_ ou sk_ — c'est peut-être la PUBLIC key (test_pk_/live_pk_) collée par erreur dans CHARGILY_API_KEY.");
     }
     console.log("──────────────────────────────\n");
 
@@ -34,7 +34,8 @@ async function main() {
     console.log(JSON.stringify(result, null, 2));
 
     if (result.success) {
-        console.log(`\n✅ Clé valide. Ouvre cette URL pour voir la page de paiement Chargily (test) :\n${result.checkoutUrl}`);
+        const modeLabel = CONFIG.CHARGILY.MODE === "live" ? "réel" : "test";
+        console.log(`\n✅ Clé valide. Ouvre cette URL pour voir la page de paiement Chargily (${modeLabel}) :\n${result.checkoutUrl}`);
     } else {
         console.log(`\n❌ Échec — vérifie la clé et le mode (test/live) : ${result.error}`);
     }
