@@ -270,10 +270,23 @@ app.get("/qg/:metier/connecter", requireAuth, (req, res) => {
 });
 
 // ── SAMII — copilote universel ──────────────────────────
-app.get("/samii", requireAuth, (req, res) => {
+app.get("/samii", requireAuth, async (req, res) => {
+    // Les cartes de la grille (Miroir, Oracle Financier, Griot...) sont des
+    // outils métier marchand — la plupart supposent un workspace et n'ont
+    // aucun sens pour un particulier. Un particulier n'a que le chat.
+    let estParticulier = false;
+    try {
+        const db = require("./services/db");
+        const rows = await db.query(`SELECT type_compte FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+        estParticulier = rows[0]?.type_compte === "client";
+    } catch (err) {
+        console.error("❌ GET /samii (type_compte) :", err.message);
+    }
+
     res.render("samii", {
         workspaceId : req.session.workspaceId || "",
         shop        : req.session.shop        || "",
+        estParticulier,
     });
 });
 

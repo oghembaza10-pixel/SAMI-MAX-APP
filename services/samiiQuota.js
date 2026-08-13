@@ -8,7 +8,9 @@
 // c'est le volume de messages autorisés par jour, pas la mémoire.
 const db = require("../services/db");
 
-const QUOTA_GRATUIT_PAR_JOUR = 30;
+const QUOTA_GRATUIT_PAR_FENETRE = 30;
+const FENETRE_HEURES = 7;
+const PRIX_PREMIUM_USD = 5; // déjà le montant réel facturé par /client-qg/premium (Stripe)
 
 async function getAbonnement(userId) {
     if (!userId) return "gratuit";
@@ -20,11 +22,11 @@ async function getAbonnement(userId) {
     }
 }
 
-async function compterMessagesAujourdhui(userId) {
+async function compterMessagesFenetre(userId) {
     try {
         const rows = await db.query(
             `SELECT count(*)::int AS n FROM samii_conversations
-             WHERE user_id = $1 AND role = 'user' AND created_at > now() - interval '24 hours'`,
+             WHERE user_id = $1 AND role = 'user' AND created_at > now() - interval '${FENETRE_HEURES} hours'`,
             [userId]
         );
         return rows[0]?.n || 0;
@@ -43,13 +45,18 @@ async function getEtatQuota(userId) {
         return { illimite: true, restant: null, total: null, utilises: 0 };
     }
 
-    const utilises = await compterMessagesAujourdhui(userId);
+    const utilises = await compterMessagesFenetre(userId);
     return {
         illimite: false,
-        total: QUOTA_GRATUIT_PAR_JOUR,
+        total: QUOTA_GRATUIT_PAR_FENETRE,
         utilises,
-        restant: Math.max(0, QUOTA_GRATUIT_PAR_JOUR - utilises),
+        restant: Math.max(0, QUOTA_GRATUIT_PAR_FENETRE - utilises),
+        fenetreHeures: FENETRE_HEURES,
     };
 }
 
-module.exports = { QUOTA_GRATUIT_PAR_JOUR, getAbonnement, compterMessagesAujourdhui, getEtatQuota };
+module.exports = {
+    QUOTA_GRATUIT_PAR_JOUR: QUOTA_GRATUIT_PAR_FENETRE, // alias conservé pour compat (routes existantes)
+    QUOTA_GRATUIT_PAR_FENETRE, FENETRE_HEURES, PRIX_PREMIUM_USD,
+    getAbonnement, compterMessagesFenetre, getEtatQuota,
+};

@@ -2,11 +2,28 @@
 // SAMII OS — API V5 — PostgreSQL + Universel (produit / rendez-vous)
 // ======================================================
 const express = require("express");
+const axios = require("axios");
 const router = express.Router();
 const planner = require("../brain/planner");
 const db = require("../services/db");
 const samiiQuota = require("../services/samiiQuota");
 const samiiMemoire = require("../services/samiiMemoire");
+const projetsService = require("../services/projetsService");
+
+// Télécharge une pièce jointe déjà hébergée (Cloudinary) pour la repasser à
+// Gemini en base64 — le payload JSON du chat reste petit (une URL, pas les
+// octets), et Gemini n'a pas besoin d'un accès public particulier à l'URL.
+async function chargerPieceJointe(url) {
+    if (!url || typeof url !== "string" || !url.startsWith("https://")) return null;
+    try {
+        const res = await axios.get(url, { responseType: "arraybuffer", maxContentLength: 15 * 1024 * 1024 });
+        const mimeType = res.headers["content-type"] || "application/octet-stream";
+        return { base64: Buffer.from(res.data).toString("base64"), mimeType };
+    } catch (err) {
+        console.warn("⚠️ chargerPieceJointe :", err.message);
+        return null;
+    }
+}
 
 const METIERS_RDV = [
     "dentiste", "medecin", "avocat", "comptable", "coiffeur", "kine",
@@ -33,14 +50,26 @@ function getMontant(c) {
 router.post("/chat", async (req, res) => {
     try {
         const message = req.body.message;
-        if (!message) return res.json({ success: false, reply: "Écris un message." });
+        const imageUrl = req.body.imageUrl;
+        const documentUrl = req.body.documentUrl;
+        const documentName = req.body.documentName;
+        if (!message && !imageUrl && !documentUrl) return res.json({ success: false, reply: "Écris un message." });
 
         const userId = req.session?.userId;
 
-        // Le quota (gratuit = 30 messages/24h glissantes, payant = illimité) est le
+        // Projet (à la Claude Projects) : fil de conversation isolé. On
+        // vérifie l'appartenance avant de lire/écrire dedans — un ID de
+        // projet fourni par le client ne suffit jamais seul.
+        let projetId = null;
+        if (req.body.projetId && userId) {
+            const appartient = await projetsService.appartientA(userId, req.body.projetId);
+            if (appartient) projetId = req.body.projetId;
+        }
+
+        // Le quota (gratuit = 30 messages/7h glissantes, payant = illimité) est le
         // seul levier commercial — la mémoire, elle, ne dépend jamais du palier
-        // (voir getSamiiHistory ci-dessous) : un client gratuit qui revient demain
-        // doit retrouver SAMII qui se souvient de tout, sinon aucune raison de
+        // (voir samiiMemoire) : un client gratuit qui revient plus tard doit
+        // retrouver SAMII qui se souvient de tout, sinon aucune raison de
         // vouloir passer payant.
         if (userId) {
             const quota = await samiiQuota.getEtatQuota(userId);
@@ -49,9 +78,9 @@ router.post("/chat", async (req, res) => {
                     success: true,
                     quotaExceeded: true,
                     reply:
-                        `Tu as atteint tes ${quota.total} messages gratuits pour aujourd'hui — ` +
-                        `je garde tout ce qu'on s'est dit, on reprend dans quelques heures. ` +
-                        `Passe en abonnement payant pour discuter sans limite et avancer sur tes projets sans attendre.`,
+                        `Tu as atteint tes ${quota.total} messages gratuits pour les ${quota.fenetreHeures || 7} prochaines heures — ` +
+                        `je garde tout ce qu'on s'est dit, on reprend bientôt. ` +
+                        `Passe en SAMII Premium (${samiiQuota.PRIX_PREMIUM_USD}$/mois) pour discuter sans limite et avancer sur tes projets sans attendre.`,
                 });
             }
         }
@@ -68,16 +97,83 @@ router.post("/chat", async (req, res) => {
             audience: "souverain",
         };
 
-        const history = await samiiMemoire.getHistorique(userId);
+        // Pièce jointe : uploadée sur Cloudinary côté client, on ne reçoit
+        // que l'URL ici (payload JSON léger), puis on télécharge les octets
+        // pour les repasser à Gemini en base64.
+        let pieceLabel = "";
+        if (imageUrl) {
+            context.piece = await chargerPieceJointe(imageUrl);
+            pieceLabel = "[Photo jointe] ";
+        } else if (documentUrl) {
+            context.piece = await chargerPieceJointe(documentUrl);
+            pieceLabel = `[Document joint : ${documentName || "fichier"}] `;
+        }
 
-        const result = await planner.build({ goal: message }, context, history);
+        const goal = message || (imageUrl ? "Que vois-tu sur cette image ?" : "Voici un document, analyse-le.");
+        const history = await samiiMemoire.getHistorique(userId, projetId);
 
-        if (userId) await samiiMemoire.enregistrerTour(userId, message, result.reply, "web");
+        const result = await planner.build({ goal }, context, history);
+
+        if (userId) {
+            await samiiMemoire.enregistrerTour(userId, pieceLabel + goal, result.reply, "web", projetId);
+            if (projetId) await projetsService.toucher(projetId);
+        }
 
         res.json(result);
     } catch (err) {
         console.error("❌ API chat :", err.message);
         res.json({ success: false, reply: "SAMII démarre. Réessaie dans quelques instants." });
+    }
+});
+
+// Historique affichable (contrairement à samiiMemoire.getHistorique, pensé
+// pour Gemini) — sert à réafficher le fil au chargement de la page ou après
+// un changement de projet, pour que ce qu'on VOIT corresponde à ce que
+// SAMII SAIT.
+router.get("/chat/historique", requireAuth, async (req, res) => {
+    try {
+        const projetId = req.query.projetId ? parseInt(req.query.projetId, 10) : null;
+        if (projetId && !(await projetsService.appartientA(req.session.userId, projetId))) {
+            return res.json({ success: false, historique: [] });
+        }
+        const historique = await samiiMemoire.getHistorique(req.session.userId, projetId);
+        res.json({ success: true, historique });
+    } catch (err) {
+        console.error("❌ GET /api/chat/historique :", err.message);
+        res.json({ success: false, historique: [] });
+    }
+});
+
+// ── PROJETS SAMII (fils de conversation séparés, à la Claude Projects) ──
+router.get("/projets", requireAuth, async (req, res) => {
+    try {
+        const projets = await projetsService.lister(req.session.userId);
+        res.json({ success: true, projets });
+    } catch (err) {
+        console.error("❌ GET /api/projets :", err.message);
+        res.json({ success: false, projets: [] });
+    }
+});
+
+router.post("/projets", requireAuth, async (req, res) => {
+    try {
+        const nom = (req.body.nom || "").trim();
+        if (!nom) return res.json({ success: false, error: "Nom du projet manquant." });
+        const projet = await projetsService.creer(req.session.userId, nom);
+        res.json({ success: true, projet });
+    } catch (err) {
+        console.error("❌ POST /api/projets :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/projets/:id/archiver", requireAuth, async (req, res) => {
+    try {
+        const ok = await projetsService.archiver(req.session.userId, req.params.id);
+        res.json({ success: ok });
+    } catch (err) {
+        console.error("❌ POST /api/projets/:id/archiver :", err.message);
+        res.json({ success: false });
     }
 });
 

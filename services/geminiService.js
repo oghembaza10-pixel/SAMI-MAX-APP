@@ -93,10 +93,20 @@ async function send({ to, message }) {
 async function chat({ message, context = {}, useTools = false, history = [] }, retryCount = 0) {
     try {
         const prompt = await SAMII_PROMPT(message, context);
+
+        // Pièce jointe (photo ou document) — envoyée en inlineData avec le
+        // message courant uniquement. L'historique ne rejoue jamais les
+        // fichiers déjà analysés (coût + les API multimodales ne les
+        // gardent pas non plus en mémoire d'une requête à l'autre).
+        const userParts = [{ text: prompt }];
+        if (context.piece?.base64 && context.piece?.mimeType) {
+            userParts.push({ inlineData: { mimeType: context.piece.mimeType, data: context.piece.base64 } });
+        }
+
         const body = {
             contents: [
                 ...history.map(h => ({ role: h.role, parts: [{ text: h.message }] })),
-                { role: "user", parts: [{ text: prompt }] },
+                { role: "user", parts: userParts },
             ],
         };
         if (useTools) body.tools = TOOLS;

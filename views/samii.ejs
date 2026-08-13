@@ -76,6 +76,7 @@
                 <span class="qg-topbar__metier" data-i18n="samii.topbar">Stratège IA</span>
             </div>
         </header>
+        <% if (!estParticulier) { %>
         <section class="samii-space">
             <div class="samii-space__stars"></div>
             <div class="samii-space__intro">
@@ -161,7 +162,24 @@
             </div>
 
         </section>
+        <% } else { %>
+        <section class="samii-space" style="padding-bottom:0;">
+            <div class="samii-space__stars"></div>
+            <div class="samii-space__intro">
+                <span class="qg-eyebrow" data-i18n="samii.status">SAMII · OPÉRATIONNEL</span>
+                <h1 data-i18n="samii.titleParticulier">Parle à SAMII.</h1>
+            </div>
+        </section>
+        <% } %>
         <section class="samii-chat">
+            <div class="samii-projets-bar" id="samii-projets-bar">
+                <select id="samii-projet-select">
+                    <option value="">💬 Conversation générale</option>
+                </select>
+                <button type="button" id="samii-nouveau-projet-btn" title="Nouveau projet">
+                    <i data-lucide="folder-plus"></i> <span data-i18n="samii.projets.new">Nouveau projet</span>
+                </button>
+            </div>
             <div class="samii-chat__feed" id="samii-page-feed">
                 <div class="samii-msg samii-msg--bot">
                     <div class="samii-msg__bubble" data-i18n="samii.chat.welcome">
@@ -213,7 +231,7 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="/js/i18n.js"></script>
 <script src="/js/qg.js"></script>
-<script src="/js/samii-page.js?v=2"></script>
+<script src="/js/samii-page.js?v=3"></script>
 <script src="/js/pwa-register.js"></script>
 <script src="/js/push-register.js"></script>
 </body>

@@ -1,5 +1,6 @@
 // ==========================================================================
-// OG TECHNOLOGY — SAMII : logique de la page de chat dédiée (V3 : voix + fichiers)
+// OG TECHNOLOGY — SAMII : logique de la page de chat dédiée
+// (voix + fichiers réellement envoyés à SAMII + Projets à la Claude)
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const form        = document.getElementById('samii-page-form');
@@ -13,10 +14,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const docInput     = document.getElementById('samii-doc-input');
     const attachPreview = document.getElementById('samii-attach-preview');
     const resumeBtn     = document.getElementById('samii-resume-btn');
+    const projetSelect  = document.getElementById('samii-projet-select');
+    const nouveauProjetBtn = document.getElementById('samii-nouveau-projet-btn');
 
     if (!form || !input || !feed) return;
 
-    let pendingAttachment = null; // { type: 'image'|'document', data, name }
+    const CLOUDINARY_CLOUD_NAME = 'ojwx5hft';
+    const CLOUDINARY_UPLOAD_PRESET = 'MARKETPLACE OG';
+
+    let pendingAttachment = null; // { type: 'image'|'document', url, name }
+    let projetActuel = localStorage.getItem('samii_projet_actuel') || '';
+    const welcomeHtml = feed.innerHTML; // message d'accueil d'origine, réutilisé quand un fil est vide
 
     // ── TOAST discret (remplace les alert()) ─────────────
     function toast(text) {
@@ -79,6 +87,84 @@ document.addEventListener('DOMContentLoaded', () => {
         return el;
     }
 
+    // ── PROJETS (à la Claude Projects) ───────────────────
+    async function chargerProjets() {
+        if (!projetSelect) return;
+        try {
+            const res = await fetch('/api/projets');
+            const data = await res.json();
+            if (!data.success) return;
+
+            projetSelect.querySelectorAll('option[data-projet]').forEach(o => o.remove());
+            data.projets.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = String(p.id);
+                opt.dataset.projet = '1';
+                opt.textContent = '📁 ' + p.nom;
+                projetSelect.appendChild(opt);
+            });
+
+            if (projetActuel && data.projets.some(p => String(p.id) === projetActuel)) {
+                projetSelect.value = projetActuel;
+            } else {
+                projetActuel = '';
+                localStorage.removeItem('samii_projet_actuel');
+            }
+        } catch (err) {
+            console.error('❌ chargerProjets :', err);
+        }
+    }
+
+    async function chargerHistorique() {
+        try {
+            const url = projetActuel ? `/api/chat/historique?projetId=${projetActuel}` : '/api/chat/historique';
+            const res = await fetch(url);
+            const data = await res.json();
+            if (!data.success) return;
+
+            if (!data.historique.length) {
+                feed.innerHTML = welcomeHtml;
+                return;
+            }
+            feed.innerHTML = '';
+            data.historique.forEach(m => addMessage(m.role === 'user' ? 'user' : 'bot', m.message));
+        } catch (err) {
+            console.error('❌ chargerHistorique :', err);
+        }
+    }
+
+    projetSelect?.addEventListener('change', () => {
+        projetActuel = projetSelect.value || '';
+        if (projetActuel) localStorage.setItem('samii_projet_actuel', projetActuel);
+        else localStorage.removeItem('samii_projet_actuel');
+        chargerHistorique();
+    });
+
+    nouveauProjetBtn?.addEventListener('click', async () => {
+        const nom = prompt('Nom du projet (ex : "Ouvrir ma boutique", "Mon mariage"...)');
+        if (!nom || !nom.trim()) return;
+        try {
+            const res = await fetch('/api/projets', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nom: nom.trim() }),
+            });
+            const data = await res.json();
+            if (!data.success) { toast(data.error || 'Erreur'); return; }
+            await chargerProjets();
+            projetSelect.value = String(data.projet.id);
+            projetActuel = String(data.projet.id);
+            localStorage.setItem('samii_projet_actuel', projetActuel);
+            chargerHistorique();
+            toast('📁 Projet créé : ' + data.projet.nom);
+        } catch {
+            toast('Erreur réseau.');
+        }
+    });
+
+    chargerProjets().then(() => {
+        if (projetActuel) chargerHistorique();
+    });
+
     // ── ENVOI ─────────────────────────────────────────────
     async function sendMessage(message) {
         const attachment = pendingAttachment;
@@ -87,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessage(
             'user',
             message,
-            attachment?.type === 'image' ? attachment.data : null,
+            attachment?.type === 'image' ? attachment.url : null,
             attachment?.type === 'document' ? attachment.name : null
         );
 
@@ -101,9 +187,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    message: message || (attachment?.type === 'image' ? "Que vois-tu sur cette image ?" : "Voici un document."),
-                    image: attachment?.type === 'image' ? attachment.data : null,
-                    document: attachment?.type === 'document' ? { name: attachment.name, data: attachment.data } : null,
+                    message: message || '',
+                    imageUrl: attachment?.type === 'image' ? attachment.url : null,
+                    documentUrl: attachment?.type === 'document' ? attachment.url : null,
+                    documentName: attachment?.type === 'document' ? attachment.name : null,
+                    projetId: projetActuel || null,
                 }),
             });
             const data = await res.json();
@@ -124,15 +212,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (message || pendingAttachment) sendMessage(message);
     });
 
-    // ── PIÈCE JOINTE : aperçu + suppression ──────────────
-    function showAttachmentPreview(attachment) {
+    // ── PIÈCE JOINTE : upload Cloudinary réel, puis aperçu ───
+    function showAttachmentPreview(attachment, previewSrc) {
         if (!attachPreview) return;
         attachPreview.style.display = 'flex';
         attachPreview.innerHTML = '';
 
         if (attachment.type === 'image') {
             const img = document.createElement('img');
-            img.src = attachment.data;
+            img.src = previewSrc || attachment.url;
             img.style.cssText = 'width:40px;height:40px;object-fit:cover;border-radius:8px;';
             attachPreview.appendChild(img);
         } else {
@@ -162,6 +250,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (attachPreview) { attachPreview.style.display = 'none'; attachPreview.innerHTML = ''; }
     }
 
+    async function uploaderVersCloudinary(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
+        const json = await response.json();
+        if (!response.ok || !json.secure_url) throw new Error('upload échoué');
+        return json.secure_url;
+    }
+
     // ── MENU PIÈCE JOINTE (photo ou document) ────────────
     if (attachBtn && attachMenu) {
         attachBtn.addEventListener('click', (e) => {
@@ -182,36 +280,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (photoInput) {
-        photoInput.addEventListener('change', () => {
+        photoInput.addEventListener('change', async () => {
             const file = photoInput.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-                pendingAttachment = { type: 'image', data: reader.result, name: file.name };
-                showAttachmentPreview(pendingAttachment);
-                toast('📷 Image prête à envoyer');
-            };
-            reader.readAsDataURL(file);
             photoInput.value = '';
+
+            const previewLocal = URL.createObjectURL(file);
+            toast('⏳ Envoi de la photo...');
+            try {
+                const url = await uploaderVersCloudinary(file);
+                pendingAttachment = { type: 'image', url, name: file.name };
+                showAttachmentPreview(pendingAttachment, previewLocal);
+                toast('📷 Image prête à envoyer');
+            } catch {
+                toast('❌ Échec de l\'envoi, réessaie.');
+            }
         });
     }
 
     if (docInput) {
-        docInput.addEventListener('change', () => {
+        docInput.addEventListener('change', async () => {
             const file = docInput.files[0];
             if (!file) return;
+            docInput.value = '';
             if (file.size > 8 * 1024 * 1024) {
                 toast('⚠️ Fichier trop lourd (max 8 Mo)');
                 return;
             }
-            const reader = new FileReader();
-            reader.onload = () => {
-                pendingAttachment = { type: 'document', data: reader.result, name: file.name };
+            toast('⏳ Envoi du document...');
+            try {
+                const url = await uploaderVersCloudinary(file);
+                pendingAttachment = { type: 'document', url, name: file.name };
                 showAttachmentPreview(pendingAttachment);
                 toast('📄 Document prêt à envoyer');
-            };
-            reader.readAsDataURL(file);
-            docInput.value = '';
+            } catch {
+                toast('❌ Échec de l\'envoi, réessaie.');
+            }
         });
     }
 
