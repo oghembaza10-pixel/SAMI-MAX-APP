@@ -294,8 +294,8 @@ io.on("connection", (socket) => {
 });
 
 // ── ENV CHECK ─────────────────────────────────────────────
-if (!CONFIG.AIRTABLE.API_KEY) console.error("❌ AIRTABLE_API_KEY manquante");
-if (!CONFIG.AIRTABLE.BASE_ID) console.error("❌ AIRTABLE_BASE_ID manquant");
+// Airtable n'est plus une dépendance réelle de l'app (tout tourne sur
+// Postgres) — plus vérifié ici, ça n'a jamais rien testé de toute façon.
 if (!CONFIG.GEMINI.API_KEY)   console.error("❌ GEMINI_API_KEY manquante");
 if (!process.env.DATABASE_URL) console.error("❌ DATABASE_URL manquante (sessions Supabase)");
 
@@ -308,7 +308,6 @@ app.get("/test-telegram", async (req, res) => {
 
 // ── SERVEUR ────────────────────────────────────────────────
 server.listen(CONFIG.PORT, () => {
-    console.log("✅ Airtable connecté");
     console.log("🚀 SAMII OS démarre...");
     console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
 });
