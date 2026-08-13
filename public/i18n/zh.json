@@ -279,5 +279,212 @@
     "heroTitle2": "购买。",
     "heroTitle3": "连接。",
     "emptyTitle": "未找到商品"
+  },
+  "connectTools": {
+    "eyebrow": "OG Technology",
+    "title": "连接我的工具",
+    "subtitle": "连接您的平台，SAMII 将自动使用它们。",
+    "createShop": {
+      "title": "🏪 一键创建我的店铺",
+      "desc": "连接您的 WooCommerce 店铺 — SAMII 会自动对接您的订单、指挥中心和实时跟踪。",
+      "btn": "创建我的店铺 →"
+    },
+    "status": {
+      "connectedSync": "🟡 已连接 · 即将同步",
+      "connected": "✅ 已连接",
+      "soon": "⏳ 即将推出",
+      "off": "🔴 未连接"
+    },
+    "soonText": "即将推出",
+    "disconnect": "断开连接",
+    "guideBtn": "📖 如何连接？",
+    "shopifyForm": {
+      "connectBtn": "连接 Shopify →",
+      "tokenToggle": "没有安装按钮？使用令牌连接 →",
+      "tokenBtn": "使用令牌连接 →",
+      "tokenGuideBtn": "📖 如何获取我的令牌？"
+    },
+    "telegramForm": {
+      "connectBtn": "连接 Telegram →"
+    },
+    "woocommerceForm": {
+      "connectBtn": "连接 WooCommerce →"
+    },
+    "ccpForm": {
+      "connectBtn": "连接 CCP →"
+    },
+    "discordForm": {
+      "connectBtn": "连接 Discord →"
+    },
+    "transporteurForm": {
+      "connected": "🟢 个人密钥已激活"
+    },
+    "footerHint": "您随时可以在指挥中心连接其他工具。",
+    "continue": {
+      "samii": "← 返回 SAMII",
+      "hub": "← 返回中心",
+      "qg": "继续前往我的指挥中心 →"
+    },
+    "guides": {
+      "shopify": {
+        "title": "🛍️ Shopify — 如何连接",
+        "subtitle": "只需 5 分钟，直接在您的店铺后台完成 — 无需外部审批。",
+        "step1": {
+          "title": "打开店铺设置",
+          "desc": "登录您的 Shopify 后台，然后进入：设置 → 应用和销售渠道。"
+        },
+        "step2": {
+          "title": "开发应用",
+          "desc": "在右上角点击「开发应用」，然后点击「创建应用」。为它命名，例如「SAMII OS」。"
+        },
+        "step3": {
+          "title": "配置权限",
+          "desc": "在「配置」选项卡中，点击「Admin API integration」下的「配置」，然后勾选以下权限（读+写）：产品、订单、客户、库存、物流、订单履行。"
+        },
+        "step4": {
+          "title": "安装应用",
+          "desc": "保存后进入「API 凭证」选项卡，点击右上角的「安装应用」（确认安装）。"
+        },
+        "step5": {
+          "title": "复制您的令牌",
+          "desc": "在「API 凭证」中，「Admin API access token」下点击「显示一次令牌」并立即复制 — Shopify 不会再次显示它。"
+        },
+        "warn": "该令牌可访问您的店铺 — 请仅与 SAMII 共享，如果丢失，请重新安装应用以生成新令牌。"
+      },
+      "whatsapp": {
+        "title": "💬 WhatsApp Business — 如何连接",
+        "subtitle": "按照以下步骤将此工具连接到 SAMII。",
+        "step1": {
+          "title": "创建 Green API 账户",
+          "desc": "前往 green-api.com 创建一个免费账户。"
+        },
+        "step2": {
+          "title": "创建 WhatsApp 实例",
+          "desc": "在您的仪表板中点击「Create instance」，选择「WhatsApp」。"
+        },
+        "step3": {
+          "title": "扫描二维码",
+          "desc": "在手机的 WhatsApp 中（设置 → 已连接的设备），扫描显示的二维码以关联您的号码。"
+        },
+        "step4": {
+          "title": "复制您的凭证",
+          "desc": "复制仪表板中显示的「Instance ID」和「API Token」，然后粘贴到连接表单中。"
+        },
+        "warn": "这些凭证可访问您的 WhatsApp 账户 — 请仅与 SAMII 共享。"
+      },
+      "telegram": {
+        "title": "✈️ Telegram — 如何连接",
+        "subtitle": "按照以下步骤将此工具连接到 SAMII。",
+        "step1": {
+          "title": "打开 SAMII 机器人",
+          "desc": "在 Telegram 中搜索 @SAMII_OGBot，或点击 t.me/SAMII_OGBot。"
+        },
+        "step2": {
+          "title": "发送 /id 命令",
+          "desc": "机器人会立即回复您的个人 Chat ID。"
+        },
+        "step3": {
+          "title": "复制 Chat ID",
+          "desc": "将该号码粘贴到上方的「您的 Telegram Chat ID」字段中以连接 Telegram。"
+        }
+      },
+      "meta": {
+        "title": "📘 Facebook / Instagram — 如何连接",
+        "subtitle": "按照以下步骤将此工具连接到 SAMII。",
+        "step1": {
+          "title": "点击「继续使用 Facebook/Instagram」",
+          "desc": "您将被重定向到 Meta 登录页面。"
+        },
+        "step2": {
+          "title": "登录并授权 SAMII",
+          "desc": "选择要连接的主页或账户，然后接受所请求的权限。"
+        },
+        "step3": {
+          "title": "完成",
+          "desc": "您将自动返回此页面 — 您的卡片现在显示「已连接」。"
+        }
+      },
+      "woocommerce": {
+        "title": "🛒 WooCommerce — 如何连接",
+        "subtitle": "按照以下步骤将此工具连接到 SAMII。",
+        "step1": {
+          "title": "点击「创建我的店铺」",
+          "desc": "SAMII 会将您重定向到您自己的 WordPress/WooCommerce 网站。"
+        },
+        "step2": {
+          "title": "授权访问",
+          "desc": "如有需要，登录您的 WooCommerce 后台，然后点击「Approve」以授权 SAMII。"
+        },
+        "step3": {
+          "title": "自动返回",
+          "desc": "您将返回 SAMII — 您的订单、产品和库存将自动同步。"
+        }
+      },
+      "ccp": {
+        "title": "🏦 CCP — 如何连接",
+        "subtitle": "按照以下步骤将此工具连接到 SAMII。",
+        "step1": {
+          "title": "准备好您的 CCP 对账单",
+          "desc": "账户持有人姓名、账户号码和密钥（最后 2 位数字）。"
+        },
+        "step2": {
+          "title": "填写表单",
+          "desc": "在 CCP 连接页面输入这些信息。"
+        },
+        "step3": {
+          "title": "验证",
+          "desc": "我们的团队会在付款到账前验证并激活您的账户。"
+        },
+        "warn": "这些信息仅用于接收您的付款 — 绝不会被分享。"
+      },
+      "discord": {
+        "title": "🎮 Discord — 如何连接",
+        "subtitle": "按照以下步骤将此工具连接到 SAMII。",
+        "step1": {
+          "title": "创建 Discord 应用",
+          "desc": "前往 Discord Developer Portal（discord.com/developers/applications），点击「New Application」。"
+        },
+        "step2": {
+          "title": "添加机器人",
+          "desc": "在「Bot」选项卡中点击「Add Bot」，然后点击「Reset Token」生成您的令牌。"
+        },
+        "step3": {
+          "title": "邀请机器人加入您的服务器",
+          "desc": "在「OAuth2 → URL Generator」中勾选「bot」，然后使用生成的链接将其添加到您的服务器。"
+        },
+        "step4": {
+          "title": "复制令牌",
+          "desc": "将机器人令牌和服务器名称粘贴到连接表单中。"
+        }
+      },
+      "transporteur": {
+        "title": "🚚 物流与消息平台 — 如何连接",
+        "subtitle": "按照以下步骤将此工具连接到 SAMII。",
+        "step1": {
+          "title": "登录您的账户",
+          "desc": "在您的物流公司或消息平台网站上（Yalidine、DHL、WhatsApp Business 等）。"
+        },
+        "step2": {
+          "title": "获取您的 API 密钥",
+          "desc": "在账户的「API」或「开发者」设置中查找。"
+        },
+        "step3": {
+          "title": "粘贴到此处",
+          "desc": "SAMII 将使用它自动创建和跟踪您的配送或消息。"
+        }
+      },
+      "impression": {
+        "title": "⏳ 同步即将推出 — 如何连接",
+        "subtitle": "按照以下步骤将此工具连接到 SAMII。",
+        "step1": {
+          "title": "此同步功能即将推出",
+          "desc": "SAMII 很快将能够自动连接此工具。"
+        },
+        "step2": {
+          "title": "与此同时",
+          "desc": "您可以照常使用它，您这边不会有任何变化。"
+        }
+      }
+    }
   }
 }

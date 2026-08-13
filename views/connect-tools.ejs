@@ -15,53 +15,53 @@
             color: #95BF47; font-size: .78rem; margin-top: 10px; cursor: pointer; text-decoration: underline;
         }
         .shopify-token-form { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #262626; }
-        .shopify-guide-toggle {
+        .tool-guide-toggle {
             display: block; width: 100%; background: none; border: none; text-align: center;
             color: #8a8a8a; font-size: .74rem; margin-top: 8px; cursor: pointer;
         }
-        .shopify-guide-toggle:hover { color: #95BF47; }
+        .tool-guide-toggle:hover { color: var(--tool-guide-accent, #95BF47); }
 
-        .shopify-guide-overlay {
+        .tool-guide-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 999;
             display: none; align-items: center; justify-content: center; padding: 20px;
         }
-        .shopify-guide-overlay.open { display: flex; }
-        .shopify-guide-modal {
+        .tool-guide-overlay.open { display: flex; }
+        .tool-guide-modal {
             background: #111; border: 1px solid #262626; border-radius: 18px;
             max-width: 560px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 28px;
         }
-        .shopify-guide-modal h2 { color: #fff; font-size: 1.25rem; margin-bottom: 6px; }
-        .shopify-guide-modal p.sub { color: #888; font-size: .82rem; margin-bottom: 22px; }
-        .shopify-guide-close {
+        .tool-guide-content h2 { color: #fff; font-size: 1.25rem; margin-bottom: 6px; }
+        .tool-guide-content p.sub { color: #888; font-size: .82rem; margin-bottom: 22px; }
+        .tool-guide-close {
             float: right; background: none; border: none; color: #666; font-size: 1.3rem; cursor: pointer;
         }
-        .shopify-guide-step {
+        .tool-guide-step {
             display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid #1a1a1a;
         }
-        .shopify-guide-step:last-of-type { border-bottom: none; }
-        .shopify-guide-step__num {
+        .tool-guide-step:last-of-type { border-bottom: none; }
+        .tool-guide-step__num {
             flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
             background: rgba(149,191,71,.14); color: #95BF47; font-weight: 800; font-size: .85rem;
             display: flex; align-items: center; justify-content: center;
         }
-        .shopify-guide-step__body h3 { color: #fff; font-size: .88rem; margin-bottom: 4px; }
-        .shopify-guide-step__body p { color: #999; font-size: .78rem; line-height: 1.55; }
-        .shopify-guide-step__path {
+        .tool-guide-step__body h3 { color: #fff; font-size: .88rem; margin-bottom: 4px; }
+        .tool-guide-step__body p { color: #999; font-size: .78rem; line-height: 1.55; }
+        .tool-guide-step__path {
             display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap;
             margin-top: 8px; font-family: monospace; font-size: .72rem;
         }
-        .shopify-guide-step__path span {
+        .tool-guide-step__path span {
             background: #1a1a1a; border: 1px solid #262626; border-radius: 6px; padding: 3px 8px; color: #ccc;
         }
-        .shopify-guide-step__path i { color: #555; width: 12px; height: 12px; }
-        .shopify-guide-scopes {
+        .tool-guide-step__path i { color: #555; width: 12px; height: 12px; }
+        .tool-guide-scopes {
             display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
         }
-        .shopify-guide-scopes span {
+        .tool-guide-scopes span {
             background: rgba(149,191,71,.1); border: 1px solid rgba(149,191,71,.25); color: #95BF47;
             border-radius: 20px; padding: 3px 10px; font-size: .68rem;
         }
-        .shopify-guide-warn {
+        .tool-guide-warn {
             margin-top: 18px; padding: 12px 14px; background: rgba(245,166,35,.08);
             border: 1px solid rgba(245,166,35,.25); border-radius: 10px; color: #F5A623; font-size: .76rem; line-height: 1.5;
         }
@@ -80,9 +80,9 @@
             <div class="hero-glow hero-glow-1"></div>
             <div class="hero-overlay"></div>
             <div class="hero-text-zone">
-                <span class="hero-eyebrow">OG Technology — <%= nom %></span>
-                <h1>Connecter mes outils</h1>
-                <p>Connectez vos plateformes. SAMII les utilisera automatiquement.</p>
+                <span class="hero-eyebrow"><span data-i18n="connectTools.eyebrow">OG Technology</span> — <%= nom %></span>
+                <h1 data-i18n="connectTools.title">Connecter mes outils</h1>
+                <p data-i18n="connectTools.subtitle">Connectez vos plateformes. SAMII les utilisera automatiquement.</p>
             </div>
         </header>
 
@@ -91,10 +91,10 @@
             <!-- CRÉER MA BOUTIQUE EN UN CLIC -->
             <div class="connect-create-shop-cta">
                 <div class="connect-create-shop-cta__text">
-                    <h2>🏪 Créer ma boutique en un clic</h2>
-                    <p>Connecte ta boutique WooCommerce — SAMII branche automatiquement tes commandes, ton QG et ton suivi en temps réel.</p>
+                    <h2 data-i18n="connectTools.createShop.title">🏪 Créer ma boutique en un clic</h2>
+                    <p data-i18n="connectTools.createShop.desc">Connecte ta boutique WooCommerce — SAMII branche automatiquement tes commandes, ton QG et ton suivi en temps réel.</p>
                 </div>
-                <a href="/connect/woocommerce" class="connect-btn connect-btn--primary connect-create-shop-cta__btn">
+                <a href="/connect/woocommerce" class="connect-btn connect-btn--primary connect-create-shop-cta__btn" data-i18n="connectTools.createShop.btn">
                     Créer ma boutique →
                 </a>
             </div>
@@ -126,13 +126,13 @@
                             <h3><%= tool.label %></h3>
                             <span class="connect-tool-card__status">
                                 <% if (isConnected && tool.mode === 'impression') { %>
-                                    <span class="og-badge og-badge--soon">🟡 Connecté · bientôt synchronisé</span>
+                                    <span class="og-badge og-badge--soon" data-i18n="connectTools.status.connectedSync">🟡 Connecté · bientôt synchronisé</span>
                                 <% } else if (isConnected) { %>
-                                    <span class="og-badge og-badge--live">✅ Connecté</span>
+                                    <span class="og-badge og-badge--live" data-i18n="connectTools.status.connected">✅ Connecté</span>
                                 <% } else if (!tool.available) { %>
-                                    <span class="og-badge og-badge--soon">⏳ Bientôt</span>
+                                    <span class="og-badge og-badge--soon" data-i18n="connectTools.status.soon">⏳ Bientôt</span>
                                 <% } else { %>
-                                    <span class="og-badge og-badge--off">🔴 Non connecté</span>
+                                    <span class="og-badge og-badge--off" data-i18n="connectTools.status.off">🔴 Non connecté</span>
                                 <% } %>
                             </span>
                         </div>
@@ -141,7 +141,7 @@
                     <div class="connect-tool-card__body">
 
                         <% if (!tool.available) { %>
-                            <p class="connect-tool-card__soon-text">Disponible prochainement</p>
+                            <p class="connect-tool-card__soon-text" data-i18n="connectTools.soonText">Disponible prochainement</p>
 
                         <% } else if (tool.id === 'shopify') { %>
                             <% if (isConnected) { %>
@@ -149,7 +149,7 @@
                                     🟢 <%= connector.config?.shop || 'Boutique connectée' %>
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
-                                        data-tool="shopify" data-action="disconnect">
+                                        data-tool="shopify" data-action="disconnect" data-i18n="connectTools.disconnect">
                                     Déconnecter
                                 </button>
                             <% } else { %>
@@ -157,18 +157,19 @@
                                     <input type="text" name="shop"
                                            placeholder="monshop.myshopify.com"
                                            class="connect-input" autocomplete="off">
-                                    <button type="submit" class="connect-btn connect-btn--primary">
+                                    <button type="submit" class="connect-btn connect-btn--primary" data-i18n="connectTools.shopifyForm.connectBtn">
                                         Connecter Shopify →
                                     </button>
                                 </form>
-                                <button type="button" class="shopify-token-toggle" id="shopify-token-toggle">
+                                <button type="button" class="shopify-token-toggle" id="shopify-token-toggle" data-i18n="connectTools.shopifyForm.tokenToggle">
                                     Pas de bouton d'installation chez toi ? Connecte-toi avec un token →
                                 </button>
+                                <button type="button" class="tool-guide-toggle" data-guide="shopify" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                                 <form class="connect-inline-form shopify-token-form" id="shopify-token-form" data-tool="shopify" data-action="shopify-token" style="display:none;">
                                     <input type="text" name="shop" placeholder="monshop.myshopify.com" class="connect-input" autocomplete="off">
                                     <input type="text" name="token" placeholder="shpat_xxxxxxxxxxxxxxxxxxxx" class="connect-input" autocomplete="off">
-                                    <button type="submit" class="connect-btn connect-btn--primary">Connecter avec le token →</button>
-                                    <button type="button" class="shopify-guide-toggle" id="shopify-guide-toggle">📖 Comment obtenir mon token ?</button>
+                                    <button type="submit" class="connect-btn connect-btn--primary" data-i18n="connectTools.shopifyForm.tokenBtn">Connecter avec le token →</button>
+                                    <button type="button" class="tool-guide-toggle" data-guide="shopify" data-i18n="connectTools.shopifyForm.tokenGuideBtn">📖 Comment obtenir mon token ?</button>
                                 </form>
                             <% } %>
 
@@ -178,7 +179,7 @@
                                     🟢 <%= connector.config?.name || 'Page connectée' %>
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
-                                        data-tool="<%= tool.id %>" data-action="disconnect">
+                                        data-tool="<%= tool.id %>" data-action="disconnect" data-i18n="connectTools.disconnect">
                                     Déconnecter
                                 </button>
                             <% } else { %>
@@ -187,6 +188,7 @@
                                         data-url="/connect/<%= tool.id %>">
                                     Continuer avec <%= tool.label %> →
                                 </button>
+                                <button type="button" class="tool-guide-toggle" data-guide="meta" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
 
                         <% } else if (tool.id === 'telegram') { %>
@@ -195,7 +197,7 @@
                                     🟢 Chat ID : <%= connector.config?.chatId || '' %>
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
-                                        data-tool="telegram" data-action="disconnect">
+                                        data-tool="telegram" data-action="disconnect" data-i18n="connectTools.disconnect">
                                     Déconnecter
                                 </button>
                             <% } else { %>
@@ -203,10 +205,11 @@
                                     <input type="text" name="chatId"
                                            placeholder="Votre Chat ID Telegram"
                                            class="connect-input" autocomplete="off">
-                                    <button type="submit" class="connect-btn connect-btn--primary">
+                                    <button type="submit" class="connect-btn connect-btn--primary" data-i18n="connectTools.telegramForm.connectBtn">
                                         Connecter Telegram →
                                     </button>
                                 </form>
+                                <button type="button" class="tool-guide-toggle" data-guide="telegram" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
 
                         <% } else if (tool.id === 'woocommerce') { %>
@@ -215,13 +218,14 @@
                                     🟢 <%= connector.config?.siteUrl || 'Boutique connectée' %>
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
-                                        data-tool="woocommerce" data-action="disconnect">
+                                        data-tool="woocommerce" data-action="disconnect" data-i18n="connectTools.disconnect">
                                     Déconnecter
                                 </button>
                             <% } else { %>
-                                <a href="/connect/woocommerce" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
+                                <a href="/connect/woocommerce" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;" data-i18n="connectTools.woocommerceForm.connectBtn">
                                     Connecter WooCommerce →
                                 </a>
+                                <button type="button" class="tool-guide-toggle" data-guide="woocommerce" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
 
                         <% } else if (tool.id === 'ccp') { %>
@@ -230,13 +234,14 @@
                                     🟢 <%= connector.config?.numero || 'Compte enregistré' %>
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
-                                        data-tool="ccp" data-action="disconnect">
+                                        data-tool="ccp" data-action="disconnect" data-i18n="connectTools.disconnect">
                                     Déconnecter
                                 </button>
                             <% } else { %>
-                                <a href="/connect/ccp" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
+                                <a href="/connect/ccp" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;" data-i18n="connectTools.ccpForm.connectBtn">
                                     Connecter CCP →
                                 </a>
+                                <button type="button" class="tool-guide-toggle" data-guide="ccp" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
 
                         <% } else if (tool.id === 'discord') { %>
@@ -245,28 +250,30 @@
                                     🟢 <%= connector.config?.serverName || 'Bot connecté' %>
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
-                                        data-tool="discord" data-action="disconnect">
+                                        data-tool="discord" data-action="disconnect" data-i18n="connectTools.disconnect">
                                     Déconnecter
                                 </button>
                             <% } else { %>
-                                <a href="/connect/discord" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
+                                <a href="/connect/discord" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;" data-i18n="connectTools.discordForm.connectBtn">
                                     Connecter Discord →
                                 </a>
+                                <button type="button" class="tool-guide-toggle" data-guide="discord" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
 
                         <% } else if (tool.mode === 'transporteur') { %>
                             <% if (isConnected) { %>
-                                <p class="connect-tool-card__connected-info">
+                                <p class="connect-tool-card__connected-info" data-i18n="connectTools.transporteurForm.connected">
                                     🟢 Clé perso active
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
-                                        data-tool="<%= tool.id %>" data-action="disconnect">
+                                        data-tool="<%= tool.id %>" data-action="disconnect" data-i18n="connectTools.disconnect">
                                     Déconnecter
                                 </button>
                             <% } else { %>
                                 <a href="/connect/<%= tool.id %>" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
                                     Connecter <%= tool.label %> →
                                 </a>
+                                <button type="button" class="tool-guide-toggle" data-guide="transporteur" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
 
                         <% } else if (tool.mode === 'impression') { %>
@@ -275,13 +282,14 @@
                                     🟡 <%= connector.config?.identifiant || 'Connecté' %>
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
-                                        data-tool="<%= tool.id %>" data-action="disconnect">
+                                        data-tool="<%= tool.id %>" data-action="disconnect" data-i18n="connectTools.disconnect">
                                     Déconnecter
                                 </button>
                             <% } else { %>
                                 <a href="/connect/<%= tool.id %>" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
                                     Connecter <%= tool.label %> →
                                 </a>
+                                <button type="button" class="tool-guide-toggle" data-guide="impression" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
                         <% } %>
                     </div>       
@@ -292,13 +300,13 @@
 
             <!-- CONTINUER VERS QG -->
             <div class="connect-tools-footer">
-                <p class="connect-tools-footer__hint">
+                <p class="connect-tools-footer__hint" data-i18n="connectTools.footerHint">
                     Vous pourrez connecter d'autres outils depuis votre QG à tout moment.
                 </p>
                 <a href="/connect/tools/continue?from=<%= from %>" class="connect-btn connect-btn--cta">
-    <% if (from === 'samii') { %>← Retour à SAMII
-    <% } else if (from === 'hub') { %>← Retour au Hub
-    <% } else { %>Continuer vers mon QG →
+    <% if (from === 'samii') { %><span data-i18n="connectTools.continue.samii">← Retour à SAMII</span>
+    <% } else if (from === 'hub') { %><span data-i18n="connectTools.continue.hub">← Retour au Hub</span>
+    <% } else { %><span data-i18n="connectTools.continue.qg">Continuer vers mon QG →</span>
     <% } %>
 </a>
             </div>
@@ -309,64 +317,115 @@
 
 </div>
 
-<!-- GUIDE : OBTENIR SON TOKEN SHOPIFY -->
-<div class="shopify-guide-overlay" id="shopify-guide-overlay">
-    <div class="shopify-guide-modal">
-        <button type="button" class="shopify-guide-close" id="shopify-guide-close">✕</button>
-        <h2>🛍️ Obtenir ton token Shopify</h2>
-        <p class="sub">5 minutes, directement depuis l'admin de ta boutique — aucune validation externe requise.</p>
+<!-- GUIDES "COMMENT SE CONNECTER ?" (multi-outils) -->
+<%
+    const GUIDES = [
+        { id: "shopify", icon: "🛍️",
+          steps: [
+            { title: "Ouvre les réglages de ta boutique", desc: "Connecte-toi sur ton admin Shopify, puis va dans :", path: ["Paramètres", "Apps et canaux de vente"] },
+            { title: "Développe une app", desc: "En haut à droite, clique sur « Développer des apps », puis « Créer une app ». Donne-lui un nom, par exemple « SAMII OS »." },
+            { title: "Configure les permissions", desc: "Dans l'onglet « Configuration », clique sur « Configurer » sous « Admin API integration », puis coche ces permissions (lecture + écriture) :", scopes: ["Produits", "Commandes", "Clients", "Inventaire", "Expédition", "Exécution des commandes"] },
+            { title: "Installe l'app", desc: "Sauvegarde, va dans l'onglet « Identifiants API », puis clique sur « Installer l'app » en haut à droite (confirme l'installation)." },
+            { title: "Copie ton token", desc: "Toujours dans « Identifiants API », sous « Admin API access token », clique sur « Révéler le token une fois » et copie-le immédiatement — Shopify ne le réaffichera plus jamais." },
+          ],
+          warn: "Ce token donne accès à ta boutique — ne le partage qu'avec SAMII, et si tu le perds, réinstalle l'app pour en générer un nouveau." },
 
-        <div class="shopify-guide-step">
-            <div class="shopify-guide-step__num">1</div>
-            <div class="shopify-guide-step__body">
-                <h3>Ouvre les réglages de ta boutique</h3>
-                <p>Connecte-toi sur ton admin Shopify, puis va dans :</p>
-                <div class="shopify-guide-step__path">
-                    <span>Paramètres</span><i data-lucide="chevron-right"></i>
-                    <span>Apps et canaux de vente</span>
+        { id: "whatsapp", icon: "💬",
+          steps: [
+            { title: "Crée un compte Green API", desc: "Va sur green-api.com et crée un compte gratuit." },
+            { title: "Crée une instance WhatsApp", desc: "Dans ton tableau de bord, clique sur « Create instance », choisis « WhatsApp »." },
+            { title: "Scanne le QR code", desc: "Depuis WhatsApp sur ton téléphone (Paramètres → Appareils connectés), scanne le QR code affiché pour lier ton numéro." },
+            { title: "Copie tes identifiants", desc: "Copie l'« ID Instance » et le « API Token » affichés dans ton tableau de bord, puis colle-les dans le formulaire de connexion." },
+          ],
+          warn: "Ces identifiants donnent accès à ton compte WhatsApp — ne les partage qu'avec SAMII." },
+
+        { id: "telegram", icon: "✈️",
+          steps: [
+            { title: "Ouvre le bot SAMII", desc: "Cherche @SAMII_OGBot sur Telegram, ou clique sur t.me/SAMII_OGBot." },
+            { title: "Envoie la commande /id", desc: "Le bot te répond immédiatement avec ton Chat ID personnel." },
+            { title: "Copie le Chat ID", desc: "Colle ce numéro dans le champ « Votre Chat ID Telegram » ci-dessus pour connecter Telegram." },
+          ] },
+
+        { id: "meta", icon: "📘", label: "Facebook / Instagram",
+          steps: [
+            { title: "Clique sur « Continuer avec Facebook/Instagram »", desc: "Tu seras redirigé vers la page de connexion Meta." },
+            { title: "Connecte-toi et autorise SAMII", desc: "Choisis la page ou le compte à connecter, puis accepte les permissions demandées." },
+            { title: "C'est fait", desc: "Tu reviens automatiquement sur cette page — ta carte affiche désormais « Connecté »." },
+          ] },
+
+        { id: "woocommerce", icon: "🛒",
+          steps: [
+            { title: "Clique sur « Créer ma boutique »", desc: "SAMII te redirige vers ton propre site WordPress/WooCommerce." },
+            { title: "Autorise l'accès", desc: "Connecte-toi à ton admin WooCommerce si besoin, puis clique sur « Approve » pour autoriser SAMII." },
+            { title: "Retour automatique", desc: "Tu reviens sur SAMII — tes commandes, produits et stock se synchronisent automatiquement." },
+          ] },
+
+        { id: "ccp", icon: "🏦",
+          steps: [
+            { title: "Munis-toi de ton relevé CCP", desc: "Titulaire du compte, numéro de compte, et clé (les 2 derniers chiffres)." },
+            { title: "Remplis le formulaire", desc: "Renseigne ces informations sur la page de connexion CCP." },
+            { title: "Vérification", desc: "Notre équipe vérifie et active ton compte avant que les paiements ne commencent à arriver." },
+          ],
+          warn: "Ces informations servent uniquement à recevoir tes paiements — elles ne sont jamais partagées." },
+
+        { id: "discord", icon: "🎮",
+          steps: [
+            { title: "Crée une application Discord", desc: "Va sur le Discord Developer Portal (discord.com/developers/applications), clique sur « New Application »." },
+            { title: "Ajoute un bot", desc: "Dans l'onglet « Bot », clique sur « Add Bot », puis « Reset Token » pour générer ton token." },
+            { title: "Invite le bot sur ton serveur", desc: "Dans « OAuth2 → URL Generator », coche « bot », puis utilise le lien généré pour l'ajouter à ton serveur." },
+            { title: "Copie le token", desc: "Colle le token du bot et le nom de ton serveur dans le formulaire de connexion." },
+          ] },
+
+        { id: "transporteur", icon: "🚚", label: "Transporteurs & messagerie",
+          steps: [
+            { title: "Connecte-toi à ton compte", desc: "Sur le site de ton transporteur ou de ta messagerie (Yalidine, DHL, WhatsApp Business...)." },
+            { title: "Récupère ta clé API", desc: "Cherche dans les paramètres « API » ou « Développeur » de ton compte." },
+            { title: "Colle-la ici", desc: "SAMII l'utilise pour créer et suivre tes livraisons ou tes messages automatiquement." },
+          ] },
+
+        { id: "impression", icon: "⏳", label: "Synchronisation à venir",
+          steps: [
+            { title: "Cette synchronisation arrive bientôt", desc: "SAMII pourra bientôt se connecter automatiquement à cet outil." },
+            { title: "En attendant", desc: "Tu peux continuer à l'utiliser normalement, rien ne change de ton côté." },
+          ] },
+    ];
+%>
+<div class="tool-guide-overlay" id="tool-guide-overlay">
+    <div class="tool-guide-modal">
+        <button type="button" class="tool-guide-close" id="tool-guide-close">✕</button>
+        <% GUIDES.forEach((guide, gi) => { %>
+        <div class="tool-guide-content" id="guide-content-<%= guide.id %>" style="<%= gi === 0 ? '' : 'display:none;' %>">
+            <h2 data-i18n="connectTools.guides.<%= guide.id %>.title"><%= guide.icon %> <%= guide.label || tools.find(t => t.id === guide.id)?.label || guide.id %> — comment se connecter</h2>
+            <p class="sub" data-i18n="connectTools.guides.<%= guide.id %>.subtitle">Suis ces étapes pour connecter cet outil à SAMII.</p>
+
+            <% guide.steps.forEach((step, si) => { %>
+            <div class="tool-guide-step">
+                <div class="tool-guide-step__num"><%= si + 1 %></div>
+                <div class="tool-guide-step__body">
+                    <h3 data-i18n="connectTools.guides.<%= guide.id %>.step<%= si + 1 %>.title"><%= step.title %></h3>
+                    <p data-i18n="connectTools.guides.<%= guide.id %>.step<%= si + 1 %>.desc"><%= step.desc %></p>
+                    <% if (step.path) { %>
+                    <div class="tool-guide-step__path">
+                        <% step.path.forEach((p, pi) => { %>
+                            <% if (pi > 0) { %><i data-lucide="chevron-right"></i><% } %>
+                            <span><%= p %></span>
+                        <% }) %>
+                    </div>
+                    <% } %>
+                    <% if (step.scopes) { %>
+                    <div class="tool-guide-scopes">
+                        <% step.scopes.forEach(s => { %><span><%= s %></span><% }) %>
+                    </div>
+                    <% } %>
                 </div>
             </div>
-        </div>
+            <% }) %>
 
-        <div class="shopify-guide-step">
-            <div class="shopify-guide-step__num">2</div>
-            <div class="shopify-guide-step__body">
-                <h3>Développe une app</h3>
-                <p>En haut à droite, clique sur <b>« Développer des apps »</b>, puis <b>« Créer une app »</b>. Donne-lui un nom, par exemple « SAMII OS ».</p>
-            </div>
+            <% if (guide.warn) { %>
+            <div class="tool-guide-warn" data-i18n="connectTools.guides.<%= guide.id %>.warn">⚠️ <%= guide.warn %></div>
+            <% } %>
         </div>
-
-        <div class="shopify-guide-step">
-            <div class="shopify-guide-step__num">3</div>
-            <div class="shopify-guide-step__body">
-                <h3>Configure les permissions</h3>
-                <p>Dans l'onglet <b>« Configuration »</b>, clique sur <b>« Configurer »</b> sous « Admin API integration », puis coche ces permissions (lecture + écriture) :</p>
-                <div class="shopify-guide-scopes">
-                    <span>Produits</span><span>Commandes</span><span>Clients</span>
-                    <span>Inventaire</span><span>Expédition</span><span>Exécution des commandes</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="shopify-guide-step">
-            <div class="shopify-guide-step__num">4</div>
-            <div class="shopify-guide-step__body">
-                <h3>Installe l'app</h3>
-                <p>Sauvegarde, va dans l'onglet <b>« Identifiants API »</b>, puis clique sur <b>« Installer l'app »</b> en haut à droite (confirme l'installation).</p>
-            </div>
-        </div>
-
-        <div class="shopify-guide-step">
-            <div class="shopify-guide-step__num">5</div>
-            <div class="shopify-guide-step__body">
-                <h3>Copie ton token</h3>
-                <p>Toujours dans « Identifiants API », sous <b>« Admin API access token »</b>, clique sur <b>« Révéler le token une fois »</b> et copie-le immédiatement — Shopify ne le réaffichera plus jamais.</p>
-            </div>
-        </div>
-
-        <div class="shopify-guide-warn">
-            ⚠️ Ce token donne accès à ta boutique — ne le partage qu'avec SAMII, et si tu le perds, réinstalle l'app pour en générer un nouveau.
-        </div>
+        <% }) %>
     </div>
 </div>
 
@@ -374,6 +433,7 @@
     window.OG_WORKSPACE_ID = "<%= workspaceId %>";
 </script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="/js/i18n.js"></script>
 <script src="/js/connect-tools.js?v=2"></script>
 
 </body>

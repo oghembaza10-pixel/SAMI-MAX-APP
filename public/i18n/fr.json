@@ -279,5 +279,212 @@
     "heroTitle2": "Achetez.",
     "heroTitle3": "Connectez.",
     "emptyTitle": "Aucun produit trouvé"
+  },
+  "connectTools": {
+    "eyebrow": "OG Technology",
+    "title": "Connecter mes outils",
+    "subtitle": "Connectez vos plateformes. SAMII les utilisera automatiquement.",
+    "createShop": {
+      "title": "🏪 Créer ma boutique en un clic",
+      "desc": "Connecte ta boutique WooCommerce — SAMII branche automatiquement tes commandes, ton QG et ton suivi en temps réel.",
+      "btn": "Créer ma boutique →"
+    },
+    "status": {
+      "connectedSync": "🟡 Connecté · bientôt synchronisé",
+      "connected": "✅ Connecté",
+      "soon": "⏳ Bientôt",
+      "off": "🔴 Non connecté"
+    },
+    "soonText": "Disponible prochainement",
+    "disconnect": "Déconnecter",
+    "guideBtn": "📖 Comment se connecter ?",
+    "shopifyForm": {
+      "connectBtn": "Connecter Shopify →",
+      "tokenToggle": "Pas de bouton d'installation chez toi ? Connecte-toi avec un token →",
+      "tokenBtn": "Connecter avec le token →",
+      "tokenGuideBtn": "📖 Comment obtenir mon token ?"
+    },
+    "telegramForm": {
+      "connectBtn": "Connecter Telegram →"
+    },
+    "woocommerceForm": {
+      "connectBtn": "Connecter WooCommerce →"
+    },
+    "ccpForm": {
+      "connectBtn": "Connecter CCP →"
+    },
+    "discordForm": {
+      "connectBtn": "Connecter Discord →"
+    },
+    "transporteurForm": {
+      "connected": "🟢 Clé perso active"
+    },
+    "footerHint": "Vous pourrez connecter d'autres outils depuis votre QG à tout moment.",
+    "continue": {
+      "samii": "← Retour à SAMII",
+      "hub": "← Retour au Hub",
+      "qg": "Continuer vers mon QG →"
+    },
+    "guides": {
+      "shopify": {
+        "title": "🛍️ Shopify — comment se connecter",
+        "subtitle": "5 minutes, directement depuis l'admin de ta boutique — aucune validation externe requise.",
+        "step1": {
+          "title": "Ouvre les réglages de ta boutique",
+          "desc": "Connecte-toi sur ton admin Shopify, puis va dans : Paramètres → Apps et canaux de vente."
+        },
+        "step2": {
+          "title": "Développe une app",
+          "desc": "En haut à droite, clique sur « Développer des apps », puis « Créer une app ». Donne-lui un nom, par exemple « SAMII OS »."
+        },
+        "step3": {
+          "title": "Configure les permissions",
+          "desc": "Dans l'onglet « Configuration », clique sur « Configurer » sous « Admin API integration », puis coche ces permissions (lecture + écriture) : Produits, Commandes, Clients, Inventaire, Expédition, Exécution des commandes."
+        },
+        "step4": {
+          "title": "Installe l'app",
+          "desc": "Sauvegarde, va dans l'onglet « Identifiants API », puis clique sur « Installer l'app » en haut à droite (confirme l'installation)."
+        },
+        "step5": {
+          "title": "Copie ton token",
+          "desc": "Toujours dans « Identifiants API », sous « Admin API access token », clique sur « Révéler le token une fois » et copie-le immédiatement — Shopify ne le réaffichera plus jamais."
+        },
+        "warn": "Ce token donne accès à ta boutique — ne le partage qu'avec SAMII, et si tu le perds, réinstalle l'app pour en générer un nouveau."
+      },
+      "whatsapp": {
+        "title": "💬 WhatsApp Business — comment se connecter",
+        "subtitle": "Suis ces étapes pour connecter cet outil à SAMII.",
+        "step1": {
+          "title": "Crée un compte Green API",
+          "desc": "Va sur green-api.com et crée un compte gratuit."
+        },
+        "step2": {
+          "title": "Crée une instance WhatsApp",
+          "desc": "Dans ton tableau de bord, clique sur « Create instance », choisis « WhatsApp »."
+        },
+        "step3": {
+          "title": "Scanne le QR code",
+          "desc": "Depuis WhatsApp sur ton téléphone (Paramètres → Appareils connectés), scanne le QR code affiché pour lier ton numéro."
+        },
+        "step4": {
+          "title": "Copie tes identifiants",
+          "desc": "Copie l'« ID Instance » et le « API Token » affichés dans ton tableau de bord, puis colle-les dans le formulaire de connexion."
+        },
+        "warn": "Ces identifiants donnent accès à ton compte WhatsApp — ne les partage qu'avec SAMII."
+      },
+      "telegram": {
+        "title": "✈️ Telegram — comment se connecter",
+        "subtitle": "Suis ces étapes pour connecter cet outil à SAMII.",
+        "step1": {
+          "title": "Ouvre le bot SAMII",
+          "desc": "Cherche @SAMII_OGBot sur Telegram, ou clique sur t.me/SAMII_OGBot."
+        },
+        "step2": {
+          "title": "Envoie la commande /id",
+          "desc": "Le bot te répond immédiatement avec ton Chat ID personnel."
+        },
+        "step3": {
+          "title": "Copie le Chat ID",
+          "desc": "Colle ce numéro dans le champ « Votre Chat ID Telegram » ci-dessus pour connecter Telegram."
+        }
+      },
+      "meta": {
+        "title": "📘 Facebook / Instagram — comment se connecter",
+        "subtitle": "Suis ces étapes pour connecter cet outil à SAMII.",
+        "step1": {
+          "title": "Clique sur « Continuer avec Facebook/Instagram »",
+          "desc": "Tu seras redirigé vers la page de connexion Meta."
+        },
+        "step2": {
+          "title": "Connecte-toi et autorise SAMII",
+          "desc": "Choisis la page ou le compte à connecter, puis accepte les permissions demandées."
+        },
+        "step3": {
+          "title": "C'est fait",
+          "desc": "Tu reviens automatiquement sur cette page — ta carte affiche désormais « Connecté »."
+        }
+      },
+      "woocommerce": {
+        "title": "🛒 WooCommerce — comment se connecter",
+        "subtitle": "Suis ces étapes pour connecter cet outil à SAMII.",
+        "step1": {
+          "title": "Clique sur « Créer ma boutique »",
+          "desc": "SAMII te redirige vers ton propre site WordPress/WooCommerce."
+        },
+        "step2": {
+          "title": "Autorise l'accès",
+          "desc": "Connecte-toi à ton admin WooCommerce si besoin, puis clique sur « Approve » pour autoriser SAMII."
+        },
+        "step3": {
+          "title": "Retour automatique",
+          "desc": "Tu reviens sur SAMII — tes commandes, produits et stock se synchronisent automatiquement."
+        }
+      },
+      "ccp": {
+        "title": "🏦 CCP — comment se connecter",
+        "subtitle": "Suis ces étapes pour connecter cet outil à SAMII.",
+        "step1": {
+          "title": "Munis-toi de ton relevé CCP",
+          "desc": "Titulaire du compte, numéro de compte, et clé (les 2 derniers chiffres)."
+        },
+        "step2": {
+          "title": "Remplis le formulaire",
+          "desc": "Renseigne ces informations sur la page de connexion CCP."
+        },
+        "step3": {
+          "title": "Vérification",
+          "desc": "Notre équipe vérifie et active ton compte avant que les paiements ne commencent à arriver."
+        },
+        "warn": "Ces informations servent uniquement à recevoir tes paiements — elles ne sont jamais partagées."
+      },
+      "discord": {
+        "title": "🎮 Discord — comment se connecter",
+        "subtitle": "Suis ces étapes pour connecter cet outil à SAMII.",
+        "step1": {
+          "title": "Crée une application Discord",
+          "desc": "Va sur le Discord Developer Portal (discord.com/developers/applications), clique sur « New Application »."
+        },
+        "step2": {
+          "title": "Ajoute un bot",
+          "desc": "Dans l'onglet « Bot », clique sur « Add Bot », puis « Reset Token » pour générer ton token."
+        },
+        "step3": {
+          "title": "Invite le bot sur ton serveur",
+          "desc": "Dans « OAuth2 → URL Generator », coche « bot », puis utilise le lien généré pour l'ajouter à ton serveur."
+        },
+        "step4": {
+          "title": "Copie le token",
+          "desc": "Colle le token du bot et le nom de ton serveur dans le formulaire de connexion."
+        }
+      },
+      "transporteur": {
+        "title": "🚚 Transporteurs & messagerie — comment se connecter",
+        "subtitle": "Suis ces étapes pour connecter cet outil à SAMII.",
+        "step1": {
+          "title": "Connecte-toi à ton compte",
+          "desc": "Sur le site de ton transporteur ou de ta messagerie (Yalidine, DHL, WhatsApp Business...)."
+        },
+        "step2": {
+          "title": "Récupère ta clé API",
+          "desc": "Cherche dans les paramètres « API » ou « Développeur » de ton compte."
+        },
+        "step3": {
+          "title": "Colle-la ici",
+          "desc": "SAMII l'utilise pour créer et suivre tes livraisons ou tes messages automatiquement."
+        }
+      },
+      "impression": {
+        "title": "⏳ Synchronisation à venir — comment se connecter",
+        "subtitle": "Suis ces étapes pour connecter cet outil à SAMII.",
+        "step1": {
+          "title": "Cette synchronisation arrive bientôt",
+          "desc": "SAMII pourra bientôt se connecter automatiquement à cet outil."
+        },
+        "step2": {
+          "title": "En attendant",
+          "desc": "Tu peux continuer à l'utiliser normalement, rien ne change de ton côté."
+        }
+      }
+    }
   }
 }

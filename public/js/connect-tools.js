@@ -160,13 +160,14 @@ document.querySelectorAll(".connect-inline-form").forEach(form => {
                                 🟢 ${value}
                             </p>
                             <button class="connect-btn connect-btn--disconnect"
-                                    data-tool="${toolId}" data-action="disconnect">
+                                    data-tool="${toolId}" data-action="disconnect" data-i18n="connectTools.disconnect">
                                 Déconnecter
                             </button>
                         `;
                         // Rebind disconnect
                         body.querySelector("[data-action='disconnect']")
                             ?.addEventListener("click", handleDisconnect);
+                        if (typeof Language !== "undefined") Language.translate();
                     }
                 } else {
                     showError(data.error || "Erreur. Réessayez.");
@@ -231,17 +232,22 @@ if (shopifyTokenToggle && shopifyTokenForm) {
     });
 }
 
-// ── Shopify : guide "comment obtenir mon token" ──────────
-const shopifyGuideOverlay = document.getElementById("shopify-guide-overlay");
-const shopifyGuideToggle  = document.getElementById("shopify-guide-toggle");
-const shopifyGuideClose   = document.getElementById("shopify-guide-close");
-if (shopifyGuideOverlay && shopifyGuideToggle) {
-    shopifyGuideToggle.addEventListener("click", () => {
-        shopifyGuideOverlay.classList.add("open");
-        if (typeof lucide !== "undefined") lucide.createIcons();
+// ── Guides "Comment se connecter ?" (multi-outils) ────────
+const toolGuideOverlay = document.getElementById("tool-guide-overlay");
+const toolGuideClose   = document.getElementById("tool-guide-close");
+if (toolGuideOverlay) {
+    document.querySelectorAll("[data-guide]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const guideId = btn.dataset.guide;
+            document.querySelectorAll(".tool-guide-content").forEach(el => {
+                el.style.display = el.id === `guide-content-${guideId}` ? "block" : "none";
+            });
+            toolGuideOverlay.classList.add("open");
+            if (typeof lucide !== "undefined") lucide.createIcons();
+        });
     });
-    shopifyGuideClose?.addEventListener("click", () => shopifyGuideOverlay.classList.remove("open"));
-    shopifyGuideOverlay.addEventListener("click", (e) => {
-        if (e.target === shopifyGuideOverlay) shopifyGuideOverlay.classList.remove("open");
+    toolGuideClose?.addEventListener("click", () => toolGuideOverlay.classList.remove("open"));
+    toolGuideOverlay.addEventListener("click", (e) => {
+        if (e.target === toolGuideOverlay) toolGuideOverlay.classList.remove("open");
     });
 }
