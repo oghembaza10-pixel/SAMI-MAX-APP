@@ -1,69 +1,69 @@
 // ======================================================
-// SAMII OS
-// MEMORY
+// SAMII OS — MEMORY (état conversation par contact)
 // ======================================================
+// Persistée en Postgres (table memoire_sessions) — avant cette version,
+// c'était un simple objet JS en RAM : tout était perdu à chaque redémarrage
+// du serveur (déploiement, crash...), et un même client repartait de zéro
+// selon le processus qui traitait sa requête. Ici, un client garde son
+// historique tant qu'on ne l'efface pas explicitement (clear), peu importe
+// les redémarrages.
+const db = require("../services/db");
 
-module.exports = `
+// Cache en mémoire (par processus) pour éviter une lecture DB à chaque
+// message d'une même conversation qui s'enchaîne rapidement — la DB reste
+// la source de vérité, ce cache n'est qu'une accélération locale.
+const cache = new Map();
 
-MÉMOIRE
+async function get(key) {
+    if (cache.has(key)) return cache.get(key);
 
-Tu possèdes une mémoire évolutive.
+    try {
+        const rows = await db.query(
+            `SELECT lang, history FROM memoire_sessions WHERE session_key = $1`,
+            [key]
+        );
+        if (!rows[0]) return null;
 
-Tu retiens uniquement les informations utiles.
+        const history = typeof rows[0].history === "string"
+            ? JSON.parse(rows[0].history)
+            : (rows[0].history || []);
 
-Tu évites de mémoriser les détails sans importance.
-
-Tu peux mémoriser :
-
-• le prénom
-• le grade
-• la langue
-• le métier
-• les objectifs
-• les préférences
-• les projets
-• les habitudes de travail
-• les boutiques
-• les marques
-• les APIs connectées
-• les modules actifs
-• les abonnements
-• les décisions importantes
-
-Tu oublies volontairement les informations temporaires lorsqu'elles ne sont plus utiles.
-
-Chaque nouvelle information doit enrichir ta compréhension de l'utilisateur.
-
-Tu utilises toujours la mémoire pour personnaliser tes réponses.
-
-Lorsque plusieurs souvenirs se contredisent, tu privilégies le plus récent.
-
-Si tu n'es pas certain qu'un souvenir soit encore valable, tu demandes une confirmation.
-
-Lorsque la mémoire permanente sera connectée, tu utiliseras les Tables FI comme mémoire principale.
-
-Tu considères la mémoire comme un outil pour mieux accompagner l'utilisateur, jamais pour le surveiller.
-
-Ton objectif est d'éviter à l'utilisateur de répéter les mêmes informations.
-
-`;
-// ======================================================
-// SAMII OS — MEMORY (état conversation par chatId)
-// ======================================================
-
-const sessions = {};
-
-function get(chatId) {
-    return sessions[chatId] || null;
+        const data = { lang: rows[0].lang || undefined, history };
+        cache.set(key, data);
+        return data;
+    } catch (err) {
+        console.error("❌ memory.get :", err.message);
+        return null;
+    }
 }
 
-function set(chatId, data) {
-    sessions[chatId] = { ...sessions[chatId], ...data };
+async function set(key, data) {
+    const existing = cache.get(key) || (await get(key)) || {};
+    const merged = { ...existing, ...data };
+    cache.set(key, merged);
+
+    try {
+        await db.query(
+            `
+            INSERT INTO memoire_sessions (session_key, lang, history, updated_at)
+            VALUES ($1, $2, $3, now())
+            ON CONFLICT (session_key)
+            DO UPDATE SET lang = $2, history = $3, updated_at = now()
+            `,
+            [key, merged.lang || null, JSON.stringify(merged.history || [])]
+        );
+    } catch (err) {
+        console.error("❌ memory.set :", err.message);
+    }
 }
 
-function clear(chatId) {
-    delete sessions[chatId];
+async function clear(key) {
+    cache.delete(key);
+    try {
+        await db.query(`DELETE FROM memoire_sessions WHERE session_key = $1`, [key]);
+    } catch (err) {
+        console.error("❌ memory.clear :", err.message);
+    }
 }
 
 module.exports = { get, set, clear };
-

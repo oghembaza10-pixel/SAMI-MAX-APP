@@ -133,7 +133,7 @@ router.post("/webhook/meta", async (req, res) => {
                 socketService.emitToShop(workspaceId, `${canal}.message`, { senderId, message: text });
 
                 const key = `${canal}_${senderId}`;
-                const session = memory.get(key) || {};
+                const session = await memory.get(key) || {};
                 const conversation = session.history || [];
 
                 const metier = await getMetierWorkspace(workspaceId);
@@ -146,8 +146,8 @@ router.post("/webhook/meta", async (req, res) => {
 
                 await meta.sendMessage(config.pageAccessToken, senderId, geminiReply);
 
-                const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-16);
-                memory.set(key, { ...session, history: nextHistory });
+                const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-60);
+                await memory.set(key, { ...session, history: nextHistory });
             }
 
             // ── Commentaires publics (posts) + avis de Page ────────────────

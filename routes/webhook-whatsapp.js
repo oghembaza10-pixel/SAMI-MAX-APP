@@ -103,7 +103,7 @@ router.post("/", async (req, res) => {
         // (prise de rendez-vous, commande, questions...), via function-calling Gemini,
         // au lieu d'un parcours pas-à-pas figé par métier.
         const key      = sessionKey(sender);
-        const session  = memory.get(key) || {};
+        const session  = await memory.get(key) || {};
         const conversation = session.history || [];
 
         const metier   = await getMetierWorkspace(workspaceId);
@@ -115,8 +115,8 @@ router.post("/", async (req, res) => {
         }, conversation);
         await reply(sender, workspaceId, geminiReply);
 
-        const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-16);
-        memory.set(key, { ...session, history: nextHistory });
+        const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-60);
+        await memory.set(key, { ...session, history: nextHistory });
 
     } catch (err) {
         console.error("❌ Webhook WhatsApp :", err.message);

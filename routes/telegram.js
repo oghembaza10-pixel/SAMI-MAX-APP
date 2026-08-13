@@ -162,7 +162,7 @@ router.post("/", async (req, res) => {
             const cb = body.callback_query;
             const chatId = cb.message.chat.id;
             const data = cb.data || "";
-            const lang = memory.get(chatId)?.lang || "fr";
+            const lang = (await memory.get(chatId))?.lang || "fr";
 
             await axios.post(`${BASE}/answerCallbackQuery`, { callback_query_id: cb.id, text: "⚙️ SAMII..." });
 
@@ -208,12 +208,12 @@ router.post("/", async (req, res) => {
         const text = (message.text || "").trim();
         const name = message.from?.first_name || "Client";
         const langDetectee = detecterLangue(message);
-        const lang = memory.get(chatId)?.lang || langDetectee;
+        const lang = (await memory.get(chatId))?.lang || langDetectee;
 
         console.log(`📨 Telegram [${name}] (${lang}) : ${text}`);
 
         if (text.startsWith("/start")) {
-            memory.clear(chatId);
+            await memory.clear(chatId);
             const param = text.split(" ")[1] || null;
 
             if (param && param.startsWith("admin_")) {
@@ -243,7 +243,7 @@ router.post("/", async (req, res) => {
         const metier   = await getMetierWorkspace(workspaceId);
         const produits = workspaceId ? await getProduitsDuWorkspace(workspaceId) : [];
 
-        const session      = memory.get(chatId) || {};
+        const session      = await memory.get(chatId) || {};
         const conversation = session.history || [];
 
         await orchestrator.process({ type: "telegram.message", shop: "", payload: { chatId, text, message } });
@@ -253,8 +253,8 @@ router.post("/", async (req, res) => {
         }, conversation);
         await reply(chatId, geminiReply);
 
-        const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-16);
-        memory.set(chatId, { ...session, lang, history: nextHistory });
+        const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-60);
+        await memory.set(chatId, { ...session, lang, history: nextHistory });
     } catch (err) {
         console.error("❌ Telegram webhook :", err.message);
     }
