@@ -3,62 +3,22 @@
  * Décideur central — exécute les automatisations
  */
 
-const axios              = require("axios");
-const airtable           = require("../services/airtable");
+const db                 = require("../services/db");
 const settingsService    = require("../services/settingsService");
 const journalService     = require("../services/journalService");
 const notificationEngine = require("./notificationEngine");
 const sovereignEngine    = require("./sovereignEngine");
 
-// ── AIRTABLE ──────────────────────────────────────────────────
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_COMMANDES  = process.env.TABLE_COMMANDES || "Commandes";
-
+// Écrivait auparavant dans une table Airtable "Commandes" qui n'est plus la
+// source réelle — les commandes vivent dans Postgres (voir engines/
+// commerceEngine.js pour le chemin de création/confirmation principal).
 async function updateStatutCommande(orderId, statut) {
     try {
-        const headers = {
-            Authorization : `Bearer ${AIRTABLE_API_KEY}`,
-            "Content-Type": "application/json",
-        };
-        const search = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_COMMANDES}`,
-            {
-                headers,
-                params: { filterByFormula: `{ID Commande}="${orderId}"` }
-            }
-        );
-        const record = search.data.records[0];
-        if (!record) return console.warn(`⚠️ Commande ${orderId} introuvable`);
-
-        await axios.patch(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_COMMANDES}/${record.id}`,
-            { fields: { Statut: statut } },
-            { headers }
-        );
-        console.log(`✅ Airtable → Commande ${orderId} : ${statut}`);
+        const rows = await db.query(`UPDATE commandes SET statut = $1 WHERE id = $2 RETURNING id`, [statut, orderId]);
+        if (!rows[0]) return console.warn(`⚠️ Commande ${orderId} introuvable`);
+        console.log(`✅ Commande ${orderId} : ${statut}`);
     } catch (err) {
         console.error("❌ updateStatutCommande :", err.message);
-    }
-}
-
-// ── SAVE COMMANDE ─────────────────────────────────────────────
-async function saveCommande(e) {
-    const p = e.payload;
-    try {
-        await airtable.create("COMMANDES", {
-            "nom client"   : `${p.customer?.first_name || ""} ${p.customer?.last_name || ""}`.trim() || "Inconnu",
-            "Boutique"     : e.shop || "",
-            "Téléphone"    : p.customer?.phone || p.billing_address?.phone || "",
-            "ID Commande"  : String(p.order_number || p.id || ""),
-            "Produit"      : (p.line_items || []).map(i => i.title).join(", ") || "—",
-            "Statut"       : "en attente",
-            "Date Commande": new Date().toISOString(),
-            "montant"      : parseFloat(p.total_price || 0),
-        });
-        console.log(`✅ Commande #${p.order_number} sauvegardée dans Airtable`);
-    } catch (err) {
-        console.error("❌ saveCommande :", err.message);
     }
 }
 

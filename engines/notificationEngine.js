@@ -5,7 +5,8 @@
  * ============================================================
  */
 
-const airtable = require("../services/airtable");
+const db = require("../services/db");
+const workspaceService = require("../services/workspaceService");
 
 // ── HANDLERS ─────────────────────────────────────────
 const handlers = {};
@@ -16,15 +17,33 @@ function register(channel, handler) {
 }
 
 // ── RÉCUPÉRER LES COORDONNÉES DE LA BOUTIQUE ──────────
+// Lisait auparavant une table Airtable "BOUTIQUES" avec des champs
+// (telegram_chat_id, whatsapp_phone...) qui n'ont jamais existé côté
+// Postgres — cette résolution automatique échouait donc toujours en
+// silence. Le chatId Telegram du marchand est le seul de ces trois
+// canaux réellement stocké aujourd'hui (table connecteurs, posé par
+// /telegram start admin_<workspaceId>) ; whatsapp_phone n'a pas
+// d'équivalent existant (la config WhatsApp du marchand ne contient que
+// les identifiants Green API d'envoi, pas un numéro de notification) —
+// mieux vaut renvoyer vide que d'inventer un champ fictif.
 async function getCoords(shop) {
     try {
-        const boutique = await airtable.getBoutique(shop);
-        const fields   = boutique?.fields || {};
+        const [connecteur, workspace] = await Promise.all([
+            db.query(`SELECT config FROM connecteurs WHERE type = 'telegram' AND workspace_id = $1 AND actif = true LIMIT 1`, [shop]),
+            workspaceService.getById(shop),
+        ]);
+
+        let telegramChatId = "";
+        if (connecteur[0]?.config) {
+            const config = typeof connecteur[0].config === "string" ? JSON.parse(connecteur[0].config) : connecteur[0].config;
+            telegramChatId = config?.chatId || "";
+        }
+
         return {
-            telegram : fields.telegram_chat_id || "",
-            whatsapp : fields.whatsapp_phone   || "",
-            email    : fields.email            || "",
-            canal    : fields.canal            || "telegram",
+            telegram : telegramChatId,
+            whatsapp : "",
+            email    : workspace?.owner || "",
+            canal    : "telegram",
         };
     } catch (err) {
         console.error("❌ getCoords :", err.message);
@@ -46,24 +65,16 @@ async function send({ channel, to, message, data = {}, shop = "" }) {
 
         console.log(`📤 Notification → [${channel}] : ${message}`);
 
-        // 1. Enregistre dans Airtable
-        await airtable.notification(channel, message, shop);
-
-        // 2. Envoie via le bon handler
         if (handlers[channel]) {
             await handlers[channel].send({ to, message, data });
         } else {
             console.warn(`⚠️ Aucun handler pour le canal : ${channel}`);
         }
 
-        // 3. Log
-        await airtable.log(`notification.${channel}`, message, shop);
-
         return { success: true };
 
     } catch (err) {
         console.error(`❌ NotificationEngine [${channel}] :`, err.message);
-        await airtable.log(`error.notification.${channel}`, err.message, shop);
         return { success: false, error: err.message };
     }
 }
@@ -90,7 +101,7 @@ async function broadcast({ channels, recipients = {}, message, data = {}, shop =
 
 // ── SHORTCUTS ────────────────────────────────────────
 async function telegram(chatId, message, shop = "") {
-    // Si chatId vide → auto-résolution depuis Airtable
+    // Si chatId vide → auto-résolution via getCoords (Postgres)
     if (!chatId && shop) {
         const coords = await getCoords(shop);
         chatId = coords.telegram;
