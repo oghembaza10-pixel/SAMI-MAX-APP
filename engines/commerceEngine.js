@@ -5,7 +5,7 @@
  * ============================================================
  */
 const socketService = require("../services/socketService");
-const airtable           = require("../services/airtable");
+const shopifyBoutiqueService = require("../services/shopifyBoutiqueService");
 const notificationEngine = require("../engines/notificationEngine");
 const automationEngine   = require("../engines/automationEngine");
 const db = require("../services/db");
@@ -15,16 +15,15 @@ const notify = require("../services/notify");
 // telegramService capterait un orchestrator encore vide au chargement.
 
 class CommerceEngine {
-    // ── HELPER : Boutique ────────────────────────────────────
-    async getBoutique(shop) {
-        return await airtable.findOne("BOUTIQUES", `{shop_url} = "${shop}"`);
-    }
-
     // ── HELPER : workspace_id réel à partir du shop Shopify ──
+    // Le "shop" Shopify (ex: monshop.myshopify.com) n'est pas directement le
+    // workspaceId SAMII — retrouve le workspace lié (voir
+    // services/shopifyBoutiqueService.js), avec repli sur "shop" tel quel
+    // pour les événements qui passent déjà un vrai workspaceId (chat, RDV...).
     async getWorkspaceIdForShop(shop) {
         try {
-            const boutique = await this.getBoutique(shop);
-            return boutique?.fields?.workspace_id || shop;
+            const workspace = await shopifyBoutiqueService.findByShopUrl(shop);
+            return workspace?.id || shop;
         } catch {
             return shop;
         }
@@ -43,20 +42,17 @@ class CommerceEngine {
 
     // ── HELPER : Notifie la boutique ─────────────────────────
     async notifyShop(shop, recipients, message) {
-        const boutique = await this.getBoutique(shop);
-        const chatId   = boutique?.fields?.telegram_chat_id;
-        const actif    = boutique?.fields?.telegram_actif;
-        const isActif = actif === true || actif === "true" || actif === 1;
+        const coords = await notificationEngine.getCoords(shop);
 
         const channels = [];
-        if (isActif && chatId) channels.push("telegram");
+        if (coords.telegram) channels.push("telegram");
         if (recipients?.whatsapp) channels.push("whatsapp");
         if (!channels.length) return;
 
         return notificationEngine.broadcast({
             channels,
             recipients: {
-                telegram : chatId,
+                telegram : coords.telegram,
                 whatsapp : recipients?.whatsapp || "",
                 email    : recipients?.email    || "",
             },
@@ -89,19 +85,16 @@ class CommerceEngine {
                     : "Premier achat avec montant important";
             }
             const workspaceId = await this.getWorkspaceIdForShop(shop);
+            const orderId = `SHOPIFY-${order.order_number || order.id}`;
 
-            await airtable.create("COMMANDES", {
-                "ID Commande"   : String(order.order_number || order.id),
-                "nom client"    : client,
-                "Téléphone"     : phone,
-                "Produit"       : order.line_items?.map(i => i.title).join(", ") || "",
-                "Statut"        : "en attente",
-                "Boutique"      : workspaceId,
-                "Date Commande" : order.created_at || new Date().toISOString(),
-                "montant"       : String(parseFloat(order.total_price || 0)),
-            });
+            await db.query(
+                `INSERT INTO commandes (id, workspace_id, nom_client, telephone, adresse, produit, statut, source, montant, date_commande)
+                 VALUES ($1, $2, $3, $4, $5, $6, 'en attente', 'shopify', $7, $8)
+                 ON CONFLICT (id) DO NOTHING`,
+                [orderId, workspaceId, client, phone, address, order.line_items?.map(i => i.title).join(", ") || "",
+                 parseFloat(order.total_price || 0), order.created_at || new Date().toISOString()]
+            );
 
-            await airtable.log("order.created", `#${order.order_number} — ${client}`, shop);
             await automationEngine.run("order.created", { shop, payload: order });
 
             const message =
@@ -127,7 +120,6 @@ class CommerceEngine {
                     `🚩 *Raison :* ${alerteFraude}\n\n` +
                     `_Vérifiez cette commande avant expédition._`;
                 await this.notifyShop(shop, { whatsapp: phone }, alerteMsg);
-                await airtable.log("fraude.alerte", `#${order.order_number} — ${alerteFraude}`, shop);
             }
 
             socketService.emitToShop(shop, "nouvelle-commande", { id: order.order_number });
@@ -135,7 +127,6 @@ class CommerceEngine {
             return { success: true, shop, orderId: order.id };
         } catch (err) {
             console.error("❌ CommerceEngine.newOrder :", err.message);
-            await airtable.log("error.order.created", err.message);
             return { success: false, error: err.message };
         }
     }
@@ -160,7 +151,6 @@ class CommerceEngine {
                         `Besoin d'aide pour finaliser votre commande ? Répondez-nous, on est là !`;
 
                     await this.notifyShop(shop, { whatsapp: phone }, message);
-                    await airtable.log("sirene.relance.envoyee", `Checkout ${checkout.id}`, shop);
                 } catch (err) {
                     console.warn("⚠️ Sirène relance échouée :", err.message);
                 }
@@ -181,7 +171,6 @@ class CommerceEngine {
             const shop  = event.shop;
             const { client, phone } = this.getClientData(order);
 
-            await airtable.log("order.updated", `#${order.order_number} mise à jour`, shop);
             await automationEngine.run("order.updated", { shop, payload: order });
 
             const message =
@@ -207,7 +196,6 @@ class CommerceEngine {
             const shop  = event.shop;
             const { client, phone } = this.getClientData(order);
 
-            await airtable.log("order.paid", `#${order.order_number} payée`, shop);
             await automationEngine.run("order.paid", { shop, payload: order });
 
             const message =
@@ -236,7 +224,6 @@ class CommerceEngine {
             const tracking = order.fulfillments?.[0]?.tracking_number  || "N/A";
             const carrier  = order.fulfillments?.[0]?.tracking_company || "N/A";
 
-            await airtable.log("order.fulfilled", `#${order.order_number} expédiée`, shop);
             await automationEngine.run("order.fulfilled", { shop, payload: order });
 
             const message =
@@ -263,8 +250,6 @@ class CommerceEngine {
             const shop  = event.shop;
             const { client, phone } = this.getClientData(order);
 
-            await airtable.log("order.delivered", `#${order.order_number} livrée`, shop);
-
             const message =
                 `👑 *SAMII — Livraison confirmée #${order.order_number}*\n\n` +
                 `✅ Colis livré avec succès.\n\n` +
@@ -287,8 +272,6 @@ class CommerceEngine {
                         message: reviewMessage,
                         shop,
                     });
-
-                    await airtable.log("sentinelle.avis.envoyee", `#${order.order_number} — ${client}`, shop);
                 } catch (avisErr) {
                     console.warn("⚠️ Sentinelle Avis non envoyée :", avisErr.message);
                 }
@@ -310,7 +293,6 @@ class CommerceEngine {
             const shop  = event.shop;
             const { client, phone } = this.getClientData(order);
 
-            await airtable.log("order.cancelled", `#${order.order_number} annulée`, shop);
             await automationEngine.run("order.cancelled", { shop, payload: order });
 
             const message =
@@ -461,7 +443,6 @@ class CommerceEngine {
     async lowStock(event) {
         try {
             const { product, variant, shop } = event.payload;
-            await airtable.log("stock.low", `Stock faible — ${product} : ${variant}`, shop);
             await automationEngine.run("stock.low", { shop, payload: event.payload });
 
             const message =
@@ -485,7 +466,6 @@ class CommerceEngine {
     async stockEmpty(event) {
         try {
             const { product, shop } = event.payload;
-            await airtable.log("stock.empty", `Stock épuisé — ${product}`, shop);
 
             const message =
                 `👑 *SAMII — Stock ÉPUISÉ*\n\n` +
@@ -507,17 +487,14 @@ class CommerceEngine {
     async yalidineStatus(event) {
         try {
             const { orderId, status, tracking, shop } = event.payload;
-            await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
-                "Statut": status
-            });
-            await airtable.log("yalidine.status", `#${orderId} → ${status}`, shop);
+            await db.query(`UPDATE commandes SET statut = $1 WHERE id = $2`, [status, orderId]);
 
             const message =
                 `👑 *SAMII — Yalidine #${orderId}*\n\n` +
                 `✅ Statut mis à jour automatiquement.\n\n` +
                 `📊 *Nouveau statut :* ${status}\n` +
                 `🔍 *Tracking :* ${tracking || "N/A"}\n\n` +
-                `_Airtable synchronisé._`;
+                `_Statut synchronisé._`;
 
             await this.notifyShop(shop, {}, message);
             return { success: true, shop, orderId };
@@ -533,10 +510,7 @@ class CommerceEngine {
     async yalidineDelivered(event) {
         try {
             const { orderId, client, phone, shop } = event.payload;
-            await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
-                "Statut": "livrée"
-            });
-            await airtable.log("yalidine.delivered", `#${orderId} livrée`, shop);
+            await db.query(`UPDATE commandes SET statut = 'livrée' WHERE id = $1`, [orderId]);
 
             const message =
                 `👑 *SAMII — Livraison Yalidine #${orderId}*\n\n` +
@@ -558,16 +532,13 @@ class CommerceEngine {
     async yalidineReturned(event) {
         try {
             const { orderId, reason, shop } = event.payload;
-            await airtable.updateWhere("COMMANDES", `{ID Commande} = "${orderId}"`, {
-                "Statut": "retournée"
-            });
-            await airtable.log("yalidine.returned", `#${orderId} retournée`, shop);
+            await db.query(`UPDATE commandes SET statut = 'retournée' WHERE id = $1`, [orderId]);
 
             const message =
                 `👑 *SAMII — Retour Yalidine #${orderId}*\n\n` +
                 `🔄 Colis retourné — statut mis à jour.\n\n` +
                 `💬 *Raison :* ${reason || "Non précisée"}\n\n` +
-                `_Airtable synchronisé._`;
+                `_Statut synchronisé._`;
 
             await this.notifyShop(shop, {}, message);
             return { success: true, shop, orderId };

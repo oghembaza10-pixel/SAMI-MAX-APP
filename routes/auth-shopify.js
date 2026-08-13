@@ -7,14 +7,10 @@ const crypto = require("crypto");
 const router = express.Router();
 const orchestrator = require("../brain/orchestrator");
 const E = require("../brain/events");
-const workspaceService = require("../services/workspaceService");
+const shopifyBoutiqueService = require("../services/shopifyBoutiqueService");
 
 const API_KEY = process.env.SHOPIFY_API_KEY;
 const API_SECRET = process.env.SHOPIFY_API_SECRET;
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_BOUTIQUES = process.env.TABLE_BOUTIQUES;
-const TABLE_USERS = process.env.TABLE_USERS || "UTILISATEURS";
 
 const APP_URL = "https://samii.souverain-store.com";
 const REDIRECT_URI = `${APP_URL}/auth/shopify/callback`;
@@ -43,11 +39,6 @@ function verifyHmac(query) {
     return crypto.timingSafeEqual(Buffer.from(generatedHash), Buffer.from(hmac));
 }
 
-const airtableHeaders = () => ({
-    Authorization : `Bearer ${AIRTABLE_API_KEY}`,
-    "Content-Type": "application/json",
-});
-
 async function exchangeCodeForToken(shop, code) {
     const { data } = await axios.post(`https://${shop}/admin/oauth/access_token`, {
         client_id: API_KEY, client_secret: API_SECRET, code, expiring: 1,
@@ -63,115 +54,31 @@ async function refreshAccessToken(shop, refreshToken) {
 }
 
 async function getFreshAccessToken(shop) {
-    const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}?filterByFormula={shop_url}="${shop}"`;
-    const search = await axios.get(searchUrl, { headers: airtableHeaders() });
-    const record = search.data.records[0];
-    if (!record) throw new Error(`Boutique introuvable : ${shop}`);
+    const workspace = await shopifyBoutiqueService.findByShopUrl(shop);
+    if (!workspace) throw new Error(`Boutique introuvable : ${shop}`);
 
-    const f = record.fields;
-    const expiresAt = f.token_expires_at ? new Date(f.token_expires_at) : null;
+    const expiresAt = workspace.shopify_token_expires_at ? new Date(workspace.shopify_token_expires_at) : null;
     // Un token d'app custom (connexion manuelle) n'a pas de date d'expiration : on ne
     // le considère "expirant bientôt" que s'il en a réellement une qui approche.
     const isExpiringSoon = expiresAt ? expiresAt.getTime() - Date.now() < 5 * 60 * 1000 : false;
 
-    if (!isExpiringSoon) return f.access_token;
-    if (!f.refresh_token) throw new Error(`Pas de refresh_token pour ${shop} — réauthentification nécessaire.`);
+    if (!isExpiringSoon) return workspace.shopify_access_token;
+    if (!workspace.shopify_refresh_token) throw new Error(`Pas de refresh_token pour ${shop} — réauthentification nécessaire.`);
 
     console.log(`🔄 Rafraîchissement du token Shopify pour ${shop}...`);
-    const refreshed = await refreshAccessToken(shop, f.refresh_token);
-    const newExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
-    const newRefreshExpiresAt = new Date(Date.now() + refreshed.refresh_token_expires_in * 1000).toISOString();
+    const refreshed = await refreshAccessToken(shop, workspace.shopify_refresh_token);
 
-    await axios.patch(
-        `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}/${record.id}`,
-        { fields: { access_token: refreshed.access_token, refresh_token: refreshed.refresh_token, token_expires_at: newExpiresAt, refresh_token_expires_at: newRefreshExpiresAt } },
-        { headers: airtableHeaders() }
-    );
+    await shopifyBoutiqueService.saveTokens(workspace.id, {
+        accessToken: refreshed.access_token,
+        refreshToken: refreshed.refresh_token,
+        tokenExpiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
+        refreshTokenExpiresAt: new Date(Date.now() + refreshed.refresh_token_expires_in * 1000),
+    });
     return refreshed.access_token;
 }
 
-async function upsertBoutique(shop, tokenData, shopInfo, currentUserEmail) {
-    const headers = airtableHeaders();
-    const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}?filterByFormula={shop_url}="${shop}"`;
-    const search = await axios.get(searchUrl, { headers });
-    const record = search.data.records[0];
-
-    // tokenData.expires_in absent = token d'app custom (connexion manuelle), qui n'expire pas.
-    const tokenExpiresAt = tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : null;
-    const refreshTokenExpiresAt = tokenData.refresh_token_expires_in ? new Date(Date.now() + tokenData.refresh_token_expires_in * 1000).toISOString() : null;
-
-    let workspaceId = record?.fields?.workspace_id || null;
-
-    if (workspaceId) {
-        const existingWorkspace = await workspaceService.getById(workspaceId);
-        if (!existingWorkspace || existingWorkspace.owner !== currentUserEmail) {
-            console.log(`⚠️ Workspace existant (${workspaceId}) n'appartient pas à ${currentUserEmail} — création d'un nouveau.`);
-            workspaceId = null;
-        }
-    }
-
-    if (!workspaceId) {
-        const workspace = await workspaceService.create({
-            workspaceId: `WS-${crypto.randomUUID()}`,
-            owner: currentUserEmail || shopInfo?.email || "",
-            nom: shopInfo?.name || shop,
-            metier: "ecommerce",
-            pays: shopInfo?.country || "DZ",
-            devise: shopInfo?.currency || "",
-            langue: "fr",
-            logo: "",
-        });
-        workspaceId = workspace.workspaceId;
-        console.log(`✅ Workspace créé pour ${shop} : ${workspaceId}`);
-    }
-
-    const fields = {
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        token_expires_at: tokenExpiresAt,
-        refresh_token_expires_at: refreshTokenExpiresAt,
-        workspace_id: workspaceId,
-        status: "actif",
-        date_connexion: new Date().toISOString().split("T")[0],
-        webhooks_actifs: false,
-        nom_boutique: shopInfo?.name || shop,
-        email: shopInfo?.email || "",
-        devise: shopInfo?.currency || "",
-        pays: shopInfo?.country || "",
-        timezone: shopInfo?.iana_timezone || "",
-    };
-
-    if (record) {
-        await axios.patch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}/${record.id}`, { fields }, { headers });
-        console.log(`🔄 Boutique mise à jour : ${shop}`);
-        return { id: record.id, workspaceId, isNew: false };
-    } else {
-        const created = await axios.post(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}`, { fields: { shop_url: shop, scopes: SCOPES, ...fields }}, { headers });
-        console.log(`✅ Nouvelle boutique créée : ${shop}`);
-        return { id: created.data.id, workspaceId, isNew: true };
-    }
-}
-
-async function upsertUser(shop, email) {
-    const headers = airtableHeaders();
-    const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={shop_url}="${shop}"`;
-    const search = await axios.get(searchUrl, { headers });
-    const record = search.data.records[0];
-
-    if (record) {
-        await axios.patch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`, { fields: { derniere_connexion: new Date().toISOString().split("T")[0], actif: true } }, { headers });
-        console.log(`🔄 Utilisateur mis à jour : ${shop}`);
-        return record.id;
-    } else {
-        const created = await axios.post(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}`, { fields: { shop_url: shop, email: email || "", role: "owner", derniere_connexion: new Date().toISOString().split("T")[0], actif: true } }, { headers });
-        console.log(`✅ Utilisateur créé : ${shop}`);
-        return created.data.id;
-    }
-}
-
 async function registerWebhooks(shop, accessToken) {
-    
-const webhooks = ["orders/create", "orders/updated", "orders/paid", "orders/fulfilled", "orders/cancelled", "customers/create", "customers/update", "products/update", "inventory_levels/update", "fulfillments/create", "checkouts/create", "app/uninstalled"];
+    const webhooks = ["orders/create", "orders/updated", "orders/paid", "orders/fulfilled", "orders/cancelled", "customers/create", "customers/update", "products/update", "inventory_levels/update", "fulfillments/create", "checkouts/create", "app/uninstalled"];
     for (const topic of webhooks) {
         try {
             await axios.post(`https://${shop}/admin/api/2026-07/webhooks.json`, { webhook: { topic, address: `${APP_URL}/webhook`, format: "json" } }, { headers: { "X-Shopify-Access-Token": accessToken, "Content-Type": "application/json" } });
@@ -181,13 +88,8 @@ const webhooks = ["orders/create", "orders/updated", "orders/paid", "orders/fulf
         }
     }
 
-    const headers = airtableHeaders();
-    const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}?filterByFormula={shop_url}="${shop}"`;
-    const search = await axios.get(searchUrl, { headers });
-    const recordId = search.data.records[0]?.id;
-    if (recordId) {
-        await axios.patch(`https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}/${recordId}`, { fields: { webhooks_actifs: true } }, { headers });
-    }
+    const workspace = await shopifyBoutiqueService.findByShopUrl(shop);
+    if (workspace) await shopifyBoutiqueService.markWebhooksActifs(workspace.id);
 }
 
 router.get("/auth/shopify", requireAuth, (req, res) => {
@@ -216,8 +118,7 @@ router.get("/auth/shopify/callback", requireAuth, async (req, res) => {
         const shopRes = await axios.get(`https://${shop}/admin/api/2026-07/shop.json`, { headers: { "X-Shopify-Access-Token": tokenData.access_token } });
         const shopInfo = shopRes.data.shop;
 
-        const boutique = await upsertBoutique(shop, tokenData, shopInfo, req.session.email);
-        await upsertUser(shop, shopInfo.email);
+        const boutique = await shopifyBoutiqueService.upsertBoutique(shop, tokenData, shopInfo, req.session.email);
         await registerWebhooks(shop, tokenData.access_token);
 
         await orchestrator.process({ type: E.SHOP_CONNECTED, shop, payload: { accessToken: tokenData.access_token, scopes: SCOPES } });
