@@ -39,6 +39,7 @@ class SamiiPlanner {
                     functionName: result.name,
                     functionArgs: result.args,
                     functionResult,
+                    thoughtSignature: result.thoughtSignature,
                 });
                 return finalReply;
             }

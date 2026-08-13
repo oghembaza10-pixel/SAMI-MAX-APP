@@ -119,6 +119,10 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
                 type: "function_call",
                 name: functionCallPart.functionCall.name,
                 args: functionCallPart.functionCall.args || {},
+                // Requis par gemini-3.6-flash pour renvoyer un functionCall dans
+                // l'historique (voir chatWithFunctionResult) — sans ça, l'appel
+                // suivant échoue en 400 "missing a thought_signature".
+                thoughtSignature: functionCallPart.thoughtSignature || functionCallPart.thought_signature || null,
             };
         }
         const textPart = parts.find(p => p.text);
@@ -166,13 +170,15 @@ async function chatWithSearch({ message, context = {} }) {
     }
 }
 
-async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult }) {
+async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult, thoughtSignature }) {
     try {
         const prompt = await SAMII_PROMPT(message, context);
+        const modelPart = { functionCall: { name: functionName, args: functionArgs } };
+        if (thoughtSignature) modelPart.thoughtSignature = thoughtSignature;
         const body = {
             contents: [
                 { role: "user", parts: [{ text: prompt }] },
-                { role: "model", parts: [{ functionCall: { name: functionName, args: functionArgs } }] },
+                { role: "model", parts: [modelPart] },
                 { role: "user", parts: [{ functionResponse: { name: functionName, response: functionResult } }] },
             ],
             tools: TOOLS,
