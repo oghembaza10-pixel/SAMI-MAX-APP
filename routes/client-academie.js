@@ -3,17 +3,14 @@
 // ==========================================================================
 const express = require("express");
 const router  = express.Router();
-const gemini  = require("../services/geminiService");
-const axios   = require("axios");
+const planner = require("../brain/planner");
+const db      = require("../services/db");
+const samiiMemoire = require("../services/samiiMemoire");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
 }
-
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const TABLE_USERS      = process.env.TABLE_UTILISATEURS || "UTILISATEURS";
 
 const LECONS = [
     { id: 1, icon: "🎯", titre: "Choisir sa niche", sujet: "comment bien choisir sa niche produit pour se lancer en e-commerce, avec des critères concrets" },
@@ -29,11 +26,8 @@ const LECONS = [
 router.get("/", requireAuth, async (req, res) => {
     let leconsFaites = 0;
     try {
-        const search = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={email}="${req.session.email}"`,
-            { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` } }
-        );
-        leconsFaites = search.data.records[0]?.fields?.lecons_ecommerce_faites || 0;
+        const rows = await db.query(`SELECT lecons_ecommerce_faites FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+        leconsFaites = rows[0]?.lecons_ecommerce_faites || 0;
     } catch (err) {
         console.warn("⚠️ Lecture progression technologie :", err.message);
     }
@@ -245,14 +239,11 @@ if (leconsFaites >= totalLecons) {
 
 router.post("/lecon", requireAuth, async (req, res) => {
     try {
-        const search = await axios.get(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}?filterByFormula={email}="${req.session.email}"`,
-            { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` } }
-        );
-        const record = search.data.records[0];
-        if (!record) return res.json({ success: false, error: "Utilisateur introuvable." });
+        const userId = req.session.userId;
+        const rows = await db.query(`SELECT lecons_ecommerce_faites FROM utilisateurs WHERE id = $1`, [userId]);
+        if (!rows[0]) return res.json({ success: false, error: "Utilisateur introuvable." });
 
-        const dejaFaites = record.fields.lecons_ecommerce_faites || 0;
+        const dejaFaites = rows[0].lecons_ecommerce_faites || 0;
 
         if (dejaFaites >= LECONS.length) {
             return res.json({ success: false, error: "Tu as déjà terminé toutes les leçons !" });
@@ -260,29 +251,27 @@ router.post("/lecon", requireAuth, async (req, res) => {
 
         const lecon = LECONS[dejaFaites];
 
-        const prompt = `Tu es SAMII, formateur en e-commerce. Enseigne cette leçon à un débutant complet : ${lecon.sujet}.\n\n`
-            + "Sois concret, pédagogique, avec des exemples pratiques. 6-8 lignes, direct, sans jargon inutile, sans JSON ni markdown.";
+        const goal = `Enseigne-moi cette leçon d'e-commerce, comme un formateur concret et pédagogique, avec des exemples pratiques : ${lecon.sujet}.\n\n`
+            + "6-8 lignes, direct, sans jargon inutile, sans JSON ni markdown.";
 
-        const result = await gemini.chat({
-            message: prompt,
-            context: { source: "client_technologie" },
-            useTools: false,
-        });
+        // Même pipeline (planner + mémoire samii_conversations) que le chat du
+        // Hub — SAMII garde le fil entre une leçon Academy et une question posée
+        // ailleurs sur la plateforme, au lieu d'un appel Gemini isolé et amnésique.
+        const context = { source: "academy", workspaceId: req.session?.workspaceId || "", audience: "souverain" };
+        const history = await samiiMemoire.getHistorique(userId);
+        const result = await planner.build({ goal }, context, history);
+
+        await samiiMemoire.enregistrerTour(userId, `[Leçon Academy ${lecon.id} — ${lecon.titre}]`, result.reply, "academy");
 
         const nouvelleProgression = dejaFaites + 1;
-
-        await axios.patch(
-            `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_USERS}/${record.id}`,
-            { fields: { lecons_ecommerce_faites: nouvelleProgression } },
-            { headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" } }
-        );
+        await db.query(`UPDATE utilisateurs SET lecons_ecommerce_faites = $1 WHERE id = $2`, [nouvelleProgression, userId]);
 
         res.json({
             success: true,
             icon: lecon.icon,
             titre: lecon.titre,
             numero: lecon.id,
-            contenu: result.type === "text" ? result.text : "Erreur de génération.",
+            contenu: result.reply || "Erreur de génération.",
             progression: nouvelleProgression,
         });
 

@@ -6,6 +6,7 @@ const router = express.Router();
 const planner = require("../brain/planner");
 const db = require("../services/db");
 const samiiQuota = require("../services/samiiQuota");
+const samiiMemoire = require("../services/samiiMemoire");
 
 const METIERS_RDV = [
     "dentiste", "medecin", "avocat", "comptable", "coiffeur", "kine",
@@ -67,11 +68,11 @@ router.post("/chat", async (req, res) => {
             audience: "souverain",
         };
 
-        const history = await getSamiiHistory(userId);
+        const history = await samiiMemoire.getHistorique(userId);
 
         const result = await planner.build({ goal: message }, context, history);
 
-        if (userId) await saveSamiiTurn(userId, message, result.reply);
+        if (userId) await samiiMemoire.enregistrerTour(userId, message, result.reply, "web");
 
         res.json(result);
     } catch (err) {
@@ -80,29 +81,9 @@ router.post("/chat", async (req, res) => {
     }
 });
 
-// ── Mémoire de conversation SAMII — toujours complète, quel que soit le
-// palier d'abonnement. Seul le NOMBRE de messages/jour est limité en
-// gratuit (voir samiiQuota) ; la profondeur de mémoire, elle, est la même
-// pour tout le monde.
-async function getSamiiHistory(userId) {
-    if (!userId) return [];
-    try {
-        const rows = await db.query(
-            `SELECT role, contenu AS message FROM samii_conversations
-             WHERE user_id = $1
-             ORDER BY created_at DESC LIMIT 150`,
-            [userId]
-        );
-        return rows.reverse();
-    } catch (err) {
-        console.error("❌ getSamiiHistory :", err.message);
-        return [];
-    }
-}
-
-// ── Résumé de la semaine (surtout utile en gratuit : mémoire 24h glissantes,
-// donc l'utilisateur peut coller ce résumé au début d'une nouvelle conversation
-// pour que SAMII reparte de là plutôt que de zéro) ──
+// ── Résumé de la semaine — un condensé que l'utilisateur peut coller en
+// tête d'une nouvelle conversation pour donner du contexte supplémentaire
+// à SAMII (la mémoire elle-même est déjà complète, voir samiiMemoire) ──
 router.post("/samii-resume", requireAuth, async (req, res) => {
     try {
         const userId = req.session.userId;
@@ -124,17 +105,6 @@ router.post("/samii-resume", requireAuth, async (req, res) => {
         res.status(500).json({ success: false, resume: "" });
     }
 });
-
-async function saveSamiiTurn(userId, message, reply) {
-    try {
-        await db.query(
-            `INSERT INTO samii_conversations (user_id, role, contenu, source) VALUES ($1,'user',$2,'web'), ($1,'model',$3,'web')`,
-            [userId, message, reply || ""]
-        );
-    } catch (err) {
-        console.error("❌ saveSamiiTurn :", err.message);
-    }
-}
 
 router.post("/speak", async (req, res) => {
     try {
