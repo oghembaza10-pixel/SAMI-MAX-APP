@@ -147,6 +147,7 @@ router.get("/", requireAuth, async (req, res) => {
         <div class="addr"><b>Récupération</b>${escapeHtml(enCours[0].adresse_recuperation)}</div>
         <div class="addr"><b>Livraison</b>${escapeHtml(enCours[0].adresse_livraison)}</div>
         <div class="addr"><b>Client</b>${escapeHtml(enCours[0].client_nom)} — ${escapeHtml(enCours[0].client_telephone)}</div>
+        ${enCours[0].prix_livraison ? `<div class="addr" style="color:#3ddc84;font-weight:700;"><b>À collecter</b>💰 ${Number(enCours[0].prix_livraison).toFixed(0)} ${enCours[0].devise} en espèces au client</div>` : ""}
         <div style="margin-top:14px;display:flex;gap:10px;">
             ${enCours[0].statut === "assignee" ? `<button class="lv-btn" id="btn-recuperee" data-id="${enCours[0].id}">📦 Colis récupéré</button>` : ""}
             ${enCours[0].statut === "recuperee" ? `<button class="lv-btn" id="btn-livree" data-id="${enCours[0].id}">✅ Livré</button>` : ""}
@@ -211,9 +212,10 @@ async function chargerDemandes() {
     }
     liste.innerHTML = json.demandes.map(d => \`
         <div class="lv-demande">
-            \${d.distance_km !== null ? '<div class="dist">📍 ~' + d.distance_km.toFixed(1) + ' km</div>' : ''}
+            \${d.distance_km !== null ? '<div class="dist">📍 ~' + d.distance_km.toFixed(1) + ' km de toi</div>' : ''}
             <div class="addr"><b>Récupération</b>\${escapeHtmlClient(d.adresse_recuperation)}</div>
             <div class="addr"><b>Livraison</b>\${escapeHtmlClient(d.adresse_livraison)}</div>
+            \${d.prix_livraison ? '<div class="addr" style="color:var(--gold-og);font-weight:700;">💰 ' + Number(d.prix_livraison).toFixed(0) + ' ' + d.devise + ' à collecter au client</div>' : ''}
             <button class="lv-btn" style="margin-top:10px;width:100%;" onclick="accepterDemande(\${d.id}, this)">Accepter cette course</button>
         </div>
     \`).join("");
@@ -330,7 +332,7 @@ router.get("/demandes", requireAuth, async (req, res) => {
         if (!livreur) return res.json({ success: false, error: "Pas un livreur." });
 
         const demandes = await db.query(
-            `SELECT id, adresse_recuperation, adresse_livraison, lat_recuperation, lng_recuperation, created_at
+            `SELECT id, adresse_recuperation, adresse_livraison, lat_recuperation, lng_recuperation, prix_livraison, devise, created_at
              FROM livraisons WHERE statut = 'en_attente' ORDER BY created_at ASC LIMIT 30`
         );
 
@@ -338,6 +340,11 @@ router.get("/demandes", requireAuth, async (req, res) => {
             id: d.id,
             adresse_recuperation: d.adresse_recuperation,
             adresse_livraison: d.adresse_livraison,
+            prix_livraison: d.prix_livraison,
+            devise: d.devise,
+            // Distance livreur → point de retrait, pour trier "le plus proche
+            // d'abord" — différente de livraisons.distance_km (retrait → client,
+            // qui sert au calcul du prix, déjà figé à la création de la demande).
             distance_km: distanceKm(livreur.latitude, livreur.longitude, d.lat_recuperation, d.lng_recuperation),
         }));
 
