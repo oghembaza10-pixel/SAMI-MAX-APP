@@ -4,7 +4,7 @@
 const axios = require("axios");
 const CONFIG = require("../config");
 const SAMII_PROMPT = require("../brain/prompts/index");
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-3.6-flash";
 const KEYS  = CONFIG.GEMINI.API_KEYS.length > 0 ? CONFIG.GEMINI.API_KEYS : [CONFIG.GEMINI.API_KEY];
 
 function urlFor(key) {

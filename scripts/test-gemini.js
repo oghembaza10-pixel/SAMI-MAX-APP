@@ -5,7 +5,7 @@
 const axios = require("axios");
 const CONFIG = require("../config");
 
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-3.6-flash";
 
 async function testKey(key, index) {
     const label = `Clé #${index + 1} (…${key.slice(-4)})`;
