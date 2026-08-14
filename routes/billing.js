@@ -124,41 +124,78 @@ router.get("/", requireAuth, async (req, res) => {
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Abonnement — SAMII</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/qg-style.css">
     <style>
-        .bill-shell { max-width: 960px; margin: 0 auto; padding: 40px 24px 80px; }
-        .bill-shell h1 { font-family: var(--font-display); color: #fff; font-size: 1.8rem; text-align: center; margin-bottom: 8px; }
-        .bill-shell p.sub { color: var(--text-muted); text-align: center; font-size: .9rem; margin-bottom: 34px; }
-        .bill-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
-        .bill-card { background: var(--bg-glass); backdrop-filter: blur(12px); border: var(--border-soft); border-radius: 18px; padding: 26px; display: flex; flex-direction: column; }
-        .bill-card--pro { border-color: rgba(197,160,89,0.5); box-shadow: 0 0 30px rgba(197,160,89,0.12); }
-        .bill-card--societe { border-color: rgba(93,156,236,0.4); }
-        .bill-card h2 { color: #fff; font-size: 1.1rem; }
-        .bill-price { font-family: var(--font-display); font-size: 1.8rem; color: var(--gold-og); margin: 12px 0; }
-        .bill-price span { font-size: .85rem; color: var(--text-muted); }
-        .bill-card ul { list-style: none; margin: 14px 0 20px; flex: 1; }
-        .bill-card li { color: var(--text-muted); font-size: .85rem; padding: 5px 0; }
-        .bill-card li::before { content: "✓ "; color: var(--cyan-tech); }
-        .bill-btn { padding: 12px; border-radius: 10px; border: none; background: var(--gold-og); color: #000; font-weight: 700; cursor: pointer; }
-        .bill-btn--free { background: rgba(255,255,255,0.08); color: var(--text-main); }
-        .bill-daily-note { text-align: center; font-size: .68rem; color: var(--text-muted); opacity: .7; margin: 8px 0 0; }
-        .callout-regularisation { max-width: 640px; margin: 0 auto 24px; padding: 14px 18px; border-radius: 12px; background: rgba(229,85,85,0.1); border: 1px solid rgba(229,85,85,0.3); color: #e55; font-size: .82rem; text-align: center; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
-        .bill-btn--regulariser { padding: 8px 14px; font-size: .78rem; background: #e55; color: #fff; }
-        .bill-bientot { max-width: 640px; margin: 30px auto 0; padding: 16px 20px; border-radius: 12px; border: 1px dashed rgba(197,160,89,0.3); text-align: center; }
-        .bill-bientot-label { font-size: .74rem; font-weight: 700; color: var(--gold-og); margin-bottom: 8px; }
-        .bill-bientot-items { display: flex; flex-direction: column; gap: 4px; font-size: .76rem; color: var(--text-muted); }
-        .bill-ccp { margin-top: auto; padding: 14px; border-radius: 12px; background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3); }
-        .bill-ccp-label { color: #F5A623; font-size: .8rem; font-weight: 700; margin-bottom: 8px; }
-        .bill-ccp-details { font-size: .78rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px; }
-        .bill-ccp-details b { color: #fff; }
-        .bill-btn--ccp { width: 100%; background: #F5A623; color: #000; }
-        .bill-btn--stripe { width: 100%; margin-top: 8px; background: rgba(255,255,255,0.08); color: var(--text-main); }
-        .bill-btn--chargily { width: 100%; margin-top: 8px; background: #2e7d32; color: #fff; }
+        :root {
+            --lux-onyx: #07070a; --lux-panel: #101013; --lux-panel-2: #16161a;
+            --lux-gold: #c9a961; --lux-gold-bright: #f0d99b;
+            --lux-steel: #9497a1; --lux-cyan: #5fd4ff; --lux-cyan-dim: rgba(95,212,255,0.12);
+            --lux-ivory: #f3f1e9; --lux-smoke: #7d7f89;
+            --lux-border: rgba(201,169,97,0.16); --lux-border-steel: rgba(148,151,161,0.22);
+        }
+        body { background: var(--lux-onyx); }
+        .lux-serif { font-family: "Didot", "Bodoni MT", "Playfair Display", Georgia, "Times New Roman", serif; }
+        .bill-shell { max-width: 1160px; margin: 0 auto; padding: 56px 24px 90px; color: var(--lux-ivory); }
+        .bill-wordmark { text-align: center; font-family: "Didot", "Bodoni MT", Georgia, serif; font-size: 12px; letter-spacing: .5em; text-indent: .5em; color: var(--lux-gold); text-transform: uppercase; margin-bottom: 16px; }
+        .bill-shell h1 { font-family: "Didot", "Bodoni MT", "Playfair Display", Georgia, serif; font-weight: 400; color: var(--lux-ivory); font-size: clamp(1.9rem, 4vw, 2.6rem); text-align: center; margin: 0 0 12px; text-wrap: balance; }
+        .bill-shell p.sub { color: var(--lux-smoke); text-align: center; font-size: .92rem; max-width: 46ch; margin: 0 auto 40px; }
+        .bill-steps { display: flex; justify-content: center; align-items: center; gap: 0; margin-bottom: 48px; flex-wrap: wrap; }
+        .bill-step { display: flex; align-items: center; gap: 10px; }
+        .bill-step-num { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(95,212,255,.35); background: var(--lux-cyan-dim); display: grid; place-items: center; font-family: var(--font-mono); font-size: 11px; color: var(--lux-cyan); flex-shrink: 0; }
+        .bill-step-label { font-size: .74rem; color: var(--lux-smoke); white-space: nowrap; }
+        .bill-step-label b { color: var(--lux-ivory); font-weight: 600; }
+        .bill-step-rule { width: 40px; height: 1px; background: linear-gradient(90deg, var(--lux-border), var(--lux-border-steel)); margin: 0 16px; }
+        @media (max-width: 640px) { .bill-step-rule { display: none; } .bill-steps { flex-direction: column; gap: 14px; } }
+        .bill-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; align-items: stretch; }
+        @media (max-width: 980px) { .bill-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .bill-grid { grid-template-columns: 1fr; } }
+        .bill-card { background: linear-gradient(180deg, var(--lux-panel-2), var(--lux-panel)); border: 1px solid var(--lux-border-steel); border-radius: 4px; padding: 30px 24px; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 24px 60px rgba(0,0,0,.5); transition: border-color .25s ease, box-shadow .25s ease; }
+        .bill-card:hover { border-color: rgba(95,212,255,.4); box-shadow: 0 0 0 1px rgba(95,212,255,.25), 0 24px 60px rgba(0,0,0,.5); }
+        .bill-card--pro { border-color: var(--lux-gold); box-shadow: 0 0 0 1px var(--lux-gold), 0 24px 60px rgba(0,0,0,.5); transform: translateY(-8px); }
+        .bill-card--pro:hover { border-color: var(--lux-gold); box-shadow: 0 0 0 1px var(--lux-gold), 0 24px 60px rgba(0,0,0,.5); }
+        @media (max-width: 980px) { .bill-card--pro { transform: none; } }
+        .bill-card--societe { border-color: var(--lux-border-steel); }
+        .bill-card-eyebrow { font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; color: var(--lux-steel); margin-bottom: 8px; }
+        .bill-card--pro .bill-card-eyebrow { color: var(--lux-gold); }
+        .bill-card h2 { font-family: "Didot", "Bodoni MT", "Playfair Display", Georgia, serif; color: var(--lux-ivory); font-size: 1.4rem; font-weight: 400; margin: 0 0 4px; }
+        .bill-card-tagline { font-size: .76rem; color: var(--lux-smoke); margin: 0 0 20px; min-height: 28px; }
+        .bill-price { font-family: var(--font-mono); font-size: 1.7rem; color: var(--lux-gold); margin: 0 0 20px; }
+        .bill-price[data-free] { font-family: "Didot", "Bodoni MT", Georgia, serif; font-size: 1.4rem; color: var(--lux-ivory); }
+        .bill-price span { font-size: .72rem; color: var(--lux-smoke); font-family: -apple-system, sans-serif; }
+        .bill-card-rule { height: 1px; background: var(--lux-border-steel); margin: 0 0 20px; }
+        .bill-card ul { list-style: none; margin: 0 0 22px; padding: 0; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .bill-card li { color: var(--lux-smoke); font-size: .78rem; padding: 0; line-height: 1.5; }
+        .bill-card li::before { content: "— "; color: var(--lux-gold); }
+        .bill-btn { width: 100%; padding: 13px; border-radius: 2px; border: 1px solid var(--lux-gold); background: transparent; color: var(--lux-gold); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; cursor: pointer; transition: all .2s ease; }
+        .bill-btn:hover { background: var(--lux-gold); color: var(--lux-onyx); }
+        .bill-btn--free { border-color: var(--lux-border-steel); color: var(--lux-steel); cursor: default; }
+        .bill-btn--free:hover { background: transparent; color: var(--lux-steel); }
+        .bill-card--pro .bill-btn { background: var(--lux-gold); color: var(--lux-onyx); }
+        .bill-card--pro .bill-btn:hover { background: var(--lux-gold-bright); border-color: var(--lux-gold-bright); }
+        .bill-daily-note { text-align: center; font-family: var(--font-mono); font-size: .64rem; color: var(--lux-cyan); opacity: .85; margin: 10px 0 0; }
+        .callout-regularisation { max-width: 640px; margin: 0 auto 28px; padding: 14px 18px; border-radius: 2px; background: rgba(229,85,85,0.08); border: 1px solid rgba(229,85,85,0.3); color: #e88; font-size: .8rem; text-align: center; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
+        .bill-btn--regulariser { width: auto; padding: 8px 14px; font-size: .7rem; background: #e55; border-color: #e55; color: #fff; }
+        .bill-bientot { max-width: 640px; margin: 56px auto 0; padding: 20px 24px; border-radius: 2px; border: 1px dashed var(--lux-border); text-align: center; }
+        .bill-bientot-label { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--lux-gold); margin-bottom: 10px; }
+        .bill-bientot-items { display: flex; flex-direction: column; gap: 4px; font-size: .76rem; color: var(--lux-smoke); }
+        .bill-ccp { margin-top: auto; padding: 14px; border-radius: 2px; background: var(--lux-cyan-dim); border: 1px solid rgba(95,212,255,.25); margin-bottom: 10px; }
+        .bill-ccp-label { color: var(--lux-cyan); font-size: .74rem; font-weight: 700; margin-bottom: 8px; }
+        .bill-ccp-details { font-size: .72rem; color: var(--lux-smoke); line-height: 1.6; margin-bottom: 10px; }
+        .bill-ccp-details b { color: var(--lux-ivory); }
+        .bill-btn--ccp { border-color: var(--lux-cyan); color: var(--lux-cyan); }
+        .bill-btn--ccp:hover { background: var(--lux-cyan); color: var(--lux-onyx); }
+        .bill-btn--stripe { margin-top: 8px; border-color: var(--lux-border-steel); color: var(--lux-steel); }
+        .bill-btn--stripe:hover { background: var(--lux-border-steel); color: var(--lux-ivory); }
+        .bill-btn--chargily { margin-top: 8px; }
+        .bill-trust { margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--lux-border-steel); display: flex; justify-content: center; gap: 36px; flex-wrap: wrap; }
+        .bill-trust-item { display: flex; align-items: center; gap: 8px; font-size: .7rem; color: var(--lux-smoke); }
+        .bill-trust-item .dot { width: 5px; height: 5px; border-radius: 50%; background: #7fae8a; flex-shrink: 0; }
+        .bill-cards-link { text-align: center; margin-top: 22px; }
+        .bill-cards-link a { color: var(--lux-gold); font-size: .82rem; text-decoration: none; }
         .bill-topbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
-        .lang-switch { display: flex; gap: 2px; font-family: var(--font-mono); font-size: .64rem; padding: 3px; border: var(--border-soft); border-radius: 9px; background: var(--bg-glass); }
-        .lang-switch span { padding: 5px 7px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: .2s ease; }
-        .lang-switch span.active, .lang-switch span:hover { color: var(--gold-og); background: rgba(197,160,89,0.12); }
+        .lang-switch { display: flex; gap: 2px; font-family: var(--font-mono); font-size: .64rem; padding: 3px; border: 1px solid var(--lux-border-steel); border-radius: 4px; }
+        .lang-switch span { padding: 5px 7px; border-radius: 2px; cursor: pointer; color: var(--lux-smoke); transition: .2s ease; }
+        .lang-switch span.active, .lang-switch span:hover { color: var(--lux-gold); background: var(--lux-border); }
         html[dir="rtl"] .bill-topbar { justify-content: flex-start; }
     </style>
 </head>
@@ -172,13 +209,26 @@ router.get("/", requireAuth, async (req, res) => {
             <span data-lang="zh">中</span>
         </div>
     </div>
-    <h1 data-i18n="billing.title">👑 Choisis ton palier</h1>
+    <div class="bill-wordmark">S A M I I &nbsp; O S</div>
+    <h1 data-i18n="billing.title">Choisis ton palier</h1>
     <p class="sub" data-i18n="billing.subtitle">Plus tu fais confiance à SAMII, plus il peut agir seul pour toi.</p>
+
+    <div class="bill-steps">
+        <div class="bill-step"><div class="bill-step-num">1</div><div class="bill-step-label" data-i18n="billing.step1"><b data-i18n="billing.step1b">Découvre</b> les paliers</div></div>
+        <div class="bill-step-rule"></div>
+        <div class="bill-step"><div class="bill-step-num">2</div><div class="bill-step-label" data-i18n="billing.step2"><b data-i18n="billing.step2b">Choisis</b> ton palier</div></div>
+        <div class="bill-step-rule"></div>
+        <div class="bill-step"><div class="bill-step-num">3</div><div class="bill-step-label" data-i18n="billing.step3"><b data-i18n="billing.step3b">Règle</b> et c'est parti</div></div>
+    </div>
+
     ${regularisationHtml}
     <div class="bill-grid">
         <div class="bill-card">
+            <div class="bill-card-eyebrow" data-i18n="billing.free.eyebrow">Palier I</div>
             <h2 data-i18n="billing.free.title">🌑 Découverte</h2>
-            <div class="bill-price" data-i18n="billing.free.price">Gratuit</div>
+            <p class="bill-card-tagline" data-i18n="billing.free.tagline">Pour tester SAMII sans engagement.</p>
+            <div class="bill-price" data-free data-i18n="billing.free.price">Gratuit</div>
+            <div class="bill-card-rule"></div>
             <ul>
                 <li data-i18n="billing.free.li1">150 confirmations & suivi / mois</li>
                 <li data-i18n="billing.free.li2">Mode Ombre + Copilote (SAMII propose, tu valides)</li>
@@ -186,18 +236,21 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.free.li4">Suivi de colis basique</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.free} cartes débloquées</li>
             </ul>
-            <button class="bill-btn bill-btn--free" disabled data-i18n="billing.free.btn">Plan actuel</button>
+            <button class="bill-btn bill-btn--free" disabled data-i18n="billing.free.btn">Palier actuel</button>
             ${dailyNote("free")}
         </div>
         <div class="bill-card">
+            <div class="bill-card-eyebrow" data-i18n="billing.standard.eyebrow">Palier II</div>
             <h2 data-i18n="billing.standard.title">🚀 Actif</h2>
+            <p class="bill-card-tagline" data-i18n="billing.standard.tagline">Pour un commerce qui tourne déjà.</p>
             <div class="bill-price">${prixHtml("standard")}</div>
+            <div class="bill-card-rule"></div>
             <ul>
-                <li data-i18n="billing.standard.li1">2 100 confirmations & suivi / mois (+0,12 $ au-delà)</li>
+                <li data-i18n="billing.standard.li1">2 100 confirmations & suivi / mois (+0,50 $ au-delà)</li>
                 <li data-i18n="billing.standard.li2">WhatsApp + Telegram + Shopify connectés</li>
                 <li data-i18n="billing.standard.li3">Client fidèle (VIP) + liste noire automatiques</li>
                 <li data-i18n="billing.standard.li5">1 Forteresse offerte chaque mois</li>
-                <li data-i18n="billing.standard.li6">50 messages SAMII toutes les 7h (+0,50 $/message au-delà)</li>
+                <li data-i18n="billing.standard.li6">50 messages SAMII toutes les 7h (+0,12 $/message au-delà)</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.standard} cartes débloquées</li>
             </ul>
             ${chargilyBlock("standard")}
@@ -207,15 +260,18 @@ router.get("/", requireAuth, async (req, res) => {
             ${griotNote}
         </div>
         <div class="bill-card bill-card--pro">
+            <div class="bill-card-eyebrow" data-i18n="billing.pro.eyebrow">Palier III · Recommandé</div>
             <h2 data-i18n="billing.pro.title">👑 Souverain</h2>
+            <p class="bill-card-tagline" data-i18n="billing.pro.tagline">Pour ne plus jamais attendre une validation.</p>
             <div class="bill-price">${prixHtml("pro")}</div>
+            <div class="bill-card-rule"></div>
             <ul>
-                <li data-i18n="billing.pro.li1">30 000 confirmations & suivi / mois (+0,12 $ au-delà)</li>
+                <li data-i18n="billing.pro.li1">30 000 confirmations & suivi / mois (+0,50 $ au-delà)</li>
                 <li data-i18n="billing.pro.li2">Tout le plan Actif, en plus généreux</li>
                 <li data-i18n="billing.pro.li3">Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)</li>
                 <li data-i18n="billing.pro.li4">2 Forteresse + 1 Boost offerts chaque mois</li>
                 <li data-i18n="billing.pro.li5">Support prioritaire</li>
-                <li data-i18n="billing.pro.li6">150 messages SAMII toutes les 7h (+0,50 $/message au-delà)</li>
+                <li data-i18n="billing.pro.li6">150 messages SAMII toutes les 7h (+0,12 $/message au-delà)</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.pro} cartes débloquées</li>
             </ul>
             ${chargilyBlock("pro")}
@@ -225,23 +281,33 @@ router.get("/", requireAuth, async (req, res) => {
             ${griotNote}
         </div>
         <div class="bill-card bill-card--societe">
-            <h2>🏛️ Société</h2>
-            <div class="bill-price">Sur devis</div>
+            <div class="bill-card-eyebrow" data-i18n="billing.societe.eyebrow">Palier IV</div>
+            <h2 data-i18n="billing.societe.title">🏛️ Société</h2>
+            <p class="bill-card-tagline" data-i18n="billing.societe.tagline">Pour plusieurs comptes, un seul contrat.</p>
+            <div class="bill-price" data-free data-i18n="billing.societe.price">Sur devis</div>
+            <div class="bill-card-rule"></div>
             <ul>
-                <li>Toutes les cartes débloquées (${NB_CARTES_PAR_PALIER.societe}/${NB_CARTES_PAR_PALIER.societe})</li>
-                <li>Multi-comptes, multi-boutiques</li>
-                <li>Contrat et facturation dédiés</li>
-                <li>Accompagnement personnalisé</li>
+                <li data-i18n="billing.societe.li1">Toutes les cartes débloquées (${NB_CARTES_PAR_PALIER.societe}/${NB_CARTES_PAR_PALIER.societe})</li>
+                <li data-i18n="billing.societe.li2">Multi-comptes, multi-boutiques</li>
+                <li data-i18n="billing.societe.li3">Contrat et facturation dédiés</li>
+                <li data-i18n="billing.societe.li4">Accompagnement personnalisé</li>
             </ul>
             <form id="societe-form" style="margin-top:auto;display:flex;flex-direction:column;gap:8px;">
-                <input type="email" name="email" placeholder="Ton email" required style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:.82rem;">
-                <textarea name="message" placeholder="Décris ton besoin (nombre de boutiques, volume...)" rows="2" style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#fff;font-size:.82rem;resize:vertical;"></textarea>
-                <button type="submit" class="bill-btn" style="background:rgba(255,255,255,0.08);color:var(--text-main);">Nous contacter</button>
-                <div id="societe-msg" style="font-size:.78rem;color:var(--text-muted);min-height:16px;"></div>
+                <input type="email" name="email" placeholder="Ton email" data-i18n-ph="billing.societe.ph.email" required style="padding:10px;border-radius:2px;border:1px solid var(--lux-border-steel);background:rgba(255,255,255,0.03);color:var(--lux-ivory);font-size:.78rem;">
+                <textarea name="message" placeholder="Décris ton besoin (nombre de boutiques, volume...)" data-i18n-ph="billing.societe.ph.message" rows="2" style="padding:10px;border-radius:2px;border:1px solid var(--lux-border-steel);background:rgba(255,255,255,0.03);color:var(--lux-ivory);font-size:.78rem;resize:vertical;"></textarea>
+                <button type="submit" class="bill-btn" data-i18n="billing.societe.btn">Nous contacter</button>
+                <div id="societe-msg" style="font-size:.72rem;color:var(--lux-smoke);min-height:16px;text-align:center;"></div>
             </form>
         </div>
     </div>
-    <p class="sub" style="margin-top:24px;"><a href="/cartes" style="color:var(--gold-og);">🃏 Voir le détail des cartes débloquées à chaque palier →</a></p>
+
+    <p class="bill-cards-link"><a href="/cartes" data-i18n="billing.cards.link">🃏 Voir le détail des cartes débloquées à chaque palier →</a></p>
+
+    <div class="bill-trust">
+        <div class="bill-trust-item"><span class="dot"></span><span data-i18n="billing.trust1">Edahabia / CIB via Chargily</span></div>
+        <div class="bill-trust-item"><span class="dot"></span><span data-i18n="billing.trust2">Virement CCP accepté</span></div>
+        <div class="bill-trust-item"><span class="dot"></span><span data-i18n="billing.trust3">Changement de palier à tout moment</span></div>
+    </div>
 
     <div class="bill-bientot">
         <div class="bill-bientot-label" data-i18n="billing.bientot.label">🔜 Bientôt disponible</div>
@@ -254,30 +320,45 @@ router.get("/", requireAuth, async (req, res) => {
 <script>
 const I18N = {
     fr: {
-        'billing.title': '👑 Choisis ton palier',
+        'billing.title': 'Choisis ton palier',
         'billing.subtitle': 'Plus tu fais confiance à SAMII, plus il peut agir seul pour toi.',
+        'billing.free.eyebrow': 'Palier I', 'billing.free.tagline': 'Pour tester SAMII sans engagement.',
         'billing.free.title': '🌑 Découverte', 'billing.free.price': 'Gratuit',
-        'billing.free.li1': '100 confirmations & suivi / mois',
+        'billing.free.li1': '150 confirmations & suivi / mois',
         'billing.free.li2': 'Mode Ombre + Copilote (SAMII propose, tu valides)',
         'billing.free.li3': '30 messages SAMII toutes les 7h',
         'billing.free.li4': 'Suivi de colis basique',
         'billing.free.btn': 'Plan actuel',
+        'billing.standard.eyebrow': 'Palier II', 'billing.standard.tagline': 'Pour un commerce qui tourne déjà.',
         'billing.standard.title': '🚀 Actif',
-        'billing.standard.li1': '1 000 confirmations & suivi / mois (+0,12 $ au-delà)',
+        'billing.standard.li1': '2 100 confirmations & suivi / mois (+0,50 $ au-delà)',
         'billing.standard.li2': 'WhatsApp + Telegram + Shopify connectés',
         'billing.standard.li3': 'Client fidèle (VIP) + liste noire automatiques',
         'billing.standard.li5': '1 Forteresse offerte chaque mois',
-        'billing.standard.li6': '50 messages SAMII toutes les 7h (+0,50 $/message au-delà)',
+        'billing.standard.li6': '50 messages SAMII toutes les 7h (+0,12 $/message au-delà)',
+        'billing.pro.eyebrow': 'Palier III · Recommandé', 'billing.pro.tagline': 'Pour ne plus jamais attendre une validation.',
         'billing.pro.title': '👑 Souverain',
-        'billing.pro.li1': '10 000 confirmations & suivi / mois (+0,12 $ au-delà)',
+        'billing.pro.li1': '30 000 confirmations & suivi / mois (+0,50 $ au-delà)',
         'billing.pro.li2': 'Tout le plan Actif, en plus généreux',
         'billing.pro.li3': 'Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)',
         'billing.pro.li4': '2 Forteresse + 1 Boost offerts chaque mois',
         'billing.pro.li5': 'Support prioritaire',
-        'billing.pro.li6': '150 messages SAMII toutes les 7h (+0,50 $/message au-delà)',
+        'billing.pro.li6': '150 messages SAMII toutes les 7h (+0,12 $/message au-delà)',
         'billing.griot.note': '🎨 Génération IA (Griot) : 0,20 $/seconde',
         'billing.bientot.label': '🔜 Bientôt disponible',
         'billing.bientot.meta': 'Pubs Meta + réponses automatiques Messenger/Instagram',
+        'billing.step1': 'Découvre les paliers', 'billing.step1b': 'Découvre',
+        'billing.step2': 'Choisis ton palier', 'billing.step2b': 'Choisis',
+        'billing.step3': "Règle et c'est parti", 'billing.step3b': 'Règle',
+        'billing.societe.eyebrow': 'Palier IV', 'billing.societe.title': '🏛️ Société',
+        'billing.societe.tagline': 'Pour plusieurs comptes, un seul contrat.', 'billing.societe.price': 'Sur devis',
+        'billing.societe.li1': 'Toutes les cartes débloquées', 'billing.societe.li2': 'Multi-comptes, multi-boutiques',
+        'billing.societe.li3': 'Contrat et facturation dédiés', 'billing.societe.li4': 'Accompagnement personnalisé',
+        'billing.societe.ph.email': 'Ton email', 'billing.societe.ph.message': 'Décris ton besoin (nombre de boutiques, volume...)',
+        'billing.societe.btn': 'Nous contacter',
+        'billing.cards.link': '🃏 Voir le détail des cartes débloquées à chaque palier →',
+        'billing.trust1': 'Edahabia / CIB via Chargily', 'billing.trust2': 'Virement CCP accepté',
+        'billing.trust3': 'Changement de palier à tout moment',
         'billing.permonth': '/mois', 'billing.permonth_filleul': '/mois — filleul -5%',
         'billing.ccp.label': '🏦 Payer par CCP',
         'billing.ccp.titulaire': 'Titulaire :', 'billing.ccp.numero': 'Numéro CCP :', 'billing.ccp.cle': 'Clé RIP :',
@@ -290,30 +371,45 @@ const I18N = {
         'billing.msg.ccp_success': '✅ Équipe prévenue, activation sous 24h',
     },
     en: {
-        'billing.title': '👑 Choose your tier',
+        'billing.title': 'Choose your tier',
         'billing.subtitle': 'The more you trust SAMII, the more it can act on its own for you.',
+        'billing.free.eyebrow': 'Tier I', 'billing.free.tagline': 'To try SAMII with no commitment.',
         'billing.free.title': '🌑 Discovery', 'billing.free.price': 'Free',
-        'billing.free.li1': '100 confirmations & tracking / month',
+        'billing.free.li1': '150 confirmations & tracking / month',
         'billing.free.li2': 'Shadow Mode + Copilot (SAMII suggests, you approve)',
         'billing.free.li3': '30 SAMII messages every 7h',
         'billing.free.li4': 'Basic package tracking',
         'billing.free.btn': 'Current plan',
+        'billing.standard.eyebrow': 'Tier II', 'billing.standard.tagline': 'For a business that is already running.',
         'billing.standard.title': '🚀 Active',
-        'billing.standard.li1': '1,000 confirmations & tracking / month (+$0.12 beyond)',
+        'billing.standard.li1': '2,100 confirmations & tracking / month (+$0.50 beyond)',
         'billing.standard.li2': 'WhatsApp + Telegram + Shopify connected',
         'billing.standard.li3': 'Automatic VIP client + blacklist detection',
         'billing.standard.li5': '1 Fortress granted every month',
-        'billing.standard.li6': '50 SAMII messages every 7h (+$0.50/message beyond)',
+        'billing.standard.li6': '50 SAMII messages every 7h (+$0.12/message beyond)',
+        'billing.pro.eyebrow': 'Tier III · Recommended', 'billing.pro.tagline': 'To never wait for approval again.',
         'billing.pro.title': '👑 Sovereign',
-        'billing.pro.li1': '10,000 confirmations & tracking / month (+$0.12 beyond)',
+        'billing.pro.li1': '30,000 confirmations & tracking / month (+$0.50 beyond)',
         'billing.pro.li2': 'Everything in the Active plan, more generous',
         'billing.pro.li3': 'Autonomous + Sovereign Modes (SAMII launches your ready ads instantly, no validation wait)',
         'billing.pro.li4': '2 Fortresses + 1 Boost granted every month',
         'billing.pro.li5': 'Priority support',
-        'billing.pro.li6': '150 SAMII messages every 7h (+$0.50/message beyond)',
+        'billing.pro.li6': '150 SAMII messages every 7h (+$0.12/message beyond)',
         'billing.griot.note': '🎨 AI generation (Griot): $0.20/second',
         'billing.bientot.label': '🔜 Coming soon',
         'billing.bientot.meta': 'Meta ads + automatic Messenger/Instagram replies',
+        'billing.step1': 'Discover the tiers', 'billing.step1b': 'Discover',
+        'billing.step2': 'Choose your tier', 'billing.step2b': 'Choose',
+        'billing.step3': "Pay and you're set", 'billing.step3b': 'Pay',
+        'billing.societe.eyebrow': 'Tier IV', 'billing.societe.title': '🏛️ Enterprise',
+        'billing.societe.tagline': 'For several accounts, one contract.', 'billing.societe.price': 'Custom quote',
+        'billing.societe.li1': 'All cards unlocked', 'billing.societe.li2': 'Multi-account, multi-store',
+        'billing.societe.li3': 'Dedicated contract and billing', 'billing.societe.li4': 'Personalized onboarding',
+        'billing.societe.ph.email': 'Your email', 'billing.societe.ph.message': 'Describe your needs (number of stores, volume...)',
+        'billing.societe.btn': 'Contact us',
+        'billing.cards.link': '🃏 See the card details for each tier →',
+        'billing.trust1': 'Edahabia / CIB via Chargily', 'billing.trust2': 'CCP transfer accepted',
+        'billing.trust3': 'Change tier anytime',
         'billing.permonth': '/month', 'billing.permonth_filleul': '/month — referral -5%',
         'billing.ccp.label': '🏦 Pay by CCP',
         'billing.ccp.titulaire': 'Account holder:', 'billing.ccp.numero': 'CCP number:', 'billing.ccp.cle': 'RIP key:',
@@ -326,30 +422,45 @@ const I18N = {
         'billing.msg.ccp_success': '✅ Team notified, activation within 24h',
     },
     ar: {
-        'billing.title': '👑 اختر باقتك',
+        'billing.title': 'اختر باقتك',
         'billing.subtitle': 'كلما زادت ثقتك بـ SAMII، زادت قدرته على التصرف بمفرده من أجلك.',
+        'billing.free.eyebrow': 'الباقة الأولى', 'billing.free.tagline': 'لتجربة SAMII بدون التزام.',
         'billing.free.title': '🌑 الاكتشاف', 'billing.free.price': 'مجاني',
-        'billing.free.li1': '100 تأكيد وتتبع / شهريًا',
+        'billing.free.li1': '150 تأكيد وتتبع / شهريًا',
         'billing.free.li2': 'وضع الظل + المساعد (SAMII يقترح، أنت توافق)',
         'billing.free.li3': '30 رسالة SAMII كل 7 ساعات',
         'billing.free.li4': 'تتبع أساسي للطرود',
         'billing.free.btn': 'الباقة الحالية',
+        'billing.standard.eyebrow': 'الباقة الثانية', 'billing.standard.tagline': 'لتجارة تعمل بالفعل.',
         'billing.standard.title': '🚀 نشط',
-        'billing.standard.li1': '1000 تأكيد وتتبع / شهريًا (+0.12$ لكل تأكيد إضافي)',
+        'billing.standard.li1': '2100 تأكيد وتتبع / شهريًا (+0.50$ لكل تأكيد إضافي)',
         'billing.standard.li2': 'ربط WhatsApp + Telegram + Shopify',
         'billing.standard.li3': 'عميل مخلص (VIP) + قائمة سوداء تلقائية',
         'billing.standard.li5': 'حصن واحد مجانًا كل شهر',
-        'billing.standard.li6': '50 رسالة SAMII كل 7 ساعات (+0.50$ لكل رسالة إضافية)',
+        'billing.standard.li6': '50 رسالة SAMII كل 7 ساعات (+0.12$ لكل رسالة إضافية)',
+        'billing.pro.eyebrow': 'الباقة الثالثة · موصى بها', 'billing.pro.tagline': 'لكي لا تنتظر موافقة أبدًا.',
         'billing.pro.title': '👑 سيادي',
-        'billing.pro.li1': '10000 تأكيد وتتبع / شهريًا (+0.12$ لكل تأكيد إضافي)',
+        'billing.pro.li1': '30000 تأكيد وتتبع / شهريًا (+0.50$ لكل تأكيد إضافي)',
         'billing.pro.li2': 'كل مزايا باقة نشط، بسخاء أكبر',
         'billing.pro.li3': 'وضعا مستقل + سيادي (SAMII يُطلق إعلاناتك الجاهزة فورًا، دون انتظار موافقتك)',
         'billing.pro.li4': 'حصنان + تعزيز واحد مجانًا كل شهر',
         'billing.pro.li5': 'دعم ذو أولوية',
-        'billing.pro.li6': '150 رسالة SAMII كل 7 ساعات (+0.50$ لكل رسالة إضافية)',
+        'billing.pro.li6': '150 رسالة SAMII كل 7 ساعات (+0.12$ لكل رسالة إضافية)',
         'billing.griot.note': '🎨 توليد بالذكاء الاصطناعي (Griot): 0.20$/ثانية',
         'billing.bientot.label': '🔜 قريبًا',
         'billing.bientot.meta': 'إعلانات Meta + ردود تلقائية على Messenger/Instagram',
+        'billing.step1': 'اكتشف الباقات', 'billing.step1b': 'اكتشف',
+        'billing.step2': 'اختر باقتك', 'billing.step2b': 'اختر',
+        'billing.step3': 'ادفع وانطلق', 'billing.step3b': 'ادفع',
+        'billing.societe.eyebrow': 'الباقة الرابعة', 'billing.societe.title': '🏛️ شركة',
+        'billing.societe.tagline': 'لعدة حسابات، عقد واحد.', 'billing.societe.price': 'عرض سعر مخصص',
+        'billing.societe.li1': 'جميع البطاقات مفتوحة', 'billing.societe.li2': 'حسابات ومتاجر متعددة',
+        'billing.societe.li3': 'عقد وفوترة مخصصة', 'billing.societe.li4': 'مرافقة شخصية',
+        'billing.societe.ph.email': 'بريدك الإلكتروني', 'billing.societe.ph.message': 'صف احتياجك (عدد المتاجر، الحجم...)',
+        'billing.societe.btn': 'تواصل معنا',
+        'billing.cards.link': '🃏 عرض تفاصيل البطاقات لكل باقة ←',
+        'billing.trust1': 'Edahabia / CIB عبر Chargily', 'billing.trust2': 'التحويل عبر CCP مقبول',
+        'billing.trust3': 'تغيير الباقة في أي وقت',
         'billing.permonth': '/شهر', 'billing.permonth_filleul': '/شهر — خصم الإحالة 5%-',
         'billing.ccp.label': '🏦 الدفع عبر CCP',
         'billing.ccp.titulaire': 'صاحب الحساب:', 'billing.ccp.numero': 'رقم CCP:', 'billing.ccp.cle': 'مفتاح RIP:',
@@ -362,30 +473,45 @@ const I18N = {
         'billing.msg.ccp_success': '✅ تم إبلاغ الفريق، التفعيل خلال 24 ساعة',
     },
     zh: {
-        'billing.title': '👑 选择你的方案',
+        'billing.title': '选择你的方案',
         'billing.subtitle': '你对 SAMII 的信任度越高，它就能为你独立完成越多操作。',
+        'billing.free.eyebrow': '第一档', 'billing.free.tagline': '无需承诺，体验 SAMII。',
         'billing.free.title': '🌑 探索版', 'billing.free.price': '免费',
-        'billing.free.li1': '每月100次确认与跟踪',
+        'billing.free.li1': '每月150次确认与跟踪',
         'billing.free.li2': '影子模式 + 副驾驶模式（SAMII 提议，你来确认）',
         'billing.free.li3': '每7小时30条 SAMII 消息',
         'billing.free.li4': '基础包裹跟踪',
         'billing.free.btn': '当前方案',
+        'billing.standard.eyebrow': '第二档', 'billing.standard.tagline': '适合已在运营的生意。',
         'billing.standard.title': '🚀 活跃版',
-        'billing.standard.li1': '每月1000次确认与跟踪（超出部分每次+0.12$）',
+        'billing.standard.li1': '每月2100次确认与跟踪（超出部分每次+0.50$）',
         'billing.standard.li2': '已连接 WhatsApp + Telegram + Shopify',
         'billing.standard.li3': '自动识别VIP忠实客户 + 黑名单',
         'billing.standard.li5': '每月赠送1座堡垒',
-        'billing.standard.li6': '每7小时50条 SAMII 消息（超出部分每条+0.50$）',
+        'billing.standard.li6': '每7小时50条 SAMII 消息（超出部分每条+0.12$）',
+        'billing.pro.eyebrow': '第三档 · 推荐', 'billing.pro.tagline': '再也不用等待批准。',
         'billing.pro.title': '👑 至尊版',
-        'billing.pro.li1': '每月10000次确认与跟踪（超出部分每次+0.12$）',
+        'billing.pro.li1': '每月30000次确认与跟踪（超出部分每次+0.50$）',
         'billing.pro.li2': '活跃版全部功能，额度更高',
         'billing.pro.li3': '自主模式 + 至尊模式（准备好的广告无需等待确认，SAMII 立即启动）',
         'billing.pro.li4': '每月赠送2座堡垒 + 1次加速',
         'billing.pro.li5': '优先支持',
-        'billing.pro.li6': '每7小时150条 SAMII 消息（超出部分每条+0.50$）',
+        'billing.pro.li6': '每7小时150条 SAMII 消息（超出部分每条+0.12$）',
         'billing.griot.note': '🎨 AI生成（Griot）：0.20$/秒',
         'billing.bientot.label': '🔜 即将推出',
         'billing.bientot.meta': 'Meta 广告 + Messenger/Instagram 自动回复',
+        'billing.step1': '了解各档位', 'billing.step1b': '了解',
+        'billing.step2': '选择你的档位', 'billing.step2b': '选择',
+        'billing.step3': '支付，立即开始', 'billing.step3b': '支付',
+        'billing.societe.eyebrow': '第四档', 'billing.societe.title': '🏛️ 企业版',
+        'billing.societe.tagline': '多账户，单一合同。', 'billing.societe.price': '定制报价',
+        'billing.societe.li1': '解锁全部卡牌', 'billing.societe.li2': '多账户、多店铺',
+        'billing.societe.li3': '专属合同与结算', 'billing.societe.li4': '专属服务支持',
+        'billing.societe.ph.email': '你的邮箱', 'billing.societe.ph.message': '描述你的需求（店铺数量、业务量……）',
+        'billing.societe.btn': '联系我们',
+        'billing.cards.link': '🃏 查看每个档位解锁的卡牌详情 →',
+        'billing.trust1': '通过 Chargily 支持 Edahabia / CIB', 'billing.trust2': '支持 CCP 转账',
+        'billing.trust3': '随时更改档位',
         'billing.permonth': '/月', 'billing.permonth_filleul': '/月 — 推荐折扣 -5%',
         'billing.ccp.label': '🏦 通过 CCP 支付',
         'billing.ccp.titulaire': '账户持有人：', 'billing.ccp.numero': 'CCP 账号：', 'billing.ccp.cle': 'RIP 密钥：',

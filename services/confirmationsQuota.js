@@ -13,7 +13,7 @@ const chargily = require("../services/chargily");
 const devises = require("../services/devises");
 
 const QUOTA_PAR_PALIER = { free: 5, standard: 70, pro: 1000 };
-const PRIX_DEPASSEMENT_USD = 0.12;
+const PRIX_DEPASSEMENT_USD = 0.5;
 
 async function getPalierWorkspace(workspaceId) {
     if (!workspaceId) return "free";

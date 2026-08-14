@@ -15,7 +15,7 @@ const PRIX_PREMIUM_USD = 5; // déjà le montant réel facturé par /client-qg/p
 // jamais bloqué, mais facturé — même principe que confirmationsQuota.js.
 // Chargily/CCP ne débitent pas en temps réel, donc ça s'accumule sur
 // workspaces.messages_depassement_mois et se règle au renouvellement.
-const PRIX_DEPASSEMENT_MESSAGE_USD = 0.5;
+const PRIX_DEPASSEMENT_MESSAGE_USD = 0.12;
 
 // Quotas alignés sur le palier d'abonnement du WORKSPACE marchand
 // (routes/billing.js) — remplace le "illimité" qui dépendait uniquement du
