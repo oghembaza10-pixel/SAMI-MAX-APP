@@ -6,6 +6,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
+const vitrineThemes = require("../config/vitrine-themes");
 
 const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
 const CLOUDINARY_UPLOAD_PRESET = "MARKETPLACE OG";
@@ -149,7 +150,7 @@ async function renderVitrine(userId, req, res) {
     const estMarchand = user.type_compte === "marchand";
     const grade = escapeHtml(user.grade_actuel || "Soldat");
 
-    const annoncesHtml = annonces.length ? annonces.map(a => {
+    function carteHtml(a) {
         let photos = [];
         try {
             if (a.photos_urls) photos = JSON.parse(a.photos_urls);
@@ -164,7 +165,36 @@ async function renderVitrine(userId, req, res) {
                 <strong>${prixHtml}</strong>
             </div>
         </a>`;
-    }).join("") : `<div class="vt-empty"><i data-lucide="package-search"></i><p data-i18n="vitrine.empty.annonces">Aucune annonce publiée pour le moment.</p></div>`;
+    }
+
+    // Vitrine organisée par le marchand : vedettes en premier, puis groupée
+    // par section (nom libre choisi via "Gérer mes produits") — les produits
+    // sans section vont dans un groupe générique en dernier.
+    const grilleClasse = user.vitrine_grille === "grande" ? "vt-grid--grande" : "";
+    const vedettes = annonces.filter(a => a.en_vedette);
+    const sections = new Map();
+    const sansSection = [];
+    annonces.forEach(a => {
+        const sec = (a.section_vitrine || "").trim();
+        if (sec) {
+            if (!sections.has(sec)) sections.set(sec, []);
+            sections.get(sec).push(a);
+        } else {
+            sansSection.push(a);
+        }
+    });
+
+    const blocHtml = (titre, icone, items) => !items.length ? "" : `
+        <div class="section-title"><i data-lucide="${icone}"></i> ${titre}</div>
+        <div class="vt-grid ${grilleClasse}">${items.map(carteHtml).join("")}</div>`;
+
+    const annoncesHtml = !annonces.length
+        ? `<div class="vt-empty"><i data-lucide="package-search"></i><p data-i18n="vitrine.empty.annonces">Aucune annonce publiée pour le moment.</p></div>`
+        : blocHtml(`<span data-i18n="vitrine.section.vedette">En vedette</span> ⭐`, "star", vedettes)
+        + [...sections.entries()].map(([nom, items]) => blocHtml(escapeHtml(nom), "tag", items)).join("")
+        + blocHtml(sections.size
+            ? `<span data-i18n="vitrine.section.autres">Autres produits</span>`
+            : `<span data-i18n="vitrine.section.annonces">Annonces actives</span>`, "store", sansSection);
 
     const publicationsHtml = publications.length ? publications.map(p => `
         <div class="vt-post">
@@ -182,6 +212,7 @@ async function renderVitrine(userId, req, res) {
 ${pixelsHtml(user)}
 <style>
 :root { --bg:#03060b; --panel:rgba(9,18,29,.88); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --gold:#d7b34c; --border:rgba(0,217,255,.16); --radius:18px; --cyan-glow:0 0 15px rgba(0,217,255,.45); }
+:root { ${vitrineThemes.cssVarsString(user.vitrine_theme)} }
 * { box-sizing:border-box; }
 body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,sans-serif; padding-bottom:60px; }
 .banner { height:220px; background:linear-gradient(135deg,#07121d,#0a1a2a); position:relative; overflow:hidden; }
@@ -207,6 +238,9 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 .section-title { font-size:16px; font-weight:800; margin:30px 0 14px; display:flex; align-items:center; gap:8px; }
 .section-title svg { width:17px; height:17px; color:var(--blue); }
 .vt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:14px; }
+.vt-grid--grande { grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:20px; }
+.vt-grid--grande .vt-card-body span { font-size:14px; }
+.vt-grid--grande .vt-card-body strong { font-size:16px; }
 .vt-card { text-decoration:none; color:var(--text); border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--panel); transition:.2s; }
 .vt-card:hover { transform:translateY(-4px); border-color:var(--blue); box-shadow:var(--cyan-glow); }
 .vt-card img { width:100%; aspect-ratio:1/1; object-fit:cover; }
@@ -267,11 +301,11 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 
     ${user.bio_vitrine ? `<p class="bio-text">${escapeHtml(user.bio_vitrine)}</p>` : ""}
 
-    ${estMoi ? `<a href="/settings" class="edit-vitrine-btn"><i data-lucide="pencil"></i> <span data-i18n="vitrine.edit.settings">Paramètres</span></a>
+    ${estMoi ? `<a href="/settings#boutique" class="edit-vitrine-btn"><i data-lucide="pencil"></i> <span data-i18n="vitrine.edit.settings">Paramètres</span></a>
+    <a href="/marketplace/mes-produits" class="edit-vitrine-btn" style="margin-left:8px;"><i data-lucide="layout-grid"></i> <span data-i18n="vitrine.edit.produits">Gérer mes produits</span></a>
     <a href="/parrainage" class="edit-vitrine-btn" style="margin-left:8px;"><i data-lucide="handshake"></i> <span data-i18n="vitrine.edit.parrainage">Parrainage</span></a>` : ""}
 
-    <div class="section-title"><i data-lucide="store"></i> <span data-i18n="vitrine.section.annonces">Annonces actives</span></div>
-    <div class="vt-grid">${annoncesHtml}</div>
+    ${annoncesHtml}
 
     <div class="section-title"><i data-lucide="message-square"></i> <span data-i18n="vitrine.section.publications">Publications Communauté</span></div>
     <div class="vt-posts">${publicationsHtml}</div>
@@ -297,8 +331,11 @@ const I18N = {
         "vitrine.stat.note": "Note",
         "vitrine.stat.points": "Points SAMII",
         "vitrine.edit.settings": "Paramètres",
+        "vitrine.edit.produits": "Gérer mes produits",
         "vitrine.edit.parrainage": "Parrainage",
+        "vitrine.section.vedette": "En vedette",
         "vitrine.section.annonces": "Annonces actives",
+        "vitrine.section.autres": "Autres produits",
         "vitrine.section.publications": "Publications Communauté",
         "vitrine.annonce.devis": "Sur devis",
         "vitrine.empty.annonces": "Aucune annonce publiée pour le moment.",
@@ -320,8 +357,11 @@ const I18N = {
         "vitrine.stat.note": "Rating",
         "vitrine.stat.points": "SAMII Points",
         "vitrine.edit.settings": "Settings",
+        "vitrine.edit.produits": "Manage my products",
         "vitrine.edit.parrainage": "Referrals",
+        "vitrine.section.vedette": "Featured",
         "vitrine.section.annonces": "Active listings",
+        "vitrine.section.autres": "Other products",
         "vitrine.section.publications": "Community posts",
         "vitrine.annonce.devis": "Contact for price",
         "vitrine.empty.annonces": "No listings published yet.",
@@ -343,8 +383,11 @@ const I18N = {
         "vitrine.stat.note": "التقييم",
         "vitrine.stat.points": "نقاط SAMII",
         "vitrine.edit.settings": "الإعدادات",
+        "vitrine.edit.produits": "إدارة منتجاتي",
         "vitrine.edit.parrainage": "الإحالة",
+        "vitrine.section.vedette": "مميز",
         "vitrine.section.annonces": "الإعلانات النشطة",
+        "vitrine.section.autres": "منتجات أخرى",
         "vitrine.section.publications": "منشورات المجتمع",
         "vitrine.annonce.devis": "على الطلب",
         "vitrine.empty.annonces": "لا توجد إعلانات منشورة حتى الآن.",
@@ -366,8 +409,11 @@ const I18N = {
         "vitrine.stat.note": "评分",
         "vitrine.stat.points": "SAMII 积分",
         "vitrine.edit.settings": "设置",
+        "vitrine.edit.produits": "管理我的商品",
         "vitrine.edit.parrainage": "推荐计划",
+        "vitrine.section.vedette": "精选",
         "vitrine.section.annonces": "在售商品",
+        "vitrine.section.autres": "其他商品",
         "vitrine.section.publications": "社区动态",
         "vitrine.annonce.devis": "价格面议",
         "vitrine.empty.annonces": "暂无发布的商品。",

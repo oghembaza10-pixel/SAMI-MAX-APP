@@ -23,7 +23,11 @@ async function createClientSubdomain(subdomainName, targetIPOrCname) {
             {
                 type: "CNAME", // Utilise "CNAME" pour pointer vers ton app Render ou un autre domaine, ou "A" pour une IP fixe
                 name: `${subdomainName}.souverain-store.com`,
-                content: targetIPOrCname || "samii.souverain-store.com", // Par défaut pointe vers ton app principale ou l'adresse cible
+                // ⚠️ Ne JAMAIS pointer vers "samii.souverain-store.com" par défaut : c'est lui-même
+                // un enregistrement Cloudflare proxied (orange), donc chaîner un proxied → proxied
+                // déclenche l'Erreur 1000 "DNS points to prohibited IP". On pointe directement vers
+                // l'origine Render réelle de l'app.
+                content: targetIPOrCname || CONFIG.CLOUDFLARE.ORIGIN_HOST || "sami-max-app-1.onrender.com",
                 ttl: 1, // Automatique
                 proxied: true // Active le proxy Cloudflare (SSL / HTTPS gratuit et protection)
             },

@@ -6334,6 +6334,128 @@ router.post(
 );
 
 // ==========================================================================
+// MES PRODUITS — organiser sa vitrine (sections, vedettes) — vendeur_id
+// n'a de sens que pour un compte utilisateur (annonces publiées à titre
+// perso via "Publier"), pas pour les imports fournisseur (CJ/BigBuy).
+// ==========================================================================
+
+router.get("/mes-produits", requireAuth, async (req, res) => {
+    let mesAnnonces = [];
+    try {
+        mesAnnonces = await db.query(
+            `SELECT id, titre, prix, photo_url, photos_urls, section_vitrine, en_vedette, actif
+             FROM annonces WHERE vendeur_id = $1 ORDER BY created_at DESC LIMIT 200`,
+            [req.session.userId]
+        );
+    } catch (err) {
+        console.error("❌ GET /marketplace/mes-produits :", err.message);
+    }
+
+    const ligneHtml = (a) => {
+        let photos = [];
+        try { if (a.photos_urls) photos = JSON.parse(a.photos_urls); } catch { /* ignore */ }
+        const photo = photos[0] || a.photo_url || "";
+        return `
+        <div class="mp-row" data-id="${a.id}">
+            ${photo ? `<img src="${escapeHtml(photo)}" alt="">` : `<div class="mp-row__ph"><i data-lucide="image"></i></div>`}
+            <div class="mp-row__body">
+                <strong>${escapeHtml(a.titre)}${!a.actif ? ` <span class="mp-inactive">(inactif)</span>` : ""}</strong>
+                <span class="mp-prix">${escapeHtml(a.prix || "")}</span>
+                <div class="mp-row__controls">
+                    <input type="text" class="mp-section" placeholder="Nom de section (ex: Nouveautés)" value="${escapeHtml(a.section_vitrine || "")}">
+                    <label class="mp-vedette"><input type="checkbox" class="mp-vedette-cb" ${a.en_vedette ? "checked" : ""}> ⭐ En vedette</label>
+                    <button type="button" class="mp-save-btn" data-id="${a.id}">Enregistrer</button>
+                    <span class="mp-status" id="mp-status-${a.id}"></span>
+                </div>
+            </div>
+        </div>`;
+    };
+
+    res.send(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mes produits — SAMII Marketplace</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root { --bg:#03060b; --panel:rgba(9,18,29,.9); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --border:rgba(0,217,255,.16); }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; padding:24px 16px 80px; }
+.mp-shell { max-width:720px; margin:0 auto; }
+.back { display:inline-flex; align-items:center; gap:6px; color:var(--muted); text-decoration:none; font-size:12.5px; margin-bottom:16px; }
+h1 { font-size:19px; margin:0 0 6px; }
+p.sub { color:var(--muted); font-size:12.5px; margin:0 0 22px; }
+.mp-row { display:flex; gap:14px; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:14px; margin-bottom:12px; }
+.mp-row img, .mp-row__ph { width:64px; height:64px; border-radius:10px; object-fit:cover; flex-shrink:0; background:#0a0d14; display:grid; place-items:center; color:var(--blue); }
+.mp-row__body { flex:1; min-width:0; }
+.mp-row__body strong { display:block; font-size:13.5px; margin-bottom:2px; }
+.mp-inactive { color:#ff6b6b; font-weight:400; font-size:11px; }
+.mp-prix { display:block; color:var(--blue); font-size:12px; margin-bottom:10px; }
+.mp-row__controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.mp-section { flex:1; min-width:160px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,.3); color:var(--text); font-size:12.5px; }
+.mp-vedette { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); white-space:nowrap; }
+.mp-save-btn { padding:8px 14px; border-radius:8px; border:1px solid var(--blue); background:rgba(0,217,255,.1); color:var(--blue); font-size:12px; font-weight:700; cursor:pointer; }
+.mp-save-btn:disabled { opacity:.5; }
+.mp-status { font-size:11.5px; color:#3ddc84; }
+.mp-empty { text-align:center; padding:60px 20px; border:1px dashed var(--border); border-radius:16px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="mp-shell">
+    <a href="/marketplace" class="back"><i data-lucide="arrow-left"></i> Retour au marketplace</a>
+    <h1>🗂️ Gérer mes produits</h1>
+    <p class="sub">Organise ta vitrine : regroupe tes produits par section, mets-en en vedette. Laisse la section vide pour qu'un produit reste dans le groupe général.</p>
+    ${mesAnnonces.length ? mesAnnonces.map(ligneHtml).join("") : `<div class="mp-empty">Aucun produit publié pour l'instant. <a href="/marketplace/publier" style="color:var(--blue);">Publier mon premier produit →</a></div>`}
+</div>
+<script>
+lucide.createIcons();
+document.querySelectorAll(".mp-save-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+        const row = btn.closest(".mp-row");
+        const id = btn.dataset.id;
+        const section_vitrine = row.querySelector(".mp-section").value.trim();
+        const en_vedette = row.querySelector(".mp-vedette-cb").checked;
+        const status = document.getElementById("mp-status-" + id);
+
+        btn.disabled = true;
+        status.textContent = "⏳...";
+        try {
+            const res = await fetch("/marketplace/mes-produits/" + id, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ section_vitrine, en_vedette }),
+            });
+            const json = await res.json();
+            status.textContent = json.success ? "✅ Enregistré" : (json.error || "Erreur");
+        } catch (err) {
+            status.textContent = "❌ Erreur réseau";
+        } finally {
+            btn.disabled = false;
+            setTimeout(() => { status.textContent = ""; }, 2500);
+        }
+    });
+});
+</script>
+</body>
+</html>`);
+});
+
+router.post("/mes-produits/:id", requireAuth, async (req, res) => {
+    try {
+        const { section_vitrine, en_vedette } = req.body;
+        const rows = await db.query(
+            `UPDATE annonces SET section_vitrine = $1, en_vedette = $2
+             WHERE id = $3 AND vendeur_id = $4 RETURNING id`,
+            [String(section_vitrine || "").trim().slice(0, 40) || null, !!en_vedette, req.params.id, req.session.userId]
+        );
+        if (!rows[0]) return res.json({ success: false, error: "Produit introuvable." });
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /marketplace/mes-produits/:id :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+// ==========================================================================
 // EXPORT
 // ==========================================================================
 

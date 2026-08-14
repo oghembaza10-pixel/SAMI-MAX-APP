@@ -83,8 +83,12 @@ module.exports = {
     // ==================================================
 
     CLOUDFLARE: {
-        ZONE_ID   : process.env.CLOUDFLARE_ZONE_ID,
-        API_TOKEN : process.env.CLOUDFLARE_API_TOKEN,
+        ZONE_ID    : process.env.CLOUDFLARE_ZONE_ID,
+        API_TOKEN  : process.env.CLOUDFLARE_API_TOKEN,
+        // Origine réelle de l'app (host Render), utilisée comme cible des sous-domaines
+        // clients. Ne JAMAIS mettre une valeur qui est elle-même un enregistrement
+        // Cloudflare proxied (ex: samii.souverain-store.com) → Erreur 1000.
+        ORIGIN_HOST: process.env.CLOUDFLARE_ORIGIN_HOST || "sami-max-app-1.onrender.com",
     },
     RUNWARE: {
     API_KEY: process.env.RUNWARE_API_KEY || "",

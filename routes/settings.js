@@ -9,6 +9,7 @@ const axios = require("axios");
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
 const cloudflareService = require("../services/cloudflareService");
+const vitrineThemes = require("../config/vitrine-themes");
 
 const SOUS_DOMAINES_RESERVES = [
     "www", "samii", "api", "admin", "app", "mail", "smtp", "ftp", "webhook",
@@ -179,6 +180,36 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
             <div class="pixel-guide-panel" id="guide-google" style="display:none;"></div>
             <p style="color:var(--muted);font-size:11px;margin:6px 0 0;" data-i18n="settings.boutique.pixel.optionalNote">Remplis uniquement les pixels des plateformes où tu comptes faire de la pub — aucun n'est obligatoire.</p>
 
+            <label data-i18n="settings.boutique.label.theme" style="margin-top:16px;display:block;">🎨 Thème de couleurs de la vitrine</label>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 14px;">
+                ${Object.entries(vitrineThemes.THEMES).map(([id, theme]) => `
+                <label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;width:84px;">
+                    <input type="radio" name="vitrine_theme" value="${id}" ${(user.vitrine_theme || "signature") === id ? "checked" : ""} style="margin:0;">
+                    <span style="display:flex;width:100%;height:34px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.15);">
+                        <span style="flex:1;background:${theme.vars["--bg"]};"></span>
+                        <span style="flex:1;background:${theme.vars["--blue"]};"></span>
+                        <span style="flex:1;background:${theme.vars["--gold"]};"></span>
+                    </span>
+                    <span style="font-size:10.5px;color:var(--muted);text-align:center;line-height:1.2;">${escapeHtml(theme.label)}</span>
+                </label>`).join("")}
+            </div>
+
+            <label data-i18n="settings.boutique.label.grille" style="display:block;">🧱 Disposition des produits</label>
+            <div style="display:flex;gap:16px;margin:6px 0 14px;">
+                <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12.5px;">
+                    <input type="radio" name="vitrine_grille" value="compacte" ${(user.vitrine_grille || "compacte") === "compacte" ? "checked" : ""}>
+                    <span data-i18n="settings.boutique.grille.compacte">Compacte (plus de produits par ligne)</span>
+                </label>
+                <label style="cursor:pointer;display:flex;align-items:center;gap:6px;font-size:12.5px;">
+                    <input type="radio" name="vitrine_grille" value="grande" ${user.vitrine_grille === "grande" ? "checked" : ""}>
+                    <span data-i18n="settings.boutique.grille.grande">Grande (photos plus grandes)</span>
+                </label>
+            </div>
+            <p style="color:var(--muted);font-size:11px;margin:0 0 6px;">
+                <span data-i18n="settings.boutique.produits.link">Pour organiser tes produits en sections et en mettre en vedette :</span>
+                <a href="/marketplace/mes-produits" style="color:var(--blue);" data-i18n="settings.boutique.produits.linkText">Gérer mes produits →</a>
+            </p>
+
             <label data-i18n="settings.boutique.label.qg">Envoyer mes commandes boutique vers ce QG</label>
             <select name="workspace_boutique_id">
                 <option value="" data-i18n="settings.boutique.qg.none">— Aucun (ne pas relier) —</option>
@@ -299,6 +330,12 @@ const I18N = {
         "settings.boutique.pixel.detect": "🔍 Détecter",
         "settings.boutique.pixel.guideBtn": "📖 Comment le récupérer moi-même ?",
         "settings.boutique.pixel.optionalNote": "Remplis uniquement les pixels des plateformes où tu comptes faire de la pub — aucun n'est obligatoire.",
+        "settings.boutique.label.theme": "🎨 Thème de couleurs de la vitrine",
+        "settings.boutique.label.grille": "🧱 Disposition des produits",
+        "settings.boutique.grille.compacte": "Compacte (plus de produits par ligne)",
+        "settings.boutique.grille.grande": "Grande (photos plus grandes)",
+        "settings.boutique.produits.link": "Pour organiser tes produits en sections et en mettre en vedette :",
+        "settings.boutique.produits.linkText": "Gérer mes produits →",
         "settings.boutique.saved": "Enregistré !",
         "settings.boutique.viewLink": "Voir ma boutique →",
         "settings.boutique.submit": "Enregistrer ma boutique"
@@ -347,6 +384,12 @@ const I18N = {
         "settings.boutique.pixel.detect": "🔍 Detect",
         "settings.boutique.pixel.guideBtn": "📖 How do I find it myself?",
         "settings.boutique.pixel.optionalNote": "Only fill in the pixels for platforms where you plan to run ads — none of them are required.",
+        "settings.boutique.label.theme": "🎨 Store color theme",
+        "settings.boutique.label.grille": "🧱 Product layout",
+        "settings.boutique.grille.compacte": "Compact (more products per row)",
+        "settings.boutique.grille.grande": "Large (bigger photos)",
+        "settings.boutique.produits.link": "To organize your products into sections and feature them:",
+        "settings.boutique.produits.linkText": "Manage my products →",
         "settings.boutique.saved": "Saved!",
         "settings.boutique.viewLink": "View my store →",
         "settings.boutique.submit": "Save my store"
@@ -395,6 +438,12 @@ const I18N = {
         "settings.boutique.pixel.detect": "🔍 اكتشاف",
         "settings.boutique.pixel.guideBtn": "📖 كيف أحصل عليه بنفسي؟",
         "settings.boutique.pixel.optionalNote": "املأ فقط بيكسلات المنصات التي تنوي الإعلان عليها — لا شيء إلزامي.",
+        "settings.boutique.label.theme": "🎨 نمط ألوان المتجر",
+        "settings.boutique.label.grille": "🧱 تنظيم عرض المنتجات",
+        "settings.boutique.grille.compacte": "مضغوط (منتجات أكثر في كل صف)",
+        "settings.boutique.grille.grande": "كبير (صور أكبر)",
+        "settings.boutique.produits.link": "لتنظيم منتجاتك في أقسام وإبرازها:",
+        "settings.boutique.produits.linkText": "إدارة منتجاتي ←",
         "settings.boutique.saved": "تم الحفظ!",
         "settings.boutique.viewLink": "عرض متجري ←",
         "settings.boutique.submit": "حفظ متجري"
@@ -443,6 +492,12 @@ const I18N = {
         "settings.boutique.pixel.detect": "🔍 自动检测",
         "settings.boutique.pixel.guideBtn": "📖 我该如何自己获取？",
         "settings.boutique.pixel.optionalNote": "只需填写你打算投放广告的平台的像素——都不是必填项。",
+        "settings.boutique.label.theme": "🎨 店铺配色主题",
+        "settings.boutique.label.grille": "🧱 产品排列方式",
+        "settings.boutique.grille.compacte": "紧凑（每行更多产品）",
+        "settings.boutique.grille.grande": "大图（图片更大）",
+        "settings.boutique.produits.link": "要将产品整理为分类并设为精选：",
+        "settings.boutique.produits.linkText": "管理我的产品 →",
         "settings.boutique.saved": "已保存！",
         "settings.boutique.viewLink": "查看我的店铺 →",
         "settings.boutique.submit": "保存我的店铺"
@@ -644,9 +699,11 @@ router.post("/boutique", async (req, res) => {
             return res.json({ success: false, error: "Réservé aux comptes marchands." });
         }
 
-        let { sous_domaine, pixel_meta, pixel_tiktok, pixel_google, workspace_boutique_id } = req.body;
+        let { sous_domaine, pixel_meta, pixel_tiktok, pixel_google, workspace_boutique_id, vitrine_theme, vitrine_grille } = req.body;
         sous_domaine = String(sous_domaine || "").trim().toLowerCase();
         workspace_boutique_id = String(workspace_boutique_id || "").trim();
+        vitrine_theme = Object.keys(vitrineThemes.THEMES).includes(vitrine_theme) ? vitrine_theme : "signature";
+        vitrine_grille = vitrine_grille === "grande" ? "grande" : "compacte";
 
         if (workspace_boutique_id) {
             const userRows = await db.query(`SELECT email FROM utilisateurs WHERE id = $1`, [req.session.userId]);
@@ -686,8 +743,8 @@ router.post("/boutique", async (req, res) => {
         }
 
         await db.query(
-            `UPDATE utilisateurs SET sous_domaine = $1, pixel_meta = $2, pixel_tiktok = $3, pixel_google = $4, workspace_boutique_id = $5 WHERE id = $6`,
-            [sous_domaine || null, pixel_meta || null, pixel_tiktok || null, pixel_google || null, workspace_boutique_id || null, req.session.userId]
+            `UPDATE utilisateurs SET sous_domaine = $1, pixel_meta = $2, pixel_tiktok = $3, pixel_google = $4, workspace_boutique_id = $5, vitrine_theme = $6, vitrine_grille = $7 WHERE id = $8`,
+            [sous_domaine || null, pixel_meta || null, pixel_tiktok || null, pixel_google || null, workspace_boutique_id || null, vitrine_theme, vitrine_grille, req.session.userId]
         );
 
         res.json({ success: true });
