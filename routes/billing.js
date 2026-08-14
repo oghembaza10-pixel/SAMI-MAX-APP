@@ -85,6 +85,7 @@ router.get("/", requireAuth, async (req, res) => {
         <button class="bill-btn bill-btn--regulariser" id="regulariser-confirm">Régulariser →</button>
     </div>` : "";
     const dailyNote = (plan) => `<p class="bill-daily-note">≈ ${confirmationsQuota.QUOTA_PAR_PALIER[plan]}/jour</p>`;
+    const griotNote = `<p class="bill-daily-note" data-i18n="billing.griot.note">🎨 Génération IA (Griot) : 0,20 $/seconde</p>`;
 
     // Prix affiché toujours converti depuis le prix de référence en USD, dans
     // la devise du marchand (marché parallèle pour le DZD, marché réel pour
@@ -203,6 +204,7 @@ router.get("/", requireAuth, async (req, res) => {
             ${ccpBlock("standard")}
             ${stripeBlock("standard")}
             ${dailyNote("standard")}
+            ${griotNote}
         </div>
         <div class="bill-card bill-card--pro">
             <h2 data-i18n="billing.pro.title">👑 Souverain</h2>
@@ -220,6 +222,7 @@ router.get("/", requireAuth, async (req, res) => {
             ${ccpBlock("pro")}
             ${stripeBlock("pro")}
             ${dailyNote("pro")}
+            ${griotNote}
         </div>
         <div class="bill-card bill-card--societe">
             <h2>🏛️ Société</h2>
@@ -244,7 +247,6 @@ router.get("/", requireAuth, async (req, res) => {
         <div class="bill-bientot-label" data-i18n="billing.bientot.label">🔜 Bientôt disponible</div>
         <div class="bill-bientot-items">
             <span data-i18n="billing.bientot.meta">Pubs Meta + réponses automatiques Messenger/Instagram</span>
-            <span data-i18n="billing.bientot.creative">Génère tes visuels et vidéos publicitaires avec SAMII (IA)</span>
         </div>
     </div>
 
@@ -273,9 +275,9 @@ const I18N = {
         'billing.pro.li4': '2 Forteresse + 1 Boost offerts chaque mois',
         'billing.pro.li5': 'Support prioritaire',
         'billing.pro.li6': '150 messages SAMII toutes les 7h (+0,50 $/message au-delà)',
+        'billing.griot.note': '🎨 Génération IA (Griot) : 0,20 $/seconde',
         'billing.bientot.label': '🔜 Bientôt disponible',
         'billing.bientot.meta': 'Pubs Meta + réponses automatiques Messenger/Instagram',
-        'billing.bientot.creative': 'Génère tes visuels et vidéos publicitaires avec SAMII (IA)',
         'billing.permonth': '/mois', 'billing.permonth_filleul': '/mois — filleul -5%',
         'billing.ccp.label': '🏦 Payer par CCP',
         'billing.ccp.titulaire': 'Titulaire :', 'billing.ccp.numero': 'Numéro CCP :', 'billing.ccp.cle': 'Clé RIP :',
@@ -309,9 +311,9 @@ const I18N = {
         'billing.pro.li4': '2 Fortresses + 1 Boost granted every month',
         'billing.pro.li5': 'Priority support',
         'billing.pro.li6': '150 SAMII messages every 7h (+$0.50/message beyond)',
+        'billing.griot.note': '🎨 AI generation (Griot): $0.20/second',
         'billing.bientot.label': '🔜 Coming soon',
         'billing.bientot.meta': 'Meta ads + automatic Messenger/Instagram replies',
-        'billing.bientot.creative': 'Generate your ad visuals and videos with SAMII (AI)',
         'billing.permonth': '/month', 'billing.permonth_filleul': '/month — referral -5%',
         'billing.ccp.label': '🏦 Pay by CCP',
         'billing.ccp.titulaire': 'Account holder:', 'billing.ccp.numero': 'CCP number:', 'billing.ccp.cle': 'RIP key:',
@@ -345,9 +347,9 @@ const I18N = {
         'billing.pro.li4': 'حصنان + تعزيز واحد مجانًا كل شهر',
         'billing.pro.li5': 'دعم ذو أولوية',
         'billing.pro.li6': '150 رسالة SAMII كل 7 ساعات (+0.50$ لكل رسالة إضافية)',
+        'billing.griot.note': '🎨 توليد بالذكاء الاصطناعي (Griot): 0.20$/ثانية',
         'billing.bientot.label': '🔜 قريبًا',
         'billing.bientot.meta': 'إعلانات Meta + ردود تلقائية على Messenger/Instagram',
-        'billing.bientot.creative': 'أنشئ صورك ومقاطع الفيديو الإعلانية مع SAMII (ذكاء اصطناعي)',
         'billing.permonth': '/شهر', 'billing.permonth_filleul': '/شهر — خصم الإحالة 5%-',
         'billing.ccp.label': '🏦 الدفع عبر CCP',
         'billing.ccp.titulaire': 'صاحب الحساب:', 'billing.ccp.numero': 'رقم CCP:', 'billing.ccp.cle': 'مفتاح RIP:',
@@ -381,9 +383,9 @@ const I18N = {
         'billing.pro.li4': '每月赠送2座堡垒 + 1次加速',
         'billing.pro.li5': '优先支持',
         'billing.pro.li6': '每7小时150条 SAMII 消息（超出部分每条+0.50$）',
+        'billing.griot.note': '🎨 AI生成（Griot）：0.20$/秒',
         'billing.bientot.label': '🔜 即将推出',
         'billing.bientot.meta': 'Meta 广告 + Messenger/Instagram 自动回复',
-        'billing.bientot.creative': '用 SAMII（AI）生成你的广告图片和视频',
         'billing.permonth': '/月', 'billing.permonth_filleul': '/月 — 推荐折扣 -5%',
         'billing.ccp.label': '🏦 通过 CCP 支付',
         'billing.ccp.titulaire': '账户持有人：', 'billing.ccp.numero': 'CCP 账号：', 'billing.ccp.cle': 'RIP 密钥：',

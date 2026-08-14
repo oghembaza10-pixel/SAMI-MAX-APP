@@ -10,6 +10,7 @@ const connectorService = require("../services/connectorService");
 const meta = require("../services/meta");
 const db = require("../services/db");
 const CONFIG  = require("../config");
+const griotCoutService = require("../services/griotCoutService");
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -501,6 +502,7 @@ if (runwareApiKey && pack.prompt_visuel) {
                     runwareTask.strength = 0.75;
                 }
 
+                const debutGeneration = Date.now();
                 const runwareRes = await fetch("https://api.runware.ai/v1", {
                     method: "POST",
                     headers: {
@@ -511,6 +513,11 @@ if (runwareApiKey && pack.prompt_visuel) {
                 });
 const runwareData = await runwareRes.json();
 console.log("📸 DEBUG Runware — statut HTTP :", runwareRes.status, "| réponse complète :", JSON.stringify(runwareData));
+                // Facturé au temps réel de génération (0,20$/seconde, voir
+                // services/griotCoutService.js) — jamais bloquant, accumulé pour
+                // le prochain renouvellement, que la génération réussisse ou non
+                // (Runware facture le calcul GPU même en cas d'échec côté rendu).
+                griotCoutService.enregistrerGeneration(req.session.workspaceId, Date.now() - debutGeneration).catch(() => {});
 
 if (runwareData && Array.isArray(runwareData.data)) {
                

@@ -13,6 +13,7 @@ const devises = require("../services/devises");
 const abonnementService = require("../services/abonnementService");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const samiiQuota = require("../services/samiiQuota");
+const griotCoutService = require("../services/griotCoutService");
 const notificationEngine = require("./notificationEngine");
 const notify = require("../services/notify");
 const CONFIG = require("../config");
@@ -23,15 +24,18 @@ const JOURS_AVANT_RAPPEL = 3;
 async function genererLienRenouvellement(workspaceId, plan) {
     // Chargily/CCP n'ont pas de prélèvement automatique (voir en-tête du
     // fichier) — les dépassements de quota confirmations (services/
-    // confirmationsQuota.js) et messages (services/samiiQuota.js) ne
-    // peuvent donc pas être débités en temps réel : ajoutés ici, une fois,
-    // au montant du prochain renouvellement.
+    // confirmationsQuota.js), messages (services/samiiQuota.js) et le coût
+    // de génération Griot (services/griotCoutService.js, 0,20$/seconde, pas
+    // de volume gratuit) ne peuvent donc pas être débités en temps réel :
+    // ajoutés ici, une fois, au montant du prochain renouvellement.
     const etatQuota = await confirmationsQuota.getEtatQuota(workspaceId, plan);
     const depassementMessages = await samiiQuota.getDepassementMessagesMois(workspaceId);
+    const coutGriot = await griotCoutService.getCoutMois(workspaceId);
     const montantBaseDzd = Math.round(devises.depuisUSD(PRIX_AFFICHE[plan], "DZD"));
     const montantDepassementConfirmDzd = etatQuota.montantDu ? Math.round(devises.depuisUSD(etatQuota.montantDu, "DZD")) : 0;
     const montantDepassementMsgDzd = depassementMessages.montantDu ? Math.round(devises.depuisUSD(depassementMessages.montantDu, "DZD")) : 0;
-    const montantDzd = montantBaseDzd + montantDepassementConfirmDzd + montantDepassementMsgDzd;
+    const montantGriotDzd = coutGriot ? Math.round(devises.depuisUSD(coutGriot, "DZD")) : 0;
+    const montantDzd = montantBaseDzd + montantDepassementConfirmDzd + montantDepassementMsgDzd + montantGriotDzd;
 
     const inserted = await db.query(
         `INSERT INTO abonnements (workspace_id, type, statut, methode_paiement, montant, devise, date_debut)
@@ -42,8 +46,9 @@ async function genererLienRenouvellement(workspaceId, plan) {
     const extras = [];
     if (montantDepassementConfirmDzd) extras.push(`${etatQuota.depassement} confirmations`);
     if (montantDepassementMsgDzd) extras.push(`${depassementMessages.count} messages`);
+    if (montantGriotDzd) extras.push(`génération Griot`);
     const description = extras.length
-        ? `Renouvellement abonnement SAMII — ${plan} (+ ${extras.join(" et ")} au-delà du quota)`
+        ? `Renouvellement abonnement SAMII — ${plan} (+ ${extras.join(", ")} au-delà du quota)`
         : `Renouvellement abonnement SAMII — ${plan}`;
 
     const checkout = await chargily.createCheckout({
