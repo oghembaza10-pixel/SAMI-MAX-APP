@@ -11,6 +11,9 @@ const socketService = require("./socketService");
 const notify = require("./notify");
 const { CARTES } = require("../config/cartes-catalog");
 const abonnementService = require("./abonnementService");
+// Les 33 lois de l'Arsenal partagent la même table cartes_achats (voir
+// routes/arsenal.js) — nécessaire ici pour retrouver leur durée exacte.
+const ARSENAL_CARDS = require("../routes/arsenal").CARDS;
 
 // Relit le statut réel du checkout chez Chargily et marque la commande payée
 // si besoin. Idempotent : ne fait rien si déjà "payée" ou si non payé.
@@ -58,7 +61,7 @@ async function confirmChargilyCartePurchase(checkoutId) {
     const { workspace_id: workspaceId, carte_id: carteId } = checkout.metadata || {};
     if (!workspaceId || !carteId) return { updated: false };
 
-    const carte = CARTES.find(c => c.id === carteId);
+    const carte = CARTES.find(c => c.id === carteId) || ARSENAL_CARDS.find(c => c.loi === carteId);
     const dureeJours = carte?.dureeJours || 7;
     const expireLe = new Date(Date.now() + dureeJours * 86400000);
 

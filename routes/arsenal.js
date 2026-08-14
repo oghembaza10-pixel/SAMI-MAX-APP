@@ -2,6 +2,8 @@ const express = require("express");
 const router   = express.Router();
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
+const chargily = require("../services/chargily");
+const CONFIG = require("../config");
 const { mobileNav } = require("../views/partials/mobileNav");
 
 function requireAuth(req, res, next) {
@@ -9,8 +11,20 @@ function requireAuth(req, res, next) {
     next();
 }
 
-// tier : palier de grade (index dans gradeService.SEUILS) requis pour débloquer.
-// 33 lois réparties en 6 paliers (Soldat → Général), ~5-6 lois par palier.
+// tier : palier de grade (index dans gradeService.SEUILS) requis pour débloquer
+// gratuitement par progression. 33 lois réparties en 6 paliers (Soldat →
+// Général), ~5-6 lois par palier. Chaque loi de tier >= 1 est aussi
+// achetable à l'unité (prix EUR, durée en jours) pour la débloquer avant
+// d'avoir atteint le grade/abonnement requis — même mécanisme que
+// config/cartes-catalog.js (table cartes_achats, Chargily).
+const PRIX_PAR_TIER = {
+    1: { prix: 1.99, dureeJours: 7 },
+    2: { prix: 2.99, dureeJours: 5 },
+    3: { prix: 3.49, dureeJours: 4 },
+    4: { prix: 3.99, dureeJours: 3 },
+    5: { prix: 4.99, dureeJours: 3 },
+};
+
 const CARDS = [
     { loi: "T-001", name: "Genèse",            icon: "sparkle",       desc: "Identité fondatrice de ta marque", tier: 0, href: "/samii" },
     { loi: "T-002", name: "Code d'Honneur",     icon: "scroll",        desc: "Charte éthique envers tes clients", tier: 0, href: "/samii" },
@@ -45,8 +59,8 @@ const CARDS = [
     { loi: "T-031", name: "Scalpel",            icon: "scissors",      desc: "Aide à la décision rapide", tier: 5, href: "/samii" },
     { loi: "T-032", name: "Sceau",              icon: "stamp",         desc: "Validation finale avant action critique", tier: 5, href: "/samii" },
     { loi: "T-033", name: "Souverain",          icon: "crown",         desc: "Lance directement tes actions déjà prêtes, sans validation finale", tier: 5, href: "/samii/mode" },
-    { loi: "—",     name: "Boost Visibilité",   icon: "star",          desc: "Augmente ta visibilité pendant 3 jours", tier: 0, href: "/coffre" },
-];
+    { loi: "T-034", name: "Boost Visibilité",   icon: "star",          desc: "Augmente ta visibilité pendant 3 jours", tier: 0, href: "/coffre" },
+].map(c => ({ ...c, ...(PRIX_PAR_TIER[c.tier] || { prix: null, dureeJours: null }) }));
 
 // Abonnement gratuit : plafonné au palier Sergent (index 2, T-001 à T-017).
 // Un abonnement payant permet de débloquer jusqu'au palier atteint par le grade.
@@ -54,33 +68,48 @@ const PALIER_MAX_GRATUIT = 2;
 
 router.get("/", requireAuth, async (req, res) => {
     let tierAtteint = 0;
-    let abonnement = "gratuit";
+    // Palier réel du workspace marchand (Actif/Souverain, routes/billing.js) —
+    // pas utilisateurs.abonnement, qui est le micro-abonnement personnel à 5$
+    // sans rapport avec l'abonnement business (même confusion déjà corrigée
+    // dans services/samiiQuota.js).
+    let palierWorkspace = "free";
+    let achatsActifsIds = [];
 
     try {
-        const rows = await db.query(
-            `SELECT grade_actuel, abonnement FROM utilisateurs WHERE id = $1`,
-            [req.session.userId]
-        );
+        const rows = await db.query(`SELECT grade_actuel FROM utilisateurs WHERE id = $1`, [req.session.userId]);
         if (rows[0]) {
-            abonnement = rows[0].abonnement || "gratuit";
             const idx = gradeService.SEUILS.findIndex(s => s.grade === (rows[0].grade_actuel || "Soldat"));
             tierAtteint = idx >= 0 ? idx : 0;
+        }
+        if (req.session.workspaceId) {
+            const wsRows = await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [req.session.workspaceId]);
+            palierWorkspace = wsRows[0]?.palier_abonnement || "free";
+
+            const achatsRows = await db.query(
+                `SELECT carte_id FROM cartes_achats WHERE workspace_id = $1 AND statut = 'payée' AND expire_le > now()`,
+                [req.session.workspaceId]
+            );
+            achatsActifsIds = achatsRows.map(r => r.carte_id);
         }
     } catch (err) {
         console.error("❌ GET /arsenal (grade) :", err.message);
     }
 
-    const tierMax = abonnement === "gratuit" ? Math.min(tierAtteint, PALIER_MAX_GRATUIT) : tierAtteint;
+    const tierMax = palierWorkspace === "free" ? Math.min(tierAtteint, PALIER_MAX_GRATUIT) : tierAtteint;
 
     const cardsHtml = CARDS.map(c => {
-        const available = c.tier <= tierMax;
+        const achetee = achatsActifsIds.includes(c.loi);
+        const available = c.tier <= tierMax || achetee;
         const tag = available
             ? `<a href="${c.href}" class="ars33-card ars33-card--on">`
             : `<div class="ars33-card">`;
         const closeTag = available ? "</a>" : "</div>";
         const badgeLabel = available
             ? "Disponible"
-            : (abonnement === "gratuit" && c.tier > PALIER_MAX_GRATUIT ? "Abonnement requis" : "Grade insuffisant");
+            : (palierWorkspace === "free" && c.tier > PALIER_MAX_GRATUIT ? "Abonnement requis" : "Grade insuffisant");
+        const acheterHtml = (!available && c.prix)
+            ? `<button type="button" class="ars33-acheter" data-loi="${c.loi}">🔒 ${c.dureeJours}j — ${c.prix.toFixed(2)}€</button>`
+            : "";
 
         return `${tag}
             <span class="ars33-loi">${c.loi}</span>
@@ -90,6 +119,7 @@ router.get("/", requireAuth, async (req, res) => {
             <span class="ars33-badge ars33-badge-item ${available ? "ars33-badge--on" : ""}" data-available="${available}">
                 ${badgeLabel}
             </span>
+            ${acheterHtml}
         ${closeTag}`;
     }).join("");
 
@@ -123,6 +153,9 @@ router.get("/", requireAuth, async (req, res) => {
         .ars33-card p { color: var(--text-muted); font-size: .74rem; line-height: 1.4; flex: 1; }
         .ars33-badge { font-family: var(--font-mono); font-size: .6rem; padding: 2px 8px; border-radius: 20px; background: rgba(255,255,255,0.06); color: var(--text-muted); align-self: flex-start; }
         .ars33-badge--on { background: rgba(61,220,132,0.12); color: #3ddc84; }
+        .ars33-acheter { margin-top: 4px; padding: 8px; border-radius: 8px; border: 1px solid rgba(197,160,89,0.3); background: rgba(197,160,89,0.1); color: var(--gold-og); font-size: .72rem; font-weight: 700; cursor: pointer; }
+        .ars33-acheter:disabled { opacity: .6; cursor: not-allowed; }
+        .ars33-msg { text-align: center; margin-top: 16px; font-size: .82rem; color: #e55; min-height: 18px; }
         .og-lang-switch { display: flex; justify-content: flex-start; gap: 10px; margin-bottom: 24px; font-family: var(--font-mono); font-size: .72rem; }
         .og-lang-switch span { cursor: pointer; color: var(--text-muted); padding: 4px 8px; border-radius: 4px; transition: color .2s ease; }
         .og-lang-switch span:hover { color: var(--cyan-tech); }
@@ -156,6 +189,7 @@ router.get("/", requireAuth, async (req, res) => {
     <h1>⚔️ <span data-i18n="arsenal.title">L'Arsenal</span></h1>
     <p class="sub" data-i18n="arsenal.subtitle">33 pouvoirs, chacun ancré dans une loi de SAMII. Débloqués progressivement.</p>
     <div class="ars33-grid">${cardsHtml}</div>
+    <div class="ars33-msg" id="ars33-msg"></div>
 </div>
 ${mobileNav("/arsenal")}
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -163,6 +197,29 @@ ${mobileNav("/arsenal")}
 <script src="/js/pwa-register.js"></script>
 <script>
     if (typeof lucide !== "undefined") lucide.createIcons();
+
+    document.querySelectorAll(".ars33-acheter").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const loi = btn.dataset.loi;
+            const msg = document.getElementById("ars33-msg");
+            btn.disabled = true;
+            btn.textContent = "Redirection...";
+            try {
+                const res = await fetch("/arsenal/acheter/" + loi, { method: "POST" });
+                const data = await res.json();
+                if (data.checkoutUrl) {
+                    window.location.href = data.checkoutUrl;
+                } else {
+                    msg.textContent = data.error || "Erreur, réessaie.";
+                    btn.disabled = false;
+                    btn.textContent = "🔒 Débloquer";
+                }
+            } catch (err) {
+                msg.textContent = "Erreur réseau.";
+                btn.disabled = false;
+            }
+        });
+    });
 
     function updateArsenalBadges(dict) {
         const onText  = dict?.arsenal?.available || "Disponible";
@@ -181,6 +238,55 @@ ${mobileNav("/arsenal")}
 </script>
 </body>
 </html>`);
+});
+
+// Achat à l'unité d'une loi de l'Arsenal — même mécanisme que config/cartes-
+// catalog.js (table cartes_achats, Chargily) : carte_id accepte n'importe
+// quel identifiant texte, donc les "T-0XX" fonctionnent sans table à part.
+router.post("/acheter/:loi", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session?.workspaceId;
+        if (!workspaceId) return res.json({ success: false, error: "Aucun espace actif." });
+
+        const loi = CARDS.find(c => c.loi === req.params.loi);
+        if (!loi || !loi.prix) return res.json({ success: false, error: "Loi introuvable ou non achetable." });
+
+        if (!chargily.isEnabled()) return res.json({ success: false, error: "Paiement en ligne indisponible pour le moment." });
+
+        const active = await db.query(
+            `SELECT 1 FROM cartes_achats WHERE workspace_id = $1 AND carte_id = $2 AND statut = 'payée' AND expire_le > now()`,
+            [workspaceId, loi.loi]
+        );
+        if (active[0]) return res.json({ success: false, error: "Déjà active — attends l'expiration pour la racheter." });
+
+        await db.query(
+            `INSERT INTO cartes_achats (workspace_id, carte_id, prix_paye, devise, statut, expire_le)
+             VALUES ($1,$2,$3,'EUR','en attente',NULL)
+             ON CONFLICT (workspace_id, carte_id) DO UPDATE SET statut = 'en attente', expire_le = NULL`,
+            [workspaceId, loi.loi, loi.prix]
+        );
+
+        const montantDzd = Math.round(loi.prix * CONFIG.CHARGILY.EUR_TO_DZD_RATE);
+        const checkout = await chargily.createCheckout({
+            amount: montantDzd,
+            currency: "dzd",
+            description: `Arsenal SAMII — ${loi.loi} ${loi.name}`,
+            successUrl: `${CONFIG.APP_URL}/arsenal?achat=ok`,
+            failureUrl: `${CONFIG.APP_URL}/arsenal?achat=echec`,
+            webhookUrl: `${CONFIG.APP_URL}/webhook/chargily`,
+            metadata: { type: "carte", workspace_id: workspaceId, carte_id: loi.loi },
+        });
+
+        if (!checkout.success) return res.json({ success: false, error: "Erreur lors de la création du paiement." });
+
+        await db.query(`UPDATE cartes_achats SET chargily_checkout_id = $1 WHERE workspace_id = $2 AND carte_id = $3`,
+            [checkout.checkoutId, workspaceId, loi.loi]);
+
+        res.json({ success: true, checkoutUrl: checkout.checkoutUrl });
+    } catch (err) {
+        console.error("❌ POST /arsenal/acheter :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
 });
 
 module.exports = router;
