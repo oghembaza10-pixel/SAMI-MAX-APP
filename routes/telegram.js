@@ -9,6 +9,7 @@ const planner      = require("../brain/planner");
 const memory       = require("../brain/memory");
 const db           = require("../services/db");
 const socketService = require("../services/socketService");
+const confirmationsQuota = require("../services/confirmationsQuota");
 
 const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
@@ -181,6 +182,7 @@ router.post("/", async (req, res) => {
             if (data.startsWith("confirm_")) {
                 const orderId = data.replace("confirm_", "");
                 const rows = await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1 RETURNING workspace_id`, [orderId]);
+                if (rows[0]?.workspace_id) confirmationsQuota.enregistrerSiDepassement(rows[0].workspace_id).catch(() => {});
                 await orchestrator.process({ type: "order.confirmed", shop: "", payload: { orderId, chatId } });
                 socketService.emitToShop(rows[0]?.workspace_id, "commande-confirmee", { id: orderId });
                 await reply(chatId, tr(lang, "commandeConfirmee", orderId));

@@ -10,6 +10,7 @@ const notificationEngine = require("../engines/notificationEngine");
 const automationEngine   = require("../engines/automationEngine");
 const db = require("../services/db");
 const notify = require("../services/notify");
+const confirmationsQuota = require("../services/confirmationsQuota");
 // require() tardif (dans les méthodes) : telegramService requiert brain/orchestrator,
 // qui requiert ce fichier — un require en tête de fichier créerait un cycle où
 // telegramService capterait un orchestrator encore vide au chargement.
@@ -318,7 +319,8 @@ class CommerceEngine {
     async confirmTelegramOrder(event) {
         try {
             const { orderId } = event.payload;
-            await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [orderId]);
+            const rows = await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1 RETURNING workspace_id`, [orderId]);
+            if (rows[0]?.workspace_id) confirmationsQuota.enregistrerSiDepassement(rows[0].workspace_id).catch(() => {});
             await db.query(
                 `INSERT INTO journal (action, details) VALUES ($1, $2)`,
                 ["order.confirmed.telegram", `#${orderId} confirmée via Telegram`]

@@ -7,6 +7,7 @@ const router = express.Router();
 const planner = require("../brain/planner");
 const db = require("../services/db");
 const samiiQuota = require("../services/samiiQuota");
+const confirmationsQuota = require("../services/confirmationsQuota");
 const samiiMemoire = require("../services/samiiMemoire");
 const projetsService = require("../services/projetsService");
 
@@ -479,6 +480,7 @@ router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
         );
         if (checkCmd.length) {
             await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [req.params.id]);
+            confirmationsQuota.enregistrerSiDepassement(req.session.workspaceId).catch(() => {});
             return res.json({ success: true });
         }
 

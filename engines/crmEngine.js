@@ -18,6 +18,7 @@
 
 const db = require("../services/db");
 const telegram = require("../services/telegramService");
+const confirmationsQuota = require("../services/confirmationsQuota");
 
 class CRMEngine {
 
@@ -110,6 +111,7 @@ class CRMEngine {
 
             if (action === "confirm") {
                 await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [orderId]);
+                if (shop) confirmationsQuota.enregistrerSiDepassement(shop).catch(() => {});
                 await telegram.send(chatId, `✅ *Commande #${orderId} confirmée !*\nSAMII a mis à jour le statut.`);
             }
 

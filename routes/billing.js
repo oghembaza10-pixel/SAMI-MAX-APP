@@ -14,6 +14,7 @@ const referralService = require("../services/referralService");
 const abonnementService = require("../services/abonnementService");
 const devises = require("../services/devises");
 const chargily = require("../services/chargily");
+const confirmationsQuota = require("../services/confirmationsQuota");
 const { confirmChargilyAbonnement } = require("../services/orders");
 const CONFIG = require("../config");
 
@@ -72,6 +73,19 @@ router.get("/", requireAuth, async (req, res) => {
     const devise = devises.deviseAffichage(workspace?.devise);
     const estAlgerie = devise === "DZD";
 
+    // Dépassement confirmations en attente (services/confirmationsQuota.js) —
+    // sur un palier payant, ajouté automatiquement au prochain renouvellement
+    // (engines/abonnementEngine.js) ; sur le gratuit, aucun cycle de
+    // renouvellement auquel l'accrocher, donc un lien de paiement à part.
+    const depassementConfirm = await confirmationsQuota.getDepassementMois(req.session.workspaceId);
+    const regularisationHtml = depassementConfirm.montantDu ? `
+    <div class="callout-regularisation">
+        ⚠️ ${depassementConfirm.count} confirmation(s) au-delà de ton quota gratuit ce mois-ci
+        (${devises.formater(devises.depuisUSD(depassementConfirm.montantDu, devise), devise)}).
+        <button class="bill-btn bill-btn--regulariser" id="regulariser-confirm">Régulariser →</button>
+    </div>` : "";
+    const dailyNote = (plan) => `<p class="bill-daily-note">≈ ${confirmationsQuota.QUOTA_PAR_PALIER[plan]}/jour</p>`;
+
     // Prix affiché toujours converti depuis le prix de référence en USD, dans
     // la devise du marchand (marché parallèle pour le DZD, marché réel pour
     // MAD/TND — voir CONFIG.DEVISES).
@@ -127,6 +141,9 @@ router.get("/", requireAuth, async (req, res) => {
         .bill-card li::before { content: "✓ "; color: var(--cyan-tech); }
         .bill-btn { padding: 12px; border-radius: 10px; border: none; background: var(--gold-og); color: #000; font-weight: 700; cursor: pointer; }
         .bill-btn--free { background: rgba(255,255,255,0.08); color: var(--text-main); }
+        .bill-daily-note { text-align: center; font-size: .68rem; color: var(--text-muted); opacity: .7; margin: 8px 0 0; }
+        .callout-regularisation { max-width: 640px; margin: 0 auto 24px; padding: 14px 18px; border-radius: 12px; background: rgba(229,85,85,0.1); border: 1px solid rgba(229,85,85,0.3); color: #e55; font-size: .82rem; text-align: center; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
+        .bill-btn--regulariser { padding: 8px 14px; font-size: .78rem; background: #e55; color: #fff; }
         .bill-ccp { margin-top: auto; padding: 14px; border-radius: 12px; background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3); }
         .bill-ccp-label { color: #F5A623; font-size: .8rem; font-weight: 700; margin-bottom: 8px; }
         .bill-ccp-details { font-size: .78rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px; }
@@ -153,24 +170,26 @@ router.get("/", requireAuth, async (req, res) => {
     </div>
     <h1 data-i18n="billing.title">👑 Choisis ton palier</h1>
     <p class="sub" data-i18n="billing.subtitle">Plus tu fais confiance à SAMII, plus il peut agir seul pour toi.</p>
+    ${regularisationHtml}
     <div class="bill-grid">
         <div class="bill-card">
             <h2 data-i18n="billing.free.title">🌑 Découverte</h2>
             <div class="bill-price" data-i18n="billing.free.price">Gratuit</div>
             <ul>
-                <li data-i18n="billing.free.li1">100 confirmations & suivi / mois</li>
+                <li data-i18n="billing.free.li1">150 confirmations & suivi / mois</li>
                 <li data-i18n="billing.free.li2">Mode Ombre + Copilote (SAMII propose, tu valides)</li>
                 <li data-i18n="billing.free.li3">30 messages SAMII toutes les 7h</li>
                 <li data-i18n="billing.free.li4">Suivi de colis basique</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.free} cartes débloquées</li>
             </ul>
             <button class="bill-btn bill-btn--free" disabled data-i18n="billing.free.btn">Plan actuel</button>
+            ${dailyNote("free")}
         </div>
         <div class="bill-card">
             <h2 data-i18n="billing.standard.title">🚀 Actif</h2>
             <div class="bill-price">${prixHtml("standard")}</div>
             <ul>
-                <li data-i18n="billing.standard.li1">1 000 confirmations & suivi / mois (+0,12 $ au-delà)</li>
+                <li data-i18n="billing.standard.li1">2 100 confirmations & suivi / mois (+0,12 $ au-delà)</li>
                 <li data-i18n="billing.standard.li2">WhatsApp + Telegram + Shopify connectés</li>
                 <li data-i18n="billing.standard.li3">Client fidèle (VIP) + liste noire automatiques</li>
                 <li data-i18n="billing.standard.li4">Pubs Meta illimitées, créées par SAMII</li>
@@ -181,12 +200,13 @@ router.get("/", requireAuth, async (req, res) => {
             ${chargilyBlock("standard")}
             ${ccpBlock("standard")}
             ${stripeBlock("standard")}
+            ${dailyNote("standard")}
         </div>
         <div class="bill-card bill-card--pro">
             <h2 data-i18n="billing.pro.title">👑 Souverain</h2>
             <div class="bill-price">${prixHtml("pro")}</div>
             <ul>
-                <li data-i18n="billing.pro.li1">10 000 confirmations & suivi / mois (+0,12 $ au-delà)</li>
+                <li data-i18n="billing.pro.li1">30 000 confirmations & suivi / mois (+0,12 $ au-delà)</li>
                 <li data-i18n="billing.pro.li2">Tout le plan Actif, en plus généreux</li>
                 <li data-i18n="billing.pro.li3">Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)</li>
                 <li data-i18n="billing.pro.li4">2 Forteresse + 1 Boost offerts chaque mois</li>
@@ -197,6 +217,7 @@ router.get("/", requireAuth, async (req, res) => {
             ${chargilyBlock("pro")}
             ${ccpBlock("pro")}
             ${stripeBlock("pro")}
+            ${dailyNote("pro")}
         </div>
         <div class="bill-card bill-card--societe">
             <h2>🏛️ Société</h2>
