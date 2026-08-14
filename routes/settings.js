@@ -217,19 +217,19 @@ const PIXEL_GUIDES = {
     en: {
         meta: { title: "Get your Meta Pixel ID", steps: [
             "Go to business.facebook.com/events_manager2 (Meta Events Manager).",
-            "Click \"Connect Data Sources\" → \"Web\" → \"Meta Pixel\" → Connect.",
+            "Click 'Connect Data Sources' → 'Web' → 'Meta Pixel' → Connect.",
             "Name your pixel, enter your store's address, then follow the steps.",
             "Once created, the Pixel ID (15-16 digits) shows at the top of its page — copy it and paste it here.",
         ]},
         tiktok: { title: "Get your TikTok Pixel ID", steps: [
             "Go to ads.tiktok.com → Assets → Events → Web Events.",
-            "Click \"Create Pixel\" and name it.",
-            "Choose \"Manually install pixel code\" (or via a partner if offered).",
+            "Click 'Create Pixel' and name it.",
+            "Choose 'Manually install pixel code' (or via a partner if offered).",
             "Once created, the Pixel ID (starts with C4...) appears in the list — copy it and paste it here.",
         ]},
         google: { title: "Get your Google Ads Tag ID", steps: [
-            "Go to ads.google.com → Tools & Settings → Google Tag (or \"Conversion tracking\").",
-            "Open the \"Google Tag\" section of your account.",
+            "Go to ads.google.com → Tools & Settings → Google Tag (or 'Conversion tracking').",
+            "Open the 'Google Tag' section of your account.",
             "Your ID (format AW-XXXXXXXXX) is shown at the top of this page — copy it and paste it here.",
         ]},
     },
