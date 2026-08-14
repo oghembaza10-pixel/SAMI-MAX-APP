@@ -222,7 +222,7 @@ router.post("/create", requireAuth, async (req, res) => {
         const ad = await meta.createAd(creds, adSet.id, creative.id, `${name} - Pub`);
 
         const mode = workspace?.samii?.mode || "copilote";
-        const wasActivated = canActAutonomously(mode);
+        const wasActivated = canActAutonomously(mode, workspace?.palierAbonnement);
 
         if (wasActivated) {
             await meta.setStatus(creds, ad.id, "ACTIVE");

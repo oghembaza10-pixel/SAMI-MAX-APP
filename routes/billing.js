@@ -172,10 +172,10 @@ router.get("/", requireAuth, async (req, res) => {
             <ul>
                 <li data-i18n="billing.standard.li1">1 000 confirmations & suivi / mois (+0,12 $ au-delà)</li>
                 <li data-i18n="billing.standard.li2">WhatsApp + Telegram + Shopify connectés</li>
-                <li data-i18n="billing.standard.li3">Mode Stratège débloqué (SAMII agit dans tes limites)</li>
+                <li data-i18n="billing.standard.li3">Client fidèle (VIP) + liste noire automatiques</li>
                 <li data-i18n="billing.standard.li4">Pubs Meta illimitées, créées par SAMII</li>
                 <li data-i18n="billing.standard.li5">1 Forteresse offerte chaque mois</li>
-                <li data-i18n="billing.standard.li6">70 messages SAMII toutes les 7h (+0,50 $/message au-delà)</li>
+                <li data-i18n="billing.standard.li6">50 messages SAMII toutes les 7h (+0,50 $/message au-delà)</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.standard} cartes débloquées</li>
             </ul>
             ${chargilyBlock("standard")}
@@ -232,10 +232,10 @@ const I18N = {
         'billing.standard.title': '🚀 Actif',
         'billing.standard.li1': '1 000 confirmations & suivi / mois (+0,12 $ au-delà)',
         'billing.standard.li2': 'WhatsApp + Telegram + Shopify connectés',
-        'billing.standard.li3': 'Mode Stratège débloqué (SAMII agit dans tes limites)',
+        'billing.standard.li3': 'Client fidèle (VIP) + liste noire automatiques',
         'billing.standard.li4': 'Pubs Meta illimitées, créées par SAMII',
         'billing.standard.li5': '1 Forteresse offerte chaque mois',
-        'billing.standard.li6': '70 messages SAMII toutes les 7h (+0,50 $/message au-delà)',
+        'billing.standard.li6': '50 messages SAMII toutes les 7h (+0,50 $/message au-delà)',
         'billing.pro.title': '👑 Souverain',
         'billing.pro.li1': '10 000 confirmations & suivi / mois (+0,12 $ au-delà)',
         'billing.pro.li2': 'Tout le plan Actif, en plus généreux',
@@ -266,10 +266,10 @@ const I18N = {
         'billing.standard.title': '🚀 Active',
         'billing.standard.li1': '1,000 confirmations & tracking / month (+$0.12 beyond)',
         'billing.standard.li2': 'WhatsApp + Telegram + Shopify connected',
-        'billing.standard.li3': 'Strategist Mode unlocked (SAMII acts within your limits)',
+        'billing.standard.li3': 'Automatic VIP client + blacklist detection',
         'billing.standard.li4': 'Unlimited Meta ads, created by SAMII',
         'billing.standard.li5': '1 Fortress granted every month',
-        'billing.standard.li6': '70 SAMII messages every 7h (+$0.50/message beyond)',
+        'billing.standard.li6': '50 SAMII messages every 7h (+$0.50/message beyond)',
         'billing.pro.title': '👑 Sovereign',
         'billing.pro.li1': '10,000 confirmations & tracking / month (+$0.12 beyond)',
         'billing.pro.li2': 'Everything in the Active plan, more generous',
@@ -300,10 +300,10 @@ const I18N = {
         'billing.standard.title': '🚀 نشط',
         'billing.standard.li1': '1000 تأكيد وتتبع / شهريًا (+0.12$ لكل تأكيد إضافي)',
         'billing.standard.li2': 'ربط WhatsApp + Telegram + Shopify',
-        'billing.standard.li3': 'فتح وضع الاستراتيجي (SAMII يتصرف ضمن حدودك)',
+        'billing.standard.li3': 'عميل مخلص (VIP) + قائمة سوداء تلقائية',
         'billing.standard.li4': 'إعلانات Meta غير محدودة، ينشئها SAMII',
         'billing.standard.li5': 'حصن واحد مجانًا كل شهر',
-        'billing.standard.li6': '70 رسالة SAMII كل 7 ساعات (+0.50$ لكل رسالة إضافية)',
+        'billing.standard.li6': '50 رسالة SAMII كل 7 ساعات (+0.50$ لكل رسالة إضافية)',
         'billing.pro.title': '👑 سيادي',
         'billing.pro.li1': '10000 تأكيد وتتبع / شهريًا (+0.12$ لكل تأكيد إضافي)',
         'billing.pro.li2': 'كل مزايا باقة نشط، بسخاء أكبر',
@@ -334,10 +334,10 @@ const I18N = {
         'billing.standard.title': '🚀 活跃版',
         'billing.standard.li1': '每月1000次确认与跟踪（超出部分每次+0.12$）',
         'billing.standard.li2': '已连接 WhatsApp + Telegram + Shopify',
-        'billing.standard.li3': '解锁策略师模式（SAMII 在你设定的范围内自主行动）',
+        'billing.standard.li3': '自动识别VIP忠实客户 + 黑名单',
         'billing.standard.li4': '无限 Meta 广告，由 SAMII 创建',
         'billing.standard.li5': '每月赠送1座堡垒',
-        'billing.standard.li6': '每7小时70条 SAMII 消息（超出部分每条+0.50$）',
+        'billing.standard.li6': '每7小时50条 SAMII 消息（超出部分每条+0.50$）',
         'billing.pro.title': '👑 至尊版',
         'billing.pro.li1': '每月10000次确认与跟踪（超出部分每次+0.12$）',
         'billing.pro.li2': '活跃版全部功能，额度更高',

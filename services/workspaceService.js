@@ -47,6 +47,7 @@ function mapRow(r) {
         metaAdAccountId: r.meta_ad_account_id || "",
         metaPageId: r.meta_page_id || "",
         timezone: r.timezone || "Africa/Algiers",
+        palierAbonnement: r.palier_abonnement || "free",
         statut: r.statut || "actif",
         actif: r.statut === "actif" || !r.statut,
         created_at: r.created_at || "",

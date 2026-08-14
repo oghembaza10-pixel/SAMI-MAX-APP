@@ -128,6 +128,12 @@ router.post("/mode", requireAuth, async (req, res) => {
         const workspace    = await workspaceService.getById(workspaceId);
         if (!workspace) return res.json({ success: false, error: "Workspace introuvable." });
 
+        // Autonome/Souverain (le vrai saut de validation) réservés à pro/societe —
+        // sinon le marchand croirait avoir un pouvoir qu'il n'a pas réellement.
+        if (["autonome", "souverain"].includes(mode) && !["pro", "societe"].includes(workspace.palierAbonnement)) {
+            return res.json({ success: false, error: "Ce mode est réservé au palier Souverain. Passe à l'abonnement supérieur pour le débloquer." });
+        }
+
         await workspaceService.update(workspace.recordId, {
             samii: JSON.stringify({ ...workspace.samii, mode }),
         });
@@ -272,8 +278,13 @@ router.post("/rdv-config", requireAuth, async (req, res) => {
     }
 });
 
-function canActAutonomously(mode) {
-    return ["strategiste", "autonome", "souverain"].includes(mode);
+// Le vrai "saut de validation" (lancer une action sans attendre confirmation)
+// est réservé au palier Souverain/Société — Gratuit et Actif peuvent choisir
+// n'importe quel mode dans l'interface, mais seuls pro/societe en obtiennent
+// l'effet réel. Ça crée une vraie différence de "pouvoir" entre Actif et
+// Souverain, plutôt que les 3 modes "autonomes" se comportant à l'identique.
+function canActAutonomously(mode, palier) {
+    return ["strategiste", "autonome", "souverain"].includes(mode) && ["pro", "societe"].includes(palier);
 }
 
 module.exports = router;

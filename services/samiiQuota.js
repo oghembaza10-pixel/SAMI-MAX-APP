@@ -20,7 +20,7 @@ const PRIX_DEPASSEMENT_MESSAGE_USD = 0.5;
 // Quotas alignés sur le palier d'abonnement du WORKSPACE marchand
 // (routes/billing.js) — remplace le "illimité" qui dépendait uniquement du
 // micro-abonnement personnel à 5$. "societe" reste illimité (contrat sur-mesure).
-const QUOTA_PAR_PALIER = { free: QUOTA_GRATUIT_PAR_FENETRE, standard: 70, pro: 150 };
+const QUOTA_PAR_PALIER = { free: QUOTA_GRATUIT_PAR_FENETRE, standard: 50, pro: 150 };
 
 async function getAbonnement(userId) {
     if (!userId) return "gratuit";
