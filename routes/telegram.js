@@ -180,7 +180,7 @@ router.post("/", async (req, res) => {
 
             if (data.startsWith("confirm_")) {
                 const orderId = data.replace("confirm_", "");
-                const rows = await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1 RETURNING workspace_id`, [orderId]);
+                const rows = await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1 RETURNING workspace_id`, [orderId]);
                 await orchestrator.process({ type: "order.confirmed", shop: "", payload: { orderId, chatId } });
                 socketService.emitToShop(rows[0]?.workspace_id, "commande-confirmee", { id: orderId });
                 await reply(chatId, tr(lang, "commandeConfirmee", orderId));

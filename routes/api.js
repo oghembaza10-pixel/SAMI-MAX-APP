@@ -471,7 +471,7 @@ router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
             [req.params.id, req.session.workspaceId]
         );
         if (checkCmd.length) {
-            await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1`, [req.params.id]);
+            await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [req.params.id]);
             return res.json({ success: true });
         }
 

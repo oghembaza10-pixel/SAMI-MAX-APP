@@ -318,7 +318,7 @@ class CommerceEngine {
     async confirmTelegramOrder(event) {
         try {
             const { orderId } = event.payload;
-            await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1`, [orderId]);
+            await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [orderId]);
             await db.query(
                 `INSERT INTO journal (action, details) VALUES ($1, $2)`,
                 ["order.confirmed.telegram", `#${orderId} confirmée via Telegram`]

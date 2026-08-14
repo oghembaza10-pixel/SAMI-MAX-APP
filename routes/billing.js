@@ -158,7 +158,7 @@ router.get("/", requireAuth, async (req, res) => {
             <h2 data-i18n="billing.free.title">🌑 Découverte</h2>
             <div class="bill-price" data-i18n="billing.free.price">Gratuit</div>
             <ul>
-                <li data-i18n="billing.free.li1">10 confirmations/jour</li>
+                <li data-i18n="billing.free.li1">100 confirmations & suivi / mois</li>
                 <li data-i18n="billing.free.li2">Mode Ombre + Copilote (SAMII propose, tu valides)</li>
                 <li data-i18n="billing.free.li3">30 messages SAMII toutes les 7h</li>
                 <li data-i18n="billing.free.li4">Suivi de colis basique</li>
@@ -170,7 +170,7 @@ router.get("/", requireAuth, async (req, res) => {
             <h2 data-i18n="billing.standard.title">🚀 Actif</h2>
             <div class="bill-price">${prixHtml("standard")}</div>
             <ul>
-                <li data-i18n="billing.standard.li1">100 confirmations/jour</li>
+                <li data-i18n="billing.standard.li1">1 000 confirmations & suivi / mois (+0,12 $ au-delà)</li>
                 <li data-i18n="billing.standard.li2">WhatsApp + Telegram + Shopify connectés</li>
                 <li data-i18n="billing.standard.li3">Mode Stratège débloqué (SAMII agit dans tes limites)</li>
                 <li data-i18n="billing.standard.li4">Pubs Meta illimitées, créées par SAMII</li>
@@ -186,7 +186,7 @@ router.get("/", requireAuth, async (req, res) => {
             <h2 data-i18n="billing.pro.title">👑 Souverain</h2>
             <div class="bill-price">${prixHtml("pro")}</div>
             <ul>
-                <li data-i18n="billing.pro.li1">1000 confirmations/jour</li>
+                <li data-i18n="billing.pro.li1">10 000 confirmations & suivi / mois (+0,12 $ au-delà)</li>
                 <li data-i18n="billing.pro.li2">Tout le plan Actif, en plus généreux</li>
                 <li data-i18n="billing.pro.li3">Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)</li>
                 <li data-i18n="billing.pro.li4">2 Forteresse + 1 Boost offerts chaque mois</li>
@@ -224,20 +224,20 @@ const I18N = {
         'billing.title': '👑 Choisis ton palier',
         'billing.subtitle': 'Plus tu fais confiance à SAMII, plus il peut agir seul pour toi.',
         'billing.free.title': '🌑 Découverte', 'billing.free.price': 'Gratuit',
-        'billing.free.li1': '10 confirmations/jour',
+        'billing.free.li1': '100 confirmations & suivi / mois',
         'billing.free.li2': 'Mode Ombre + Copilote (SAMII propose, tu valides)',
         'billing.free.li3': '30 messages SAMII toutes les 7h',
         'billing.free.li4': 'Suivi de colis basique',
         'billing.free.btn': 'Plan actuel',
         'billing.standard.title': '🚀 Actif',
-        'billing.standard.li1': '100 confirmations/jour',
+        'billing.standard.li1': '1 000 confirmations & suivi / mois (+0,12 $ au-delà)',
         'billing.standard.li2': 'WhatsApp + Telegram + Shopify connectés',
         'billing.standard.li3': 'Mode Stratège débloqué (SAMII agit dans tes limites)',
         'billing.standard.li4': 'Pubs Meta illimitées, créées par SAMII',
         'billing.standard.li5': '1 Forteresse offerte chaque mois',
         'billing.standard.li6': '70 messages SAMII toutes les 7h',
         'billing.pro.title': '👑 Souverain',
-        'billing.pro.li1': '1000 confirmations/jour',
+        'billing.pro.li1': '10 000 confirmations & suivi / mois (+0,12 $ au-delà)',
         'billing.pro.li2': 'Tout le plan Actif, en plus généreux',
         'billing.pro.li3': 'Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)',
         'billing.pro.li4': '2 Forteresse + 1 Boost offerts chaque mois',
@@ -258,20 +258,20 @@ const I18N = {
         'billing.title': '👑 Choose your tier',
         'billing.subtitle': 'The more you trust SAMII, the more it can act on its own for you.',
         'billing.free.title': '🌑 Discovery', 'billing.free.price': 'Free',
-        'billing.free.li1': '10 confirmations/day',
+        'billing.free.li1': '100 confirmations & tracking / month',
         'billing.free.li2': 'Shadow Mode + Copilot (SAMII suggests, you approve)',
         'billing.free.li3': '30 SAMII messages every 7h',
         'billing.free.li4': 'Basic package tracking',
         'billing.free.btn': 'Current plan',
         'billing.standard.title': '🚀 Active',
-        'billing.standard.li1': '100 confirmations/day',
+        'billing.standard.li1': '1,000 confirmations & tracking / month (+$0.12 beyond)',
         'billing.standard.li2': 'WhatsApp + Telegram + Shopify connected',
         'billing.standard.li3': 'Strategist Mode unlocked (SAMII acts within your limits)',
         'billing.standard.li4': 'Unlimited Meta ads, created by SAMII',
         'billing.standard.li5': '1 Fortress granted every month',
         'billing.standard.li6': '70 SAMII messages every 7h',
         'billing.pro.title': '👑 Sovereign',
-        'billing.pro.li1': '1000 confirmations/day',
+        'billing.pro.li1': '10,000 confirmations & tracking / month (+$0.12 beyond)',
         'billing.pro.li2': 'Everything in the Active plan, more generous',
         'billing.pro.li3': 'Autonomous + Sovereign Modes (SAMII launches your ready ads instantly, no validation wait)',
         'billing.pro.li4': '2 Fortresses + 1 Boost granted every month',
@@ -292,20 +292,20 @@ const I18N = {
         'billing.title': '👑 اختر باقتك',
         'billing.subtitle': 'كلما زادت ثقتك بـ SAMII، زادت قدرته على التصرف بمفرده من أجلك.',
         'billing.free.title': '🌑 الاكتشاف', 'billing.free.price': 'مجاني',
-        'billing.free.li1': '10 تأكيدات/يوم',
+        'billing.free.li1': '100 تأكيد وتتبع / شهريًا',
         'billing.free.li2': 'وضع الظل + المساعد (SAMII يقترح، أنت توافق)',
         'billing.free.li3': '30 رسالة SAMII كل 7 ساعات',
         'billing.free.li4': 'تتبع أساسي للطرود',
         'billing.free.btn': 'الباقة الحالية',
         'billing.standard.title': '🚀 نشط',
-        'billing.standard.li1': '100 تأكيد/يوم',
+        'billing.standard.li1': '1000 تأكيد وتتبع / شهريًا (+0.12$ لكل تأكيد إضافي)',
         'billing.standard.li2': 'ربط WhatsApp + Telegram + Shopify',
         'billing.standard.li3': 'فتح وضع الاستراتيجي (SAMII يتصرف ضمن حدودك)',
         'billing.standard.li4': 'إعلانات Meta غير محدودة، ينشئها SAMII',
         'billing.standard.li5': 'حصن واحد مجانًا كل شهر',
         'billing.standard.li6': '70 رسالة SAMII كل 7 ساعات',
         'billing.pro.title': '👑 سيادي',
-        'billing.pro.li1': '1000 تأكيد/يوم',
+        'billing.pro.li1': '10000 تأكيد وتتبع / شهريًا (+0.12$ لكل تأكيد إضافي)',
         'billing.pro.li2': 'كل مزايا باقة نشط، بسخاء أكبر',
         'billing.pro.li3': 'وضعا مستقل + سيادي (SAMII يُطلق إعلاناتك الجاهزة فورًا، دون انتظار موافقتك)',
         'billing.pro.li4': 'حصنان + تعزيز واحد مجانًا كل شهر',
@@ -326,20 +326,20 @@ const I18N = {
         'billing.title': '👑 选择你的方案',
         'billing.subtitle': '你对 SAMII 的信任度越高，它就能为你独立完成越多操作。',
         'billing.free.title': '🌑 探索版', 'billing.free.price': '免费',
-        'billing.free.li1': '每日10次确认',
+        'billing.free.li1': '每月100次确认与跟踪',
         'billing.free.li2': '影子模式 + 副驾驶模式（SAMII 提议，你来确认）',
         'billing.free.li3': '每7小时30条 SAMII 消息',
         'billing.free.li4': '基础包裹跟踪',
         'billing.free.btn': '当前方案',
         'billing.standard.title': '🚀 活跃版',
-        'billing.standard.li1': '每日100次确认',
+        'billing.standard.li1': '每月1000次确认与跟踪（超出部分每次+0.12$）',
         'billing.standard.li2': '已连接 WhatsApp + Telegram + Shopify',
         'billing.standard.li3': '解锁策略师模式（SAMII 在你设定的范围内自主行动）',
         'billing.standard.li4': '无限 Meta 广告，由 SAMII 创建',
         'billing.standard.li5': '每月赠送1座堡垒',
         'billing.standard.li6': '每7小时70条 SAMII 消息',
         'billing.pro.title': '👑 至尊版',
-        'billing.pro.li1': '每日1000次确认',
+        'billing.pro.li1': '每月10000次确认与跟踪（超出部分每次+0.12$）',
         'billing.pro.li2': '活跃版全部功能，额度更高',
         'billing.pro.li3': '自主模式 + 至尊模式（准备好的广告无需等待确认，SAMII 立即启动）',
         'billing.pro.li4': '每月赠送2座堡垒 + 1次加速',

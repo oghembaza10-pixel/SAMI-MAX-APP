@@ -109,7 +109,7 @@ class CRMEngine {
             const [action, orderId] = data.split("_");
 
             if (action === "confirm") {
-                await db.query(`UPDATE commandes SET statut = 'confirmée' WHERE id = $1`, [orderId]);
+                await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [orderId]);
                 await telegram.send(chatId, `✅ *Commande #${orderId} confirmée !*\nSAMII a mis à jour le statut.`);
             }
 

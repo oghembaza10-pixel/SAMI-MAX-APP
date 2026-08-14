@@ -11,6 +11,7 @@ const db = require("../services/db");
 const chargily = require("../services/chargily");
 const devises = require("../services/devises");
 const abonnementService = require("../services/abonnementService");
+const confirmationsQuota = require("../services/confirmationsQuota");
 const notificationEngine = require("./notificationEngine");
 const notify = require("../services/notify");
 const CONFIG = require("../config");
@@ -19,7 +20,14 @@ const PRIX_AFFICHE = { standard: 9.99, pro: 39.99 };
 const JOURS_AVANT_RAPPEL = 3;
 
 async function genererLienRenouvellement(workspaceId, plan) {
-    const montantDzd = Math.round(devises.depuisUSD(PRIX_AFFICHE[plan], "DZD"));
+    // Chargily/CCP n'ont pas de prélèvement automatique (voir en-tête du
+    // fichier) — le dépassement du quota confirmations/mois (services/
+    // confirmationsQuota.js) ne peut donc pas être débité en temps réel :
+    // il est ajouté ici, une fois, au montant du prochain renouvellement.
+    const etatQuota = await confirmationsQuota.getEtatQuota(workspaceId, plan);
+    const montantBaseDzd = Math.round(devises.depuisUSD(PRIX_AFFICHE[plan], "DZD"));
+    const montantDepassementDzd = etatQuota.montantDu ? Math.round(devises.depuisUSD(etatQuota.montantDu, "DZD")) : 0;
+    const montantDzd = montantBaseDzd + montantDepassementDzd;
 
     const inserted = await db.query(
         `INSERT INTO abonnements (workspace_id, type, statut, methode_paiement, montant, devise, date_debut)
@@ -27,10 +35,14 @@ async function genererLienRenouvellement(workspaceId, plan) {
         [workspaceId, plan, montantDzd]
     );
 
+    const description = montantDepassementDzd
+        ? `Renouvellement abonnement SAMII — ${plan} (+ ${etatQuota.depassement} confirmations au-delà du quota)`
+        : `Renouvellement abonnement SAMII — ${plan}`;
+
     const checkout = await chargily.createCheckout({
         amount: montantDzd,
         currency: "dzd",
-        description: `Renouvellement abonnement SAMII — ${plan}`,
+        description,
         successUrl: `${CONFIG.APP_URL}/billing/success?method=chargily`,
         failureUrl: `${CONFIG.APP_URL}/billing?achat=echec`,
         webhookUrl: `${CONFIG.APP_URL}/webhook/chargily`,
