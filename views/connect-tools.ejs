@@ -92,7 +92,7 @@
             <div class="connect-create-shop-cta">
                 <div class="connect-create-shop-cta__text">
                     <h2 data-i18n="connectTools.createShop.title">🏪 Créer ma boutique OG Technology en un clic</h2>
-                    <p data-i18n="connectTools.createShop.desc">Ta boutique hébergée et gérée entièrement par SAMII — commandes, QG et suivi branchés automatiquement, sans WooCommerce ni hébergement à gérer toi-même.</p>
+                    <p data-i18n="connectTools.createShop.desc">Ta boutique hébergée et gérée entièrement par SAMII — commandes, QG et suivi branchés automatiquement, prête à recevoir tes pubs Meta, TikTok et Google.</p>
                 </div>
                 <a href="/settings#boutique" class="connect-btn connect-btn--primary connect-create-shop-cta__btn" data-i18n="connectTools.createShop.btn">
                     Créer ma boutique →
@@ -210,22 +210,6 @@
                                     </button>
                                 </form>
                                 <button type="button" class="tool-guide-toggle" data-guide="telegram" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
-                            <% } %>
-
-                        <% } else if (tool.id === 'woocommerce') { %>
-                            <% if (isConnected) { %>
-                                <p class="connect-tool-card__connected-info">
-                                    🟢 <%= connector.config?.siteUrl || 'Boutique connectée' %>
-                                </p>
-                                <button class="connect-btn connect-btn--disconnect"
-                                        data-tool="woocommerce" data-action="disconnect" data-i18n="connectTools.disconnect">
-                                    Déconnecter
-                                </button>
-                            <% } else { %>
-                                <a href="/connect/woocommerce" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;" data-i18n="connectTools.woocommerceForm.connectBtn">
-                                    Connecter WooCommerce →
-                                </a>
-                                <button type="button" class="tool-guide-toggle" data-guide="woocommerce" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
 
                         <% } else if (tool.id === 'ccp') { %>
@@ -351,13 +335,6 @@
             { title: "Clique sur « Continuer avec Facebook/Instagram »", desc: "Tu seras redirigé vers la page de connexion Meta." },
             { title: "Connecte-toi et autorise SAMII", desc: "Choisis la page ou le compte à connecter, puis accepte les permissions demandées." },
             { title: "C'est fait", desc: "Tu reviens automatiquement sur cette page — ta carte affiche désormais « Connecté »." },
-          ] },
-
-        { id: "woocommerce", icon: "🛒",
-          steps: [
-            { title: "Clique sur « Créer ma boutique »", desc: "SAMII te redirige vers ton propre site WordPress/WooCommerce." },
-            { title: "Autorise l'accès", desc: "Connecte-toi à ton admin WooCommerce si besoin, puis clique sur « Approve » pour autoriser SAMII." },
-            { title: "Retour automatique", desc: "Tu reviens sur SAMII — tes commandes, produits et stock se synchronisent automatiquement." },
           ] },
 
         { id: "ccp", icon: "🏦",

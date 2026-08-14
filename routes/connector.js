@@ -13,7 +13,6 @@ function requireAuth(req, res, next) {
 
 const TOOLS = [
     { id: "shopify",      label: "Shopify",              icon: "shopping-bag",   color: "#95BF47", available: true  },
-    { id: "woocommerce",  label: "WooCommerce",          icon: "shopping-cart",  color: "#96588A", available: true  },
     { id: "facebook",     label: "Facebook",             icon: "facebook",       color: "#1877F2", available: true  },
     { id: "instagram",    label: "Instagram",            icon: "instagram",      color: "#E1306C", available: true  },
     { id: "telegram",     label: "Telegram",             icon: "send",           color: "#229ED9", available: true  },
