@@ -138,7 +138,7 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
     </div>
 
     ${!isClient ? `
-    <div class="vm-card" style="margin-top:20px;">
+    <div class="vm-card" id="boutique" style="margin-top:20px;">
         <h1 style="font-size:17px;margin:0 0 4px;" data-i18n="settings.boutique.title">🏪 Ma boutique</h1>
         <p style="color:var(--muted);font-size:12px;margin:0 0 18px;" data-i18n="settings.boutique.sub">Donne un nom à ta boutique et connecte tes pixels publicitaires pour pouvoir lancer des campagnes.</p>
         <form id="form-boutique">
