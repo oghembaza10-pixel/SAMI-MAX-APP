@@ -26,9 +26,16 @@ function escapeHtml(value) {
 
 router.get("/", async (req, res) => {
     let user = {};
+    let workspacesMarchand = [];
     try {
         const rows = await db.query(`SELECT * FROM utilisateurs WHERE id = $1`, [req.session.userId]);
         user = rows[0] || {};
+        if (user.type_compte === "marchand" && user.email) {
+            workspacesMarchand = await db.query(
+                `SELECT id, nom FROM workspaces WHERE owner_email = $1 ORDER BY created_at ASC`,
+                [user.email]
+            );
+        }
     } catch (err) {
         console.error("❌ GET /settings :", err.message);
     }
@@ -150,6 +157,13 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
             <label data-i18n="settings.boutique.label.pixelgoogle">Google Ads Tag ID</label>
             <input name="pixel_google" value="${escapeHtml(user.pixel_google || "")}" placeholder="Ex : AW-XXXXXXXXX">
 
+            <label data-i18n="settings.boutique.label.qg">Envoyer mes commandes boutique vers ce QG</label>
+            <select name="workspace_boutique_id">
+                <option value="" data-i18n="settings.boutique.qg.none">— Aucun (ne pas relier) —</option>
+                ${workspacesMarchand.map(w => `<option value="${escapeHtml(w.id)}" ${user.workspace_boutique_id === w.id ? "selected" : ""}>${escapeHtml(w.nom || w.id)}</option>`).join("")}
+            </select>
+            ${!workspacesMarchand.length ? `<p style="font-size:11px;color:var(--muted);margin:4px 0 0;" data-i18n="settings.boutique.qg.empty">Tu n'as pas encore de QG/workspace créé.</p>` : ""}
+
             <button type="submit" data-i18n="settings.boutique.submit">Enregistrer ma boutique</button>
         </form>
         <div class="vm-msg" id="msgBoutique"></div>
@@ -197,6 +211,9 @@ const I18N = {
         "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram)",
         "settings.boutique.label.pixeltiktok": "TikTok Pixel ID",
         "settings.boutique.label.pixelgoogle": "Google Ads Tag ID",
+        "settings.boutique.label.qg": "Envoyer mes commandes boutique vers ce QG",
+        "settings.boutique.qg.none": "— Aucun (ne pas relier) —",
+        "settings.boutique.qg.empty": "Tu n'as pas encore de QG/workspace créé.",
         "settings.boutique.submit": "Enregistrer ma boutique"
     },
     en: {
@@ -237,6 +254,9 @@ const I18N = {
         "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram)",
         "settings.boutique.label.pixeltiktok": "TikTok Pixel ID",
         "settings.boutique.label.pixelgoogle": "Google Ads Tag ID",
+        "settings.boutique.label.qg": "Send my store orders to this HQ",
+        "settings.boutique.qg.none": "— None (don't link) —",
+        "settings.boutique.qg.empty": "You don't have a HQ/workspace yet.",
         "settings.boutique.submit": "Save my store"
     },
     ar: {
@@ -277,6 +297,9 @@ const I18N = {
         "settings.boutique.label.pixelmeta": "معرّف Meta Pixel (فيسبوك/إنستغرام)",
         "settings.boutique.label.pixeltiktok": "معرّف TikTok Pixel",
         "settings.boutique.label.pixelgoogle": "معرّف Google Ads",
+        "settings.boutique.label.qg": "إرسال طلبات متجري إلى مركز القيادة هذا",
+        "settings.boutique.qg.none": "— لا شيء (بدون ربط) —",
+        "settings.boutique.qg.empty": "ليس لديك مركز قيادة بعد.",
         "settings.boutique.submit": "حفظ متجري"
     },
     zh: {
@@ -317,6 +340,9 @@ const I18N = {
         "settings.boutique.label.pixelmeta": "Meta 像素 ID（Facebook/Instagram）",
         "settings.boutique.label.pixeltiktok": "TikTok 像素 ID",
         "settings.boutique.label.pixelgoogle": "Google Ads 标签 ID",
+        "settings.boutique.label.qg": "将我的店铺订单发送到此指挥中心",
+        "settings.boutique.qg.none": "— 无（不关联）—",
+        "settings.boutique.qg.empty": "你还没有创建指挥中心/工作区。",
         "settings.boutique.submit": "保存我的店铺"
     }
 };
@@ -462,8 +488,20 @@ router.post("/boutique", async (req, res) => {
             return res.json({ success: false, error: "Réservé aux comptes marchands." });
         }
 
-        let { sous_domaine, pixel_meta, pixel_tiktok, pixel_google } = req.body;
+        let { sous_domaine, pixel_meta, pixel_tiktok, pixel_google, workspace_boutique_id } = req.body;
         sous_domaine = String(sous_domaine || "").trim().toLowerCase();
+        workspace_boutique_id = String(workspace_boutique_id || "").trim();
+
+        if (workspace_boutique_id) {
+            const userRows = await db.query(`SELECT email FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+            const appartient = await db.query(
+                `SELECT id FROM workspaces WHERE id = $1 AND owner_email = $2`,
+                [workspace_boutique_id, userRows[0]?.email || ""]
+            );
+            if (!appartient.length) {
+                return res.json({ success: false, error: "Ce QG ne t'appartient pas." });
+            }
+        }
 
         if (sous_domaine) {
             if (!/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(sous_domaine)) {
@@ -492,8 +530,8 @@ router.post("/boutique", async (req, res) => {
         }
 
         await db.query(
-            `UPDATE utilisateurs SET sous_domaine = $1, pixel_meta = $2, pixel_tiktok = $3, pixel_google = $4 WHERE id = $5`,
-            [sous_domaine || null, pixel_meta || null, pixel_tiktok || null, pixel_google || null, req.session.userId]
+            `UPDATE utilisateurs SET sous_domaine = $1, pixel_meta = $2, pixel_tiktok = $3, pixel_google = $4, workspace_boutique_id = $5 WHERE id = $6`,
+            [sous_domaine || null, pixel_meta || null, pixel_tiktok || null, pixel_google || null, workspace_boutique_id || null, req.session.userId]
         );
 
         res.json({ success: true });

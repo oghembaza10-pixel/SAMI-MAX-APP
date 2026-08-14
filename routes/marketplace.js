@@ -12,6 +12,8 @@ const chargily = require("../services/chargily");
 const { confirmChargilyPayment } = require("../services/orders");
 const devises = require("../services/devises");
 const pixelsService = require("../services/pixelsService");
+const socketService = require("../services/socketService");
+const notify = require("../services/notify");
 const CONFIG = require("../config");
 const verificationService = require("../services/verificationService");
 
@@ -3330,6 +3332,46 @@ function parseMontantEtDevise(prixStr) {
     return { montant, devise: match[2] || "DZD" };
 }
 
+// Un achat marketplace/lien externe n'a par défaut aucun workspace (vente
+// plateforme) — mais si l'acheteur vient de la boutique d'un marchand (même
+// attribution que les pixels pub, voir pixelsService), et que ce marchand a
+// choisi un QG dans Réglages > Ma boutique, la commande y remonte comme
+// n'importe quelle autre commande workspace (QG + notif Telegram incluses).
+async function resoudreWorkspaceBoutique(req) {
+    if (!req.session.pixelVendeurId) return null;
+    try {
+        const rows = await db.query(
+            `SELECT workspace_boutique_id FROM utilisateurs WHERE id = $1`,
+            [req.session.pixelVendeurId]
+        );
+        return rows[0]?.workspace_boutique_id || null;
+    } catch {
+        return null;
+    }
+}
+
+async function notifierNouvelleCommandeBoutique(workspaceId, orderId, resume) {
+    if (!workspaceId) return;
+    try {
+        await db.query(
+            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+            ["commande.creee.boutique", `#${orderId.slice(0, 8)} — ${resume.nom} (${resume.montant} ${resume.devise})`, workspaceId]
+        );
+        socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
+        notify.notifyWorkspace(workspaceId, {
+            title: "🛍️ Nouvelle commande boutique",
+            body: `${resume.nom} — ${resume.montant} ${resume.devise}`,
+            url: "/qg",
+        });
+        await require("../services/telegramService").notifyAdmin(
+            workspaceId,
+            `🛍️ *Nouvelle commande boutique !*\n\n🆔 *Numéro :* \`${orderId.slice(0, 8)}\`\n👤 *Client :* ${resume.nom}\n📞 *Tél :* ${resume.telephone}\n📦 *Produit :* ${resume.produit}\n💰 *Montant :* ${resume.montant} ${resume.devise}`
+        );
+    } catch (err) {
+        console.error("❌ notifierNouvelleCommandeBoutique :", err.message);
+    }
+}
+
 router.post(
     "/commander",
     requireAuth,
@@ -3355,13 +3397,19 @@ router.post(
             });
 
             const id = crypto.randomUUID();
+            const workspaceId = await resoudreWorkspaceBoutique(req);
+            const produitResume = lignes.join(" · ");
 
             await db.query(
                 `INSERT INTO commandes
-                    (id, nom_client, telephone, adresse, pays, ville, produit, montant, devise, statut, source)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'en attente','marketplace')`,
-                [id, nom_client.trim(), telephone.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(), lignes.join(" · "), montantTotal, devise]
+                    (id, workspace_id, nom_client, telephone, adresse, pays, ville, produit, montant, devise, statut, source)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'en attente','marketplace')`,
+                [id, workspaceId, nom_client.trim(), telephone.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(), produitResume, montantTotal, devise]
             );
+
+            await notifierNouvelleCommandeBoutique(workspaceId, id, {
+                nom: nom_client.trim(), telephone: telephone.trim(), produit: produitResume, montant: montantTotal, devise,
+            });
 
             // Paiement en ligne réel (Chargily n'accepte que le DZD — nos prix
             // marketplace sont en EUR, on convertit uniquement pour ce paiement,
@@ -3637,17 +3685,22 @@ router.post("/lien-externe/commander", requireAuth, async (req, res) => {
         const totalEUR = prixEUR + fraisEUR;
 
         const id = crypto.randomUUID();
+        const workspaceId = await resoudreWorkspaceBoutique(req);
         await db.query(
             `INSERT INTO commandes
-                (id, nom_client, telephone, adresse, pays, ville, produit, montant, devise, statut, source,
+                (id, workspace_id, nom_client, telephone, adresse, pays, ville, produit, montant, devise, statut, source,
                  url_produit, titre_produit, image_produit, prix_source, devise_source, frais_service)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'EUR','en attente','lien_externe',$9,$10,$11,$12,$13,$14)`,
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'EUR','en attente','lien_externe',$10,$11,$12,$13,$14,$15)`,
             [
-                id, nom_client.trim(), telephone.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(),
+                id, workspaceId, nom_client.trim(), telephone.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(),
                 titre.trim(), totalEUR.toFixed(2),
                 url, titre.trim(), image || "", Number(prix), (devise || "EUR").toUpperCase(), fraisEUR.toFixed(2),
             ]
         );
+
+        await notifierNouvelleCommandeBoutique(workspaceId, id, {
+            nom: nom_client.trim(), telephone: telephone.trim(), produit: titre.trim(), montant: totalEUR.toFixed(2), devise: "EUR",
+        });
 
         if (chargily.isEnabled()) {
             const montantDzd = Math.round(totalEUR * CONFIG.CHARGILY.EUR_TO_DZD_RATE);
