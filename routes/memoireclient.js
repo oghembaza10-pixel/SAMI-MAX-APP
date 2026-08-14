@@ -164,6 +164,7 @@ function renderFiche(data) {
 
     const badges = [];
     if (data.vip) badges.push('<span class="mc-badge mc-badge--vip">👑 Fidèle</span>');
+    if (data.blackliste) badges.push('<span class="mc-badge mc-badge--black">⚠️ Signalé (réseau SAMII)</span>');
 
     const historyItems = (data.historique || []).map(h => \`
         <div class="mc-history-item">
@@ -291,9 +292,22 @@ router.post("/", requireAuth, async (req, res) => {
             montant: (Number(c.montant) || 0).toFixed(2),
         }));
 
-        // Pas de statut VIP/Blacklist en base (voir Miroir/Missions/Ambassadeur,
-        // même choix) : "fidèle" est basé sur un vrai signal (3+ commandes).
+        // Pas de statut VIP en base (voir Miroir/Missions/Ambassadeur, même
+        // choix) : "fidèle" est basé sur un vrai signal (3+ commandes).
         const vip = total_commandes >= 3;
+
+        // Liste noire : basée sur les commandes annulées de ce numéro auprès de
+        // TOUS les marchands SAMII, pas seulement de celui-ci — un client qui
+        // enchaîne les commandes non honorées ailleurs est un vrai risque ici
+        // aussi. Seuil : 2 commandes annulées ou plus, réseau entier.
+        let blackliste = false;
+        if (telephone) {
+            const annulRows = await db.query(
+                `SELECT COUNT(*)::int AS n FROM commandes WHERE telephone = $1 AND statut = 'annulée'`,
+                [telephone]
+            );
+            blackliste = (annulRows[0]?.n || 0) >= 2;
+        }
 
         let analyse = "Client sans historique suffisant pour une analyse.";
         if (total_commandes > 0) {
@@ -301,7 +315,8 @@ router.post("/", requireAuth, async (req, res) => {
                 + `Nombre de commandes : ${total_commandes}\n`
                 + `Total dépensé : ${total_depense.toFixed(2)}\n`
                 + `Fréquence d'achat moyenne : ${frequence}\n`
-                + `Client fidèle (3+ commandes) : ${vip ? "oui" : "non"}\n\n`
+                + `Client fidèle (3+ commandes) : ${vip ? "oui" : "non"}\n`
+                + `Signalé liste noire (2+ commandes annulées tous marchands confondus) : ${blackliste ? "oui" : "non"}\n\n`
                 + "En 1 à 2 phrases courtes, donne ton analyse de ce profil client (fidèle, à risque, nouveau, à relancer, etc.) et une recommandation concrète pour le marchand. Réponds directement en texte, sans JSON, sans formatage markdown.";
 
             const result = await gemini.chat({
@@ -318,6 +333,7 @@ router.post("/", requireAuth, async (req, res) => {
                 nom,
                 telephone,
                 vip,
+                blackliste,
                 total_commandes,
                 total_depense: total_depense.toFixed(2),
                 frequence,
