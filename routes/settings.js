@@ -5,6 +5,7 @@
 // ==========================================================================
 const express = require("express");
 const router = express.Router();
+const axios = require("axios");
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
 const cloudflareService = require("../services/cloudflareService");
@@ -68,6 +69,16 @@ input,textarea,select { width:100%; padding:12px 13px; border-radius:10px; borde
 input:focus,textarea:focus,select:focus { border-color:var(--blue); box-shadow:var(--cyan-glow); }
 select option { background:#07101a; }
 textarea { resize:vertical; min-height:90px; }
+.pixel-detect-btn { width:auto; white-space:nowrap; padding:0 14px; border-radius:10px; border:1px solid var(--blue); background:rgba(0,217,255,.1); color:var(--blue); font-size:12px; font-weight:700; cursor:pointer; }
+.pixel-detect-btn:disabled { opacity:.5; cursor:default; }
+.pixel-detect-status { font-size:11.5px; margin-top:6px; min-height:14px; color:var(--blue); }
+.pixel-detect-status.err { color:#ff5470; }
+.pixel-detect-status.ok { color:#3ddc84; }
+.pixel-guide-toggle { width:auto; background:transparent; border:none; color:var(--muted); font-size:11.5px; text-decoration:underline; cursor:pointer; padding:6px 0 0; margin:0; }
+.pixel-guide-toggle:hover { color:var(--blue); }
+.pixel-guide-panel { background:rgba(0,217,255,.04); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-top:8px; font-size:12px; color:var(--text); line-height:1.7; }
+.pixel-guide-panel ol { margin:0; padding-left:18px; }
+.pixel-guide-panel li { margin-bottom:6px; }
 .upload-zone { display:flex; align-items:center; gap:12px; }
 .upload-preview-img { width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid var(--border); flex-shrink:0; background:#07121d; }
 .upload-preview-banner { width:100%; height:80px; border-radius:12px; object-fit:cover; border:1px solid var(--border); background:#07121d; margin-top:8px; }
@@ -148,14 +159,25 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
                 <span style="color:var(--muted);font-size:12.5px;white-space:nowrap;">.souverain-store.com</span>
             </div>
 
-            <label data-i18n="settings.boutique.label.pixelmeta">Meta Pixel ID (Facebook/Instagram)</label>
-            <input name="pixel_meta" value="${escapeHtml(user.pixel_meta || "")}" placeholder="Ex : 1234567890123456">
+            <label data-i18n="settings.boutique.label.pixelmeta">Meta Pixel ID (Facebook/Instagram) — facultatif</label>
+            <div style="display:flex;gap:6px;">
+                <input name="pixel_meta" id="pixelMetaInput" value="${escapeHtml(user.pixel_meta || "")}" placeholder="Ex : 1234567890123456" style="flex:1;">
+                <button type="button" class="pixel-detect-btn" id="detectMetaBtn" data-i18n="settings.boutique.pixel.detect">🔍 Détecter</button>
+            </div>
+            <div class="pixel-detect-status" id="detectMetaStatus"></div>
+            <button type="button" class="pixel-guide-toggle" data-guide="meta" data-i18n="settings.boutique.pixel.guideBtn">📖 Comment le récupérer moi-même ?</button>
+            <div class="pixel-guide-panel" id="guide-meta" style="display:none;"></div>
 
-            <label data-i18n="settings.boutique.label.pixeltiktok">TikTok Pixel ID</label>
+            <label data-i18n="settings.boutique.label.pixeltiktok">TikTok Pixel ID — facultatif</label>
             <input name="pixel_tiktok" value="${escapeHtml(user.pixel_tiktok || "")}" placeholder="Ex : C4XXXXXXXXXXXXXXXX">
+            <button type="button" class="pixel-guide-toggle" data-guide="tiktok" data-i18n="settings.boutique.pixel.guideBtn">📖 Comment le récupérer moi-même ?</button>
+            <div class="pixel-guide-panel" id="guide-tiktok" style="display:none;"></div>
 
-            <label data-i18n="settings.boutique.label.pixelgoogle">Google Ads Tag ID</label>
+            <label data-i18n="settings.boutique.label.pixelgoogle">Google Ads Tag ID — facultatif</label>
             <input name="pixel_google" value="${escapeHtml(user.pixel_google || "")}" placeholder="Ex : AW-XXXXXXXXX">
+            <button type="button" class="pixel-guide-toggle" data-guide="google" data-i18n="settings.boutique.pixel.guideBtn">📖 Comment le récupérer moi-même ?</button>
+            <div class="pixel-guide-panel" id="guide-google" style="display:none;"></div>
+            <p style="color:var(--muted);font-size:11px;margin:6px 0 0;" data-i18n="settings.boutique.pixel.optionalNote">Remplis uniquement les pixels des plateformes où tu comptes faire de la pub — aucun n'est obligatoire.</p>
 
             <label data-i18n="settings.boutique.label.qg">Envoyer mes commandes boutique vers ce QG</label>
             <select name="workspace_boutique_id">
@@ -171,6 +193,66 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
 </div>
 <script>
 if (typeof lucide !== "undefined") lucide.createIcons();
+
+const PIXEL_GUIDES = {
+    fr: {
+        meta: { title: "Récupérer ton Meta Pixel ID", steps: [
+            "Va sur business.facebook.com/events_manager2 (Gestionnaire d'événements Meta).",
+            "Clique sur « Connecter des sources de données » → « Web » → « Meta Pixel » → Connecter.",
+            "Donne un nom à ton pixel, entre l'adresse de ta boutique, puis suis les étapes.",
+            "Une fois créé, l'ID du pixel (15-16 chiffres) s'affiche en haut de sa page — copie-le et colle-le ici.",
+        ]},
+        tiktok: { title: "Récupérer ton TikTok Pixel ID", steps: [
+            "Va sur ads.tiktok.com → Ressources → Événements → Événements Web.",
+            "Clique sur « Créer un pixel », donne-lui un nom.",
+            "Choisis « Installer le code manuellement » (ou via un partenaire si proposé).",
+            "Une fois créé, l'ID du pixel (commence par C4...) apparaît dans la liste — copie-le et colle-le ici.",
+        ]},
+        google: { title: "Récupérer ton Google Ads Tag ID", steps: [
+            "Va sur ads.google.com → Outils et paramètres → Google Tag (ou « Suivi des conversions »).",
+            "Ouvre la section « Google Tag » de ton compte.",
+            "Ton identifiant (format AW-XXXXXXXXX) est affiché en haut de cette page — copie-le et colle-le ici.",
+        ]},
+    },
+    en: {
+        meta: { title: "Get your Meta Pixel ID", steps: [
+            "Go to business.facebook.com/events_manager2 (Meta Events Manager).",
+            "Click \"Connect Data Sources\" → \"Web\" → \"Meta Pixel\" → Connect.",
+            "Name your pixel, enter your store's address, then follow the steps.",
+            "Once created, the Pixel ID (15-16 digits) shows at the top of its page — copy it and paste it here.",
+        ]},
+        tiktok: { title: "Get your TikTok Pixel ID", steps: [
+            "Go to ads.tiktok.com → Assets → Events → Web Events.",
+            "Click \"Create Pixel\" and name it.",
+            "Choose \"Manually install pixel code\" (or via a partner if offered).",
+            "Once created, the Pixel ID (starts with C4...) appears in the list — copy it and paste it here.",
+        ]},
+        google: { title: "Get your Google Ads Tag ID", steps: [
+            "Go to ads.google.com → Tools & Settings → Google Tag (or \"Conversion tracking\").",
+            "Open the \"Google Tag\" section of your account.",
+            "Your ID (format AW-XXXXXXXXX) is shown at the top of this page — copy it and paste it here.",
+        ]},
+    },
+    ar: {
+        meta: { title: "احصل على معرّف Meta Pixel الخاص بك", steps: [
+            "اذهب إلى business.facebook.com/events_manager2 (مدير الأحداث في Meta).",
+            "اضغط على «ربط مصادر البيانات» ← «الويب» ← «Meta Pixel» ← ربط.",
+            "أعطِ اسماً للبيكسل، أدخل عنوان متجرك، ثم اتبع الخطوات.",
+            "بمجرد إنشائه، يظهر معرّف البيكسل (15-16 رقماً) أعلى الصفحة — انسخه والصقه هنا.",
+        ]},
+        tiktok: { title: "احصل على معرّف TikTok Pixel الخاص بك", steps: [
+            "اذهب إلى ads.tiktok.com ← الأصول ← الأحداث ← أحداث الويب.",
+            "اضغط على «إنشاء بيكسل» وأعطه اسماً.",
+            "اختر «تثبيت الكود يدوياً» (أو عبر شريك إذا كان متاحاً).",
+            "بمجرد إنشائه، يظهر معرّف البيكسل (يبدأ بـ C4...) في القائمة — انسخه والصقه هنا.",
+        ]},
+        google: { title: "احصل على معرّف Google Ads الخاص بك", steps: [
+            "اذهب إلى ads.google.com ← الأدوات والإعدادات ← Google Tag (أو «تتبع التحويلات»).",
+            "افتح قسم «Google Tag» في حسابك.",
+            "يظهر معرّفك (بصيغة AW-XXXXXXXXX) أعلى هذه الصفحة — انسخه والصقه هنا.",
+        ]},
+    },
+};
 
 const I18N = {
     fr: {
@@ -208,12 +290,15 @@ const I18N = {
         "settings.boutique.sub": "Donne un nom à ta boutique et connecte tes pixels publicitaires pour pouvoir lancer des campagnes.",
         "settings.boutique.label.sousdomaine": "Adresse de ta boutique",
         "settings.boutique.ph.sousdomaine": "maboutique",
-        "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram)",
-        "settings.boutique.label.pixeltiktok": "TikTok Pixel ID",
-        "settings.boutique.label.pixelgoogle": "Google Ads Tag ID",
+        "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram) — facultatif",
+        "settings.boutique.label.pixeltiktok": "TikTok Pixel ID — facultatif",
+        "settings.boutique.label.pixelgoogle": "Google Ads Tag ID — facultatif",
         "settings.boutique.label.qg": "Envoyer mes commandes boutique vers ce QG",
         "settings.boutique.qg.none": "— Aucun (ne pas relier) —",
         "settings.boutique.qg.empty": "Tu n'as pas encore de QG/workspace créé.",
+        "settings.boutique.pixel.detect": "🔍 Détecter",
+        "settings.boutique.pixel.guideBtn": "📖 Comment le récupérer moi-même ?",
+        "settings.boutique.pixel.optionalNote": "Remplis uniquement les pixels des plateformes où tu comptes faire de la pub — aucun n'est obligatoire.",
         "settings.boutique.submit": "Enregistrer ma boutique"
     },
     en: {
@@ -251,12 +336,15 @@ const I18N = {
         "settings.boutique.sub": "Name your store and connect your ad pixels so you can run campaigns.",
         "settings.boutique.label.sousdomaine": "Your store address",
         "settings.boutique.ph.sousdomaine": "mystore",
-        "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram)",
-        "settings.boutique.label.pixeltiktok": "TikTok Pixel ID",
-        "settings.boutique.label.pixelgoogle": "Google Ads Tag ID",
+        "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram) — optional",
+        "settings.boutique.label.pixeltiktok": "TikTok Pixel ID — optional",
+        "settings.boutique.label.pixelgoogle": "Google Ads Tag ID — optional",
         "settings.boutique.label.qg": "Send my store orders to this HQ",
         "settings.boutique.qg.none": "— None (don't link) —",
         "settings.boutique.qg.empty": "You don't have a HQ/workspace yet.",
+        "settings.boutique.pixel.detect": "🔍 Detect",
+        "settings.boutique.pixel.guideBtn": "📖 How do I find it myself?",
+        "settings.boutique.pixel.optionalNote": "Only fill in the pixels for platforms where you plan to run ads — none of them are required.",
         "settings.boutique.submit": "Save my store"
     },
     ar: {
@@ -294,12 +382,15 @@ const I18N = {
         "settings.boutique.sub": "اختر اسماً لمتجرك واربط بكسلات الإعلانات لتتمكن من إطلاق حملات.",
         "settings.boutique.label.sousdomaine": "عنوان متجرك",
         "settings.boutique.ph.sousdomaine": "متجري",
-        "settings.boutique.label.pixelmeta": "معرّف Meta Pixel (فيسبوك/إنستغرام)",
-        "settings.boutique.label.pixeltiktok": "معرّف TikTok Pixel",
-        "settings.boutique.label.pixelgoogle": "معرّف Google Ads",
+        "settings.boutique.label.pixelmeta": "معرّف Meta Pixel (فيسبوك/إنستغرام) — اختياري",
+        "settings.boutique.label.pixeltiktok": "معرّف TikTok Pixel — اختياري",
+        "settings.boutique.label.pixelgoogle": "معرّف Google Ads — اختياري",
         "settings.boutique.label.qg": "إرسال طلبات متجري إلى مركز القيادة هذا",
         "settings.boutique.qg.none": "— لا شيء (بدون ربط) —",
         "settings.boutique.qg.empty": "ليس لديك مركز قيادة بعد.",
+        "settings.boutique.pixel.detect": "🔍 اكتشاف",
+        "settings.boutique.pixel.guideBtn": "📖 كيف أحصل عليه بنفسي؟",
+        "settings.boutique.pixel.optionalNote": "املأ فقط بيكسلات المنصات التي تنوي الإعلان عليها — لا شيء إلزامي.",
         "settings.boutique.submit": "حفظ متجري"
     },
     zh: {
@@ -337,12 +428,15 @@ const I18N = {
         "settings.boutique.sub": "为你的店铺命名并连接广告像素，以便投放广告。",
         "settings.boutique.label.sousdomaine": "店铺地址",
         "settings.boutique.ph.sousdomaine": "我的店铺",
-        "settings.boutique.label.pixelmeta": "Meta 像素 ID（Facebook/Instagram）",
-        "settings.boutique.label.pixeltiktok": "TikTok 像素 ID",
-        "settings.boutique.label.pixelgoogle": "Google Ads 标签 ID",
+        "settings.boutique.label.pixelmeta": "Meta 像素 ID（Facebook/Instagram）——可选",
+        "settings.boutique.label.pixeltiktok": "TikTok 像素 ID——可选",
+        "settings.boutique.label.pixelgoogle": "Google Ads 标签 ID——可选",
         "settings.boutique.label.qg": "将我的店铺订单发送到此指挥中心",
         "settings.boutique.qg.none": "— 无（不关联）—",
         "settings.boutique.qg.empty": "你还没有创建指挥中心/工作区。",
+        "settings.boutique.pixel.detect": "🔍 自动检测",
+        "settings.boutique.pixel.guideBtn": "📖 我该如何自己获取？",
+        "settings.boutique.pixel.optionalNote": "只需填写你打算投放广告的平台的像素——都不是必填项。",
         "settings.boutique.submit": "保存我的店铺"
     }
 };
@@ -454,6 +548,49 @@ if (formBoutique) {
         }
     });
 }
+
+document.querySelectorAll(".pixel-guide-toggle").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const platform = btn.dataset.guide;
+        const panel = document.getElementById("guide-" + platform);
+        if (!panel) return;
+        const isOpen = panel.style.display !== "none";
+        panel.style.display = isOpen ? "none" : "block";
+        if (!isOpen) {
+            const guide = (PIXEL_GUIDES[currentLang] || PIXEL_GUIDES.fr)[platform];
+            panel.innerHTML = "<strong>" + guide.title + "</strong><ol>" + guide.steps.map(s => "<li>" + s + "</li>").join("") + "</ol>";
+        }
+    });
+});
+
+const detectMetaBtn = document.getElementById("detectMetaBtn");
+if (detectMetaBtn) {
+    detectMetaBtn.addEventListener("click", async () => {
+        const status = document.getElementById("detectMetaStatus");
+        detectMetaBtn.disabled = true;
+        detectMetaBtn.textContent = "⏳...";
+        status.className = "pixel-detect-status";
+        status.textContent = "";
+        try {
+            const res = await fetch("/settings/boutique/detecter-pixel-meta", { method: "POST" });
+            const json = await res.json();
+            if (json.success) {
+                document.getElementById("pixelMetaInput").value = json.pixelId;
+                status.className = "pixel-detect-status ok";
+                status.textContent = "✅ " + json.pixelId;
+            } else {
+                status.className = "pixel-detect-status err";
+                status.textContent = json.error || "Échec.";
+            }
+        } catch (err) {
+            status.className = "pixel-detect-status err";
+            status.textContent = "Erreur réseau.";
+        } finally {
+            detectMetaBtn.disabled = false;
+            detectMetaBtn.textContent = t("settings.boutique.pixel.detect");
+        }
+    });
+}
 </script>
 </body>
 </html>`);
@@ -538,6 +675,60 @@ router.post("/boutique", async (req, res) => {
     } catch (err) {
         console.error("❌ POST /settings/boutique :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+// Auto-détection du Meta Pixel : réutilise le token déjà obtenu quand le
+// marchand a connecté Facebook/Instagram dans "Connecter mes outils" —
+// cherche un pixel existant sur son compte pub, en crée un sinon.
+// Ne fonctionne que si l'appli Meta de SAMII a déjà l'autorisation
+// ads_management pour ce compte (encore en mode test tant que Meta n'a
+// pas validé l'app en revue) — sinon Meta renvoie une erreur de permission
+// claire, remontée telle quelle au marchand.
+router.post("/boutique/detecter-pixel-meta", async (req, res) => {
+    try {
+        if (req.session.typeCompte === "client") {
+            return res.json({ success: false, error: "Réservé aux comptes marchands." });
+        }
+
+        const userRows = await db.query(`SELECT email FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+        const email = userRows[0]?.email;
+
+        const wsRows = await db.query(
+            `SELECT meta_access_token, meta_ad_account_id FROM workspaces
+             WHERE owner_email = $1 AND meta_access_token IS NOT NULL AND meta_ad_account_id IS NOT NULL
+             LIMIT 1`,
+            [email]
+        );
+        const ws = wsRows[0];
+        if (!ws) {
+            return res.json({ success: false, error: "Connecte d'abord Facebook/Instagram dans \"Connecter mes outils\" avant de détecter ton pixel." });
+        }
+
+        const { meta_access_token: token, meta_ad_account_id: adAccountId } = ws;
+
+        const listRes = await axios.get(`https://graph.facebook.com/v19.0/act_${adAccountId}/adspixels`, {
+            params: { fields: "id,name", access_token: token },
+        });
+        let pixelId = listRes.data?.data?.[0]?.id;
+
+        if (!pixelId) {
+            const createRes = await axios.post(`https://graph.facebook.com/v19.0/act_${adAccountId}/adspixels`, null, {
+                params: { name: "SAMII Pixel", access_token: token },
+            });
+            pixelId = createRes.data?.id;
+        }
+
+        if (!pixelId) {
+            return res.json({ success: false, error: "Aucun pixel trouvé ni créé." });
+        }
+
+        await db.query(`UPDATE utilisateurs SET pixel_meta = $1 WHERE id = $2`, [pixelId, req.session.userId]);
+        res.json({ success: true, pixelId });
+    } catch (err) {
+        const metaMsg = err.response?.data?.error?.message;
+        console.error("❌ POST /settings/boutique/detecter-pixel-meta :", metaMsg || err.message);
+        res.json({ success: false, error: metaMsg || "Échec de la détection — réessaie ou colle ton pixel manuellement." });
     }
 });
 
