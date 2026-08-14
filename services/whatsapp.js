@@ -13,10 +13,13 @@ const connectorService  = require("./connectorService");
 async function resolveCredentials(workspaceId) {
     if (workspaceId) {
         try {
+            // Le formulaire générique /connect/whatsapp (routes/connector.js)
+            // enregistre { apiId, apiToken } — mêmes noms que tous les autres
+            // transporteurs de la boucle TRANSPORTEUR_TOOLS.
             const connecteur = await connectorService.getOne(workspaceId, "whatsapp");
-            const { instanceId, apiToken } = connecteur?.config || {};
-            if (connecteur?.actif && instanceId && apiToken) {
-                return { instanceId, apiToken };
+            const { apiId, apiToken } = connecteur?.config || {};
+            if (connecteur?.actif && apiId && apiToken) {
+                return { instanceId: apiId, apiToken };
             }
         } catch (err) {
             console.error("❌ WhatsApp resolveCredentials :", err.message);
