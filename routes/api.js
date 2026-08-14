@@ -74,14 +74,21 @@ router.post("/chat", async (req, res) => {
         if (userId) {
             const quota = await samiiQuota.getEtatQuota(userId, req.session?.workspaceId);
             if (!quota.illimite && quota.restant <= 0) {
-                return res.json({
-                    success: true,
-                    quotaExceeded: true,
-                    reply:
-                        `Tu as atteint tes ${quota.total} messages gratuits pour les ${quota.fenetreHeures || 7} prochaines heures — ` +
-                        `je garde tout ce qu'on s'est dit, on reprend bientôt. ` +
-                        `Passe en SAMII Premium (${samiiQuota.PRIX_PREMIUM_USD}$/mois) pour discuter sans limite et avancer sur tes projets sans attendre.`,
-                });
+                if (quota.depassementFacturable) {
+                    // Workspace payant (moyen de paiement déjà lié) : jamais bloqué,
+                    // le dépassement s'accumule et se règle au renouvellement —
+                    // voir services/samiiQuota.js et engines/abonnementEngine.js.
+                    await samiiQuota.enregistrerMessageDepassement(req.session.workspaceId);
+                } else {
+                    return res.json({
+                        success: true,
+                        quotaExceeded: true,
+                        reply:
+                            `Tu as atteint tes ${quota.total} messages gratuits pour les ${quota.fenetreHeures || 7} prochaines heures — ` +
+                            `je garde tout ce qu'on s'est dit, on reprend bientôt. ` +
+                            `Passe en SAMII Premium (${samiiQuota.PRIX_PREMIUM_USD}$/mois) pour discuter sans limite et avancer sur tes projets sans attendre.`,
+                    });
+                }
             }
         }
 
