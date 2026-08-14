@@ -1366,6 +1366,17 @@ nav {
     padding-bottom: 14px;
 }
 
+.filters-topline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 24px 16px;
+}
+
+.filters-topline .espace-row {
+    padding: 0;
+}
+
 .espace-row {
     display: flex;
     gap: 8px;
@@ -1374,6 +1385,8 @@ nav {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     padding: 4px 24px 16px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .espace-row::-webkit-scrollbar {
@@ -1413,6 +1426,57 @@ nav {
     border-color: var(--gold);
     background: rgba(217,179,108,.16);
     color: var(--gold-bright);
+}
+
+.more-filters-toggle {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    margin-left: auto;
+    border-radius: 12px;
+    border: 1px dashed rgba(var(--blue-rgb),.3);
+    background: transparent;
+    color: var(--muted);
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.more-filters-toggle:hover,
+.more-filters-toggle.active {
+    border-style: solid;
+    border-color: rgba(var(--blue-rgb),.4);
+    background: rgba(var(--blue-rgb),.1);
+    color: var(--blue);
+}
+
+.more-filters-toggle svg {
+    width: 14px;
+    height: 14px;
+}
+
+.more-filters-toggle.open #moreFiltersChevron {
+    transform: rotate(180deg);
+}
+
+.more-filters-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(var(--blue-rgb),.15);
+    color: var(--blue);
+    font-size: 10px;
+}
+
+.more-filters-panel {
+    animation: filtersReveal .18s ease;
+}
+
+@keyframes filtersReveal {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .services-row {
@@ -2600,29 +2664,49 @@ nav {
 
     </div>
 
-    <div class="espace-row">
-        ${espaceRowHtml}
-    </div>
+    <div class="filters-topline">
 
-    ${espace !== "local" ? `
-    <div class="region-row">
+        <div class="espace-row">
+            ${espaceRowHtml}
+        </div>
 
-        <a
-            href="/marketplace${espace === "international" ? "?espace=international" : ""}"
-            class="region-chip ${!region ? "active" : ""}"
+        <button
+            type="button"
+            class="more-filters-toggle ${region ? "active open" : ""}"
+            id="moreFiltersToggle"
+            onclick="toggleMoreFilters()"
         >
-            <i data-lucide="globe"></i>
-            <span data-i18n="marketplace.allRegions">Toutes régions</span>
-        </a>
-
-        ${regionChipsHtml}
+            <i data-lucide="sliders-horizontal"></i>
+            <span data-i18n="marketplace.moreFilters">Plus de filtres</span>
+            ${region ? `<span class="more-filters-badge">${escapeHtml(supplierRegionLabel(region))}</span>` : ""}
+            <i data-lucide="chevron-down" id="moreFiltersChevron"></i>
+        </button>
 
     </div>
-    ` : ""}
 
-    <div class="services-row">
+    <div class="more-filters-panel" id="moreFiltersPanel" ${region ? "" : `style="display:none;"`}>
 
-        ${SERVICES_CHIPS_HTML}
+        ${espace !== "local" ? `
+        <div class="region-row">
+
+            <a
+                href="/marketplace${espace === "international" ? "?espace=international" : ""}"
+                class="region-chip ${!region ? "active" : ""}"
+            >
+                <i data-lucide="globe"></i>
+                <span data-i18n="marketplace.allRegions">Toutes régions</span>
+            </a>
+
+            ${regionChipsHtml}
+
+        </div>
+        ` : ""}
+
+        <div class="services-row">
+
+            ${SERVICES_CHIPS_HTML}
+
+        </div>
 
     </div>
 
@@ -3033,6 +3117,15 @@ try {
 } catch {
 
     cart = [];
+}
+
+function toggleMoreFilters() {
+    const panel = document.getElementById("moreFiltersPanel");
+    const toggle = document.getElementById("moreFiltersToggle");
+    if (!panel || !toggle) return;
+    const isOpen = panel.style.display !== "none";
+    panel.style.display = isOpen ? "none" : "";
+    toggle.classList.toggle("open", !isOpen);
 }
 
 function updateCartBadge() {
