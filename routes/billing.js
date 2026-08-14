@@ -160,7 +160,7 @@ router.get("/", requireAuth, async (req, res) => {
             <ul>
                 <li data-i18n="billing.free.li1">10 confirmations/jour</li>
                 <li data-i18n="billing.free.li2">Mode Ombre + Copilote (SAMII propose, tu valides)</li>
-                <li data-i18n="billing.free.li3">10 messages stratégie SAMII/mois</li>
+                <li data-i18n="billing.free.li3">30 messages SAMII toutes les 7h</li>
                 <li data-i18n="billing.free.li4">Suivi de colis basique</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.free} cartes débloquées</li>
             </ul>
@@ -175,7 +175,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.standard.li3">Mode Stratège débloqué (SAMII agit dans tes limites)</li>
                 <li data-i18n="billing.standard.li4">Pubs Meta illimitées, créées par SAMII</li>
                 <li data-i18n="billing.standard.li5">1 Forteresse offerte chaque mois</li>
-                <li data-i18n="billing.standard.li6">Messages SAMII illimités</li>
+                <li data-i18n="billing.standard.li6">70 messages SAMII toutes les 7h</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.standard} cartes débloquées</li>
             </ul>
             ${chargilyBlock("standard")}
@@ -187,10 +187,11 @@ router.get("/", requireAuth, async (req, res) => {
             <div class="bill-price">${prixHtml("pro")}</div>
             <ul>
                 <li data-i18n="billing.pro.li1">1000 confirmations/jour</li>
-                <li data-i18n="billing.pro.li2">Tout le plan Actif, en illimité</li>
+                <li data-i18n="billing.pro.li2">Tout le plan Actif, en plus généreux</li>
                 <li data-i18n="billing.pro.li3">Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)</li>
                 <li data-i18n="billing.pro.li4">2 Forteresse + 1 Boost offerts chaque mois</li>
                 <li data-i18n="billing.pro.li5">Support prioritaire</li>
+                <li data-i18n="billing.pro.li6">150 messages SAMII toutes les 7h</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.pro} cartes débloquées</li>
             </ul>
             ${chargilyBlock("pro")}
@@ -225,7 +226,7 @@ const I18N = {
         'billing.free.title': '🌑 Découverte', 'billing.free.price': 'Gratuit',
         'billing.free.li1': '10 confirmations/jour',
         'billing.free.li2': 'Mode Ombre + Copilote (SAMII propose, tu valides)',
-        'billing.free.li3': '10 messages stratégie SAMII/mois',
+        'billing.free.li3': '30 messages SAMII toutes les 7h',
         'billing.free.li4': 'Suivi de colis basique',
         'billing.free.btn': 'Plan actuel',
         'billing.standard.title': '🚀 Actif',
@@ -234,13 +235,14 @@ const I18N = {
         'billing.standard.li3': 'Mode Stratège débloqué (SAMII agit dans tes limites)',
         'billing.standard.li4': 'Pubs Meta illimitées, créées par SAMII',
         'billing.standard.li5': '1 Forteresse offerte chaque mois',
-        'billing.standard.li6': 'Messages SAMII illimités',
+        'billing.standard.li6': '70 messages SAMII toutes les 7h',
         'billing.pro.title': '👑 Souverain',
         'billing.pro.li1': '1000 confirmations/jour',
-        'billing.pro.li2': 'Tout le plan Actif, en illimité',
+        'billing.pro.li2': 'Tout le plan Actif, en plus généreux',
         'billing.pro.li3': 'Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)',
         'billing.pro.li4': '2 Forteresse + 1 Boost offerts chaque mois',
         'billing.pro.li5': 'Support prioritaire',
+        'billing.pro.li6': '150 messages SAMII toutes les 7h',
         'billing.permonth': '/mois', 'billing.permonth_filleul': '/mois — filleul -5%',
         'billing.ccp.label': '🏦 Payer par CCP',
         'billing.ccp.titulaire': 'Titulaire :', 'billing.ccp.numero': 'Numéro CCP :', 'billing.ccp.cle': 'Clé RIP :',
@@ -258,7 +260,7 @@ const I18N = {
         'billing.free.title': '🌑 Discovery', 'billing.free.price': 'Free',
         'billing.free.li1': '10 confirmations/day',
         'billing.free.li2': 'Shadow Mode + Copilot (SAMII suggests, you approve)',
-        'billing.free.li3': '10 SAMII strategy messages/month',
+        'billing.free.li3': '30 SAMII messages every 7h',
         'billing.free.li4': 'Basic package tracking',
         'billing.free.btn': 'Current plan',
         'billing.standard.title': '🚀 Active',
@@ -267,13 +269,14 @@ const I18N = {
         'billing.standard.li3': 'Strategist Mode unlocked (SAMII acts within your limits)',
         'billing.standard.li4': 'Unlimited Meta ads, created by SAMII',
         'billing.standard.li5': '1 Fortress granted every month',
-        'billing.standard.li6': 'Unlimited SAMII messages',
+        'billing.standard.li6': '70 SAMII messages every 7h',
         'billing.pro.title': '👑 Sovereign',
         'billing.pro.li1': '1000 confirmations/day',
-        'billing.pro.li2': 'Everything in the Active plan, unlimited',
+        'billing.pro.li2': 'Everything in the Active plan, more generous',
         'billing.pro.li3': 'Autonomous + Sovereign Modes (SAMII launches your ready ads instantly, no validation wait)',
         'billing.pro.li4': '2 Fortresses + 1 Boost granted every month',
         'billing.pro.li5': 'Priority support',
+        'billing.pro.li6': '150 SAMII messages every 7h',
         'billing.permonth': '/month', 'billing.permonth_filleul': '/month — referral -5%',
         'billing.ccp.label': '🏦 Pay by CCP',
         'billing.ccp.titulaire': 'Account holder:', 'billing.ccp.numero': 'CCP number:', 'billing.ccp.cle': 'RIP key:',
@@ -291,7 +294,7 @@ const I18N = {
         'billing.free.title': '🌑 الاكتشاف', 'billing.free.price': 'مجاني',
         'billing.free.li1': '10 تأكيدات/يوم',
         'billing.free.li2': 'وضع الظل + المساعد (SAMII يقترح، أنت توافق)',
-        'billing.free.li3': '10 رسائل استراتيجية SAMII/شهر',
+        'billing.free.li3': '30 رسالة SAMII كل 7 ساعات',
         'billing.free.li4': 'تتبع أساسي للطرود',
         'billing.free.btn': 'الباقة الحالية',
         'billing.standard.title': '🚀 نشط',
@@ -300,13 +303,14 @@ const I18N = {
         'billing.standard.li3': 'فتح وضع الاستراتيجي (SAMII يتصرف ضمن حدودك)',
         'billing.standard.li4': 'إعلانات Meta غير محدودة، ينشئها SAMII',
         'billing.standard.li5': 'حصن واحد مجانًا كل شهر',
-        'billing.standard.li6': 'رسائل SAMII غير محدودة',
+        'billing.standard.li6': '70 رسالة SAMII كل 7 ساعات',
         'billing.pro.title': '👑 سيادي',
         'billing.pro.li1': '1000 تأكيد/يوم',
-        'billing.pro.li2': 'كل مزايا باقة نشط، بدون حدود',
+        'billing.pro.li2': 'كل مزايا باقة نشط، بسخاء أكبر',
         'billing.pro.li3': 'وضعا مستقل + سيادي (SAMII يُطلق إعلاناتك الجاهزة فورًا، دون انتظار موافقتك)',
         'billing.pro.li4': 'حصنان + تعزيز واحد مجانًا كل شهر',
         'billing.pro.li5': 'دعم ذو أولوية',
+        'billing.pro.li6': '150 رسالة SAMII كل 7 ساعات',
         'billing.permonth': '/شهر', 'billing.permonth_filleul': '/شهر — خصم الإحالة 5%-',
         'billing.ccp.label': '🏦 الدفع عبر CCP',
         'billing.ccp.titulaire': 'صاحب الحساب:', 'billing.ccp.numero': 'رقم CCP:', 'billing.ccp.cle': 'مفتاح RIP:',
@@ -324,7 +328,7 @@ const I18N = {
         'billing.free.title': '🌑 探索版', 'billing.free.price': '免费',
         'billing.free.li1': '每日10次确认',
         'billing.free.li2': '影子模式 + 副驾驶模式（SAMII 提议，你来确认）',
-        'billing.free.li3': '每月10条 SAMII 策略消息',
+        'billing.free.li3': '每7小时30条 SAMII 消息',
         'billing.free.li4': '基础包裹跟踪',
         'billing.free.btn': '当前方案',
         'billing.standard.title': '🚀 活跃版',
@@ -333,13 +337,14 @@ const I18N = {
         'billing.standard.li3': '解锁策略师模式（SAMII 在你设定的范围内自主行动）',
         'billing.standard.li4': '无限 Meta 广告，由 SAMII 创建',
         'billing.standard.li5': '每月赠送1座堡垒',
-        'billing.standard.li6': '无限 SAMII 消息',
+        'billing.standard.li6': '每7小时70条 SAMII 消息',
         'billing.pro.title': '👑 至尊版',
         'billing.pro.li1': '每日1000次确认',
-        'billing.pro.li2': '活跃版全部功能，无限量',
+        'billing.pro.li2': '活跃版全部功能，额度更高',
         'billing.pro.li3': '自主模式 + 至尊模式（准备好的广告无需等待确认，SAMII 立即启动）',
         'billing.pro.li4': '每月赠送2座堡垒 + 1次加速',
         'billing.pro.li5': '优先支持',
+        'billing.pro.li6': '每7小时150条 SAMII 消息',
         'billing.permonth': '/月', 'billing.permonth_filleul': '/月 — 推荐折扣 -5%',
         'billing.ccp.label': '🏦 通过 CCP 支付',
         'billing.ccp.titulaire': '账户持有人：', 'billing.ccp.numero': 'CCP 账号：', 'billing.ccp.cle': 'RIP 密钥：',

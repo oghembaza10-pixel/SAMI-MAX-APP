@@ -12,6 +12,11 @@ const QUOTA_GRATUIT_PAR_FENETRE = 30;
 const FENETRE_HEURES = 7;
 const PRIX_PREMIUM_USD = 5; // déjà le montant réel facturé par /client-qg/premium (Stripe)
 
+// Quotas alignés sur le palier d'abonnement du WORKSPACE marchand
+// (routes/billing.js) — remplace le "illimité" qui dépendait uniquement du
+// micro-abonnement personnel à 5$. "societe" reste illimité (contrat sur-mesure).
+const QUOTA_PAR_PALIER = { free: QUOTA_GRATUIT_PAR_FENETRE, standard: 70, pro: 150 };
+
 async function getAbonnement(userId) {
     if (!userId) return "gratuit";
     try {
@@ -19,6 +24,16 @@ async function getAbonnement(userId) {
         return rows[0]?.abonnement || "gratuit";
     } catch {
         return "gratuit";
+    }
+}
+
+async function getPalierWorkspace(workspaceId) {
+    if (!workspaceId) return null;
+    try {
+        const rows = await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [workspaceId]);
+        return rows[0]?.palier_abonnement || null;
+    } catch {
+        return null;
     }
 }
 
@@ -35,10 +50,22 @@ async function compterMessagesFenetre(userId) {
     }
 }
 
-// Retourne l'état du quota pour ce client — utilisé à la fois pour bloquer
+// Retourne l'état du quota pour ce compte — utilisé à la fois pour bloquer
 // l'envoi côté /api/chat et pour l'afficher côté /client-qg/quota.
-async function getEtatQuota(userId) {
+// workspaceId (optionnel) : quand fourni (un marchand connecté), le palier
+// du workspace prime sur le micro-abonnement personnel à 5$ dès qu'il
+// dépasse le gratuit — sinon (un client final sans workspace, ou un
+// marchand encore au palier gratuit) on retombe sur l'ancien comportement.
+async function getEtatQuota(userId, workspaceId) {
     if (!userId) return { illimite: true, restant: null, total: null, utilises: 0 };
+
+    const palier = await getPalierWorkspace(workspaceId);
+    if (palier === "societe") return { illimite: true, restant: null, total: null, utilises: 0 };
+    if (palier && QUOTA_PAR_PALIER[palier] && palier !== "free") {
+        const utilises = await compterMessagesFenetre(userId);
+        const total = QUOTA_PAR_PALIER[palier];
+        return { illimite: false, total, utilises, restant: Math.max(0, total - utilises), fenetreHeures: FENETRE_HEURES };
+    }
 
     const abonnement = await getAbonnement(userId);
     if (abonnement !== "gratuit") {
@@ -57,6 +84,6 @@ async function getEtatQuota(userId) {
 
 module.exports = {
     QUOTA_GRATUIT_PAR_JOUR: QUOTA_GRATUIT_PAR_FENETRE, // alias conservé pour compat (routes existantes)
-    QUOTA_GRATUIT_PAR_FENETRE, FENETRE_HEURES, PRIX_PREMIUM_USD,
-    getAbonnement, compterMessagesFenetre, getEtatQuota,
+    QUOTA_GRATUIT_PAR_FENETRE, QUOTA_PAR_PALIER, FENETRE_HEURES, PRIX_PREMIUM_USD,
+    getAbonnement, getPalierWorkspace, compterMessagesFenetre, getEtatQuota,
 };

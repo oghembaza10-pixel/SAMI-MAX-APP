@@ -72,7 +72,7 @@ router.post("/chat", async (req, res) => {
         // retrouver SAMII qui se souvient de tout, sinon aucune raison de
         // vouloir passer payant.
         if (userId) {
-            const quota = await samiiQuota.getEtatQuota(userId);
+            const quota = await samiiQuota.getEtatQuota(userId, req.session?.workspaceId);
             if (!quota.illimite && quota.restant <= 0) {
                 return res.json({
                     success: true,
