@@ -48,6 +48,23 @@ async function send({ to, message, workspaceId }) {
     }
 }
 
+// ── CONFIRMATION OUI/NON (demandée directement au client) ──────────────────
+async function demanderConfirmation(to, commande, workspaceId) {
+    const prenom  = commande.client   || "cher client";
+    const total   = commande.total    || 0;
+    const produit = commande.produits || "";
+
+    const texte =
+        `Bonjour ${prenom} 👋\n\n` +
+        `Merci pour votre commande ! 🙏\n\n` +
+        `📦 ${produit}\n` +
+        `💰 Total : ${total} DZD\n\n` +
+        `Confirmez-vous votre commande ?\n` +
+        `Répondez *OUI* pour confirmer ou *NON* pour annuler.`;
+
+    return await send({ to, message: texte, workspaceId });
+}
+
 // ── REÇOIT UN MESSAGE → ORCHESTRATOR ────────────────
 async function message(msg) {
     await orchestrator.process({
@@ -57,4 +74,4 @@ async function message(msg) {
     });
 }
 
-module.exports = { send, message };
+module.exports = { send, message, demanderConfirmation };

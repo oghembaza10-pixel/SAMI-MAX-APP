@@ -357,24 +357,26 @@ class CommerceEngine {
     // =========================================================
     async createOrderFromChat(context, args) {
         try {
-            const { workspaceId, name, source } = context || {};
+            const { workspaceId, name, source, chatId } = context || {};
             if (!workspaceId) return { success: false, error: "Impossible d'identifier le workspace de ce client." };
 
             // Anti-invention : si un vrai catalogue est fourni, le produit doit en faire partie.
+            let montant = 0;
             if (Array.isArray(context.produits) && context.produits.length > 0) {
-                const existe = context.produits.some(
+                const produitCatalogue = context.produits.find(
                     p => (p.nom || "").toLowerCase() === (args.produit || "").toLowerCase()
                 );
-                if (!existe) {
+                if (!produitCatalogue) {
                     return { success: false, error: "Ce produit ne fait pas partie du catalogue réel du marchand. Redemande au client de choisir un produit exact de la liste fournie." };
                 }
+                montant = Number(produitCatalogue.prix) || 0;
             }
 
             const orderId = `${source === "whatsapp" ? "WA" : "TG"}-${Date.now().toString().slice(-6)}`;
             await db.query(
-                `INSERT INTO commandes (id, workspace_id, nom_client, telephone, adresse, produit, statut, source, montant)
-                 VALUES ($1, $2, $3, $4, $5, $6, 'en attente', $7, 0)`,
-                [orderId, workspaceId, name || "Client", args.telephone || "", args.adresse || "", args.produit || "", source || "chat"]
+                `INSERT INTO commandes (id, workspace_id, nom_client, telephone, adresse, produit, statut, source, montant, contact_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, 'en attente', $7, $8, $9)`,
+                [orderId, workspaceId, name || "Client", args.telephone || "", args.adresse || "", args.produit || "", source || "chat", montant, chatId ? String(chatId) : null]
             );
             await db.query(
                 `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
@@ -387,13 +389,22 @@ class CommerceEngine {
                 url  : "/qg",
             });
 
-            if (source === "telegram") {
-                await require("../services/telegramService").notifyAdmin(
-                    workspaceId,
-                    `🛎️ *Nouvelle commande !*\n\n🆔 *Numéro :* \`${orderId}\`\n👤 *Client :* ${name || "Client"}\n📞 *Tél :* ${args.telephone}\n📦 *Produit :* ${args.produit}\n📍 *Adresse :* ${args.adresse}`,
-                    [[{ text: "✅", callback_data: `confirm_${orderId}` }, { text: "❌", callback_data: `cancel_${orderId}` }]]
-                );
+            // Le client final confirme directement lui-même (IA, sans agent humain) —
+            // le marchand n'a donc plus qu'à regarder la commande une fois validée
+            // et l'expédier ; il n'a plus de bouton à cliquer pour la confirmer.
+            const commandePourConfirmation = {
+                client: name, total: montant, produits: args.produit, order_id: orderId,
+            };
+            if (source === "telegram" && chatId) {
+                await require("../services/telegramService").demanderConfirmation(chatId, commandePourConfirmation);
+            } else if (source === "whatsapp" && chatId) {
+                await require("../services/whatsapp").demanderConfirmation(chatId, commandePourConfirmation, workspaceId);
             }
+
+            await require("../services/telegramService").notifyAdmin(
+                workspaceId,
+                `🛎️ *Nouvelle commande — confirmation demandée au client*\n\n🆔 *Numéro :* \`${orderId}\`\n👤 *Client :* ${name || "Client"}\n📞 *Tél :* ${args.telephone}\n📦 *Produit :* ${args.produit}\n💰 *Total :* ${montant} DZD\n📍 *Adresse :* ${args.adresse}\n\n⏳ SAMII attend la réponse du client. Tu seras notifié dès qu'elle sera confirmée.`
+            );
 
             return { success: true, orderId };
         } catch (err) {
