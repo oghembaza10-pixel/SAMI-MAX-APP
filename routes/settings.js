@@ -299,6 +299,8 @@ const I18N = {
         "settings.boutique.pixel.detect": "🔍 Détecter",
         "settings.boutique.pixel.guideBtn": "📖 Comment le récupérer moi-même ?",
         "settings.boutique.pixel.optionalNote": "Remplis uniquement les pixels des plateformes où tu comptes faire de la pub — aucun n'est obligatoire.",
+        "settings.boutique.saved": "Enregistré !",
+        "settings.boutique.viewLink": "Voir ma boutique →",
         "settings.boutique.submit": "Enregistrer ma boutique"
     },
     en: {
@@ -345,6 +347,8 @@ const I18N = {
         "settings.boutique.pixel.detect": "🔍 Detect",
         "settings.boutique.pixel.guideBtn": "📖 How do I find it myself?",
         "settings.boutique.pixel.optionalNote": "Only fill in the pixels for platforms where you plan to run ads — none of them are required.",
+        "settings.boutique.saved": "Saved!",
+        "settings.boutique.viewLink": "View my store →",
         "settings.boutique.submit": "Save my store"
     },
     ar: {
@@ -391,6 +395,8 @@ const I18N = {
         "settings.boutique.pixel.detect": "🔍 اكتشاف",
         "settings.boutique.pixel.guideBtn": "📖 كيف أحصل عليه بنفسي؟",
         "settings.boutique.pixel.optionalNote": "املأ فقط بيكسلات المنصات التي تنوي الإعلان عليها — لا شيء إلزامي.",
+        "settings.boutique.saved": "تم الحفظ!",
+        "settings.boutique.viewLink": "عرض متجري ←",
         "settings.boutique.submit": "حفظ متجري"
     },
     zh: {
@@ -437,6 +443,8 @@ const I18N = {
         "settings.boutique.pixel.detect": "🔍 自动检测",
         "settings.boutique.pixel.guideBtn": "📖 我该如何自己获取？",
         "settings.boutique.pixel.optionalNote": "只需填写你打算投放广告的平台的像素——都不是必填项。",
+        "settings.boutique.saved": "已保存！",
+        "settings.boutique.viewLink": "查看我的店铺 →",
         "settings.boutique.submit": "保存我的店铺"
     }
 };
@@ -538,8 +546,19 @@ if (formBoutique) {
             });
             const json = await res.json();
             if (json.success) {
-                msg.textContent = "✅ " + t("msg.saved_redirect").replace("✅ ", "");
+                const sousDomaine = String(data.sous_domaine || "").trim();
                 msg.className = "vm-msg ok";
+                msg.textContent = "";
+                msg.appendChild(document.createTextNode("✅ " + t("settings.boutique.saved") + " "));
+                if (sousDomaine) {
+                    const link = document.createElement("a");
+                    link.href = "https://" + sousDomaine + ".souverain-store.com";
+                    link.target = "_blank";
+                    link.rel = "noopener";
+                    link.style.color = "var(--blue)";
+                    link.textContent = t("settings.boutique.viewLink");
+                    msg.appendChild(link);
+                }
             } else {
                 msg.textContent = json.error || t("msg.error_generic");
             }
