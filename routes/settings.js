@@ -149,6 +149,20 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
         <div class="vm-msg" id="msg"></div>
     </div>
 
+    ${isClient ? `
+    <div class="vm-card" id="compte" style="margin-top:20px;">
+        <h1 style="font-size:17px;margin:0 0 4px;" data-i18n="settings.compte.title">🔧 Mon compte</h1>
+        <p style="color:var(--muted);font-size:12px;margin:0 0 18px;" data-i18n="settings.compte.sub">Réglages que tu ne touches pas tous les jours.</p>
+        <a href="/client-qg/connect" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);text-decoration:none;margin-bottom:10px;">
+            <span style="display:flex;align-items:center;gap:10px;color:var(--text-main);font-size:.88rem;"><i data-lucide="plug-zap"></i> <span data-i18n="settings.compte.connect">Connecter mes réseaux (Telegram, WhatsApp...)</span></span>
+            <i data-lucide="chevron-right" style="color:var(--muted);"></i>
+        </a>
+        <a href="/client-qg/premium" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);text-decoration:none;">
+            <span style="display:flex;align-items:center;gap:10px;color:var(--text-main);font-size:.88rem;"><i data-lucide="crown"></i> <span data-i18n="settings.compte.premium">Gérer mon abonnement SAMII Premium</span></span>
+            <i data-lucide="chevron-right" style="color:var(--muted);"></i>
+        </a>
+    </div>` : ""}
+
     ${!isClient ? `
     <div class="vm-card" id="boutique" style="margin-top:20px;">
         <h1 style="font-size:17px;margin:0 0 4px;" data-i18n="settings.boutique.title">🏪 Ma boutique</h1>
@@ -317,6 +331,10 @@ const I18N = {
         "msg.saving": "Enregistrement...",
         "msg.saved_redirect": "✅ Paramètres enregistrés ! Redirection...",
         "msg.error_generic": "Erreur.",
+        "settings.compte.title": "🔧 Mon compte",
+        "settings.compte.sub": "Réglages que tu ne touches pas tous les jours.",
+        "settings.compte.connect": "Connecter mes réseaux (Telegram, WhatsApp...)",
+        "settings.compte.premium": "Gérer mon abonnement SAMII Premium",
         "settings.boutique.title": "🏪 Ma boutique",
         "settings.boutique.sub": "Donne un nom à ta boutique et connecte tes pixels publicitaires pour pouvoir lancer des campagnes.",
         "settings.boutique.label.sousdomaine": "Adresse de ta boutique",
@@ -371,6 +389,10 @@ const I18N = {
         "msg.saving": "Saving...",
         "msg.saved_redirect": "✅ Settings saved! Redirecting...",
         "msg.error_generic": "Error.",
+        "settings.compte.title": "🔧 My account",
+        "settings.compte.sub": "Settings you don't touch every day.",
+        "settings.compte.connect": "Connect my accounts (Telegram, WhatsApp...)",
+        "settings.compte.premium": "Manage my SAMII Premium subscription",
         "settings.boutique.title": "🏪 My store",
         "settings.boutique.sub": "Name your store and connect your ad pixels so you can run campaigns.",
         "settings.boutique.label.sousdomaine": "Your store address",
@@ -425,6 +447,10 @@ const I18N = {
         "msg.saving": "جارٍ الحفظ...",
         "msg.saved_redirect": "✅ تم حفظ الإعدادات! جارٍ التحويل...",
         "msg.error_generic": "خطأ.",
+        "settings.compte.title": "🔧 حسابي",
+        "settings.compte.sub": "إعدادات لا تلمسها كل يوم.",
+        "settings.compte.connect": "ربط حساباتي (Telegram, WhatsApp...)",
+        "settings.compte.premium": "إدارة اشتراكي SAMII Premium",
         "settings.boutique.title": "🏪 متجري",
         "settings.boutique.sub": "اختر اسماً لمتجرك واربط بكسلات الإعلانات لتتمكن من إطلاق حملات.",
         "settings.boutique.label.sousdomaine": "عنوان متجرك",
@@ -479,6 +505,10 @@ const I18N = {
         "msg.saving": "保存中...",
         "msg.saved_redirect": "✅ 设置已保存！正在跳转...",
         "msg.error_generic": "错误。",
+        "settings.compte.title": "🔧 我的账户",
+        "settings.compte.sub": "不常用的设置。",
+        "settings.compte.connect": "连接我的账号（Telegram、WhatsApp……）",
+        "settings.compte.premium": "管理我的 SAMII Premium 订阅",
         "settings.boutique.title": "🏪 我的店铺",
         "settings.boutique.sub": "为你的店铺命名并连接广告像素，以便投放广告。",
         "settings.boutique.label.sousdomaine": "店铺地址",
