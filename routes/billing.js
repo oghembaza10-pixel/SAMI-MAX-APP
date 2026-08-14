@@ -144,6 +144,9 @@ router.get("/", requireAuth, async (req, res) => {
         .bill-daily-note { text-align: center; font-size: .68rem; color: var(--text-muted); opacity: .7; margin: 8px 0 0; }
         .callout-regularisation { max-width: 640px; margin: 0 auto 24px; padding: 14px 18px; border-radius: 12px; background: rgba(229,85,85,0.1); border: 1px solid rgba(229,85,85,0.3); color: #e55; font-size: .82rem; text-align: center; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
         .bill-btn--regulariser { padding: 8px 14px; font-size: .78rem; background: #e55; color: #fff; }
+        .bill-bientot { max-width: 640px; margin: 30px auto 0; padding: 16px 20px; border-radius: 12px; border: 1px dashed rgba(197,160,89,0.3); text-align: center; }
+        .bill-bientot-label { font-size: .74rem; font-weight: 700; color: var(--gold-og); margin-bottom: 8px; }
+        .bill-bientot-items { display: flex; flex-direction: column; gap: 4px; font-size: .76rem; color: var(--text-muted); }
         .bill-ccp { margin-top: auto; padding: 14px; border-radius: 12px; background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3); }
         .bill-ccp-label { color: #F5A623; font-size: .8rem; font-weight: 700; margin-bottom: 8px; }
         .bill-ccp-details { font-size: .78rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px; }
@@ -237,6 +240,14 @@ router.get("/", requireAuth, async (req, res) => {
     </div>
     <p class="sub" style="margin-top:24px;"><a href="/cartes" style="color:var(--gold-og);">🃏 Voir le détail des cartes débloquées à chaque palier →</a></p>
 
+    <div class="bill-bientot">
+        <div class="bill-bientot-label" data-i18n="billing.bientot.label">🔜 Bientôt disponible</div>
+        <div class="bill-bientot-items">
+            <span data-i18n="billing.bientot.meta">Pubs Meta + réponses automatiques Messenger/Instagram</span>
+            <span data-i18n="billing.bientot.creative">Génère tes visuels et vidéos publicitaires avec SAMII (IA)</span>
+        </div>
+    </div>
+
 </div>
 <script>
 const I18N = {
@@ -262,6 +273,9 @@ const I18N = {
         'billing.pro.li4': '2 Forteresse + 1 Boost offerts chaque mois',
         'billing.pro.li5': 'Support prioritaire',
         'billing.pro.li6': '150 messages SAMII toutes les 7h (+0,50 $/message au-delà)',
+        'billing.bientot.label': '🔜 Bientôt disponible',
+        'billing.bientot.meta': 'Pubs Meta + réponses automatiques Messenger/Instagram',
+        'billing.bientot.creative': 'Génère tes visuels et vidéos publicitaires avec SAMII (IA)',
         'billing.permonth': '/mois', 'billing.permonth_filleul': '/mois — filleul -5%',
         'billing.ccp.label': '🏦 Payer par CCP',
         'billing.ccp.titulaire': 'Titulaire :', 'billing.ccp.numero': 'Numéro CCP :', 'billing.ccp.cle': 'Clé RIP :',
@@ -295,6 +309,9 @@ const I18N = {
         'billing.pro.li4': '2 Fortresses + 1 Boost granted every month',
         'billing.pro.li5': 'Priority support',
         'billing.pro.li6': '150 SAMII messages every 7h (+$0.50/message beyond)',
+        'billing.bientot.label': '🔜 Coming soon',
+        'billing.bientot.meta': 'Meta ads + automatic Messenger/Instagram replies',
+        'billing.bientot.creative': 'Generate your ad visuals and videos with SAMII (AI)',
         'billing.permonth': '/month', 'billing.permonth_filleul': '/month — referral -5%',
         'billing.ccp.label': '🏦 Pay by CCP',
         'billing.ccp.titulaire': 'Account holder:', 'billing.ccp.numero': 'CCP number:', 'billing.ccp.cle': 'RIP key:',
@@ -328,6 +345,9 @@ const I18N = {
         'billing.pro.li4': 'حصنان + تعزيز واحد مجانًا كل شهر',
         'billing.pro.li5': 'دعم ذو أولوية',
         'billing.pro.li6': '150 رسالة SAMII كل 7 ساعات (+0.50$ لكل رسالة إضافية)',
+        'billing.bientot.label': '🔜 قريبًا',
+        'billing.bientot.meta': 'إعلانات Meta + ردود تلقائية على Messenger/Instagram',
+        'billing.bientot.creative': 'أنشئ صورك ومقاطع الفيديو الإعلانية مع SAMII (ذكاء اصطناعي)',
         'billing.permonth': '/شهر', 'billing.permonth_filleul': '/شهر — خصم الإحالة 5%-',
         'billing.ccp.label': '🏦 الدفع عبر CCP',
         'billing.ccp.titulaire': 'صاحب الحساب:', 'billing.ccp.numero': 'رقم CCP:', 'billing.ccp.cle': 'مفتاح RIP:',
@@ -361,6 +381,9 @@ const I18N = {
         'billing.pro.li4': '每月赠送2座堡垒 + 1次加速',
         'billing.pro.li5': '优先支持',
         'billing.pro.li6': '每7小时150条 SAMII 消息（超出部分每条+0.50$）',
+        'billing.bientot.label': '🔜 即将推出',
+        'billing.bientot.meta': 'Meta 广告 + Messenger/Instagram 自动回复',
+        'billing.bientot.creative': '用 SAMII（AI）生成你的广告图片和视频',
         'billing.permonth': '/月', 'billing.permonth_filleul': '/月 — 推荐折扣 -5%',
         'billing.ccp.label': '🏦 通过 CCP 支付',
         'billing.ccp.titulaire': '账户持有人：', 'billing.ccp.numero': 'CCP 账号：', 'billing.ccp.cle': 'RIP 密钥：',
