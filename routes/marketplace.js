@@ -2501,6 +2501,15 @@ nav {
 
         </form>
 
+        <a href="/marketplace/lien-externe"
+           style="display:flex;align-items:center;gap:6px;padding:9px 14px;border-radius:20px;
+                  background:rgba(95,212,255,0.08);border:1px solid rgba(95,212,255,0.3);
+                  color:var(--cyan-tech,#5FD4FF);text-decoration:none;font-size:.82rem;
+                  font-weight:600;white-space:nowrap;">
+            <i data-lucide="link" style="width:15px;height:15px;"></i>
+            <span data-i18n="marketplace.lienExterneCta">Pas trouvé ? Colle un lien →</span>
+        </a>
+
         <div class="header-actions">
 
             <button
@@ -3376,6 +3385,283 @@ router.post(
         }
     }
 );
+
+// ==========================================================================
+// LIEN EXTERNE — produit trouvé sur Amazon/AliExpress/etc., absent du
+// catalogue. Extraction best-effort (titre/photo/prix), sinon le client
+// complète lui-même. Marge de service : 1€ fixe + 15% du prix produit.
+// ==========================================================================
+const extractionProduit = require("../services/extractionProduit");
+const FRAIS_SERVICE_FIXE_EUR = 1;
+const FRAIS_SERVICE_POURCENT = 0.15;
+
+function convertirEnEUR(montant, devise) {
+    if (!Number.isFinite(montant)) return null;
+    const d = CONFIG.DEVISES;
+    switch (String(devise || "EUR").toUpperCase()) {
+        case "EUR": return montant;
+        case "USD": return montant / d.EUR_TO_USD;
+        default:    return montant; // devise non gérée par le convertisseur → traitée telle quelle, affichée au client pour vérif
+    }
+}
+
+router.get("/lien-externe", requireAuth, (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Produit externe — SAMII Marketplace</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root { --bg:#03060b; --panel:rgba(9,18,29,.9); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --border:rgba(0,217,255,.16); --gold:#d4af37; }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; padding:24px 16px 80px; }
+.le-shell { max-width:480px; margin:0 auto; }
+.back { display:inline-flex; align-items:center; gap:6px; color:var(--muted); text-decoration:none; font-size:12.5px; margin-bottom:16px; }
+h1 { font-size:19px; margin:0 0 6px; }
+p.sub { color:var(--muted); font-size:12.5px; margin:0 0 22px; line-height:1.5; }
+.le-card { background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:22px; margin-bottom:16px; }
+label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:14px 0 6px; }
+label:first-of-type { margin-top:0; }
+input, select { width:100%; padding:12px 13px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,.3); color:var(--text); font-size:13.5px; font-family:inherit; outline:none; }
+input:focus, select:focus { border-color:var(--blue); }
+.row2 { display:flex; gap:10px; }
+.row2 > div { flex:1; }
+.btn { width:100%; padding:13px; margin-top:14px; border:none; border-radius:10px; font-weight:700; font-size:13.5px; cursor:pointer; }
+.btn-blue { background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:#001018; }
+.btn-blue:disabled { opacity:.5; cursor:not-allowed; }
+.status { text-align:center; font-size:12.5px; margin-top:10px; min-height:16px; color:var(--blue); }
+.status.err { color:#ff6b6b; }
+#step2 { display:none; }
+.le-preview { display:flex; gap:12px; align-items:center; margin-bottom:6px; }
+.le-preview img { width:56px; height:56px; border-radius:10px; object-fit:cover; background:#0a0d14; border:1px solid var(--border); }
+.le-breakdown { font-size:12.5px; color:var(--muted); line-height:1.9; border-top:1px solid var(--border); margin-top:16px; padding-top:14px; }
+.le-breakdown strong { color:var(--gold); }
+.le-total { display:flex; justify-content:space-between; font-size:15px; font-weight:800; color:#fff; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="le-shell">
+    <a href="/marketplace" class="back"><i data-lucide="arrow-left"></i> Retour au marketplace</a>
+    <h1>🔗 Produit trouvé ailleurs ?</h1>
+    <p class="sub">Colle le lien du produit (Amazon, AliExpress, autre site...) — on l'achète pour toi et on te le livre. Frais de service : 1€ + 15% du prix produit.</p>
+
+    <div class="le-card" id="step1">
+        <label>Lien du produit</label>
+        <input type="url" id="url" placeholder="https://...">
+        <button type="button" class="btn btn-blue" id="analyserBtn">🔍 Analyser le lien</button>
+        <div class="status" id="status1"></div>
+    </div>
+
+    <div class="le-card" id="step2">
+        <div class="le-preview">
+            <img id="prevImg" src="" alt="">
+            <div style="flex:1;">
+                <label style="margin:0 0 4px;">Titre du produit</label>
+                <input type="text" id="titre" placeholder="Titre du produit">
+            </div>
+        </div>
+        <div class="row2">
+            <div>
+                <label>Prix produit</label>
+                <input type="number" step="0.01" id="prix" placeholder="0.00">
+            </div>
+            <div>
+                <label>Devise</label>
+                <select id="devise">
+                    <option value="EUR">EUR €</option>
+                    <option value="USD">USD $</option>
+                    <option value="GBP">GBP £</option>
+                    <option value="CNY">CNY ¥</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="le-breakdown" id="breakdown"></div>
+
+        <label>Nom complet</label>
+        <input type="text" id="nom_client" placeholder="Ton nom">
+        <label>Téléphone</label>
+        <input type="text" id="telephone" placeholder="06...">
+        <label>Adresse de livraison</label>
+        <input type="text" id="adresse" placeholder="Adresse complète">
+        <div class="row2">
+            <div><label>Ville</label><input type="text" id="ville" placeholder="Ville"></div>
+            <div><label>Pays</label><input type="text" id="pays" placeholder="Pays"></div>
+        </div>
+
+        <button type="button" class="btn btn-blue" id="commanderBtn">💳 Payer maintenant</button>
+        <div class="status" id="status2"></div>
+    </div>
+</div>
+
+<script>
+lucide.createIcons();
+const FRAIS_FIXE = ${FRAIS_SERVICE_FIXE_EUR};
+const FRAIS_POURCENT = ${FRAIS_SERVICE_POURCENT};
+
+document.getElementById('analyserBtn').addEventListener('click', async () => {
+    const url = document.getElementById('url').value.trim();
+    const status1 = document.getElementById('status1');
+    if (!url) { status1.className = 'status err'; status1.textContent = 'Colle un lien d\\'abord.'; return; }
+
+    status1.className = 'status'; status1.textContent = '⏳ Analyse en cours...';
+    try {
+        const res = await fetch('/marketplace/lien-externe/extraire', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url }),
+        });
+        const json = await res.json();
+
+        document.getElementById('titre').value = json.titre || '';
+        document.getElementById('prix').value = json.prix || '';
+        document.getElementById('devise').value = json.devise || 'EUR';
+        if (json.image) document.getElementById('prevImg').src = json.image;
+
+        status1.textContent = json.success ? '✅ Vérifie les infos ci-dessous, corrige si besoin.' : '';
+        if (!json.success) { status1.className = 'status err'; status1.textContent = json.error || 'Analyse impossible, remplis les champs toi-même ci-dessous.'; }
+
+        document.getElementById('step2').style.display = 'block';
+        document.getElementById('step2').scrollIntoView({ behavior: 'smooth' });
+        recalculer();
+    } catch (err) {
+        status1.className = 'status err';
+        status1.textContent = 'Erreur réseau — remplis les champs manuellement ci-dessous.';
+        document.getElementById('step2').style.display = 'block';
+    }
+});
+
+function recalculer() {
+    const prix = parseFloat(document.getElementById('prix').value) || 0;
+    const frais = FRAIS_FIXE + prix * FRAIS_POURCENT;
+    const total = prix + frais;
+    const devise = document.getElementById('devise').value;
+    document.getElementById('breakdown').innerHTML =
+        'Prix produit : <strong>' + prix.toFixed(2) + ' ' + devise + '</strong><br>' +
+        'Frais de service (1€ + 15%) : <strong>' + frais.toFixed(2) + ' ' + devise + '</strong>' +
+        '<div class="le-total"><span>Total à payer</span><span>' + total.toFixed(2) + ' ' + devise + '</span></div>';
+}
+document.getElementById('prix').addEventListener('input', recalculer);
+document.getElementById('devise').addEventListener('change', recalculer);
+
+document.getElementById('commanderBtn').addEventListener('click', async () => {
+    const status2 = document.getElementById('status2');
+    const payload = {
+        url: document.getElementById('url').value.trim(),
+        titre: document.getElementById('titre').value.trim(),
+        image: document.getElementById('prevImg').src || '',
+        prix: parseFloat(document.getElementById('prix').value) || 0,
+        devise: document.getElementById('devise').value,
+        nom_client: document.getElementById('nom_client').value.trim(),
+        telephone: document.getElementById('telephone').value.trim(),
+        adresse: document.getElementById('adresse').value.trim(),
+        ville: document.getElementById('ville').value.trim(),
+        pays: document.getElementById('pays').value.trim(),
+    };
+
+    if (!payload.titre || !payload.prix || !payload.nom_client || !payload.telephone || !payload.adresse) {
+        status2.className = 'status err';
+        status2.textContent = 'Titre, prix, nom, téléphone et adresse sont obligatoires.';
+        return;
+    }
+
+    const btn = document.getElementById('commanderBtn');
+    btn.disabled = true; btn.textContent = '⏳ Création de la commande...';
+    status2.className = 'status'; status2.textContent = '';
+
+    try {
+        const res = await fetch('/marketplace/lien-externe/commander', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (json.success && json.checkoutUrl) {
+            window.location.href = json.checkoutUrl;
+        } else if (json.success) {
+            status2.textContent = '✅ Commande enregistrée — ' + (json.paymentError || 'on te contacte pour le paiement.');
+            btn.textContent = '✅ Commande envoyée';
+        } else {
+            status2.className = 'status err';
+            status2.textContent = json.error || 'Erreur.';
+            btn.disabled = false; btn.textContent = '💳 Payer maintenant';
+        }
+    } catch (err) {
+        status2.className = 'status err';
+        status2.textContent = 'Erreur réseau, réessaie.';
+        btn.disabled = false; btn.textContent = '💳 Payer maintenant';
+    }
+});
+</script>
+</body>
+</html>`);
+});
+
+router.post("/lien-externe/extraire", requireAuth, async (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) return res.json({ success: false, error: "Lien manquant." });
+        const result = await extractionProduit.extraireProduit(url);
+        res.json(result);
+    } catch (err) {
+        console.error("❌ POST /marketplace/lien-externe/extraire :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/lien-externe/commander", requireAuth, async (req, res) => {
+    try {
+        const { url, titre, image, prix, devise, nom_client, telephone, adresse, ville, pays } = req.body;
+
+        if (!url || !titre || !prix || !nom_client?.trim() || !telephone?.trim() || !adresse?.trim()) {
+            return res.json({ success: false, error: "Lien, titre, prix, nom, téléphone et adresse sont obligatoires." });
+        }
+
+        const prixEUR = convertirEnEUR(Number(prix), devise);
+        if (!prixEUR || prixEUR <= 0) return res.json({ success: false, error: "Prix invalide." });
+
+        const fraisEUR = FRAIS_SERVICE_FIXE_EUR + prixEUR * FRAIS_SERVICE_POURCENT;
+        const totalEUR = prixEUR + fraisEUR;
+
+        const id = crypto.randomUUID();
+        await db.query(
+            `INSERT INTO commandes
+                (id, nom_client, telephone, adresse, pays, ville, produit, montant, devise, statut, source,
+                 url_produit, titre_produit, image_produit, prix_source, devise_source, frais_service)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'EUR','en attente','lien_externe',$9,$10,$11,$12,$13,$14)`,
+            [
+                id, nom_client.trim(), telephone.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(),
+                titre.trim(), totalEUR.toFixed(2),
+                url, titre.trim(), image || "", Number(prix), (devise || "EUR").toUpperCase(), fraisEUR.toFixed(2),
+            ]
+        );
+
+        if (chargily.isEnabled()) {
+            const montantDzd = Math.round(totalEUR * CONFIG.CHARGILY.EUR_TO_DZD_RATE);
+            const checkout = await chargily.createCheckout({
+                amount: montantDzd,
+                currency: "dzd",
+                description: `SAMII — Achat externe #${id.slice(0, 8)} : ${titre.slice(0, 60)}`,
+                successUrl: `${CONFIG.APP_URL}/marketplace?commande=payee&order_id=${id}`,
+                failureUrl: `${CONFIG.APP_URL}/marketplace?commande=echouee`,
+                webhookUrl: `${CONFIG.APP_URL}/webhook/chargily`,
+                metadata: { order_id: id },
+            });
+
+            if (checkout.success) {
+                await db.query(`UPDATE commandes SET chargily_checkout_id = $1 WHERE id = $2`, [checkout.checkoutId, id]);
+                return res.json({ success: true, id, checkoutUrl: checkout.checkoutUrl });
+            }
+
+            console.error("❌ Chargily checkout (lien externe) :", checkout.error);
+            return res.json({ success: true, id, paymentError: "Paiement en ligne indisponible pour le moment, on te contacte pour confirmer." });
+        }
+
+        res.json({ success: true, id });
+    } catch (err) {
+        console.error("❌ POST /marketplace/lien-externe/commander :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
 
 // ==========================================================================
 // FAVORITES TOGGLE

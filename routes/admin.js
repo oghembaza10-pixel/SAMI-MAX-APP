@@ -161,11 +161,13 @@ router.get("/", requireAdmin, async (req, res) => {
     let candidatures = [];
     let ccpDemandes = [];
     let verifications = [];
+    let achatsExternes = [];
 
     try {
         const [
             utilisateurs, marchands, clients, workspacesRows, commandesTotal, commandesJour,
             commissionsRows, ccpDemandesRows, candidaturesRows, candidaturesNouvelles, verifsRows,
+            achatsExternesRows,
         ] = await Promise.all([
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs`),
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE type_compte = 'marchand'`),
@@ -178,6 +180,7 @@ router.get("/", requireAdmin, async (req, res) => {
             db.query(`SELECT COUNT(*)::int AS n FROM candidatures_partenariat`),
             db.query(`SELECT COUNT(*)::int AS n FROM candidatures_partenariat WHERE statut = 'nouveau'`),
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE verification_statut = 'en_attente'`),
+            db.query(`SELECT COUNT(*)::int AS n FROM commandes WHERE source = 'lien_externe' AND statut IN ('payée','achetée')`),
         ]);
 
         stats = {
@@ -193,6 +196,7 @@ router.get("/", requireAdmin, async (req, res) => {
             candidaturesTotal: candidaturesRows[0].n,
             candidaturesNouvelles: candidaturesNouvelles[0].n,
             verifsEnAttente: verifsRows[0].n,
+            achatsExternes: achatsExternesRows[0].n,
         };
 
         candidatures = await db.query(`SELECT * FROM candidatures_partenariat ORDER BY created_at DESC LIMIT 200`);
@@ -205,6 +209,13 @@ router.get("/", requireAdmin, async (req, res) => {
         verifications = await db.query(
             `SELECT id, nom, prenom, email, telephone, verification_document_url, verification_soumis_le
              FROM utilisateurs WHERE verification_statut = 'en_attente' ORDER BY verification_soumis_le ASC LIMIT 100`
+        );
+        achatsExternes = await db.query(
+            `SELECT id, nom_client, telephone, adresse, ville, pays, montant, devise, statut,
+                    url_produit, titre_produit, image_produit, prix_source, devise_source, frais_service,
+                    numero_suivi, transporteur, date_commande
+             FROM commandes WHERE source = 'lien_externe' AND statut IN ('payée','achetée')
+             ORDER BY date_commande ASC LIMIT 100`
         );
     } catch (err) {
         console.error("❌ GET /admin :", err.message);
@@ -239,6 +250,45 @@ router.get("/", requireAdmin, async (req, res) => {
             <div class="pa-contact">${escapeHtml(v.email || "")}${v.telephone ? ` · <a href="tel:${escapeHtml(v.telephone)}">${escapeHtml(v.telephone)}</a>` : ""}</div>
             ${v.verification_document_url ? `<a href="${escapeHtml(v.verification_document_url)}" target="_blank" rel="noopener" style="display:inline-block;margin:6px 0;"><img src="${escapeHtml(v.verification_document_url)}" style="max-width:220px;max-height:140px;border-radius:8px;border:1px solid var(--border);"></a>` : ""}
             <span class="pa-date">Soumis le ${v.verification_soumis_le ? new Date(v.verification_soumis_le).toLocaleString("fr-FR") : "-"}</span>
+        </div>`;
+
+    const ligneAchatExterneHtml = (c) => `
+        <div class="pa-row" data-achat-id="${c.id}">
+            <div class="pa-row-top">
+                <span class="pa-cat">🔗 ${escapeHtml(c.titre_produit || "Produit")} — ${Number(c.montant).toLocaleString("fr-FR")} ${escapeHtml(c.devise)}</span>
+                ${c.statut === "payée"
+                    ? `<button class="achat-fait-btn" data-id="${c.id}">✅ Marqué comme acheté</button>`
+                    : `<span class="pa-cat" style="color:var(--green);">✅ Acheté</span>`}
+            </div>
+            <div class="pa-contact">
+                ${escapeHtml(c.nom_client)} · <a href="tel:${escapeHtml(c.telephone)}">${escapeHtml(c.telephone)}</a><br>
+                ${escapeHtml(c.adresse)}${c.ville ? `, ${escapeHtml(c.ville)}` : ""}${c.pays ? `, ${escapeHtml(c.pays)}` : ""}
+            </div>
+            <p class="pa-desc">
+                ${c.image_produit ? `<img src="${escapeHtml(c.image_produit)}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px;">` : ""}
+                <a href="${escapeHtml(c.url_produit)}" target="_blank" rel="noopener" style="color:var(--blue);">${escapeHtml(c.url_produit)}</a><br>
+                Prix source : ${Number(c.prix_source).toLocaleString("fr-FR")} ${escapeHtml(c.devise_source)} — Frais service : ${Number(c.frais_service).toFixed(2)} EUR
+            </p>
+            ${c.statut === "achetée" && !c.numero_suivi ? `
+                <div class="achat-suivi-form" data-id="${c.id}" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                    <select class="achat-transporteur">
+                        <option value="yalidine">Yalidine</option>
+                        <option value="amana">Amana</option>
+                        <option value="ctm">CTM</option>
+                        <option value="dhl">DHL</option>
+                        <option value="aramex">Aramex</option>
+                        <option value="colissimo">Colissimo</option>
+                        <option value="chronopost">Chronopost</option>
+                        <option value="mondialrelay">Mondial Relay</option>
+                        <option value="dpd">DPD</option>
+                        <option value="ups">UPS</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                    <input type="text" class="achat-numero" placeholder="Numéro de suivi" style="flex:1;min-width:140px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);font-size:12px;">
+                    <button class="achat-suivi-btn" data-id="${c.id}">📦 Activer le suivi</button>
+                </div>
+            ` : c.numero_suivi ? `<p class="pa-desc">📦 Suivi : ${escapeHtml(c.numero_suivi)} (${escapeHtml(c.transporteur)})</p>` : ""}
+            <span class="pa-date">Payé le ${new Date(c.date_commande).toLocaleString("fr-FR")}</span>
         </div>`;
 
     const ligneHtml = (c) => `
@@ -283,10 +333,14 @@ router.get("/", requireAdmin, async (req, res) => {
         ${statCard("🤝", stats.candidaturesTotal, "Candidatures partenariat")}
         ${statCard("🆕", stats.candidaturesNouvelles, "Nouvelles candidatures", "var(--blue)")}
         ${statCard("🪪", stats.verifsEnAttente, "Vérifications en attente", stats.verifsEnAttente ? "var(--gold)" : "var(--text)")}
+        ${statCard("🔗", stats.achatsExternes, "Achats externes à traiter", stats.achatsExternes ? "var(--gold)" : "var(--text)")}
     </div>
 
     <div class="section-title">🪪 Vérifications d'identité en attente (livreurs / location)</div>
     <div id="verif-list" style="margin-bottom:30px;">${verifications.length ? verifications.map(ligneVerifHtml).join("") : `<div class="pa-empty">Aucune vérification en attente.</div>`}</div>
+
+    <div class="section-title">🔗 Achats externes à traiter</div>
+    <div id="achat-list" style="margin-bottom:30px;">${achatsExternes.length ? achatsExternes.map(ligneAchatExterneHtml).join("") : `<div class="pa-empty">Aucun achat externe en attente.</div>`}</div>
 
     <div class="section-title">🏦 Demandes CCP en attente</div>
     <div id="ccp-list" style="margin-bottom:30px;">${ccpDemandes.length ? ccpDemandes.map(ligneCcpHtml).join("") : `<div class="pa-empty">Aucune demande CCP en attente.</div>`}</div>
@@ -322,6 +376,10 @@ router.get("/", requireAdmin, async (req, res) => {
 .pa-empty { text-align:center; padding:60px 20px; border:1px dashed var(--border); border-radius:16px; color:var(--muted); }
 .ccp-confirm-btn { padding:7px 13px; border-radius:8px; border:1px solid var(--green); background:rgba(61,220,132,.12); color:var(--green); font-size:11.5px; font-weight:700; cursor:pointer; font-family:"JetBrains Mono"; }
 .ccp-confirm-btn:disabled { opacity:.5; cursor:default; }
+.achat-fait-btn, .achat-suivi-btn { padding:7px 13px; border-radius:8px; border:1px solid var(--gold); background:rgba(212,175,55,.12); color:var(--gold); font-size:11.5px; font-weight:700; cursor:pointer; font-family:"JetBrains Mono"; }
+.achat-fait-btn:disabled, .achat-suivi-btn:disabled { opacity:.5; cursor:default; }
+.achat-transporteur { padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:rgba(0,0,0,.3); color:var(--text); font-size:12px; }
+.achat-transporteur option { background:#0a0d14; }
 .verif-approuver-btn { padding:7px 13px; border-radius:8px; border:1px solid var(--green); background:rgba(61,220,132,.12); color:var(--green); font-size:11.5px; font-weight:700; cursor:pointer; font-family:"JetBrains Mono"; }
 .verif-refuser-btn { padding:7px 13px; border-radius:8px; border:1px solid #e55; background:rgba(229,85,85,.12); color:#e55; font-size:11.5px; font-weight:700; cursor:pointer; font-family:"JetBrains Mono"; }
 .verif-approuver-btn:disabled, .verif-refuser-btn:disabled { opacity:.5; cursor:default; }
@@ -351,6 +409,64 @@ document.getElementById("ccp-list").addEventListener("click", async (e) => {
         alert("Erreur réseau.");
         btn.disabled = false;
         btn.textContent = "✅ Confirmer le paiement";
+    }
+});
+
+document.getElementById("achat-list").addEventListener("click", async (e) => {
+    const btnFait = e.target.closest(".achat-fait-btn");
+    const btnSuivi = e.target.closest(".achat-suivi-btn");
+
+    if (btnFait) {
+        btnFait.disabled = true;
+        btnFait.textContent = "⏳...";
+        try {
+            const res = await fetch("/admin/achat-externe/" + btnFait.dataset.id + "/achete", { method: "POST" });
+            const json = await res.json();
+            if (json.success) {
+                location.reload();
+            } else {
+                alert(json.error || "Erreur.");
+                btnFait.disabled = false;
+                btnFait.textContent = "✅ Marqué comme acheté";
+            }
+        } catch (err) {
+            alert("Erreur réseau.");
+            btnFait.disabled = false;
+            btnFait.textContent = "✅ Marqué comme acheté";
+        }
+        return;
+    }
+
+    if (btnSuivi) {
+        const form = btnSuivi.closest(".achat-suivi-form");
+        const transporteur = form.querySelector(".achat-transporteur").value;
+        const numero = form.querySelector(".achat-numero").value.trim();
+        if (!numero) { alert("Indique le numéro de suivi."); return; }
+
+        btnSuivi.disabled = true;
+        btnSuivi.textContent = "⏳...";
+        try {
+            const res = await fetch("/admin/achat-externe/" + btnSuivi.dataset.id + "/suivi", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ transporteur, numero }),
+            });
+            const json = await res.json();
+            if (json.success) {
+                btnSuivi.closest(".pa-row").remove();
+                if (!document.querySelector("#achat-list .pa-row")) {
+                    document.getElementById("achat-list").innerHTML = '<div class="pa-empty">Aucun achat externe en attente.</div>';
+                }
+            } else {
+                alert(json.error || "Erreur.");
+                btnSuivi.disabled = false;
+                btnSuivi.textContent = "📦 Activer le suivi";
+            }
+        } catch (err) {
+            alert("Erreur réseau.");
+            btnSuivi.disabled = false;
+            btnSuivi.textContent = "📦 Activer le suivi";
+        }
     }
 });
 
@@ -436,6 +552,39 @@ socket.on("partenariat:nouvelle", (c) => {
     document.getElementById("pa-list").prepend(div);
 });
 </script>`));
+});
+
+router.post("/achat-externe/:id/achete", requireAdmin, async (req, res) => {
+    try {
+        const rows = await db.query(
+            `UPDATE commandes SET statut = 'achetée' WHERE id = $1 AND source = 'lien_externe' AND statut = 'payée' RETURNING id`,
+            [req.params.id]
+        );
+        if (!rows[0]) return res.json({ success: false, error: "Introuvable ou déjà traité." });
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /admin/achat-externe/:id/achete :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/achat-externe/:id/suivi", requireAdmin, async (req, res) => {
+    try {
+        const { transporteur, numero } = req.body;
+        if (!transporteur || !numero?.trim()) {
+            return res.json({ success: false, error: "Transporteur et numéro requis." });
+        }
+        const rows = await db.query(
+            `UPDATE commandes SET numero_suivi = $1, transporteur = $2, statut = 'en cours'
+             WHERE id = $3 AND source = 'lien_externe' AND statut = 'achetée' RETURNING id`,
+            [numero.trim(), transporteur, req.params.id]
+        );
+        if (!rows[0]) return res.json({ success: false, error: "Introuvable ou déjà traité." });
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /admin/achat-externe/:id/suivi :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
 });
 
 router.post("/ccp/:id/confirmer", requireAdmin, async (req, res) => {
