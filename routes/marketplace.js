@@ -346,6 +346,33 @@ router.get("/", requireAuth, async (req, res) => {
         );
     }
 
+    // Effet réel de la carte Boost Visibilité (Coffre OG) : les annonces des
+    // vendeurs avec un Boost actif remontent en tête de liste, sans changer
+    // l'ordre entre elles (tri stable) ni entre les autres annonces.
+    try {
+        const boostRows = await db.query(
+            `SELECT u.id AS user_id, w.coffre
+             FROM utilisateurs u
+             JOIN workspaces w ON w.id = u.workspace_boutique_id
+             WHERE w.coffre IS NOT NULL AND w.coffre != ''`
+        );
+        const maintenant = Date.now();
+        const vendeursBoostes = new Set();
+        boostRows.forEach(r => {
+            try {
+                const activeUntil = JSON.parse(r.coffre)?.boost?.activeUntil;
+                if (activeUntil && new Date(activeUntil).getTime() > maintenant) vendeursBoostes.add(r.user_id);
+            } catch { /* ignore */ }
+        });
+        if (vendeursBoostes.size) {
+            annoncesDB = [...annoncesDB].sort((a, b) =>
+                (vendeursBoostes.has(b.vendeur_id) ? 1 : 0) - (vendeursBoostes.has(a.vendeur_id) ? 1 : 0)
+            );
+        }
+    } catch (err) {
+        console.warn("⚠️ Marketplace lecture boosts :", err.message);
+    }
+
     // ----------------------------------------------------------------------
     // LISTING (déjà filtrée en SQL — categorie/region/espace)
     // ----------------------------------------------------------------------

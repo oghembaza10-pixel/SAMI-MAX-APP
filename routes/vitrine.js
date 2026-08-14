@@ -129,8 +129,23 @@ async function renderVitrine(userId, req, res) {
             [userId]
         );
 
+        // Effet réel de la carte Forteresse (Coffre OG) : tant qu'elle est active,
+        // les avis négatifs (note <= 2) sont exclus de la moyenne/du compteur publics
+        // — le temps que le marchand règle le problème en coulisses avec le client.
+        let forteresseActive = false;
+        if (user.workspace_boutique_id) {
+            try {
+                const wsRows = await db.query(`SELECT coffre FROM workspaces WHERE id = $1`, [user.workspace_boutique_id]);
+                const coffre = wsRows[0]?.coffre ? JSON.parse(wsRows[0].coffre) : {};
+                const activeUntil = coffre?.forteresse?.activeUntil;
+                forteresseActive = !!(activeUntil && new Date(activeUntil) > new Date());
+            } catch { /* ignore */ }
+        }
+
         const noteRows = await db.query(
-            `SELECT ROUND(AVG(note)::numeric, 1) AS moyenne, COUNT(*) AS total FROM avis WHERE cible_type = 'vendeur' AND cible_id = $1`,
+            forteresseActive
+                ? `SELECT ROUND(AVG(note)::numeric, 1) AS moyenne, COUNT(*) AS total FROM avis WHERE cible_type = 'vendeur' AND cible_id = $1 AND note > 2`
+                : `SELECT ROUND(AVG(note)::numeric, 1) AS moyenne, COUNT(*) AS total FROM avis WHERE cible_type = 'vendeur' AND cible_id = $1`,
             [userId]
         );
         if (noteRows[0]?.total > 0) {
