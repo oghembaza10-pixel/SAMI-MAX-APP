@@ -188,7 +188,7 @@ router.get("/", requireAuth, async (req, res) => {
             <ul>
                 <li data-i18n="billing.pro.li1">1000 confirmations/jour</li>
                 <li data-i18n="billing.pro.li2">Tout le plan Actif, en illimité</li>
-                <li data-i18n="billing.pro.li3">Modes Autonome + Souverain (SAMII active seul tes pubs)</li>
+                <li data-i18n="billing.pro.li3">Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)</li>
                 <li data-i18n="billing.pro.li4">2 Forteresse + 1 Boost offerts chaque mois</li>
                 <li data-i18n="billing.pro.li5">Support prioritaire</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.pro} cartes débloquées</li>
@@ -238,7 +238,7 @@ const I18N = {
         'billing.pro.title': '👑 Souverain',
         'billing.pro.li1': '1000 confirmations/jour',
         'billing.pro.li2': 'Tout le plan Actif, en illimité',
-        'billing.pro.li3': 'Modes Autonome + Souverain (SAMII active seul tes pubs)',
+        'billing.pro.li3': 'Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)',
         'billing.pro.li4': '2 Forteresse + 1 Boost offerts chaque mois',
         'billing.pro.li5': 'Support prioritaire',
         'billing.permonth': '/mois', 'billing.permonth_filleul': '/mois — filleul -5%',
@@ -271,7 +271,7 @@ const I18N = {
         'billing.pro.title': '👑 Sovereign',
         'billing.pro.li1': '1000 confirmations/day',
         'billing.pro.li2': 'Everything in the Active plan, unlimited',
-        'billing.pro.li3': 'Autonomous + Sovereign Modes (SAMII activates your ads on its own)',
+        'billing.pro.li3': 'Autonomous + Sovereign Modes (SAMII launches your ready ads instantly, no validation wait)',
         'billing.pro.li4': '2 Fortresses + 1 Boost granted every month',
         'billing.pro.li5': 'Priority support',
         'billing.permonth': '/month', 'billing.permonth_filleul': '/month — referral -5%',
@@ -304,7 +304,7 @@ const I18N = {
         'billing.pro.title': '👑 سيادي',
         'billing.pro.li1': '1000 تأكيد/يوم',
         'billing.pro.li2': 'كل مزايا باقة نشط، بدون حدود',
-        'billing.pro.li3': 'وضعا مستقل + سيادي (SAMII يفعّل إعلاناتك بمفرده)',
+        'billing.pro.li3': 'وضعا مستقل + سيادي (SAMII يُطلق إعلاناتك الجاهزة فورًا، دون انتظار موافقتك)',
         'billing.pro.li4': 'حصنان + تعزيز واحد مجانًا كل شهر',
         'billing.pro.li5': 'دعم ذو أولوية',
         'billing.permonth': '/شهر', 'billing.permonth_filleul': '/شهر — خصم الإحالة 5%-',
@@ -337,7 +337,7 @@ const I18N = {
         'billing.pro.title': '👑 至尊版',
         'billing.pro.li1': '每日1000次确认',
         'billing.pro.li2': '活跃版全部功能，无限量',
-        'billing.pro.li3': '自主模式 + 至尊模式（SAMII 独立启动你的广告）',
+        'billing.pro.li3': '自主模式 + 至尊模式（准备好的广告无需等待确认，SAMII 立即启动）',
         'billing.pro.li4': '每月赠送2座堡垒 + 1次加速',
         'billing.pro.li5': '优先支持',
         'billing.permonth': '/月', 'billing.permonth_filleul': '/月 — 推荐折扣 -5%',

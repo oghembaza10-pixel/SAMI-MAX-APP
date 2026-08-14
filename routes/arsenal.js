@@ -44,7 +44,7 @@ const CARDS = [
     { loi: "T-030", name: "Cartographe",        icon: "map",           desc: "Carte de performance par région", tier: 5, href: "/samii" },
     { loi: "T-031", name: "Scalpel",            icon: "scissors",      desc: "Aide à la décision rapide", tier: 5, href: "/samii" },
     { loi: "T-032", name: "Sceau",              icon: "stamp",         desc: "Validation finale avant action critique", tier: 5, href: "/samii" },
-    { loi: "T-033", name: "Souverain",          icon: "crown",         desc: "Autonomie quasi-totale sur ta stratégie", tier: 5, href: "/samii/mode" },
+    { loi: "T-033", name: "Souverain",          icon: "crown",         desc: "Lance directement tes actions déjà prêtes, sans validation finale", tier: 5, href: "/samii/mode" },
     { loi: "—",     name: "Boost Visibilité",   icon: "star",          desc: "Augmente ta visibilité pendant 3 jours", tier: 0, href: "/coffre" },
 ];
 

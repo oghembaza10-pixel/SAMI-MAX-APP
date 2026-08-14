@@ -20,7 +20,7 @@ const MODES = [
     { id: "copilote", label: "🚀 Copilote", desc: "SAMII exécute seul les actions réversibles. Il demande confirmation dès qu'il y a de l'argent ou de la visibilité publique en jeu." },
     { id: "strategiste", label: "⚔️ Stratège", desc: "SAMII agit seul dans les limites que tu fixes (budget, règles). Il ne t'alerte que pour les exceptions." },
     { id: "autonome", label: "🛡️ Autonome",  desc: "SAMII gère le quotidien seul. Résumé périodique au lieu d'une confirmation à chaque action." },
-    { id: "souverain", label: "👑 Souverain", desc: "Autonomie quasi-totale sur la stratégie validée avec toi. Seules les décisions critiques ou irréversibles remontent." },
+    { id: "souverain", label: "👑 Souverain", desc: "Une fois que tu prépares une action (ex: une campagne pub), SAMII la lance directement sans attendre ta validation finale. Tu restes celui qui initie chaque action." },
 ];
 
 router.get("/mode", requireAuth, async (req, res) => {
