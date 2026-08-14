@@ -32,6 +32,41 @@ function initiales(prenom, nom) {
 
 const MOIS_FR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
 
+// Pixels pub (Meta/TikTok/Google) configurés par le marchand dans ses réglages —
+// injectés seulement s'il a rempli l'ID correspondant. Permet de lancer des
+// campagnes publicitaires (audiences, retargeting) vers sa boutique.
+function pixelsHtml(user) {
+    let html = "";
+    if (user.pixel_meta) {
+        html += `
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '${escapeHtml(user.pixel_meta)}');
+fbq('track', 'PageView');
+</script>`;
+    }
+    if (user.pixel_tiktok) {
+        html += `
+<script>
+!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+ttq.load('${escapeHtml(user.pixel_tiktok)}');
+ttq.page();
+}(window,document,'ttq');
+</script>`;
+    }
+    if (user.pixel_google) {
+        html += `
+<script async src="https://www.googletagmanager.com/gtag/js?id=${escapeHtml(user.pixel_google)}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${escapeHtml(user.pixel_google)}');
+</script>`;
+    }
+    return html;
+}
+
 // Rendu du badge "Membre depuis mois année" avec le mois traduisible
 // côté client via data-i18n (clé month.<index>) — l'année n'a pas besoin
 // de traduction.
@@ -45,8 +80,11 @@ function membreDepuisHtml(date) {
 // PAGE PUBLIQUE
 // ==========================================================================
 
-router.get("/:userId", async (req, res) => {
-    const userId = req.params.userId;
+router.get("/:userId", (req, res) => renderVitrine(req.params.userId, req, res));
+
+// Réutilisée par index.js pour servir directement la boutique d'un marchand
+// sur son sous-domaine (maboutique.souverain-store.com) sans passer par /vitrine/:id.
+async function renderVitrine(userId, req, res) {
     let user = null;
     let annonces = [];
     let publications = [];
@@ -141,6 +179,7 @@ router.get("/:userId", async (req, res) => {
 <title>${escapeHtml(nomComplet)} — SAMII OS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+${pixelsHtml(user)}
 <style>
 :root { --bg:#03060b; --panel:rgba(9,18,29,.88); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --gold:#d7b34c; --border:rgba(0,217,255,.16); --radius:18px; --cyan-glow:0 0 15px rgba(0,217,255,.45); }
 * { box-sizing:border-box; }
@@ -188,6 +227,11 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 .vt-post { border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--panel); padding:14px; }
 .vt-post img { width:100%; border-radius:10px; margin-bottom:10px; aspect-ratio:16/10; object-fit:cover; }
 .vt-post p { font-size:12.5px; color:var(--text); line-height:1.6; margin:0; }
+.vt-footer { display:flex; gap:20px; flex-wrap:wrap; align-items:center; margin-top:50px; padding-top:20px; border-top:1px solid var(--border); font-size:11.5px; color:var(--muted); }
+.vt-footer a { color:var(--muted); text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+.vt-footer a:hover { color:var(--blue); }
+.vt-footer a svg { width:12px; height:12px; }
+.vt-footer-powered { margin-left:auto; opacity:.6; }
 </style>
 </head>
 <body>
@@ -231,6 +275,14 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 
     <div class="section-title"><i data-lucide="message-square"></i> <span data-i18n="vitrine.section.publications">Publications Communauté</span></div>
     <div class="vt-posts">${publicationsHtml}</div>
+
+    <footer class="vt-footer">
+        ${user.telephone ? `<a href="tel:${escapeHtml(user.telephone)}"><i data-lucide="phone"></i> ${escapeHtml(user.telephone)}</a>` : ""}
+        <a href="mailto:${escapeHtml(user.email)}"><i data-lucide="mail"></i> ${escapeHtml(user.email)}</a>
+        <a href="/privacy.html" target="_blank" rel="noopener" data-i18n="vitrine.footer.privacy">Politique de confidentialité</a>
+        <a href="/terms.html" target="_blank" rel="noopener" data-i18n="vitrine.footer.terms">Conditions d'utilisation</a>
+        <span class="vt-footer-powered">Powered by SAMII OS</span>
+    </footer>
 </div>
 <script>
 if (typeof lucide !== "undefined") lucide.createIcons();
@@ -251,6 +303,8 @@ const I18N = {
         "vitrine.annonce.devis": "Sur devis",
         "vitrine.empty.annonces": "Aucune annonce publiée pour le moment.",
         "vitrine.empty.publications": "Aucune publication pour le moment.",
+        "vitrine.footer.privacy": "Politique de confidentialité",
+        "vitrine.footer.terms": "Conditions d'utilisation",
         "grade.Soldat": "Soldat", "grade.Caporal": "Caporal", "grade.Sergent": "Sergent",
         "grade.Lieutenant": "Lieutenant", "grade.Capitaine": "Capitaine", "grade.Général": "Général",
         "month.0": "janvier", "month.1": "février", "month.2": "mars", "month.3": "avril",
@@ -272,6 +326,8 @@ const I18N = {
         "vitrine.annonce.devis": "Contact for price",
         "vitrine.empty.annonces": "No listings published yet.",
         "vitrine.empty.publications": "No posts yet.",
+        "vitrine.footer.privacy": "Privacy Policy",
+        "vitrine.footer.terms": "Terms of Service",
         "grade.Soldat": "Soldier", "grade.Caporal": "Corporal", "grade.Sergent": "Sergeant",
         "grade.Lieutenant": "Lieutenant", "grade.Capitaine": "Captain", "grade.Général": "General",
         "month.0": "January", "month.1": "February", "month.2": "March", "month.3": "April",
@@ -293,6 +349,8 @@ const I18N = {
         "vitrine.annonce.devis": "على الطلب",
         "vitrine.empty.annonces": "لا توجد إعلانات منشورة حتى الآن.",
         "vitrine.empty.publications": "لا توجد منشورات حتى الآن.",
+        "vitrine.footer.privacy": "سياسة الخصوصية",
+        "vitrine.footer.terms": "شروط الاستخدام",
         "grade.Soldat": "جندي", "grade.Caporal": "عريف", "grade.Sergent": "رقيب",
         "grade.Lieutenant": "ملازم", "grade.Capitaine": "نقيب", "grade.Général": "جنرال",
         "month.0": "يناير", "month.1": "فبراير", "month.2": "مارس", "month.3": "أبريل",
@@ -314,6 +372,8 @@ const I18N = {
         "vitrine.annonce.devis": "价格面议",
         "vitrine.empty.annonces": "暂无发布的商品。",
         "vitrine.empty.publications": "暂无动态。",
+        "vitrine.footer.privacy": "隐私政策",
+        "vitrine.footer.terms": "使用条款",
         "grade.Soldat": "士兵", "grade.Caporal": "下士", "grade.Sergent": "中士",
         "grade.Lieutenant": "中尉", "grade.Capitaine": "上尉", "grade.Général": "将军",
         "month.0": "1月", "month.1": "2月", "month.2": "3月", "month.3": "4月",
@@ -351,6 +411,7 @@ applyLang(currentLang);
 </script>
 </body>
 </html>`);
-});
+}
 
 module.exports = router;
+module.exports.renderVitrine = renderVitrine;

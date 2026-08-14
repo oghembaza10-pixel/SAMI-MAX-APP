@@ -213,6 +213,31 @@ app.get("/inscription", requireAuth, (req, res) => {
     res.redirect(`/workspace/create${metier ? `?metier=${metier}` : ""}`);
 });
 
+// ── SOUS-DOMAINE BOUTIQUE (maboutique.souverain-store.com) ──
+// Un marchand qui a configuré une adresse dans Réglages → Ma boutique voit
+// sa vitrine directement à la racine de son sous-domaine, à la Shopify —
+// tout le reste (marketplace, paiement...) reste servi normalement, seul
+// le "/" change selon le sous-domaine appelé.
+const RESERVED_HOST_PREFIXES = ["www", "samii", "api"];
+app.get("/", async (req, res, next) => {
+    try {
+        const host = (req.hostname || "").toLowerCase();
+        if (host.endsWith(".souverain-store.com")) {
+            const prefix = host.slice(0, -".souverain-store.com".length);
+            if (prefix && !RESERVED_HOST_PREFIXES.includes(prefix)) {
+                const rows = await db.query(`SELECT id FROM utilisateurs WHERE sous_domaine = $1`, [prefix]);
+                if (rows[0]) {
+                    const { renderVitrine } = require("./routes/vitrine");
+                    return renderVitrine(rows[0].id, req, res);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("❌ Routage sous-domaine boutique :", err.message);
+    }
+    next();
+});
+
 // ── PAGE ACCUEIL ────────────────────────────────────────
 app.get("/", (req, res) => {
     res.render("index", {

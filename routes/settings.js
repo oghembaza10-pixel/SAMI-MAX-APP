@@ -7,6 +7,13 @@ const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
 const gradeService = require("../services/gradeService");
+const cloudflareService = require("../services/cloudflareService");
+
+const SOUS_DOMAINES_RESERVES = [
+    "www", "samii", "api", "admin", "app", "mail", "smtp", "ftp", "webhook",
+    "cdn", "static", "assets", "blog", "shop", "store", "help", "support",
+    "send", "resend", "test", "staging", "dev", "ns1", "ns2",
+];
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -122,6 +129,31 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
         </form>
         <div class="vm-msg" id="msg"></div>
     </div>
+
+    ${!isClient ? `
+    <div class="vm-card" style="margin-top:20px;">
+        <h1 style="font-size:17px;margin:0 0 4px;" data-i18n="settings.boutique.title">🏪 Ma boutique</h1>
+        <p style="color:var(--muted);font-size:12px;margin:0 0 18px;" data-i18n="settings.boutique.sub">Donne un nom à ta boutique et connecte tes pixels publicitaires pour pouvoir lancer des campagnes.</p>
+        <form id="form-boutique">
+            <label data-i18n="settings.boutique.label.sousdomaine">Adresse de ta boutique</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <input name="sous_domaine" id="sousDomaineInput" value="${escapeHtml(user.sous_domaine || "")}" placeholder="maboutique" data-i18n-ph="settings.boutique.ph.sousdomaine" style="flex:1;">
+                <span style="color:var(--muted);font-size:12.5px;white-space:nowrap;">.souverain-store.com</span>
+            </div>
+
+            <label data-i18n="settings.boutique.label.pixelmeta">Meta Pixel ID (Facebook/Instagram)</label>
+            <input name="pixel_meta" value="${escapeHtml(user.pixel_meta || "")}" placeholder="Ex : 1234567890123456">
+
+            <label data-i18n="settings.boutique.label.pixeltiktok">TikTok Pixel ID</label>
+            <input name="pixel_tiktok" value="${escapeHtml(user.pixel_tiktok || "")}" placeholder="Ex : C4XXXXXXXXXXXXXXXX">
+
+            <label data-i18n="settings.boutique.label.pixelgoogle">Google Ads Tag ID</label>
+            <input name="pixel_google" value="${escapeHtml(user.pixel_google || "")}" placeholder="Ex : AW-XXXXXXXXX">
+
+            <button type="submit" data-i18n="settings.boutique.submit">Enregistrer ma boutique</button>
+        </form>
+        <div class="vm-msg" id="msgBoutique"></div>
+    </div>` : ""}
 </div>
 <script>
 if (typeof lucide !== "undefined") lucide.createIcons();
@@ -157,7 +189,15 @@ const I18N = {
         "msg.network_error": "❌ Erreur réseau.",
         "msg.saving": "Enregistrement...",
         "msg.saved_redirect": "✅ Paramètres enregistrés ! Redirection...",
-        "msg.error_generic": "Erreur."
+        "msg.error_generic": "Erreur.",
+        "settings.boutique.title": "🏪 Ma boutique",
+        "settings.boutique.sub": "Donne un nom à ta boutique et connecte tes pixels publicitaires pour pouvoir lancer des campagnes.",
+        "settings.boutique.label.sousdomaine": "Adresse de ta boutique",
+        "settings.boutique.ph.sousdomaine": "maboutique",
+        "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram)",
+        "settings.boutique.label.pixeltiktok": "TikTok Pixel ID",
+        "settings.boutique.label.pixelgoogle": "Google Ads Tag ID",
+        "settings.boutique.submit": "Enregistrer ma boutique"
     },
     en: {
         "nav.back": "Back",
@@ -189,7 +229,15 @@ const I18N = {
         "msg.network_error": "❌ Network error.",
         "msg.saving": "Saving...",
         "msg.saved_redirect": "✅ Settings saved! Redirecting...",
-        "msg.error_generic": "Error."
+        "msg.error_generic": "Error.",
+        "settings.boutique.title": "🏪 My store",
+        "settings.boutique.sub": "Name your store and connect your ad pixels so you can run campaigns.",
+        "settings.boutique.label.sousdomaine": "Your store address",
+        "settings.boutique.ph.sousdomaine": "mystore",
+        "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram)",
+        "settings.boutique.label.pixeltiktok": "TikTok Pixel ID",
+        "settings.boutique.label.pixelgoogle": "Google Ads Tag ID",
+        "settings.boutique.submit": "Save my store"
     },
     ar: {
         "nav.back": "رجوع",
@@ -221,7 +269,15 @@ const I18N = {
         "msg.network_error": "❌ خطأ في الشبكة.",
         "msg.saving": "جارٍ الحفظ...",
         "msg.saved_redirect": "✅ تم حفظ الإعدادات! جارٍ التحويل...",
-        "msg.error_generic": "خطأ."
+        "msg.error_generic": "خطأ.",
+        "settings.boutique.title": "🏪 متجري",
+        "settings.boutique.sub": "اختر اسماً لمتجرك واربط بكسلات الإعلانات لتتمكن من إطلاق حملات.",
+        "settings.boutique.label.sousdomaine": "عنوان متجرك",
+        "settings.boutique.ph.sousdomaine": "متجري",
+        "settings.boutique.label.pixelmeta": "معرّف Meta Pixel (فيسبوك/إنستغرام)",
+        "settings.boutique.label.pixeltiktok": "معرّف TikTok Pixel",
+        "settings.boutique.label.pixelgoogle": "معرّف Google Ads",
+        "settings.boutique.submit": "حفظ متجري"
     },
     zh: {
         "nav.back": "返回",
@@ -253,7 +309,15 @@ const I18N = {
         "msg.network_error": "❌ 网络错误。",
         "msg.saving": "保存中...",
         "msg.saved_redirect": "✅ 设置已保存！正在跳转...",
-        "msg.error_generic": "错误。"
+        "msg.error_generic": "错误。",
+        "settings.boutique.title": "🏪 我的店铺",
+        "settings.boutique.sub": "为你的店铺命名并连接广告像素，以便投放广告。",
+        "settings.boutique.label.sousdomaine": "店铺地址",
+        "settings.boutique.ph.sousdomaine": "我的店铺",
+        "settings.boutique.label.pixelmeta": "Meta 像素 ID（Facebook/Instagram）",
+        "settings.boutique.label.pixeltiktok": "TikTok 像素 ID",
+        "settings.boutique.label.pixelgoogle": "Google Ads 标签 ID",
+        "settings.boutique.submit": "保存我的店铺"
     }
 };
 
@@ -339,6 +403,31 @@ document.getElementById("form-settings").addEventListener("submit", async (e) =>
         msg.textContent = t("msg.network_error");
     }
 });
+
+const formBoutique = document.getElementById("form-boutique");
+if (formBoutique) {
+    formBoutique.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById("msgBoutique");
+        const data = Object.fromEntries(new FormData(e.target));
+        msg.textContent = t("msg.saving");
+        msg.className = "vm-msg";
+        try {
+            const res = await fetch("/settings/boutique", {
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+            });
+            const json = await res.json();
+            if (json.success) {
+                msg.textContent = "✅ " + t("msg.saved_redirect").replace("✅ ", "");
+                msg.className = "vm-msg ok";
+            } else {
+                msg.textContent = json.error || t("msg.error_generic");
+            }
+        } catch (err) {
+            msg.textContent = t("msg.network_error");
+        }
+    });
+}
 </script>
 </body>
 </html>`);
@@ -363,6 +452,53 @@ router.post("/", async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error("❌ POST /settings :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/boutique", async (req, res) => {
+    try {
+        if (req.session.typeCompte === "client") {
+            return res.json({ success: false, error: "Réservé aux comptes marchands." });
+        }
+
+        let { sous_domaine, pixel_meta, pixel_tiktok, pixel_google } = req.body;
+        sous_domaine = String(sous_domaine || "").trim().toLowerCase();
+
+        if (sous_domaine) {
+            if (!/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(sous_domaine)) {
+                return res.json({ success: false, error: "Adresse invalide (lettres, chiffres, tirets, 3 à 30 caractères)." });
+            }
+            if (SOUS_DOMAINES_RESERVES.includes(sous_domaine)) {
+                return res.json({ success: false, error: "Cette adresse est réservée, choisis-en une autre." });
+            }
+
+            const existant = await db.query(
+                `SELECT id FROM utilisateurs WHERE sous_domaine = $1 AND id != $2`,
+                [sous_domaine, req.session.userId]
+            );
+            if (existant.length) {
+                return res.json({ success: false, error: "Cette adresse est déjà prise, choisis-en une autre." });
+            }
+
+            const dejaConfigure = await db.query(`SELECT sous_domaine FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+            if (dejaConfigure[0]?.sous_domaine !== sous_domaine) {
+                const dns = await cloudflareService.createClientSubdomain(sous_domaine);
+                if (!dns.success) {
+                    console.error("❌ Création sous-domaine :", dns.error);
+                    return res.json({ success: false, error: "Impossible de créer cette adresse pour le moment, réessaie dans un instant." });
+                }
+            }
+        }
+
+        await db.query(
+            `UPDATE utilisateurs SET sous_domaine = $1, pixel_meta = $2, pixel_tiktok = $3, pixel_google = $4 WHERE id = $5`,
+            [sous_domaine || null, pixel_meta || null, pixel_tiktok || null, pixel_google || null, req.session.userId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /settings/boutique :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
     }
 });
