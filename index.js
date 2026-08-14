@@ -227,6 +227,9 @@ app.get("/", async (req, res, next) => {
             if (prefix && !RESERVED_HOST_PREFIXES.includes(prefix)) {
                 const rows = await db.query(`SELECT id FROM utilisateurs WHERE sous_domaine = $1`, [prefix]);
                 if (rows[0]) {
+                    // Attribution pub : toute la navigation qui suit (produit, achat)
+                    // est rattachée à ce vendeur pour le déclenchement des pixels.
+                    req.session.pixelVendeurId = rows[0].id;
                     const { renderVitrine } = require("./routes/vitrine");
                     return renderVitrine(rows[0].id, req, res);
                 }

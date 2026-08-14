@@ -11,6 +11,7 @@ const gradeService = require("../services/gradeService");
 const chargily = require("../services/chargily");
 const { confirmChargilyPayment } = require("../services/orders");
 const devises = require("../services/devises");
+const pixelsService = require("../services/pixelsService");
 const CONFIG = require("../config");
 const verificationService = require("../services/verificationService");
 
@@ -224,14 +225,26 @@ router.get("/", requireAuth, async (req, res) => {
     // Filet de sécurité : le webhook Chargily peut ne jamais arriver (mauvaise
     // config côté dashboard, réseau...). Au retour du client sur cette page
     // après paiement, on revérifie activement le statut auprès de Chargily.
+    let pixelPurchaseHtml = "";
     if (req.query.commande === "payee" && req.query.order_id) {
         try {
             const rows = await db.query(
-                `SELECT chargily_checkout_id FROM commandes WHERE id = $1`,
+                `SELECT chargily_checkout_id, montant, devise FROM commandes WHERE id = $1`,
                 [req.query.order_id]
             );
             if (rows[0]?.chargily_checkout_id) {
                 await confirmChargilyPayment(rows[0].chargily_checkout_id);
+            }
+            // Attribution par session (dernière boutique/produit visité) — pas
+            // de découpage par vendeur pour un panier multi-vendeurs, cohérent
+            // avec le fonctionnement standard des pixels pub (dernier contact).
+            const pixels = await pixelsService.getPixels(req.session.pixelVendeurId);
+            if (pixels && rows[0]) {
+                pixelPurchaseHtml = pixelsService.pixelEventHtml(pixels, "Purchase", {
+                    value: Number(rows[0].montant) || undefined,
+                    currency: rows[0].devise || "EUR",
+                    transactionId: req.query.order_id,
+                });
             }
         } catch (err) {
             console.error("❌ Vérification retour paiement Chargily :", err.message);
@@ -796,6 +809,7 @@ router.get("/", requireAuth, async (req, res) => {
 <title>
     ${escapeHtml(MARKETPLACE_NAME || "SAMII Marketplace")}
 </title>
+${pixelPurchaseHtml}
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#070809">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -4145,6 +4159,7 @@ router.get(
 
         let produit = null;
         let avisListe = [];
+        let pixelViewContentHtml = "";
 
         let notes = {
             moyenne: 0,
@@ -4174,6 +4189,22 @@ router.get(
                 return res.redirect(
                     "/marketplace"
                 );
+            }
+
+            // Attribution pub : un clic direct depuis une pub vers une fiche
+            // produit rattache aussi la navigation à ce vendeur (pas seulement
+            // en arrivant par son sous-domaine).
+            if (pixelsService.estVendeurReel(produit.vendeur_id)) {
+                req.session.pixelVendeurId = produit.vendeur_id;
+            }
+            const pixels = await pixelsService.getPixels(req.session.pixelVendeurId);
+            if (pixels) {
+                const { montant: prixNum } = parseMontantEtDevise(produit.prix);
+                pixelViewContentHtml = pixelsService.pixelEventHtml(pixels, "ViewContent", {
+                    value: prixNum || undefined,
+                    contentId: String(produit.id),
+                    contentName: produit.titre,
+                });
             }
 
             avisListe =
@@ -4440,7 +4471,7 @@ router.get(
 <title>
     ${escapeHtml(produit.titre)}
 </title>
-
+${pixelViewContentHtml}
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <style>
