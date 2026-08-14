@@ -148,7 +148,13 @@ router.get("/", requireAuth, async (req, res) => {
         @media (max-width: 640px) { .bill-step-rule { display: none; } .bill-steps { flex-direction: column; gap: 14px; } }
         .bill-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; align-items: stretch; }
         @media (max-width: 980px) { .bill-grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 600px) { .bill-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) {
+            .bill-grid { grid-template-columns: 1fr; }
+            .bill-shell { padding-top: 32px; }
+            .lang-switch span { padding: 9px 12px; font-size: .68rem; }
+            .bill-btn { padding: 15px; font-size: .76rem; }
+            .bill-card { padding: 26px 20px; }
+        }
         .bill-card { background: linear-gradient(180deg, var(--lux-panel-2), var(--lux-panel)); border: 1px solid var(--lux-border-steel); border-radius: 4px; padding: 30px 24px; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 24px 60px rgba(0,0,0,.5); transition: border-color .25s ease, box-shadow .25s ease; }
         .bill-card:hover { border-color: rgba(95,212,255,.4); box-shadow: 0 0 0 1px rgba(95,212,255,.25), 0 24px 60px rgba(0,0,0,.5); }
         .bill-card--pro { border-color: var(--lux-gold); box-shadow: 0 0 0 1px var(--lux-gold), 0 24px 60px rgba(0,0,0,.5); transform: translateY(-8px); }
