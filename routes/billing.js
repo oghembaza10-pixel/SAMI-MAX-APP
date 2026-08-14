@@ -447,6 +447,26 @@ document.querySelectorAll("[data-plan-chargily]").forEach(btn => {
         }
     });
 });
+document.getElementById("regulariser-confirm")?.addEventListener("click", async (btnEvent) => {
+    const btn = btnEvent.target;
+    btn.disabled = true;
+    btn.textContent = "...";
+    try {
+        const res = await fetch("/billing/regulariser-confirmations", { method: "POST" });
+        const json = await res.json();
+        if (json.url) {
+            window.location.href = json.url;
+        } else {
+            alert(json.error || t('billing.msg.error_generic'));
+            btn.disabled = false;
+            btn.textContent = "Régulariser →";
+        }
+    } catch {
+        alert(t('billing.msg.error_generic'));
+        btn.disabled = false;
+        btn.textContent = "Régulariser →";
+    }
+});
 document.getElementById("societe-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -508,6 +528,25 @@ router.post("/contact-societe", requireAuth, async (req, res) => {
     } catch (err) {
         console.error("❌ POST /billing/contact-societe :", err.message);
         res.json({ success: false, error: "Erreur interne." });
+    }
+});
+
+// Régularisation du dépassement de confirmations sur le palier gratuit —
+// aucun cycle de renouvellement Chargily n'existe pour lui accrocher la
+// dette (réservé aux paliers payants, voir engines/abonnementEngine.js),
+// donc un lien de paiement à part est généré à la demande.
+router.post("/regulariser-confirmations", requireAuth, async (req, res) => {
+    try {
+        const workspaceId = req.session.workspaceId;
+        if (!workspaceId) return res.json({ error: "Aucun workspace actif." });
+        if (!chargily.isEnabled()) return res.json({ error: "Paiement Chargily indisponible pour le moment." });
+
+        const url = await confirmationsQuota.genererLienRegularisation(workspaceId);
+        if (!url) return res.json({ error: "Rien à régulariser." });
+        res.json({ url });
+    } catch (err) {
+        console.error("❌ POST /billing/regulariser-confirmations :", err.message);
+        res.json({ error: "Erreur serveur." });
     }
 });
 
