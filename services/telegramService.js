@@ -10,6 +10,31 @@ const db           = require("./db");
 const TOKEN = CONFIG.TELEGRAM.BOT_TOKEN;
 const BASE  = `https://api.telegram.org/bot${TOKEN}`;
 
+// ── CREDENTIALS : bot perso du marchand si connecté, sinon bot partagé SAMII ──
+// Miroir de services/whatsapp.js : un marchand qui a connecté son propre bot
+// Telegram (routes/connector.js, POST /connect/telegram/bot) voit ses clients
+// lui parler sous SA PROPRE identité (nom/photo de son bot), pas sous
+// "SAMII_OGBot". Contrairement au numéro WhatsApp partagé, le bot partagé
+// Telegram reste un repli sûr : chaque bot (perso ou partagé) a son webhook
+// dédié (voir routes/telegram.js), aucune ambiguïté de routage possible.
+async function resolveCredentials(workspaceId) {
+    if (workspaceId) {
+        try {
+            const rows = await db.query(
+                `SELECT config FROM connecteurs WHERE type = 'telegram_bot' AND actif = true AND workspace_id = $1`,
+                [workspaceId]
+            );
+            const config = rows[0] ? JSON.parse(rows[0].config || "{}") : null;
+            if (config?.botToken) {
+                return { token: config.botToken, base: `https://api.telegram.org/bot${config.botToken}` };
+            }
+        } catch (err) {
+            console.error("❌ Telegram resolveCredentials :", err.message);
+        }
+    }
+    return { token: TOKEN, base: BASE };
+}
+
 // ── CHAT ID DU MARCHAND CONNECTÉ SUR UN WORKSPACE ──────────────────────────
 async function getAdminChatId(workspaceId) {
     try {
@@ -43,10 +68,11 @@ async function notifyAdmin(workspaceId, message, inlineKeyboard) {
 }
 
 // ── ENVOYER MESSAGE AVEC BOUTONS INLINE (calendrier RDV, choix...) ─────────
-async function sendWithKeyboard(chatId, message, inlineKeyboard) {
+async function sendWithKeyboard(chatId, message, inlineKeyboard, workspaceId) {
     try {
-        if (!TOKEN) return { success: false, error: "TOKEN manquant" };
-        await axios.post(`${BASE}/sendMessage`, {
+        const { token, base } = await resolveCredentials(workspaceId);
+        if (!token) return { success: false, error: "TOKEN manquant" };
+        await axios.post(`${base}/sendMessage`, {
             chat_id     : chatId,
             text        : message,
             parse_mode  : "Markdown",
@@ -60,10 +86,11 @@ async function sendWithKeyboard(chatId, message, inlineKeyboard) {
 }
 
 // ── ENVOYER MESSAGE ────────────────────────────────────────────────────────
-async function send(chatId, message) {
+async function send(chatId, message, workspaceId) {
     try {
-        if (!TOKEN) return { success: false, error: "TOKEN manquant" };
-        await axios.post(`${BASE}/sendMessage`, {
+        const { token, base } = await resolveCredentials(workspaceId);
+        if (!token) return { success: false, error: "TOKEN manquant" };
+        await axios.post(`${base}/sendMessage`, {
             chat_id   : chatId,
             text      : message,
             parse_mode: "Markdown",
@@ -77,9 +104,10 @@ async function send(chatId, message) {
 }
 
 // ── CONFIRMATION OUI/NON ───────────────────────────────────────────────────
-async function demanderConfirmation(chatId, commande) {
+async function demanderConfirmation(chatId, commande, workspaceId) {
     try {
-        if (!TOKEN) return { success: false, error: "TOKEN manquant" };
+        const { token, base } = await resolveCredentials(workspaceId);
+        if (!token) return { success: false, error: "TOKEN manquant" };
 
         const prenom  = commande.client   || "cher client";
         const total   = commande.total    || "0";
@@ -99,7 +127,7 @@ async function demanderConfirmation(chatId, commande) {
               `💰 *Total :* ${total} DZD\n\n` +
               `Confirmez-vous votre commande ?`;
 
-        await axios.post(`${BASE}/sendMessage`, {
+        await axios.post(`${base}/sendMessage`, {
             chat_id     : chatId,
             text        : texte,
             parse_mode  : "Markdown",

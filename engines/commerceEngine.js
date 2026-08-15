@@ -396,7 +396,7 @@ class CommerceEngine {
                 client: name, total: montant, produits: args.produit, order_id: orderId,
             };
             if (source === "telegram" && chatId) {
-                await require("../services/telegramService").demanderConfirmation(chatId, commandePourConfirmation);
+                await require("../services/telegramService").demanderConfirmation(chatId, commandePourConfirmation, workspaceId);
             } else if (source === "whatsapp" && chatId) {
                 await require("../services/whatsapp").demanderConfirmation(chatId, commandePourConfirmation, workspaceId);
             }

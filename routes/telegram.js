@@ -15,6 +15,25 @@ const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
 const BASE   = `https://api.telegram.org/bot${TOKEN}`;
 
+// ── Bot perso du marchand (routes/connector.js, POST /connect/telegram/bot) ──
+// Chaque bot perso a son propre webhook dédié (/telegram/:workspaceId, voir
+// plus bas) — contrairement à WhatsApp, aucune ambiguïté de routage : c'est
+// justement Telegram qui indique par QUELLE URL le message arrive.
+async function resolveBotBase(workspaceId) {
+    if (!workspaceId) return BASE;
+    try {
+        const rows = await db.query(
+            `SELECT config FROM connecteurs WHERE type = 'telegram_bot' AND actif = true AND workspace_id = $1`,
+            [workspaceId]
+        );
+        const config = rows[0] ? JSON.parse(rows[0].config || "{}") : null;
+        if (config?.botToken) return `https://api.telegram.org/bot${config.botToken}`;
+    } catch (err) {
+        console.error("❌ Telegram resolveBotBase :", err.message);
+    }
+    return BASE;
+}
+
 // ── MULTI-LANGUE ───────────────────────────────────────────────
 const LANGUES_SUPPORTEES = ["fr", "en", "ar"];
 
@@ -77,9 +96,9 @@ function tr(lang, key, ...args) {
     return typeof entry === "function" ? entry(...args) : entry;
 }
 
-async function reply(chatId, text) {
+async function reply(chatId, text, base = BASE) {
     try {
-        await axios.post(`${BASE}/sendMessage`, {
+        await axios.post(`${base}/sendMessage`, {
             chat_id: chatId,
             text,
             parse_mode: "Markdown",
@@ -166,18 +185,29 @@ async function getProduitsDuWorkspace(workspaceId) {
     } catch { return []; }
 }
 
-router.post("/", async (req, res) => {
-    res.sendStatus(200);
+// ── Traite une mise à jour Telegram, pour n'importe quel bot ──────────────
+// (partagé ou perso d'un marchand). `base` = URL API du bot qui a reçu ce
+// message (déjà résolue par l'appelant) ; `forcedWorkspaceId` n'est fourni
+// que sur le webhook per-marchand (/telegram/:workspaceId) — dans ce cas,
+// TOUTE la conversation appartient déjà à ce marchand, aucune liaison
+// admin_/client_ n'est nécessaire (contrairement au bot partagé, où un même
+// bot sert tout le monde et a besoin de savoir qui parle à qui).
+async function handleUpdate(body, base, forcedWorkspaceId) {
     try {
-        const body = req.body;
+        // Clé mémoire distincte par bot : sur Telegram, le chat.id d'une
+        // conversation privée est l'identifiant Telegram de l'utilisateur,
+        // identique quel que soit le bot auquel il écrit — sans ce préfixe,
+        // l'historique d'un même client se mélangerait entre le bot partagé
+        // et le bot perso d'un marchand.
+        const memKey = (chatId) => forcedWorkspaceId ? `tg_${forcedWorkspaceId}_${chatId}` : String(chatId);
 
         if (body.callback_query) {
             const cb = body.callback_query;
             const chatId = cb.message.chat.id;
             const data = cb.data || "";
-            const lang = (await memory.get(chatId))?.lang || "fr";
+            const lang = (await memory.get(memKey(chatId)))?.lang || "fr";
 
-            await axios.post(`${BASE}/answerCallbackQuery`, { callback_query_id: cb.id, text: "⚙️ SAMII..." });
+            await axios.post(`${base}/answerCallbackQuery`, { callback_query_id: cb.id, text: "⚙️ SAMII..." });
 
             if (data.startsWith("confirm_")) {
                 const orderId = data.replace("confirm_", "");
@@ -185,7 +215,7 @@ router.post("/", async (req, res) => {
                 if (rows[0]?.workspace_id) confirmationsQuota.enregistrerSiDepassement(rows[0].workspace_id).catch(() => {});
                 await orchestrator.process({ type: "order.confirmed", shop: "", payload: { orderId, chatId } });
                 socketService.emitToShop(rows[0]?.workspace_id, "commande-confirmee", { id: orderId });
-                await reply(chatId, tr(lang, "commandeConfirmee", orderId));
+                await reply(chatId, tr(lang, "commandeConfirmee", orderId), base);
                 return;
             }
             if (data.startsWith("cancel_")) {
@@ -193,21 +223,21 @@ router.post("/", async (req, res) => {
                 const rows = await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1 RETURNING workspace_id`, [orderId]);
                 await orchestrator.process({ type: "order.cancelled.telegram", shop: "", payload: { orderId, chatId } });
                 socketService.emitToShop(rows[0]?.workspace_id, "commande-annulee", { id: orderId });
-                await reply(chatId, tr(lang, "commandeAnnuleeId", orderId));
+                await reply(chatId, tr(lang, "commandeAnnuleeId", orderId), base);
                 return;
             }
             if (data.startsWith("rdvconfirm_")) {
                 const rdvId = data.replace("rdvconfirm_", "");
                 const rows = await db.query(`UPDATE rendez_vous SET statut = 'confirmé' WHERE id = $1 RETURNING workspace_id`, [rdvId.replace("RDV-", "")]);
                 socketService.emitToShop(rows[0]?.workspace_id, "rdv-confirme", { id: rdvId });
-                await reply(chatId, tr(lang, "rdvConfirme", rdvId));
+                await reply(chatId, tr(lang, "rdvConfirme", rdvId), base);
                 return;
             }
             if (data.startsWith("rdvcancel_")) {
                 const rdvId = data.replace("rdvcancel_", "");
                 const rows = await db.query(`UPDATE rendez_vous SET statut = 'annulé' WHERE id = $1 RETURNING workspace_id`, [rdvId.replace("RDV-", "")]);
                 socketService.emitToShop(rows[0]?.workspace_id, "rdv-annule", { id: rdvId });
-                await reply(chatId, tr(lang, "rdvAnnule", rdvId));
+                await reply(chatId, tr(lang, "rdvAnnule", rdvId), base);
                 return;
             }
 
@@ -217,11 +247,11 @@ router.post("/", async (req, res) => {
                 if (!draftId) return;
                 const draftRows = await db.query(`SELECT workspace_id FROM rendez_vous WHERE id = $1 AND statut = 'brouillon'`, [draftId]);
                 const workspaceId = draftRows[0]?.workspace_id;
-                if (!workspaceId) { await reply(chatId, tr(lang, "rdvExpire")); return; }
+                if (!workspaceId) { await reply(chatId, tr(lang, "rdvExpire"), base); return; }
 
                 const commerceEngine = require("../engines/commerceEngine");
                 const creneaux = await commerceEngine.creneauxLibresPourJour(workspaceId, dateISO);
-                if (!creneaux.length) { await reply(chatId, tr(lang, "rdvJourComplet")); return; }
+                if (!creneaux.length) { await reply(chatId, tr(lang, "rdvJourComplet"), base); return; }
 
                 const boutons = [];
                 for (let i = 0; i < creneaux.length; i += 3) {
@@ -230,7 +260,7 @@ router.post("/", async (req, res) => {
                         callback_data: `rdvslot_${draftId}_${c.getFullYear()}-${String(c.getMonth() + 1).padStart(2, "0")}-${String(c.getDate()).padStart(2, "0")}T${String(c.getHours()).padStart(2, "0")}:${String(c.getMinutes()).padStart(2, "0")}:00`,
                     })));
                 }
-                await require("../services/telegramService").sendWithKeyboard(chatId, tr(lang, "rdvChoisirHeure"), boutons);
+                await require("../services/telegramService").sendWithKeyboard(chatId, tr(lang, "rdvChoisirHeure"), boutons, forcedWorkspaceId);
                 return;
             }
 
@@ -239,8 +269,8 @@ router.post("/", async (req, res) => {
                 if (!draftId) return;
                 const commerceEngine = require("../engines/commerceEngine");
                 const rdv = await commerceEngine.finaliserCreneauRdv(draftId, dateRdv);
-                if (!rdv) { await reply(chatId, tr(lang, "rdvExpire")); return; }
-                await reply(chatId, tr(lang, "rdvCree", new Date(rdv.date_rdv).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })));
+                if (!rdv) { await reply(chatId, tr(lang, "rdvExpire"), base); return; }
+                await reply(chatId, tr(lang, "rdvCree", new Date(rdv.date_rdv).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })), base);
                 return;
             }
 
@@ -255,42 +285,53 @@ router.post("/", async (req, res) => {
         const text = (message.text || "").trim();
         const name = message.from?.first_name || "Client";
         const langDetectee = detecterLangue(message);
-        const lang = (await memory.get(chatId))?.lang || langDetectee;
+        const lang = (await memory.get(memKey(chatId)))?.lang || langDetectee;
 
         console.log(`📨 Telegram [${name}] (${lang}) : ${text}`);
 
         if (text.startsWith("/start")) {
-            await memory.clear(chatId);
+            await memory.clear(memKey(chatId));
+
+            // Bot perso : cette conversation appartient déjà à ce marchand,
+            // aucun paramètre de liaison à traiter.
+            if (forcedWorkspaceId) {
+                await reply(chatId, tr(lang, "bienvenueClient"), base);
+                return;
+            }
+
             const param = text.split(" ")[1] || null;
 
             if (param && param.startsWith("admin_")) {
                 const workspaceId = param.replace("admin_", "");
                 const ok = await linkMerchantToWorkspace(chatId, workspaceId);
-                await reply(chatId, ok ? tr(lang, "adminConnecte") : tr(lang, "adminErreur"));
+                await reply(chatId, ok ? tr(lang, "adminConnecte") : tr(lang, "adminErreur"), base);
                 return;
             }
 
             if (param) {
                 await linkClientToWorkspace(chatId, param);
-                await reply(chatId, tr(lang, "bienvenueClient"));
+                await reply(chatId, tr(lang, "bienvenueClient"), base);
                 return;
             }
 
-            await reply(chatId, tr(lang, "bienvenueGenerique", chatId));
+            await reply(chatId, tr(lang, "bienvenueGenerique", chatId), base);
             return;
         }
 
-        if (text === "/id") { await reply(chatId, tr(lang, "idChat", chatId)); return; }
+        if (text === "/id") { await reply(chatId, tr(lang, "idChat", chatId), base); return; }
 
         // ── Raisonnement universel : SAMII mène la conversation lui-même, tous métiers ──
         // (prise de rendez-vous, commande, questions...), via function-calling Gemini,
         // au lieu d'un parcours pas-à-pas figé par métier.
-        let workspaceId = await getClientWorkspace(chatId);
-        if (!workspaceId) workspaceId = await getWorkspaceByChatId(chatId);
+        let workspaceId = forcedWorkspaceId;
+        if (!workspaceId) {
+            workspaceId = await getClientWorkspace(chatId);
+            if (!workspaceId) workspaceId = await getWorkspaceByChatId(chatId);
+        }
         const metier   = await getMetierWorkspace(workspaceId);
         const produits = workspaceId ? await getProduitsDuWorkspace(workspaceId) : [];
 
-        const session      = await memory.get(chatId) || {};
+        const session      = await memory.get(memKey(chatId)) || {};
         const conversation = session.history || [];
 
         await orchestrator.process({ type: "telegram.message", shop: "", payload: { chatId, text, message } });
@@ -298,13 +339,31 @@ router.post("/", async (req, res) => {
             source: "telegram", chatId, name, lang, audience: "client",
             workspaceId, metier, produits,
         }, conversation);
-        await reply(chatId, geminiReply);
+        await reply(chatId, geminiReply, base);
 
         const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-60);
-        await memory.set(chatId, { ...session, lang, history: nextHistory });
+        await memory.set(memKey(chatId), { ...session, lang, history: nextHistory });
     } catch (err) {
         console.error("❌ Telegram webhook :", err.message);
     }
+}
+
+// ── Bot partagé SAMII (tous les marchands sans bot perso, + les clients qui
+// n'ont pas encore de commande/rdv en cours ailleurs) ──────────────────────
+router.post("/", (req, res) => {
+    res.sendStatus(200);
+    handleUpdate(req.body, BASE, null);
+});
+
+// ── Bot perso d'un marchand — chaque marchand qui connecte son propre bot
+// (routes/connector.js, POST /connect/telegram/bot) a son webhook dédié à
+// cette URL, enregistré côté Telegram via setWebhook au moment de la
+// connexion. Ça évite toute ambiguïté : Telegram nous dit lui-même, par
+// l'URL appelée, à quel marchand ce message appartient.
+router.post("/:workspaceId", async (req, res) => {
+    res.sendStatus(200);
+    const base = await resolveBotBase(req.params.workspaceId);
+    handleUpdate(req.body, base, req.params.workspaceId);
 });
 
 module.exports = router;

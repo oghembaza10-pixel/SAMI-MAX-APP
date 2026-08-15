@@ -157,6 +157,22 @@ async function renderVitrine(userId, req, res) {
         return res.status(404).send("Vitrine introuvable.");
     }
 
+    // Le marchand a son propre bot Telegram (routes/connector.js, /connect/telegram/bot) ?
+    // Ses clients doivent lui parler sous SA propre identité, pas via le bot partagé.
+    let botTelegramUsername = "";
+    if (user.workspace_boutique_id) {
+        try {
+            const botRows = await db.query(
+                `SELECT config FROM connecteurs WHERE type = 'telegram_bot' AND actif = true AND workspace_id = $1`,
+                [user.workspace_boutique_id]
+            );
+            if (botRows[0]) {
+                const config = typeof botRows[0].config === "string" ? JSON.parse(botRows[0].config) : botRows[0].config;
+                botTelegramUsername = config?.botUsername || "";
+            }
+        } catch { /* ignore */ }
+    }
+
     const estMoi = req.session?.userId === userId;
 
     const nomComplet = `${user.prenom || ""} ${user.nom || ""}`.trim() || "Membre SAMII";
@@ -317,7 +333,7 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
     ${user.bio_vitrine ? `<p class="bio-text">${escapeHtml(user.bio_vitrine)}</p>` : ""}
 
     ${!estMoi && estMarchand && user.workspace_boutique_id ? `
-    <a href="https://t.me/SAMII_OGBot?start=${escapeHtml(user.workspace_boutique_id)}" target="_blank" class="edit-vitrine-btn" style="background:linear-gradient(135deg,#00c6ff,#0072ff);border:none;color:#fff;">
+    <a href="${botTelegramUsername ? `https://t.me/${escapeHtml(botTelegramUsername)}` : `https://t.me/SAMII_OGBot?start=${escapeHtml(user.workspace_boutique_id)}`}" target="_blank" class="edit-vitrine-btn" style="background:linear-gradient(135deg,#00c6ff,#0072ff);border:none;color:#fff;">
         <i data-lucide="send"></i> <span data-i18n="vitrine.orderTelegram">Commander via Telegram</span>
     </a>` : ""}
 

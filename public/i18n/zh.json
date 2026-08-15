@@ -576,7 +576,21 @@
     "telegram": {
       "oneClick": "一键完成——无需手动输入。",
       "cta": "通过 Telegram 连接",
-      "already": "已连接"
+      "already": "已连接",
+      "activeBadge": "你自己的机器人已激活",
+      "quick": {
+        "title": "快速连接"
+      },
+      "bot": {
+        "title": "连接我自己的机器人",
+        "desc": "推荐用于在 Telegram 上销售：你的客户会通过你自己的机器人名称联系你，而不是 \"SAMII_OGBot\"。",
+        "step1": "打开 Telegram，搜索 @BotFather。",
+        "step2": "发送 /newbot 并按照提示操作（名称，然后是以 \"bot\" 结尾的 @用户名）。",
+        "step3": "BotFather 会给你一个 token（一长串包含 \":\" 的字符）。复制它。",
+        "step4": "将该 token 粘贴到下方并确认。",
+        "tokenLabel": "机器人 Token（@BotFather）",
+        "submit": "使用我自己的机器人"
+      }
     },
     "whatsapp": {
       "ownNumberActive": "你自己的号码已激活",

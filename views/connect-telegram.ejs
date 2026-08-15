@@ -8,26 +8,71 @@
 <body>
 <div class="og-capital">
   <%- include("./partials/sidebar") %>
-  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
-    <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
-      <div style="text-align:center;margin-bottom:30px;">
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
+    <div style="max-width:520px;width:100%;">
+
+      <div style="text-align:center;margin-bottom:24px;">
         <div style="font-size:3rem;">✈️</div>
         <h2 style="color:#fff;margin-top:10px;"><span data-i18n="connect.title">Connecter</span> Telegram</h2>
-        <p style="color:#666;font-size:0.85rem;margin-top:6px;" data-i18n="connect.telegram.oneClick">
-          Un clic, et c'est fait — aucune saisie manuelle nécessaire.
-        </p>
+        <% if (botActif) { %>
+          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ <span data-i18n="connect.telegram.bot.activeBadge">Ton propre bot est actif</span> (@<%= botUsername %>)</span>
+        <% } %>
       </div>
 
-      <a href="https://t.me/SAMII_OGBot?start=admin_<%= workspaceId %>" target="_blank"
-         style="display:block;text-align:center;width:100%;padding:13px;background:linear-gradient(135deg,#00c6ff,#0072ff);border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;text-decoration:none;">
-        ✈️ <span data-i18n="connect.telegram.cta">Connecter avec Telegram</span>
+      <% if (error) { %>
+        <p style="color:#e55;font-size:0.85rem;margin-bottom:14px;text-align:center;background:#e5555522;padding:10px;border-radius:8px;"><%= error %></p>
+      <% } %>
+
+      <!-- ── CASE 1 : BOT PARTAGÉ SAMII (rapide) ────────────────────── -->
+      <div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;margin-bottom:18px;">
+        <h3 style="color:#fff;margin:0 0 6px;font-size:1.05rem;">⚡ <span data-i18n="connect.telegram.quick.title">Connexion rapide</span></h3>
+        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 18px;" data-i18n="connect.telegram.oneClick">
+          Un clic, et c'est fait — aucune saisie manuelle nécessaire. Tes notifications de commandes/rendez-vous arrivent sur le bot partagé SAMII.
+        </p>
+
+        <a href="https://t.me/SAMII_OGBot?start=admin_<%= workspaceId %>" target="_blank"
+           style="display:block;text-align:center;width:100%;padding:13px;background:linear-gradient(135deg,#00c6ff,#0072ff);border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;text-decoration:none;">
+          ✈️ <span data-i18n="connect.telegram.cta">Connecter avec Telegram</span>
+        </a>
+
+        <% if (telegramActif) { %>
+          <p style="text-align:center;color:#3ddc84;font-size:0.85rem;margin-top:16px;">
+            ✅ <span data-i18n="connect.telegram.already">Déjà connecté</span>
+          </p>
+        <% } %>
+      </div>
+
+      <!-- ── CASE 2 : BOT PERSO DU MARCHAND ──────────────────────────── -->
+      <div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;">
+        <h3 style="color:#fff;margin:0 0 6px;font-size:1.05rem;">🤖 <span data-i18n="connect.telegram.bot.title">Connecter mon propre bot</span></h3>
+        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 16px;" data-i18n="connect.telegram.bot.desc">
+          Solution recommandée pour vendre sur Telegram : tes clients te parlent sous TON nom de bot, pas "SAMII_OGBot".
+        </p>
+
+        <ol style="color:#999;font-size:0.82rem;line-height:1.9;margin:0 0 18px;padding-left:20px;">
+          <li data-i18n="connect.telegram.bot.step1">Ouvre Telegram et cherche <b style="color:#00c6ff;">@BotFather</b>.</li>
+          <li data-i18n="connect.telegram.bot.step2">Envoie-lui <b>/newbot</b> et suis les instructions (nom, puis @pseudo se terminant par "bot").</li>
+          <li data-i18n="connect.telegram.bot.step3">BotFather te donne un <b>token</b> (une longue chaîne avec ":"). Copie-le.</li>
+          <li data-i18n="connect.telegram.bot.step4">Colle ce token ci-dessous et valide.</li>
+        </ol>
+
+        <form method="POST" action="/connect/telegram/bot">
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.telegram.bot.tokenLabel">Token du bot (@BotFather)</label>
+          <input type="password" name="bot_token" placeholder="Ex: 123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                 style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+
+          <button type="submit"
+                  style="display:block;width:100%;padding:13px;background:#00c6ff;border:none;border-radius:10px;color:#001018;font-weight:700;font-size:0.95rem;cursor:pointer;">
+            🤖 <span data-i18n="connect.telegram.bot.submit">Utiliser mon propre bot</span>
+          </button>
+        </form>
+      </div>
+
+      <a href="/connect/tools"
+         style="display:block;margin-top:16px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        <span data-i18n="connect.back">← Retour à mes outils</span>
       </a>
 
-      <% if (telegramActif) { %>
-        <p style="text-align:center;color:#3ddc84;font-size:0.85rem;margin-top:20px;">
-          ✅ <span data-i18n="connect.telegram.already">Déjà connecté</span>
-        </p>
-      <% } %>
     </div>
   </main>
 </div>

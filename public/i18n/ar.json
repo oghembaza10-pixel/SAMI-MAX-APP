@@ -576,7 +576,21 @@
     "telegram": {
       "oneClick": "نقرة واحدة وانتهى الأمر — لا حاجة لإدخال يدوي.",
       "cta": "الربط عبر Telegram",
-      "already": "متصل بالفعل"
+      "already": "متصل بالفعل",
+      "activeBadge": "بوتك الخاص نشط",
+      "quick": {
+        "title": "اتصال سريع"
+      },
+      "bot": {
+        "title": "ربط بوت Telegram الخاص بي",
+        "desc": "الحل الموصى به إذا كنت تبيع عبر Telegram: يتحدث معك عملاؤك باسم بوتك أنت، وليس \"SAMII_OGBot\".",
+        "step1": "افتح Telegram وابحث عن @BotFather.",
+        "step2": "أرسل له /newbot واتبع التعليمات (الاسم، ثم معرّف @ ينتهي بـ \"bot\").",
+        "step3": "سيعطيك BotFather رمزاً (token) طويلاً يحتوي على \":\". انسخه.",
+        "step4": "الصق هذا الرمز أدناه وتحقق.",
+        "tokenLabel": "رمز البوت (@BotFather)",
+        "submit": "استخدام بوتي الخاص"
+      }
     },
     "whatsapp": {
       "ownNumberActive": "رقمك الخاص نشط",

@@ -576,7 +576,21 @@
     "telegram": {
       "oneClick": "Un clic, et c'est fait — aucune saisie manuelle nécessaire.",
       "cta": "Connecter avec Telegram",
-      "already": "Déjà connecté"
+      "already": "Déjà connecté",
+      "activeBadge": "Ton propre bot est actif",
+      "quick": {
+        "title": "Connexion rapide"
+      },
+      "bot": {
+        "title": "Connecter mon propre bot",
+        "desc": "Solution recommandée pour vendre sur Telegram : tes clients te parlent sous TON nom de bot, pas \"SAMII_OGBot\".",
+        "step1": "Ouvre Telegram et cherche @BotFather.",
+        "step2": "Envoie-lui /newbot et suis les instructions (nom, puis @pseudo se terminant par \"bot\").",
+        "step3": "BotFather te donne un token (une longue chaîne avec \":\"). Copie-le.",
+        "step4": "Colle ce token ci-dessous et valide.",
+        "tokenLabel": "Token du bot (@BotFather)",
+        "submit": "Utiliser mon propre bot"
+      }
     },
     "whatsapp": {
       "ownNumberActive": "Ton propre numéro est actif",

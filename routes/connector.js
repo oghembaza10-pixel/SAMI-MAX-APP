@@ -2,9 +2,11 @@
 // SAMII OS — Connector Routes
 // ======================================================
 const express          = require("express");
+const axios            = require("axios");
 const router           = express.Router();
 const connectorService = require("../services/connectorService");
 const workspaceService = require("../services/workspaceService");
+const CONFIG            = require("../config");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -114,6 +116,24 @@ router.get("/instagram", requireAuth, (req, res) => {
 });
 
 // ── TELEGRAM ────────────────────────────────────────────
+async function getTelegramBotState(workspaceId) {
+    let botUsername = "";
+    let botActif = false;
+    if (workspaceId) {
+        try {
+            const connecteurs = await connectorService.getByWorkspace(workspaceId);
+            const bot = connecteurs.find(c => c.type === "telegram_bot");
+            if (bot) {
+                botUsername = bot.config?.botUsername || "";
+                botActif = bot.actif === true;
+            }
+        } catch (err) {
+            console.error("❌ getTelegramBotState :", err.message);
+        }
+    }
+    return { botUsername, botActif };
+}
+
 router.get("/telegram", requireAuth, async (req, res) => {
     const workspaceId = req.session?.workspaceId || "";
     let telegramChatId = "";
@@ -121,20 +141,23 @@ router.get("/telegram", requireAuth, async (req, res) => {
     try {
         if (workspaceId) {
             const connecteurs = await connectorService.getByWorkspace(workspaceId);
-            const tg = connecteurs?.telegram;
+            const tg = connecteurs.find(c => c.type === "telegram");
             if (tg) {
-                telegramChatId = tg.chatId || tg.identifiant || "";
+                telegramChatId = tg.config?.chatId || tg.config?.identifiant || "";
                 telegramActif = tg.actif === true;
             }
         }
     } catch (err) {
         console.error("❌ GET /connect/telegram (lecture) :", err.message);
     }
+    const { botUsername, botActif } = await getTelegramBotState(workspaceId);
     res.render("connect-telegram", {
         workspaceId,
         shop: req.session?.shop || "",
         telegramChatId,
         telegramActif,
+        botUsername,
+        botActif,
         error: null,
     });
 });
@@ -145,12 +168,14 @@ router.post("/telegram", requireAuth, async (req, res) => {
         if (!workspaceId) return res.redirect("/hub");
         const chatId = req.body.telegram_chat_id;
         const actif = req.body.telegram_actif === "true";
+        const botState = await getTelegramBotState(workspaceId);
         if (!chatId || !chatId.trim()) {
             return res.render("connect-telegram", {
                 workspaceId,
                 shop: req.session?.shop || "",
                 telegramChatId: "",
                 telegramActif: false,
+                ...botState,
                 error: "Entre ton Chat ID Telegram.",
             });
         }
@@ -164,6 +189,7 @@ router.post("/telegram", requireAuth, async (req, res) => {
             shop: req.session?.shop || "",
             telegramChatId: chatId.trim(),
             telegramActif: actif,
+            ...botState,
             error: null,
         });
     } catch (err) {
@@ -173,7 +199,60 @@ router.post("/telegram", requireAuth, async (req, res) => {
             shop: req.session?.shop || "",
             telegramChatId: "",
             telegramActif: false,
+            botUsername: "",
+            botActif: false,
             error: "Erreur interne. Réessayez.",
+        });
+    }
+});
+
+// ── TELEGRAM — bot perso du marchand (mêmes principes que WhatsApp) ──────
+// Le marchand crée son propre bot via @BotFather, colle le token ici : on
+// valide le token (getMe), on enregistre le webhook Telegram dédié
+// (setWebhook → /telegram/<workspaceId>), puis on stocke le token. Ses
+// clients lui parlent désormais sous SA PROPRE identité de bot.
+router.post("/telegram/bot", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId;
+    if (!workspaceId) return res.redirect("/hub");
+    const botToken = (req.body.bot_token || "").trim();
+    const chatState = { telegramChatId: "", telegramActif: false };
+    try {
+        const tgRows = await connectorService.getByWorkspace(workspaceId);
+        const tg = tgRows.find(c => c.type === "telegram");
+        if (tg) {
+            chatState.telegramChatId = tg.config?.chatId || "";
+            chatState.telegramActif = tg.actif === true;
+        }
+
+        if (!botToken) {
+            return res.render("connect-telegram", {
+                workspaceId, shop: req.session?.shop || "", ...chatState,
+                botUsername: "", botActif: false,
+                error: "Colle le token de ton bot Telegram.",
+            });
+        }
+
+        const meRes = await axios.get(`https://api.telegram.org/bot${botToken}/getMe`);
+        if (!meRes.data?.ok) throw new Error("Token invalide");
+        const botUsername = meRes.data.result.username;
+
+        const webhookUrl = `${CONFIG.APP_URL}/telegram/${workspaceId}`;
+        await axios.get(`https://api.telegram.org/bot${botToken}/setWebhook`, { params: { url: webhookUrl } });
+
+        await connectorService.save(workspaceId, "telegram_bot", {
+            botToken, botUsername, connectedAt: new Date().toISOString(),
+        });
+
+        return res.render("connect-telegram", {
+            workspaceId, shop: req.session?.shop || "", ...chatState,
+            botUsername, botActif: true, error: null,
+        });
+    } catch (err) {
+        console.error("❌ POST /connect/telegram/bot :", err.response?.data || err.message);
+        return res.render("connect-telegram", {
+            workspaceId, shop: req.session?.shop || "", ...chatState,
+            botUsername: "", botActif: false,
+            error: "Token invalide ou erreur Telegram. Vérifie le token collé depuis @BotFather.",
         });
     }
 });
