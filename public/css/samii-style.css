@@ -174,6 +174,18 @@
         margin-top: 12px;
         box-shadow: 0 12px 30px rgba(0,0,0,0.45);
     }
+
+    /* Sur mobile, 6 contrôles (pièce jointe, champ, langue du micro, micro,
+       résumé, envoyer) ne tiennent pas sur une largeur d'écran — ça poussait
+       le micro ET le bouton envoyer hors de l'écran visible (aucun moyen
+       d'envoyer un message). On garde l'essentiel visible et joignable
+       (pièce jointe, champ, micro, envoyer) ; la langue du micro retombe sur
+       le français par défaut, le résumé reste demandable directement en
+       tapant dans le chat. */
+    #samii-lang-select,
+    #samii-resume-btn {
+        display: none;
+    }
 }
 .samii-mode-link {
     display: inline-flex; align-items: center; gap: 8px;
