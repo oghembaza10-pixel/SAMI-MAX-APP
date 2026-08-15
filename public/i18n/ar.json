@@ -17,7 +17,8 @@
     "community": "المجتمع",
     "arsenal": "الترسانة",
     "settings": "الإعدادات",
-    "profile": "الملف الشخصي"
+    "profile": "الملف الشخصي",
+    "discussions": "نقاشات"
   },
   "hub": {
     "hero": {
@@ -223,6 +224,10 @@
         "label": "صائد المخزون",
         "value": "البحث عن مورّد ←"
       }
+    },
+    "titleParticulier": "تحدث مع SAMII.",
+    "projets": {
+      "new": "مشروع جديد"
     }
   },
   "arsenal": {

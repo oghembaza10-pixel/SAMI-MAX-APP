@@ -17,7 +17,8 @@
     "community": "Community",
     "arsenal": "Arsenal",
     "settings": "Paramètres",
-    "profile": "Profil"
+    "profile": "Profil",
+    "discussions": "Discussions"
   },
   "hub": {
     "hero": {
@@ -223,6 +224,10 @@
         "label": "Chasseur de Stock",
         "value": "Trouver un fournisseur →"
       }
+    },
+    "titleParticulier": "Parle à SAMII.",
+    "projets": {
+      "new": "Nouveau projet"
     }
   },
   "arsenal": {

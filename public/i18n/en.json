@@ -17,7 +17,8 @@
     "community": "Community",
     "arsenal": "Arsenal",
     "settings": "Settings",
-    "profile": "Profile"
+    "profile": "Profile",
+    "discussions": "Discussions"
   },
   "hub": {
     "hero": {
@@ -223,6 +224,10 @@
         "label": "Stock Hunter",
         "value": "Find a supplier →"
       }
+    },
+    "titleParticulier": "Talk to SAMII.",
+    "projets": {
+      "new": "New project"
     }
   },
   "arsenal": {

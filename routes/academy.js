@@ -553,7 +553,7 @@ a { color: inherit; text-decoration: none; }
         <nav class="side-menu">
             <a href="/qg" class="side-link"><i data-lucide="layout-dashboard"></i> <span data-i18n="nav_qg">QG Central</span></a>
             <a href="/marketplace" class="side-link"><i data-lucide="shopping-bag"></i> <span data-i18n="nav_store">Marketplace</span></a>
-            <a href="/academie" class="side-link active"><i data-lucide="graduation-cap"></i> <span data-i18n="nav_academy">Académie & Feed</span></a>
+            <a href="/academy" class="side-link active"><i data-lucide="graduation-cap"></i> <span data-i18n="nav_academy">Académie & Feed</span></a>
             <a href="/community" class="side-link"><i data-lucide="users"></i> <span data-i18n="nav_chat">Communauté</span></a>
             <a href="/client-qg" class="side-link"><i data-lucide="shield-check"></i> Client-QG</a>
         </nav>
@@ -751,6 +751,31 @@ const i18n = {
         cat_logistique: "Logistics & Transport", cat_affiliation: "Affiliation",
         toast_liked: "❤️ Added to favorites", toast_unliked: "Removed", toast_demo: "Demo resource.",
         toast_copied: "🔗 Link copied!", toast_upload_ok: "✅ File ready!", toast_upload_fail: "❌ Upload failed.",
+    },
+    zh: {
+        nav_qg: "中央指挥部", nav_store: "市场", nav_academy: "学院与动态", nav_chat: "社区",
+        side_desc: "OG 品牌下的高科技移动优先界面。",
+        btn_express: "发表你的看法",
+        hero_title: "OG <span>动态</span>",
+        hero_desc: "SAMII OS 生态系统下的培训、物流、运输和社区分享。",
+        modal_title: "分享你的想法",
+        modal_desc: "发布你的文章、运输配置、照片或技巧——或安排一场直播来培训社区。",
+        form_title: "标题 / 主题", form_cat: "分类", form_format: "格式",
+        form_upload: "照片或视频（真实上传）", form_upload_hint: "点击添加照片或视频",
+        form_live_date: "📅 直播日期和时间", form_live_hint: "你的直播将出现在动态中，并显示社区倒计时。",
+        form_content: "描述 / 说明", form_submit: "发布到动态",
+        sami_social_text: "📌 别忘了关注 Sami 的 Facebook 并添加好友，观看讲解视频和使用通知！",
+        sami_fb_btn: "Sami 的 Facebook",
+        search_ph: "搜索运输、电商、自动化...",
+        badge_live: " 直播", badge_ai: " SAMII AI",
+        empty_state: "未找到任何资源。",
+        fmt_tous: "所有格式", fmt_live: "🔴 直播与回放", fmt_video: "🎬 视频课程",
+        fmt_ebook: "📚 电子书与 PDF 指南", fmt_outil: "⚙️ 文件与配置",
+        fmt_form_outil: "⚙️ 配置 / 文件", fmt_form_ebook: "📚 文章 / PDF", fmt_form_video: "🎬 视频 / 演示", fmt_form_live: "🔴 直播场次",
+        cat_ecommerce: "电商", cat_automatisation: "自动化",
+        cat_logistique: "物流与运输", cat_affiliation: "联盟营销",
+        toast_liked: "❤️ 已加入收藏", toast_unliked: "已移除", toast_demo: "演示资源。",
+        toast_copied: "🔗 链接已复制！", toast_upload_ok: "✅ 文件已就绪！", toast_upload_fail: "❌ 上传失败。",
     }
 };
 
