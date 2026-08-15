@@ -244,6 +244,13 @@ router.get("/", requireAuth, async (req, res) => {
                 </div>
             </div>
 
+            <label>Moteur de génération</label>
+            <select name="moteur" id="select-moteur">
+                <option value="runware">Runware — standard (0,20$/s)</option>
+                <option value="wan">WAN 2.6 (Alibaba) — rapide, sans son (0,48$/s)</option>
+                <option value="h3">H3 (MiniMax) — vidéo + son natif (0,78$/s)</option>
+            </select>
+
             <label>De quoi parle le contenu ?</label>
             <textarea name="sujet" placeholder="Ex : ma nouvelle collection de vestes d'hiver..." required></textarea>
 
@@ -417,10 +424,11 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
 </html>`);
 });
 
-// ── POST : Traitement Gemini + Runware ─────────────────────────────────
+// ── POST : Traitement Gemini + génération média (Runware / WAN / H3) ────
 router.post("/", requireAuth, upload.single("client_image"), async (req, res) => {
     try {
-        const { reseau, format, objectif, sujet, ton, type_creation, duree, nombre_variantes } = req.body;
+        const { reseau, format, objectif, sujet, ton, type_creation, duree, nombre_variantes, moteur } = req.body;
+        const moteurChoisi = ["wan", "h3"].includes(moteur) ? moteur : "runware";
 
         if (!sujet || !sujet.trim()) {
             return res.json({ success: false, error: "Décris ton produit ou ton sujet." });
@@ -482,9 +490,39 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
 
         pack.medias = [];
 
+        // ── WAN 2.6 / H3 (OpenRouter) — génération vidéo asynchrone, facturée
+        // au temps réel mesuré (6x le prix fournisseur, services/griotCoutService.js) ──
+        if ((moteurChoisi === "wan" || moteurChoisi === "h3") && pack.prompt_visuel) {
+            const openrouterVideo = require("../services/openrouterVideo");
+            let imageBase64 = null;
+            if (req.file && req.file.buffer) {
+                imageBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+            }
+            const dureeSecondes = parseInt(duree, 10) || 15;
+            const resultat = await openrouterVideo.genererVideo({
+                moteur: moteurChoisi,
+                prompt: pack.prompt_visuel,
+                dureeSecondes,
+                imageBase64,
+            });
+
+            if (resultat.dureeMs) {
+                griotCoutService.enregistrerGeneration(req.session.workspaceId, resultat.dureeMs, moteurChoisi).catch(() => {});
+            }
+
+            if (resultat.success) {
+                // Le lien direct OpenRouter exige un header Authorization qu'un
+                // <video src="..."> ne peut pas envoyer — on sert le fichier via
+                // notre propre route, qui elle porte la clé côté serveur.
+                pack.medias.push(`/samii/griot/media/${resultat.jobId}`);
+            } else {
+                console.error(`⚠️ Erreur génération ${moteurChoisi} (OpenRouter, non bloquant) :`, resultat.error);
+            }
+        }
+
         // ── Runware — uniquement si une clé est configurée, sinon on ignore silencieusement ──
         const runwareApiKey = CONFIG.RUNWARE?.API_KEY;
-if (runwareApiKey && pack.prompt_visuel) {
+if (moteurChoisi === "runware" && runwareApiKey && pack.prompt_visuel) {
             console.log("🔑 DEBUG Runware — clé présente ?", !!runwareApiKey, "| prompt_visuel présent ?", !!pack.prompt_visuel);
             try {
                 const runwareTask = {
@@ -536,6 +574,27 @@ if (runwareData && Array.isArray(runwareData.data)) {
     } catch (err) {
         console.error("❌ POST /samii/griot :", err.message);
         res.json({ success: false, error: "Erreur lors de la génération. Réessaie." });
+    }
+});
+
+// ── Sert une vidéo générée par OpenRouter (WAN/H3) — le lien OpenRouter
+// exige un header Authorization que le navigateur ne peut pas envoyer via
+// une simple balise <video>, donc on relaie ici avec la clé côté serveur.
+router.get("/media/:jobId", requireAuth, async (req, res) => {
+    try {
+        const upstream = await fetch(
+            `https://openrouter.ai/api/v1/videos/${req.params.jobId}/content?index=0`,
+            { headers: { Authorization: `Bearer ${CONFIG.OPENROUTER.API_KEY}` } }
+        );
+        if (!upstream.ok || !upstream.body) {
+            return res.status(upstream.status || 502).send("Vidéo indisponible.");
+        }
+        res.setHeader("Content-Type", upstream.headers.get("content-type") || "video/mp4");
+        const { Readable } = require("stream");
+        Readable.fromWeb(upstream.body).pipe(res);
+    } catch (err) {
+        console.error("❌ GET /samii/griot/media/:jobId :", err.message);
+        res.status(502).send("Erreur de relais vidéo.");
     }
 });
 

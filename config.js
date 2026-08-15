@@ -93,6 +93,9 @@ module.exports = {
     RUNWARE: {
     API_KEY: process.env.RUNWARE_API_KEY || "",
 },
+    OPENROUTER: {
+        API_KEY: process.env.OPENROUTER_API_KEY || "",
+    },
     // ==================================================
     // TELEGRAM
     // ==================================================
