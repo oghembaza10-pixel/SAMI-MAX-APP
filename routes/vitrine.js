@@ -316,6 +316,11 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 
     ${user.bio_vitrine ? `<p class="bio-text">${escapeHtml(user.bio_vitrine)}</p>` : ""}
 
+    ${!estMoi && estMarchand && user.workspace_boutique_id ? `
+    <a href="https://t.me/SAMII_OGBot?start=${escapeHtml(user.workspace_boutique_id)}" target="_blank" class="edit-vitrine-btn" style="background:linear-gradient(135deg,#00c6ff,#0072ff);border:none;color:#fff;">
+        <i data-lucide="send"></i> <span data-i18n="vitrine.orderTelegram">Commander via Telegram</span>
+    </a>` : ""}
+
     ${estMoi ? `<a href="/settings#boutique" class="edit-vitrine-btn"><i data-lucide="pencil"></i> <span data-i18n="vitrine.edit.settings">Paramètres</span></a>
     <a href="/marketplace/mes-produits" class="edit-vitrine-btn" style="margin-left:8px;"><i data-lucide="layout-grid"></i> <span data-i18n="vitrine.edit.produits">Gérer mes produits</span></a>
     <a href="/parrainage" class="edit-vitrine-btn" style="margin-left:8px;"><i data-lucide="handshake"></i> <span data-i18n="vitrine.edit.parrainage">Parrainage</span></a>` : ""}
@@ -348,6 +353,7 @@ const I18N = {
         "vitrine.edit.settings": "Paramètres",
         "vitrine.edit.produits": "Gérer mes produits",
         "vitrine.edit.parrainage": "Parrainage",
+        "vitrine.orderTelegram": "Commander via Telegram",
         "vitrine.section.vedette": "En vedette",
         "vitrine.section.annonces": "Annonces actives",
         "vitrine.section.autres": "Autres produits",
@@ -374,6 +380,7 @@ const I18N = {
         "vitrine.edit.settings": "Settings",
         "vitrine.edit.produits": "Manage my products",
         "vitrine.edit.parrainage": "Referrals",
+        "vitrine.orderTelegram": "Order via Telegram",
         "vitrine.section.vedette": "Featured",
         "vitrine.section.annonces": "Active listings",
         "vitrine.section.autres": "Other products",
@@ -400,6 +407,7 @@ const I18N = {
         "vitrine.edit.settings": "الإعدادات",
         "vitrine.edit.produits": "إدارة منتجاتي",
         "vitrine.edit.parrainage": "الإحالة",
+        "vitrine.orderTelegram": "اطلب عبر Telegram",
         "vitrine.section.vedette": "مميز",
         "vitrine.section.annonces": "الإعلانات النشطة",
         "vitrine.section.autres": "منتجات أخرى",
@@ -426,6 +434,7 @@ const I18N = {
         "vitrine.edit.settings": "设置",
         "vitrine.edit.produits": "管理我的商品",
         "vitrine.edit.parrainage": "推荐计划",
+        "vitrine.orderTelegram": "通过 Telegram 下单",
         "vitrine.section.vedette": "精选",
         "vitrine.section.annonces": "在售商品",
         "vitrine.section.autres": "其他商品",
