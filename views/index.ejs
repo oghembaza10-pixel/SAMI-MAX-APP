@@ -2402,17 +2402,6 @@
                         </div>
                     </div>
 
-                    <div id="bloc-metier" style="display:none;">
-                        <div class="field-group">
-                            <label data-i18n="auth.field.metier">Ton métier</label>
-                            <select name="metier">
-                                <option value="ecommerce" data-i18n="auth.metier.ecommerce">E-commerçant</option>
-                                <option value="restaurant" data-i18n="auth.metier.restaurant">Restaurateur</option>
-                                <option value="immobilier" data-i18n="auth.metier.immobilier">Immobilier</option>
-                            </select>
-                        </div>
-                    </div>
-
                     <div class="grade-preview">
                         <span class="grade-preview__icon">🪖</span>
                         <span class="grade-preview__text"><span data-i18n="auth.grade1">Tu prends du service au grade de</span> <strong data-i18n="auth.grade2">Soldat</strong> <span data-i18n="auth.grade3">— chaque action te rapproche du sommet.</span></span>
@@ -2856,12 +2845,6 @@
                 msg.textContent = t('msg.error_network');
                 btn.disabled = false;
             }
-        });
-
-        document.querySelectorAll('input[name="type_compte"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                document.getElementById('bloc-metier').style.display = radio.value === 'marchand' && radio.checked ? 'block' : 'none';
-            });
         });
 
         document.getElementById('select-pays').addEventListener('change', function () {

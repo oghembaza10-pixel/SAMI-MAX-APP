@@ -87,19 +87,6 @@ router.get("/", (req, res) => {
             </label>
         </div>
 
-        <div id="bloc-metier" style="display:none;">
-            ${metier
-                ? `<input type="hidden" name="metier" value="${metier}">`
-                : `<select name="metier">
-                    <option value="ecommerce" data-i18n="register.metier.ecommerce">E-commerçant</option>
-                    <option value="restaurant" data-i18n="register.metier.restaurant">Restaurateur</option>
-                    <option value="immobilier" data-i18n="register.metier.immobilier">Immobilier</option>
-                    <option value="livreur"     disabled data-i18n="register.metier.livreur">Livreur (bientôt)</option>
-                    <option value="fournisseur" disabled data-i18n="register.metier.fournisseur">Fournisseur (bientôt)</option>
-                  </select>`
-            }
-        </div>
-
         <input name="password" type="password" placeholder="Mot de passe" data-i18n-ph="register.ph.password" required minlength="6">
         <input type="hidden" name="ref" value="${refCode}">
         <button type="submit" data-i18n="register.submit">Créer mon compte</button>
@@ -189,14 +176,6 @@ document.querySelectorAll('.lang-switch span').forEach(span => {
 });
 
 applyLang(currentLang);
-
-document.querySelectorAll('input[name="type_compte"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-        document.getElementById('bloc-metier').style.display =
-            radio.value === 'marchand' && radio.checked ? 'block' : 'none';
-    });
-});
-document.querySelector('input[name="type_compte"][value="marchand"]').dispatchEvent(new Event('change'));
 
 document.getElementById('form-register').addEventListener('submit', async (e) => {
     e.preventDefault();
