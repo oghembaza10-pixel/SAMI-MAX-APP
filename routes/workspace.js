@@ -50,6 +50,9 @@ router.get("/create", requireAuth, async (req, res) => {
         *{ box-sizing:border-box; margin:0; padding:0; }
         body{ background:#050505; font-family:Arial,sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; color:white; padding:20px; }
         .box{ width:100%; max-width:440px; background:#12121a; padding:32px; border-radius:16px; border:1px solid rgba(197,160,89,.25); }
+        .lang-switch{ display:flex; gap:4px; justify-content:center; margin-bottom:20px; font-size:.68rem; }
+        .lang-switch span{ padding:5px 10px; border-radius:6px; cursor:pointer; color:#777; border:1px solid #333; transition:.2s ease; }
+        .lang-switch span.active, .lang-switch span:hover{ color:#C5A059; border-color:#C5A059; background:rgba(197,160,89,.08); }
         .samii-line{ display:flex; gap:10px; align-items:flex-start; margin-bottom:18px; }
         .samii-avatar{ width:36px; height:36px; border-radius:50%; flex-shrink:0; background:linear-gradient(145deg,#7d5cff,#5a3fe0); display:flex; align-items:center; justify-content:center; font-size:16px; }
         .samii-bubble{ background:#1a1a24; border-radius:12px; padding:12px 14px; font-size:.88rem; line-height:1.5; color:#e8e4d8; }
@@ -65,46 +68,130 @@ router.get("/create", requireAuth, async (req, res) => {
 </head>
 <body>
 <div class="box">
+    <div class="lang-switch">
+        <span data-lang="fr" class="active">FR</span>
+        <span data-lang="en">EN</span>
+        <span data-lang="ar">AR</span>
+        <span data-lang="zh">中</span>
+    </div>
     <div class="samii-line">
         <div class="samii-avatar">🤖</div>
-        <div class="samii-bubble">
+        <div class="samii-bubble" data-i18n="ws.welcome">
             Bonjour Général ! Je suis <b>SAMII</b>. Avant de construire votre QG${metier ? ` <b>${metier}</b>` : ""}, j'ai besoin de quelques infos pour bien l'adapter à votre réalité.
         </div>
     </div>
     <form id="form-workspace">
-        <label>Nom de votre boutique / entreprise</label>
-        <input name="nom" placeholder="Ex : Le Souverain Store" required>
+        <label data-i18n="ws.nom.label">Nom de votre boutique / entreprise</label>
+        <input name="nom" data-i18n-ph="ws.nom.ph" placeholder="Ex : Le Souverain Store" required>
 
         <input type="hidden" name="metier" id="metier-hidden" value="${metier}">
         ${!metier ? `
-        <label>Votre métier</label>
+        <label data-i18n="ws.metier.label">Votre métier</label>
         <select name="metierSelect" id="metier-select">
-            <option value="ecommerce">E-commerce</option>
-            <option value="restaurant">Restaurant</option>
-            <option value="autre">Autre</option>
+            <option value="ecommerce" data-i18n="ws.metier.ecommerce">E-commerce</option>
+            <option value="restaurant" data-i18n="ws.metier.restaurant">Restaurant</option>
+            <option value="autre" data-i18n="ws.metier.autre">Autre</option>
         </select>
         <div id="custom-metier-wrap">
-            <label>Précisez votre métier</label>
-            <input name="metierCustom" id="metier-custom" placeholder="Ex : Coiffeur">
+            <label data-i18n="ws.metierCustom.label">Précisez votre métier</label>
+            <input name="metierCustom" id="metier-custom" data-i18n-ph="ws.metierCustom.ph" placeholder="Ex : Coiffeur">
         </div>` : ''}
 
-        <label>Description (optionnel)</label>
-        <input name="description" placeholder="Décrivez votre activité en une phrase">
+        <label data-i18n="ws.description.label">Description (optionnel)</label>
+        <input name="description" data-i18n-ph="ws.description.ph" placeholder="Décrivez votre activité en une phrase">
 
-        <label>Votre pays</label>
+        <label data-i18n="ws.pays.label">Votre pays</label>
         <select name="pays" id="select-pays">
-            <option value="">Choisissez votre pays</option>
+            <option value="" data-i18n="ws.pays.placeholder">Choisissez votre pays</option>
             ${paysOptions}
         </select>
 
-        <label>Devise</label>
-        <input name="devise" id="input-devise" placeholder="Sera pré-remplie selon le pays" readonly>
+        <label data-i18n="ws.devise.label">Devise</label>
+        <input name="devise" id="input-devise" data-i18n-ph="ws.devise.ph" placeholder="Sera pré-remplie selon le pays" readonly>
 
-        <button type="submit">Créer mon QG</button>
+        <button type="submit" data-i18n="ws.submit">Créer mon QG</button>
     </form>
     <div class="msg" id="msg"></div>
 </div>
 <script>
+const I18N = {
+    fr: {
+        'ws.welcome': 'Bonjour Général ! Je suis <b>SAMII</b>. Avant de construire votre QG${metier ? ` <b>${metier}</b>` : ""}, j\\'ai besoin de quelques infos pour bien l\\'adapter à votre réalité.',
+        'ws.nom.label': 'Nom de votre boutique / entreprise', 'ws.nom.ph': 'Ex : Le Souverain Store',
+        'ws.metier.label': 'Votre métier', 'ws.metier.ecommerce': 'E-commerce', 'ws.metier.restaurant': 'Restaurant', 'ws.metier.autre': 'Autre',
+        'ws.metierCustom.label': 'Précisez votre métier', 'ws.metierCustom.ph': 'Ex : Coiffeur',
+        'ws.description.label': 'Description (optionnel)', 'ws.description.ph': 'Décrivez votre activité en une phrase',
+        'ws.pays.label': 'Votre pays', 'ws.pays.placeholder': 'Choisissez votre pays',
+        'ws.devise.label': 'Devise', 'ws.devise.ph': 'Sera pré-remplie selon le pays',
+        'ws.submit': 'Créer mon QG',
+        'msg.creating': '⏳ SAMII prépare votre QG...', 'msg.created': '✅ QG créé ! Redirection...',
+        'msg.error_default': '❌ Erreur. Réessayez.',
+    },
+    en: {
+        'ws.welcome': 'Hello General! I am <b>SAMII</b>. Before building your HQ${metier ? ` <b>${metier}</b>` : ""}, I need a few details to tailor it to your business.',
+        'ws.nom.label': 'Name of your store / business', 'ws.nom.ph': 'E.g.: Le Souverain Store',
+        'ws.metier.label': 'Your business type', 'ws.metier.ecommerce': 'E-commerce', 'ws.metier.restaurant': 'Restaurant', 'ws.metier.autre': 'Other',
+        'ws.metierCustom.label': 'Specify your business type', 'ws.metierCustom.ph': 'E.g.: Hairdresser',
+        'ws.description.label': 'Description (optional)', 'ws.description.ph': 'Describe your business in one sentence',
+        'ws.pays.label': 'Your country', 'ws.pays.placeholder': 'Choose your country',
+        'ws.devise.label': 'Currency', 'ws.devise.ph': 'Will be filled in based on your country',
+        'ws.submit': 'Create my HQ',
+        'msg.creating': '⏳ SAMII is preparing your HQ...', 'msg.created': '✅ HQ created! Redirecting...',
+        'msg.error_default': '❌ Error. Please try again.',
+    },
+    ar: {
+        'ws.welcome': 'مرحبًا أيها الجنرال! أنا <b>SAMII</b>. قبل بناء مقر قيادتك${metier ? ` <b>${metier}</b>` : ""}، أحتاج إلى بعض المعلومات لتكييفه مع نشاطك.',
+        'ws.nom.label': 'اسم متجرك / شركتك', 'ws.nom.ph': 'مثال: متجر السيادة',
+        'ws.metier.label': 'مجال نشاطك', 'ws.metier.ecommerce': 'تجارة إلكترونية', 'ws.metier.restaurant': 'مطعم', 'ws.metier.autre': 'آخر',
+        'ws.metierCustom.label': 'حدد مجال نشاطك', 'ws.metierCustom.ph': 'مثال: حلّاق',
+        'ws.description.label': 'الوصف (اختياري)', 'ws.description.ph': 'صف نشاطك في جملة واحدة',
+        'ws.pays.label': 'بلدك', 'ws.pays.placeholder': 'اختر بلدك',
+        'ws.devise.label': 'العملة', 'ws.devise.ph': 'ستُملأ تلقائيًا حسب البلد',
+        'ws.submit': 'إنشاء مقر قيادتي',
+        'msg.creating': '⏳ SAMII يجهّز مقر قيادتك...', 'msg.created': '✅ تم إنشاء المقر! جارٍ التحويل...',
+        'msg.error_default': '❌ خطأ. حاول مرة أخرى.',
+    },
+    zh: {
+        'ws.welcome': '你好，将军！我是 <b>SAMII</b>。在搭建你的指挥部${metier ? ` <b>${metier}</b>` : ""}之前，我需要一些信息来更好地适配你的业务。',
+        'ws.nom.label': '你的店铺 / 企业名称', 'ws.nom.ph': '例如：Le Souverain Store',
+        'ws.metier.label': '你的行业', 'ws.metier.ecommerce': '电商', 'ws.metier.restaurant': '餐饮', 'ws.metier.autre': '其他',
+        'ws.metierCustom.label': '请说明你的行业', 'ws.metierCustom.ph': '例如：理发师',
+        'ws.description.label': '描述（可选）', 'ws.description.ph': '用一句话描述你的业务',
+        'ws.pays.label': '你的国家', 'ws.pays.placeholder': '选择你的国家',
+        'ws.devise.label': '货币', 'ws.devise.ph': '将根据国家自动填写',
+        'ws.submit': '创建我的指挥部',
+        'msg.creating': '⏳ SAMII 正在准备你的指挥部...', 'msg.created': '✅ 指挥部已创建！正在跳转...',
+        'msg.error_default': '❌ 错误，请重试。',
+    },
+};
+
+let currentLang = localStorage.getItem('samii_lang') || 'fr';
+function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
+
+function applyLang(lang) {
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    localStorage.setItem('samii_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang][key] !== undefined) el.innerHTML = I18N[lang][key];
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (I18N[lang][key] !== undefined) el.placeholder = I18N[lang][key];
+    });
+    document.querySelectorAll('.lang-switch span').forEach(s => s.classList.toggle('active', s.dataset.lang === lang));
+}
+
+document.querySelectorAll('.lang-switch span').forEach(span => {
+    span.addEventListener('click', () => applyLang(span.dataset.lang));
+});
+
+applyLang(currentLang);
+
 document.getElementById('select-pays').addEventListener('change', (e) => {
     const opt = e.target.selectedOptions[0];
     document.getElementById('input-devise').value = opt?.dataset.devise || "";
@@ -123,7 +210,7 @@ document.getElementById('form-workspace').addEventListener('submit', async (e) =
     e.preventDefault();
     const msg  = document.getElementById('msg');
     const data = Object.fromEntries(new FormData(e.target));
-    msg.textContent = '⏳ SAMII prépare votre QG...';
+    msg.textContent = t('msg.creating');
     msg.className   = 'msg';
 
     const res  = await fetch('/workspace/create', {
@@ -134,11 +221,11 @@ document.getElementById('form-workspace').addEventListener('submit', async (e) =
     const json = await res.json();
 
     if (json.success) {
-        msg.textContent = '✅ QG créé ! Redirection...';
+        msg.textContent = t('msg.created');
         msg.className   = 'msg ok';
         window.location.href = '/qg';
     } else {
-        msg.textContent = json.error || '❌ Erreur. Réessayez.';
+        msg.textContent = json.error || t('msg.error_default');
     }
 });
 </script>
