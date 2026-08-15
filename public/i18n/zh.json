@@ -493,5 +493,120 @@
         }
       }
     }
+  },
+  "connect": {
+    "title": "连接",
+    "activeKey": "你的专属密钥已激活",
+    "connected": "已连接",
+    "submit": "使用我的密钥",
+    "back": "← 返回我的工具",
+    "backToQg": "返回指挥部 →",
+    "purpose": {
+      "prefix": "连接你自己的",
+      "suffix": "账户。你的凭证仅归属于你的工作空间，其他人无法访问。"
+    },
+    "optional": {
+      "label": "可选。",
+      "prefix": "没有专属密钥时，SAMII 会自动使用 OG Technology 的全局",
+      "middle": "账户来追踪你的包裹。仅当你拥有自己的",
+      "suffix": "账户并希望使用它时才添加你自己的密钥。"
+    },
+    "apiId": {
+      "label": "API ID",
+      "ph": "你的 API ID"
+    },
+    "apiToken": {
+      "label": "API 令牌",
+      "ph": "你的 API 令牌"
+    },
+    "impression": {
+      "connected": "已连接 · 即将同步",
+      "soon": "官方权限即将开放——现在可以先用简化模式连接。",
+      "field": {
+        "youtube": "你的 YouTube 频道链接或 @用户名",
+        "tiktok": "TikTok @用户名",
+        "gmail": "Gmail 邮箱地址",
+        "google": "关联 Google 的 Gmail 地址",
+        "linkedin": "你的 LinkedIn 个人资料或主页链接"
+      }
+    },
+    "ccp": {
+      "postAlgerie": "阿尔及利亚邮政",
+      "desc": "向客户展示你的 CCP 账户，以便他们通过邮政转账付款。没有自动验证——收到付款后由你自己确认订单。",
+      "titulaire": "账户持有人",
+      "numero": "CCP 账号",
+      "cle": "RIP 密钥",
+      "submit": "保存我的 CCP",
+      "titulaireLabel": "账户持有人姓名",
+      "titulairePh": "姓名",
+      "numeroLabel": "CCP 账号",
+      "cleLabel": "RIP 密钥（2位数字）"
+    },
+    "discord": {
+      "desc": "在 Discord 开发者门户创建一个机器人，并在此粘贴其令牌。",
+      "serveur": "服务器",
+      "token": {
+        "label": "机器人令牌"
+      },
+      "serveurName": {
+        "label": "服务器名称（可选）",
+        "ph": "我的服务器"
+      }
+    },
+    "shopify": {
+      "boutique": "店铺",
+      "domaine": "域名",
+      "connectedOn": "连接时间",
+      "webhooks": "Webhooks",
+      "webhooksOn": "6 个已启用 ✅",
+      "webhooksOff": "未启用 ❌",
+      "backToHub": "← 返回中心"
+    },
+    "soon": {
+      "title": "即将推出",
+      "subtitle": "此集成即将登陆 SAMII OS。",
+      "badge": "开发中",
+      "continueToQg": "继续前往我的指挥部 →",
+      "inProgress": {
+        "prefix": "",
+        "suffix": "集成正在开发中。",
+        "line2": "它将在 SAMII OS 的未来更新中提供。"
+      }
+    },
+    "telegram": {
+      "oneClick": "一键完成——无需手动输入。",
+      "cta": "通过 Telegram 连接",
+      "already": "已连接"
+    },
+    "whatsapp": {
+      "ownNumberActive": "你自己的号码已激活",
+      "depannage": {
+        "badge": "应急通道已激活",
+        "daysLeftShort": "天剩余",
+        "title": "快速应急通道 — 3天",
+        "desc": "使用 OG Technology 的共享 WhatsApp 号码 3 天，同时创建你自己的账户。每家店铺仅限使用一次——期限过后，请连接你自己的号码（见下方）以继续使用。",
+        "noLongerNeeded": "你自己的号码已连接，不再需要应急通道。",
+        "activeLabel": "已激活",
+        "daysLeftLong": "天剩余",
+        "expired": "应急通道已使用且已过期——请在下方连接你自己的号码以继续。",
+        "activate": "激活 3 天应急通道"
+      },
+      "perso": {
+        "title": "连接我自己的 WhatsApp",
+        "desc": "永久且免费的启动方案：通过 5 个步骤连接你自己的 Green API 账户。",
+        "step1": "访问 green-api.com 并创建一个免费账户。",
+        "step2": "点击 \"Create an instance\"（选择 \"Developer\" 方案进行测试）。",
+        "step3": "用手机上的 WhatsApp Business 应用扫描二维码（或使用 \"Link with phone number\"）：设置 → 已链接的设备 → 链接设备。",
+        "step4": "状态变为 \"Authorized\" 后，获取你的 idInstance 和 apiTokenInstance（点击眼睛图标显示）。",
+        "step5": "将这两个值粘贴到下方并确认。"
+      },
+      "apiId": {
+        "label": "API ID（idInstance）"
+      },
+      "apiToken": {
+        "label": "API 令牌（apiTokenInstance）",
+        "ph": "你的 apiTokenInstance"
+      }
+    }
   }
 }

@@ -15,9 +15,9 @@
         <div style="font-size:3rem;"><i data-lucide="<%= tool.icon || 'plug' %>" style="width:48px;height:48px;color:<%= tool.color %>;"></i></div>
         <h2 style="color:#fff;margin-top:10px;"><%= tool.label %></h2>
         <% if (actif) { %>
-          <span style="background:#d4af3722;color:#d4af37;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">🟡 Connecté · bientôt synchronisé</span>
+          <span style="background:#d4af3722;color:#d4af37;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">🟡 <span data-i18n="connect.impression.connected">Connecté · bientôt synchronisé</span></span>
         <% } else { %>
-          <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+          <p style="color:#666;font-size:0.85rem;margin-top:6px;" data-i18n="connect.impression.soon">
             Les permissions officielles arrivent bientôt — connecte-toi dès maintenant en mode simplifié.
           </p>
         <% } %>
@@ -30,37 +30,38 @@
       <% if (actif) { %>
         <div style="border-top:1px solid #1a1a1a;padding-top:20px;">
           <div style="display:flex;justify-content:space-between;padding:10px 0;">
-            <span style="color:#666;font-size:0.85rem;"><%= fieldLabel %></span>
+            <span style="color:#666;font-size:0.85rem;" data-i18n="connect.impression.field.<%= tool.id %>"><%= fieldLabel %></span>
             <span style="color:#fff;font-size:0.85rem;font-weight:500;"><%= identifiant %></span>
           </div>
         </div>
       <% } else { %>
         <form method="POST" action="/connect/<%= tool.id %>">
-          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;"><%= fieldLabel %></label>
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.impression.field.<%= tool.id %>"><%= fieldLabel %></label>
           <input type="text" name="identifiant" required
                  style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
 
           <button type="submit"
                   style="display:block;width:100%;padding:13px;background:<%= tool.color %>;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
-            Connecter <%= tool.label %>
+            <span data-i18n="connect.title">Connecter</span> <%= tool.label %>
           </button>
         </form>
       <% } %>
 
       <a href="/connect/tools"
          style="display:block;margin-top:20px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
-        ← Retour à mes outils
+        <span data-i18n="connect.back">← Retour à mes outils</span>
       </a>
       <% if (actif) { %>
       <a href="/qg"
          style="display:block;margin-top:10px;text-align:center;padding:13px;background:<%= tool.color %>;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
-        Retour au QG →
+        <span data-i18n="connect.backToQg">Retour au QG →</span>
       </a>
       <% } %>
 
     </div>
   </main>
 </div>
+<script src="/js/i18n.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>lucide.createIcons();</script>
 </body>

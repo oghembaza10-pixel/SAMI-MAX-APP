@@ -13,17 +13,17 @@
 
       <div style="text-align:center;margin-bottom:24px;">
         <div style="font-size:3rem;"><%= tool.emoji || "🚚" %></div>
-        <h2 style="color:#fff;margin-top:10px;">Connecter <%= tool.label %></h2>
+        <h2 style="color:#fff;margin-top:10px;"><span data-i18n="connect.title">Connecter</span> <%= tool.label %></h2>
         <% if (actif) { %>
-          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ Ta clé perso est active</span>
+          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ <span data-i18n="connect.activeKey">Ta clé perso est active</span></span>
         <% } %>
       </div>
 
       <div style="background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:14px;margin-bottom:20px;font-size:0.8rem;color:#999;line-height:1.6;">
         <% if (tool.purpose) { %>
-          ℹ️ Connecte ton propre compte <%= tool.label %> <%= tool.purpose %>. Tes identifiants restent liés à ton espace, personne d'autre n'y a accès.
+          ℹ️ <span data-i18n="connect.purpose.prefix">Connecte ton propre compte</span> <%= tool.label %> <%= tool.purpose %>. <span data-i18n="connect.purpose.suffix">Tes identifiants restent liés à ton espace, personne d'autre n'y a accès.</span>
         <% } else { %>
-          ℹ️ <b>Optionnel.</b> Sans clé perso, SAMII utilise automatiquement le compte <%= tool.label %> global d'OG Technology pour suivre tes colis. Ajoute ta propre clé uniquement si tu as ton propre compte <%= tool.label %> et que tu préfères qu'elle soit utilisée à la place.
+          ℹ️ <b data-i18n="connect.optional.label">Optionnel.</b> <span data-i18n="connect.optional.prefix">Sans clé perso, SAMII utilise automatiquement le compte</span> <%= tool.label %> <span data-i18n="connect.optional.middle">global d'OG Technology pour suivre tes colis. Ajoute ta propre clé uniquement si tu as ton propre compte</span> <%= tool.label %> <span data-i18n="connect.optional.suffix">et que tu préfères qu'elle soit utilisée à la place.</span>
         <% } %>
       </div>
 
@@ -32,28 +32,29 @@
       <% } %>
 
       <form method="POST" action="/connect/<%= tool.id %>">
-        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">ID API</label>
-        <input type="text" name="api_id" value="<%= apiId %>" placeholder="Ton API ID"
+        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.apiId.label">ID API</label>
+        <input type="text" name="api_id" value="<%= apiId %>" data-i18n-placeholder="connect.apiId.ph" placeholder="Ton API ID"
                style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
 
-        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Token API</label>
-        <input type="password" name="api_token" placeholder="Ton API Token"
+        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.apiToken.label">Token API</label>
+        <input type="password" name="api_token" data-i18n-placeholder="connect.apiToken.ph" placeholder="Ton API Token"
                style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
 
         <button type="submit"
                 style="display:block;width:100%;padding:13px;background:<%= tool.color %>;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
-          <%= tool.emoji || "🚚" %> Utiliser ma clé <%= tool.label %>
+          <%= tool.emoji || "🚚" %> <span data-i18n="connect.submit">Utiliser ma clé</span> <%= tool.label %>
         </button>
       </form>
 
       <a href="/connect/tools"
          style="display:block;margin-top:16px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
-        ← Retour à mes outils
+        <span data-i18n="connect.back">← Retour à mes outils</span>
       </a>
 
     </div>
   </main>
 </div>
+<script src="/js/i18n.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>lucide.createIcons();</script>
 </body>

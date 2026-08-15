@@ -13,11 +13,11 @@
 
       <div style="text-align:center;margin-bottom:30px;">
         <div style="font-size:3rem;">🏦</div>
-        <h2 style="color:#fff;margin-top:10px;">CCP (Algérie Poste)</h2>
+        <h2 style="color:#fff;margin-top:10px;">CCP (<span data-i18n="connect.ccp.postAlgerie">Algérie Poste</span>)</h2>
         <% if (ccpActif) { %>
-          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ Connecté</span>
+          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ <span data-i18n="connect.connected">Connecté</span></span>
         <% } else { %>
-          <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+          <p style="color:#666;font-size:0.85rem;margin-top:6px;" data-i18n="connect.ccp.desc">
             Affiche ton compte CCP à tes clients pour qu'ils te règlent par virement postal. Pas de vérification automatique — tu confirmes toi-même la commande une fois le paiement reçu.
           </p>
         <% } %>
@@ -30,53 +30,54 @@
       <% if (ccpActif) { %>
         <div style="border-top:1px solid #1a1a1a;padding-top:20px;">
           <div style="display:flex;justify-content:space-between;padding:10px 0;">
-            <span style="color:#666;font-size:0.85rem;">Titulaire</span>
+            <span style="color:#666;font-size:0.85rem;" data-i18n="connect.ccp.titulaire">Titulaire</span>
             <span style="color:#fff;font-size:0.85rem;font-weight:500;"><%= ccpTitulaire || '—' %></span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:10px 0;">
-            <span style="color:#666;font-size:0.85rem;">Numéro CCP</span>
+            <span style="color:#666;font-size:0.85rem;" data-i18n="connect.ccp.numero">Numéro CCP</span>
             <span style="color:#fff;font-size:0.85rem;font-weight:500;"><%= ccpNumero || '—' %></span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:10px 0;">
-            <span style="color:#666;font-size:0.85rem;">Clé RIP</span>
+            <span style="color:#666;font-size:0.85rem;" data-i18n="connect.ccp.cle">Clé RIP</span>
             <span style="color:#fff;font-size:0.85rem;font-weight:500;"><%= ccpCle || '—' %></span>
           </div>
         </div>
       <% } else { %>
         <form method="POST" action="/connect/ccp">
-          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Titulaire du compte</label>
-          <input type="text" name="titulaire" placeholder="Nom Prénom" required
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.ccp.titulaireLabel">Titulaire du compte</label>
+          <input type="text" name="titulaire" data-i18n-placeholder="connect.ccp.titulairePh" placeholder="Nom Prénom" required
                  style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
 
-          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Numéro de compte CCP</label>
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.ccp.numeroLabel">Numéro de compte CCP</label>
           <input type="text" name="numero" placeholder="0012345678" required
                  style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
 
-          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Clé RIP (2 chiffres)</label>
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.ccp.cleLabel">Clé RIP (2 chiffres)</label>
           <input type="text" name="cle" placeholder="12" maxlength="2"
                  style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
 
           <button type="submit"
                   style="display:block;width:100%;padding:13px;background:#F5A623;border:none;border-radius:10px;color:#111;font-weight:700;font-size:0.95rem;cursor:pointer;">
-            🏦 Enregistrer mon CCP
+            🏦 <span data-i18n="connect.ccp.submit">Enregistrer mon CCP</span>
           </button>
         </form>
       <% } %>
 
       <a href="/connect/tools"
          style="display:block;margin-top:20px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
-        ← Retour à mes outils
+        <span data-i18n="connect.back">← Retour à mes outils</span>
       </a>
       <% if (ccpActif) { %>
       <a href="/qg"
          style="display:block;margin-top:10px;text-align:center;padding:13px;background:#F5A623;border-radius:10px;color:#111;text-decoration:none;font-weight:600;font-size:0.9rem;">
-        Retour au QG →
+        <span data-i18n="connect.backToQg">Retour au QG →</span>
       </a>
       <% } %>
 
     </div>
   </main>
 </div>
+<script src="/js/i18n.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>lucide.createIcons();</script>
 </body>

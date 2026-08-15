@@ -493,5 +493,120 @@
         }
       }
     }
+  },
+  "connect": {
+    "title": "Connecter",
+    "activeKey": "Ta clé perso est active",
+    "connected": "Connecté",
+    "submit": "Utiliser ma clé",
+    "back": "← Retour à mes outils",
+    "backToQg": "Retour au QG →",
+    "purpose": {
+      "prefix": "Connecte ton propre compte",
+      "suffix": "Tes identifiants restent liés à ton espace, personne d'autre n'y a accès."
+    },
+    "optional": {
+      "label": "Optionnel.",
+      "prefix": "Sans clé perso, SAMII utilise automatiquement le compte",
+      "middle": "global d'OG Technology pour suivre tes colis. Ajoute ta propre clé uniquement si tu as ton propre compte",
+      "suffix": "et que tu préfères qu'elle soit utilisée à la place."
+    },
+    "apiId": {
+      "label": "ID API",
+      "ph": "Ton API ID"
+    },
+    "apiToken": {
+      "label": "Token API",
+      "ph": "Ton API Token"
+    },
+    "impression": {
+      "connected": "Connecté · bientôt synchronisé",
+      "soon": "Les permissions officielles arrivent bientôt — connecte-toi dès maintenant en mode simplifié.",
+      "field": {
+        "youtube": "Lien ou @pseudo de ta chaîne YouTube",
+        "tiktok": "@pseudo TikTok",
+        "gmail": "Adresse Gmail",
+        "google": "Adresse Gmail liée à Google",
+        "linkedin": "Lien de ton profil ou page LinkedIn"
+      }
+    },
+    "ccp": {
+      "postAlgerie": "Algérie Poste",
+      "desc": "Affiche ton compte CCP à tes clients pour qu'ils te règlent par virement postal. Pas de vérification automatique — tu confirmes toi-même la commande une fois le paiement reçu.",
+      "titulaire": "Titulaire",
+      "numero": "Numéro CCP",
+      "cle": "Clé RIP",
+      "submit": "Enregistrer mon CCP",
+      "titulaireLabel": "Titulaire du compte",
+      "titulairePh": "Nom Prénom",
+      "numeroLabel": "Numéro de compte CCP",
+      "cleLabel": "Clé RIP (2 chiffres)"
+    },
+    "discord": {
+      "desc": "Crée un bot sur le Discord Developer Portal et colle son token ici.",
+      "serveur": "Serveur",
+      "token": {
+        "label": "Token du bot"
+      },
+      "serveurName": {
+        "label": "Nom du serveur (optionnel)",
+        "ph": "Mon serveur"
+      }
+    },
+    "shopify": {
+      "boutique": "Boutique",
+      "domaine": "Domaine",
+      "connectedOn": "Connecté le",
+      "webhooks": "Webhooks",
+      "webhooksOn": "6 actifs ✅",
+      "webhooksOff": "Inactifs ❌",
+      "backToHub": "← Retour au Hub"
+    },
+    "soon": {
+      "title": "Bientôt disponible",
+      "subtitle": "Cette intégration arrive prochainement sur SAMII OS.",
+      "badge": "En développement",
+      "continueToQg": "Continuer vers mon QG →",
+      "inProgress": {
+        "prefix": "L'intégration",
+        "suffix": "est en cours de développement.",
+        "line2": "Elle sera disponible dans une prochaine mise à jour de SAMII OS."
+      }
+    },
+    "telegram": {
+      "oneClick": "Un clic, et c'est fait — aucune saisie manuelle nécessaire.",
+      "cta": "Connecter avec Telegram",
+      "already": "Déjà connecté"
+    },
+    "whatsapp": {
+      "ownNumberActive": "Ton propre numéro est actif",
+      "depannage": {
+        "badge": "Dépannage actif",
+        "daysLeftShort": "j restant(s)",
+        "title": "Dépannage rapide — 3 jours",
+        "desc": "Utilise le numéro WhatsApp partagé d'OG Technology pendant 3 jours, le temps de créer ton propre compte. Utilisable une seule fois par boutique — passé ce délai, connecte ton propre numéro (case ci-dessous) pour continuer.",
+        "noLongerNeeded": "Ton propre numéro est déjà connecté, le dépannage n'est plus nécessaire.",
+        "activeLabel": "Actif",
+        "daysLeftLong": "jour(s) restant(s)",
+        "expired": "Dépannage déjà utilisé et terminé — connecte ton propre numéro ci-dessous pour continuer.",
+        "activate": "Activer le dépannage 3 jours"
+      },
+      "perso": {
+        "title": "Connecter mon propre WhatsApp",
+        "desc": "Solution définitive et gratuite pour démarrer : connecte ton propre compte Green API en 5 étapes.",
+        "step1": "Va sur green-api.com et crée un compte gratuit.",
+        "step2": "Clique sur \"Create an instance\" (choisis le plan \"Developer\" pour tester).",
+        "step3": "Scanne le QR code (ou utilise \"Link with phone number\") avec l'appli WhatsApp Business sur ton téléphone : Réglages → Appareils liés → Lier un appareil.",
+        "step4": "Une fois le statut passé sur \"Authorized\", récupère ton idInstance et ton apiTokenInstance (icône œil pour le révéler).",
+        "step5": "Colle ces deux valeurs ci-dessous et valide."
+      },
+      "apiId": {
+        "label": "ID API (idInstance)"
+      },
+      "apiToken": {
+        "label": "Token API (apiTokenInstance)",
+        "ph": "Ton apiTokenInstance"
+      }
+    }
   }
 }

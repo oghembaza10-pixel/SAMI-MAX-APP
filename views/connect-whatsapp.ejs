@@ -13,11 +13,11 @@
 
       <div style="text-align:center;margin-bottom:24px;">
         <div style="font-size:3rem;"><%= tool.emoji || "💬" %></div>
-        <h2 style="color:#fff;margin-top:10px;">Connecter <%= tool.label %></h2>
+        <h2 style="color:#fff;margin-top:10px;"><span data-i18n="connect.title">Connecter</span> <%= tool.label %></h2>
         <% if (actif) { %>
-          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ Ton propre numéro est actif</span>
+          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ <span data-i18n="connect.whatsapp.ownNumberActive">Ton propre numéro est actif</span></span>
         <% } else if (depannage && depannage.active) { %>
-          <span style="background:#f5a62322;color:#f5a623;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">🕒 Dépannage actif — <%= depannage.joursRestants %> j restant<%= depannage.joursRestants > 1 ? 's' : '' %></span>
+          <span style="background:#f5a62322;color:#f5a623;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">🕒 <span data-i18n="connect.whatsapp.depannage.badge">Dépannage actif</span> — <%= depannage.joursRestants %> <span data-i18n="connect.whatsapp.depannage.daysLeftShort">j restant(s)</span></span>
         <% } %>
       </div>
 
@@ -27,27 +27,27 @@
 
       <!-- ── CASE 1 : DÉPANNAGE ─────────────────────────────────────── -->
       <div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;margin-bottom:18px;">
-        <h3 style="color:#fff;margin:0 0 6px;font-size:1.05rem;">🕒 Dépannage rapide — 3 jours</h3>
-        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 18px;">
+        <h3 style="color:#fff;margin:0 0 6px;font-size:1.05rem;">🕒 <span data-i18n="connect.whatsapp.depannage.title">Dépannage rapide — 3 jours</span></h3>
+        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 18px;" data-i18n="connect.whatsapp.depannage.desc">
           Utilise le numéro WhatsApp partagé d'OG Technology pendant 3 jours, le temps de créer ton propre compte.
           Utilisable <b>une seule fois</b> par boutique — passé ce délai, connecte ton propre numéro (case ci-dessous) pour continuer.
         </p>
 
         <% if (actif) { %>
-          <p style="color:#666;font-size:0.82rem;text-align:center;">Ton propre numéro est déjà connecté, le dépannage n'est plus nécessaire.</p>
+          <p style="color:#666;font-size:0.82rem;text-align:center;" data-i18n="connect.whatsapp.depannage.noLongerNeeded">Ton propre numéro est déjà connecté, le dépannage n'est plus nécessaire.</p>
         <% } else if (depannage && depannage.active) { %>
           <div style="text-align:center;padding:12px;background:#f5a62311;border-radius:10px;color:#f5a623;font-weight:700;font-size:0.9rem;">
-            Actif — <%= depannage.joursRestants %> jour<%= depannage.joursRestants > 1 ? 's' : '' %> restant<%= depannage.joursRestants > 1 ? 's' : '' %>
+            <span data-i18n="connect.whatsapp.depannage.activeLabel">Actif</span> — <%= depannage.joursRestants %> <span data-i18n="connect.whatsapp.depannage.daysLeftLong">jour(s) restant(s)</span>
           </div>
         <% } else if (depannage && depannage.dejaUtilise) { %>
-          <div style="text-align:center;padding:12px;background:#e5555511;border-radius:10px;color:#e55;font-weight:700;font-size:0.9rem;">
+          <div style="text-align:center;padding:12px;background:#e5555511;border-radius:10px;color:#e55;font-weight:700;font-size:0.9rem;" data-i18n="connect.whatsapp.depannage.expired">
             Dépannage déjà utilisé et terminé — connecte ton propre numéro ci-dessous pour continuer.
           </div>
         <% } else { %>
           <form method="POST" action="/connect/whatsapp/depannage">
             <button type="submit"
                     style="display:block;width:100%;padding:13px;background:#f5a623;border:none;border-radius:10px;color:#000;font-weight:700;font-size:0.95rem;cursor:pointer;">
-              🕒 Activer le dépannage 3 jours
+              🕒 <span data-i18n="connect.whatsapp.depannage.activate">Activer le dépannage 3 jours</span>
             </button>
           </form>
         <% } %>
@@ -55,43 +55,44 @@
 
       <!-- ── CASE 2 : CONNEXION PERSO ────────────────────────────────── -->
       <div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;">
-        <h3 style="color:#fff;margin:0 0 6px;font-size:1.05rem;">🔗 Connecter mon propre WhatsApp</h3>
-        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 16px;">
+        <h3 style="color:#fff;margin:0 0 6px;font-size:1.05rem;">🔗 <span data-i18n="connect.whatsapp.perso.title">Connecter mon propre WhatsApp</span></h3>
+        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 16px;" data-i18n="connect.whatsapp.perso.desc">
           Solution définitive et gratuite pour démarrer : connecte ton propre compte Green API en 5 étapes.
         </p>
 
         <ol style="color:#999;font-size:0.82rem;line-height:1.9;margin:0 0 18px;padding-left:20px;">
-          <li>Va sur <b style="color:#25D366;">green-api.com</b> et crée un compte gratuit.</li>
-          <li>Clique sur <b>"Create an instance"</b> (choisis le plan "Developer" pour tester).</li>
-          <li>Scanne le QR code (ou utilise "Link with phone number") avec l'appli WhatsApp Business sur ton téléphone : Réglages → Appareils liés → Lier un appareil.</li>
-          <li>Une fois le statut passé sur <b>"Authorized"</b>, récupère ton <b>idInstance</b> et ton <b>apiTokenInstance</b> (icône œil pour le révéler).</li>
-          <li>Colle ces deux valeurs ci-dessous et valide.</li>
+          <li data-i18n="connect.whatsapp.perso.step1">Va sur <b style="color:#25D366;">green-api.com</b> et crée un compte gratuit.</li>
+          <li data-i18n="connect.whatsapp.perso.step2">Clique sur <b>"Create an instance"</b> (choisis le plan "Developer" pour tester).</li>
+          <li data-i18n="connect.whatsapp.perso.step3">Scanne le QR code (ou utilise "Link with phone number") avec l'appli WhatsApp Business sur ton téléphone : Réglages → Appareils liés → Lier un appareil.</li>
+          <li data-i18n="connect.whatsapp.perso.step4">Une fois le statut passé sur <b>"Authorized"</b>, récupère ton <b>idInstance</b> et ton <b>apiTokenInstance</b> (icône œil pour le révéler).</li>
+          <li data-i18n="connect.whatsapp.perso.step5">Colle ces deux valeurs ci-dessous et valide.</li>
         </ol>
 
         <form method="POST" action="/connect/whatsapp">
-          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">ID API (idInstance)</label>
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.whatsapp.apiId.label">ID API (idInstance)</label>
           <input type="text" name="api_id" value="<%= apiId %>" placeholder="Ex: 710722710666"
                  style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
 
-          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Token API (apiTokenInstance)</label>
-          <input type="password" name="api_token" placeholder="Ton apiTokenInstance"
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.whatsapp.apiToken.label">Token API (apiTokenInstance)</label>
+          <input type="password" name="api_token" data-i18n-placeholder="connect.whatsapp.apiToken.ph" placeholder="Ton apiTokenInstance"
                  style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
 
           <button type="submit"
                   style="display:block;width:100%;padding:13px;background:<%= tool.color %>;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
-            🔗 Utiliser ma clé <%= tool.label %>
+            🔗 <span data-i18n="connect.submit">Utiliser ma clé</span> <%= tool.label %>
           </button>
         </form>
       </div>
 
       <a href="/connect/tools"
          style="display:block;margin-top:16px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
-        ← Retour à mes outils
+        <span data-i18n="connect.back">← Retour à mes outils</span>
       </a>
 
     </div>
   </main>
 </div>
+<script src="/js/i18n.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>lucide.createIcons();</script>
 </body>

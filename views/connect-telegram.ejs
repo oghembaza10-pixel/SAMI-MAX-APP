@@ -12,25 +12,26 @@
     <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
       <div style="text-align:center;margin-bottom:30px;">
         <div style="font-size:3rem;">✈️</div>
-        <h2 style="color:#fff;margin-top:10px;">Connecter Telegram</h2>
-        <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+        <h2 style="color:#fff;margin-top:10px;"><span data-i18n="connect.title">Connecter</span> Telegram</h2>
+        <p style="color:#666;font-size:0.85rem;margin-top:6px;" data-i18n="connect.telegram.oneClick">
           Un clic, et c'est fait — aucune saisie manuelle nécessaire.
         </p>
       </div>
 
       <a href="https://t.me/SAMII_OGBot?start=admin_<%= workspaceId %>" target="_blank"
          style="display:block;text-align:center;width:100%;padding:13px;background:linear-gradient(135deg,#00c6ff,#0072ff);border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;text-decoration:none;">
-        ✈️ Connecter avec Telegram
+        ✈️ <span data-i18n="connect.telegram.cta">Connecter avec Telegram</span>
       </a>
 
       <% if (telegramActif) { %>
         <p style="text-align:center;color:#3ddc84;font-size:0.85rem;margin-top:20px;">
-          ✅ Déjà connecté
+          ✅ <span data-i18n="connect.telegram.already">Déjà connecté</span>
         </p>
       <% } %>
     </div>
   </main>
 </div>
+<script src="/js/i18n.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>lucide.createIcons();</script>
 </body>

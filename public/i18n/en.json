@@ -493,5 +493,120 @@
         }
       }
     }
+  },
+  "connect": {
+    "title": "Connect",
+    "activeKey": "Your personal key is active",
+    "connected": "Connected",
+    "submit": "Use my",
+    "back": "← Back to my tools",
+    "backToQg": "Back to HQ →",
+    "purpose": {
+      "prefix": "Connect your own",
+      "suffix": "account. Your credentials stay tied to your workspace, no one else can access them."
+    },
+    "optional": {
+      "label": "Optional.",
+      "prefix": "Without a personal key, SAMII automatically uses OG Technology's global",
+      "middle": "account to track your packages. Add your own key only if you have your own",
+      "suffix": "account and prefer it to be used instead."
+    },
+    "apiId": {
+      "label": "API ID",
+      "ph": "Your API ID"
+    },
+    "apiToken": {
+      "label": "API Token",
+      "ph": "Your API Token"
+    },
+    "impression": {
+      "connected": "Connected · syncing soon",
+      "soon": "Official permissions are coming soon — connect now in simplified mode.",
+      "field": {
+        "youtube": "Link or @handle of your YouTube channel",
+        "tiktok": "TikTok @handle",
+        "gmail": "Gmail address",
+        "google": "Gmail address linked to Google",
+        "linkedin": "Link to your LinkedIn profile or page"
+      }
+    },
+    "ccp": {
+      "postAlgerie": "Algeria Post",
+      "desc": "Show your CCP account to your customers so they can pay by postal transfer. No automatic verification — you confirm the order yourself once payment is received.",
+      "titulaire": "Account holder",
+      "numero": "CCP number",
+      "cle": "RIP key",
+      "submit": "Save my CCP",
+      "titulaireLabel": "Account holder name",
+      "titulairePh": "Full name",
+      "numeroLabel": "CCP account number",
+      "cleLabel": "RIP key (2 digits)"
+    },
+    "discord": {
+      "desc": "Create a bot on the Discord Developer Portal and paste its token here.",
+      "serveur": "Server",
+      "token": {
+        "label": "Bot token"
+      },
+      "serveurName": {
+        "label": "Server name (optional)",
+        "ph": "My server"
+      }
+    },
+    "shopify": {
+      "boutique": "Store",
+      "domaine": "Domain",
+      "connectedOn": "Connected on",
+      "webhooks": "Webhooks",
+      "webhooksOn": "6 active ✅",
+      "webhooksOff": "Inactive ❌",
+      "backToHub": "← Back to Hub"
+    },
+    "soon": {
+      "title": "Coming soon",
+      "subtitle": "This integration is coming soon to SAMII OS.",
+      "badge": "In development",
+      "continueToQg": "Continue to my HQ →",
+      "inProgress": {
+        "prefix": "The",
+        "suffix": "integration is under development.",
+        "line2": "It will be available in a future SAMII OS update."
+      }
+    },
+    "telegram": {
+      "oneClick": "One click and it's done — no manual entry needed.",
+      "cta": "Connect with Telegram",
+      "already": "Already connected"
+    },
+    "whatsapp": {
+      "ownNumberActive": "Your own number is active",
+      "depannage": {
+        "badge": "Fallback active",
+        "daysLeftShort": "day(s) left",
+        "title": "Quick fallback — 3 days",
+        "desc": "Use OG Technology's shared WhatsApp number for 3 days, while you set up your own account. One-time use per store — once it ends, connect your own number (below) to keep going.",
+        "noLongerNeeded": "Your own number is already connected, the fallback is no longer needed.",
+        "activeLabel": "Active",
+        "daysLeftLong": "day(s) left",
+        "expired": "Fallback already used and expired — connect your own number below to continue.",
+        "activate": "Activate 3-day fallback"
+      },
+      "perso": {
+        "title": "Connect my own WhatsApp",
+        "desc": "The permanent, free way to start: connect your own Green API account in 5 steps.",
+        "step1": "Go to green-api.com and create a free account.",
+        "step2": "Click \"Create an instance\" (choose the \"Developer\" plan to test).",
+        "step3": "Scan the QR code (or use \"Link with phone number\") with the WhatsApp Business app on your phone: Settings → Linked devices → Link a device.",
+        "step4": "Once the status shows \"Authorized\", grab your idInstance and apiTokenInstance (eye icon to reveal it).",
+        "step5": "Paste both values below and confirm."
+      },
+      "apiId": {
+        "label": "API ID (idInstance)"
+      },
+      "apiToken": {
+        "label": "API Token (apiTokenInstance)",
+        "ph": "Your apiTokenInstance"
+      }
+    }
   }
 }

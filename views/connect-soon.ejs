@@ -24,8 +24,8 @@
             <div class="hero-overlay"></div>
             <div class="hero-text-zone">
                 <span class="hero-eyebrow">OG Technology</span>
-                <h1>Bientôt disponible</h1>
-                <p>Cette intégration arrive prochainement sur SAMII OS.</p>
+                <h1 data-i18n="connect.soon.title">Bientôt disponible</h1>
+                <p data-i18n="connect.soon.subtitle">Cette intégration arrive prochainement sur SAMII OS.</p>
             </div>
         </header>
 
@@ -37,17 +37,17 @@
                 </div>
                 <h2><%= tool.label %></h2>
                 <p class="connect-soon-card__text">
-                    L'intégration <b><%= tool.label %></b> est en cours de développement.<br>
-                    Elle sera disponible dans une prochaine mise à jour de SAMII OS.
+                    <span data-i18n="connect.soon.inProgress.prefix">L'intégration</span> <b><%= tool.label %></b> <span data-i18n="connect.soon.inProgress.suffix">est en cours de développement.</span><br>
+                    <span data-i18n="connect.soon.inProgress.line2">Elle sera disponible dans une prochaine mise à jour de SAMII OS.</span>
                 </p>
-                <span class="og-badge og-badge--soon">⏳ En développement</span>
+                <span class="og-badge og-badge--soon">⏳ <span data-i18n="connect.soon.badge">En développement</span></span>
             </div>
 
             <div class="connect-soon-actions">
-                <a href="/connect/tools" class="connect-btn connect-btn--primary">
+                <a href="/connect/tools" class="connect-btn connect-btn--primary" data-i18n="connect.back">
                     ← Retour à mes outils
                 </a>
-                <a href="/qg" class="connect-btn connect-btn--cta">
+                <a href="/qg" class="connect-btn connect-btn--cta" data-i18n="connect.soon.continueToQg">
                     Continuer vers mon QG →
                 </a>
             </div>
@@ -58,6 +58,7 @@
 
 </div>
 
+<script src="/js/i18n.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
     if (typeof lucide !== "undefined") lucide.createIcons();

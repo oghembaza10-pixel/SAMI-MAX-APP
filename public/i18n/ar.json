@@ -493,5 +493,120 @@
         }
       }
     }
+  },
+  "connect": {
+    "title": "ربط",
+    "activeKey": "مفتاحك الشخصي نشط",
+    "connected": "متصل",
+    "submit": "استخدام مفتاحي",
+    "back": "← الرجوع إلى أدواتي",
+    "backToQg": "الرجوع إلى المقر ←",
+    "purpose": {
+      "prefix": "اربط حسابك الخاص في",
+      "suffix": "تبقى بياناتك مرتبطة بمساحة عملك، لا أحد آخر يمكنه الوصول إليها."
+    },
+    "optional": {
+      "label": "اختياري.",
+      "prefix": "بدون مفتاح شخصي، يستخدم SAMII تلقائيًا حساب",
+      "middle": "العام الخاص بـ OG Technology لتتبع طرودك. أضف مفتاحك الخاص فقط إذا كان لديك حساب",
+      "suffix": "خاص بك وتفضل استخدامه بدلاً من ذلك."
+    },
+    "apiId": {
+      "label": "معرّف API",
+      "ph": "معرّف API الخاص بك"
+    },
+    "apiToken": {
+      "label": "رمز API",
+      "ph": "رمز API الخاص بك"
+    },
+    "impression": {
+      "connected": "متصل · قريبًا المزامنة",
+      "soon": "الأذونات الرسمية قادمة قريبًا — اتصل الآن في الوضع المبسط.",
+      "field": {
+        "youtube": "رابط أو معرّف @ لقناتك على يوتيوب",
+        "tiktok": "معرّف @ على تيك توك",
+        "gmail": "عنوان Gmail",
+        "google": "عنوان Gmail المرتبط بـ Google",
+        "linkedin": "رابط ملفك الشخصي أو صفحتك على LinkedIn"
+      }
+    },
+    "ccp": {
+      "postAlgerie": "بريد الجزائر",
+      "desc": "اعرض حساب CCP الخاص بك لعملائك ليدفعوا عبر التحويل البريدي. لا يوجد تحقق تلقائي — أنت من يؤكد الطلب بنفسك بعد استلام الدفع.",
+      "titulaire": "صاحب الحساب",
+      "numero": "رقم CCP",
+      "cle": "مفتاح RIP",
+      "submit": "حفظ حساب CCP",
+      "titulaireLabel": "اسم صاحب الحساب",
+      "titulairePh": "الاسم الكامل",
+      "numeroLabel": "رقم حساب CCP",
+      "cleLabel": "مفتاح RIP (رقمان)"
+    },
+    "discord": {
+      "desc": "أنشئ بوت على Discord Developer Portal والصق رمزه هنا.",
+      "serveur": "الخادم",
+      "token": {
+        "label": "رمز البوت"
+      },
+      "serveurName": {
+        "label": "اسم الخادم (اختياري)",
+        "ph": "خادمي"
+      }
+    },
+    "shopify": {
+      "boutique": "المتجر",
+      "domaine": "النطاق",
+      "connectedOn": "تاريخ الاتصال",
+      "webhooks": "Webhooks",
+      "webhooksOn": "6 نشطة ✅",
+      "webhooksOff": "غير نشطة ❌",
+      "backToHub": "← الرجوع إلى المركز"
+    },
+    "soon": {
+      "title": "قريبًا",
+      "subtitle": "هذا الربط قادم قريبًا إلى SAMII OS.",
+      "badge": "قيد التطوير",
+      "continueToQg": "متابعة إلى مقري ←",
+      "inProgress": {
+        "prefix": "ربط",
+        "suffix": "قيد التطوير حاليًا.",
+        "line2": "سيكون متاحًا في تحديث قادم لـ SAMII OS."
+      }
+    },
+    "telegram": {
+      "oneClick": "نقرة واحدة وانتهى الأمر — لا حاجة لإدخال يدوي.",
+      "cta": "الربط عبر Telegram",
+      "already": "متصل بالفعل"
+    },
+    "whatsapp": {
+      "ownNumberActive": "رقمك الخاص نشط",
+      "depannage": {
+        "badge": "الحل المؤقت نشط",
+        "daysLeftShort": "يوم متبقٍ",
+        "title": "حل سريع مؤقت — 3 أيام",
+        "desc": "استخدم رقم واتساب المشترك الخاص بـ OG Technology لمدة 3 أيام، ريثما تنشئ حسابك الخاص. الاستخدام مرة واحدة فقط لكل متجر — بعد انتهاء المدة، اربط رقمك الخاص (أدناه) للمتابعة.",
+        "noLongerNeeded": "رقمك الخاص متصل بالفعل، لم تعد بحاجة إلى الحل المؤقت.",
+        "activeLabel": "نشط",
+        "daysLeftLong": "يوم متبقٍ",
+        "expired": "انتهى الحل المؤقت واستُخدم بالفعل — اربط رقمك الخاص أدناه للمتابعة.",
+        "activate": "تفعيل الحل المؤقت لمدة 3 أيام"
+      },
+      "perso": {
+        "title": "ربط رقم واتساب الخاص بي",
+        "desc": "الحل الدائم والمجاني للبدء: اربط حساب Green API الخاص بك في 5 خطوات.",
+        "step1": "اذهب إلى green-api.com وأنشئ حسابًا مجانيًا.",
+        "step2": "انقر على \"Create an instance\" (اختر خطة \"Developer\" للتجربة).",
+        "step3": "امسح رمز QR (أو استخدم \"Link with phone number\") بتطبيق WhatsApp Business على هاتفك: الإعدادات ← الأجهزة المرتبطة ← ربط جهاز.",
+        "step4": "بمجرد أن تصبح الحالة \"Authorized\"، احصل على idInstance و apiTokenInstance (أيقونة العين لإظهاره).",
+        "step5": "الصق القيمتين أدناه وأكّد."
+      },
+      "apiId": {
+        "label": "معرّف API (idInstance)"
+      },
+      "apiToken": {
+        "label": "رمز API (apiTokenInstance)",
+        "ph": "apiTokenInstance الخاص بك"
+      }
+    }
   }
 }
