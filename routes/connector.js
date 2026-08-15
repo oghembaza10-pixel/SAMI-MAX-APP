@@ -245,7 +245,6 @@ router.post("/discord", requireAuth, async (req, res) => {
 const TRANSPORTEUR_TOOLS = [
     "yalidine", "amana", "ctm", "dhl", "aramex",
     "colissimo", "chronopost", "mondialrelay", "dpd", "ups",
-    "whatsapp",
 ];
 
 TRANSPORTEUR_TOOLS.forEach(toolId => {
@@ -312,6 +311,118 @@ TRANSPORTEUR_TOOLS.forEach(toolId => {
             });
         }
     });
+});
+
+// ── WHATSAPP — cas particulier : deux façons de démarrer ──────────────────
+// 1) Dépannage : le marchand utilise le numéro partagé SAMII, 3 jours, une
+//    seule fois (pas un palier gratuit renouvelable — sinon tout le monde y
+//    reste et le numéro partagé prend un volume dangereux, voir
+//    services/whatsapp.js). 2) Connexion perso Green API (identique aux
+//    transporteurs, mais nécessite sa propre vue avec les deux options
+//    présentées ensemble.
+const DEPANNAGE_DUREE_MS = 3 * 24 * 60 * 60 * 1000;
+
+function depannageState(config) {
+    if (!config || config.mode !== "depannage") {
+        return config?.depannageUsedAt ? { dejaUtilise: true, active: false, joursRestants: 0 } : null;
+    }
+    const expiresAt = config.expiresAt ? new Date(config.expiresAt).getTime() : 0;
+    const restant = expiresAt - Date.now();
+    return {
+        dejaUtilise: true,
+        active: restant > 0,
+        joursRestants: Math.max(0, Math.ceil(restant / (24 * 60 * 60 * 1000))),
+    };
+}
+
+router.get("/whatsapp", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId || "";
+    let actif = false;
+    let apiId = "";
+    let depannage = null;
+    try {
+        if (workspaceId) {
+            const c = await connectorService.getOne(workspaceId, "whatsapp");
+            if (c) {
+                apiId = c.config?.apiId || "";
+                actif = c.actif === true && !!apiId;
+                depannage = depannageState(c.config);
+            }
+        }
+    } catch (err) {
+        console.error("❌ GET /connect/whatsapp (lecture) :", err.message);
+    }
+    res.render("connect-whatsapp", {
+        workspaceId,
+        tool: TOOLS.find(t => t.id === "whatsapp"),
+        actif,
+        apiId,
+        depannage,
+        error: null,
+    });
+});
+
+router.post("/whatsapp", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId;
+    if (!workspaceId) return res.redirect("/hub");
+    try {
+        const apiId = (req.body.api_id || "").trim();
+        const apiToken = (req.body.api_token || "").trim();
+        if (!apiId || !apiToken) {
+            const c = await connectorService.getOne(workspaceId, "whatsapp");
+            return res.render("connect-whatsapp", {
+                workspaceId,
+                tool: TOOLS.find(t => t.id === "whatsapp"),
+                actif: false,
+                apiId: "",
+                depannage: depannageState(c?.config),
+                error: "Renseigne ton ID API et ton Token API.",
+            });
+        }
+        await connectorService.save(workspaceId, "whatsapp", {
+            apiId, apiToken, connectedAt: new Date().toISOString(),
+        });
+        return res.render("connect-whatsapp", {
+            workspaceId,
+            tool: TOOLS.find(t => t.id === "whatsapp"),
+            actif: true,
+            apiId,
+            depannage: null,
+            error: null,
+        });
+    } catch (err) {
+        console.error("❌ POST /connect/whatsapp :", err);
+        res.render("connect-whatsapp", {
+            workspaceId,
+            tool: TOOLS.find(t => t.id === "whatsapp"),
+            actif: false,
+            apiId: "",
+            depannage: null,
+            error: "Erreur interne. Réessaie.",
+        });
+    }
+});
+
+router.post("/whatsapp/depannage", requireAuth, async (req, res) => {
+    const workspaceId = req.session?.workspaceId;
+    if (!workspaceId) return res.redirect("/hub");
+    try {
+        const existing = await connectorService.getOne(workspaceId, "whatsapp");
+        if (existing?.config?.depannageUsedAt) {
+            return res.redirect("/connect/whatsapp");
+        }
+        const now = new Date();
+        await connectorService.save(workspaceId, "whatsapp", {
+            mode: "depannage",
+            depannageUsedAt: now.toISOString(),
+            expiresAt: new Date(now.getTime() + DEPANNAGE_DUREE_MS).toISOString(),
+            warned: false,
+        });
+        return res.redirect("/connect/whatsapp");
+    } catch (err) {
+        console.error("❌ POST /connect/whatsapp/depannage :", err);
+        res.redirect("/connect/whatsapp");
+    }
 });
 
 // ── MODE IMPRESSION — YouTube, TikTok, Gmail, Google, WhatsApp, LinkedIn ──

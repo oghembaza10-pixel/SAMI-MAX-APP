@@ -52,6 +52,11 @@ async function traiterReponseConfirmation(sender, workspaceId, text) {
 }
 
 // ── Résout le workspace propriétaire de l'instance Green API ──────────
+// Fiable uniquement pour une instance personnelle (1 instance = 1 marchand).
+// Sur l'instance partagée de dépannage, plusieurs marchands peuvent être
+// actifs en même temps — cette fonction ne trouvera jamais rien pour elle
+// (aucun connecteur de dépannage n'y stocke d'apiId), ce qui est volontaire :
+// voir resolveWorkspaceEntrant ci-dessous pour la vraie résolution.
 async function getWorkspaceByInstance(idInstance) {
     try {
         const rows = await db.query(
@@ -62,6 +67,25 @@ async function getWorkspaceByInstance(idInstance) {
     } catch {
         return "";
     }
+}
+
+// ── Résout le marchand d'un message entrant ────────────────────────────
+// 1) D'abord via une commande WhatsApp en attente pour ce numéro : marche
+//    aussi bien sur une instance perso que sur l'instance de dépannage
+//    partagée, puisqu'une telle commande n'a pu être créée que par un
+//    marchand effectivement autorisé à envoyer au moment de sa création.
+// 2) Sinon, repli sur la correspondance instance → marchand — utile pour
+//    une question nouvelle du client sur son instance perso, mais qui ne
+//    résout jamais rien sur l'instance partagée (ambiguë entre marchands).
+async function resolveWorkspaceEntrant(idInstance, sender) {
+    try {
+        const rows = await db.query(
+            `SELECT workspace_id FROM commandes WHERE contact_id = $1 AND source = 'whatsapp' AND statut = 'en attente' ORDER BY created_at DESC LIMIT 1`,
+            [sender]
+        );
+        if (rows[0]?.workspace_id) return rows[0].workspace_id;
+    } catch { /* ignore, on retombe sur l'instance */ }
+    return await getWorkspaceByInstance(idInstance);
 }
 
 async function getMetierWorkspace(workspaceId) {
@@ -98,15 +122,15 @@ router.post("/", async (req, res) => {
 
         if (!idInstance || !textMessage) return;
 
-        const workspaceId = await getWorkspaceByInstance(idInstance);
-        if (!workspaceId) {
-            console.log(`⚠️ WhatsApp webhook : aucune instance connectée pour idInstance=${idInstance}`);
-            return;
-        }
-
         const senderName = senderData.senderName || senderData.chatName || "Client";
         const sender      = (senderData.sender || senderData.chatId || "").replace("@c.us", "");
         const text        = textMessage.trim();
+
+        const workspaceId = await resolveWorkspaceEntrant(idInstance, sender);
+        if (!workspaceId) {
+            console.log(`⚠️ WhatsApp webhook : marchand introuvable pour idInstance=${idInstance}, sender=${sender}`);
+            return;
+        }
 
         console.log(`💬 WhatsApp [${senderName}] (workspace ${workspaceId}) : ${text}`);
 

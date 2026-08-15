@@ -2,51 +2,92 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Connecter WhatsApp — OG Technology</title>
+  <title>Connecter <%= tool.label %> — OG Technology</title>
   <link rel="stylesheet" href="/css/hub-premium.css">
 </head>
 <body>
 <div class="og-capital">
-  <%- include("../partials/sidebar") %>
-  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
-    <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
+  <%- include("partials/sidebar") %>
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">
+    <div style="max-width:520px;width:100%;">
 
-      <div style="text-align:center;margin-bottom:30px;">
-        <div style="font-size:3rem;">💬</div>
-        <h2 style="color:#fff;margin-top:10px;">Connecter WhatsApp</h2>
-        <p style="color:#666;font-size:0.85rem;margin-top:6px;">
-          Entre ton numéro WhatsApp pour recevoir les notifications commandes
-        </p>
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:3rem;"><%= tool.emoji || "💬" %></div>
+        <h2 style="color:#fff;margin-top:10px;">Connecter <%= tool.label %></h2>
+        <% if (actif) { %>
+          <span style="background:#00ff8822;color:#00ff88;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">✅ Ton propre numéro est actif</span>
+        <% } else if (depannage && depannage.active) { %>
+          <span style="background:#f5a62322;color:#f5a623;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;">🕒 Dépannage actif — <%= depannage.joursRestants %> j restant<%= depannage.joursRestants > 1 ? 's' : '' %></span>
+        <% } %>
       </div>
 
-      <form method="POST" action="/connect/whatsapp">
-        <input type="hidden" name="shop" value="<%= shop %>">
+      <% if (error) { %>
+        <p style="color:#e55;font-size:0.85rem;margin-bottom:14px;text-align:center;background:#e5555522;padding:10px;border-radius:8px;"><%= error %></p>
+      <% } %>
 
-        <div style="margin-bottom:16px;">
-          <label style="color:#888;font-size:0.82rem;display:block;margin-bottom:6px;">Numéro WhatsApp</label>
-          <input
-            type="tel"
-            name="whatsapp_phone"
-            value="<%= whatsappPhone %>"
-            placeholder="ex: +213XXXXXXXXX"
-            style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:12px 16px;color:#fff;font-size:0.9rem;outline:none;"
-          >
-        </div>
+      <!-- ── CASE 1 : DÉPANNAGE ─────────────────────────────────────── -->
+      <div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;margin-bottom:18px;">
+        <h3 style="color:#fff;margin:0 0 6px;font-size:1.05rem;">🕒 Dépannage rapide — 3 jours</h3>
+        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 18px;">
+          Utilise le numéro WhatsApp partagé d'OG Technology pendant 3 jours, le temps de créer ton propre compte.
+          Utilisable <b>une seule fois</b> par boutique — passé ce délai, connecte ton propre numéro (case ci-dessous) pour continuer.
+        </p>
 
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-          <span style="color:#888;font-size:0.85rem;">Activer les notifications</span>
-          <label style="position:relative;width:44px;height:24px;">
-            <input type="checkbox" name="whatsapp_actif" value="true" <%= whatsappActif ? "checked" : "" %>
-              style="opacity:0;width:0;height:0;">
-            <span style="position:absolute;inset:0;background:<%= whatsappActif ? '#25d366' : '#333' %>;border-radius:24px;cursor:pointer;"></span>
-          </label>
-        </div>
+        <% if (actif) { %>
+          <p style="color:#666;font-size:0.82rem;text-align:center;">Ton propre numéro est déjà connecté, le dépannage n'est plus nécessaire.</p>
+        <% } else if (depannage && depannage.active) { %>
+          <div style="text-align:center;padding:12px;background:#f5a62311;border-radius:10px;color:#f5a623;font-weight:700;font-size:0.9rem;">
+            Actif — <%= depannage.joursRestants %> jour<%= depannage.joursRestants > 1 ? 's' : '' %> restant<%= depannage.joursRestants > 1 ? 's' : '' %>
+          </div>
+        <% } else if (depannage && depannage.dejaUtilise) { %>
+          <div style="text-align:center;padding:12px;background:#e5555511;border-radius:10px;color:#e55;font-weight:700;font-size:0.9rem;">
+            Dépannage déjà utilisé et terminé — connecte ton propre numéro ci-dessous pour continuer.
+          </div>
+        <% } else { %>
+          <form method="POST" action="/connect/whatsapp/depannage">
+            <button type="submit"
+                    style="display:block;width:100%;padding:13px;background:#f5a623;border:none;border-radius:10px;color:#000;font-weight:700;font-size:0.95rem;cursor:pointer;">
+              🕒 Activer le dépannage 3 jours
+            </button>
+          </form>
+        <% } %>
+      </div>
 
-        <button type="submit"
-          style="width:100%;padding:13px;background:linear-gradient(135deg,#00ff88,#00c853);border:none;border-radius:10px;color:#000;font-weight:700;font-size:0.95rem;cursor:pointer;">
-          💾 Sauvegarder
-        </button>
-      </form>
+      <!-- ── CASE 2 : CONNEXION PERSO ────────────────────────────────── -->
+      <div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;">
+        <h3 style="color:#fff;margin:0 0 6px;font-size:1.05rem;">🔗 Connecter mon propre WhatsApp</h3>
+        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 16px;">
+          Solution définitive et gratuite pour démarrer : connecte ton propre compte Green API en 5 étapes.
+        </p>
+
+        <ol style="color:#999;font-size:0.82rem;line-height:1.9;margin:0 0 18px;padding-left:20px;">
+          <li>Va sur <b style="color:#25D366;">green-api.com</b> et crée un compte gratuit.</li>
+          <li>Clique sur <b>"Create an instance"</b> (choisis le plan "Developer" pour tester).</li>
+          <li>Scanne le QR code (ou utilise "Link with phone number") avec l'appli WhatsApp Business sur ton téléphone : Réglages → Appareils liés → Lier un appareil.</li>
+          <li>Une fois le statut passé sur <b>"Authorized"</b>, récupère ton <b>idInstance</b> et ton <b>apiTokenInstance</b> (icône œil pour le révéler).</li>
+          <li>Colle ces deux valeurs ci-dessous et valide.</li>
+        </ol>
+
+        <form method="POST" action="/connect/whatsapp">
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">ID API (idInstance)</label>
+          <input type="text" name="api_id" value="<%= apiId %>" placeholder="Ex: 710722710666"
+                 style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
+
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Token API (apiTokenInstance)</label>
+          <input type="password" name="api_token" placeholder="Ton apiTokenInstance"
+                 style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+
+          <button type="submit"
+                  style="display:block;width:100%;padding:13px;background:<%= tool.color %>;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
+            🔗 Utiliser ma clé <%= tool.label %>
+          </button>
+        </form>
+      </div>
+
+      <a href="/connect/tools"
+         style="display:block;margin-top:16px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        ← Retour à mes outils
+      </a>
 
     </div>
   </main>

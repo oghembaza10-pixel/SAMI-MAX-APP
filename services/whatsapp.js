@@ -9,23 +9,32 @@ const CONFIG            = require("../config");
 const orchestrator      = require("../brain/orchestrator");
 const connectorService  = require("./connectorService");
 
-// ── CREDENTIALS : instance du marchand en priorité, sinon canal global SAMII ──
+// ── CREDENTIALS : instance perso du marchand, ou dépannage (3 jours, choisi
+// explicitement par le marchand) sur le canal partagé SAMII. Plus de repli
+// automatique implicite : un marchand qui n'a rien connecté n'envoie rien —
+// le numéro partagé ne peut techniquement servir qu'un marchand actif à la
+// fois côté réception (voir routes/webhook-whatsapp.js), donc il ne doit
+// jamais s'activer sans un choix explicite et limité dans le temps.
 async function resolveCredentials(workspaceId) {
-    if (workspaceId) {
-        try {
-            // Le formulaire générique /connect/whatsapp (routes/connector.js)
-            // enregistre { apiId, apiToken } — mêmes noms que tous les autres
-            // transporteurs de la boucle TRANSPORTEUR_TOOLS.
-            const connecteur = await connectorService.getOne(workspaceId, "whatsapp");
-            const { apiId, apiToken } = connecteur?.config || {};
-            if (connecteur?.actif && apiId && apiToken) {
-                return { instanceId: apiId, apiToken };
-            }
-        } catch (err) {
-            console.error("❌ WhatsApp resolveCredentials :", err.message);
+    if (!workspaceId) return { instanceId: null, apiToken: null };
+    try {
+        // Le formulaire générique /connect/whatsapp (routes/connector.js)
+        // enregistre { apiId, apiToken } — mêmes noms que tous les autres
+        // transporteurs de la boucle TRANSPORTEUR_TOOLS.
+        const connecteur = await connectorService.getOne(workspaceId, "whatsapp");
+        if (!connecteur?.actif) return { instanceId: null, apiToken: null };
+
+        const { apiId, apiToken, mode, expiresAt } = connecteur.config || {};
+        if (apiId && apiToken) {
+            return { instanceId: apiId, apiToken };
         }
+        if (mode === "depannage" && expiresAt && new Date(expiresAt).getTime() > Date.now()) {
+            return { instanceId: CONFIG.WHATSAPP.INSTANCE, apiToken: CONFIG.WHATSAPP.API_KEY, depannage: true };
+        }
+    } catch (err) {
+        console.error("❌ WhatsApp resolveCredentials :", err.message);
     }
-    return { instanceId: CONFIG.WHATSAPP.INSTANCE, apiToken: CONFIG.WHATSAPP.API_KEY };
+    return { instanceId: null, apiToken: null };
 }
 
 // ── ENVOIE UN MESSAGE ────────────────────────────────
