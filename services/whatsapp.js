@@ -8,6 +8,9 @@ const axios             = require("axios");
 const CONFIG            = require("../config");
 const orchestrator      = require("../brain/orchestrator");
 const connectorService  = require("./connectorService");
+const notify            = require("./notify");
+
+const UN_JOUR_MS = 24 * 60 * 60 * 1000;
 
 // ── CREDENTIALS : instance perso du marchand, ou dépannage (3 jours, choisi
 // explicitement par le marchand) sur le canal partagé SAMII. Plus de repli
@@ -35,6 +38,45 @@ async function resolveCredentials(workspaceId) {
         console.error("❌ WhatsApp resolveCredentials :", err.message);
     }
     return { instanceId: null, apiToken: null };
+}
+
+// ── PRÉVENIR LE MARCHAND AVANT LA FIN DU DÉPANNAGE ─────────────────────────
+// Appelée en tâche de fond (non-bloquant) depuis une page visitée souvent
+// (le QG) plutôt que par une tâche planifiée — pas de cron dans cette appli,
+// et ça reste largement assez réactif pour un délai de 3 jours. Chaque
+// avertissement (bientôt fini / terminé) ne part qu'une seule fois, marqué
+// dans le connecteur pour ne pas spammer à chaque rafraîchissement du QG.
+async function verifierEtNotifierDepannage(workspaceId) {
+    if (!workspaceId) return;
+    try {
+        const connecteur = await connectorService.getOne(workspaceId, "whatsapp");
+        const config = connecteur?.config;
+        if (!connecteur?.actif || config?.mode !== "depannage" || !config.expiresAt) return;
+
+        const restant = new Date(config.expiresAt).getTime() - Date.now();
+
+        if (restant <= 0) {
+            if (config.warnedExpired) return;
+            await notify.notifyWorkspace(workspaceId, {
+                title: "❌ WhatsApp dépannage terminé",
+                body: "Le numéro de secours n'est plus actif — connecte ton propre WhatsApp pour continuer à recevoir les confirmations automatiques.",
+                url: "/connect/whatsapp",
+            });
+            await connectorService.save(workspaceId, "whatsapp", { warnedExpired: true });
+            return;
+        }
+
+        if (restant <= UN_JOUR_MS && !config.warned) {
+            await notify.notifyWorkspace(workspaceId, {
+                title: "⏳ WhatsApp dépannage bientôt terminé",
+                body: "Il te reste moins d'un jour sur le numéro partagé — connecte ton propre WhatsApp pour ne pas perdre les confirmations automatiques.",
+                url: "/connect/whatsapp",
+            });
+            await connectorService.save(workspaceId, "whatsapp", { warned: true });
+        }
+    } catch (err) {
+        console.error("❌ WhatsApp verifierEtNotifierDepannage :", err.message);
+    }
 }
 
 // ── ENVOIE UN MESSAGE ────────────────────────────────
@@ -86,4 +128,4 @@ async function message(msg) {
     });
 }
 
-module.exports = { send, message, demanderConfirmation };
+module.exports = { send, message, demanderConfirmation, verifierEtNotifierDepannage };

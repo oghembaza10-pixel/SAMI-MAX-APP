@@ -262,6 +262,12 @@ router.get("/qg-data", requireAuth, async (req, res) => {
         const workspace = wsRows[0];
         if (!workspace) return res.status(404).json({ error: "Workspace introuvable." });
 
+        // Tâche de fond, non-bloquante : prévient le marchand quand son
+        // dépannage WhatsApp approche de la fin ou vient d'expirer — pas de
+        // cron dans cette appli, le QG est visité assez souvent pour un
+        // délai de 3 jours (voir services/whatsapp.js).
+        require("../services/whatsapp").verifierEtNotifierDepannage(workspaceId).catch(() => {});
+
         const parcours = typeParcours(workspace.metier);
 
         if (parcours === "rdv") {
