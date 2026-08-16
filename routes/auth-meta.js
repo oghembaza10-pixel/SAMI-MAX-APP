@@ -31,10 +31,13 @@ const SCOPES = [
     "pages_manage_posts",
     "pages_manage_engagement",
     "pages_read_engagement",
-    "instagram_basic",
-    "instagram_manage_messages",
-    "instagram_content_publish",
-    "instagram_manage_comments",
+    // Renommées par Meta début 2025 (préfixe "instagram_business_" obligatoire
+    // depuis, les anciens noms "instagram_basic" etc. sont désormais rejetés
+    // par le dialogue OAuth avec "Invalid Scopes").
+    "instagram_business_basic",
+    "instagram_business_manage_messages",
+    "instagram_business_content_publish",
+    "instagram_business_manage_comments",
 ].join(",");
 
 function requireAuth(req, res, next) {
