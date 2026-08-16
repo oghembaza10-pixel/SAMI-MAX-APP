@@ -94,7 +94,10 @@ module.exports = {
     API_KEY: process.env.RUNWARE_API_KEY || "",
 },
     OPENROUTER: {
-        API_KEY: process.env.OPENROUTER_API_KEY || "",
+        // Nom réel de la variable sur Render : OPENROUTE_API_TOKEN (vérifié
+        // sur le dashboard) — fallback sur l'ancien nom au cas où il serait
+        // corrigé plus tard côté Render.
+        API_KEY: process.env.OPENROUTE_API_TOKEN || process.env.OPENROUTER_API_KEY || "",
     },
     // ==================================================
     // TELEGRAM

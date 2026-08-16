@@ -30,6 +30,78 @@ async function postWithRotation(body) {
     throw lastErr;
 }
 
+// ── RELAIS OPENROUTER : si Gemini est en panne ou en quota épuisé sur toutes
+// ses clés, SAMII continue de répondre aux clients et de confirmer/créer
+// leurs commandes via un modèle différent plutôt que de rester silencieux.
+// Volontairement un fournisseur DIFFÉRENT de Gemini (pas une autre variante
+// Google) pour une vraie redondance en cas de panne côté Google.
+const OPENROUTER_MODEL = "openai/gpt-4o-mini";
+const OPENROUTER_URL   = "https://openrouter.ai/api/v1/chat/completions";
+
+async function postOpenRouter(body) {
+    if (!CONFIG.OPENROUTER?.API_KEY) throw new Error("Clé OpenRouter absente (relais indisponible).");
+    return await axios.post(OPENROUTER_URL, body, {
+        headers: {
+            "Authorization": `Bearer ${CONFIG.OPENROUTER.API_KEY}`,
+            "Content-Type": "application/json",
+        },
+    });
+}
+
+// Convertit les déclarations d'outils au format Gemini (utilisées plus bas)
+// vers le format OpenAI/OpenRouter — une seule source de vérité (TOOLS),
+// jamais deux définitions à maintenir en double.
+function toOpenAiTools(geminiTools) {
+    return geminiTools[0].functionDeclarations.map(fn => ({
+        type: "function",
+        function: {
+            name: fn.name,
+            description: fn.description,
+            parameters: {
+                type: "object",
+                properties: Object.fromEntries(
+                    Object.entries(fn.parameters.properties).map(([key, val]) => [
+                        key, { type: (val.type || "STRING").toLowerCase(), description: val.description },
+                    ])
+                ),
+                required: fn.parameters.required || [],
+            },
+        },
+    }));
+}
+
+async function chatViaOpenRouter({ message, context = {}, useTools = false, history = [] }) {
+    const prompt = await SAMII_PROMPT(message, context);
+    const messages = [
+        ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.message })),
+        { role: "user", content: prompt },
+    ];
+    const body = { model: OPENROUTER_MODEL, messages };
+    if (useTools) body.tools = toOpenAiTools(TOOLS);
+
+    const response = await postOpenRouter(body);
+    const choice = response.data.choices?.[0];
+    const toolCall = choice?.message?.tool_calls?.[0];
+
+    if (toolCall) {
+        let args = {};
+        try { args = JSON.parse(toolCall.function.arguments || "{}"); } catch { /* ignore */ }
+        return {
+            type: "function_call",
+            provider: "openrouter",
+            name: toolCall.function.name,
+            args,
+            toolCallId: toolCall.id,
+            assistantMessage: choice.message,
+        };
+    }
+    return {
+        type: "text",
+        provider: "openrouter",
+        text: choice?.message?.content || "SAMII n'a pas su répondre, réessaie autrement.",
+    };
+}
+
 const TOOLS = [
     {
         functionDeclarations: [
@@ -129,6 +201,7 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
         if (functionCallPart) {
             return {
                 type: "function_call",
+                provider: "gemini",
                 name: functionCallPart.functionCall.name,
                 args: functionCallPart.functionCall.args || {},
                 // Requis par gemini-3.6-flash pour renvoyer un functionCall dans
@@ -140,6 +213,7 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
         const textPart = parts.find(p => p.text);
         return {
             type: "text",
+            provider: "gemini",
             text: textPart?.text || "SAMII n'a pas su répondre, réessaie autrement.",
         };
     } catch (err) {
@@ -150,7 +224,16 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
             return chat({ message, context, useTools, history }, retryCount + 1);
         }
         console.error("❌ Gemini :", err.response?.data || err.message);
-        return { type: "text", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
+        // Gemini est en panne ou toutes les clés sont en quota épuisé — on
+        // relaie vers OpenRouter (fournisseur différent) plutôt que de
+        // laisser le client sans réponse et sa commande/RDV non traité.
+        try {
+            console.warn("🔀 Relais OpenRouter (Gemini indisponible)...");
+            return await chatViaOpenRouter({ message, context, useTools, history });
+        } catch (fallbackErr) {
+            console.error("❌ OpenRouter (relais) :", fallbackErr.response?.data || fallbackErr.message);
+            return { type: "text", provider: "gemini", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
+        }
     }
 }
 
@@ -182,7 +265,28 @@ async function chatWithSearch({ message, context = {} }) {
     }
 }
 
-async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult, thoughtSignature }) {
+async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult, thoughtSignature, provider = "gemini", toolCallId, assistantMessage, history = [] }) {
+    // Le tour a démarré sur OpenRouter (Gemini indisponible pour ce tour) —
+    // on doit continuer sur OpenRouter : les formats "suite d'appel de
+    // fonction" de Gemini et OpenAI sont structurellement incompatibles
+    // (impossible de rejouer un functionCall Gemini en tool_call OpenAI).
+    if (provider === "openrouter") {
+        try {
+            const prompt = await SAMII_PROMPT(message, context);
+            const messages = [
+                ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.message })),
+                { role: "user", content: prompt },
+                assistantMessage,
+                { role: "tool", tool_call_id: toolCallId, content: JSON.stringify(functionResult) },
+            ];
+            const response = await postOpenRouter({ model: OPENROUTER_MODEL, messages });
+            const text = response.data.choices?.[0]?.message?.content;
+            return text || "C'est fait ✅";
+        } catch (err) {
+            console.error("❌ OpenRouter (function result) :", err.response?.data || err.message);
+            return "C'est fait ✅";
+        }
+    }
     try {
         const prompt = await SAMII_PROMPT(message, context);
         const modelPart = { functionCall: { name: functionName, args: functionArgs } };
@@ -231,4 +335,4 @@ async function receive(msg) {
     console.log("📥 Gemini receive :", msg);
 }
 
-module.exports = { send, chat, chatWithFunctionResult, chatWithSearch, summarize, receive, TOOLS };
+module.exports = { send, chat, chatWithFunctionResult, chatWithSearch, chatViaOpenRouter, summarize, receive, TOOLS };

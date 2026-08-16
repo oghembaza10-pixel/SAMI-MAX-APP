@@ -43,6 +43,10 @@ class SamiiPlanner {
                     functionArgs: result.args,
                     functionResult,
                     thoughtSignature: result.thoughtSignature,
+                    provider: result.provider,
+                    toolCallId: result.toolCallId,
+                    assistantMessage: result.assistantMessage,
+                    history,
                 });
                 return finalReply;
             }
