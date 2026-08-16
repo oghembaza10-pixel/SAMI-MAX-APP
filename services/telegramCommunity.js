@@ -7,7 +7,7 @@ const axios = require("axios");
 const memory = require("../brain/memory");
 const planner = require("../brain/planner");
 
-let cachedBotUsername = null;
+const botUsernameCache = new Map();
 
 function key(chatId) {
     return `tg_group_${chatId}`;
@@ -47,10 +47,11 @@ async function api(base, method, payload) {
 }
 
 async function getBotUsername(base) {
-    if (cachedBotUsername) return cachedBotUsername;
+    if (botUsernameCache.has(base)) return botUsernameCache.get(base);
     const bot = await api(base, "getMe", {});
-    cachedBotUsername = bot?.username || "";
-    return cachedBotUsername;
+    const username = bot?.username || "";
+    botUsernameCache.set(base, username);
+    return username;
 }
 
 async function isAdmin(base, chatId, userId) {
