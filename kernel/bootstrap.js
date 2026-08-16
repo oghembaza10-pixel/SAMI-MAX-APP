@@ -76,6 +76,9 @@ function registerScheduledJobs() {
 scheduler.add("0 9 * * *", "Guerre - compte à rebours communauté", guerreEngine.runDaily);
     scheduler.add("0 8 * * *", "Abonnement - rappel de renouvellement", abonnementEngine.runDailyRenewalCheck);
     scheduler.add("0 12 * * *", "Canal SAMII - post promo quotidien", canalEngine.runDaily);
+    const pageEngine = require("../engines/pageEngine");
+    scheduler.add("0 9,14,19 * * *", "Page Facebook - 3 posts/jour", pageEngine.runFacebook);
+    scheduler.add("15 9,14,19 * * *", "Page Instagram - 3 posts/jour", pageEngine.runInstagram);
     scheduler.start();
 }
 

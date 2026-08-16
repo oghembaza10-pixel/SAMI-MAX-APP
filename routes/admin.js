@@ -353,6 +353,16 @@ router.get("/", requireAdmin, async (req, res) => {
         <div id="canal-poster-resultat" style="margin-top:12px; font-size:12.5px; white-space:pre-wrap;"></div>
     </div>
 
+    <div class="section-title">📘 Pages Facebook / Instagram</div>
+    <div class="pa-row" style="margin-bottom:30px;">
+        <div class="pa-contact" style="margin-bottom:12px;">Publication automatique 3x/jour (9h, 14h, 19h) sur chaque réseau. Nécessite la Page Facebook + le compte Instagram Business d'OG Technology connectés via Meta OAuth (workspace ${escapeHtml(CONFIG.META.OG_WORKSPACE_ID)}).</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="page-poster-fb-btn" class="ccp-confirm-btn">📤 Publier sur Facebook (test)</button>
+            <button id="page-poster-ig-btn" class="ccp-confirm-btn">📤 Publier sur Instagram (test)</button>
+        </div>
+        <div id="page-poster-resultat" style="margin-top:12px; font-size:12.5px; white-space:pre-wrap;"></div>
+    </div>
+
     <div class="section-title">🤝 Candidatures Partenariat</div>
     <div class="pa-filters" id="pa-filters">
         <button data-filter="all" class="active">Toutes</button>
@@ -412,6 +422,29 @@ document.getElementById("canal-poster-btn").addEventListener("click", async () =
     btn.disabled = false;
     btn.textContent = "📤 Publier maintenant (test)";
 });
+
+function posterPage(btnId, endpoint, texteDefaut) {
+    document.getElementById(btnId).addEventListener("click", async () => {
+        const btn = document.getElementById(btnId);
+        const zone = document.getElementById("page-poster-resultat");
+        btn.disabled = true;
+        btn.textContent = "⏳ Génération + publication...";
+        zone.textContent = "";
+        try {
+            const res = await fetch(endpoint, { method: "POST" });
+            const json = await res.json();
+            zone.textContent = json.success
+                ? "✅ Publié :\\n\\n" + json.texte
+                : "❌ Échec : " + (json.error || "erreur inconnue") + (json.texte ? "\\n\\nTexte généré (non publié) :\\n" + json.texte : "");
+        } catch (err) {
+            zone.textContent = "❌ Erreur réseau.";
+        }
+        btn.disabled = false;
+        btn.textContent = texteDefaut;
+    });
+}
+posterPage("page-poster-fb-btn", "/admin/page/poster-facebook", "📤 Publier sur Facebook (test)");
+posterPage("page-poster-ig-btn", "/admin/page/poster-instagram", "📤 Publier sur Instagram (test)");
 
 document.getElementById("ccp-list").addEventListener("click", async (e) => {
     const btn = e.target.closest(".ccp-confirm-btn");
@@ -632,6 +665,28 @@ router.post("/canal/poster", requireAdmin, async (req, res) => {
         res.json(resultat);
     } catch (err) {
         console.error("❌ POST /admin/canal/poster :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/page/poster-facebook", requireAdmin, async (req, res) => {
+    try {
+        const pageEngine = require("../engines/pageEngine");
+        const resultat = await pageEngine.posterMaintenantFacebook();
+        res.json(resultat);
+    } catch (err) {
+        console.error("❌ POST /admin/page/poster-facebook :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/page/poster-instagram", requireAdmin, async (req, res) => {
+    try {
+        const pageEngine = require("../engines/pageEngine");
+        const resultat = await pageEngine.posterMaintenantInstagram();
+        res.json(resultat);
+    } catch (err) {
+        console.error("❌ POST /admin/page/poster-instagram :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
     }
 });

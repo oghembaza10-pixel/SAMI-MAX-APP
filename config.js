@@ -130,6 +130,11 @@ module.exports = {
         APP_ID       : process.env.META_APP_ID,
         APP_SECRET   : process.env.META_APP_SECRET,
         REDIRECT_URI : process.env.META_REDIRECT_URI,
+        // Workspace où la Page Facebook / le compte Instagram officiels
+        // d'OG Technology sont connectés (via /connect/meta comme n'importe
+        // quel marchand) — utilisé par engines/pageEngine.js pour la
+        // publication automatique. Réglable sans redéploiement de code.
+        OG_WORKSPACE_ID: process.env.META_OG_WORKSPACE_ID || "test-workspace-1",
     },
 
     // ==================================================
