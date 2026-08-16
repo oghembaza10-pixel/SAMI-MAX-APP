@@ -245,8 +245,11 @@ router.post("/create", requireAuth, async (req, res) => {
         res.json({ success: true, message: statusMessage, campaignId: campaign.id, adId: ad.id });
 
     } catch (err) {
+        const metaMsg = err.response?.data?.error?.message;
         console.error("❌ POST /ads/create :", err.response?.data || err.message);
-        res.json({ success: false, error: "Erreur lors de la création de la pub. Vérifie ta connexion Meta (/ads/settings)." });
+        // Détail Meta affiché temporairement pour diagnostiquer en direct avec
+        // le marchand — à remettre en message générique une fois stabilisé.
+        res.json({ success: false, error: metaMsg ? `Erreur Meta : ${metaMsg}` : "Erreur lors de la création de la pub. Vérifie ta connexion Meta (/ads/settings)." });
     }
 });
 
