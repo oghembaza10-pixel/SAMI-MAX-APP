@@ -10,6 +10,7 @@ const samiiQuota = require("../services/samiiQuota");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const samiiMemoire = require("../services/samiiMemoire");
 const projetsService = require("../services/projetsService");
+const memoireUtilisateur = require("../services/memoireUtilisateur");
 
 // Télécharge une pièce jointe déjà hébergée (Cloudinary) pour la repasser à
 // Gemini en base64 — le payload JSON du chat reste petit (une URL, pas les
@@ -94,6 +95,7 @@ router.post("/chat", async (req, res) => {
         }
 
         const grade = await getGrade(userId);
+        const memoireActuelle = userId ? await memoireUtilisateur.get(userId) : null;
         const context = {
             user: { lang: req.body.lang || "" },
             workspaceId: req.session?.workspaceId || req.body.workspaceId || "",
@@ -103,6 +105,7 @@ router.post("/chat", async (req, res) => {
             lastAction: req.body.lastAction || "",
             grade: grade.actuel,
             audience: "souverain",
+            memoireUtilisateur: memoireActuelle,
         };
 
         // Pièce jointe : uploadée sur Cloudinary côté client, on ne reçoit
@@ -125,6 +128,9 @@ router.post("/chat", async (req, res) => {
         if (userId) {
             await samiiMemoire.enregistrerTour(userId, pieceLabel + goal, result.reply, "web", projetId);
             if (projetId) await projetsService.toucher(projetId);
+            // Fire-and-forget : n'attend jamais la réponse, ne casse jamais
+            // le chat si ça échoue (voir memoireUtilisateur.js).
+            memoireUtilisateur.extraireEtMemoriser(userId, goal, result.reply);
         }
 
         res.json(result);

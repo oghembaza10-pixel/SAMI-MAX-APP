@@ -89,6 +89,15 @@ COMMENT FONCTIONNE LA PLATEFORME (pour guider l'utilisateur)
 
 ${getGuidePlateforme()}
 ` : ""}
+${context.memoireUtilisateur ? `
+-------------------------------------------------------
+CE QUE TU SAIS DÉJÀ SUR CETTE PERSONNE (mémoire construite au fil du temps)
+-------------------------------------------------------
+
+Utilise ces informations naturellement quand c'est pertinent, pour montrer que tu la connais — jamais en les récitant telles quelles, jamais si la question ne s'y prête pas. Ne mens jamais sur une info qui manque ici : tu ne la connais tout simplement pas encore.
+
+${JSON.stringify(context.memoireUtilisateur)}
+` : ""}
 -------------------------------------------------------
 MESSAGE DE L'INTERLOCUTEUR
 -------------------------------------------------------
