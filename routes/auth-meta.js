@@ -20,14 +20,9 @@ const REDIRECT_URI = CONFIG.META.REDIRECT_URI;
 const GRAPH_VERSION = "v23.0";
 
 // ── DIAGNOSTIC EN COURS (16/08/2026) ───────────────────────────────────────
-// Le dialogue OAuth de Meta rejette la demande EN BLOC ("Invalid Scopes")
-// dès qu'UN SEUL scope de la liste est invalide/désactivé côté tableau de
-// bord développeur — impossible de savoir lequel sans tester par lots.
-// Étape 1 (en cours) : liste réduite au strict minimum (les 3 scopes les
-// plus basiques, presque jamais désactivés) pour confirmer que la connexion
-// elle-même fonctionne. Une fois confirmé, on rajoute les scopes ci-dessous
-// par petits groupes et on reteste à chaque fois :
-//   Lot 2 : business_management, ads_management, ads_read
+// Lot 1 (public_profile, email, pages_show_list) confirmé OK le 16/08.
+// Lot 2 (business_management, ads_management, ads_read) en cours de test.
+// Reste à tester ensuite :
 //   Lot 3 : pages_manage_ads, pages_messaging, pages_manage_posts,
 //           pages_manage_engagement, pages_read_engagement
 //   Lot 4 (Instagram, déjà confirmé invalide le 16/08) : instagram_business_basic,
@@ -37,6 +32,9 @@ const SCOPES = [
     "public_profile",
     "email",
     "pages_show_list",
+    "business_management",
+    "ads_management",
+    "ads_read",
 ].join(",");
 
 function requireAuth(req, res, next) {
