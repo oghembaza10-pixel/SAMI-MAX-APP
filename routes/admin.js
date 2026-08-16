@@ -7,6 +7,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
+const CONFIG = require("../config");
 const db = require("../services/db");
 const { confirmCcpAbonnement } = require("../services/orders");
 const verificationService = require("../services/verificationService");
@@ -345,6 +346,13 @@ router.get("/", requireAdmin, async (req, res) => {
     <div class="section-title">🏦 Demandes CCP en attente</div>
     <div id="ccp-list" style="margin-bottom:30px;">${ccpDemandes.length ? ccpDemandes.map(ligneCcpHtml).join("") : `<div class="pa-empty">Aucune demande CCP en attente.</div>`}</div>
 
+    <div class="section-title">📣 Canal SAMII (${escapeHtml(CONFIG.TELEGRAM.CHANNEL_USERNAME)})</div>
+    <div class="pa-row" style="margin-bottom:30px;">
+        <div class="pa-contact" style="margin-bottom:12px;">Publication automatique 1x/jour (12h). Le bot doit être admin du canal avec le droit de publier.</div>
+        <button id="canal-poster-btn" class="ccp-confirm-btn">📤 Publier maintenant (test)</button>
+        <div id="canal-poster-resultat" style="margin-top:12px; font-size:12.5px; white-space:pre-wrap;"></div>
+    </div>
+
     <div class="section-title">🤝 Candidatures Partenariat</div>
     <div class="pa-filters" id="pa-filters">
         <button data-filter="all" class="active">Toutes</button>
@@ -386,6 +394,25 @@ router.get("/", requireAdmin, async (req, res) => {
 </style>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+document.getElementById("canal-poster-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("canal-poster-btn");
+    const zone = document.getElementById("canal-poster-resultat");
+    btn.disabled = true;
+    btn.textContent = "⏳ Génération + publication...";
+    zone.textContent = "";
+    try {
+        const res = await fetch("/admin/canal/poster", { method: "POST" });
+        const json = await res.json();
+        zone.textContent = json.success
+            ? "✅ Publié :\n\n" + json.texte
+            : "❌ Échec : " + (json.error || "erreur inconnue") + (json.texte ? "\n\nTexte généré (non publié) :\n" + json.texte : "");
+    } catch (err) {
+        zone.textContent = "❌ Erreur réseau.";
+    }
+    btn.disabled = false;
+    btn.textContent = "📤 Publier maintenant (test)";
+});
+
 document.getElementById("ccp-list").addEventListener("click", async (e) => {
     const btn = e.target.closest(".ccp-confirm-btn");
     if (!btn) return;
@@ -594,6 +621,17 @@ router.post("/ccp/:id/confirmer", requireAdmin, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error("❌ POST /admin/ccp/:id/confirmer :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/canal/poster", requireAdmin, async (req, res) => {
+    try {
+        const canalEngine = require("../engines/canalEngine");
+        const resultat = await canalEngine.posterMaintenant();
+        res.json(resultat);
+    } catch (err) {
+        console.error("❌ POST /admin/canal/poster :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
     }
 });

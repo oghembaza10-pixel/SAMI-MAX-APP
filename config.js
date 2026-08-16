@@ -106,6 +106,10 @@ module.exports = {
     TELEGRAM: {
         BOT_TOKEN : process.env.TELEGRAM_BOT_TOKEN,
         CHAT_ID   : process.env.TELEGRAM_CHAT_ID,
+        // Canal public de pub/acquisition SAMII (le bot partagé doit être
+        // admin de ce canal avec le droit de publier). Réglable sans
+        // redéploiement de code si le canal change de nom.
+        CHANNEL_USERNAME: process.env.TELEGRAM_CHANNEL_USERNAME || "@SAMII",
     },
 
     // ==================================================

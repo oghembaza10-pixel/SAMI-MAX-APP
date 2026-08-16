@@ -86,14 +86,18 @@ async function sendWithKeyboard(chatId, message, inlineKeyboard, workspaceId) {
 }
 
 // ── ENVOYER MESSAGE ────────────────────────────────────────────────────────
-async function send(chatId, message, workspaceId) {
+// parseMode : "Markdown" par défaut (comportement historique, inchangé pour
+// tous les appelants existants) — passer null désactive le parsing Markdown
+// (utile pour un texte généré par IA dont les astérisques/underscores ne
+// sont pas garantis équilibrés, ce qui ferait échouer l'appel Telegram).
+async function send(chatId, message, workspaceId, parseMode = "Markdown") {
     try {
         const { token, base } = await resolveCredentials(workspaceId);
         if (!token) return { success: false, error: "TOKEN manquant" };
         await axios.post(`${base}/sendMessage`, {
-            chat_id   : chatId,
-            text      : message,
-            parse_mode: "Markdown",
+            chat_id: chatId,
+            text: message,
+            ...(parseMode ? { parse_mode: parseMode } : {}),
         });
         console.log(`✅ Telegram → ${chatId}`);
         return { success: true };

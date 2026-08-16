@@ -18,6 +18,7 @@ const ambassadeurEngine  = require("../engines/ambassadeurEngine");
 const sereniteEngine     = require("../engines/sereniteEngine");
 const messagerEclairEngine = require("../engines/messagerEclairEngine");
 const abonnementEngine    = require("../engines/abonnementEngine");
+const canalEngine         = require("../engines/canalEngine");
 const trackingRegistry   = require("../services/tracking");
 const yalidineTracking   = require("../services/tracking/yalidine");
 const universalTracking  = require("../services/tracking/universal");
@@ -74,6 +75,7 @@ function registerScheduledJobs() {
     const guerreEngine = require("../engines/guerreEngine");
 scheduler.add("0 9 * * *", "Guerre - compte à rebours communauté", guerreEngine.runDaily);
     scheduler.add("0 8 * * *", "Abonnement - rappel de renouvellement", abonnementEngine.runDailyRenewalCheck);
+    scheduler.add("0 12 * * *", "Canal SAMII - post promo quotidien", canalEngine.runDaily);
     scheduler.start();
 }
 
