@@ -20,12 +20,16 @@ function cleanText(text = "") {
     return text.replace(/@\w+/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function isDirectlyAddressed(message, botUsername) {
     const text = String(message?.text || "");
     if (!text) return false;
     if (/^\/sami(?:@\w+)?(?:\s|$)/i.test(text)) return true;
-    if (botUsername && new RegExp(`@${botUsername.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}(?:\\\\b|$)`, "i").test(text)) return true;
-    if (/@sami\\b/i.test(text)) return true;
+    if (botUsername && new RegExp(`@${escapeRegExp(botUsername)}\\b`, "i").test(text)) return true;
+    if (/@sami\b/i.test(text)) return true;
     if (message?.reply_to_message?.from?.is_bot) return true;
     return false;
 }
