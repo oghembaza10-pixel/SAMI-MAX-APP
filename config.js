@@ -2,11 +2,17 @@
 // SAMII OS - CONFIGURATION CENTRALE
 // ======================================================
 
+// Extrait en constante (pas juste une propriété de l'objet exporté) pour
+// pouvoir dériver d'autres valeurs (ex: META.REDIRECT_URI) à partir d'elle
+// sans jamais risquer qu'elles se désynchronisent — une seule source de
+// vérité pour le domaine réel de l'app.
+const APP_URL = process.env.APP_URL || "https://samii.souverain-store.com";
+
 module.exports = {
 
     PORT: process.env.PORT || 10000,
 
-    APP_URL: process.env.APP_URL || "https://samii.souverain-store.com",
+    APP_URL,
 
     // ==================================================
     // AIRTABLE
@@ -129,7 +135,11 @@ module.exports = {
     META: {
         APP_ID       : process.env.META_APP_ID,
         APP_SECRET   : process.env.META_APP_SECRET,
-        REDIRECT_URI : process.env.META_REDIRECT_URI,
+        // Toujours dérivée du vrai domaine de l'app (APP_URL) — jamais de
+        // variable d'env séparée qui pourrait rester bloquée sur l'ancienne
+        // adresse Render brute pendant que APP_URL a changé (c'est
+        // exactement ce qui vient de bloquer toute reconnexion Meta).
+        REDIRECT_URI : `${APP_URL}/auth/meta/callback`,
         // Workspace où la Page Facebook / le compte Instagram officiels
         // d'OG Technology sont connectés (via /connect/meta comme n'importe
         // quel marchand) — utilisé par engines/pageEngine.js pour la
