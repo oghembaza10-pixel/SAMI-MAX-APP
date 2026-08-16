@@ -10,6 +10,7 @@ const memory       = require("../brain/memory");
 const db           = require("../services/db");
 const socketService = require("../services/socketService");
 const confirmationsQuota = require("../services/confirmationsQuota");
+const telegramCommunity = require("../services/telegramCommunity");
 
 const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
@@ -186,20 +187,18 @@ async function getProduitsDuWorkspace(workspaceId) {
 }
 
 // ── Traite une mise à jour Telegram, pour n'importe quel bot ──────────────
-// (partagé ou perso d'un marchand). `base` = URL API du bot qui a reçu ce
-// message (déjà résolue par l'appelant) ; `forcedWorkspaceId` n'est fourni
-// que sur le webhook per-marchand (/telegram/:workspaceId) — dans ce cas,
-// TOUTE la conversation appartient déjà à ce marchand, aucune liaison
-// admin_/client_ n'est nécessaire (contrairement au bot partagé, où un même
-// bot sert tout le monde et a besoin de savoir qui parle à qui).
 async function handleUpdate(body, base, forcedWorkspaceId) {
     try {
-        // Clé mémoire distincte par bot : sur Telegram, le chat.id d'une
-        // conversation privée est l'identifiant Telegram de l'utilisateur,
-        // identique quel que soit le bot auquel il écrit — sans ce préfixe,
-        // l'historique d'un même client se mélangerait entre le bot partagé
-        // et le bot perso d'un marchand.
         const memKey = (chatId) => forcedWorkspaceId ? `tg_${forcedWorkspaceId}_${chatId}` : String(chatId);
+
+        // Les groupes/communautés passent par l'agent communautaire dédié.
+        // Cela évite de mélanger la mémoire collective avec une conversation privée.
+        if (body.message && telegramCommunity.isGroup(body.message)) {
+            await telegramCommunity.handleMessage(body.message, base, {
+                workspaceId: forcedWorkspaceId || ""
+            });
+            return;
+        }
 
         if (body.callback_query) {
             const cb = body.callback_query;
@@ -241,7 +240,6 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
                 return;
             }
 
-            // ── Calendrier RDV interactif : choix du jour, puis du créneau ──
             if (data.startsWith("rdvday_")) {
                 const [, draftId, dateISO] = data.match(/^rdvday_(\d+)_(\d{4}-\d{2}-\d{2})$/) || [];
                 if (!draftId) return;
@@ -292,8 +290,6 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
         if (text.startsWith("/start")) {
             await memory.clear(memKey(chatId));
 
-            // Bot perso : cette conversation appartient déjà à ce marchand,
-            // aucun paramètre de liaison à traiter.
             if (forcedWorkspaceId) {
                 await reply(chatId, tr(lang, "bienvenueClient"), base);
                 return;
@@ -320,9 +316,6 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
 
         if (text === "/id") { await reply(chatId, tr(lang, "idChat", chatId), base); return; }
 
-        // ── Raisonnement universel : SAMII mène la conversation lui-même, tous métiers ──
-        // (prise de rendez-vous, commande, questions...), via function-calling Gemini,
-        // au lieu d'un parcours pas-à-pas figé par métier.
         let workspaceId = forcedWorkspaceId;
         if (!workspaceId) {
             workspaceId = await getClientWorkspace(chatId);
@@ -348,18 +341,11 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
     }
 }
 
-// ── Bot partagé SAMII (tous les marchands sans bot perso, + les clients qui
-// n'ont pas encore de commande/rdv en cours ailleurs) ──────────────────────
 router.post("/", (req, res) => {
     res.sendStatus(200);
     handleUpdate(req.body, BASE, null);
 });
 
-// ── Bot perso d'un marchand — chaque marchand qui connecte son propre bot
-// (routes/connector.js, POST /connect/telegram/bot) a son webhook dédié à
-// cette URL, enregistré côté Telegram via setWebhook au moment de la
-// connexion. Ça évite toute ambiguïté : Telegram nous dit lui-même, par
-// l'URL appelée, à quel marchand ce message appartient.
 router.post("/:workspaceId", async (req, res) => {
     res.sendStatus(200);
     const base = await resolveBotBase(req.params.workspaceId);
