@@ -404,8 +404,8 @@ document.getElementById("canal-poster-btn").addEventListener("click", async () =
         const res = await fetch("/admin/canal/poster", { method: "POST" });
         const json = await res.json();
         zone.textContent = json.success
-            ? "✅ Publié :\n\n" + json.texte
-            : "❌ Échec : " + (json.error || "erreur inconnue") + (json.texte ? "\n\nTexte généré (non publié) :\n" + json.texte : "");
+            ? "✅ Publié :\\n\\n" + json.texte
+            : "❌ Échec : " + (json.error || "erreur inconnue") + (json.texte ? "\\n\\nTexte généré (non publié) :\\n" + json.texte : "");
     } catch (err) {
         zone.textContent = "❌ Erreur réseau.";
     }
