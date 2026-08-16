@@ -19,6 +19,17 @@ const APP_SECRET = CONFIG.META.APP_SECRET;
 const REDIRECT_URI = CONFIG.META.REDIRECT_URI;
 const GRAPH_VERSION = "v23.0";
 
+// Les 4 scopes "instagram_business_*" sont désactivés pour le moment : Meta
+// les rejette avec "Invalid Scopes" côté dialogue OAuth (le cas d'utilisation
+// Instagram doit être reconfiguré côté tableau de bord développeur Meta).
+// Comme le dialogue OAuth refuse la demande EN BLOC dès qu'un seul scope est
+// invalide, les garder ici bloquait aussi la connexion Facebook/Ads qui,
+// elle, fonctionne. Les 4 lignes sont laissées en commentaire pour les
+// remettre dès que le cas d'utilisation Instagram est validé côté Meta :
+//     "instagram_business_basic",
+//     "instagram_business_manage_messages",
+//     "instagram_business_content_publish",
+//     "instagram_business_manage_comments",
 const SCOPES = [
     "public_profile",
     "email",
@@ -31,13 +42,6 @@ const SCOPES = [
     "pages_manage_posts",
     "pages_manage_engagement",
     "pages_read_engagement",
-    // Renommées par Meta début 2025 (préfixe "instagram_business_" obligatoire
-    // depuis, les anciens noms "instagram_basic" etc. sont désormais rejetés
-    // par le dialogue OAuth avec "Invalid Scopes").
-    "instagram_business_basic",
-    "instagram_business_manage_messages",
-    "instagram_business_content_publish",
-    "instagram_business_manage_comments",
 ].join(",");
 
 function requireAuth(req, res, next) {
