@@ -7,8 +7,6 @@ const axios = require("axios");
 const memory = require("../brain/memory");
 const planner = require("../brain/planner");
 
-const MODES = new Set(["smart", "on"]);
-
 function key(chatId) {
     return `tg_group_${chatId}`;
 }
@@ -22,11 +20,12 @@ function cleanText(text = "") {
     return text.replace(/@\w+/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function isDirectlyAddressed(message) {
+function isDirectlyAddressed(message, botUsername) {
     const text = String(message?.text || "");
     if (!text) return false;
     if (/^\/sami(?:@\w+)?(?:\s|$)/i.test(text)) return true;
-    if (/@sami/i.test(text)) return true;
+    if (botUsername && new RegExp(`@${botUsername.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}(?:\\\\b|$)`, "i").test(text)) return true;
+    if (/@sami\\b/i.test(text)) return true;
     if (message?.reply_to_message?.from?.is_bot) return true;
     return false;
 }
@@ -39,6 +38,11 @@ async function api(base, method, payload) {
         console.error(`❌ Telegram community ${method}:`, err.response?.data || err.message);
         return null;
     }
+}
+
+async function getBotUsername(base) {
+    const bot = await api(base, "getMe", {});
+    return bot?.username || "";
 }
 
 async function isAdmin(base, chatId, userId) {
@@ -125,11 +129,10 @@ async function handleMessage(message, base, context = {}) {
     if (!text) return true;
 
     const state = await getState(message.chat.id);
-    const direct = isDirectlyAddressed(message);
+    const botUsername = await getBotUsername(base);
+    const direct = isDirectlyAddressed(message, botUsername);
     const active = state.communityMode === "on";
 
-    // Smart mode avoids flooding the community. Active mode lets SAMII assist
-    // continuously; direct mentions always work in both modes.
     if (!direct && !active) return true;
 
     const history = Array.isArray(state.history) ? state.history : [];
