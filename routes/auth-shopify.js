@@ -19,6 +19,9 @@ const SCOPES = [
     "read_products", "write_products", "read_orders", "write_orders",
     "read_customers", "write_customers", "read_inventory", "write_inventory",
     "read_shipping", "write_shipping", "read_fulfillments", "write_fulfillments",
+    // Codes de réduction limités dans le temps pour la relance panier
+    // abandonné (engines/commerceEngine.js abandonedCheckout).
+    "read_discounts", "write_discounts",
 ].join(",");
 
 const stateStore = new Map();

@@ -11,6 +11,11 @@ const automationEngine   = require("../engines/automationEngine");
 const db = require("../services/db");
 const notify = require("../services/notify");
 const confirmationsQuota = require("../services/confirmationsQuota");
+const geminiService = require("../services/geminiService");
+// require() tardif de services/shopify.js et routes/auth-shopify.js (dans
+// abandonedCheckout ci-dessous) : services/shopify.js requiert lui-même
+// brain/orchestrator, qui requiert ce fichier — même cycle que pour
+// telegramService (voir note plus haut).
 // require() tardif (dans les méthodes) : telegramService requiert brain/orchestrator,
 // qui requiert ce fichier — un require en tête de fichier créerait un cycle où
 // telegramService capterait un orchestrator encore vide au chargement.
@@ -140,16 +145,47 @@ class CommerceEngine {
             const shop = event.shop;
             const phone = checkout.shipping_address?.phone || checkout.phone || "";
             const client = `${checkout.shipping_address?.first_name || ""} ${checkout.shipping_address?.last_name || ""}`.trim() || "cher client";
+            // Jusqu'à 3 titres de produits laissés dans le panier, pour que le
+            // message de relance parle du produit précis plutôt que de rester
+            // générique — beaucoup plus efficace pour reconvertir le client.
+            const produitsLaisses = (checkout.line_items || []).map(li => li.title).filter(Boolean).slice(0, 3);
 
             if (!phone) return { success: false, error: "Pas de téléphone." };
 
             // ── Attendre 1h avant de relancer (évite de spammer trop tôt) ──
             setTimeout(async () => {
                 try {
-                    const message =
-                        `👋 Bonjour ${client} !\n\n` +
-                        `Vous avez laissé des articles dans votre panier. 🛒\n\n` +
-                        `Besoin d'aide pour finaliser votre commande ? Répondez-nous, on est là !`;
+                    // require() tardif : voir la note en tête de fichier.
+                    const { getFreshAccessToken } = require("../routes/auth-shopify");
+                    const shopifyService = require("../services/shopify");
+
+                    const code = `RELANCE${(checkout.token || Date.now().toString(36)).replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase()}`;
+                    let codeCree = null;
+                    try {
+                        const accessToken = await getFreshAccessToken(shop);
+                        codeCree = await shopifyService.createDiscountCode(shop, accessToken, {
+                            code, percentage: 10, validityMinutes: 120,
+                        });
+                    } catch (discountErr) {
+                        console.warn("⚠️ Code de réduction relance panier non créé :", discountErr.message);
+                    }
+
+                    const produitTexte = produitsLaisses.length
+                        ? `Le(s) produit(s) laissé(s) : ${produitsLaisses.join(", ")}.`
+                        : "Des articles sont restés dans son panier.";
+                    const consigneReduction = codeCree
+                        ? `Termine en donnant ce code de réduction de -10%, valable 2h seulement : ${codeCree}. Crée un vrai sentiment d'urgence (le temps est limité).`
+                        : "N'invente aucun code de réduction, il n'y en a pas cette fois.";
+
+                    const prompt =
+                        `Écris un message court (max 4-5 phrases) pour relancer ${client}, qui a laissé un panier sans payer sur notre boutique en ligne. ` +
+                        `${produitTexte} Sois chaleureux, pas insistant, propose ton aide pour finaliser la commande. ${consigneReduction} ` +
+                        `Quelques emojis avec modération. Réponds uniquement avec le texte final du message, prêt à envoyer.`;
+
+                    const ia = await geminiService.chat({ message: prompt, context: { audience: "client" }, useTools: false });
+                    const message = ia.type === "text" && ia.text
+                        ? ia.text
+                        : `👋 Bonjour ${client} !\n\nVous avez laissé des articles dans votre panier. 🛒\n\nBesoin d'aide pour finaliser votre commande ? Répondez-nous, on est là !`;
 
                     await this.notifyShop(shop, { whatsapp: phone }, message);
                 } catch (err) {

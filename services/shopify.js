@@ -62,6 +62,61 @@ async function getProducts(shop, accessToken) {
 }
 
 // ─────────────────────────────────────────────
+// Créer un code de réduction limité dans le temps (relance panier
+// abandonné) — API GraphQL, méthode recommandée par Shopify depuis que
+// PriceRule/DiscountCode REST sont dépréciées. Nécessite le scope
+// write_discounts. Non-bloquant pour l'appelant : renvoie null en cas
+// d'échec plutôt que de faire planter la relance (le message part quand
+// même, juste sans réduction).
+// ─────────────────────────────────────────────
+async function createDiscountCode(shop, accessToken, { code, percentage, validityMinutes = 120 }) {
+    try {
+        const startsAt = new Date();
+        const endsAt = new Date(startsAt.getTime() + validityMinutes * 60 * 1000);
+
+        const mutation = `
+            mutation discountCodeBasicCreate($basicCodeDiscount: DiscountCodeBasicInput!) {
+                discountCodeBasicCreate(basicCodeDiscount: $basicCodeDiscount) {
+                    codeDiscountNode { id }
+                    userErrors { field message }
+                }
+            }
+        `;
+        const variables = {
+            basicCodeDiscount: {
+                title: `Relance panier — ${code}`,
+                code,
+                startsAt: startsAt.toISOString(),
+                endsAt: endsAt.toISOString(),
+                customerSelection: { all: true },
+                customerGets: {
+                    value: { percentage: percentage / 100 },
+                    items: { all: true },
+                },
+                appliesOncePerCustomer: true,
+                usageLimit: 1,
+            },
+        };
+
+        const { data } = await axios.post(
+            `https://${shop}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`,
+            { query: mutation, variables },
+            { headers: { "X-Shopify-Access-Token": accessToken, "Content-Type": "application/json" } }
+        );
+
+        const errors = data?.data?.discountCodeBasicCreate?.userErrors || [];
+        if (errors.length) {
+            console.warn("⚠️ Shopify createDiscountCode :", errors);
+            return null;
+        }
+        return data?.data?.discountCodeBasicCreate?.codeDiscountNode ? code : null;
+    } catch (err) {
+        console.error("❌ Shopify createDiscountCode :", err.response?.data || err.message);
+        return null;
+    }
+}
+
+// ─────────────────────────────────────────────
 // Réception d'un événement Shopify
 // ─────────────────────────────────────────────
 async function receive(event) {
@@ -81,6 +136,7 @@ async function receive(event) {
 }
 
 module.exports = {
+    createDiscountCode,
     getOrders,
     getProducts,
     receive,
