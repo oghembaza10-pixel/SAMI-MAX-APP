@@ -32,9 +32,12 @@ const GRAPH_VERSION = "v23.0";
 // qui n'affiche pas ce statut, et c'est précisément celle que Facebook
 // rejetait avec "Invalid Scopes" (y compris quand elle n'était pas demandée).
 //
-// Lot 4 (Instagram, déjà confirmé invalide le 16/08) : instagram_business_basic,
-// instagram_business_manage_messages, instagram_business_content_publish,
-// instagram_business_manage_comments — toujours pas résolu.
+// Lot 4 (Instagram) : le préfixe "instagram_business_*" (supposé obligatoire
+// depuis 2025 d'après la doc générale) est en fait INVALIDE pour cette app
+// précise — vérifié le 17/08 dans "Autorisations et fonctionnalités" :
+// instagram_manage_messages (ancien nom) affiche "Prête pour le test",
+// alors qu'instagram_business_manage_messages n'affiche aucun statut. On
+// utilise donc l'ancien nommage, confirmé actif sur cette app.
 const SCOPES = [
     "public_profile",
     "email",
@@ -47,6 +50,10 @@ const SCOPES = [
     "pages_manage_engagement",
     "pages_manage_metadata",
     "pages_read_engagement",
+    "instagram_basic",
+    "instagram_content_publish",
+    "instagram_manage_comments",
+    "instagram_manage_messages",
 ].join(",");
 
 function requireAuth(req, res, next) {
