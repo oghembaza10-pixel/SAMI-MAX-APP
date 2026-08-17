@@ -25,11 +25,9 @@ const THEMES = [
 function construirePrompt(reseau) {
     return `Tu es SAMII, et tu gères toi-même la page ${reseau === "instagram" ? "Instagram" : "Facebook"} officielle d'OG Technology (SAMII OS), destinée à un public d'entrepreneurs et de porteurs de projets, pas seulement en Algérie/Maroc mais plus largement francophone/arabophone.
 
-Rédige UN SEUL post, prêt à publier tel quel — pas de JSON, pas de balises, pas de titre "Post :", juste le texte final (la légende).
+Rédige UN SEUL post, prêt à publier tel quel — pas de JSON, pas de balises, pas de titre "Post :", juste le texte final (la légende). N'écris QUE le contenu de valeur (le conseil/la réflexion/l'actu) : une signature de fin (liens, contact) sera ajoutée automatiquement après ton texte, ne l'invente pas toi-même.
 
 Choisis TOI-MÊME le thème parmi ceux-ci (sans t'y limiter, tu peux aussi en inventer d'autres) : ${THEMES.join(" / ")}.
-La majorité des posts doivent apporter une vraie valeur (conseil, réflexion, actu) — pas juste "inscris-toi" à chaque fois. Le lien vers SAMII (https://samii.souverain-store.com) peut apparaître naturellement quand c'est pertinent, jamais forcé à chaque post.
-Termine CHAQUE post par une invitation courte et naturelle à rejoindre le canal Telegram SAMII pour plus d'astuces au quotidien (ex: "📲 Rejoins-moi sur ${CONFIG.TELEGRAM.CHANNEL_USERNAME} pour plus d'astuces" — reformule à ta façon à chaque fois, ne répète jamais la même phrase mot pour mot).
 Écris principalement en arabe (arabe standard ou darija algérienne/marocaine selon ce qui sonne le plus naturel pour le sujet) — c'est la langue par défaut de la page. Tu peux mélanger quelques mots de français si c'est naturel (comme le fait vraiment un entrepreneur bilingue), mais le post doit rester majoritairement en arabe.
 Ne répète jamais un post déjà écrit par le passé — sois créatif, chaque post doit sembler écrit par une vraie personne qui a réfléchi à ce sujet précis aujourd'hui.
 
@@ -38,7 +36,22 @@ Consignes :
 - Rends le post visuellement accrocheur : emojis pertinents (pas juste à la fin, répartis dans le texte), et quand le sujet s'y prête, une petite liste à puces (avec des emojis en puces, ex: ✅ 🔥 📌 ➡️) plutôt qu'un pavé de texte plat.
 - Des sauts de ligne pour l'aération, jamais un mur de texte.
 - Ne mens jamais et n'invente jamais une fonctionnalité qui n'existe pas.
-- Reste sous 600 caractères.`;
+- Reste sous 350 caractères (une signature fixe est ajoutée après, il faut laisser la place).`;
+}
+
+// Signature fixe (jamais générée par l'IA, pour ne jamais risquer une faute
+// sur l'email ou le nom d'un canal dans un post public) : fait comprendre
+// que c'est SAMII, une IA autonome, qui gère les canaux, et fait le lien
+// entre eux — chacune évite de repromouvoir le réseau où elle est déjà
+// publiée.
+function construireSignature(reseau) {
+    const autreReseauSocial = reseau === "instagram" ? "Facebook" : "Instagram";
+    return `
+
+🤖 Ce post est écrit et publié automatiquement par SAMII, l'IA qui gère ce compte toute seule — c'est ce qu'elle peut faire pour votre business aussi.
+📲 ${autreReseauSocial} + Telegram (${CONFIG.TELEGRAM.CHANNEL_USERNAME}) pour plus d'astuces au quotidien
+🖥️ Testez SAMII en direct sur ${CONFIG.APP_URL}
+📩 Contact OG Technology : ${CONFIG.META.CONTACT_EMAIL}`;
 }
 
 async function genererPost(reseau) {
@@ -47,7 +60,8 @@ async function genererPost(reseau) {
         context: { source: `page_${reseau}`, workspaceId: "", audience: "souverain" },
         useTools: false,
     });
-    return result.type === "text" ? result.text.trim() : "";
+    const corps = result.type === "text" ? result.text.trim() : "";
+    return corps ? `${corps}${construireSignature(reseau)}` : "";
 }
 
 // Dérive les creds nécessaires à partir de ce qui est réellement enregistré

@@ -145,6 +145,11 @@ module.exports = {
         // quel marchand) — utilisé par engines/pageEngine.js pour la
         // publication automatique. Réglable sans redéploiement de code.
         OG_WORKSPACE_ID: process.env.META_OG_WORKSPACE_ID || "test-workspace-1",
+        // Email de contact public affiché sur les posts Facebook/Instagram
+        // officiels (celui déjà déclaré comme "Adresse e-mail de contact"
+        // sur le tableau de bord développeur Meta) — à remplacer par une
+        // adresse pro dédiée dès qu'elle existe.
+        CONTACT_EMAIL: process.env.OG_CONTACT_EMAIL || "oghembaza10@gmail.com",
     },
 
     // ==================================================
