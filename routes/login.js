@@ -208,10 +208,6 @@ router.post("/", async (req, res) => {
             return res.json({ success: false, error: "Email ou mot de passe incorrect." });
         }
 
-        if (user.email_verifie !== true) {
-            return res.json({ success: false, error: "Confirme ton email avant de te connecter (vérifie ta boîte mail)." });
-        }
-
         const passwordOk = await bcrypt.compare(password, user.password_hash || "");
         if (!passwordOk) {
             return res.json({ success: false, error: "Email ou mot de passe incorrect." });
