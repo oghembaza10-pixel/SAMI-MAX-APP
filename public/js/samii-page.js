@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── MESSAGES ──────────────────────────────────────────
-    function addMessage(role, text, imageUrl, fileLabel) {
+    function addMessage(role, text, imageUrl, fileLabel, messageId) {
         const wrapper = document.createElement('div');
         wrapper.className = `samii-msg samii-msg--${role}`;
 
@@ -67,6 +67,37 @@ document.addEventListener('DOMContentLoaded', () => {
             bubble.className = 'samii-msg__bubble';
             bubble.textContent = text;
             wrapper.appendChild(bubble);
+        }
+
+        // 👍/👎 : construit un historique de ce qui marche/marche pas
+        // pendant qu'on entraîne SAMII, en attendant le vrai volume de
+        // clients — uniquement sur les réponses de SAMII, jamais sur ses
+        // propres messages.
+        if (role === 'bot' && messageId) {
+            const feedbackRow = document.createElement('div');
+            feedbackRow.className = 'samii-msg__feedback';
+            feedbackRow.innerHTML = `
+                <button type="button" data-feedback="up" aria-label="Bonne réponse">👍</button>
+                <button type="button" data-feedback="down" aria-label="Mauvaise réponse">👎</button>
+            `;
+            feedbackRow.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (feedbackRow.dataset.envoye) return;
+                    feedbackRow.dataset.envoye = '1';
+                    feedbackRow.querySelectorAll('button').forEach(b => b.disabled = true);
+                    btn.classList.add('samii-msg__feedback--actif');
+                    try {
+                        await fetch('/api/chat/feedback', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ messageId, feedback: btn.dataset.feedback }),
+                        });
+                    } catch (err) {
+                        console.error('❌ Feedback :', err);
+                    }
+                });
+            });
+            wrapper.appendChild(feedbackRow);
         }
 
         feed.appendChild(wrapper);
@@ -196,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             typingEl.remove();
             const reply = data.reply || "Je n'ai pas de réponse pour l'instant.";
-            addMessage('bot', reply);
+            addMessage('bot', reply, null, null, data.messageId);
         } catch (err) {
             console.error(err);
             typingEl.remove();

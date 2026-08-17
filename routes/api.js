@@ -132,18 +132,36 @@ router.post("/chat", async (req, res) => {
 
         const result = await planner.build({ goal }, context, history);
 
+        let messageId = null;
         if (userId) {
-            await samiiMemoire.enregistrerTour(userId, pieceLabel + goal, result.reply, "web", projetId);
+            messageId = await samiiMemoire.enregistrerTour(userId, pieceLabel + goal, result.reply, "web", projetId);
             if (projetId) await projetsService.toucher(projetId);
             // Fire-and-forget : n'attend jamais la réponse, ne casse jamais
             // le chat si ça échoue (voir memoireUtilisateur.js).
             memoireUtilisateur.extraireEtMemoriser(userId, goal, result.reply);
         }
 
-        res.json(result);
+        res.json({ ...result, messageId });
     } catch (err) {
         console.error("❌ API chat :", err.message);
         res.json({ success: false, reply: "SAMII démarre. Réessaie dans quelques instants." });
+    }
+});
+
+// 👍/👎 sur une réponse de SAMII — construit un historique de ce qui
+// marche/marche pas pendant qu'on entraîne SAMII, sans attendre le vrai
+// volume de clients.
+router.post("/chat/feedback", requireAuth, async (req, res) => {
+    try {
+        const { messageId, feedback } = req.body;
+        if (!messageId || !["up", "down"].includes(feedback)) {
+            return res.json({ success: false, error: "Paramètres invalides." });
+        }
+        const ok = await samiiMemoire.setFeedback(messageId, req.session.userId, feedback);
+        res.json({ success: ok });
+    } catch (err) {
+        console.error("❌ POST /api/chat/feedback :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
     }
 });
 

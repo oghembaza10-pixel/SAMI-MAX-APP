@@ -130,6 +130,18 @@
     max-width: 85%;
 }
 
+.samii-msg__feedback {
+    display: flex; gap: 6px; margin-top: 4px;
+}
+.samii-msg__feedback button {
+    background: transparent; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 3px 8px; font-size: .78rem;
+    cursor: pointer; opacity: .55; transition: opacity .2s ease, border-color .2s ease;
+}
+.samii-msg__feedback button:hover:not(:disabled) { opacity: 1; border-color: rgba(95,212,255,0.4); }
+.samii-msg__feedback button:disabled { cursor: default; }
+.samii-msg__feedback button.samii-msg__feedback--actif { opacity: 1; border-color: var(--cyan-tech); }
+
 .samii-msg--user { display: flex; justify-content: flex-end; }
 .samii-msg--user .samii-msg__bubble {
     background: linear-gradient(135deg, var(--cyan-tech), #2a8fc9);

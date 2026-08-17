@@ -36,16 +36,36 @@ async function getHistorique(userId, projetId = null) {
     }
 }
 
+// Renvoie l'id de la ligne 'model' insérée (jamais celui de 'user') — sert
+// à attacher un feedback 👍/👎 à cette réponse précise (voir setFeedback).
 async function enregistrerTour(userId, message, reply, source = "web", projetId = null) {
-    if (!userId) return;
+    if (!userId) return null;
     try {
-        await db.query(
-            `INSERT INTO samii_conversations (user_id, role, contenu, source, projet_id) VALUES ($1,'user',$2,$4,$5), ($1,'model',$3,$4,$5)`,
+        const rows = await db.query(
+            `INSERT INTO samii_conversations (user_id, role, contenu, source, projet_id) VALUES ($1,'user',$2,$4,$5), ($1,'model',$3,$4,$5) RETURNING id, role`,
             [userId, message, reply || "", source, projetId]
         );
+        return rows.find(r => r.role === "model")?.id || null;
     } catch (err) {
         console.error("❌ samiiMemoire.enregistrerTour :", err.message);
+        return null;
     }
 }
 
-module.exports = { getHistorique, enregistrerTour };
+// N'autorise à noter que ses propres messages (WHERE user_id = $3) — un
+// utilisateur ne peut jamais modifier le feedback d'un autre.
+async function setFeedback(messageId, userId, feedback) {
+    if (!["up", "down"].includes(feedback)) return false;
+    try {
+        const rows = await db.query(
+            `UPDATE samii_conversations SET feedback = $1 WHERE id = $2 AND user_id = $3 AND role = 'model' RETURNING id`,
+            [feedback, messageId, userId]
+        );
+        return rows.length > 0;
+    } catch (err) {
+        console.error("❌ samiiMemoire.setFeedback :", err.message);
+        return false;
+    }
+}
+
+module.exports = { getHistorique, enregistrerTour, setFeedback };
