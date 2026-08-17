@@ -256,6 +256,11 @@ router.post("/webhook/meta", async (req, res) => {
 });
 
 router.get("/auth/meta", requireAuth, (req, res) => {
+    // Empêche le navigateur (ou un cache intermédiaire type Cloudflare) de
+    // servir une ancienne redirection avec une vieille liste de scopes —
+    // vu en test le 17/08 : une redirection vers une URL contenant un scope
+    // qui n'existe plus dans SCOPES depuis plusieurs déploiements.
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     const authUrl =
         `https://www.facebook.com/${GRAPH_VERSION}/dialog/oauth` +
         `?client_id=${APP_ID}` +
@@ -272,10 +277,10 @@ router.get("/auth/meta", requireAuth, (req, res) => {
 });
 
 router.get("/auth/meta/callback", requireAuth, async (req, res) => {
-    const { code, error, error_description } = req.query;
+    const { code, error, error_description, error_code, error_message } = req.query;
 
-    if (error) {
-        return res.send(`<p>Connexion annulée ou refusée : ${error_description || error}</p>`);
+    if (error || error_code) {
+        return res.send(`<p>Connexion annulée ou refusée : ${error_description || error || error_message || error_code}</p>`);
     }
     if (!code) {
         return res.send("<p>Code d'autorisation manquant.</p>");
