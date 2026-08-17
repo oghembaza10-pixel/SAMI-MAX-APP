@@ -37,8 +37,6 @@ const SCOPES = [
     "read_discounts", "write_discounts",
 ].join(",");
 
-const stateStore = new Map();
-
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
     next();
@@ -116,7 +114,7 @@ router.get("/auth/shopify", requireAuth, (req, res) => {
         return res.status(400).send('Paramètre "shop" manquant ou invalide.');
     }
     const state = crypto.randomBytes(16).toString("hex");
-    stateStore.set(shop, state);
+    req.session.shopifyOAuthState = { shop, state };
     const { apiKey } = credentialsFor(shop);
     const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${SCOPES}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=${state}`;
     res.redirect(installUrl);
@@ -126,9 +124,9 @@ router.get("/auth/shopify/callback", requireAuth, async (req, res) => {
     const { shop, code, state } = req.query;
     if (!shop || !code) return res.status(400).send("Paramètres manquants.");
 
-    const savedState = stateStore.get(shop);
-    if (!savedState || state !== savedState) return res.status(403).send("State invalide — tentative CSRF détectée.");
-    stateStore.delete(shop);
+    const saved = req.session.shopifyOAuthState;
+    if (!saved || saved.shop !== shop || saved.state !== state) return res.status(403).send("State invalide — tentative CSRF détectée.");
+    delete req.session.shopifyOAuthState;
 
     if (!verifyHmac(req.query)) return res.status(401).send("Signature invalide.");
 
