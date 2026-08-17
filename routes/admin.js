@@ -11,6 +11,9 @@ const CONFIG = require("../config");
 const db = require("../services/db");
 const { confirmCcpAbonnement } = require("../services/orders");
 const verificationService = require("../services/verificationService");
+const planner = require("../brain/planner");
+const samiiMemoire = require("../services/samiiMemoire");
+const projetsService = require("../services/projetsService");
 
 const ROOM_ADMIN = "partenariat-admin";
 
@@ -155,6 +158,182 @@ router.get("/logout", (req, res) => {
     delete req.session.isAdmin;
     delete req.session.adminEmail;
     req.session.save(() => res.redirect("/admin/login"));
+});
+
+// ── ESPACE D'ENTRAÎNEMENT SAMII (fondateur uniquement) ─────────────────────
+// L'accès admin (admin_comptes) est totalement séparé du compte normal
+// (utilisateurs) — on relie les deux par email pour retrouver le vrai
+// userId/prénom du fondateur et réutiliser EXACTEMENT le même pipeline que
+// le chat QG (/samii) : mêmes lois souveraines, même mémoire persistante,
+// mêmes fonctions. La seule différence ici, c'est la certitude à 100% que
+// c'est bien le fondateur (requireAdmin, pas une détection probable), et un
+// fil de conversation dédié, isolé du reste ("Entraînement SAMII").
+const NOM_PROJET_ENTRAINEMENT = "🎓 Entraînement SAMII";
+
+async function resolveFondateur(req) {
+    const rows = await db.query(`SELECT id, prenom, grade_actuel, workspace_boutique_id FROM utilisateurs WHERE email = $1`, [req.session.adminEmail]);
+    const compte = rows[0];
+    if (!compte) return null;
+
+    let projets = await projetsService.lister(compte.id);
+    let projet = projets.find(p => p.nom === NOM_PROJET_ENTRAINEMENT);
+    if (!projet) projet = await projetsService.creer(compte.id, NOM_PROJET_ENTRAINEMENT);
+
+    return {
+        userId: compte.id,
+        prenom: compte.prenom || "",
+        grade: compte.grade_actuel || "Soldat",
+        workspace_boutique_id: compte.workspace_boutique_id || "",
+        projetId: projet.id,
+    };
+}
+
+router.get("/samii", requireAdmin, async (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entraînement SAMII — Centre de contrôle</title>
+<style>
+:root { --bg:#03060b; --panel:rgba(9,18,29,.88); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --gold:#d7b34c; --border:rgba(0,217,255,.16); }
+* { box-sizing:border-box; }
+html,body { height:100%; margin:0; }
+body { display:flex; flex-direction:column; background:var(--bg); color:var(--text); font-family:Inter,sans-serif; }
+.entr-header { display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--border); background:var(--panel); }
+.entr-header a { color:var(--muted); text-decoration:none; font-size:13px; }
+.entr-header h1 { font-size:15px; margin:0; flex:1; }
+.entr-badge { font-family:"JetBrains Mono",monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--gold); border:1px solid rgba(215,179,76,.4); background:rgba(215,179,76,.1); border-radius:6px; padding:3px 8px; }
+.entr-feed { flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:12px; }
+.entr-msg { max-width:80%; }
+.entr-msg--bot { align-self:flex-start; }
+.entr-msg--user { align-self:flex-end; }
+.entr-bubble { border-radius:14px; padding:12px 15px; font-size:14px; line-height:1.55; white-space:pre-wrap; }
+.entr-msg--bot .entr-bubble { background:var(--panel); border:1px solid var(--border); }
+.entr-msg--user .entr-bubble { background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:#001018; }
+.entr-feedback { display:flex; gap:6px; margin-top:4px; }
+.entr-feedback button { background:transparent; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:3px 8px; font-size:12.5px; cursor:pointer; opacity:.55; }
+.entr-feedback button:hover:not(:disabled) { opacity:1; }
+.entr-feedback button:disabled { cursor:default; }
+.entr-feedback button.actif { opacity:1; border-color:var(--blue); }
+.entr-form { display:flex; gap:10px; padding:14px 18px; border-top:1px solid var(--border); background:var(--panel); }
+.entr-form input { flex:1; padding:12px 14px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,.3); color:var(--text); font-size:14px; outline:none; }
+.entr-form input:focus { border-color:var(--blue); }
+.entr-form button { padding:0 18px; border:none; border-radius:10px; background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:#001018; font-weight:800; cursor:pointer; }
+.entr-form button:disabled { opacity:.5; cursor:default; }
+</style>
+</head>
+<body>
+<div class="entr-header">
+    <a href="/admin">← Centre de contrôle</a>
+    <h1>🎓 Entraînement SAMII</h1>
+    <span class="entr-badge">Fondateur</span>
+</div>
+<div class="entr-feed" id="feed">
+    <div class="entr-msg entr-msg--bot"><div class="entr-bubble">Wesh khoya 👋 On est là, juste toi et moi, dans ton espace d'entraînement — fil séparé du reste. Dis-moi ce que tu veux ajuster, tester ou m'apprendre.</div></div>
+</div>
+<form class="entr-form" id="form">
+    <input id="input" placeholder="Parle à SAMII..." autocomplete="off" autofocus>
+    <button type="submit" id="btn">Envoyer</button>
+</form>
+<script>
+const feed = document.getElementById("feed");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const btn = document.getElementById("btn");
+
+function addMessage(role, text, messageId) {
+    const wrap = document.createElement("div");
+    wrap.className = "entr-msg entr-msg--" + role;
+    const bubble = document.createElement("div");
+    bubble.className = "entr-bubble";
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+    if (role === "bot" && messageId) {
+        const fb = document.createElement("div");
+        fb.className = "entr-feedback";
+        fb.innerHTML = '<button type="button" data-fb="up">👍</button><button type="button" data-fb="down">👎</button>';
+        fb.querySelectorAll("button").forEach(b => b.addEventListener("click", async () => {
+            if (fb.dataset.envoye) return;
+            fb.dataset.envoye = "1";
+            fb.querySelectorAll("button").forEach(x => x.disabled = true);
+            b.classList.add("actif");
+            await fetch("/admin/samii/feedback", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ messageId, feedback: b.dataset.fb }),
+            });
+        }));
+        wrap.appendChild(fb);
+    }
+    feed.appendChild(wrap);
+    feed.scrollTop = feed.scrollHeight;
+}
+
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
+    addMessage("user", message);
+    input.value = "";
+    btn.disabled = true;
+    try {
+        const res = await fetch("/admin/samii/chat", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message }),
+        });
+        const data = await res.json();
+        addMessage("bot", data.reply || "SAMII n'a pas su répondre, réessaie.", data.messageId);
+    } catch (err) {
+        addMessage("bot", "Erreur réseau, réessaie.");
+    }
+    btn.disabled = false;
+    input.focus();
+});
+</script>
+</body>
+</html>`);
+});
+
+router.post("/samii/chat", requireAdmin, async (req, res) => {
+    try {
+        const message = (req.body.message || "").trim();
+        if (!message) return res.json({ success: false, reply: "Écris un message." });
+
+        const fondateur = await resolveFondateur(req);
+        if (!fondateur) return res.json({ success: false, reply: "Compte fondateur introuvable (email admin non lié à un compte utilisateurs)." });
+
+        const context = {
+            workspaceId: fondateur.workspace_boutique_id || "",
+            grade: fondateur.grade,
+            prenom: fondateur.prenom,
+            audience: "souverain",
+            instructions: "Tu es dans l'espace d'entraînement dédié du fondateur, dans le Centre de contrôle — un fil séparé de son QG habituel, réservé à te tester, t'ajuster et t'apprendre à mieux le connaître. C'est certainement lui, aucune ambiguïté possible ici.",
+        };
+        const history = await samiiMemoire.getHistorique(fondateur.userId, fondateur.projetId);
+        const result = await planner.build({ goal: message }, context, history);
+
+        const messageId = await samiiMemoire.enregistrerTour(fondateur.userId, message, result.reply, "admin-entrainement", fondateur.projetId);
+        await projetsService.toucher(fondateur.projetId);
+
+        res.json({ success: true, reply: result.reply, messageId });
+    } catch (err) {
+        console.error("❌ POST /admin/samii/chat :", err.message);
+        res.json({ success: false, reply: "Erreur serveur." });
+    }
+});
+
+router.post("/samii/feedback", requireAdmin, async (req, res) => {
+    try {
+        const { messageId, feedback } = req.body;
+        const fondateur = await resolveFondateur(req);
+        if (!fondateur || !messageId || !["up", "down"].includes(feedback)) {
+            return res.json({ success: false });
+        }
+        const ok = await samiiMemoire.setFeedback(messageId, fondateur.userId, feedback);
+        res.json({ success: ok });
+    } catch (err) {
+        console.error("❌ POST /admin/samii/feedback :", err.message);
+        res.json({ success: false });
+    }
 });
 
 router.get("/", requireAdmin, async (req, res) => {
@@ -318,7 +497,10 @@ router.get("/", requireAdmin, async (req, res) => {
             <h1 style="font-size:22px;margin-bottom:4px;">🛡️ Centre de contrôle</h1>
             <p style="color:var(--muted);font-size:12.5px;">Connecté en tant que ${escapeHtml(req.session.adminEmail || "")}</p>
         </div>
-        <a href="/admin/logout" style="font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:8px 14px;border-radius:9px;">Déconnexion</a>
+        <div style="display:flex;gap:10px;">
+            <a href="/admin/samii" style="font-size:12.5px;color:var(--gold);text-decoration:none;border:1px solid rgba(215,179,76,.4);padding:8px 14px;border-radius:9px;">🎓 Entraînement SAMII</a>
+            <a href="/admin/logout" style="font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:8px 14px;border-radius:9px;">Déconnexion</a>
+        </div>
     </div>
 
     <div class="ad-stats-grid">

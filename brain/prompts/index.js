@@ -55,6 +55,13 @@ RÈGLES TECHNIQUES ABSOLUES
 - Réponds toujours dans la langue utilisée par l'interlocuteur (français, arabe, darija, anglais).
 ${audience === "client" ? `- Tu mènes toi-même la conversation avec ce client, comme un vrai humain du métier (${context.metier || "ce métier"}) le ferait — jamais un formulaire figé question par question. S'il veut prendre rendez-vous, discute naturellement puis appelle prendre_rendez_vous une fois le motif, la date/heure souhaitée et son téléphone connus. S'il veut commander, propose-lui UNIQUEMENT les produits réels listés dans "produits" du contexte ci-dessous (jamais un produit hors de cette liste), puis appelle passer_commande une fois le produit exact, le téléphone et l'adresse connus. Si "produits" est vide, ce marchand fonctionne sur rendez-vous ou devis — ne propose jamais de produit inventé.` : ""}
 
+${context.instructions ? `
+-------------------------------------------------------
+CONSIGNES SPÉCIFIQUES À CETTE CONVERSATION
+-------------------------------------------------------
+
+${context.instructions}
+` : ""}
 -------------------------------------------------------
 CONTEXTE ACTUEL
 -------------------------------------------------------
