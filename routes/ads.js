@@ -160,7 +160,11 @@ router.get("/create", requireAuth, async (req, res) => {
             </div>
             <div class="ads-field"><label data-i18n="ads.create.headline">Titre de l'annonce</label><input name="headline" placeholder="Ex : -20% sur toute la collection" required></div>
             <div class="ads-field"><label data-i18n="ads.create.message">Message</label><textarea name="message" required></textarea></div>
-            <div class="ads-field"><label data-i18n="ads.create.imageUrl">URL de l'image</label><input name="imageUrl" type="url" required></div>
+            <div class="ads-field">
+                <label data-i18n="ads.create.imageUrl">URL de l'image</label>
+                <input name="imageUrl" type="url" placeholder="https://.../photo.jpg" required>
+                <small style="display:block;margin-top:6px;color:var(--text-muted);font-size:.72rem;" data-i18n="ads.create.imageUrlHint">Lien direct vers un fichier image (.jpg ou .png) — pas l'adresse de ta boutique.</small>
+            </div>
             <div class="ads-field"><label data-i18n="ads.create.link">Lien vers ta boutique/produit</label><input name="link" type="url" required></div>
             <button type="submit" class="ads-submit" data-i18n="ads.create.submit">Créer la campagne</button>
         </form>
@@ -190,6 +194,17 @@ router.post("/create", requireAuth, async (req, res) => {
         const { name, objective, headline, message, imageUrl, link, dailyBudgetCents } = req.body;
         if (!name || !headline || !message || !imageUrl || !link || !dailyBudgetCents) {
             return res.json({ success: false, error: "Tous les champs sont obligatoires." });
+        }
+
+        // Meta ne renvoie qu'un "Invalid parameter / Image non importée" très
+        // tardif (après création de la campagne et de l'ensemble de pubs) si
+        // l'URL ne pointe pas vers un vrai fichier image — on refuse tout de
+        // suite pour ne pas laisser une campagne orpheline côté Meta.
+        if (!/\.(jpe?g|png|gif|webp)(\?.*)?$/i.test(imageUrl)) {
+            return res.json({
+                success: false,
+                error: "L'URL de l'image doit pointer directement vers un fichier image (.jpg, .png…), pas vers une page de ta boutique.",
+            });
         }
 
         const workspace = await workspaceService.getById(req.session.workspaceId);

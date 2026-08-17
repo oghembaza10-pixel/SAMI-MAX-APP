@@ -25,16 +25,12 @@ const GRAPH_VERSION = "v23.0";
 // c'est cette liste (Lot 1 + 2) qui fait marcher /ads/settings et
 // /ads/create, revenu à cet état stable le 17/08.
 //
-// Lot 3 (pages_manage_ads, pages_messaging, pages_manage_posts,
-// pages_manage_engagement, pages_read_engagement) retiré le 17/08 : requis
-// pour publier automatiquement sur la Page (engines/pageEngine.js), mais
-// pages_manage_posts entraîne Facebook à exiger aussi
-// pages_read_user_content ("Page Public Content Access"), une fonctionnalité
-// à part qui n'est pas activée sur cette app et semble nécessiter une
-// validation Meta séparée (App Review) — même demandée explicitement,
-// Facebook la rejette avec "Invalid Scopes". Tant que ce n'est pas résolu
-// côté tableau de bord Meta, la publication auto sur la Page
-// (engines/pageEngine.js) reste indisponible sans bloquer le reste.
+// Lot 3 (publication sur la Page) remis le 17/08 après vérification dans le
+// tableau de bord Meta : sous le cas d'utilisation "Gérez des Pages", ces
+// permissions sont bien listées "Prête pour le test".
+// pages_read_user_content est volontairement EXCLUE : c'est la seule du lot
+// qui n'affiche pas ce statut, et c'est précisément celle que Facebook
+// rejetait avec "Invalid Scopes" (y compris quand elle n'était pas demandée).
 //
 // Lot 4 (Instagram, déjà confirmé invalide le 16/08) : instagram_business_basic,
 // instagram_business_manage_messages, instagram_business_content_publish,
@@ -46,6 +42,11 @@ const SCOPES = [
     "business_management",
     "ads_management",
     "ads_read",
+    "pages_manage_ads",
+    "pages_manage_posts",
+    "pages_manage_engagement",
+    "pages_manage_metadata",
+    "pages_read_engagement",
 ].join(",");
 
 function requireAuth(req, res, next) {
