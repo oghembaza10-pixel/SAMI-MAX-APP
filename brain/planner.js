@@ -29,7 +29,14 @@ class SamiiPlanner {
 
     async ask(message, context = {}, history = []) {
         try {
-            const useTools = context.allowActions !== false;
+            // Les outils disponibles (confirmer/annuler une commande, prendre
+            // RDV, passer commande) concernent exclusivement une conversation
+            // avec un CLIENT d'un marchand — jamais le fondateur qui parle à
+            // SAMII pour lui-même (QG, Academy, Entraînement admin). Sans ce
+            // garde-fou, un fallback (Groq/OpenRouter/DeepSeek, moins
+            // disciplinés que Gemini sur le function calling) peut déclencher
+            // ces outils hors contexte, avec des valeurs inventées.
+            const useTools = context.allowActions !== false && context.audience !== "souverain";
             const result = await gemini.chat({ message, context, useTools, history });
 
             if (result.type === "function_call") {
