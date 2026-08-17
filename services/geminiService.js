@@ -35,7 +35,10 @@ async function postWithRotation(body) {
 // leurs commandes via un modèle différent plutôt que de rester silencieux.
 // Volontairement un fournisseur DIFFÉRENT de Gemini (pas une autre variante
 // Google) pour une vraie redondance en cas de panne côté Google.
-const OPENROUTER_MODEL = "openai/gpt-4o-mini";
+// Modèle GRATUIT (":free") — ce relais ne se déclenche que dans de rares
+// pannes Gemini, un modèle gratuit avec support du function calling suffit
+// largement et évite de payer pour un chemin de secours peu utilisé.
+const OPENROUTER_MODEL = "openai/gpt-oss-20b:free";
 const OPENROUTER_URL   = "https://openrouter.ai/api/v1/chat/completions";
 
 async function postOpenRouter(body) {
