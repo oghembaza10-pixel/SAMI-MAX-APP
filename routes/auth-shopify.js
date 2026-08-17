@@ -12,6 +12,19 @@ const shopifyBoutiqueService = require("../services/shopifyBoutiqueService");
 const API_KEY = process.env.SHOPIFY_API_KEY;
 const API_SECRET = process.env.SHOPIFY_API_SECRET;
 
+// App Shopify dédiée à la boutique du fondateur (distribution personnalisée,
+// pas encore soumise à review Shopify) — distincte de l'app multi-boutiques
+// ci-dessus utilisée par tous les marchands de la plateforme.
+const SOVEREIGN_SHOP = "lifestyle2-0-store.myshopify.com";
+const SOVEREIGN_API_KEY = process.env.SHOPIFY_API_KEY2;
+const SOVEREIGN_API_SECRET = process.env.SHOPIFY_API_SECRET2;
+
+function credentialsFor(shop) {
+    return shop === SOVEREIGN_SHOP
+        ? { apiKey: SOVEREIGN_API_KEY, apiSecret: SOVEREIGN_API_SECRET }
+        : { apiKey: API_KEY, apiSecret: API_SECRET };
+}
+
 const APP_URL = "https://samii.souverain-store.com";
 const REDIRECT_URI = `${APP_URL}/auth/shopify/callback`;
 
@@ -34,17 +47,19 @@ function requireAuth(req, res, next) {
 function verifyHmac(query) {
     const { hmac, signature, ...rest } = query;
     if (!hmac) return false;
+    const { apiSecret } = credentialsFor(query.shop);
     const message = Object.keys(rest)
         .sort()
         .map((key) => `${key}=${Array.isArray(rest[key]) ? rest[key].join(",") : rest[key]}`)
         .join("&");
-    const generatedHash = crypto.createHmac("sha256", API_SECRET).update(message).digest("hex");
+    const generatedHash = crypto.createHmac("sha256", apiSecret).update(message).digest("hex");
     return crypto.timingSafeEqual(Buffer.from(generatedHash), Buffer.from(hmac));
 }
 
 async function exchangeCodeForToken(shop, code) {
+    const { apiKey, apiSecret } = credentialsFor(shop);
     const { data } = await axios.post(`https://${shop}/admin/oauth/access_token`, {
-        client_id: API_KEY, client_secret: API_SECRET, code, expiring: 1,
+        client_id: apiKey, client_secret: apiSecret, code, expiring: 1,
     });
     return data;
 }
@@ -102,7 +117,8 @@ router.get("/auth/shopify", requireAuth, (req, res) => {
     }
     const state = crypto.randomBytes(16).toString("hex");
     stateStore.set(shop, state);
-    const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${API_KEY}&scope=${SCOPES}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=${state}`;
+    const { apiKey } = credentialsFor(shop);
+    const installUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${SCOPES}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=${state}`;
     res.redirect(installUrl);
 });
 
