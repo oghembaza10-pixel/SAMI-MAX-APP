@@ -3,6 +3,7 @@
 // ======================================================
 const express = require("express");
 const axios = require("axios");
+const multer = require("multer");
 const router = express.Router();
 const planner = require("../brain/planner");
 const db = require("../services/db");
@@ -11,6 +12,11 @@ const confirmationsQuota = require("../services/confirmationsQuota");
 const samiiMemoire = require("../services/samiiMemoire");
 const projetsService = require("../services/projetsService");
 const memoireUtilisateur = require("../services/memoireUtilisateur");
+const transcription = require("../services/transcription");
+
+// Notes vocales du chat QG : jamais plus de ~2 minutes d'audio en usage
+// normal, 10 Mo est très large pour ça (webm/opus compresse énormément).
+const uploadAudio = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Télécharge une pièce jointe déjà hébergée (Cloudinary) pour la repasser à
 // Gemini en base64 — le payload JSON du chat reste petit (une URL, pas les
@@ -138,6 +144,22 @@ router.post("/chat", async (req, res) => {
     } catch (err) {
         console.error("❌ API chat :", err.message);
         res.json({ success: false, reply: "SAMII démarre. Réessaie dans quelques instants." });
+    }
+});
+
+// Transcrit une note vocale enregistrée dans le navigateur (chat QG) — même
+// moteur (Groq Whisper, gratuit) que pour WhatsApp/Telegram, plutôt que la
+// reconnaissance vocale native du navigateur (absente sur Firefox, qualité
+// très inégale en darija).
+router.post("/chat/transcribe", requireAuth, uploadAudio.single("audio"), async (req, res) => {
+    try {
+        if (!req.file) return res.json({ success: false, error: "Aucun audio reçu." });
+        const text = await transcription.transcribeBuffer(req.file.buffer, req.file.originalname || "audio.webm");
+        if (!text) return res.json({ success: false, error: "Transcription impossible, réessaie." });
+        res.json({ success: true, text });
+    } catch (err) {
+        console.error("❌ POST /api/chat/transcribe :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
     }
 });
 

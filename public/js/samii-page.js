@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const input        = document.getElementById('samii-page-input');
     const feed         = document.getElementById('samii-page-feed');
     const micBtn       = document.getElementById('samii-mic-btn');
-    const langSelect   = document.getElementById('samii-lang-select');
     const attachBtn    = document.getElementById('samii-attach-btn');
     const attachMenu   = document.getElementById('samii-attach-menu');
     const photoInput   = document.getElementById('samii-photo-input');
@@ -319,58 +318,64 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── MICRO : reconnaissance vocale avec sélecteur de langue ──
+    // ── MICRO : enregistrement + transcription Groq Whisper ──────────────
+    // Remplace l'ancienne reconnaissance vocale native du navigateur
+    // (indisponible sur Firefox, qualité très inégale en darija) par le même
+    // moteur que WhatsApp/Telegram : on enregistre localement, on envoie
+    // l'audio à /api/chat/transcribe, et le texte revient prêt à envoyer.
     if (micBtn) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-        if (!SpeechRecognition) {
+        if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
             micBtn.style.display = 'none';
         } else {
-            const recognition = new SpeechRecognition();
-            recognition.interimResults = false;
-            let listening = false;
+            let mediaRecorder = null;
+            let chunks = [];
+            let recording = false;
 
-            function currentLang() {
-                return langSelect?.value || 'fr-FR';
+            async function startRecording() {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                chunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.addEventListener('dataavailable', (e) => { if (e.data.size) chunks.push(e.data); });
+                mediaRecorder.addEventListener('stop', async () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    await envoyerAudio(new Blob(chunks, { type: mediaRecorder.mimeType || 'audio/webm' }));
+                });
+                mediaRecorder.start();
+                recording = true;
+                micBtn.classList.add('samii-mic-btn--active');
             }
 
-            micBtn.addEventListener('click', () => {
-                if (listening) {
-                    recognition.stop();
-                    return;
-                }
-                recognition.lang = currentLang();
+            function stopRecording() {
+                recording = false;
+                micBtn.classList.remove('samii-mic-btn--active');
+                mediaRecorder?.stop();
+            }
+
+            async function envoyerAudio(blob) {
+                toast('🎙️ SAMII écoute...');
                 try {
-                    recognition.start();
+                    const form = new FormData();
+                    form.append('audio', blob, 'audio.webm');
+                    const res = await fetch('/api/chat/transcribe', { method: 'POST', body: form });
+                    const data = await res.json();
+                    if (data.success && data.text) {
+                        sendMessage(data.text);
+                    } else {
+                        toast(data.error || '🎙️ Je n\'ai pas bien entendu, réessaie');
+                    }
                 } catch (err) {
-                    console.warn('Reconnaissance déjà active.');
+                    console.error('❌ Transcription :', err);
+                    toast('🎙️ Erreur réseau, réessaie');
                 }
-            });
+            }
 
-            recognition.addEventListener('start', () => {
-                listening = true;
-                micBtn.classList.add('samii-mic-btn--active');
-            });
-
-            recognition.addEventListener('end', () => {
-                listening = false;
-                micBtn.classList.remove('samii-mic-btn--active');
-            });
-
-            recognition.addEventListener('result', (event) => {
-                const transcript = event.results[0][0].transcript;
-                input.value = transcript;
-                sendMessage(transcript);
-            });
-
-            recognition.addEventListener('error', (event) => {
-                console.error('❌ Reconnaissance vocale :', event.error);
-                listening = false;
-                micBtn.classList.remove('samii-mic-btn--active');
-                if (event.error === 'not-allowed') {
+            micBtn.addEventListener('click', async () => {
+                if (recording) { stopRecording(); return; }
+                try {
+                    await startRecording();
+                } catch (err) {
+                    console.error('❌ Micro :', err);
                     toast('🎙️ Autorise le micro dans ton navigateur');
-                } else if (event.error !== 'no-speech') {
-                    toast('🎙️ Je n\'ai pas bien entendu, réessaie');
                 }
             });
         }
