@@ -261,6 +261,12 @@ router.get("/auth/meta", requireAuth, (req, res) => {
         `?client_id=${APP_ID}` +
         `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
         `&scope=${SCOPES}` +
+        // Sans ça, Facebook ne réaffiche pas l'écran de permissions pour un
+        // compte qui a déjà autorisé l'app par le passé — il renvoie
+        // silencieusement le même token limité aux anciennes permissions,
+        // même si SCOPES a changé côté code. "rerequest" force le dialogue
+        // à demander les permissions manquantes/nouvelles à chaque connexion.
+        `&auth_type=rerequest` +
         `&response_type=code`;
     res.redirect(authUrl);
 });
