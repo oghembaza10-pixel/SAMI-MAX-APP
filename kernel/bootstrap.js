@@ -79,6 +79,8 @@ scheduler.add("0 9 * * *", "Guerre - compte à rebours communauté", guerreEngin
     const pageEngine = require("../engines/pageEngine");
     scheduler.add("0 9,14,19 * * *", "Page Facebook - 3 posts/jour", pageEngine.runFacebook);
     scheduler.add("15 9,14,19 * * *", "Page Instagram - 3 posts/jour", pageEngine.runInstagram);
+    const communityEngine = require("../engines/communityEngine");
+    scheduler.add("30 11,18 * * *", "Tchat général - sujet SAMII 2x/jour", communityEngine.run);
     scheduler.start();
 }
 

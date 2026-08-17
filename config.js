@@ -14,6 +14,13 @@ module.exports = {
 
     APP_URL,
 
+    // Compte système "SAMII IA" dans utilisateurs (type_compte='ia', jamais
+    // capable de se connecter) — auteur des messages postés par SAMII dans
+    // le tchat général de la plateforme (routes/discussions.js,
+    // engines/communityEngine.js). Toujours identifié comme IA côté rendu,
+    // jamais présenté comme un membre humain.
+    SAMII_IA_USER_ID: process.env.SAMII_IA_USER_ID || "5d67f6d5-b3c1-4784-a29f-eee856f29f43",
+
     // ==================================================
     // AIRTABLE
     // ==================================================

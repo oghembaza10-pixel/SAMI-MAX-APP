@@ -7,6 +7,20 @@ const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
 const socketService = require("../services/socketService");
+const planner = require("../brain/planner");
+const CONFIG = require("../config");
+
+const SAMII_USER_ID = CONFIG.SAMII_IA_USER_ID;
+
+// SAMII n'intervient pas sur chaque message (ce serait envahissant dans un
+// vrai tchat entre humains) — seulement quand on l'appelle directement, ou
+// quand le message ressemble à une vraie question (prix, produit, aide).
+function samiiDoitRepondre(texte) {
+    const t = texte.toLowerCase();
+    if (/@?samii\b/.test(t) || /\bsami\b/.test(t)) return true;
+    if (/\?/.test(t)) return true;
+    return /\b(prix|combien|coûte|coute|tarif|comment|où|ou trouve|besoin d'aide|aide moi|c'est quoi)\b/.test(t);
+}
 
 function requireAuth(req, res, next) { if (!req.session?.loggedIn) return res.redirect("/login"); next(); }
 function escapeHtml(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
@@ -254,13 +268,14 @@ router.get("/:id", requireAuth, async (req, res) => {
     }
 
     const messagesHtml = messages.map(m => {
-        const moi = m.expediteur_id === userId;
-        const nom = `${m.prenom || ""} ${m.nom || ""}`.trim() || "Membre";
+        const estIa = m.expediteur_id === SAMII_USER_ID;
+        const moi = !estIa && m.expediteur_id === userId;
+        const nom = estIa ? "SAMII 🤖" : (`${m.prenom || ""} ${m.nom || ""}`.trim() || "Membre");
         return `
-        <div class="msg-row ${moi ? "msg-row--moi" : ""}">
-            ${!moi ? `<div class="msg-avatar">${initiales(nom)}</div>` : ""}
+        <div class="msg-row ${moi ? "msg-row--moi" : ""} ${estIa ? "msg-row--ia" : ""}">
+            ${!moi ? `<div class="msg-avatar">${estIa ? "🤖" : initiales(nom)}</div>` : ""}
             <div class="msg-bubble">
-                ${!moi ? `<span class="msg-author">${escapeHtml(nom)}</span>` : ""}
+                ${!moi ? `<span class="msg-author">${escapeHtml(nom)}${estIa ? ' <span class="msg-ia-badge">IA</span>' : ''}</span>` : ""}
                 ${m.contenu ? `<p>${escapeHtml(m.contenu)}</p>` : ""}
                 ${m.media_url ? `<img src="${escapeHtml(m.media_url)}" alt="">` : ""}
                 <time>${timeAgo(m.created_at)}</time>
@@ -290,6 +305,9 @@ body { display:flex; flex-direction:column; background:var(--bg); color:var(--te
 .msg-bubble { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:9px 13px; }
 .msg-row--moi .msg-bubble { background:linear-gradient(135deg,rgba(0,217,255,.22),rgba(0,119,255,.14)); border-color:rgba(0,217,255,.35); }
 .msg-author { display:block; font-size:10.5px; color:var(--blue); font-weight:700; margin-bottom:3px; }
+.msg-row--ia .msg-avatar { background:linear-gradient(135deg,#9d5cff,#d7b34c); }
+.msg-row--ia .msg-bubble { border-color:rgba(157,92,255,.4); background:rgba(157,92,255,.08); }
+.msg-ia-badge { display:inline-block; font-size:8.5px; font-weight:900; letter-spacing:.04em; color:#9d5cff; background:rgba(157,92,255,.15); border:1px solid rgba(157,92,255,.35); border-radius:5px; padding:1px 5px; margin-left:4px; vertical-align:middle; }
 .msg-bubble p { margin:0; font-size:13px; line-height:1.5; word-break:break-word; }
 .msg-bubble img { max-width:100%; border-radius:10px; margin-top:6px; }
 .msg-bubble time { display:block; font-size:9.5px; color:var(--muted); margin-top:4px; text-align:right; }
@@ -320,12 +338,12 @@ const socket = io();
 socket.emit("join", "discussion-" + discussionId);
 
 function ajouterMessage(m) {
-    const moi = m.expediteur_id === monId;
+    const moi = !m.est_ia && m.expediteur_id === monId;
     const row = document.createElement("div");
-    row.className = "msg-row" + (moi ? " msg-row--moi" : "");
-    row.innerHTML = (!moi ? '<div class="msg-avatar">' + (m.nom_initiales || "OG") + '</div>' : "") +
+    row.className = "msg-row" + (moi ? " msg-row--moi" : "") + (m.est_ia ? " msg-row--ia" : "");
+    row.innerHTML = (!moi ? '<div class="msg-avatar">' + (m.est_ia ? "🤖" : (m.nom_initiales || "OG")) + '</div>' : "") +
         '<div class="msg-bubble">' +
-        (!moi ? '<span class="msg-author">' + (m.nom_auteur || "Membre") + '</span>' : "") +
+        (!moi ? '<span class="msg-author">' + (m.nom_auteur || "Membre") + (m.est_ia ? ' <span class="msg-ia-badge">IA</span>' : '') + '</span>' : "") +
         (m.contenu ? '<p></p>' : "") +
         '<time>à l\\'instant</time></div>';
     if (m.contenu) row.querySelector("p").textContent = m.contenu;
@@ -386,10 +404,65 @@ router.post("/:id/message", requireAuth, async (req, res) => {
         });
 
         res.json({ success:true });
+
+        // SAMII répond après coup (pas d'attente sur l'envoi du message
+        // humain) — seulement dans le tchat général, seulement quand c'est
+        // pertinent (mention directe ou vraie question), jamais sur les
+        // groupes privés non sollicités.
+        if (discussion.type === "general" && samiiDoitRepondre(contenu)) {
+            repondreCommeSamii(discussionId, contenu, nomAuteur).catch(err => {
+                console.error("❌ Réponse SAMII (discussion) :", err.message);
+            });
+        }
     } catch (err) {
         console.error("❌ POST /discussions/:id/message :", err.message);
         res.json({ success:false, error:"Erreur serveur." });
     }
 });
+
+// ── SAMII répond dans le tchat général, comme un membre de plus, mais
+// clairement identifié comme IA (jamais un humain) ──────────────────────
+async function repondreCommeSamii(discussionId, contenu, nomAuteur) {
+    const historiqueRows = await db.query(
+        `SELECT dm.contenu, dm.expediteur_id, u.prenom FROM discussion_messages dm
+         LEFT JOIN utilisateurs u ON u.id = dm.expediteur_id
+         WHERE dm.discussion_id = $1 ORDER BY dm.created_at DESC LIMIT 20`,
+        [discussionId]
+    );
+    const history = historiqueRows.reverse().map(m => ({
+        role: m.expediteur_id === SAMII_USER_ID ? "model" : "user",
+        message: m.expediteur_id === SAMII_USER_ID ? m.contenu : `${m.prenom || "Membre"}: ${m.contenu}`,
+    }));
+
+    const reply = await planner.ask(contenu, {
+        source: "discussion-generale",
+        audience: "community",
+        memberName: nomAuteur,
+        instructions: [
+            "Tu es SAMII, et tu participes ici comme IA CLAIREMENT identifiée — jamais tu ne prétends être un humain.",
+            "Réponds naturellement, utilement et brièvement (2-5 phrases), comme une vraie participation à la discussion — jamais un menu ou un formulaire.",
+            "Ce tchat général réunit de vrais marchands/clients de la plateforme SAMII — tu peux partager de vraies astuces e-commerce/dropshipping, de l'actu IA pertinente, ou répondre à une question posée, pour que les gens apprennent et participent.",
+            "Ne fabrique jamais de faits, de chiffres ou d'actualités que tu ne connais pas vraiment.",
+            "Réponds dans la langue/dialecte du message auquel tu réagis.",
+        ].join("\n"),
+    }, history);
+
+    const rows = await db.query(
+        `INSERT INTO discussion_messages (discussion_id, expediteur_id, contenu, type) VALUES ($1,$2,$3,'texte') RETURNING *`,
+        [discussionId, SAMII_USER_ID, reply]
+    );
+    const message = rows[0];
+    await db.query(`UPDATE discussions SET updated_at = now() WHERE id = $1`, [discussionId]);
+
+    socketService.emitToShop(`discussion-${discussionId}`, "nouveau-message-discussion", {
+        discussion_id: discussionId,
+        expediteur_id: SAMII_USER_ID,
+        contenu: message.contenu,
+        nom_auteur: "SAMII 🤖",
+        nom_initiales: "IA",
+        est_ia: true,
+        created_at: message.created_at,
+    });
+}
 
 module.exports = router;

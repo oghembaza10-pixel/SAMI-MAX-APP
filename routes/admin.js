@@ -365,6 +365,13 @@ router.get("/", requireAdmin, async (req, res) => {
         <div id="meta-perms-resultat" style="margin-top:12px; font-size:12.5px; white-space:pre-wrap;"></div>
     </div>
 
+    <div class="section-title">💬 Tchat général (plateforme)</div>
+    <div class="pa-row" style="margin-bottom:30px;">
+        <div class="pa-contact" style="margin-bottom:12px;">SAMII lance un sujet de discussion 2x/jour (11h30, 18h30) dans le tchat général, et répond aux vraies questions des membres (prix, produits, aide) — toujours identifié comme IA, jamais un compte humain.</div>
+        <button id="community-poster-btn" class="ccp-confirm-btn">📤 Lancer un sujet (test)</button>
+        <div id="community-poster-resultat" style="margin-top:12px; font-size:12.5px; white-space:pre-wrap;"></div>
+    </div>
+
     <div class="section-title">🤝 Candidatures Partenariat</div>
     <div class="pa-filters" id="pa-filters">
         <button data-filter="all" class="active">Toutes</button>
@@ -447,6 +454,25 @@ function posterPage(btnId, endpoint, texteDefaut) {
 }
 posterPage("page-poster-fb-btn", "/admin/page/poster-facebook", "📤 Publier sur Facebook (test)");
 posterPage("page-poster-ig-btn", "/admin/page/poster-instagram", "📤 Publier sur Instagram (test)");
+
+document.getElementById("community-poster-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("community-poster-btn");
+    const zone = document.getElementById("community-poster-resultat");
+    btn.disabled = true;
+    btn.textContent = "⏳ Génération + publication...";
+    zone.textContent = "";
+    try {
+        const res = await fetch("/admin/community/poster", { method: "POST" });
+        const json = await res.json();
+        zone.textContent = json.success
+            ? "✅ Publié :\\n\\n" + json.texte
+            : "❌ Échec : " + (json.error || "erreur inconnue") + (json.texte ? "\\n\\nTexte généré (non publié) :\\n" + json.texte : "");
+    } catch (err) {
+        zone.textContent = "❌ Erreur réseau.";
+    }
+    btn.disabled = false;
+    btn.textContent = "📤 Lancer un sujet (test)";
+});
 
 document.getElementById("meta-perms-btn").addEventListener("click", async () => {
     const btn = document.getElementById("meta-perms-btn");
@@ -727,6 +753,17 @@ router.post("/page/poster-instagram", requireAdmin, async (req, res) => {
         res.json(resultat);
     } catch (err) {
         console.error("❌ POST /admin/page/poster-instagram :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/community/poster", requireAdmin, async (req, res) => {
+    try {
+        const communityEngine = require("../engines/communityEngine");
+        const resultat = await communityEngine.posterMaintenant();
+        res.json(resultat);
+    } catch (err) {
+        console.error("❌ POST /admin/community/poster :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
     }
 });
