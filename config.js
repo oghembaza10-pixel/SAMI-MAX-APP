@@ -105,6 +105,11 @@ module.exports = {
         // corrigé plus tard côté Render.
         API_KEY: process.env.OPENROUTE_API_TOKEN || process.env.OPENROUTER_API_KEY || "",
     },
+    GROQ: {
+        // Relais de secours gratuit (2ᵉ position, avant OpenRouter) — clé
+        // créée gratuitement sur console.groq.com, sans carte bancaire.
+        API_KEY: process.env.GROQ_API_KEY || "",
+    },
     // ==================================================
     // TELEGRAM
     // ==================================================

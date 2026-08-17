@@ -51,6 +51,23 @@ async function postOpenRouter(body) {
     });
 }
 
+// ── RELAIS GROQ : essayé AVANT OpenRouter quand Gemini est en panne — API
+// gratuite, ultra rapide, compatible format OpenAI (mêmes helpers que le
+// relais OpenRouter ci-dessus), donc un fournisseur de plus dans la chaîne
+// de secours pour qu'un client ne reste jamais sans réponse.
+const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GROQ_URL    = "https://api.groq.com/openai/v1/chat/completions";
+
+async function postGroq(body) {
+    if (!CONFIG.GROQ?.API_KEY) throw new Error("Clé Groq absente (relais indisponible).");
+    return await axios.post(GROQ_URL, body, {
+        headers: {
+            "Authorization": `Bearer ${CONFIG.GROQ.API_KEY}`,
+            "Content-Type": "application/json",
+        },
+    });
+}
+
 // Convertit les déclarations d'outils au format Gemini (utilisées plus bas)
 // vers le format OpenAI/OpenRouter — une seule source de vérité (TOOLS),
 // jamais deux définitions à maintenir en double.
@@ -73,16 +90,19 @@ function toOpenAiTools(geminiTools) {
     }));
 }
 
-async function chatViaOpenRouter({ message, context = {}, useTools = false, history = [] }) {
+// Logique partagée entre les relais Groq et OpenRouter : les deux exposent
+// une API compatible format OpenAI (chat completions + tool_calls), seuls
+// le endpoint/modèle/nom de provider changent.
+async function chatViaOpenAiCompatible({ provider, model, poster, message, context = {}, useTools = false, history = [] }) {
     const prompt = await SAMII_PROMPT(message, context);
     const messages = [
         ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.message })),
         { role: "user", content: prompt },
     ];
-    const body = { model: OPENROUTER_MODEL, messages };
+    const body = { model, messages };
     if (useTools) body.tools = toOpenAiTools(TOOLS);
 
-    const response = await postOpenRouter(body);
+    const response = await poster(body);
     const choice = response.data.choices?.[0];
     const toolCall = choice?.message?.tool_calls?.[0];
 
@@ -91,7 +111,7 @@ async function chatViaOpenRouter({ message, context = {}, useTools = false, hist
         try { args = JSON.parse(toolCall.function.arguments || "{}"); } catch { /* ignore */ }
         return {
             type: "function_call",
-            provider: "openrouter",
+            provider,
             name: toolCall.function.name,
             args,
             toolCallId: toolCall.id,
@@ -100,9 +120,17 @@ async function chatViaOpenRouter({ message, context = {}, useTools = false, hist
     }
     return {
         type: "text",
-        provider: "openrouter",
+        provider,
         text: choice?.message?.content || "SAMII n'a pas su répondre, réessaie autrement.",
     };
+}
+
+async function chatViaGroq(args) {
+    return chatViaOpenAiCompatible({ provider: "groq", model: GROQ_MODEL, poster: postGroq, ...args });
+}
+
+async function chatViaOpenRouter(args) {
+    return chatViaOpenAiCompatible({ provider: "openrouter", model: OPENROUTER_MODEL, poster: postOpenRouter, ...args });
 }
 
 const TOOLS = [
@@ -228,14 +256,21 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
         }
         console.error("❌ Gemini :", err.response?.data || err.message);
         // Gemini est en panne ou toutes les clés sont en quota épuisé — on
-        // relaie vers OpenRouter (fournisseur différent) plutôt que de
-        // laisser le client sans réponse et sa commande/RDV non traité.
+        // relaie vers un fournisseur différent plutôt que de laisser le
+        // client sans réponse et sa commande/RDV non traité. Groq d'abord
+        // (gratuit, très rapide), puis OpenRouter si Groq échoue aussi.
         try {
-            console.warn("🔀 Relais OpenRouter (Gemini indisponible)...");
-            return await chatViaOpenRouter({ message, context, useTools, history });
-        } catch (fallbackErr) {
-            console.error("❌ OpenRouter (relais) :", fallbackErr.response?.data || fallbackErr.message);
-            return { type: "text", provider: "gemini", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
+            console.warn("🔀 Relais Groq (Gemini indisponible)...");
+            return await chatViaGroq({ message, context, useTools, history });
+        } catch (groqErr) {
+            console.error("❌ Groq (relais) :", groqErr.response?.data || groqErr.message);
+            try {
+                console.warn("🔀 Relais OpenRouter (Groq indisponible aussi)...");
+                return await chatViaOpenRouter({ message, context, useTools, history });
+            } catch (fallbackErr) {
+                console.error("❌ OpenRouter (relais) :", fallbackErr.response?.data || fallbackErr.message);
+                return { type: "text", provider: "gemini", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
+            }
         }
     }
 }
@@ -269,11 +304,14 @@ async function chatWithSearch({ message, context = {} }) {
 }
 
 async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult, thoughtSignature, provider = "gemini", toolCallId, assistantMessage, history = [] }) {
-    // Le tour a démarré sur OpenRouter (Gemini indisponible pour ce tour) —
-    // on doit continuer sur OpenRouter : les formats "suite d'appel de
-    // fonction" de Gemini et OpenAI sont structurellement incompatibles
-    // (impossible de rejouer un functionCall Gemini en tool_call OpenAI).
-    if (provider === "openrouter") {
+    // Le tour a démarré sur Groq ou OpenRouter (Gemini indisponible pour ce
+    // tour) — on doit continuer sur le MÊME fournisseur : les formats
+    // "suite d'appel de fonction" de Gemini et OpenAI sont structurellement
+    // incompatibles (impossible de rejouer un functionCall Gemini en
+    // tool_call OpenAI). Groq et OpenRouter partagent le même format OpenAI.
+    if (provider === "groq" || provider === "openrouter") {
+        const poster = provider === "groq" ? postGroq : postOpenRouter;
+        const model = provider === "groq" ? GROQ_MODEL : OPENROUTER_MODEL;
         try {
             const prompt = await SAMII_PROMPT(message, context);
             const messages = [
@@ -282,11 +320,11 @@ async function chatWithFunctionResult({ message, context = {}, functionName, fun
                 assistantMessage,
                 { role: "tool", tool_call_id: toolCallId, content: JSON.stringify(functionResult) },
             ];
-            const response = await postOpenRouter({ model: OPENROUTER_MODEL, messages });
+            const response = await poster({ model, messages });
             const text = response.data.choices?.[0]?.message?.content;
             return text || "C'est fait ✅";
         } catch (err) {
-            console.error("❌ OpenRouter (function result) :", err.response?.data || err.message);
+            console.error(`❌ ${provider} (function result) :`, err.response?.data || err.message);
             return "C'est fait ✅";
         }
     }
