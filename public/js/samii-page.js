@@ -47,6 +47,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2500);
     }
 
+    // ── VOIX DE SAMII (synthèse vocale, Groq Orpheus, gratuit) ──────────
+    // Un seul audio à la fois : en relancer un coupe le précédent.
+    let audioEnCours = null;
+    async function lireAVoixHaute(texte, btn) {
+        if (audioEnCours) { audioEnCours.pause(); audioEnCours = null; }
+
+        // Déjà en train de lire CE message précis → un second clic met en pause.
+        if (btn.dataset.lecture === '1') {
+            btn.dataset.lecture = '';
+            btn.textContent = '🔊';
+            return;
+        }
+
+        const original = btn.textContent;
+        btn.textContent = '⏳';
+        btn.disabled = true;
+        try {
+            const res = await fetch('/api/chat/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: texte }),
+            });
+            if (!res.ok) throw new Error('tts échoué');
+            const blob = await res.blob();
+            const audio = new Audio(URL.createObjectURL(blob));
+            audioEnCours = audio;
+            btn.dataset.lecture = '1';
+            btn.disabled = false;
+            btn.textContent = '⏸️';
+            const reinitialiser = () => { btn.dataset.lecture = ''; btn.textContent = original; if (audioEnCours === audio) audioEnCours = null; };
+            audio.addEventListener('ended', reinitialiser);
+            audio.addEventListener('pause', reinitialiser);
+            audio.play();
+        } catch (err) {
+            console.error('❌ Voix SAMII :', err);
+            toast('🔊 Impossible de lire cette réponse');
+            btn.textContent = original;
+            btn.disabled = false;
+        }
+    }
+
     // ── MESSAGES ──────────────────────────────────────────
     function addMessage(role, text, imageUrl, fileLabel, messageId) {
         const wrapper = document.createElement('div');
@@ -77,18 +118,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // pendant qu'on entraîne SAMII, en attendant le vrai volume de
         // clients — uniquement sur les réponses de SAMII, jamais sur ses
         // propres messages.
-        if (role === 'bot' && messageId) {
+        if (role === 'bot' && text) {
             const feedbackRow = document.createElement('div');
             feedbackRow.className = 'samii-msg__feedback';
             feedbackRow.innerHTML = `
-                <button type="button" data-feedback="up" aria-label="Bonne réponse">👍</button>
-                <button type="button" data-feedback="down" aria-label="Mauvaise réponse">👎</button>
+                <button type="button" data-tts="1" aria-label="Écouter">🔊</button>
+                ${messageId ? `<button type="button" data-feedback="up" aria-label="Bonne réponse">👍</button>
+                <button type="button" data-feedback="down" aria-label="Mauvaise réponse">👎</button>` : ''}
             `;
-            feedbackRow.querySelectorAll('button').forEach(btn => {
+            const ttsBtn = feedbackRow.querySelector('[data-tts]');
+            ttsBtn.addEventListener('click', () => lireAVoixHaute(text, ttsBtn));
+            feedbackRow.querySelectorAll('button[data-feedback]').forEach(btn => {
                 btn.addEventListener('click', async () => {
+                    const boutonsFeedback = feedbackRow.querySelectorAll('button[data-feedback]');
                     if (feedbackRow.dataset.envoye) return;
                     feedbackRow.dataset.envoye = '1';
-                    feedbackRow.querySelectorAll('button').forEach(b => b.disabled = true);
+                    boutonsFeedback.forEach(b => b.disabled = true);
                     btn.classList.add('samii-msg__feedback--actif');
                     try {
                         await fetch('/api/chat/feedback', {

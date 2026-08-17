@@ -242,6 +242,36 @@ const form = document.getElementById("form");
 const input = document.getElementById("input");
 const btn = document.getElementById("btn");
 
+let audioEnCours = null;
+async function lireAVoixHaute(texte, btn) {
+    if (audioEnCours) { audioEnCours.pause(); audioEnCours = null; }
+    if (btn.dataset.lecture === "1") { btn.dataset.lecture = ""; btn.textContent = "🔊"; return; }
+    const original = btn.textContent;
+    btn.textContent = "⏳";
+    btn.disabled = true;
+    try {
+        const res = await fetch("/admin/samii/tts", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: texte }),
+        });
+        if (!res.ok) throw new Error("tts échoué");
+        const blob = await res.blob();
+        const audio = new Audio(URL.createObjectURL(blob));
+        audioEnCours = audio;
+        btn.dataset.lecture = "1";
+        btn.disabled = false;
+        btn.textContent = "⏸️";
+        const reinitialiser = () => { btn.dataset.lecture = ""; btn.textContent = original; if (audioEnCours === audio) audioEnCours = null; };
+        audio.addEventListener("ended", reinitialiser);
+        audio.addEventListener("pause", reinitialiser);
+        audio.play();
+    } catch (err) {
+        console.error("❌ Voix SAMII :", err);
+        btn.textContent = original;
+        btn.disabled = false;
+    }
+}
+
 function addMessage(role, text, messageId) {
     const wrap = document.createElement("div");
     wrap.className = "entr-msg entr-msg--" + role;
@@ -249,14 +279,17 @@ function addMessage(role, text, messageId) {
     bubble.className = "entr-bubble";
     bubble.textContent = text;
     wrap.appendChild(bubble);
-    if (role === "bot" && messageId) {
+    if (role === "bot" && text) {
         const fb = document.createElement("div");
         fb.className = "entr-feedback";
-        fb.innerHTML = '<button type="button" data-fb="up">👍</button><button type="button" data-fb="down">👎</button>';
-        fb.querySelectorAll("button").forEach(b => b.addEventListener("click", async () => {
+        fb.innerHTML = '<button type="button" data-tts="1">🔊</button>' +
+            (messageId ? '<button type="button" data-fb="up">👍</button><button type="button" data-fb="down">👎</button>' : '');
+        fb.querySelector('[data-tts]').addEventListener("click", () => lireAVoixHaute(text, fb.querySelector('[data-tts]')));
+        fb.querySelectorAll("button[data-fb]").forEach(b => b.addEventListener("click", async () => {
+            const boutonsFeedback = fb.querySelectorAll("button[data-fb]");
             if (fb.dataset.envoye) return;
             fb.dataset.envoye = "1";
-            fb.querySelectorAll("button").forEach(x => x.disabled = true);
+            boutonsFeedback.forEach(x => x.disabled = true);
             b.classList.add("actif");
             await fetch("/admin/samii/feedback", {
                 method: "POST", headers: { "Content-Type": "application/json" },
@@ -325,6 +358,21 @@ router.post("/samii/chat", requireAdmin, async (req, res) => {
     } catch (err) {
         console.error("❌ POST /admin/samii/chat :", err.message);
         res.json({ success: false, reply: "Erreur serveur." });
+    }
+});
+
+router.post("/samii/tts", requireAdmin, async (req, res) => {
+    try {
+        const texte = (req.body.text || "").trim();
+        if (!texte) return res.status(400).end();
+        const tts = require("../services/tts");
+        const audio = await tts.synthesize(texte);
+        if (!audio) return res.status(502).end();
+        res.set("Content-Type", "audio/wav");
+        res.send(audio);
+    } catch (err) {
+        console.error("❌ POST /admin/samii/tts :", err.message);
+        res.status(500).end();
     }
 });
 
