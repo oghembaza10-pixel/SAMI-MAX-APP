@@ -29,6 +29,7 @@ Rédige UN SEUL post, prêt à publier tel quel — pas de JSON, pas de balises,
 
 Choisis TOI-MÊME le thème parmi ceux-ci (sans t'y limiter, tu peux aussi en inventer d'autres) : ${THEMES.join(" / ")}.
 La majorité des posts doivent apporter une vraie valeur (conseil, réflexion, actu) — pas juste "inscris-toi" à chaque fois. Le lien vers SAMII (https://samii.souverain-store.com) peut apparaître naturellement quand c'est pertinent, jamais forcé à chaque post.
+Termine CHAQUE post par une invitation courte et naturelle à rejoindre le canal Telegram SAMII pour plus d'astuces au quotidien (ex: "📲 Rejoins-moi sur ${CONFIG.TELEGRAM.CHANNEL_USERNAME} pour plus d'astuces" — reformule à ta façon à chaque fois, ne répète jamais la même phrase mot pour mot).
 Écris principalement en arabe (arabe standard ou darija algérienne/marocaine selon ce qui sonne le plus naturel pour le sujet) — c'est la langue par défaut de la page. Tu peux mélanger quelques mots de français si c'est naturel (comme le fait vraiment un entrepreneur bilingue), mais le post doit rester majoritairement en arabe.
 Ne répète jamais un post déjà écrit par le passé — sois créatif, chaque post doit sembler écrit par une vraie personne qui a réfléchi à ce sujet précis aujourd'hui.
 
