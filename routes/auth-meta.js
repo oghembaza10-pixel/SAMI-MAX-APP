@@ -19,15 +19,14 @@ const APP_SECRET = CONFIG.META.APP_SECRET;
 const REDIRECT_URI = CONFIG.META.REDIRECT_URI;
 const GRAPH_VERSION = "v23.0";
 
-// ── DIAGNOSTIC EN COURS (16/08/2026) ───────────────────────────────────────
+// ── DIAGNOSTIC EN COURS (16-17/08/2026) ────────────────────────────────────
 // Lot 1 (public_profile, email, pages_show_list) confirmé OK le 16/08.
-// Lot 2 (business_management, ads_management, ads_read) en cours de test.
-// Reste à tester ensuite :
-//   Lot 3 : pages_manage_ads, pages_messaging, pages_manage_posts,
-//           pages_manage_engagement, pages_read_engagement
-//   Lot 4 (Instagram, déjà confirmé invalide le 16/08) : instagram_business_basic,
-//           instagram_business_manage_messages, instagram_business_content_publish,
-//           instagram_business_manage_comments
+// Lot 2 (business_management, ads_management, ads_read) confirmé OK.
+// Lot 3 (ci-dessous) ajouté le 17/08 : requis pour publier sur la Page
+// ("#200 ... requires both pages_read_engagement and pages_manage_posts").
+// Reste à tester : Lot 4 (Instagram, déjà confirmé invalide le 16/08) :
+//   instagram_business_basic, instagram_business_manage_messages,
+//   instagram_business_content_publish, instagram_business_manage_comments
 const SCOPES = [
     "public_profile",
     "email",
@@ -35,6 +34,11 @@ const SCOPES = [
     "business_management",
     "ads_management",
     "ads_read",
+    "pages_manage_ads",
+    "pages_messaging",
+    "pages_manage_posts",
+    "pages_manage_engagement",
+    "pages_read_engagement",
 ].join(",");
 
 function requireAuth(req, res, next) {

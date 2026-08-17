@@ -29,12 +29,13 @@ Rédige UN SEUL post, prêt à publier tel quel — pas de JSON, pas de balises,
 
 Choisis TOI-MÊME le thème parmi ceux-ci (sans t'y limiter, tu peux aussi en inventer d'autres) : ${THEMES.join(" / ")}.
 La majorité des posts doivent apporter une vraie valeur (conseil, réflexion, actu) — pas juste "inscris-toi" à chaque fois. Le lien vers SAMII (https://samii.souverain-store.com) peut apparaître naturellement quand c'est pertinent, jamais forcé à chaque post.
-Choisis aussi TOI-MÊME la langue/le ton : varie réellement d'un post à l'autre entre français, arabe, darija algérienne, darija marocaine, ou un mélange naturel.
+Écris principalement en arabe (arabe standard ou darija algérienne/marocaine selon ce qui sonne le plus naturel pour le sujet) — c'est la langue par défaut de la page. Tu peux mélanger quelques mots de français si c'est naturel (comme le fait vraiment un entrepreneur bilingue), mais le post doit rester majoritairement en arabe.
 Ne répète jamais un post déjà écrit par le passé — sois créatif, chaque post doit sembler écrit par une vraie personne qui a réfléchi à ce sujet précis aujourd'hui.
 
 Consignes :
 - Ton direct, humain, jamais un communiqué de presse.
-- Quelques emojis avec modération, des sauts de ligne pour l'aération.
+- Rends le post visuellement accrocheur : emojis pertinents (pas juste à la fin, répartis dans le texte), et quand le sujet s'y prête, une petite liste à puces (avec des emojis en puces, ex: ✅ 🔥 📌 ➡️) plutôt qu'un pavé de texte plat.
+- Des sauts de ligne pour l'aération, jamais un mur de texte.
 - Ne mens jamais et n'invente jamais une fonctionnalité qui n'existe pas.
 - Reste sous 600 caractères.`;
 }
