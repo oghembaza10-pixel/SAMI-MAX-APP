@@ -11,6 +11,7 @@ const db           = require("../services/db");
 const socketService = require("../services/socketService");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const telegramCommunity = require("../services/telegramCommunity");
+const transcription = require("../services/transcription");
 
 const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
@@ -95,6 +96,22 @@ function tr(lang, key, ...args) {
     const dict = T[lang] || T.fr;
     const entry = dict[key] || T.fr[key];
     return typeof entry === "function" ? entry(...args) : entry;
+}
+
+// ── Note vocale : Telegram ne fournit qu'un file_id, il faut d'abord
+// résoudre son chemin de téléchargement réel via getFile avant de pouvoir
+// récupérer l'audio et le transcrire (Groq Whisper, gratuit).
+async function transcribeVoice(fileId, base) {
+    try {
+        const { data } = await axios.get(`${base}/getFile`, { params: { file_id: fileId } });
+        const filePath = data?.result?.file_path;
+        if (!filePath) return "";
+        const fileUrl = `${base.replace("api.telegram.org/bot", "api.telegram.org/file/bot")}/${filePath}`;
+        return await transcription.transcribeFromUrl(fileUrl, "voice.oga");
+    } catch (err) {
+        console.error("❌ Telegram transcribeVoice :", err.response?.data || err.message);
+        return "";
+    }
 }
 
 async function reply(chatId, text, base = BASE) {
@@ -280,7 +297,10 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
         if (!message) return;
 
         const chatId = message.chat.id;
-        const text = (message.text || "").trim();
+        let text = (message.text || "").trim();
+        if (!text && message.voice?.file_id) {
+            text = (await transcribeVoice(message.voice.file_id, base)).trim();
+        }
         const name = message.from?.first_name || "Client";
         const langDetectee = detecterLangue(message);
         const lang = (await memory.get(memKey(chatId)))?.lang || langDetectee;

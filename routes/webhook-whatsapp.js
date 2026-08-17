@@ -11,6 +11,7 @@ const socketService = require("../services/socketService");
 const whatsapp       = require("../services/whatsapp");
 const db            = require("../services/db");
 const confirmationsQuota = require("../services/confirmationsQuota");
+const transcription  = require("../services/transcription");
 
 const router = express.Router();
 
@@ -115,10 +116,19 @@ router.post("/", async (req, res) => {
 
         const idInstance = body.instanceData?.idInstance;
         const senderData  = body.senderData || {};
-        const textMessage =
+        let textMessage =
             body.messageData?.textMessageData?.textMessage ||
             body.messageData?.extendedTextMessageData?.text ||
             "";
+
+        // ── Note vocale : Green API l'envoie en fileMessageData (audio/ogg,
+        // downloadUrl temporaire) plutôt qu'en texte — on la transcrit via
+        // Groq Whisper (gratuit) et on continue exactement comme un message
+        // texte normal, le client n'a pas besoin de savoir taper.
+        const fileData = body.messageData?.fileMessageData;
+        if (!textMessage && fileData?.downloadUrl && (fileData.mimeType || "").startsWith("audio/")) {
+            textMessage = await transcription.transcribeFromUrl(fileData.downloadUrl, fileData.fileName || "audio.ogg");
+        }
 
         if (!idInstance || !textMessage) return;
 
