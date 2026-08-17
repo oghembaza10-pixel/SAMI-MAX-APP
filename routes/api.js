@@ -148,6 +148,23 @@ router.post("/chat", async (req, res) => {
     }
 });
 
+// Directives permanentes : réglage fiable (pas une supposition de l'IA),
+// appliqué à CHAQUE conversation avec SAMII (voir brain/prompts/index.js).
+router.get("/directives", requireAuth, async (req, res) => {
+    try {
+        const rows = await db.query(`SELECT directives_permanentes FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+        res.json({ success: true, directives: rows[0]?.directives_permanentes || "" });
+    } catch (err) {
+        console.error("❌ GET /api/directives :", err.message);
+        res.json({ success: false, directives: "" });
+    }
+});
+
+router.post("/directives", requireAuth, async (req, res) => {
+    const ok = await memoireUtilisateur.setDirectives(req.session.userId, req.body.directives || "");
+    res.json({ success: ok });
+});
+
 // 👍/👎 sur une réponse de SAMII — construit un historique de ce qui
 // marche/marche pas pendant qu'on entraîne SAMII, sans attendre le vrai
 // volume de clients.

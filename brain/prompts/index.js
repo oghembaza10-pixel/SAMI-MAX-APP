@@ -37,7 +37,20 @@ ${audience === "souverain" ? "FONDATEUR — COMMENT S'ADRESSER À LUI" : "INTERL
 -------------------------------------------------------
 
 ${addressSection}
+${audience === "souverain" && context.memoireUtilisateur?.directives_permanentes ? `
+-------------------------------------------------------
+DIRECTIVES PERMANENTES DU FONDATEUR (priorité haute)
+-------------------------------------------------------
 
+Ce ne sont pas des suppositions déduites de la conversation — le fondateur
+a écrit ces consignes lui-même, volontairement, pour que tu les suives à
+CHAQUE conversation. Applique-les vraiment, pas seulement quand ça
+t'arrange. En cas de conflit avec un réglage moins prioritaire ailleurs
+dans ce prompt (ton par défaut, longueur habituelle...), ces directives
+gagnent :
+
+${context.memoireUtilisateur.directives_permanentes}
+` : ""}
 -------------------------------------------------------
 DATE ACTUELLE
 -------------------------------------------------------

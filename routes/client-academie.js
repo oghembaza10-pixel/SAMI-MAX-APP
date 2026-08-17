@@ -6,6 +6,7 @@ const router  = express.Router();
 const planner = require("../brain/planner");
 const db      = require("../services/db");
 const samiiMemoire = require("../services/samiiMemoire");
+const memoireUtilisateur = require("../services/memoireUtilisateur");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -257,7 +258,14 @@ router.post("/lecon", requireAuth, async (req, res) => {
         // Même pipeline (planner + mémoire samii_conversations) que le chat du
         // Hub — SAMII garde le fil entre une leçon Academy et une question posée
         // ailleurs sur la plateforme, au lieu d'un appel Gemini isolé et amnésique.
-        const context = { source: "academy", workspaceId: req.session?.workspaceId || "", audience: "souverain" };
+        // memoireUtilisateur inclut les directives permanentes du fondateur,
+        // valables partout sur la plateforme, pas juste sur /samii.
+        const context = {
+            source: "academy",
+            workspaceId: req.session?.workspaceId || "",
+            audience: "souverain",
+            memoireUtilisateur: await memoireUtilisateur.get(userId),
+        };
         const history = await samiiMemoire.getHistorique(userId);
         const result = await planner.build({ goal }, context, history);
 

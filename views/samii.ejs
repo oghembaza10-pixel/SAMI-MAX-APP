@@ -186,7 +186,7 @@
             <div class="samii-chat__feed" id="samii-page-feed">
                 <div class="samii-msg samii-msg--bot">
                     <div class="samii-msg__bubble" data-i18n="samii.chat.welcome">
-                        Bienvenue, Général. Je suis <b>SAMII</b>. Comment puis-je vous aider aujourd'hui ?
+                        Wesh khoya 👋 Je suis <b>SAMII</b>. Comment je peux t'aider aujourd'hui ?
                     </div>
                 </div>
             </div>
@@ -216,10 +216,26 @@
                 <button type="button" id="samii-resume-btn" title="Résumé de ma semaine" aria-label="Résumé de ma semaine" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
                     <i data-lucide="clipboard-list"></i>
                 </button>
+                <button type="button" id="samii-directives-btn" title="Directives permanentes" aria-label="Directives permanentes" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
+                    <i data-lucide="settings-2"></i>
+                </button>
                 <button type="submit" aria-label="Envoyer">
                     <i data-lucide="arrow-up"></i>
                 </button>
             </form>
+
+            <div id="samii-directives-panel" class="samii-directives-panel" style="display:none;">
+                <div class="samii-directives-panel__inner">
+                    <h3>⚙️ Directives permanentes</h3>
+                    <p>Ce que tu écris ici s'applique à CHAQUE conversation avec SAMII, partout sur la plateforme (QG, Academy, Entraînement admin) — pas juste ici. Exemple : "réponds toujours en 2 phrases max", "jamais d'emoji", "parle-moi toujours en darija".</p>
+                    <textarea id="samii-directives-text" rows="5" placeholder="Écris tes directives ici..."></textarea>
+                    <div class="samii-directives-panel__actions">
+                        <button type="button" id="samii-directives-fermer">Fermer</button>
+                        <button type="button" id="samii-directives-sauver">Enregistrer</button>
+                    </div>
+                    <div id="samii-directives-msg"></div>
+                </div>
+            </div>
             <div id="samii-attach-preview" style="display:none;align-items:center;gap:10px;max-width:680px;margin:8px auto 0;padding:8px 14px;background:var(--bg-panel);border:1px solid rgba(95,212,255,0.2);border-radius:12px;"></div>
         </section>
     </main>

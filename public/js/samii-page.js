@@ -15,6 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const resumeBtn     = document.getElementById('samii-resume-btn');
     const projetSelect  = document.getElementById('samii-projet-select');
     const nouveauProjetBtn = document.getElementById('samii-nouveau-projet-btn');
+    const directivesBtn   = document.getElementById('samii-directives-btn');
+    const directivesPanel = document.getElementById('samii-directives-panel');
+    const directivesText  = document.getElementById('samii-directives-text');
+    const directivesMsg   = document.getElementById('samii-directives-msg');
 
     if (!form || !input || !feed) return;
 
@@ -434,6 +438,49 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 resumeBtn.disabled = false;
             }
+        });
+    }
+
+    // ── DIRECTIVES PERMANENTES : réglage fiable, valable partout sur la
+    // plateforme (QG, Academy, Entraînement admin), pas juste ici ──
+    if (directivesBtn && directivesPanel && directivesText) {
+        let charge = false;
+
+        async function ouvrirPanel() {
+            directivesPanel.style.display = directivesPanel.style.display === 'none' ? 'block' : 'none';
+            if (directivesPanel.style.display === 'none' || charge) return;
+            try {
+                const res = await fetch('/api/directives');
+                const data = await res.json();
+                directivesText.value = data.directives || '';
+                charge = true;
+            } catch (err) {
+                console.error('❌ Chargement directives :', err);
+            }
+        }
+
+        directivesBtn.addEventListener('click', ouvrirPanel);
+
+        document.getElementById('samii-directives-fermer')?.addEventListener('click', () => {
+            directivesPanel.style.display = 'none';
+        });
+
+        document.getElementById('samii-directives-sauver')?.addEventListener('click', async () => {
+            const btn = document.getElementById('samii-directives-sauver');
+            btn.disabled = true;
+            directivesMsg.textContent = '';
+            try {
+                const res = await fetch('/api/directives', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ directives: directivesText.value }),
+                });
+                const data = await res.json();
+                directivesMsg.textContent = data.success ? '✅ Enregistré — s\'applique dès maintenant, partout.' : '❌ Erreur, réessaie.';
+            } catch (err) {
+                directivesMsg.textContent = '❌ Erreur réseau.';
+            }
+            btn.disabled = false;
         });
     }
 });

@@ -35,7 +35,7 @@ async function get(userId) {
     if (!userId) return null;
     try {
         const rows = await db.query(
-            `SELECT nom, prenom, langue_preferee, pays, metier, memoire FROM utilisateurs WHERE id = $1`,
+            `SELECT nom, prenom, langue_preferee, pays, metier, memoire, directives_permanentes FROM utilisateurs WHERE id = $1`,
             [userId]
         );
         const u = rows[0];
@@ -44,6 +44,7 @@ async function get(userId) {
             profil: { nom: u.nom, prenom: u.prenom, langue: u.langue_preferee, pays: u.pays, metier: u.metier },
             ...FORME_VIDE,
             ...(u.memoire || {}),
+            directives_permanentes: u.directives_permanentes || "",
         };
     } catch (err) {
         console.error("❌ memoireUtilisateur.get :", err.message);
@@ -97,4 +98,18 @@ Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, dans ce format
     }
 }
 
-module.exports = { get, fusionner, extraireEtMemoriser };
+// Directives permanentes : contrairement au reste de cette fiche (extrait
+// automatiquement par l'IA, probabiliste), ce champ est écrit DIRECTEMENT
+// par l'utilisateur — un réglage fiable et garanti, pas une supposition.
+async function setDirectives(userId, texte) {
+    if (!userId) return false;
+    try {
+        await db.query(`UPDATE utilisateurs SET directives_permanentes = $1 WHERE id = $2`, [(texte || "").trim().slice(0, 2000), userId]);
+        return true;
+    } catch (err) {
+        console.error("❌ memoireUtilisateur.setDirectives :", err.message);
+        return false;
+    }
+}
+
+module.exports = { get, fusionner, extraireEtMemoriser, setDirectives };
