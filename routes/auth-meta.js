@@ -39,6 +39,11 @@ const SCOPES = [
     "pages_manage_posts",
     "pages_manage_engagement",
     "pages_read_engagement",
+    // Doc Meta ("Features Reference") : pages_manage_posts exige aussi
+    // pages_read_user_content — Facebook la valide même si elle n'est pas
+    // demandée, et rejette toute la liste avec "Invalid Scopes" tant
+    // qu'elle n'a jamais été explicitement demandée/accordée.
+    "pages_read_user_content",
 ].join(",");
 
 function requireAuth(req, res, next) {
