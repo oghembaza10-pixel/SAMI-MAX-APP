@@ -335,10 +335,14 @@ router.post("/samii/chat", requireAdmin, async (req, res) => {
         const fondateur = await resolveFondateur(req);
         if (!fondateur) return res.json({ success: false, reply: "Compte fondateur introuvable (email admin non lié à un compte utilisateurs)." });
 
-        // Mêmes directives permanentes que partout ailleurs sur la
-        // plateforme (/samii, Academy...) — un seul réglage, valable
+        // Mêmes directives permanentes et connaissances que partout ailleurs
+        // sur la plateforme (/samii, Academy...) — un seul réglage, valable
         // pour toute conversation avec le fondateur, pas juste ce fil.
-        const memoireActuelle = await memoireUtilisateur.get(fondateur.userId);
+        const connaissancesService = require("../services/connaissances");
+        const [memoireActuelle, connaissancesTexte] = await Promise.all([
+            memoireUtilisateur.get(fondateur.userId),
+            connaissancesService.texteAgrege(fondateur.userId),
+        ]);
 
         const context = {
             workspaceId: fondateur.workspace_boutique_id || "",
@@ -346,6 +350,7 @@ router.post("/samii/chat", requireAdmin, async (req, res) => {
             prenom: fondateur.prenom,
             audience: "souverain",
             memoireUtilisateur: memoireActuelle,
+            connaissances: connaissancesTexte,
             instructions: "Tu es dans l'espace d'entraînement dédié du fondateur, dans le Centre de contrôle — un fil séparé de son QG habituel, réservé à te tester, t'ajuster et t'apprendre à mieux le connaître. C'est certainement lui, aucune ambiguïté possible ici.",
         };
         const history = await samiiMemoire.getHistorique(fondateur.userId, fondateur.projetId);

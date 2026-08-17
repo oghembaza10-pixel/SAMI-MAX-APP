@@ -163,7 +163,19 @@
 }
 #samii-directives-fermer { background: transparent; color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1) !important; }
 #samii-directives-sauver { background: var(--cyan-tech); color: #001018; font-weight: 700; }
-#samii-directives-msg { margin-top: 8px; font-size: .78rem; color: #3ddc84; min-height: 16px; }
+#samii-directives-msg, #samii-connaissance-msg { margin-top: 8px; font-size: .78rem; color: #3ddc84; min-height: 16px; }
+
+.samii-connaissance-liste { max-height: 160px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.samii-connaissance-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 7px 10px; font-size: .78rem; color: var(--text-main);
+}
+.samii-connaissance-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.samii-connaissance-item button {
+    background: transparent; border: none; color: #ff5470; cursor: pointer; font-size: .78rem;
+    flex-shrink: 0;
+}
 
 .samii-msg--user { display: flex; justify-content: flex-end; }
 .samii-msg--user .samii-msg__bubble {

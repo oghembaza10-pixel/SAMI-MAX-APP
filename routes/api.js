@@ -14,6 +14,8 @@ const projetsService = require("../services/projetsService");
 const memoireUtilisateur = require("../services/memoireUtilisateur");
 const transcription = require("../services/transcription");
 const tts = require("../services/tts");
+const connaissances = require("../services/connaissances");
+const geminiService = require("../services/geminiService");
 
 // Notes vocales du chat QG : jamais plus de ~2 minutes d'audio en usage
 // normal, 10 Mo est très large pour ça (webm/opus compresse énormément).
@@ -103,6 +105,7 @@ router.post("/chat", async (req, res) => {
 
         const grade = await getGrade(userId);
         const memoireActuelle = userId ? await memoireUtilisateur.get(userId) : null;
+        const connaissancesTexte = userId ? await connaissances.texteAgrege(userId) : "";
         const context = {
             user: { lang: req.body.lang || "" },
             workspaceId: req.session?.workspaceId || req.body.workspaceId || "",
@@ -112,6 +115,7 @@ router.post("/chat", async (req, res) => {
             lastAction: req.body.lastAction || "",
             grade: grade.actuel,
             prenom: grade.prenom,
+            connaissances: connaissancesTexte,
             audience: "souverain",
             memoireUtilisateur: memoireActuelle,
         };
@@ -163,6 +167,63 @@ router.get("/directives", requireAuth, async (req, res) => {
 
 router.post("/directives", requireAuth, async (req, res) => {
     const ok = await memoireUtilisateur.setDirectives(req.session.userId, req.body.directives || "");
+    res.json({ success: ok });
+});
+
+// Base de connaissances permanente : le fichier (PDF/image) part sur
+// Cloudinary côté client (même flux que les pièces jointes du chat), on ne
+// reçoit ici que l'URL — SAMII (multimodal) lit le fichier une seule fois
+// pour en extraire un résumé, qui seul sera relu à chaque conversation
+// future (voir brain/prompts/index.js).
+router.get("/connaissances", requireAuth, async (req, res) => {
+    try {
+        const rows = await connaissances.lister(req.session.userId);
+        res.json({ success: true, connaissances: rows });
+    } catch (err) {
+        console.error("❌ GET /api/connaissances :", err.message);
+        res.json({ success: false, connaissances: [] });
+    }
+});
+
+router.post("/connaissances", requireAuth, async (req, res) => {
+    try {
+        const { titre, fichierUrl, fichierNom, texte } = req.body;
+        if (!fichierUrl && !texte) {
+            return res.json({ success: false, error: "Fournis un fichier ou du texte." });
+        }
+
+        let contenuResume;
+        if (texte) {
+            contenuResume = texte.trim();
+        } else {
+            const piece = await chargerPieceJointe(fichierUrl);
+            if (!piece) return res.json({ success: false, error: "Impossible de lire ce fichier." });
+            const result = await geminiService.chat({
+                message: "Résume le contenu utile de ce document pour qu'une IA (SAMII) puisse s'en souvenir durablement et le réutiliser dans de futures conversations avec son auteur. Garde tous les faits, chiffres et décisions concrets, retire le superflu. Réponds uniquement avec le résumé, sans préambule.",
+                context: { source: "connaissances", audience: "souverain", piece },
+                useTools: false,
+            });
+            if (result.type !== "text" || !result.text) {
+                return res.json({ success: false, error: "SAMII n'a pas réussi à lire ce document." });
+            }
+            contenuResume = result.text.trim();
+        }
+
+        const ligne = await connaissances.ajouter(req.session.userId, {
+            titre: titre || fichierNom || "Sans titre",
+            contenu_resume: contenuResume,
+            fichier_url: fichierUrl || null,
+            fichier_nom: fichierNom || null,
+        });
+        res.json({ success: true, connaissance: ligne });
+    } catch (err) {
+        console.error("❌ POST /api/connaissances :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.delete("/connaissances/:id", requireAuth, async (req, res) => {
+    const ok = await connaissances.retirer(req.session.userId, parseInt(req.params.id, 10));
     res.json({ success: ok });
 });
 

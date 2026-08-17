@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="/css/qg-style.css?v=4">
-<link rel="stylesheet" href="/css/samii-style.css?v=3">
+<link rel="stylesheet" href="/css/samii-style.css?v=4">
 </head>
 <body data-theme="og">
 <div class="qg-shell">
@@ -219,6 +219,9 @@
                 <button type="button" id="samii-directives-btn" title="Directives permanentes" aria-label="Directives permanentes" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
                     <i data-lucide="settings-2"></i>
                 </button>
+                <button type="button" id="samii-connaissances-btn" title="Base de connaissances" aria-label="Base de connaissances" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
+                    <i data-lucide="brain-circuit"></i>
+                </button>
                 <button type="submit" aria-label="Envoyer">
                     <i data-lucide="arrow-up"></i>
                 </button>
@@ -236,6 +239,23 @@
                     <div id="samii-directives-msg"></div>
                 </div>
             </div>
+
+            <div id="samii-connaissances-panel" class="samii-directives-panel" style="display:none;">
+                <div class="samii-directives-panel__inner">
+                    <h3>📚 Base de connaissances</h3>
+                    <p>Donne un PDF, une image ou du texte à SAMII — il en retient un résumé pour toujours, dans CHAQUE conversation future, partout sur la plateforme.</p>
+                    <input type="file" id="samii-connaissance-file" accept=".pdf,.doc,.docx,.txt,image/*" style="display:none;">
+                    <textarea id="samii-connaissance-texte" rows="3" placeholder="...ou colle du texte directement ici"></textarea>
+                    <input type="text" id="samii-connaissance-titre" placeholder="Titre (facultatif)" style="width:100%;margin-top:8px;padding:9px 11px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.3);color:var(--text-main);font-size:.82rem;box-sizing:border-box;">
+                    <div class="samii-directives-panel__actions">
+                        <button type="button" id="samii-connaissance-fichier-btn">📎 Choisir un fichier</button>
+                        <button type="button" id="samii-connaissance-ajouter">Ajouter</button>
+                    </div>
+                    <div id="samii-connaissance-msg"></div>
+                    <div id="samii-connaissance-liste" class="samii-connaissance-liste"></div>
+                    <button type="button" id="samii-connaissances-fermer" style="width:100%;margin-top:10px;background:transparent;color:var(--text-muted);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px;font-size:.8rem;cursor:pointer;">Fermer</button>
+                </div>
+            </div>
             <div id="samii-attach-preview" style="display:none;align-items:center;gap:10px;max-width:680px;margin:8px auto 0;padding:8px 14px;background:var(--bg-panel);border:1px solid rgba(95,212,255,0.2);border-radius:12px;"></div>
         </section>
     </main>
@@ -243,7 +263,7 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="/js/i18n.js"></script>
 <script src="/js/qg.js"></script>
-<script src="/js/samii-page.js?v=5"></script>
+<script src="/js/samii-page.js?v=6"></script>
 <script src="/js/pwa-register.js"></script>
 <script src="/js/push-register.js"></script>
 </body>

@@ -111,6 +111,18 @@ COMMENT FONCTIONNE LA PLATEFORME (pour guider l'utilisateur)
 
 ${getGuidePlateforme()}
 ` : ""}
+${audience === "souverain" && context.connaissances ? `
+-------------------------------------------------------
+BASE DE CONNAISSANCES DU FONDATEUR (documents qu'il t'a lui-même donnés)
+-------------------------------------------------------
+
+Contenu réel, donné volontairement par le fondateur (PDF, image, texte) pour
+que tu t'en souviennes durablement. Utilise-le naturellement quand c'est
+pertinent — jamais en le récitant tel quel, jamais si la question ne s'y
+prête pas. Ne mens jamais sur un détail qui n'y figure pas.
+
+${context.connaissances}
+` : ""}
 ${context.memoireUtilisateur ? `
 -------------------------------------------------------
 CE QUE TU SAIS DÉJÀ SUR CETTE PERSONNE (mémoire construite au fil du temps)

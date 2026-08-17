@@ -19,6 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const directivesPanel = document.getElementById('samii-directives-panel');
     const directivesText  = document.getElementById('samii-directives-text');
     const directivesMsg   = document.getElementById('samii-directives-msg');
+    const connBtn      = document.getElementById('samii-connaissances-btn');
+    const connPanel     = document.getElementById('samii-connaissances-panel');
+    const connFile      = document.getElementById('samii-connaissance-file');
+    const connFileBtn   = document.getElementById('samii-connaissance-fichier-btn');
+    const connTexte     = document.getElementById('samii-connaissance-texte');
+    const connTitre     = document.getElementById('samii-connaissance-titre');
+    const connAjouter   = document.getElementById('samii-connaissance-ajouter');
+    const connMsg       = document.getElementById('samii-connaissance-msg');
+    const connListe     = document.getElementById('samii-connaissance-liste');
 
     if (!form || !input || !feed) return;
 
@@ -526,6 +535,99 @@ document.addEventListener('DOMContentLoaded', () => {
                 directivesMsg.textContent = '❌ Erreur réseau.';
             }
             btn.disabled = false;
+        });
+    }
+
+    // ── BASE DE CONNAISSANCES : PDF/image/texte que SAMII retient pour
+    // toujours, partout sur la plateforme (QG, Academy, Entraînement admin) ──
+    if (connBtn && connPanel) {
+        let connChargeFileUrl = null;
+        let connChargeFileNom = null;
+
+        async function chargerListeConnaissances() {
+            connListe.innerHTML = '<div style="font-size:.75rem;color:var(--text-muted);">Chargement...</div>';
+            try {
+                const res = await fetch('/api/connaissances');
+                const data = await res.json();
+                const items = data.connaissances || [];
+                connListe.innerHTML = items.length
+                    ? ''
+                    : '<div style="font-size:.75rem;color:var(--text-muted);">Rien pour l\'instant.</div>';
+                items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'samii-connaissance-item';
+                    row.innerHTML = `<span title="${item.titre.replace(/"/g, '&quot;')}">📄 ${item.titre}</span><button type="button">Retirer</button>`;
+                    row.querySelector('button').addEventListener('click', async () => {
+                        row.remove();
+                        await fetch('/api/connaissances/' + item.id, { method: 'DELETE' });
+                    });
+                    connListe.appendChild(row);
+                });
+            } catch (err) {
+                connListe.innerHTML = '<div style="font-size:.75rem;color:#ff5470;">Erreur de chargement.</div>';
+            }
+        }
+
+        connBtn.addEventListener('click', () => {
+            connPanel.style.display = connPanel.style.display === 'none' ? 'block' : 'none';
+            if (connPanel.style.display === 'block') chargerListeConnaissances();
+        });
+
+        document.getElementById('samii-connaissances-fermer')?.addEventListener('click', () => {
+            connPanel.style.display = 'none';
+        });
+
+        connFileBtn?.addEventListener('click', () => connFile.click());
+
+        connFile?.addEventListener('change', async () => {
+            const file = connFile.files[0];
+            if (!file) return;
+            connMsg.textContent = '⏳ Envoi du fichier...';
+            try {
+                connChargeFileUrl = await uploaderVersCloudinary(file);
+                connChargeFileNom = file.name;
+                if (!connTitre.value) connTitre.value = file.name;
+                connMsg.textContent = '✅ Fichier prêt — clique "Ajouter" pour que SAMII le lise.';
+            } catch (err) {
+                connMsg.textContent = '❌ Échec de l\'envoi, réessaie.';
+            }
+            connFile.value = '';
+        });
+
+        connAjouter?.addEventListener('click', async () => {
+            const texte = connTexte.value.trim();
+            if (!connChargeFileUrl && !texte) {
+                connMsg.textContent = '⚠️ Choisis un fichier ou écris du texte.';
+                return;
+            }
+            connAjouter.disabled = true;
+            connMsg.textContent = '⏳ SAMII lit et retient...';
+            try {
+                const res = await fetch('/api/connaissances', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        titre: connTitre.value.trim(),
+                        fichierUrl: connChargeFileUrl,
+                        fichierNom: connChargeFileNom,
+                        texte: connChargeFileUrl ? null : texte,
+                    }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    connMsg.textContent = '✅ Retenu pour toujours.';
+                    connTexte.value = '';
+                    connTitre.value = '';
+                    connChargeFileUrl = null;
+                    connChargeFileNom = null;
+                    chargerListeConnaissances();
+                } else {
+                    connMsg.textContent = '❌ ' + (data.error || 'Erreur, réessaie.');
+                }
+            } catch (err) {
+                connMsg.textContent = '❌ Erreur réseau.';
+            }
+            connAjouter.disabled = false;
         });
     }
 });

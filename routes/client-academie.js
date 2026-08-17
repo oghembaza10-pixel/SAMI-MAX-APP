@@ -7,6 +7,7 @@ const planner = require("../brain/planner");
 const db      = require("../services/db");
 const samiiMemoire = require("../services/samiiMemoire");
 const memoireUtilisateur = require("../services/memoireUtilisateur");
+const connaissances = require("../services/connaissances");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -265,6 +266,7 @@ router.post("/lecon", requireAuth, async (req, res) => {
             workspaceId: req.session?.workspaceId || "",
             audience: "souverain",
             memoireUtilisateur: await memoireUtilisateur.get(userId),
+            connaissances: await connaissances.texteAgrege(userId),
         };
         const history = await samiiMemoire.getHistorique(userId);
         const result = await planner.build({ goal }, context, history);
