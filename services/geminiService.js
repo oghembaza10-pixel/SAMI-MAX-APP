@@ -271,9 +271,16 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
         };
     } catch (err) {
         const isQuotaError = err.response?.data?.error?.code === 429;
-        if (isQuotaError && retryCount < 1) {
-            console.warn("⏳ Quota Gemini atteint, nouvel essai dans 5s...");
-            await new Promise(resolve => setTimeout(resolve, 5000));
+        // "UNAVAILABLE" = Google dit lui-même que c'est un pic de charge
+        // temporaire ("usually temporary") — pas un problème de clé/quota.
+        // Sans ce cas, chaque pic basculait directement sur Groq, qui se
+        // retrouvait à absorber tout le trafic et s'épuisait en quelques
+        // messages (prompt système volumineux = beaucoup de tokens par appel).
+        const estSurcharge = err.response?.data?.error?.status === "UNAVAILABLE";
+        if ((isQuotaError || estSurcharge) && retryCount < 2) {
+            const delai = estSurcharge ? 2000 * (retryCount + 1) : 5000;
+            console.warn(`⏳ Gemini ${estSurcharge ? "surchargé" : "quota atteint"}, nouvel essai dans ${delai / 1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, delai));
             return chat({ message, context, useTools, history }, retryCount + 1);
         }
         console.error("❌ Gemini :", err.response?.data || err.message);
