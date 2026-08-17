@@ -104,6 +104,7 @@ router.post("/chat", async (req, res) => {
             page: req.body.page || "",
             lastAction: req.body.lastAction || "",
             grade: grade.actuel,
+            prenom: grade.prenom,
             audience: "souverain",
             memoireUtilisateur: memoireActuelle,
         };
@@ -290,13 +291,13 @@ router.get("/qg-data", requireAuth, async (req, res) => {
 // affichait avant un grade recalculé localement à partir du nombre de
 // commandes de la boutique, déconnecté du vrai grade (Arsenal, thèmes...).
 async function getGrade(userId) {
-    if (!userId) return { actuel: "Soldat", score: 0 };
+    if (!userId) return { actuel: "Soldat", score: 0, prenom: "" };
     try {
-        const rows = await db.query(`SELECT grade_actuel, score_grade FROM utilisateurs WHERE id = $1`, [userId]);
-        return { actuel: rows[0]?.grade_actuel || "Soldat", score: rows[0]?.score_grade || 0 };
+        const rows = await db.query(`SELECT grade_actuel, score_grade, prenom FROM utilisateurs WHERE id = $1`, [userId]);
+        return { actuel: rows[0]?.grade_actuel || "Soldat", score: rows[0]?.score_grade || 0, prenom: rows[0]?.prenom || "" };
     } catch (err) {
         console.error("❌ getGrade :", err.message);
-        return { actuel: "Soldat", score: 0 };
+        return { actuel: "Soldat", score: 0, prenom: "" };
     }
 }
 

@@ -17,21 +17,23 @@ function dateDuJour() {
 async function SAMII_PROMPT(message, context = {}) {
     const tables = await getTables(message);
     const { jour, iso } = dateDuJour();
-    const grade = context.grade || "Soldat";
     // "souverain" = le fondateur/marchand qui possède le compte (QG, page /samii) —
-    // seul lui est adressé par grade. "client" = un client du marchand (Telegram,
-    // WhatsApp...) — jamais de titre militaire envers un client, ce serait absurde
-    // et casserait la confiance du client dans le commerce du marchand.
+    // ton familier, darija, par son prénom (voir PERSONALITY, section "TON AVEC
+    // LE FONDATEUR"). "client" = un client du marchand (Telegram, WhatsApp...) —
+    // toujours vouvoiement poli, jamais le ton familier réservé au fondateur.
     const audience = context.audience || "souverain";
+    const prenom = (context.prenom || "").trim();
     const addressSection = audience === "souverain"
-        ? `Tu peux commencer une réponse par son grade (${grade}) en guise de salutation, occasionnellement — jamais à chaque message. Le grade n'est JAMAIS toute ta réponse : après lui, tu réponds toujours au fond de la question, avec de vraies phrases complètes et utiles. Une réponse réduite au grade seul, ou au grade suivi d'un seul mot, est un échec.`
-        : `Tu t'adresses à ce client normalement et poliment (vouvoiement, ou son prénom si connu). Tu n'utilises jamais de grade militaire (Soldat, Général...) envers un client : ce titre est réservé exclusivement au fondateur du compte, jamais à ses clients.`;
+        ? (prenom
+            ? `Son prénom est ${prenom} — utilise-le pour t'adresser à lui, avec le ton familier/darija décrit dans PERSONALITY (section "TON AVEC LE FONDATEUR").`
+            : `Son prénom n'est pas connu ici — utilise "khoya"/"sahby" avec le ton familier/darija décrit dans PERSONALITY, sans inventer de prénom.`)
+        : `Tu t'adresses à ce client normalement et poliment (vouvoiement, ou son prénom si connu). Tu n'utilises jamais le ton familier ("khoya", "sahby"...) réservé exclusivement au fondateur du compte, jamais à ses clients.`;
 
     return `
 ${PERSONALITY}
 
 -------------------------------------------------------
-${audience === "souverain" ? "GRADE ACTUEL DE L'INTERLOCUTEUR" : "INTERLOCUTEUR : CLIENT DU MARCHAND"}
+${audience === "souverain" ? "FONDATEUR — COMMENT S'ADRESSER À LUI" : "INTERLOCUTEUR : CLIENT DU MARCHAND"}
 -------------------------------------------------------
 
 ${addressSection}
