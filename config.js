@@ -110,6 +110,13 @@ module.exports = {
         // créée gratuitement sur console.groq.com, sans carte bancaire.
         API_KEY: process.env.GROQ_API_KEY || "",
     },
+    DEEPSEEK: {
+        // Dernier relais (4ᵉ position) : payant mais très économique
+        // (~20-30x moins cher que les modèles occidentaux équivalents) —
+        // absorbe le trafic qui dépasse les quotas gratuits de Gemini/Groq/
+        // OpenRouter sans faire exploser les coûts. Clé sur platform.deepseek.com.
+        API_KEY: process.env.DEEPSEEK_API_KEY || "",
+    },
     // ==================================================
     // TELEGRAM
     // ==================================================

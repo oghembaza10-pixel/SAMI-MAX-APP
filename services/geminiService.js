@@ -68,6 +68,24 @@ async function postGroq(body) {
     });
 }
 
+// ── RELAIS DEEPSEEK : dernier recours, essayé seulement si Gemini ET Groq
+// ET OpenRouter ont tous échoué (quotas gratuits tous épuisés en même
+// temps — cas rare mais possible si le trafic grossit). Payant mais très
+// économique, ça absorbe le débordement sans jamais laisser un client sans
+// réponse. Format compatible OpenAI, mêmes helpers que Groq/OpenRouter.
+const DEEPSEEK_MODEL = "deepseek-chat";
+const DEEPSEEK_URL   = "https://api.deepseek.com/chat/completions";
+
+async function postDeepSeek(body) {
+    if (!CONFIG.DEEPSEEK?.API_KEY) throw new Error("Clé DeepSeek absente (relais indisponible).");
+    return await axios.post(DEEPSEEK_URL, body, {
+        headers: {
+            "Authorization": `Bearer ${CONFIG.DEEPSEEK.API_KEY}`,
+            "Content-Type": "application/json",
+        },
+    });
+}
+
 // Convertit les déclarations d'outils au format Gemini (utilisées plus bas)
 // vers le format OpenAI/OpenRouter — une seule source de vérité (TOOLS),
 // jamais deux définitions à maintenir en double.
@@ -131,6 +149,10 @@ async function chatViaGroq(args) {
 
 async function chatViaOpenRouter(args) {
     return chatViaOpenAiCompatible({ provider: "openrouter", model: OPENROUTER_MODEL, poster: postOpenRouter, ...args });
+}
+
+async function chatViaDeepSeek(args) {
+    return chatViaOpenAiCompatible({ provider: "deepseek", model: DEEPSEEK_MODEL, poster: postDeepSeek, ...args });
 }
 
 const TOOLS = [
@@ -258,7 +280,8 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
         // Gemini est en panne ou toutes les clés sont en quota épuisé — on
         // relaie vers un fournisseur différent plutôt que de laisser le
         // client sans réponse et sa commande/RDV non traité. Groq d'abord
-        // (gratuit, très rapide), puis OpenRouter si Groq échoue aussi.
+        // (gratuit, très rapide), puis OpenRouter, puis DeepSeek (payant
+        // mais très économique) en tout dernier recours.
         try {
             console.warn("🔀 Relais Groq (Gemini indisponible)...");
             return await chatViaGroq({ message, context, useTools, history });
@@ -269,7 +292,13 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
                 return await chatViaOpenRouter({ message, context, useTools, history });
             } catch (fallbackErr) {
                 console.error("❌ OpenRouter (relais) :", fallbackErr.response?.data || fallbackErr.message);
-                return { type: "text", provider: "gemini", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
+                try {
+                    console.warn("🔀 Relais DeepSeek (OpenRouter indisponible aussi)...");
+                    return await chatViaDeepSeek({ message, context, useTools, history });
+                } catch (deepseekErr) {
+                    console.error("❌ DeepSeek (relais) :", deepseekErr.response?.data || deepseekErr.message);
+                    return { type: "text", provider: "gemini", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
+                }
             }
         }
     }
@@ -303,15 +332,22 @@ async function chatWithSearch({ message, context = {} }) {
     }
 }
 
+// Les 3 relais de secours partagent le même format OpenAI (chat completions
+// + tool_calls) — une seule table à étendre si un nouveau relais s'ajoute.
+const OPENAI_COMPATIBLE_PROVIDERS = {
+    groq:       { poster: postGroq,       model: GROQ_MODEL },
+    openrouter: { poster: postOpenRouter, model: OPENROUTER_MODEL },
+    deepseek:   { poster: postDeepSeek,   model: DEEPSEEK_MODEL },
+};
+
 async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult, thoughtSignature, provider = "gemini", toolCallId, assistantMessage, history = [] }) {
-    // Le tour a démarré sur Groq ou OpenRouter (Gemini indisponible pour ce
-    // tour) — on doit continuer sur le MÊME fournisseur : les formats
+    // Le tour a démarré sur un relais de secours (Gemini indisponible pour
+    // ce tour) — on doit continuer sur le MÊME fournisseur : les formats
     // "suite d'appel de fonction" de Gemini et OpenAI sont structurellement
     // incompatibles (impossible de rejouer un functionCall Gemini en
-    // tool_call OpenAI). Groq et OpenRouter partagent le même format OpenAI.
-    if (provider === "groq" || provider === "openrouter") {
-        const poster = provider === "groq" ? postGroq : postOpenRouter;
-        const model = provider === "groq" ? GROQ_MODEL : OPENROUTER_MODEL;
+    // tool_call OpenAI).
+    if (OPENAI_COMPATIBLE_PROVIDERS[provider]) {
+        const { poster, model } = OPENAI_COMPATIBLE_PROVIDERS[provider];
         try {
             const prompt = await SAMII_PROMPT(message, context);
             const messages = [
