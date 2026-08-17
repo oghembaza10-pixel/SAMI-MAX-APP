@@ -10,6 +10,17 @@ function checkCreds(creds) {
     if (!creds?.adAccountId) throw new Error("adAccountId Meta manquant pour ce workspace.");
 }
 
+// Diagnostic direct : liste les permissions réellement accordées par
+// l'utilisateur sur le token actuel (granted/declined), équivalent au
+// test-meta.js qu'on lançait avant en terminal — sauf qu'ici ça tourne
+// avec le vrai token déjà enregistré, sans rien copier-coller.
+async function getPermissions(accessToken) {
+    const res = await axios.get(`${BASE_URL}/me/permissions`, {
+        params: { access_token: accessToken },
+    });
+    return res.data.data || [];
+}
+
 async function getPages(creds) {
     const res = await axios.get(`${BASE_URL}/me/accounts`, {
         params: { access_token: creds.accessToken },
@@ -186,6 +197,7 @@ async function replyToInstagramComment(pageAccessToken, commentId, message) {
 }
 
 module.exports = {
+    getPermissions,
     getPages,
     getAdAccountInfo,
     createCampaign,

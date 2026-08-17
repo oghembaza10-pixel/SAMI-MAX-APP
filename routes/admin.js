@@ -359,8 +359,10 @@ router.get("/", requireAdmin, async (req, res) => {
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button id="page-poster-fb-btn" class="ccp-confirm-btn">📤 Publier sur Facebook (test)</button>
             <button id="page-poster-ig-btn" class="ccp-confirm-btn">📤 Publier sur Instagram (test)</button>
+            <button id="meta-perms-btn" class="ccp-confirm-btn" style="border-color:var(--blue);background:rgba(0,217,255,.12);color:var(--blue);">🔎 Vérifier permissions Meta</button>
         </div>
         <div id="page-poster-resultat" style="margin-top:12px; font-size:12.5px; white-space:pre-wrap;"></div>
+        <div id="meta-perms-resultat" style="margin-top:12px; font-size:12.5px; white-space:pre-wrap;"></div>
     </div>
 
     <div class="section-title">🤝 Candidatures Partenariat</div>
@@ -445,6 +447,25 @@ function posterPage(btnId, endpoint, texteDefaut) {
 }
 posterPage("page-poster-fb-btn", "/admin/page/poster-facebook", "📤 Publier sur Facebook (test)");
 posterPage("page-poster-ig-btn", "/admin/page/poster-instagram", "📤 Publier sur Instagram (test)");
+
+document.getElementById("meta-perms-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("meta-perms-btn");
+    const zone = document.getElementById("meta-perms-resultat");
+    btn.disabled = true;
+    btn.textContent = "⏳ Vérification...";
+    zone.textContent = "";
+    try {
+        const res = await fetch("/admin/page/permissions");
+        const json = await res.json();
+        zone.textContent = json.success
+            ? "✅ Permissions sur le token actuel :\\n\\n" + json.permissions.map(p => (p.status === "granted" ? "✅ " : "❌ ") + p.permission).join("\\n")
+            : "❌ Échec : " + (json.error || "erreur inconnue");
+    } catch (err) {
+        zone.textContent = "❌ Erreur réseau.";
+    }
+    btn.disabled = false;
+    btn.textContent = "🔎 Vérifier permissions Meta";
+});
 
 document.getElementById("ccp-list").addEventListener("click", async (e) => {
     const btn = e.target.closest(".ccp-confirm-btn");
@@ -666,6 +687,25 @@ router.post("/canal/poster", requireAdmin, async (req, res) => {
     } catch (err) {
         console.error("❌ POST /admin/canal/poster :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+// Diagnostic direct des permissions Meta accordées sur le token du
+// workspace officiel OG Technology — évite de repasser par un script en
+// terminal avec le token collé à la main à chaque fois.
+router.get("/page/permissions", requireAdmin, async (req, res) => {
+    try {
+        const workspaceService = require("../services/workspaceService");
+        const meta = require("../services/meta");
+        const workspace = await workspaceService.getById(CONFIG.META.OG_WORKSPACE_ID);
+        if (!workspace?.metaAccessToken) {
+            return res.json({ success: false, error: "Aucun token Meta enregistré pour ce workspace — connecte Meta d'abord." });
+        }
+        const permissions = await meta.getPermissions(workspace.metaAccessToken);
+        res.json({ success: true, permissions });
+    } catch (err) {
+        console.error("❌ GET /admin/page/permissions :", err.response?.data || err.message);
+        res.json({ success: false, error: err.response?.data?.error?.message || "Erreur serveur." });
     }
 });
 
