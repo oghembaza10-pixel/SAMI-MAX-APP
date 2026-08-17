@@ -207,7 +207,7 @@ const TOOLS = [
             },
             {
                 name: "passer_commande",
-                description: "Enregistre une commande pour le client, uniquement une fois que le produit (choisi EXACTEMENT parmi le catalogue réel fourni dans le contexte — jamais inventé), l'adresse de livraison et le numéro de téléphone sont connus.",
+                description: "Enregistre une commande pour UN SEUL produit (choisi EXACTEMENT parmi le catalogue réel fourni dans le contexte — jamais inventé, jamais deux produits dans le même appel), une fois que le produit, l'adresse de livraison et le numéro de téléphone sont connus. AVANT le tout premier appel sur cette commande, si un autre produit du catalogue complète naturellement celui choisi (ex: accessoire, produit du même univers), suggère-le UNE SEULE fois au client en une phrase courte, sans insister — n'appelle la fonction qu'après sa réponse. S'il accepte le produit complémentaire, appelle cette fonction UNE DEUXIÈME FOIS juste après, avec ce second produit (adresse/téléphone identiques), pour créer sa propre commande. Si aucun produit complémentaire pertinent n'existe, ou si le client a déjà répondu à la suggestion, appelle la fonction directement pour le produit initial.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
