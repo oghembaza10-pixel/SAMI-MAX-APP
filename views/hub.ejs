@@ -405,6 +405,24 @@
 
     applyLang(currentLang);
 </script>
+
+<!-- ── ONBOARDING CONVERSATIONNEL : créer son QG en parlant à Sami ── -->
+<div class="onboarding-chat-overlay" id="onboarding-chat-overlay">
+    <div class="onboarding-chat-panel">
+        <div class="onboarding-chat-header">
+            <span>🧠 Sami</span>
+            <button type="button" id="onboarding-chat-close" aria-label="Fermer">✕</button>
+        </div>
+        <div class="onboarding-chat-feed" id="onboarding-chat-feed"></div>
+        <form class="onboarding-chat-form" id="onboarding-chat-form">
+            <input type="text" id="onboarding-chat-input" placeholder="Écris ta réponse..." autocomplete="off">
+            <button type="submit" aria-label="Envoyer">→</button>
+        </form>
+        <a href="/inscription" class="onboarding-chat-fallback">Préférer le formulaire classique →</a>
+    </div>
+</div>
+
 <script src="/js/hub.js"></script>
+<script src="/js/onboarding-chat.js"></script>
 </body>
 </html>

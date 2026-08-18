@@ -118,7 +118,7 @@ async function chatViaOpenAiCompatible({ provider, model, poster, message, conte
         { role: "user", content: prompt },
     ];
     const body = { model, messages };
-    body.tools = toOpenAiTools(useTools ? TOOLS : SEARCH_TOOLS);
+    body.tools = toOpenAiTools(buildToolsPayload(useTools, context));
 
     const response = await poster(body);
     const choice = response.data.choices?.[0];
@@ -243,6 +243,38 @@ const SEARCH_TOOLS = [
     { functionDeclarations: TOOLS[0].functionDeclarations.filter(fn => fn.name === "rechercher_prospects") },
 ];
 
+// Outil dédié à l'onboarding conversationnel (création du QG) — volontairement
+// tenu à l'écart de TOOLS/SEARCH_TOOLS : il ne doit jamais être proposé dans
+// une conversation client ou une conversation générale avec le fondateur,
+// seulement dans le contexte précis context.source === "onboarding" (voir
+// buildToolsPayload ci-dessous et routes/workspace.js).
+const ONBOARDING_TOOLS = [
+    {
+        functionDeclarations: [
+            {
+                name: "creer_workspace",
+                description: "Crée le QG (workspace) du marchand, une seule fois que son activité (nom), son métier et son pays sont connus dans la conversation. N'appelle cette fonction qu'une seule fois.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        nom: { type: "STRING", description: "Le nom de l'activité/du workspace, tel que donné par l'utilisateur." },
+                        metier: { type: "STRING", description: "Un des métiers suivants EXACTEMENT si l'activité correspond : ecommerce, restaurant, immobilier, livreur, sante, finance, education, technologie, agriculture, industrie, services, tourisme. Si aucun ne correspond vraiment, utilise 'autre'." },
+                        metierCustom: { type: "STRING", description: "Si metier vaut 'autre', le métier précis tel que décrit par l'utilisateur (ex: Avocat, Coiffeur, Dentiste). Chaîne vide sinon." },
+                        pays: { type: "STRING", description: "Code pays sur 2 lettres parmi : DZ, MA, TN, FR, BE, CA, SN, CI. Si un autre pays est mentionné, utilise 'OTHER'." },
+                        description: { type: "STRING", description: "Courte description optionnelle de l'activité, si l'utilisateur en donne une spontanément. Chaîne vide sinon." },
+                    },
+                    required: ["nom", "metier", "pays"],
+                },
+            },
+        ],
+    },
+];
+
+function buildToolsPayload(useTools, context) {
+    if (context?.source === "onboarding") return ONBOARDING_TOOLS;
+    return useTools ? TOOLS : SEARCH_TOOLS;
+}
+
 async function send({ to, message }) {
     console.log(`🤖 Gemini → ${to} : ${message}`);
     return { success: true };
@@ -267,7 +299,7 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
                 { role: "user", parts: userParts },
             ],
         };
-        body.tools = useTools ? TOOLS : SEARCH_TOOLS;
+        body.tools = buildToolsPayload(useTools, context);
         const response = await postWithRotation(body);
         const candidate = response.data.candidates?.[0];
         const parts = candidate?.content?.parts || [];

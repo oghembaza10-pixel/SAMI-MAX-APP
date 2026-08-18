@@ -301,4 +301,107 @@ try {
     }
 });
 
+// ── ONBOARDING CONVERSATIONNEL ────────────────────────────────────────────
+// Remplace le formulaire par une conversation avec Sami : mêmes champs,
+// mêmes règles, même workspaceService.create() que POST /create ci-dessus —
+// seule la façon de les recueillir change. Le formulaire classique reste
+// disponible (GET /create) en repli, rien n'est retiré.
+const METIERS_VALIDES = new Set([
+    "ecommerce", "restaurant", "immobilier", "livreur", "sante", "finance",
+    "education", "technologie", "agriculture", "industrie", "services", "tourisme",
+]);
+const PAYS_VALIDES = new Set(["DZ", "MA", "TN", "FR", "BE", "CA", "SN", "CI", "OTHER"]);
+
+router.post("/onboarding-chat", requireAuth, async (req, res) => {
+    try {
+        const { message, history } = req.body;
+        if (!message || !message.trim()) {
+            return res.json({ success: false, error: "Message vide." });
+        }
+
+        const gemini = require("../services/geminiService");
+        const email = req.session?.email || "";
+        const prenom = (req.session?.nom || "").split(" ")[0] || "";
+
+        const result = await gemini.chat({
+            message: message.trim(),
+            context: {
+                source: "onboarding",
+                audience: "souverain",
+                prenom,
+                instructions:
+                    "Tu accompagnes un nouveau membre qui vient de s'inscrire, pour créer son QG (workspace). " +
+                    "Pose les questions une par une, jamais toutes en même temps : d'abord comment il veut appeler son activité (nom), " +
+                    "puis ce qu'il fait exactement (pour en déduire le métier), puis dans quel pays il est basé. " +
+                    "Reste bref et naturel, une ou deux phrases par message. Dès que tu as ces trois informations, " +
+                    "appelle creer_workspace — n'attends pas d'avoir plus de détails que nécessaire.",
+            },
+            useTools: true,
+            history: Array.isArray(history) ? history.slice(-20) : [],
+        });
+
+        if (result.type !== "function_call" || result.name !== "creer_workspace") {
+            return res.json({ success: true, reply: result.text, redirect: null });
+        }
+
+        const args = result.args || {};
+        const nom = (args.nom || "").trim();
+        let metierFinal = (args.metier || "").trim().toLowerCase();
+        const pays = PAYS_VALIDES.has(args.pays) ? args.pays : "OTHER";
+
+        if (!nom) {
+            return res.json({ success: true, reply: "Il me manque le nom de ton activité — comment tu veux l'appeler ?", redirect: null });
+        }
+        if (metierFinal === "autre" || !METIERS_VALIDES.has(metierFinal)) {
+            const custom = (args.metierCustom || "").trim();
+            metierFinal = custom ? custom.toLowerCase() : "autre";
+        }
+
+        const workspaceId = generateWorkspaceId();
+        const workspace = await workspaceService.create({
+            workspaceId,
+            owner      : email,
+            nom,
+            metier     : metierFinal,
+            description: (args.description || "").trim(),
+            pays,
+            devise: "",
+            langue: "fr",
+            logo  : "",
+        });
+
+        if (!workspace) {
+            return res.json({ success: true, reply: "Je n'ai pas réussi à créer ton QG, on réessaie ?", redirect: null });
+        }
+
+        req.session.workspaceId   = workspace.workspaceId;
+        req.session.metier        = workspace.metier;
+        req.session.lastWorkspace = workspace.workspaceId;
+
+        try {
+            const notificationEngine = require("../engines/notificationEngine");
+            await notificationEngine.send({
+                channel: "email",
+                to: email,
+                message: `Bienvenue dans OG Technology, Soldat !\n\nVotre QG "${workspace.nom}" est prêt. SAMII est déjà à votre poste pour vous accompagner.\n\nAllez jeter un œil : https://samii.souverain-store.com/qg\n\nÀ votre conquête 👑`,
+            });
+        } catch (mailErr) {
+            console.warn("⚠️ Email de bienvenue non envoyé :", mailErr.message);
+        }
+
+        req.session.save((err) => {
+            if (err) return res.json({ success: false, error: "Erreur de session." });
+            res.json({
+                success : true,
+                reply   : `✅ Ton QG "${workspace.nom}" est prêt ! Je t'y emmène →`,
+                redirect: "/qg",
+            });
+        });
+
+    } catch (err) {
+        console.error("❌ POST /workspace/onboarding-chat :", err.message);
+        res.json({ success: false, error: "Erreur serveur. Réessaie." });
+    }
+});
+
 module.exports = router;

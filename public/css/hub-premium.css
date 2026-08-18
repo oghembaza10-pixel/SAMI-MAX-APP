@@ -634,3 +634,84 @@ body {
     .connect-tools-section { padding: 24px 20px 40px; }
     .connect-tools-grid { grid-template-columns: 1fr; }
 }
+
+/* ── ONBOARDING CONVERSATIONNEL (créer mon QG en parlant à Sami) ── */
+.onboarding-chat-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(6px);
+    align-items: center; justify-content: center;
+    padding: 20px;
+}
+.onboarding-chat-overlay.open { display: flex; }
+
+.onboarding-chat-panel {
+    width: 100%; max-width: 460px; max-height: 80vh;
+    display: flex; flex-direction: column;
+    background: var(--bg-panel);
+    border: var(--border-gold);
+    border-radius: 18px;
+    box-shadow: var(--gold-glow), 0 30px 80px rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+
+.onboarding-chat-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(217,179,108,0.16);
+    font-family: var(--font-display);
+    color: var(--text-main);
+    font-size: 1.05rem;
+}
+.onboarding-chat-header button {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 1.1rem; cursor: pointer; line-height: 1;
+}
+.onboarding-chat-header button:hover { color: var(--text-main); }
+
+.onboarding-chat-feed {
+    flex: 1; overflow-y: auto; padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 12px;
+}
+.onboarding-chat-msg {
+    max-width: 85%; padding: 10px 14px; border-radius: 14px;
+    font-family: var(--font-body); font-size: .88rem; line-height: 1.5;
+}
+.onboarding-chat-msg--bot {
+    align-self: flex-start;
+    background: rgba(217,179,108,0.08);
+    border: 1px solid rgba(217,179,108,0.18);
+    color: var(--text-main);
+}
+.onboarding-chat-msg--user {
+    align-self: flex-end;
+    background: var(--gold-og);
+    color: #1a1206;
+    font-weight: 600;
+}
+.onboarding-chat-msg--typing { color: var(--text-muted); font-style: italic; }
+
+.onboarding-chat-form {
+    display: flex; gap: 8px; padding: 14px 16px;
+    border-top: 1px solid rgba(217,179,108,0.16);
+}
+.onboarding-chat-form input {
+    flex: 1; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.3); color: var(--text-main);
+    font-family: var(--font-body); font-size: .88rem;
+}
+.onboarding-chat-form input:focus { outline: none; border-color: var(--cyan-tech); }
+.onboarding-chat-form button {
+    width: 40px; border-radius: 10px; border: none; cursor: pointer;
+    background: linear-gradient(135deg, var(--gold-og), var(--gold-hover));
+    color: #1a1206; font-weight: 700; font-size: 1rem;
+}
+.onboarding-chat-form button:disabled { opacity: .6; cursor: not-allowed; }
+
+.onboarding-chat-fallback {
+    display: block; text-align: center; padding: 10px 16px 16px;
+    color: var(--text-muted); font-size: .76rem; text-decoration: none;
+}
+.onboarding-chat-fallback:hover { color: var(--cyan-tech); }

@@ -119,10 +119,13 @@ function initSearchPanel() {
             const query = input.value.trim();
 
             if (action === "create") {
-                const url = query
-                    ? `/inscription?metier=${encodeURIComponent(query)}`
-                    : `/inscription`;
-                window.location.href = url;
+                closePanel();
+                if (typeof window.openOnboardingChat === "function") {
+                    window.openOnboardingChat();
+                } else {
+                    // Repli si le script de chat n'a pas chargé, pour ne jamais bloquer la création
+                    window.location.href = query ? `/inscription?metier=${encodeURIComponent(query)}` : `/inscription`;
+                }
             } else if (action === "invite") {
                 showHubToast(typeof t === "function" ? t("hub.toast.inviteSoon") : "Inviter un collaborateur — bientôt disponible");
                 closePanel();
