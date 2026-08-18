@@ -35,6 +35,41 @@
     <meta name="description" content="SAMII est l'assistant IA qui automatise ta vente en ligne : commandes, SAV et publicité, connecté à Shopify, WhatsApp, Telegram et Meta — pour les marchands qui n'ont pas de temps à perdre.">
     <link rel="canonical" href="https://samii.souverain-store.com/">
 
+    <!-- Données structurées (schema.org) — pour le SEO classique ET pour que
+         les moteurs génératifs (ChatGPT, Perplexity, Bing Chat...) comprennent
+         directement ce qu'est SAMII quand on leur pose la question (GEO). -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://samii.souverain-store.com/#organization",
+          "name": "OG Technology",
+          "url": "https://samii.souverain-store.com/",
+          "logo": "https://samii.souverain-store.com/og-hero.png",
+          "sameAs": []
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "SAMII OS",
+          "url": "https://samii.souverain-store.com/",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "SAMII est l'assistant IA qui automatise la vente en ligne des commerçants : commandes, service client et publicité, connecté à Shopify, WhatsApp, Telegram et Meta.",
+          "inLanguage": "fr",
+          "publisher": { "@id": "https://samii.souverain-store.com/#organization" },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR",
+            "description": "Inscription gratuite"
+          }
+        }
+      ]
+    }
+    </script>
+
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="SAMII OS">
     <meta property="og:title" content="SAMII — Prends le commandement de ton Empire Digital">
