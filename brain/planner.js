@@ -22,8 +22,44 @@ class SamiiPlanner {
             case "passer_commande":
                 return await commerceEngine.createOrderFromChat(context, args);
 
+            case "rechercher_prospects":
+                return await this.rechercherProspects(args);
+
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
+        }
+    }
+
+    // Même moteur que routes/radarprospects.js (recherche web réelle via
+    // Gemini), mais utilisable directement dans une conversation avec Sami —
+    // par un marchand pour ses propres clients, ou par le fondateur pour
+    // trouver des marchands à qui proposer SAMII.
+    async rechercherProspects({ cible, marche }) {
+        try {
+            const prompt = `Tu es SAMII, le stratège commercial de OG Technology. On te demande de trouver de vrais prospects (clients ou marchands potentiels) à contacter.
+
+Profil de prospect recherché : ${cible}
+Marché cible : ${marche}
+
+Utilise la recherche web pour identifier entre 3 et 5 VRAIES entreprises, boutiques ou pages publiques qui correspondent à ce profil — jamais de noms inventés. Pour chacune, donne uniquement des informations publiques d'entreprise (nom, site web ou page publique si tu la trouves) — jamais de coordonnées personnelles privées.
+
+Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans balises markdown, dans ce format exact :
+[
+  { "nom": "Nom de l'entreprise ou de la boutique", "lien": "URL publique si trouvée, sinon chaîne vide", "explication": "Une phrase expliquant pourquoi c'est un bon prospect." }
+]`;
+
+            const result = await gemini.chatWithSearch({ message: prompt, context: { source: "rechercher_prospects_chat" } });
+            const rawText = result.type === "text" ? result.text : "";
+            const match = rawText.match(/\[[\s\S]*\]/);
+            const prospects = match ? JSON.parse(match[0]) : null;
+
+            if (!prospects || !Array.isArray(prospects)) {
+                return { success: false, error: "Recherche impossible pour le moment, réessaie." };
+            }
+            return { success: true, prospects, sources: result.sources || [] };
+        } catch (err) {
+            console.error("❌ Planner.rechercherProspects :", err.message);
+            return { success: false, error: "Erreur lors de la recherche." };
         }
     }
 

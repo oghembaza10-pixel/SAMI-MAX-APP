@@ -118,7 +118,7 @@ async function chatViaOpenAiCompatible({ provider, model, poster, message, conte
         { role: "user", content: prompt },
     ];
     const body = { model, messages };
-    if (useTools) body.tools = toOpenAiTools(TOOLS);
+    body.tools = toOpenAiTools(useTools ? TOOLS : SEARCH_TOOLS);
 
     const response = await poster(body);
     const choice = response.data.choices?.[0];
@@ -206,6 +206,18 @@ const TOOLS = [
                 },
             },
             {
+                name: "rechercher_prospects",
+                description: "Cherche sur le web de vraies entreprises ou boutiques publiques correspondant à un profil donné — pour trouver des clients ou marchands potentiels à contacter. Utilise cette fonction dès qu'on te demande de trouver des prospects, des clients, ou des marchands à qui proposer quelque chose (y compris pour OG Technology lui-même).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        cible: { type: "STRING", description: "Description du profil de prospect recherché (ex: \"petites boutiques de vêtements en ligne\", \"marchands sans assistant IA\")." },
+                        marche: { type: "STRING", description: "Marché ou région ciblée (ex: \"Algérie\", \"France\")." },
+                    },
+                    required: ["cible", "marche"],
+                },
+            },
+            {
                 name: "passer_commande",
                 description: "Enregistre une commande pour UN SEUL produit (choisi EXACTEMENT parmi le catalogue réel fourni dans le contexte — jamais inventé, jamais deux produits dans le même appel), une fois que le produit, l'adresse de livraison et le numéro de téléphone sont connus. AVANT le tout premier appel sur cette commande, si un autre produit du catalogue complète naturellement celui choisi (ex: accessoire, produit du même univers), suggère-le UNE SEULE fois au client en une phrase courte, sans insister — n'appelle la fonction qu'après sa réponse. S'il accepte le produit complémentaire, appelle cette fonction UNE DEUXIÈME FOIS juste après, avec ce second produit (adresse/téléphone identiques), pour créer sa propre commande. Si aucun produit complémentaire pertinent n'existe, ou si le client a déjà répondu à la suggestion, appelle la fonction directement pour le produit initial.",
                 parameters: {
@@ -220,6 +232,15 @@ const TOOLS = [
             },
         ],
     },
+];
+
+// Outils "lecture seule" (recherche web) — toujours proposés au modèle, même
+// quand les outils d'action commerciale (commande, RDV...) sont désactivés
+// pour le fondateur (audience "souverain", voir planner.js) : chercher des
+// prospects ne crée ni ne modifie aucune donnée, donc ne présente pas le
+// risque qui justifie ce garde-fou.
+const SEARCH_TOOLS = [
+    { functionDeclarations: TOOLS[0].functionDeclarations.filter(fn => fn.name === "rechercher_prospects") },
 ];
 
 async function send({ to, message }) {
@@ -246,7 +267,7 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
                 { role: "user", parts: userParts },
             ],
         };
-        if (useTools) body.tools = TOOLS;
+        body.tools = useTools ? TOOLS : SEARCH_TOOLS;
         const response = await postWithRotation(body);
         const candidate = response.data.candidates?.[0];
         const parts = candidate?.content?.parts || [];
