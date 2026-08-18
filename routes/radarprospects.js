@@ -197,6 +197,12 @@ router.get("/", requireAuth, async (req, res) => {
 </svg>
 
 <script>
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 function badgeClass(score) {
     if (score >= 70) return { cls: 'fort', label: 'Fort' };
     if (score >= 40) return { cls: 'moyen', label: 'Moyen' };
@@ -212,8 +218,14 @@ function renderProspects(list) {
         const badge = badgeClass(score);
         const circumference = 188.5;
         const offset = circumference - (circumference * score / 100);
-        const nomAffiche = p.nom || 'Prospect';
-        const lienHtml = p.lien ? \` — <a href="\${p.lien}" target="_blank" rel="noopener">voir →</a>\` : '';
+        const nomAffiche = escapeHtml(p.nom || 'Prospect');
+        const lienHtml = p.lien ? \` — <a href="\${escapeHtml(p.lien)}" target="_blank" rel="noopener">site →</a>\` : '';
+        const secteurHtml = p.secteur ? \`<span class="opp-badge" style="border-color:rgba(255,255,255,.18);color:var(--text-muted);">\${escapeHtml(p.secteur)}</span>\` : '';
+
+        const metaLignes = [];
+        if (p.reseau_social) metaLignes.push(\`🔗 <a href="\${escapeHtml(p.reseau_social)}" target="_blank" rel="noopener" style="color:var(--cyan-tech);">\${escapeHtml(p.reseau_social)}</a>\`);
+        if (p.contact_pro) metaLignes.push(\`✉️ \${escapeHtml(p.contact_pro)}\`);
+        const metaHtml = metaLignes.length ? \`<p style="margin-top:8px;font-size:.78rem;">\${metaLignes.join(' &nbsp;·&nbsp; ')}</p>\` : '';
 
         const card = document.createElement('div');
         card.className = 'opp-card';
@@ -227,8 +239,9 @@ function renderProspects(list) {
                 <div class="opp-ring-value">\${score}<span>/100</span></div>
             </div>
             <div class="opp-body">
-                <h3>\${nomAffiche} <span class="opp-badge opp-badge--\${badge.cls}">\${badge.label}</span>\${lienHtml}</h3>
-                <p>\${p.explication || ''}</p>
+                <h3>\${nomAffiche} <span class="opp-badge opp-badge--\${badge.cls}">\${badge.label}</span>\${secteurHtml}\${lienHtml}</h3>
+                <p>\${escapeHtml(p.explication || '')}</p>
+                \${metaHtml}
             </div>
         \`;
         container.appendChild(card);
@@ -306,11 +319,13 @@ Profil de prospect recherché : ${cible.trim()}
 Marché cible : ${marche.trim()}
 ${details?.trim() ? `Précisions : ${details.trim()}` : ""}
 
-Utilise la recherche web pour identifier entre 3 et 5 VRAIES entreprises, boutiques ou pages publiques qui correspondent à ce profil — jamais de noms inventés. Pour chacune, donne uniquement des informations publiques d'entreprise (nom, site web ou page publique si tu la trouves) — jamais de coordonnées personnelles privées (email/téléphone d'un individu).
+Utilise la recherche web pour identifier entre 5 et 8 VRAIES entreprises, boutiques ou pages professionnelles qui correspondent à ce profil — jamais de noms inventés. Cherche largement : Google Maps/Google Business, pages entreprise LinkedIn, pages professionnelles Instagram et Facebook, annuaires professionnels, sites officiels, marketplaces B2B.
+
+Pour chacune, ramène le MAXIMUM d'informations publiques disponibles : nom, site web, page réseau social, ville/pays, secteur d'activité, et — uniquement si l'entreprise l'affiche elle-même publiquement sur son site ou sa page pour être contactée professionnellement — son email ou téléphone professionnel de contact. Ne remonte jamais les coordonnées personnelles d'un individu qui ne sont pas destinées au contact professionnel (ex : profil personnel, numéro privé) — uniquement ce que l'entreprise publie elle-même comme point de contact professionnel.
 
 Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans balises markdown, dans ce format exact :
 [
-  { "nom": "Nom de l'entreprise ou de la boutique", "lien": "URL publique si trouvée, sinon chaîne vide", "score": 82, "explication": "Une phrase expliquant pourquoi c'est un bon prospect, concrète et actionnable." }
+  { "nom": "Nom de l'entreprise ou de la boutique", "lien": "URL publique si trouvée, sinon chaîne vide", "reseau_social": "URL de la page Instagram/Facebook/LinkedIn si trouvée, sinon chaîne vide", "contact_pro": "Email ou téléphone professionnel publié par l'entreprise elle-même, sinon chaîne vide", "secteur": "Secteur d'activité", "score": 82, "explication": "Une phrase expliquant pourquoi c'est un bon prospect, concrète et actionnable." }
 ]
 
 Le score est un nombre entre 0 et 100 représentant la pertinence réelle du prospect selon ce qui est recherché. Sois honnête : tous les prospects ne doivent pas avoir un score élevé.`;

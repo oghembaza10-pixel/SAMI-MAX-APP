@@ -41,11 +41,13 @@ class SamiiPlanner {
 Profil de prospect recherché : ${cible}
 Marché cible : ${marche}
 
-Utilise la recherche web pour identifier entre 3 et 5 VRAIES entreprises, boutiques ou pages publiques qui correspondent à ce profil — jamais de noms inventés. Pour chacune, donne uniquement des informations publiques d'entreprise (nom, site web ou page publique si tu la trouves) — jamais de coordonnées personnelles privées.
+Utilise la recherche web pour identifier entre 5 et 8 VRAIES entreprises, boutiques ou pages professionnelles qui correspondent à ce profil — jamais de noms inventés. Cherche largement : Google Maps/Google Business, pages entreprise LinkedIn, pages professionnelles Instagram et Facebook, annuaires professionnels, sites officiels, marketplaces B2B.
+
+Pour chacune, ramène le MAXIMUM d'informations publiques disponibles : nom, site web, page réseau social, secteur d'activité, et — uniquement si l'entreprise l'affiche elle-même publiquement pour être contactée professionnellement — son email ou téléphone professionnel de contact. Ne remonte jamais les coordonnées personnelles d'un individu qui ne sont pas destinées au contact professionnel.
 
 Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans balises markdown, dans ce format exact :
 [
-  { "nom": "Nom de l'entreprise ou de la boutique", "lien": "URL publique si trouvée, sinon chaîne vide", "explication": "Une phrase expliquant pourquoi c'est un bon prospect." }
+  { "nom": "Nom de l'entreprise ou de la boutique", "lien": "URL publique si trouvée, sinon chaîne vide", "reseau_social": "URL de page pro si trouvée, sinon chaîne vide", "contact_pro": "Email ou téléphone professionnel publié par l'entreprise, sinon chaîne vide", "secteur": "Secteur d'activité", "explication": "Une phrase expliquant pourquoi c'est un bon prospect." }
 ]`;
 
             const result = await gemini.chatWithSearch({ message: prompt, context: { source: "rechercher_prospects_chat" } });
