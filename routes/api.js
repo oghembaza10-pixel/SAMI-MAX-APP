@@ -13,7 +13,6 @@ const samiiMemoire = require("../services/samiiMemoire");
 const projetsService = require("../services/projetsService");
 const memoireUtilisateur = require("../services/memoireUtilisateur");
 const transcription = require("../services/transcription");
-const tts = require("../services/tts");
 const connaissances = require("../services/connaissances");
 const geminiService = require("../services/geminiService");
 
@@ -241,21 +240,6 @@ router.post("/chat/feedback", requireAuth, async (req, res) => {
     } catch (err) {
         console.error("❌ POST /api/chat/feedback :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
-    }
-});
-
-// Donne une voix aux réponses de SAMII (chat QG) — Groq Orpheus, gratuit.
-router.post("/chat/tts", requireAuth, async (req, res) => {
-    try {
-        const texte = (req.body.text || "").trim();
-        if (!texte) return res.status(400).end();
-        const audio = await tts.synthesize(texte);
-        if (!audio) return res.status(502).end();
-        res.set("Content-Type", "audio/wav");
-        res.send(audio);
-    } catch (err) {
-        console.error("❌ POST /api/chat/tts :", err.message);
-        res.status(500).end();
     }
 });
 
