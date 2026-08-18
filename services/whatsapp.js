@@ -81,6 +81,13 @@ async function verifierEtNotifierDepannage(workspaceId) {
 
 // ── ENVOIE UN MESSAGE ────────────────────────────────
 async function send({ to, message, workspaceId }) {
+    // Canal officiel OG Technology : API Cloud WhatsApp directe (numéro
+    // enregistré chez Meta), sans passer par Green API. Tous les autres
+    // marchands continuent sur Green API ci-dessous, inchangé.
+    if (workspaceId && workspaceId === CONFIG.META.OG_WORKSPACE_ID) {
+        return await sendViaCloudApi({ to, message });
+    }
+
     try {
         const { instanceId, apiToken } = await resolveCredentials(workspaceId);
         if (!to || !instanceId || !apiToken) {
@@ -98,6 +105,26 @@ async function send({ to, message, workspaceId }) {
 
     } catch (err) {
         console.error("❌ WhatsApp send :", err.message);
+        return { success: false, error: err.message };
+    }
+}
+
+async function sendViaCloudApi({ to, message }) {
+    const { TOKEN, PHONE_NUMBER_ID } = CONFIG.META.WHATSAPP_CLOUD;
+    if (!to || !TOKEN || !PHONE_NUMBER_ID) {
+        console.warn("⚠️ WhatsApp Cloud API non configuré (token ou numéro manquant)");
+        return { success: false };
+    }
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v23.0/${PHONE_NUMBER_ID}/messages`,
+            { messaging_product: "whatsapp", to, type: "text", text: { body: message } },
+            { headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" } }
+        );
+        console.log(`✅ WhatsApp (Cloud API) → ${to}`);
+        return { success: true };
+    } catch (err) {
+        console.error("❌ WhatsApp Cloud API send :", err.response?.data || err.message);
         return { success: false, error: err.message };
     }
 }

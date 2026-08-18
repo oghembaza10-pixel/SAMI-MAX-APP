@@ -169,6 +169,16 @@ module.exports = {
         // sur le tableau de bord développeur Meta) — à remplacer par une
         // adresse pro dédiée dès qu'elle existe.
         CONTACT_EMAIL: process.env.OG_CONTACT_EMAIL || "oghembaza10@gmail.com",
+
+        // ── WhatsApp Cloud API officielle (numéro OG Technology) ──────────
+        // Distincte de CONFIG.WHATSAPP (Green API, utilisée par tous les
+        // marchands) : celle-ci ne sert que le canal officiel SAMII, avec un
+        // token d'utilisateur système permanent (Business Settings →
+        // Utilisateur(ice)s système → Générer un token).
+        WHATSAPP_CLOUD: {
+            TOKEN          : process.env.META_WHATSAPP_TOKEN,
+            PHONE_NUMBER_ID: process.env.META_WHATSAPP_PHONE_NUMBER_ID || "1304094159450033",
+        },
     },
 
     // ==================================================

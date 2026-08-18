@@ -116,6 +116,65 @@ router.post("/webhook/meta", async (req, res) => {
         const raw = req.body;
         const body = Buffer.isBuffer(raw) ? JSON.parse(raw.toString("utf8") || "{}") : (raw || {});
 
+        // ── WhatsApp Cloud API (numéro officiel OG Technology) ────────────
+        // Distinct du webhook Green API (routes/webhook-whatsapp.js) qui sert
+        // tous les marchands — celui-ci ne traite que le canal officiel SAMII,
+        // routé directement sur CONFIG.META.OG_WORKSPACE_ID (pas encore de
+        // résolution multi-marchand, prévu plus tard pour ceux qui passeront
+        // par leur propre numéro Cloud API).
+        if (body.object === "whatsapp_business_account") {
+            const workspaceId = CONFIG.META.OG_WORKSPACE_ID;
+            for (const entry of body.entry || []) {
+                for (const change of entry.changes || []) {
+                    if (change.field !== "messages") continue;
+                    const value = change.value || {};
+                    for (const msg of value.messages || []) {
+                        if (msg.type !== "text" || !msg.text?.body) continue;
+
+                        const sender = msg.from;
+                        const text = msg.text.body.trim();
+                        const senderName = value.contacts?.[0]?.profile?.name || "Client";
+                        if (!sender || !text) continue;
+
+                        console.log(`💬 WhatsApp Cloud [${senderName}] (workspace ${workspaceId}) : ${text}`);
+
+                        await db.query(
+                            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                            ["whatsapp.message", `${senderName}: ${text}`, workspaceId]
+                        );
+
+                        try {
+                            await orchestrator.process({
+                                type: "whatsapp.message",
+                                shop: workspaceId,
+                                payload: { senderName, sender, message: text },
+                            });
+                        } catch (procErr) {
+                            console.error("❌ WhatsApp Cloud orchestrator :", procErr.message);
+                        }
+
+                        socketService.emitToShop(workspaceId, "whatsapp.message", { senderName, message: text });
+
+                        const key = `wa_${sender}`;
+                        const session = await memory.get(key) || {};
+                        const conversation = session.history || [];
+
+                        const geminiReply = await planner.ask(text, {
+                            source: "whatsapp", chatId: sender, name: senderName, audience: "client",
+                            workspaceId,
+                        }, conversation);
+
+                        const whatsapp = require("../services/whatsapp");
+                        await whatsapp.send({ to: sender, message: geminiReply, workspaceId });
+
+                        const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-60);
+                        await memory.set(key, { ...session, history: nextHistory });
+                    }
+                }
+            }
+            return;
+        }
+
         if (!["page", "instagram"].includes(body.object)) return;
         const canal = body.object === "instagram" ? "instagram" : "facebook";
 
