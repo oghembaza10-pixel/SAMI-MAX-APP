@@ -409,7 +409,10 @@ router.post("/", async (req, res) => {
 
         const lienConfirmation = `${CONFIG.APP_URL}/register/confirmer?token=${token}`;
 
-        await gmail.send({
+        // L'email de confirmation part toujours (utile pour la récupération de
+        // compte), mais en tâche de fond : un souci d'envoi ne doit plus jamais
+        // empêcher quelqu'un d'entrer dans l'app — l'accès est immédiat.
+        gmail.send({
             to: email,
             subject: "Confirme ton compte SAMII OS",
             html: `
@@ -425,14 +428,29 @@ router.post("/", async (req, res) => {
     </div>
 `,
 
-        });
+        }).catch((err) => console.warn("⚠️ Envoi email confirmation inscription :", err.message));
 
         console.log(`✅ Nouveau compte PostgreSQL (${typeCompte}) : ${email}`);
 
-        res.json({
-            success: true,
-            message: "✅ Compte créé ! Vérifie ta boîte mail.",
-            redirect: "/register/en-attente",
+        // ── Accès immédiat, sans attendre la confirmation email ──
+        // Comme les grandes plateformes : on facilite l'entrée, la vérification
+        // email reste utile (récupération de compte) mais ne bloque plus rien.
+        const userId = nouveauRows[0].id;
+        req.session.regenerate((sessErr) => {
+            if (sessErr) return res.json({ success: false, error: "Erreur session." });
+
+            req.session.loggedIn    = true;
+            req.session.email       = email;
+            req.session.userId      = userId;
+            req.session.nom         = `${prenom || ""} ${nom || ""}`.trim();
+            req.session.typeCompte  = typeCompte;
+            req.session.workspaceId = null;
+
+            res.json({
+                success : true,
+                message : "✅ Compte créé !",
+                redirect: typeCompte === "client" ? "/client-qg" : "/hub",
+            });
         });
 
     } catch (err) {

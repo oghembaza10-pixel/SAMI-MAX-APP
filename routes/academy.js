@@ -265,7 +265,9 @@ router.post("/favoris/toggle", requireAuth, async (req, res) => {
     }
 });
 
-router.get("/", requireAuth, async (req, res) => {
+// Ouvert à tous, sans compte — s'inscrire/aimer/partager reste réservé aux
+// connectés, mais parcourir le contenu ne doit jamais demander de compte.
+router.get("/", async (req, res) => {
     const { categorie, format, recherche, niveau } = req.query;
     let coursDB = [];
 

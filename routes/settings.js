@@ -235,6 +235,19 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
         </form>
         <div class="vm-msg" id="msgBoutique"></div>
     </div>` : ""}
+
+    <div class="vm-card" id="livraison" style="margin-top:20px;">
+        <h1 style="font-size:17px;margin:0 0 4px;" data-i18n="settings.livraison.title">🚚 Livraison</h1>
+        <p style="color:var(--muted);font-size:12px;margin:0 0 18px;" data-i18n="settings.livraison.sub">Réglages que tu ne touches pas tous les jours.</p>
+        <a href="/livraisons" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);text-decoration:none;margin-bottom:10px;">
+            <span style="display:flex;align-items:center;gap:10px;color:var(--text-main);font-size:.88rem;"><i data-lucide="truck"></i> <span data-i18n="settings.livraison.demander">Demander un livreur</span></span>
+            <i data-lucide="chevron-right" style="color:var(--muted);"></i>
+        </a>
+        <a href="/livreur" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);text-decoration:none;">
+            <span style="display:flex;align-items:center;gap:10px;color:var(--text-main);font-size:.88rem;"><i data-lucide="bike"></i> <span data-i18n="settings.livraison.devenir">Devenir livreur</span></span>
+            <i data-lucide="chevron-right" style="color:var(--muted);"></i>
+        </a>
+    </div>
 </div>
 <script>
 if (typeof lucide !== "undefined") lucide.createIcons();

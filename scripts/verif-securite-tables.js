@@ -15,6 +15,7 @@ async function run() {
         `ALTER TABLE commandes ADD COLUMN IF NOT EXISTS numero_suivi TEXT`,
         `ALTER TABLE commandes ADD COLUMN IF NOT EXISTS transporteur TEXT`,
         `ALTER TABLE commandes ADD COLUMN IF NOT EXISTS dernier_statut_suivi TEXT`,
+        `ALTER TABLE commandes ADD COLUMN IF NOT EXISTS email TEXT`,
     ];
     let ok = 0, fail = 0;
     for (const sql of fixes) {

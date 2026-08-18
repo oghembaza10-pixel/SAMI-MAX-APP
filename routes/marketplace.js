@@ -204,7 +204,10 @@ const SERVICES_CHIPS_HTML = (SERVICES_RAPIDES || [])
 // MARKETPLACE
 // ==========================================================================
 
-router.get("/", requireAuth, async (req, res) => {
+// Ouvert à tous, sans compte — comme les grandes marketplaces : on ne
+// demande une identité qu'au moment de vendre ou d'acheter, jamais pour
+// simplement regarder.
+router.get("/", async (req, res) => {
 
     const {
         categorie,
@@ -2840,6 +2843,7 @@ nav {
     <div class="cart-delivery" id="cartDelivery" style="display:none;">
         <input id="ci-nom" class="cart-input" placeholder="Nom complet">
         <input id="ci-telephone" class="cart-input" placeholder="Téléphone">
+        <input id="ci-email" class="cart-input" type="email" placeholder="Email (pour suivre ta commande)">
         <input id="ci-adresse" class="cart-input" placeholder="Adresse de livraison">
         <div style="display:flex;gap:8px;">
             <input id="ci-ville" class="cart-input" placeholder="Ville" style="flex:1;">
@@ -3384,12 +3388,17 @@ async function checkout() {
 
     const nom       = document.getElementById("ci-nom")?.value.trim() || "";
     const telephone = document.getElementById("ci-telephone")?.value.trim() || "";
+    const email     = document.getElementById("ci-email")?.value.trim() || "";
     const adresse   = document.getElementById("ci-adresse")?.value.trim() || "";
     const ville     = document.getElementById("ci-ville")?.value.trim() || "";
     const pays      = document.getElementById("ci-pays")?.value.trim() || "";
 
     if (!nom || !telephone || !adresse) {
         showToast("Renseigne ton nom, téléphone et adresse.");
+        return;
+    }
+    if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+        showToast("Un email valide est nécessaire pour suivre ta commande.");
         return;
     }
 
@@ -3400,7 +3409,7 @@ async function checkout() {
         const res = await fetch("/marketplace/commander", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items: cart, nom_client: nom, telephone, adresse, ville, pays }),
+            body: JSON.stringify({ items: cart, nom_client: nom, telephone, email, adresse, ville, pays }),
         });
         const data = await res.json();
 
@@ -3492,18 +3501,23 @@ async function notifierNouvelleCommandeBoutique(workspaceId, orderId, resume) {
     }
 }
 
+// Achat ouvert à tous, avec ou sans compte — seul un email est demandé, au
+// moment de commander, pour pouvoir suivre la commande (comme les grandes
+// marketplaces qui autorisent l'achat invité).
 router.post(
     "/commander",
-    requireAuth,
     async (req, res) => {
         try {
-            const { items, nom_client, telephone, adresse, ville, pays } = req.body;
+            const { items, nom_client, telephone, adresse, ville, pays, email } = req.body;
 
             if (!Array.isArray(items) || !items.length) {
                 return res.json({ success: false, error: "Panier vide." });
             }
             if (!nom_client?.trim() || !telephone?.trim() || !adresse?.trim()) {
                 return res.json({ success: false, error: "Nom, téléphone et adresse sont obligatoires." });
+            }
+            if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+                return res.json({ success: false, error: "Un email valide est nécessaire pour suivre ta commande." });
             }
 
             let montantTotal = 0;
@@ -3522,9 +3536,9 @@ router.post(
 
             await db.query(
                 `INSERT INTO commandes
-                    (id, workspace_id, nom_client, telephone, adresse, pays, ville, produit, montant, devise, statut, source)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'en attente','marketplace')`,
-                [id, workspaceId, nom_client.trim(), telephone.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(), produitResume, montantTotal, devise]
+                    (id, workspace_id, nom_client, telephone, email, adresse, pays, ville, produit, montant, devise, statut, source)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'en attente','marketplace')`,
+                [id, workspaceId, nom_client.trim(), telephone.trim(), email.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(), produitResume, montantTotal, devise]
             );
 
             await notifierNouvelleCommandeBoutique(workspaceId, id, {
@@ -3587,7 +3601,7 @@ function convertirEnEUR(montant, devise) {
     }
 }
 
-router.get("/lien-externe", requireAuth, (req, res) => {
+router.get("/lien-externe", (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -3665,6 +3679,8 @@ input:focus, select:focus { border-color:var(--blue); }
         <input type="text" id="nom_client" placeholder="Ton nom">
         <label>Téléphone</label>
         <input type="text" id="telephone" placeholder="06...">
+        <label>Email (pour suivre ta commande)</label>
+        <input type="email" id="email" placeholder="toi@exemple.com">
         <label>Adresse de livraison</label>
         <input type="text" id="adresse" placeholder="Adresse complète">
         <div class="row2">
@@ -3736,6 +3752,7 @@ document.getElementById('commanderBtn').addEventListener('click', async () => {
         devise: document.getElementById('devise').value,
         nom_client: document.getElementById('nom_client').value.trim(),
         telephone: document.getElementById('telephone').value.trim(),
+        email: document.getElementById('email').value.trim(),
         adresse: document.getElementById('adresse').value.trim(),
         ville: document.getElementById('ville').value.trim(),
         pays: document.getElementById('pays').value.trim(),
@@ -3744,6 +3761,11 @@ document.getElementById('commanderBtn').addEventListener('click', async () => {
     if (!payload.titre || !payload.prix || !payload.nom_client || !payload.telephone || !payload.adresse) {
         status2.className = 'status err';
         status2.textContent = 'Titre, prix, nom, téléphone et adresse sont obligatoires.';
+        return;
+    }
+    if (!payload.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+        status2.className = 'status err';
+        status2.textContent = 'Un email valide est nécessaire pour suivre ta commande.';
         return;
     }
 
@@ -3790,12 +3812,15 @@ router.post("/lien-externe/extraire", requireAuth, async (req, res) => {
     }
 });
 
-router.post("/lien-externe/commander", requireAuth, async (req, res) => {
+router.post("/lien-externe/commander", async (req, res) => {
     try {
-        const { url, titre, image, prix, devise, nom_client, telephone, adresse, ville, pays } = req.body;
+        const { url, titre, image, prix, devise, nom_client, telephone, adresse, ville, pays, email } = req.body;
 
         if (!url || !titre || !prix || !nom_client?.trim() || !telephone?.trim() || !adresse?.trim()) {
             return res.json({ success: false, error: "Lien, titre, prix, nom, téléphone et adresse sont obligatoires." });
+        }
+        if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+            return res.json({ success: false, error: "Un email valide est nécessaire pour suivre ta commande." });
         }
 
         const prixEUR = convertirEnEUR(Number(prix), devise);
@@ -3808,11 +3833,11 @@ router.post("/lien-externe/commander", requireAuth, async (req, res) => {
         const workspaceId = await resoudreWorkspaceBoutique(req);
         await db.query(
             `INSERT INTO commandes
-                (id, workspace_id, nom_client, telephone, adresse, pays, ville, produit, montant, devise, statut, source,
+                (id, workspace_id, nom_client, telephone, email, adresse, pays, ville, produit, montant, devise, statut, source,
                  url_produit, titre_produit, image_produit, prix_source, devise_source, frais_service)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'EUR','en attente','lien_externe',$10,$11,$12,$13,$14,$15)`,
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'EUR','en attente','lien_externe',$11,$12,$13,$14,$15,$16)`,
             [
-                id, workspaceId, nom_client.trim(), telephone.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(),
+                id, workspaceId, nom_client.trim(), telephone.trim(), email.trim(), adresse.trim(), (pays || "").trim(), (ville || "").trim(),
                 titre.trim(), totalEUR.toFixed(2),
                 url, titre.trim(), image || "", Number(prix), (devise || "EUR").toUpperCase(), fraisEUR.toFixed(2),
             ]
@@ -4315,7 +4340,6 @@ router.post(
 
 router.get(
     "/produit/:id",
-    requireAuth,
     async (req, res) => {
 
         const id =
@@ -4925,6 +4949,7 @@ button {
         </label>
         <input id="qc-nom" placeholder="Nom complet">
         <input id="qc-telephone" placeholder="Téléphone">
+        <input id="qc-email" type="email" placeholder="Email (pour suivre ta commande)">
         <input id="qc-adresse" placeholder="Adresse de livraison">
         <div class="pd-quick-row">
             <input id="qc-ville" placeholder="Ville">
@@ -5043,12 +5068,17 @@ function ouvrirAchatDirect() {
 async function confirmerAchatDirect() {
     const nom       = document.getElementById("qc-nom").value.trim();
     const telephone = document.getElementById("qc-telephone").value.trim();
+    const email     = document.getElementById("qc-email").value.trim();
     const adresse   = document.getElementById("qc-adresse").value.trim();
     const ville     = document.getElementById("qc-ville").value.trim();
     const pays      = document.getElementById("qc-pays").value.trim();
 
     if (!nom || !telephone || !adresse) {
         alert("Renseigne ton nom, téléphone et adresse.");
+        return;
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        alert("Un email valide est nécessaire pour suivre ta commande.");
         return;
     }
 
@@ -5060,7 +5090,7 @@ async function confirmerAchatDirect() {
         const res = await fetch("/marketplace/commander", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items: [currentItem()], nom_client: nom, telephone, adresse, ville, pays }),
+            body: JSON.stringify({ items: [currentItem()], nom_client: nom, telephone, email, adresse, ville, pays }),
         });
         const data = await res.json();
 

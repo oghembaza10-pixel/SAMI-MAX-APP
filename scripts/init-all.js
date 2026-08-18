@@ -11,6 +11,7 @@ async function run() {
                 workspace_id TEXT REFERENCES workspaces(id),
                 nom_client TEXT,
                 telephone TEXT,
+                email TEXT,
                 adresse TEXT,
                 pays TEXT,
                 ville TEXT,
