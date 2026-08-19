@@ -145,22 +145,49 @@ async function listUpcomingEvents(workspaceId, max = 10) {
     }
 }
 
-async function createCalendarEvent(workspaceId, { summary, description = "", startISO, endISO }) {
+async function createCalendarEvent(workspaceId, { summary, description = "", startISO, endISO, invites = [], avecMeet = false }) {
     const token = await getValidAccessToken(workspaceId);
     if (!token) return { success: false, error: "Google non connecté." };
 
     try {
+        const body = {
+            summary,
+            description,
+            start: { dateTime: startISO },
+            end: { dateTime: endISO },
+        };
+        if (invites.length) body.attendees = invites.map(email => ({ email }));
+        // Le lien Meet est généré par l'API Agenda elle-même (pas Drive) —
+        // conferenceDataVersion=1 est obligatoire dans l'URL pour que Google
+        // tienne compte de ce champ, sinon il est silencieusement ignoré.
+        if (avecMeet) {
+            body.conferenceData = {
+                createRequest: {
+                    requestId: `samii-${Date.now()}`,
+                    conferenceSolutionKey: { type: "hangoutsMeet" },
+                },
+            };
+        }
+
         const res = await axios.post(
             "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+            body,
             {
-                summary,
-                description,
-                start: { dateTime: startISO },
-                end: { dateTime: endISO },
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
+                headers: { Authorization: `Bearer ${token}` },
+                params: {
+                    conferenceDataVersion: avecMeet ? 1 : 0,
+                    // Sans ça, Google Calendar n'envoie jamais l'email
+                    // d'invitation aux participants ajoutés.
+                    sendUpdates: invites.length ? "all" : "none",
+                },
+            }
         );
-        return { success: true, eventId: res.data.id, link: res.data.htmlLink };
+        return {
+            success: true,
+            eventId: res.data.id,
+            link: res.data.htmlLink,
+            meetLink: res.data.hangoutLink || "",
+        };
     } catch (err) {
         console.error("❌ google.createCalendarEvent :", err.response?.data || err.message);
         return { success: false, error: "Échec de la création de l'événement." };

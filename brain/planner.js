@@ -133,6 +133,8 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
                 description: args.description || "",
                 startISO: args.debut,
                 endISO: args.fin,
+                invites: args.invites || [],
+                avecMeet: args.avecMeet === true,
             });
         } catch (err) {
             console.error("❌ Planner.creerEvenementAgenda :", err.message);

@@ -242,7 +242,7 @@ const TOOLS = [
             },
             {
                 name: "creer_evenement_agenda",
-                description: "Crée un événement dans le vrai Google Agenda du marchand connecté (pas un rendez-vous client — pour ça utilise prendre_rendez_vous/proposer_creneaux_rdv). N'appelle cette fonction que pour le marchand lui-même qui te demande de lui bloquer un moment dans SON agenda.",
+                description: "Crée un événement dans le vrai Google Agenda du marchand connecté (pas un rendez-vous client — pour ça utilise prendre_rendez_vous/proposer_creneaux_rdv). N'appelle cette fonction que pour le marchand lui-même qui te demande de lui bloquer un moment dans SON agenda, ou d'organiser une réunion.",
                 parameters: {
                     type: "OBJECT",
                     properties: {
@@ -250,6 +250,8 @@ const TOOLS = [
                         debut: { type: "STRING", description: "Date et heure de début, calculées à partir de la date actuelle donnée dans le contexte, au format ISO strict AAAA-MM-JJTHH:MM:SS." },
                         fin: { type: "STRING", description: "Date et heure de fin, même format ISO. Si non précisé par le marchand, mets 1h après le début." },
                         description: { type: "STRING", description: "Détail optionnel de l'événement. Chaîne vide sinon." },
+                        invites: { type: "ARRAY", items: { type: "STRING" }, description: "Adresses email des personnes à inviter, si le marchand en donne. Tableau vide sinon." },
+                        avecMeet: { type: "BOOLEAN", description: "true si le marchand veut une réunion Google Meet (visio) — génère un lien Meet automatiquement et l'ajoute à l'invitation. false pour un simple événement sans visio." },
                     },
                     required: ["titre", "debut", "fin"],
                 },
