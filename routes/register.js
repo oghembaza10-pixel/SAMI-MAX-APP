@@ -341,49 +341,51 @@ router.post("/", async (req, res) => {
     }
 
     try {
-        const existing = await db.query(`SELECT id, email_verifie FROM utilisateurs WHERE email = $1`, [email]);
+        const existing = await db.query(`SELECT * FROM utilisateurs WHERE email = $1`, [email]);
 
         if (existing.length > 0) {
-    const user = existing[0];
-    if (user.email_verifie === true) {
-        return res.json({ success: false, error: "Cet email est déjà utilisé." });
-    }
+            const user = existing[0];
 
-    // Compte existant non confirmé → réutilise le token existant s'il est encore valide
-    const rows = await db.query(`SELECT token_verification, token_expire_le FROM utilisateurs WHERE id = $1`, [user.id]);
-    const existingUser = rows[0];
-    const tokenEncoreValide = existingUser.token_verification && existingUser.token_expire_le && new Date() < new Date(existingUser.token_expire_le);
+            // Compte déjà existant (vérifié ou non) : on ne bloque plus derrière
+            // la confirmation email — si le mot de passe fourni correspond, on
+            // connecte directement, comme un login classique. L'email de
+            // confirmation reste utile pour la récupération de compte, mais ne
+            // conditionne plus jamais l'accès (cf. inscription plus bas).
+            const passwordOk = await bcrypt.compare(password, user.password_hash || "");
+            if (!passwordOk) {
+                return res.json({ success: false, error: "Cet email est déjà utilisé — mot de passe incorrect si c'est ton compte." });
+            }
 
-    let tokenAUtiliser;
+            if (!user.email_verifie) {
+                await db.query(
+                    `UPDATE utilisateurs SET email_verifie = true, token_verification = NULL, token_expire_le = NULL WHERE id = $1`,
+                    [user.id]
+                );
+            }
 
-    if (tokenEncoreValide) {
-        tokenAUtiliser = existingUser.token_verification;
-    } else {
-        tokenAUtiliser = crypto.randomBytes(32).toString("hex");
-        const newExpire = new Date(Date.now() + TOKEN_VALIDITE_HEURES * 60 * 60 * 1000);
+            const typeCompteExistant = user.type_compte === "marchand" ? "marchand" : "client";
+            req.session.regenerate(async (sessErr) => {
+                if (sessErr) return res.json({ success: false, error: "Erreur session." });
 
-        await db.query(
-            `UPDATE utilisateurs SET token_verification = $1, token_expire_le = $2 WHERE id = $3`,
-            [tokenAUtiliser, newExpire, user.id]
-        );
-    }
+                req.session.loggedIn   = true;
+                req.session.email      = email;
+                req.session.userId     = user.id;
+                req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
+                req.session.typeCompte = typeCompteExistant;
 
-    const lienRenvoi = `${CONFIG.APP_URL}/register/confirmer?token=${tokenAUtiliser}`;
-            await gmail.send({
-                to: email,
-                subject: "Confirme ton compte SAMII OS",
-                html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
-                    <h2 style="color:#C5A059;">Nouveau lien de confirmation</h2>
-                    <p>Clique ci-dessous pour confirmer ton adresse email.</p>
-                    <a href="${lienRenvoi}" style="display:inline-block;padding:12px 24px;background:#C5A059;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;">Confirmer mon email</a>
-                </div>`,
+                if (typeCompteExistant === "client") {
+                    req.session.workspaceId = null;
+                    return res.json({ success: true, redirect: "/client-qg" });
+                }
+
+                const workspaces = await db.query(`SELECT * FROM workspaces WHERE owner_email = $1`, [email]);
+                const workspace = workspaces[0] || null;
+                req.session.workspaceId = workspace?.id || null;
+                if (workspace) req.session.metier = workspace.metier;
+
+                res.json({ success: true, redirect: workspace ? "/qg" : "/hub" });
             });
-
-            return res.json({
-                success: true,
-                message: "✅ Un nouveau lien de confirmation a été envoyé.",
-                redirect: "/register/en-attente",
-            });
+            return;
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
