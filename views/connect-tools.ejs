@@ -173,10 +173,10 @@
                                 </form>
                             <% } %>
 
-                        <% } else if (tool.id === 'facebook' || tool.id === 'instagram') { %>
+                        <% } else if (tool.id === 'facebook' || tool.id === 'instagram' || tool.id === 'google') { %>
                             <% if (isConnected) { %>
                                 <p class="connect-tool-card__connected-info">
-                                    🟢 <%= connector.config?.name || 'Page connectée' %>
+                                    🟢 <%= connector.config?.name || connector.config?.email || 'Connecté' %>
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
                                         data-tool="<%= tool.id %>" data-action="disconnect" data-i18n="connectTools.disconnect">

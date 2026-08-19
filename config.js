@@ -190,6 +190,17 @@ module.exports = {
         // Identifiant du moteur de recherche personnalisé (cx) — pas secret,
         // mais réglable sans redéploiement si le fondateur en recrée un.
         SEARCH_CX: process.env.GOOGLE_SEARCH_CX || "f70583c741f994ca5",
+
+        // ── OAuth (Gmail, Calendar, Drive, YouTube — outils marchand) ─────
+        // Distinct de API_KEY ci-dessus (clé serveur pour Custom Search) :
+        // ceci ouvre l'accès aux données PERSONNELLES d'un marchand
+        // (sa boîte mail, son agenda, son Drive, sa chaîne YouTube), donc
+        // passe par un vrai écran de consentement Google, un par marchand.
+        OAUTH: {
+            CLIENT_ID    : process.env.GOOGLE_OAUTH_CLIENT_ID,
+            CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+            REDIRECT_URI : `${APP_URL}/auth/google/callback`,
+        },
     },
 
     // ==================================================

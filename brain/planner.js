@@ -3,6 +3,7 @@
 // ======================================================
 const gemini = require("../services/geminiService");
 const googleSearch = require("../services/googleSearch");
+const google = require("../services/google");
 const commerceEngine = require("../engines/commerceEngine");
 
 class SamiiPlanner {
@@ -25,6 +26,12 @@ class SamiiPlanner {
 
             case "rechercher_prospects":
                 return await this.rechercherProspects(args);
+
+            case "consulter_gmail":
+                return await this.consulterGmail(context);
+
+            case "envoyer_email":
+                return await this.envoyerEmail(context, args);
 
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
@@ -69,6 +76,31 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         } catch (err) {
             console.error("❌ Planner.rechercherProspects :", err.message);
             return { success: false, error: "Erreur lors de la recherche." };
+        }
+    }
+
+    // Boîte Gmail du marchand connecté (services/google.js, via son OAuth
+    // Google) — jamais celle d'un client, ces outils ne sont proposés que
+    // pour le marchand lui-même (voir SEARCH_TOOLS dans geminiService.js).
+    async consulterGmail(context) {
+        try {
+            const result = await google.listRecentEmails(context.workspaceId);
+            if (!result.connected) {
+                return { success: false, error: "Gmail n'est pas encore connecté — va dans Paramètres → Connecter tes outils → Google." };
+            }
+            return { success: true, emails: result.emails };
+        } catch (err) {
+            console.error("❌ Planner.consulterGmail :", err.message);
+            return { success: false, error: "Erreur lors de la lecture de Gmail." };
+        }
+    }
+
+    async envoyerEmail(context, args) {
+        try {
+            return await google.sendEmail(context.workspaceId, args);
+        } catch (err) {
+            console.error("❌ Planner.envoyerEmail :", err.message);
+            return { success: false, error: "Erreur lors de l'envoi de l'email." };
         }
     }
 

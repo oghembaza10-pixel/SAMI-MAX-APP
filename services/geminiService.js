@@ -218,6 +218,24 @@ const TOOLS = [
                 },
             },
             {
+                name: "consulter_gmail",
+                description: "Consulte les derniers emails reçus dans la boîte Gmail du marchand connecté (sujet, expéditeur, extrait). Utilise cette fonction dès qu'on te demande ce qu'il y a dans le mail, les derniers messages reçus, etc.",
+                parameters: { type: "OBJECT", properties: {} },
+            },
+            {
+                name: "envoyer_email",
+                description: "Envoie un email au nom du marchand connecté, depuis sa boîte Gmail. N'appelle cette fonction qu'une fois le destinataire, le sujet et le contenu clairement connus.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        to: { type: "STRING", description: "L'adresse email du destinataire." },
+                        subject: { type: "STRING", description: "L'objet de l'email." },
+                        body: { type: "STRING", description: "Le contenu de l'email." },
+                    },
+                    required: ["to", "subject", "body"],
+                },
+            },
+            {
                 name: "passer_commande",
                 description: "Enregistre une commande pour UN SEUL produit (choisi EXACTEMENT parmi le catalogue réel fourni dans le contexte — jamais inventé, jamais deux produits dans le même appel), une fois que le produit, l'adresse de livraison et le numéro de téléphone sont connus. AVANT le tout premier appel sur cette commande, si un autre produit du catalogue complète naturellement celui choisi (ex: accessoire, produit du même univers), suggère-le UNE SEULE fois au client en une phrase courte, sans insister — n'appelle la fonction qu'après sa réponse. S'il accepte le produit complémentaire, appelle cette fonction UNE DEUXIÈME FOIS juste après, avec ce second produit (adresse/téléphone identiques), pour créer sa propre commande. Si aucun produit complémentaire pertinent n'existe, ou si le client a déjà répondu à la suggestion, appelle la fonction directement pour le produit initial.",
                 parameters: {
@@ -234,13 +252,18 @@ const TOOLS = [
     },
 ];
 
-// Outils "lecture seule" (recherche web) — toujours proposés au modèle, même
-// quand les outils d'action commerciale (commande, RDV...) sont désactivés
-// pour le fondateur (audience "souverain", voir planner.js) : chercher des
-// prospects ne crée ni ne modifie aucune donnée, donc ne présente pas le
-// risque qui justifie ce garde-fou.
+// Outils du marchand pour lui-même (jamais côté client) — toujours proposés
+// dès que les outils d'action commerciale (commande, RDV...) sont désactivés
+// pour le fondateur/marchand (audience "souverain", voir planner.js), seul
+// cas où useTools vaut false. Recherche de prospects, lecture/envoi Gmail :
+// aucun ne touche aux données commerciales d'un client, donc aucun ne
+// présente le risque qui justifie ce garde-fou.
 const SEARCH_TOOLS = [
-    { functionDeclarations: TOOLS[0].functionDeclarations.filter(fn => fn.name === "rechercher_prospects") },
+    {
+        functionDeclarations: TOOLS[0].functionDeclarations.filter(fn =>
+            ["rechercher_prospects", "consulter_gmail", "envoyer_email"].includes(fn.name)
+        ),
+    },
 ];
 
 // Outil dédié à l'onboarding conversationnel (création du QG) — volontairement

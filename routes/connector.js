@@ -23,7 +23,7 @@ const TOOLS = [
     { id: "youtube",      label: "YouTube",               icon: "youtube",        color: "#FF0000", available: true, mode: "impression" },
     { id: "tiktok",       label: "TikTok",                 icon: "music",          color: "#010101", available: true, mode: "impression" },
     { id: "gmail",        label: "Gmail",                  icon: "mail",           color: "#EA4335", available: true, mode: "impression" },
-    { id: "google",       label: "Google",                 icon: "chrome",         color: "#4285F4", available: true, mode: "impression" },
+    { id: "google",       label: "Google (Gmail, Agenda, Drive, YouTube)", icon: "chrome", color: "#4285F4", available: true },
     { id: "whatsapp",     label: "WhatsApp Business",      icon: "message-circle", color: "#25D366", available: true, mode: "transporteur", emoji: "💬", purpose: "pour recevoir tes messages et commandes clients" },
     { id: "linkedin",     label: "LinkedIn",               icon: "linkedin",       color: "#0A66C2", available: true, mode: "impression" },
 
@@ -113,6 +113,11 @@ router.get("/facebook", requireAuth, (req, res) => {
 });
 router.get("/instagram", requireAuth, (req, res) => {
     res.redirect("/auth/meta");
+});
+
+// ── GOOGLE (Gmail / Calendar / Drive / YouTube, via OAuth) ─────────────
+router.get("/google", requireAuth, (req, res) => {
+    res.redirect("/auth/google");
 });
 
 // ── TELEGRAM ────────────────────────────────────────────
@@ -507,12 +512,11 @@ router.post("/whatsapp/depannage", requireAuth, async (req, res) => {
 // ── MODE IMPRESSION — YouTube, TikTok, Gmail, Google, WhatsApp, LinkedIn ──
 // Pas de vraie API branchée : le client colle un identifiant simple,
 // juste pour l'affichage "connecté" en attendant les permissions officielles.
-const IMPRESSION_TOOLS = ["youtube", "tiktok", "gmail", "google", "linkedin"];
+const IMPRESSION_TOOLS = ["youtube", "tiktok", "gmail", "linkedin"];
 const IMPRESSION_FIELD_LABEL = {
     youtube: "Lien ou @pseudo de ta chaîne YouTube",
     tiktok: "@pseudo TikTok",
     gmail: "Adresse Gmail",
-    google: "Adresse Gmail liée à Google",
     linkedin: "Lien de ton profil ou page LinkedIn",
 };
 

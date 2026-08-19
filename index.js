@@ -138,6 +138,7 @@ registerScheduledJobs();
 // ROUTES — OAuth externes (Meta, Shopify)
 // ══════════════════════════════════════════════════════
 app.use(require("./routes/auth-meta"));
+app.use(require("./routes/auth-google"));
 app.use(require("./routes/auth-shopify"));
 app.use(require("./routes/auth-woocommerce"));
 app.use(require("./routes/webhook-woocommerce").router);
