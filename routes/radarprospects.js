@@ -9,6 +9,7 @@
 const express = require("express");
 const router  = express.Router();
 const gemini  = require("../services/geminiService");
+const googleSearch = require("../services/googleSearch");
 const workspaceService = require("../services/workspaceService");
 
 function requireAuth(req, res, next) {
@@ -313,11 +314,20 @@ router.post("/", requireAuth, async (req, res) => {
             return res.json({ success: false, error: "Le profil recherché et le marché cible sont obligatoires." });
         }
 
+        // Recherche ciblée (moteur personnalisé TikTok/Meta/LinkedIn du
+        // fondateur) en complément de la recherche web générale ci-dessous —
+        // n'échoue jamais bloquant (googleSearch.search renvoie [] en erreur).
+        const cseResults = await googleSearch.search(`${cible.trim()} ${marche.trim()}`);
+        const cseContext = cseResults.length
+            ? `\n\nRésultats déjà trouvés sur TikTok/Meta/LinkedIn (moteur de recherche ciblé) — utilise-les en priorité s'ils sont pertinents, en plus de ta propre recherche web :\n${cseResults.map(r => `- ${r.title} — ${r.link} — ${r.snippet}`).join("\n")}`
+            : "";
+
         const prompt = `Tu es SAMII, le stratège commercial de OG Technology. Un utilisateur cherche de vrais prospects (clients ou marchands potentiels) à contacter pour développer son activité.
 
 Profil de prospect recherché : ${cible.trim()}
 Marché cible : ${marche.trim()}
 ${details?.trim() ? `Précisions : ${details.trim()}` : ""}
+${cseContext}
 
 Utilise la recherche web pour identifier entre 5 et 8 VRAIES entreprises, boutiques ou pages professionnelles qui correspondent à ce profil — jamais de noms inventés. Cherche largement : Google Maps/Google Business, pages entreprise LinkedIn, pages professionnelles Instagram et Facebook, annuaires professionnels, sites officiels, marketplaces B2B.
 

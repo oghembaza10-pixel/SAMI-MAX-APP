@@ -2,6 +2,7 @@
 // SAMII OS — PLANNER V3 (exécute de vraies actions)
 // ======================================================
 const gemini = require("../services/geminiService");
+const googleSearch = require("../services/googleSearch");
 const commerceEngine = require("../engines/commerceEngine");
 
 class SamiiPlanner {
@@ -36,10 +37,16 @@ class SamiiPlanner {
     // trouver des marchands à qui proposer SAMII.
     async rechercherProspects({ cible, marche }) {
         try {
+            const cseResults = await googleSearch.search(`${cible} ${marche}`);
+            const cseContext = cseResults.length
+                ? `\n\nRésultats déjà trouvés sur TikTok/Meta/LinkedIn (moteur de recherche ciblé) — utilise-les en priorité s'ils sont pertinents, en plus de ta propre recherche web :\n${cseResults.map(r => `- ${r.title} — ${r.link} — ${r.snippet}`).join("\n")}`
+                : "";
+
             const prompt = `Tu es SAMII, le stratège commercial de OG Technology. On te demande de trouver de vrais prospects (clients ou marchands potentiels) à contacter.
 
 Profil de prospect recherché : ${cible}
 Marché cible : ${marche}
+${cseContext}
 
 Utilise la recherche web pour identifier entre 5 et 8 VRAIES entreprises, boutiques ou pages professionnelles qui correspondent à ce profil — jamais de noms inventés. Cherche largement : Google Maps/Google Business, pages entreprise LinkedIn, pages professionnelles Instagram et Facebook, annuaires professionnels, sites officiels, marketplaces B2B.
 

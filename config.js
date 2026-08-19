@@ -182,6 +182,17 @@ module.exports = {
     },
 
     // ==================================================
+    // GOOGLE (Custom Search — TikTok/Meta/LinkedIn ciblés, + YouTube)
+    // ==================================================
+
+    GOOGLE: {
+        API_KEY: process.env.GOOGLE_API_KEY,
+        // Identifiant du moteur de recherche personnalisé (cx) — pas secret,
+        // mais réglable sans redéploiement si le fondateur en recrée un.
+        SEARCH_CX: process.env.GOOGLE_SEARCH_CX || "f70583c741f994ca5",
+    },
+
+    // ==================================================
     // YALIDINE
     // ==================================================
 
