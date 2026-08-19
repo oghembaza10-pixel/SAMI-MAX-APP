@@ -7,6 +7,7 @@
     "title": "Build your Empire.",
     "description": "One platform.\nOne identity.\nOne Headquarters.\n\nWork.\nGrow.\nBuild your Empire.",
     "badge": "OG Technology",
+    "badgeSub": "the company behind SAMII",
     "title1": "The platform that automates",
     "title2": "your business",
     "tag1": "Automate.",
@@ -14,8 +15,15 @@
     "tag3": "Thrive.",
     "desc": "One platform. One workspace. Your sales, advertising and customer service, orchestrated by a single intelligence.",
     "descTech": "Connected to Gmail, Google Calendar, Drive, YouTube and Google Ads, SAMII replies to your emails, organizes your meetings, publishes your content and manages your campaigns — always at your request.",
-    "cta1": "Create my account",
-    "cta2": "Discover SAMII ↓"
+    "cta1": "See SAMII in action",
+    "cta2": "Create my account"
+  },
+  "proof": {
+    "connected": "Connected to Shopify · WooCommerce · Telegram · WhatsApp · Google",
+    "soon": "Coming soon — TikTok, Meta",
+    "step1": "Connect your tools — two minutes, no tech skills needed.",
+    "step2": "Sami replies, sells and publishes on your behalf, day and night.",
+    "step3": "You always keep the final say, on everything."
   },
   "buttons": {
     "enter": "ENTER MY HQ"

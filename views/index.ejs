@@ -77,7 +77,7 @@
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="OG Technology">
-    <meta property="og:title" content="SAMII — Prends le commandement de ton Empire Digital">
+    <meta property="og:title" content="OG Technology — La plateforme qui automatise votre commerce">
     <meta property="og:description" content="L'assistant IA qui automatise ta vente en ligne : commandes, SAV et publicité, connecté à Shopify, WhatsApp, Telegram et Meta.">
     <meta property="og:image" content="https://samii.souverain-store.com/og-hero.png">
     <meta property="og:image:width" content="1408">
@@ -86,7 +86,7 @@
     <meta property="og:locale" content="fr_FR">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SAMII — Prends le commandement de ton Empire Digital">
+    <meta name="twitter:title" content="OG Technology — La plateforme qui automatise votre commerce">
     <meta name="twitter:description" content="L'assistant IA qui automatise ta vente en ligne : commandes, SAV et publicité, connecté à Shopify, WhatsApp, Telegram et Meta.">
     <meta name="twitter:image" content="https://samii.souverain-store.com/og-hero.png">
 
@@ -564,6 +564,71 @@
             max-width: 600px;
             opacity: .68;
             margin-top: 10px;
+        }
+
+        .hero-badge-sub {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: .64rem;
+            letter-spacing: .08em;
+            color: var(--text-muted);
+            margin-top: -18px;
+            margin-bottom: 27px;
+        }
+
+        .hero-proof {
+            margin-top: 54px;
+            padding-top: 34px;
+            border-top: 1px solid rgba(212,169,74,.12);
+            text-align: center;
+        }
+
+        .hero-proof__connected {
+            font-family: var(--font-mono);
+            font-size: .74rem;
+            letter-spacing: .03em;
+            color: var(--text-muted);
+            margin: 0 0 8px;
+        }
+
+        .hero-proof__soon {
+            font-family: var(--font-mono);
+            font-size: .66rem;
+            letter-spacing: .03em;
+            color: rgba(255,255,255,.28);
+            margin: 0 0 38px;
+        }
+
+        .hero-proof__steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+            max-width: 620px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .hero-proof__step .n {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: .68rem;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        .hero-proof__step p {
+            margin: 0;
+            font-size: .84rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        @media (max-width: 640px) {
+            .hero-proof__steps {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                text-align: center;
+            }
         }
 
         .hero-ctas {
@@ -2244,14 +2309,24 @@
 
     <section class="hero">
         <span class="hero-badge"><span class="dot"></span><span data-i18n="hero.badge">OG Technology</span></span>
+        <span class="hero-badge-sub" data-i18n="hero.badgeSub">éditeur de SAMII</span>
         <h1><span data-i18n="hero.title1">La plateforme qui automatise</span> <span class="accent" data-i18n="hero.title2">votre commerce</span></h1>
         <div class="hero-divider" aria-hidden="true"></div>
         <div class="hero-tagline"><b data-i18n="hero.tag1">Automatisez.</b> <span data-i18n="hero.tag2">Vendez.</span> <b data-i18n="hero.tag3">Prospérez.</b></div>
         <p class="desc" data-i18n="hero.desc">Une plateforme. Un espace de travail. Vos ventes, votre publicité et votre service client, orchestrés par une seule intelligence.</p>
         <p class="desc hero-desc-tech" data-i18n="hero.descTech">Connecté à Gmail, Google Agenda, Drive, YouTube et Google Ads, SAMII répond à vos emails, organise vos rendez-vous, publie votre contenu et gère vos campagnes — toujours sur votre demande.</p>
         <div class="hero-ctas">
-            <a href="#auth" class="btn-primary" data-i18n="hero.cta1">Créer mon compte</a>
-            <a href="#preview" class="btn-secondary" data-i18n="hero.cta2">Découvrir SAMII ↓</a>
+            <a href="#preview" class="btn-primary" data-i18n="hero.cta1">Voir SAMII en action</a>
+            <a href="#auth" class="btn-secondary" data-i18n="hero.cta2">Créer mon compte</a>
+        </div>
+        <div class="hero-proof">
+            <p class="hero-proof__connected" data-i18n="proof.connected">Connecté à Shopify · WooCommerce · Telegram · WhatsApp · Google</p>
+            <p class="hero-proof__soon" data-i18n="proof.soon">Bientôt — TikTok, Meta</p>
+            <div class="hero-proof__steps">
+                <div class="hero-proof__step"><span class="n">01</span><p data-i18n="proof.step1">Vous connectez vos outils — deux minutes, sans technique.</p></div>
+                <div class="hero-proof__step"><span class="n">02</span><p data-i18n="proof.step2">Sami répond, vend et publie à votre place, jour et nuit.</p></div>
+                <div class="hero-proof__step"><span class="n">03</span><p data-i18n="proof.step3">Vous gardez le dernier mot, toujours, sur tout.</p></div>
+            </div>
         </div>
     </section>
 
@@ -2537,7 +2612,7 @@
 
                     <div class="btn-row">
                         <button type="button" class="auth-btn-back" id="btn-step2-back" data-i18n="auth.back">← Retour</button>
-                        <button type="submit" class="auth-submit" data-i18n="hero.cta1">👑 Créer mon compte</button>
+                        <button type="submit" class="auth-submit" data-i18n="hero.cta2">Créer mon compte</button>
                     </div>
                 </div>
             </form>
@@ -2574,7 +2649,7 @@
     </section>
 
     <footer class="site-footer">
-        <span class="site-footer__quote" data-i18n="footer.quote">OG · EMPIRE — Construis sans limite.</span>
+        <span class="site-footer__quote" data-i18n="footer.quote">© 2026 OG Technology</span>
         <div class="social-links">
             <a href="https://www.instagram.com/og20250/" target="_blank" rel="noopener" aria-label="Instagram">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
@@ -2589,7 +2664,7 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
             </a>
         </div>
-        <span class="site-footer__meta">v1.0 · SAMII OS</span>
+        <span class="site-footer__meta">SAMII OS</span>
     </footer>
 
     <script>
@@ -2597,11 +2672,17 @@
             fr: {
                 'brand.sub': 'LE QG MONDIAL', 'nav.login': 'Se connecter',
                 'banner.welcome': 'Content de te revoir,', 'banner.continue': 'Continuer vers mon QG →',
-                'hero.badge': 'SAMII OS · OPÉRATIONNEL',
-                'hero.title1': 'Prends le commandement de ton', 'hero.title2': 'Empire Digital',
-                'hero.tag1': 'Automatisez.', 'hero.tag2': 'Développez.', 'hero.tag3': 'Dominez.',
-                'hero.desc': "La plateforme des bâtisseurs d'empire : pilote ton commerce, connecte tes outils, et règne sur ton marché — où que tu sois dans le monde.",
-                'hero.cta1': '👑 Créer mon compte', 'hero.cta2': 'Découvrir SAMII ↓',
+                'hero.badge': 'OG Technology', 'hero.badgeSub': 'éditeur de SAMII',
+                'hero.title1': 'La plateforme qui automatise', 'hero.title2': 'votre commerce',
+                'hero.tag1': 'Automatisez.', 'hero.tag2': 'Vendez.', 'hero.tag3': 'Prospérez.',
+                'hero.desc': "Une plateforme. Un espace de travail. Vos ventes, votre publicité et votre service client, orchestrés par une seule intelligence.",
+                'hero.descTech': "Connecté à Gmail, Google Agenda, Drive, YouTube et Google Ads, SAMII répond à vos emails, organise vos rendez-vous, publie votre contenu et gère vos campagnes — toujours sur votre demande.",
+                'hero.cta1': 'Voir SAMII en action', 'hero.cta2': 'Créer mon compte',
+                'proof.connected': 'Connecté à Shopify · WooCommerce · Telegram · WhatsApp · Google',
+                'proof.soon': 'Bientôt — TikTok, Meta',
+                'proof.step1': 'Vous connectez vos outils — deux minutes, sans technique.',
+                'proof.step2': 'Sami répond, vend et publie à votre place, jour et nuit.',
+                'proof.step3': 'Vous gardez le dernier mot, toujours, sur tout.',
                 'preview.title': 'Aperçu de ton QG', 'preview.sub': "CE QUI T'ATTEND",
                 'preview.samii.desc': 'Ton stratège personnel', 'preview.samii.stat': 'messages disponibles chaque jour', 'preview.samii.btn': 'Discuter avec SAMII →',
                 'preview.shopify.desc': 'Connecte ta boutique', 'preview.shopify.btn': 'Connecter Shopify →',
@@ -2653,7 +2734,7 @@
                 'auth.theme.gaming': '🎮 Gaming', 'auth.theme.lock2': '🔒 Grade Lieutenant',
                 'auth.theme.note': 'Aventurier et Gaming se débloquent en progressant en grade — modifiable à tout moment depuis ton espace.',
                 'auth.back': '← Retour', 'auth.ph.password_login': 'Ton mot de passe', 'auth.forgot': 'Mot de passe oublié ?',
-                'footer.quote': 'OG · EMPIRE — Construis sans limite.',
+                'footer.quote': '© 2026 OG Technology',
                 'msg.creating': '⏳ Création en cours...', 'msg.created_default': '✅ Compte créé !',
                 'msg.error_default': '❌ Erreur.', 'msg.error_network': '❌ Erreur réseau.',
                 'msg.connecting': '⏳ Connexion...', 'msg.connected': '✅ Connecté !',
@@ -2661,11 +2742,17 @@
             en: {
                 'brand.sub': 'THE GLOBAL HQ', 'nav.login': 'Log in',
                 'banner.welcome': 'Welcome back,', 'banner.continue': 'Go to my HQ →',
-                'hero.badge': 'SAMII OS · OPERATIONAL',
-                'hero.title1': 'Take command of your', 'hero.title2': 'Digital Empire',
-                'hero.tag1': 'Automate.', 'hero.tag2': 'Grow.', 'hero.tag3': 'Dominate.',
-                'hero.desc': "The platform for empire builders: run your business, connect your tools, and rule your market — wherever you are in the world.",
-                'hero.cta1': '👑 Create my account', 'hero.cta2': 'Discover SAMII ↓',
+                'hero.badge': 'OG Technology', 'hero.badgeSub': 'the company behind SAMII',
+                'hero.title1': 'The platform that automates', 'hero.title2': 'your business',
+                'hero.tag1': 'Automate.', 'hero.tag2': 'Sell.', 'hero.tag3': 'Thrive.',
+                'hero.desc': "One platform. One workspace. Your sales, advertising and customer service, orchestrated by a single intelligence.",
+                'hero.descTech': "Connected to Gmail, Google Calendar, Drive, YouTube and Google Ads, SAMII replies to your emails, organizes your meetings, publishes your content and manages your campaigns — always at your request.",
+                'hero.cta1': 'See SAMII in action', 'hero.cta2': 'Create my account',
+                'proof.connected': 'Connected to Shopify · WooCommerce · Telegram · WhatsApp · Google',
+                'proof.soon': 'Coming soon — TikTok, Meta',
+                'proof.step1': 'Connect your tools — two minutes, no tech skills needed.',
+                'proof.step2': 'Sami replies, sells and publishes on your behalf, day and night.',
+                'proof.step3': 'You always keep the final say, on everything.',
                 'preview.title': 'A preview of your HQ', 'preview.sub': 'WHAT AWAITS YOU',
                 'preview.samii.desc': 'Your personal strategist', 'preview.samii.stat': 'messages available every day', 'preview.samii.btn': 'Chat with SAMII →',
                 'preview.shopify.desc': 'Connect your store', 'preview.shopify.btn': 'Connect Shopify →',
@@ -2717,7 +2804,7 @@
                 'auth.theme.gaming': '🎮 Gaming', 'auth.theme.lock2': '🔒 Lieutenant rank',
                 'auth.theme.note': 'Adventurer and Gaming unlock as you level up — changeable anytime from your space.',
                 'auth.back': '← Back', 'auth.ph.password_login': 'Your password', 'auth.forgot': 'Forgot password?',
-                'footer.quote': 'OG · EMPIRE — Build without limits.',
+                'footer.quote': '© 2026 OG Technology',
                 'msg.creating': '⏳ Creating account...', 'msg.created_default': '✅ Account created!',
                 'msg.error_default': '❌ Error.', 'msg.error_network': '❌ Network error.',
                 'msg.connecting': '⏳ Signing in...', 'msg.connected': '✅ Signed in!',
@@ -2725,11 +2812,17 @@
             ar: {
                 'brand.sub': 'المقر العالمي', 'nav.login': 'تسجيل الدخول',
                 'banner.welcome': 'سعداء بعودتك،', 'banner.continue': 'الذهاب إلى مقري ←',
-                'hero.badge': 'SAMII OS · تعمل الآن',
-                'hero.title1': 'تولَّ قيادة', 'hero.title2': 'إمبراطوريتك الرقمية',
-                'hero.tag1': 'أتمتة.', 'hero.tag2': 'تطوير.', 'hero.tag3': 'هيمنة.',
-                'hero.desc': 'منصة بناة الإمبراطوريات: أدر تجارتك، اربط أدواتك، واحكم سوقك — أينما كنت في العالم.',
-                'hero.cta1': '👑 إنشاء حسابي', 'hero.cta2': 'اكتشف SAMII ↓',
+                'hero.badge': 'OG Technology', 'hero.badgeSub': 'الشركة المطوّرة لـ SAMII',
+                'hero.title1': 'المنصة التي تُؤتمت', 'hero.title2': 'تجارتك',
+                'hero.tag1': 'أتمتة.', 'hero.tag2': 'بِع.', 'hero.tag3': 'ازدهر.',
+                'hero.desc': 'منصة واحدة. مساحة عمل واحدة. مبيعاتك وإعلاناتك وخدمة عملائك، بذكاء واحد يدير كل شيء.',
+                'hero.descTech': 'متصل بـ Gmail وGoogle Calendar وDrive وYouTube وGoogle Ads، يرد سامي على رسائلك، وينظم مواعيدك، وينشر محتواك، ويدير حملاتك — دائمًا بناءً على طلبك.',
+                'hero.cta1': 'شاهد سامي أثناء العمل', 'hero.cta2': 'أنشئ حسابي',
+                'proof.connected': 'متصل بـ Shopify · WooCommerce · Telegram · WhatsApp · Google',
+                'proof.soon': 'قريبًا — TikTok، Meta',
+                'proof.step1': 'تربط أدواتك — دقيقتان، دون أي خبرة تقنية.',
+                'proof.step2': 'سامي يرد، يبيع وينشر بدلاً عنك، ليل نهار.',
+                'proof.step3': 'تبقى الكلمة الأخيرة لك، دائمًا، في كل شيء.',
                 'preview.title': 'لمحة عن مقرك', 'preview.sub': 'ما ينتظرك',
                 'preview.samii.desc': 'استراتيجيك الشخصي', 'preview.samii.stat': 'رسائل متاحة يوميًا', 'preview.samii.btn': 'تحدث مع SAMII ←',
                 'preview.shopify.desc': 'اربط متجرك', 'preview.shopify.btn': 'ربط Shopify ←',
@@ -2781,7 +2874,7 @@
                 'auth.theme.gaming': '🎮 ألعاب', 'auth.theme.lock2': '🔒 رتبة ملازم',
                 'auth.theme.note': 'يُفتح مغامر وألعاب مع تقدمك في الرتبة — قابل للتغيير في أي وقت من مساحتك.',
                 'auth.back': '← رجوع', 'auth.ph.password_login': 'كلمة مرورك', 'auth.forgot': 'نسيت كلمة المرور؟',
-                'footer.quote': 'OG · EMPIRE — ابنِ بلا حدود.',
+                'footer.quote': '© 2026 OG Technology',
                 'msg.creating': '⏳ جارٍ إنشاء الحساب...', 'msg.created_default': '✅ تم إنشاء الحساب!',
                 'msg.error_default': '❌ خطأ.', 'msg.error_network': '❌ خطأ في الشبكة.',
                 'msg.connecting': '⏳ جارٍ تسجيل الدخول...', 'msg.connected': '✅ تم تسجيل الدخول!',
@@ -2845,7 +2938,7 @@
                 'auth.theme.gaming': '🎮 游戏', 'auth.theme.lock2': '🔒 中尉军衔',
                 'auth.theme.note': '冒险家和游戏主题会随着你的军衔提升而解锁——可随时在你的空间中修改。',
                 'auth.back': '← 返回', 'auth.ph.password_login': '你的密码', 'auth.forgot': '忘记密码？',
-                'footer.quote': 'OG · EMPIRE — 无限建造。',
+                'footer.quote': '© 2026 OG Technology',
                 'msg.creating': '⏳ 正在创建账户...', 'msg.created_default': '✅ 账户创建成功！',
                 'msg.error_default': '❌ 错误。', 'msg.error_network': '❌ 网络错误。',
                 'msg.connecting': '⏳ 正在登录...', 'msg.connected': '✅ 登录成功！',

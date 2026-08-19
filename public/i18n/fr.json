@@ -7,6 +7,7 @@
     "title": "Construisez votre Empire.",
     "description": "Une seule plateforme.\nUne seule identité.\nUn seul Quartier Général.\n\nTravaillez.\nDéveloppez-vous.\nCréez votre Empire.",
     "badge": "OG Technology",
+    "badgeSub": "éditeur de SAMII",
     "title1": "La plateforme qui automatise",
     "title2": "votre commerce",
     "tag1": "Automatisez.",
@@ -14,8 +15,15 @@
     "tag3": "Prospérez.",
     "desc": "Une plateforme. Un espace de travail. Vos ventes, votre publicité et votre service client, orchestrés par une seule intelligence.",
     "descTech": "Connecté à Gmail, Google Agenda, Drive, YouTube et Google Ads, SAMII répond à vos emails, organise vos rendez-vous, publie votre contenu et gère vos campagnes — toujours sur votre demande.",
-    "cta1": "Créer mon compte",
-    "cta2": "Découvrir SAMII ↓"
+    "cta1": "Voir SAMII en action",
+    "cta2": "Créer mon compte"
+  },
+  "proof": {
+    "connected": "Connecté à Shopify · WooCommerce · Telegram · WhatsApp · Google",
+    "soon": "Bientôt — TikTok, Meta",
+    "step1": "Vous connectez vos outils — deux minutes, sans technique.",
+    "step2": "Sami répond, vend et publie à votre place, jour et nuit.",
+    "step3": "Vous gardez le dernier mot, toujours, sur tout."
   },
   "buttons": {
     "enter": "ENTRER DANS MON QG"
