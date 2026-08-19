@@ -2171,6 +2171,23 @@
             color: var(--text-dim);
             font-size: .66rem;
             letter-spacing: .02em;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .site-footer__legal-link {
+            color: var(--text-dim);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: color .15s, border-color .15s;
+        }
+
+        .site-footer__legal-link:hover {
+            color: var(--gold);
+            border-color: rgba(212,169,74,.4);
         }
 
         .social-links {
@@ -2649,7 +2666,11 @@
     </section>
 
     <footer class="site-footer">
-        <span class="site-footer__quote" data-i18n="footer.quote">© 2026 OG Technology</span>
+        <span class="site-footer__quote">
+            <span data-i18n="footer.quote">© 2026 OG Technology</span>
+            <a href="/privacy.html" class="site-footer__legal-link" data-i18n="footer.privacy">Confidentialité</a>
+            <a href="/terms.html" class="site-footer__legal-link" data-i18n="footer.terms">Conditions</a>
+        </span>
         <div class="social-links">
             <a href="https://www.instagram.com/og20250/" target="_blank" rel="noopener" aria-label="Instagram">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
@@ -2735,6 +2756,7 @@
                 'auth.theme.note': 'Aventurier et Gaming se débloquent en progressant en grade — modifiable à tout moment depuis ton espace.',
                 'auth.back': '← Retour', 'auth.ph.password_login': 'Ton mot de passe', 'auth.forgot': 'Mot de passe oublié ?',
                 'footer.quote': '© 2026 OG Technology',
+                'footer.privacy': 'Confidentialité', 'footer.terms': 'Conditions',
                 'msg.creating': '⏳ Création en cours...', 'msg.created_default': '✅ Compte créé !',
                 'msg.error_default': '❌ Erreur.', 'msg.error_network': '❌ Erreur réseau.',
                 'msg.connecting': '⏳ Connexion...', 'msg.connected': '✅ Connecté !',
@@ -2805,6 +2827,7 @@
                 'auth.theme.note': 'Adventurer and Gaming unlock as you level up — changeable anytime from your space.',
                 'auth.back': '← Back', 'auth.ph.password_login': 'Your password', 'auth.forgot': 'Forgot password?',
                 'footer.quote': '© 2026 OG Technology',
+                'footer.privacy': 'Privacy', 'footer.terms': 'Terms',
                 'msg.creating': '⏳ Creating account...', 'msg.created_default': '✅ Account created!',
                 'msg.error_default': '❌ Error.', 'msg.error_network': '❌ Network error.',
                 'msg.connecting': '⏳ Signing in...', 'msg.connected': '✅ Signed in!',
@@ -2875,6 +2898,7 @@
                 'auth.theme.note': 'يُفتح مغامر وألعاب مع تقدمك في الرتبة — قابل للتغيير في أي وقت من مساحتك.',
                 'auth.back': '← رجوع', 'auth.ph.password_login': 'كلمة مرورك', 'auth.forgot': 'نسيت كلمة المرور؟',
                 'footer.quote': '© 2026 OG Technology',
+                'footer.privacy': 'الخصوصية', 'footer.terms': 'الشروط',
                 'msg.creating': '⏳ جارٍ إنشاء الحساب...', 'msg.created_default': '✅ تم إنشاء الحساب!',
                 'msg.error_default': '❌ خطأ.', 'msg.error_network': '❌ خطأ في الشبكة.',
                 'msg.connecting': '⏳ جارٍ تسجيل الدخول...', 'msg.connected': '✅ تم تسجيل الدخول!',
