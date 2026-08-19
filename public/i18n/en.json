@@ -5,7 +5,17 @@
   "hero": {
     "eyebrow": "EMPIRE • GLOBAL ECOSYSTEM",
     "title": "Build your Empire.",
-    "description": "One platform.\nOne identity.\nOne Headquarters.\n\nWork.\nGrow.\nBuild your Empire."
+    "description": "One platform.\nOne identity.\nOne Headquarters.\n\nWork.\nGrow.\nBuild your Empire.",
+    "badge": "SAMII OS",
+    "title1": "The intelligence that runs",
+    "title2": "your business",
+    "tag1": "Automate.",
+    "tag2": "Sell.",
+    "tag3": "Thrive.",
+    "desc": "One platform. One workspace. Your sales, advertising and customer service, orchestrated by a single intelligence.",
+    "descTech": "Connected to Gmail, Google Calendar, Drive, YouTube and Google Ads, SAMII replies to your emails, organizes your meetings, publishes your content and manages your campaigns — always at your request.",
+    "cta1": "Create my account",
+    "cta2": "Discover SAMII ↓"
   },
   "buttons": {
     "enter": "ENTER MY HQ"

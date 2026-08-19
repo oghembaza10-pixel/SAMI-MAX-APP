@@ -5,7 +5,17 @@
   "hero": {
     "eyebrow": "EMPIRE • ÉCOSYSTÈME MONDIAL",
     "title": "Construisez votre Empire.",
-    "description": "Une seule plateforme.\nUne seule identité.\nUn seul Quartier Général.\n\nTravaillez.\nDéveloppez-vous.\nCréez votre Empire."
+    "description": "Une seule plateforme.\nUne seule identité.\nUn seul Quartier Général.\n\nTravaillez.\nDéveloppez-vous.\nCréez votre Empire.",
+    "badge": "SAMII OS",
+    "title1": "L'intelligence qui dirige",
+    "title2": "votre commerce",
+    "tag1": "Automatisez.",
+    "tag2": "Vendez.",
+    "tag3": "Prospérez.",
+    "desc": "Une plateforme. Un espace de travail. Vos ventes, votre publicité et votre service client, orchestrés par une seule intelligence.",
+    "descTech": "Connecté à Gmail, Google Agenda, Drive, YouTube et Google Ads, SAMII répond à vos emails, organise vos rendez-vous, publie votre contenu et gère vos campagnes — toujours sur votre demande.",
+    "cta1": "Créer mon compte",
+    "cta2": "Découvrir SAMII ↓"
   },
   "buttons": {
     "enter": "ENTRER DANS MON QG"
