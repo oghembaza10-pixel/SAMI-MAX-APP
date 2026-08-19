@@ -311,10 +311,10 @@ function block(icon, title, bodyHtml, copyValue) {
 
 let dernierPack = null;
 
-async function publierSurReseau(url) {
-    const reseau = selectReseau.value;
-    const label = reseau === 'instagram' ? 'Instagram' : 'Facebook';
-    if (!confirm('Publier ce visuel maintenant sur ta page ' + label + ' connectée ?')) return;
+async function publierSurReseau(url, reseauOverride) {
+    const reseau = reseauOverride || selectReseau.value;
+    const label = reseau === 'instagram' ? 'Instagram' : (reseau === 'youtube' ? 'YouTube' : 'Facebook');
+    if (!confirm('Publier ce visuel maintenant sur ' + label + ' ?')) return;
     try {
         const res = await fetch('/samii/griot/publier', {
             method: 'POST',
@@ -355,7 +355,8 @@ function renderPack(data) {
         data.medias.forEach((url, idx) => {
             if (url.endsWith('.mp4') || url.includes('video')) {
                 mediaHtml += '<div><p style="font-size:.75rem;color:var(--gold-og);margin-bottom:4px;">Variante vidéo #' + (idx + 1) + '</p>'
-                    + '<video controls style="width:100%;border-radius:8px;"><source src="' + url + '" type="video/mp4">Ton navigateur ne supporte pas la vidéo.</video></div>';
+                    + '<video controls style="width:100%;border-radius:8px;"><source src="' + url + '" type="video/mp4">Ton navigateur ne supporte pas la vidéo.</video>'
+                    + '<button type="button" class="griot-publish-btn" onclick=\\'publierSurReseau(' + JSON.stringify(url) + ', ' + JSON.stringify('youtube') + ')\\'>📤 Publier maintenant sur YouTube</button></div>';
             } else {
                 const publierBtn = peutPublier
                     ? '<button type="button" class="griot-publish-btn" onclick="publierSurReseau(' + JSON.stringify(url) + ')">📤 Publier maintenant sur ' + (reseauActuel === 'instagram' ? 'Instagram' : 'Facebook') + '</button>'
@@ -603,12 +604,43 @@ router.get("/media/:jobId", requireAuth, async (req, res) => {
 router.post("/publier", requireAuth, async (req, res) => {
     try {
         const { reseau, legende, imageUrl } = req.body;
-        if (!["facebook", "instagram"].includes(reseau)) {
-            return res.json({ success: false, error: "Publication directe disponible uniquement pour Facebook et Instagram." });
+        if (!["facebook", "instagram", "youtube"].includes(reseau)) {
+            return res.json({ success: false, error: "Publication directe disponible pour Facebook, Instagram et YouTube." });
         }
         if (!imageUrl) return res.json({ success: false, error: "Choisis un visuel généré à publier." });
 
         const workspaceId = req.session.workspaceId;
+
+        // ── YouTube : imageUrl porte ici l'URL de la vidéo générée (Runware
+        // ou notre relais OpenRouter) — le média doit être un fichier vidéo,
+        // pas une image (voir services/google.js).
+        if (reseau === "youtube") {
+            const google = require("../services/google");
+            const axios = require("axios");
+            const videoRes = await axios.get(
+                imageUrl.startsWith("/") ? `${CONFIG.APP_URL}${imageUrl}` : imageUrl,
+                {
+                    responseType: "arraybuffer",
+                    timeout: 90000,
+                    headers: imageUrl.startsWith("/samii/griot/media/") ? { Cookie: req.headers.cookie || "" } : {},
+                }
+            );
+            const buffer = Buffer.from(videoRes.data);
+            const mimeType = videoRes.headers["content-type"] || "video/mp4";
+            const resultat = await google.uploadYoutubeVideo(workspaceId, {
+                buffer, mimeType,
+                title: (legende || "Vidéo SAMII").slice(0, 90),
+                description: legende || "",
+            });
+            if (!resultat.success) return res.json({ success: false, error: resultat.error });
+
+            await db.query(
+                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
+                ["youtube.publication", `Vidéo publiée via Griot — ${resultat.link}`, workspaceId]
+            );
+            return res.json({ success: true, link: resultat.link });
+        }
+
         const connecteur = await connectorService.getOne(workspaceId, reseau);
         if (!connecteur?.actif || !connecteur.config?.pageAccessToken) {
             const label = reseau === "instagram" ? "Instagram" : "Facebook";

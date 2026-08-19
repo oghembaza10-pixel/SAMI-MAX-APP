@@ -81,6 +81,11 @@ scheduler.add("0 9 * * *", "Guerre - compte à rebours communauté", guerreEngin
     scheduler.add("15 9,14,19 * * *", "Page Instagram - 3 posts/jour", pageEngine.runInstagram);
     const communityEngine = require("../engines/communityEngine");
     scheduler.add("30 11,18 * * *", "Tchat général - sujet SAMII 2x/jour", communityEngine.run);
+    // Contrairement à pageEngine (compte officiel OG uniquement) : vérifie
+    // TOUS les workspaces marchands ayant activé /autopost, chacun selon sa
+    // propre fréquence (voir engines/autopostEngine.js).
+    const autopostEngine = require("../engines/autopostEngine");
+    scheduler.add("0 * * * *", "Auto-post marchand - vérification horaire", autopostEngine.runCheck);
     scheduler.start();
 }
 

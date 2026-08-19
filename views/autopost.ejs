@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Publication automatique — OG Technology</title>
+  <link rel="stylesheet" href="/css/hub-premium.css">
+</head>
+<body>
+<div class="og-capital">
+  <%- include("partials/sidebar") %>
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;">
+    <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:520px;width:100%;">
+
+      <div style="text-align:center;margin-bottom:30px;">
+        <div style="font-size:3rem;">🤖</div>
+        <h2 style="color:#fff;margin-top:10px;">Publication automatique</h2>
+        <p style="color:#666;font-size:0.85rem;margin-top:6px;">
+          Sami génère et publie lui-même un post (texte + visuel) sur les canaux que tu choisis, à la fréquence que tu choisis.
+        </p>
+      </div>
+
+      <% if (success) { %>
+        <p style="color:#4CAF50;font-size:0.85rem;margin-bottom:18px;text-align:center;">✅ Réglages enregistrés.</p>
+      <% } %>
+      <% if (error) { %>
+        <p style="color:#e55;font-size:0.85rem;margin-bottom:14px;text-align:center;"><%= error %></p>
+      <% } %>
+
+      <form method="POST" action="/autopost">
+
+        <label style="display:flex;align-items:center;gap:10px;color:#fff;font-weight:600;margin-bottom:22px;cursor:pointer;">
+          <input type="checkbox" name="actif" <%= config.actif ? "checked" : "" %> style="width:18px;height:18px;">
+          Activer la publication automatique
+        </label>
+
+        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:10px;">Canaux</label>
+        <% canaux.forEach(c => { %>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 0;color:<%= c.connecte ? '#fff' : '#555' %>;font-size:0.9rem;<%= c.connecte ? '' : 'cursor:not-allowed;' %>">
+            <input type="checkbox" name="canaux" value="<%= c.id %>"
+                   <%= (config.canaux || []).includes(c.id) ? "checked" : "" %>
+                   <%= c.connecte ? "" : "disabled" %>
+                   style="width:16px;height:16px;">
+            <%= c.label %>
+            <% if (!c.connecte) { %><span style="font-size:0.75rem;color:#666;">— non connecté (<a href="/connect/tools" style="color:#d4af37;">connecter →</a>)</span><% } %>
+          </label>
+        <% }) %>
+
+        <label style="display:block;color:#999;font-size:0.75rem;margin:20px 0 6px;">Fréquence</label>
+        <select name="frequence" style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+          <option value="quotidien" <%= config.frequence === "quotidien" ? "selected" : "" %>>Tous les jours</option>
+          <option value="3x_semaine" <%= config.frequence === "3x_semaine" ? "selected" : "" %>>3 fois par semaine</option>
+          <option value="hebdo" <%= config.frequence === "hebdo" ? "selected" : "" %>>Une fois par semaine</option>
+        </select>
+
+        <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Sujet / ton à privilégier (optionnel)</label>
+        <textarea name="sujet" rows="3" placeholder="Ex : mets en avant nos promos, ton direct et humoristique..."
+                  style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:20px;resize:vertical;"><%= config.sujet || "" %></textarea>
+
+        <button type="submit"
+                style="display:block;width:100%;padding:13px;background:#d4af37;border:none;border-radius:10px;color:#000;font-weight:700;font-size:0.95rem;cursor:pointer;">
+          Enregistrer
+        </button>
+      </form>
+
+      <a href="/qg"
+         style="display:block;margin-top:20px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">
+        ← Retour au QG
+      </a>
+
+    </div>
+  </main>
+</div>
+<script src="/js/i18n.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
+</body>
+</html>
