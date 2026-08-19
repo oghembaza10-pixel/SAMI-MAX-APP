@@ -3,9 +3,16 @@
 // Appelé côté Sami (brain/planner.js) et par toute future route qui a besoin
 // des outils Google du marchand connecté (routes/auth-google.js).
 // ==========================================================================
-const axios = require("axios");
+const axiosBase = require("axios");
 const CONFIG = require("../config");
 const connectorService = require("../services/connectorService");
+
+// Délai par défaut sur tous les appels Google — sans ça, un appel qui coince
+// (réseau, proxy intermédiaire) laisse la requête pendre indéfiniment côté
+// serveur, et la page du marchand reste bloquée sans jamais afficher
+// d'erreur (vu en test le 19/08 sur l'upload YouTube). uploadYoutubeVideo
+// applique son propre délai plus long, plus bas, vu la taille des fichiers.
+const axios = axiosBase.create({ timeout: 20000 });
 
 // Renvoie un access_token valide pour le workspace, en le renouvelant via le
 // refresh_token stocké s'il a expiré — le marchand ne repasse jamais par
@@ -228,6 +235,11 @@ async function uploadYoutubeVideo(workspaceId, { buffer, mimeType, title, descri
                 },
                 maxBodyLength: Infinity,
                 maxContentLength: Infinity,
+                // Sans ça, un envoi qui coince côté Google (ou un proxy
+                // intermédiaire qui coupe silencieusement) laissait la requête
+                // pendre indéfiniment — la page restait bloquée sans jamais
+                // afficher d'erreur au marchand.
+                timeout: 120000,
             }
         );
         return { success: true, videoId: res.data.id, link: `https://youtube.com/watch?v=${res.data.id}` };
