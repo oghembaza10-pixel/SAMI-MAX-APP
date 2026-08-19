@@ -104,4 +104,146 @@ async function sendEmail(workspaceId, { to, subject, body }) {
     }
 }
 
-module.exports = { getValidAccessToken, listRecentEmails, sendEmail };
+// ── Calendar ───────────────────────────────────────────────────────────
+// Agenda Google du marchand — distinct de la table interne `rendez_vous`
+// (booking client, engines/commerceEngine.js) : un rendez-vous client y est
+// aussi recopié en best-effort (voir syncRdvToCalendar) pour que le marchand
+// le voie directement dans son vrai agenda, sans dupliquer la logique métier.
+async function listUpcomingEvents(workspaceId, max = 10) {
+    const token = await getValidAccessToken(workspaceId);
+    if (!token) return { connected: false, events: [] };
+
+    try {
+        const res = await axios.get(
+            "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+            {
+                headers: { Authorization: `Bearer ${token}` },
+                params: {
+                    maxResults: max,
+                    singleEvents: true,
+                    orderBy: "startTime",
+                    timeMin: new Date().toISOString(),
+                },
+            }
+        );
+        const events = (res.data.items || []).map(e => ({
+            titre: e.summary || "(sans titre)",
+            debut: e.start?.dateTime || e.start?.date || "",
+            fin: e.end?.dateTime || e.end?.date || "",
+        }));
+        return { connected: true, events };
+    } catch (err) {
+        console.error("❌ google.listUpcomingEvents :", err.response?.data || err.message);
+        return { connected: true, events: [], error: true };
+    }
+}
+
+async function createCalendarEvent(workspaceId, { summary, description = "", startISO, endISO }) {
+    const token = await getValidAccessToken(workspaceId);
+    if (!token) return { success: false, error: "Google non connecté." };
+
+    try {
+        const res = await axios.post(
+            "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+            {
+                summary,
+                description,
+                start: { dateTime: startISO },
+                end: { dateTime: endISO },
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return { success: true, eventId: res.data.id, link: res.data.htmlLink };
+    } catch (err) {
+        console.error("❌ google.createCalendarEvent :", err.response?.data || err.message);
+        return { success: false, error: "Échec de la création de l'événement." };
+    }
+}
+
+// Best-effort : appelé après la création d'un rendez-vous client (voir
+// engines/commerceEngine.js) — n'échoue jamais bruyamment, un marchand sans
+// Google connecté continue de recevoir ses RDV normalement dans SAMII.
+async function syncRdvToCalendar(workspaceId, { motif, dateDebut, clientNom }) {
+    try {
+        const connecteur = await connectorService.getOne(workspaceId, "google");
+        if (!connecteur?.actif || !connecteur.config?.refreshToken || !dateDebut) return;
+        const fin = new Date(new Date(dateDebut).getTime() + 30 * 60000);
+        await createCalendarEvent(workspaceId, {
+            summary: `RDV — ${clientNom || "Client"}${motif ? " (" + motif + ")" : ""}`,
+            description: "Rendez-vous pris via SAMII.",
+            startISO: new Date(dateDebut).toISOString(),
+            endISO: fin.toISOString(),
+        });
+    } catch (err) {
+        console.error("❌ google.syncRdvToCalendar :", err.message);
+    }
+}
+
+// ── Drive ──────────────────────────────────────────────────────────────
+// Lecture seule (scope drive.readonly) — sert par ex. à retrouver des PDF
+// que le marchand veut faire lire à Sami pour alimenter l'Academy.
+async function listDriveFiles(workspaceId, max = 10) {
+    const token = await getValidAccessToken(workspaceId);
+    if (!token) return { connected: false, files: [] };
+
+    try {
+        const res = await axios.get("https://www.googleapis.com/drive/v3/files", {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { pageSize: max, fields: "files(id,name,mimeType,webViewLink)", orderBy: "modifiedTime desc" },
+        });
+        return { connected: true, files: res.data.files || [] };
+    } catch (err) {
+        console.error("❌ google.listDriveFiles :", err.response?.data || err.message);
+        return { connected: true, files: [], error: true };
+    }
+}
+
+// ── YouTube ────────────────────────────────────────────────────────────
+// Upload réel d'une vidéo sur la chaîne du marchand connecté — appelé depuis
+// une route avec fichier (pas depuis le chat texte de Sami : une vidéo ne
+// peut pas être "décrite" en langage, il faut le vrai fichier).
+async function uploadYoutubeVideo(workspaceId, { buffer, mimeType, title, description = "" }) {
+    const token = await getValidAccessToken(workspaceId);
+    if (!token) return { success: false, error: "Google non connecté." };
+
+    try {
+        const metadata = {
+            snippet: { title, description },
+            status: { privacyStatus: "public" },
+        };
+        const boundary = "samii_youtube_upload";
+        const multipartBody = Buffer.concat([
+            Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`),
+            buffer,
+            Buffer.from(`\r\n--${boundary}--`),
+        ]);
+
+        const res = await axios.post(
+            "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status",
+            multipartBody,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": `multipart/related; boundary=${boundary}`,
+                },
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity,
+            }
+        );
+        return { success: true, videoId: res.data.id, link: `https://youtube.com/watch?v=${res.data.id}` };
+    } catch (err) {
+        console.error("❌ google.uploadYoutubeVideo :", err.response?.data || err.message);
+        return { success: false, error: err.response?.data?.error?.message || "Échec de l'upload YouTube." };
+    }
+}
+
+module.exports = {
+    getValidAccessToken,
+    listRecentEmails,
+    sendEmail,
+    listUpcomingEvents,
+    createCalendarEvent,
+    syncRdvToCalendar,
+    listDriveFiles,
+    uploadYoutubeVideo,
+};

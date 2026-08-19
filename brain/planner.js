@@ -33,6 +33,15 @@ class SamiiPlanner {
             case "envoyer_email":
                 return await this.envoyerEmail(context, args);
 
+            case "consulter_agenda":
+                return await this.consulterAgenda(context);
+
+            case "creer_evenement_agenda":
+                return await this.creerEvenementAgenda(context, args);
+
+            case "lister_fichiers_drive":
+                return await this.listerFichiersDrive(context);
+
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
         }
@@ -101,6 +110,46 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         } catch (err) {
             console.error("❌ Planner.envoyerEmail :", err.message);
             return { success: false, error: "Erreur lors de l'envoi de l'email." };
+        }
+    }
+
+    async consulterAgenda(context) {
+        try {
+            const result = await google.listUpcomingEvents(context.workspaceId);
+            if (!result.connected) {
+                return { success: false, error: "Google n'est pas encore connecté — va dans Paramètres → Connecter tes outils → Google." };
+            }
+            return { success: true, events: result.events };
+        } catch (err) {
+            console.error("❌ Planner.consulterAgenda :", err.message);
+            return { success: false, error: "Erreur lors de la lecture de l'agenda." };
+        }
+    }
+
+    async creerEvenementAgenda(context, args) {
+        try {
+            return await google.createCalendarEvent(context.workspaceId, {
+                summary: args.titre,
+                description: args.description || "",
+                startISO: args.debut,
+                endISO: args.fin,
+            });
+        } catch (err) {
+            console.error("❌ Planner.creerEvenementAgenda :", err.message);
+            return { success: false, error: "Erreur lors de la création de l'événement." };
+        }
+    }
+
+    async listerFichiersDrive(context) {
+        try {
+            const result = await google.listDriveFiles(context.workspaceId);
+            if (!result.connected) {
+                return { success: false, error: "Google n'est pas encore connecté — va dans Paramètres → Connecter tes outils → Google." };
+            }
+            return { success: true, files: result.files };
+        } catch (err) {
+            console.error("❌ Planner.listerFichiersDrive :", err.message);
+            return { success: false, error: "Erreur lors de la lecture du Drive." };
         }
     }
 

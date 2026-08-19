@@ -178,6 +178,11 @@
                                 <p class="connect-tool-card__connected-info">
                                     🟢 <%= connector.config?.name || connector.config?.email || 'Connecté' %>
                                 </p>
+                                <% if (tool.id === 'google') { %>
+                                    <a href="/youtube/upload" style="display:block;text-align:center;padding:10px;background:#FF0000;border-radius:8px;color:#fff;text-decoration:none;font-weight:600;font-size:0.85rem;margin-bottom:8px;">
+                                        Uploader une vidéo YouTube →
+                                    </a>
+                                <% } %>
                                 <button class="connect-btn connect-btn--disconnect"
                                         data-tool="<%= tool.id %>" data-action="disconnect" data-i18n="connectTools.disconnect">
                                     Déconnecter

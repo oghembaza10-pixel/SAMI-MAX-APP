@@ -236,6 +236,30 @@ const TOOLS = [
                 },
             },
             {
+                name: "consulter_agenda",
+                description: "Consulte les prochains événements dans le vrai Google Agenda du marchand connecté. Utilise cette fonction pour \"qu'est-ce que j'ai de prévu\", \"mon agenda cette semaine\", etc.",
+                parameters: { type: "OBJECT", properties: {} },
+            },
+            {
+                name: "creer_evenement_agenda",
+                description: "Crée un événement dans le vrai Google Agenda du marchand connecté (pas un rendez-vous client — pour ça utilise prendre_rendez_vous/proposer_creneaux_rdv). N'appelle cette fonction que pour le marchand lui-même qui te demande de lui bloquer un moment dans SON agenda.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        titre: { type: "STRING", description: "Le titre de l'événement." },
+                        debut: { type: "STRING", description: "Date et heure de début, calculées à partir de la date actuelle donnée dans le contexte, au format ISO strict AAAA-MM-JJTHH:MM:SS." },
+                        fin: { type: "STRING", description: "Date et heure de fin, même format ISO. Si non précisé par le marchand, mets 1h après le début." },
+                        description: { type: "STRING", description: "Détail optionnel de l'événement. Chaîne vide sinon." },
+                    },
+                    required: ["titre", "debut", "fin"],
+                },
+            },
+            {
+                name: "lister_fichiers_drive",
+                description: "Liste les fichiers récents du Google Drive du marchand connecté (nom, type, lien). Utilise cette fonction pour \"qu'est-ce que j'ai sur mon Drive\", retrouver un document, etc.",
+                parameters: { type: "OBJECT", properties: {} },
+            },
+            {
                 name: "passer_commande",
                 description: "Enregistre une commande pour UN SEUL produit (choisi EXACTEMENT parmi le catalogue réel fourni dans le contexte — jamais inventé, jamais deux produits dans le même appel), une fois que le produit, l'adresse de livraison et le numéro de téléphone sont connus. AVANT le tout premier appel sur cette commande, si un autre produit du catalogue complète naturellement celui choisi (ex: accessoire, produit du même univers), suggère-le UNE SEULE fois au client en une phrase courte, sans insister — n'appelle la fonction qu'après sa réponse. S'il accepte le produit complémentaire, appelle cette fonction UNE DEUXIÈME FOIS juste après, avec ce second produit (adresse/téléphone identiques), pour créer sa propre commande. Si aucun produit complémentaire pertinent n'existe, ou si le client a déjà répondu à la suggestion, appelle la fonction directement pour le produit initial.",
                 parameters: {
@@ -261,7 +285,7 @@ const TOOLS = [
 const SEARCH_TOOLS = [
     {
         functionDeclarations: TOOLS[0].functionDeclarations.filter(fn =>
-            ["rechercher_prospects", "consulter_gmail", "envoyer_email"].includes(fn.name)
+            ["rechercher_prospects", "consulter_gmail", "envoyer_email", "consulter_agenda", "creer_evenement_agenda", "lister_fichiers_drive"].includes(fn.name)
         ),
     },
 ];

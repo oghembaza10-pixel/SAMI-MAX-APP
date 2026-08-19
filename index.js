@@ -195,6 +195,7 @@ app.use("/samii/messager-eclair", requireAuth, require("./routes/messagereclair"
 app.use("/samii/oracle-financier", requireAuth, require("./routes/oraclefinancier"));
 app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 app.use("/connect",   require("./routes/connector"));
+app.use("/youtube",   require("./routes/youtube"));
 app.use("/livreur",    require("./routes/livreur"));
 app.use("/livraisons", require("./routes/livraisons"));
 app.use("/verification", require("./routes/verification"));

@@ -478,6 +478,15 @@ class CommerceEngine {
                 url  : "/qg",
             });
 
+            // Best-effort : si le marchand a connecté Google, le RDV apparaît
+            // aussi dans son vrai agenda — silencieux et sans impact si non
+            // connecté (voir services/google.js).
+            if (dateParsee) {
+                require("../services/google")
+                    .syncRdvToCalendar(workspaceId, { motif: args.motif, dateDebut: dateParsee, clientNom: name })
+                    .catch(() => {});
+            }
+
             if (source === "telegram") {
                 await require("../services/telegramService").notifyAdmin(
                     workspaceId,
