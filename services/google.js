@@ -276,6 +276,41 @@ async function uploadYoutubeVideo(workspaceId, { buffer, mimeType, title, descri
     }
 }
 
+// ── Sheets ─────────────────────────────────────────────────────────────
+// Crée une nouvelle feuille Google Sheets et l'écrit en une passe — sert
+// aux rapports que Sami génère à la demande du marchand (ventes, stock...),
+// jamais pour modifier une feuille existante (accès complet demandé, mais
+// ce premier usage reste volontairement simple et non destructif).
+async function creerRapportSheets(workspaceId, { titre, lignes }) {
+    const token = await getValidAccessToken(workspaceId);
+    if (!token) return { success: false, error: "Google non connecté." };
+
+    try {
+        const createRes = await axios.post(
+            "https://sheets.googleapis.com/v4/spreadsheets",
+            { properties: { title: titre } },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const spreadsheetId = createRes.data.spreadsheetId;
+
+        if (Array.isArray(lignes) && lignes.length) {
+            await axios.put(
+                `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A1`,
+                { values: lignes },
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    params: { valueInputOption: "RAW" },
+                }
+            );
+        }
+
+        return { success: true, spreadsheetId, link: createRes.data.spreadsheetUrl };
+    } catch (err) {
+        console.error("❌ google.creerRapportSheets :", err.response?.data || err.message);
+        return { success: false, error: err.response?.data?.error?.message || "Échec de la création de la feuille." };
+    }
+}
+
 module.exports = {
     getValidAccessToken,
     listRecentEmails,
@@ -285,4 +320,5 @@ module.exports = {
     syncRdvToCalendar,
     listDriveFiles,
     uploadYoutubeVideo,
+    creerRapportSheets,
 };

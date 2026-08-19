@@ -262,6 +262,22 @@ const TOOLS = [
                 parameters: { type: "OBJECT", properties: {} },
             },
             {
+                name: "creer_rapport_sheets",
+                description: "Crée un nouveau rapport dans une feuille Google Sheets du marchand connecté, avec les lignes de données fournies. Utilise cette fonction quand le marchand demande un rapport, un export, ou un tableau de chiffres.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        titre: { type: "STRING", description: "Le titre du rapport / de la feuille." },
+                        lignes: {
+                            type: "ARRAY",
+                            description: "Les lignes du tableau, la première étant les en-têtes de colonnes. Chaque ligne est un tableau de valeurs texte.",
+                            items: { type: "ARRAY", items: { type: "STRING" } },
+                        },
+                    },
+                    required: ["titre", "lignes"],
+                },
+            },
+            {
                 name: "passer_commande",
                 description: "Enregistre une commande pour UN SEUL produit (choisi EXACTEMENT parmi le catalogue réel fourni dans le contexte — jamais inventé, jamais deux produits dans le même appel), une fois que le produit, l'adresse de livraison et le numéro de téléphone sont connus. AVANT le tout premier appel sur cette commande, si un autre produit du catalogue complète naturellement celui choisi (ex: accessoire, produit du même univers), suggère-le UNE SEULE fois au client en une phrase courte, sans insister — n'appelle la fonction qu'après sa réponse. S'il accepte le produit complémentaire, appelle cette fonction UNE DEUXIÈME FOIS juste après, avec ce second produit (adresse/téléphone identiques), pour créer sa propre commande. Si aucun produit complémentaire pertinent n'existe, ou si le client a déjà répondu à la suggestion, appelle la fonction directement pour le produit initial.",
                 parameters: {
@@ -287,7 +303,7 @@ const TOOLS = [
 const SEARCH_TOOLS = [
     {
         functionDeclarations: TOOLS[0].functionDeclarations.filter(fn =>
-            ["rechercher_prospects", "consulter_gmail", "envoyer_email", "consulter_agenda", "creer_evenement_agenda", "lister_fichiers_drive"].includes(fn.name)
+            ["rechercher_prospects", "consulter_gmail", "envoyer_email", "consulter_agenda", "creer_evenement_agenda", "lister_fichiers_drive", "creer_rapport_sheets"].includes(fn.name)
         ),
     },
 ];

@@ -42,6 +42,9 @@ class SamiiPlanner {
             case "lister_fichiers_drive":
                 return await this.listerFichiersDrive(context);
 
+            case "creer_rapport_sheets":
+                return await this.creerRapportSheets(context, args);
+
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
         }
@@ -152,6 +155,18 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         } catch (err) {
             console.error("❌ Planner.listerFichiersDrive :", err.message);
             return { success: false, error: "Erreur lors de la lecture du Drive." };
+        }
+    }
+
+    async creerRapportSheets(context, args) {
+        try {
+            return await google.creerRapportSheets(context.workspaceId, {
+                titre: args.titre,
+                lignes: args.lignes || [],
+            });
+        } catch (err) {
+            console.error("❌ Planner.creerRapportSheets :", err.message);
+            return { success: false, error: "Erreur lors de la création du rapport." };
         }
     }
 
