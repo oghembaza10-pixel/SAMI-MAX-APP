@@ -453,7 +453,32 @@ async function chatWithSearch({ message, context = {} }) {
         };
     } catch (err) {
         console.error("❌ Gemini (search) :", err.response?.data || err.message);
-        return { type: "text", text: "SAMII démarre actuellement. Réessaie dans quelques instants.", sources: [] };
+        // Aucun des relais (Groq/OpenRouter/DeepSeek) n'a d'équivalent au grounding
+        // "google_search" natif de Gemini — la réponse de secours n'aura donc pas de
+        // vraies sources web, mais mieux vaut une réponse basée sur leur connaissance
+        // générale qu'un échec total, même principe que le relais de chat() ci-dessus.
+        try {
+            console.warn("🔀 Relais Groq (Gemini search indisponible)...");
+            const fallback = await chatViaGroq({ message, context, useTools: false });
+            return { type: "text", text: fallback.text, sources: [] };
+        } catch (groqErr) {
+            console.error("❌ Groq (relais search) :", groqErr.response?.data || groqErr.message);
+            try {
+                console.warn("🔀 Relais OpenRouter (Groq search indisponible aussi)...");
+                const fallback = await chatViaOpenRouter({ message, context, useTools: false });
+                return { type: "text", text: fallback.text, sources: [] };
+            } catch (openrouterErr) {
+                console.error("❌ OpenRouter (relais search) :", openrouterErr.response?.data || openrouterErr.message);
+                try {
+                    console.warn("🔀 Relais DeepSeek (OpenRouter search indisponible aussi)...");
+                    const fallback = await chatViaDeepSeek({ message, context, useTools: false });
+                    return { type: "text", text: fallback.text, sources: [] };
+                } catch (deepseekErr) {
+                    console.error("❌ DeepSeek (relais search) :", deepseekErr.response?.data || deepseekErr.message);
+                    return { type: "text", text: "SAMII démarre actuellement. Réessaie dans quelques instants.", sources: [] };
+                }
+            }
+        }
     }
 }
 
