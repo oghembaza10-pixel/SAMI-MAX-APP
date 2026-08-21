@@ -632,7 +632,7 @@ body {
 
 @media (max-width: 768px) {
     .connect-tools-section { padding: 24px 20px 40px; }
-    .connect-tools-grid { grid-template-columns: 1fr; }
+    .connect-tools-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 }
 
 /* ── ONBOARDING CONVERSATIONNEL (créer mon QG en parlant à Sami) ── */

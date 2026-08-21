@@ -165,6 +165,8 @@ router.get("/", requireAuth, async (req, res) => {
         .mobile-nav { display: none; }
         @media (max-width: 900px) {
             .ars33-shell { padding-bottom: 90px; }
+            .ars33-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .ars33-card { padding: 12px 8px; font-size: .82rem; }
             .mobile-nav {
                 position: fixed; left: 0; right: 0; bottom: 0;
                 display: flex; justify-content: space-around;
