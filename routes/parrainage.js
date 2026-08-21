@@ -84,7 +84,7 @@ router.get("/", requireAuth, async (req, res) => {
 <html lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Parrainage — SAMII OS</title>
+<title>Devenez partenaire SAMII — SAMII OS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
@@ -105,6 +105,7 @@ h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10
 .pr-link-row { display:flex; gap:10px; }
 .pr-link-row input { flex:1; padding:12px 13px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,.3); color:var(--blue); font-size:13px; font-family:"JetBrains Mono"; outline:none; }
 .pr-copy-btn { padding:0 18px; border-radius:10px; border:none; background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:#001018; font-weight:800; cursor:pointer; box-shadow:var(--cyan-glow); white-space:nowrap; }
+.pr-pitch { margin:14px 0 0; padding-top:14px; border-top:1px dashed var(--border); font-size:12.5px; line-height:1.6; color:var(--muted); }
 .pr-terms { display:flex; gap:14px; margin-top:14px; flex-wrap:wrap; }
 .pr-term { flex:1; min-width:140px; background:rgba(0,217,255,.06); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
 .pr-term strong { display:block; color:var(--blue); font-size:16px; font-family:"JetBrains Mono"; }
@@ -145,8 +146,8 @@ h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10
     </div>
 </div>
 <div class="pr-wrap">
-    <h1>🤝 <span data-i18n="parrainage.title">Parrainage</span></h1>
-    <p class="pr-sub" data-i18n="parrainage.subtitle">Invite tes proches. Toi et eux gagnez, pendant 12 mois.</p>
+    <h1>🤝 <span data-i18n="parrainage.title">Devenez partenaire SAMII</span></h1>
+    <p class="pr-sub" data-i18n="parrainage.subtitle">Vous gardez la relation avec vos clients. Nous fournissons la technologie. 20% récurrent pendant 12 mois sur chaque compte que vous apportez.</p>
 
     <div class="pr-link-card">
         <label data-i18n="parrainage.link.label">Ton lien de parrainage</label>
@@ -158,6 +159,7 @@ h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10
             <div class="pr-term"><strong>20%</strong><span data-i18n="parrainage.term1.desc">Toi, sur chaque paiement de ton filleul — 12 mois</span></div>
             <div class="pr-term"><strong>5%</strong><span data-i18n="parrainage.term2.desc">Ton filleul, sur son propre abonnement — 12 mois</span></div>
         </div>
+        <p class="pr-pitch" data-i18n="parrainage.pitch">Freelance, agence e-commerce, intégrateur : proposez SAMII à vos propres clients comme une extension de votre prestation (installation, configuration WhatsApp, automatisations — vous facturez ce que vous voulez dessus), et touchez en plus cette commission récurrente tant qu'ils restent actifs.</p>
     </div>
 
     <div class="pr-stats-bar">
@@ -182,13 +184,14 @@ if (typeof lucide !== "undefined") lucide.createIcons();
 const I18N = {
     fr: {
         "nav.back": "Retour",
-        "parrainage.title": "Parrainage",
-        "parrainage.subtitle": "Invite tes proches. Toi et eux gagnez, pendant 12 mois.",
+        "parrainage.title": "Devenez partenaire SAMII",
+        "parrainage.subtitle": "Vous gardez la relation avec vos clients. Nous fournissons la technologie. 20% récurrent pendant 12 mois sur chaque compte que vous apportez.",
         "parrainage.link.label": "Ton lien de parrainage",
         "parrainage.copy": "Copier",
         "parrainage.copied": "Copié !",
         "parrainage.term1.desc": "Toi, sur chaque paiement de ton filleul — 12 mois",
         "parrainage.term2.desc": "Ton filleul, sur son propre abonnement — 12 mois",
+        "parrainage.pitch": "Freelance, agence e-commerce, intégrateur : proposez SAMII à vos propres clients comme une extension de votre prestation (installation, configuration WhatsApp, automatisations — vous facturez ce que vous voulez dessus), et touchez en plus cette commission récurrente tant qu'ils restent actifs.",
         "parrainage.stat.confirmed": "Gains confirmés",
         "parrainage.stat.pending": "En attente",
         "parrainage.stat.filleuls": "Filleuls",
@@ -206,13 +209,14 @@ const I18N = {
     },
     en: {
         "nav.back": "Back",
-        "parrainage.title": "Referral program",
-        "parrainage.subtitle": "Invite your friends. You both earn, for 12 months.",
+        "parrainage.title": "Become a SAMII partner",
+        "parrainage.subtitle": "You keep the relationship with your clients. We provide the technology. 20% recurring for 12 months on every account you bring in.",
         "parrainage.link.label": "Your referral link",
         "parrainage.copy": "Copy",
         "parrainage.copied": "Copied!",
         "parrainage.term1.desc": "You, on every payment made by your referral — 12 months",
         "parrainage.term2.desc": "Your referral, on their own subscription — 12 months",
+        "parrainage.pitch": "Freelancer, e-commerce agency, integrator: offer SAMII to your own clients as an extension of your service (installation, WhatsApp setup, automations — you charge whatever you want for that), and earn this recurring commission on top for as long as they stay active.",
         "parrainage.stat.confirmed": "Confirmed earnings",
         "parrainage.stat.pending": "Pending",
         "parrainage.stat.filleuls": "Referrals",
@@ -230,13 +234,14 @@ const I18N = {
     },
     ar: {
         "nav.back": "رجوع",
-        "parrainage.title": "برنامج الإحالة",
-        "parrainage.subtitle": "ادعُ أصدقاءك. تربحان معًا، لمدة 12 شهرًا.",
+        "parrainage.title": "كن شريكًا لـ SAMII",
+        "parrainage.subtitle": "تحتفظ بعلاقتك مع عملائك. نحن نوفّر التقنية. 20% عمولة متكررة لمدة 12 شهرًا على كل حساب تجلبه.",
         "parrainage.link.label": "رابط الإحالة الخاص بك",
         "parrainage.copy": "نسخ",
         "parrainage.copied": "تم النسخ!",
         "parrainage.term1.desc": "أنت، على كل دفعة يقوم بها من أحلته — 12 شهرًا",
         "parrainage.term2.desc": "من أحلته، على اشتراكه الخاص — 12 شهرًا",
+        "parrainage.pitch": "مستقل، وكالة تجارة إلكترونية، مكامل تقني: اقترح SAMII على عملائك كامتداد لخدمتك (تثبيت، إعداد WhatsApp، أتمتة — وأنت من يحدد سعر ذلك)، واحصل بالإضافة إلى ذلك على هذه العمولة المتكررة طالما بقي عميلك نشطًا.",
         "parrainage.stat.confirmed": "أرباح مؤكدة",
         "parrainage.stat.pending": "قيد الانتظار",
         "parrainage.stat.filleuls": "الإحالات",
@@ -254,13 +259,14 @@ const I18N = {
     },
     zh: {
         "nav.back": "返回",
-        "parrainage.title": "推荐计划",
-        "parrainage.subtitle": "邀请你的朋友。你们都能获得收益，为期12个月。",
+        "parrainage.title": "成为 SAMII 合作伙伴",
+        "parrainage.subtitle": "你保留与客户的关系，我们提供技术。你带来的每个账户，12个月内可获得20%的持续佣金。",
         "parrainage.link.label": "你的推荐链接",
         "parrainage.copy": "复制",
         "parrainage.copied": "已复制！",
         "parrainage.term1.desc": "你，从被推荐人的每笔付款中获得 — 12个月",
         "parrainage.term2.desc": "被推荐人，在其自身订阅上获得 — 12个月",
+        "parrainage.pitch": "自由职业者、电商代理、系统集成商：把 SAMII 作为你自身服务的延伸推荐给你的客户（安装、WhatsApp 配置、自动化——费用由你自己定），只要客户保持活跃，你就能额外获得这份持续佣金。",
         "parrainage.stat.confirmed": "已确认收益",
         "parrainage.stat.pending": "待确认",
         "parrainage.stat.filleuls": "被推荐人",
