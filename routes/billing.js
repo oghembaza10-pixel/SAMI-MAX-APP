@@ -762,8 +762,8 @@ router.post("/checkout", requireAuth, async (req, res) => {
             payment_method_types: ["card"],
             line_items: [{ price: priceId, quantity: 1 }],
             discounts,
-            success_url: "https://samii.souverain-store.com/billing/success",
-            cancel_url : "https://samii.souverain-store.com/billing",
+            success_url: `${CONFIG.APP_URL}/billing/success`,
+            cancel_url : `${CONFIG.APP_URL}/billing`,
             client_reference_id: workspace.workspaceId,
             metadata: { workspaceId: workspace.workspaceId, plan },
         });
