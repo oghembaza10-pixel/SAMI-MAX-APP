@@ -1746,6 +1746,40 @@
             gap: 10px;
         }
 
+        .password-input-wrap {
+            position: relative;
+        }
+
+        .password-input-wrap input {
+            padding-right: 42px !important;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-dim);
+            padding: 0;
+        }
+
+        .password-toggle:hover {
+            color: var(--text-main);
+        }
+
+        .password-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+
         .auth-card input,
         .auth-card select,
         .auth-card textarea {
@@ -2602,7 +2636,7 @@
                 </div>
 
                 <div class="form-step" data-step="2">
-                    <div class="field-group"><label data-i18n="auth.field.password">Mot de passe</label><input name="password" type="password" placeholder="Minimum 6 caractères" data-i18n-ph="auth.ph.password" required minlength="6"></div>
+                    <div class="field-group"><label data-i18n="auth.field.password">Mot de passe</label><div class="password-input-wrap"><input name="password" type="password" placeholder="Minimum 6 caractères" data-i18n-ph="auth.ph.password" required minlength="6"><button type="button" class="password-toggle" aria-label="Afficher le mot de passe"><svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg><svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 4.22-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.6 19.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
 
                     <label style="display:block; font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:8px;" data-i18n="auth.theme.choose">Choisis l'univers de SAMII</label>
                     <div class="theme-picker">
@@ -2636,10 +2670,22 @@
 
             <form id="form-login" style="display:none;">
                 <div class="field-group"><label data-i18n="auth.field.email">Email</label><input name="email" type="email" placeholder="ton@email.com" required></div>
-                <div class="field-group"><label data-i18n="auth.field.password">Mot de passe</label><input name="password" type="password" placeholder="Ton mot de passe" data-i18n-ph="auth.ph.password_login" required></div>
+                <div class="field-group"><label data-i18n="auth.field.password">Mot de passe</label><div class="password-input-wrap"><input name="password" type="password" placeholder="Ton mot de passe" data-i18n-ph="auth.ph.password_login" required><button type="button" class="password-toggle" aria-label="Afficher le mot de passe"><svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg><svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.7 19.7 0 0 1 4.22-5.94M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a19.6 19.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button></div></div>
                 <a href="/password-reset" class="forgot-link" data-i18n="auth.forgot">Mot de passe oublié ?</a>
                 <button type="submit" class="auth-submit" data-i18n="nav.login">Se connecter</button>
             </form>
+
+            <script>
+                document.querySelectorAll('.password-toggle').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var input = btn.closest('.password-input-wrap').querySelector('input');
+                        var showing = input.type === 'text';
+                        input.type = showing ? 'password' : 'text';
+                        btn.querySelector('.icon-eye').style.display = showing ? '' : 'none';
+                        btn.querySelector('.icon-eye-off').style.display = showing ? 'none' : '';
+                    });
+                });
+            </script>
 
             <div id="form-partenariat" style="display:none;">
                 <p class="pa-intro" data-i18n="partenariat.intro">Investisseur, créateur de contenu, développeur, fournisseur... Dis-nous comment tu veux construire l'Empire avec nous.</p>
