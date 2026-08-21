@@ -43,6 +43,19 @@ async function getValidAccessToken(workspaceId) {
         return access_token;
     } catch (err) {
         console.error("❌ google.getValidAccessToken :", err.response?.data || err.message);
+        // invalid_grant = refresh_token définitivement mort (révoqué par le
+        // marchand, ou — cas vu en pratique tant que l'appli Google reste en
+        // mode "Test" — expiré au bout de 7 jours). Sans ce garde-fou, la
+        // page Paramètres → Outils continuait d'afficher "Google connecté"
+        // indéfiniment (connectorService.save() met toujours actif=true),
+        // pendant que Sami répondait en boucle "Google n'est pas encore
+        // connecté" — le marchand n'avait aucun signal pour comprendre qu'il
+        // fallait re-cliquer sur "Connecter Google". On désactive donc le
+        // connecteur pour que l'état affiché redevienne cohérent avec la
+        // réalité. Une erreur réseau/temporaire ne déclenche pas ça.
+        if (err.response?.data?.error === "invalid_grant") {
+            await connectorService.disconnect(workspaceId, "google");
+        }
         return null;
     }
 }
