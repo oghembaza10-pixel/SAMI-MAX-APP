@@ -278,6 +278,17 @@ const TOOLS = [
                 },
             },
             {
+                name: "envoyer_facture",
+                description: "Génère la facture d'une commande existante et l'envoie directement au client sur son canal (WhatsApp ou Telegram). Utilise cette fonction quand le marchand demande d'envoyer une facture, un ticket, ou un reçu pour une commande précise.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        commandeId: { type: "STRING", description: "L'identifiant de la commande concernée (ex: TG-123456)." },
+                    },
+                    required: ["commandeId"],
+                },
+            },
+            {
                 name: "passer_commande",
                 description: "Enregistre une commande pour UN SEUL produit (choisi EXACTEMENT parmi le catalogue réel fourni dans le contexte — jamais inventé, jamais deux produits dans le même appel), une fois que le produit, l'adresse de livraison et le numéro de téléphone sont connus. AVANT le tout premier appel sur cette commande, si un autre produit du catalogue complète naturellement celui choisi (ex: accessoire, produit du même univers), suggère-le UNE SEULE fois au client en une phrase courte, sans insister — n'appelle la fonction qu'après sa réponse. S'il accepte le produit complémentaire, appelle cette fonction UNE DEUXIÈME FOIS juste après, avec ce second produit (adresse/téléphone identiques), pour créer sa propre commande. Si aucun produit complémentaire pertinent n'existe, ou si le client a déjà répondu à la suggestion, appelle la fonction directement pour le produit initial.",
                 parameters: {
@@ -303,7 +314,7 @@ const TOOLS = [
 const SEARCH_TOOLS = [
     {
         functionDeclarations: TOOLS[0].functionDeclarations.filter(fn =>
-            ["rechercher_prospects", "consulter_gmail", "envoyer_email", "consulter_agenda", "creer_evenement_agenda", "lister_fichiers_drive", "creer_rapport_sheets"].includes(fn.name)
+            ["rechercher_prospects", "consulter_gmail", "envoyer_email", "consulter_agenda", "creer_evenement_agenda", "lister_fichiers_drive", "creer_rapport_sheets", "envoyer_facture"].includes(fn.name)
         ),
     },
 ];

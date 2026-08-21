@@ -5,6 +5,7 @@ const gemini = require("../services/geminiService");
 const googleSearch = require("../services/googleSearch");
 const google = require("../services/google");
 const commerceEngine = require("../engines/commerceEngine");
+const factureService = require("../services/factureService");
 
 class SamiiPlanner {
     async executeFunction(name, args, context = {}) {
@@ -44,6 +45,9 @@ class SamiiPlanner {
 
             case "creer_rapport_sheets":
                 return await this.creerRapportSheets(context, args);
+
+            case "envoyer_facture":
+                return await this.envoyerFacture(context, args);
 
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
@@ -167,6 +171,15 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         } catch (err) {
             console.error("❌ Planner.creerRapportSheets :", err.message);
             return { success: false, error: "Erreur lors de la création du rapport." };
+        }
+    }
+
+    async envoyerFacture(context, args) {
+        try {
+            return await factureService.genererEtEnvoyerFacture(context.workspaceId, args.commandeId);
+        } catch (err) {
+            console.error("❌ Planner.envoyerFacture :", err.message);
+            return { success: false, error: "Erreur lors de la génération de la facture." };
         }
     }
 
