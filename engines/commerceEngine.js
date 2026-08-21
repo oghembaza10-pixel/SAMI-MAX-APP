@@ -358,8 +358,8 @@ class CommerceEngine {
             const rows = await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1 RETURNING workspace_id`, [orderId]);
             if (rows[0]?.workspace_id) confirmationsQuota.enregistrerSiDepassement(rows[0].workspace_id).catch(() => {});
             await db.query(
-                `INSERT INTO journal (action, details) VALUES ($1, $2)`,
-                ["order.confirmed.telegram", `#${orderId} confirmée via Telegram`]
+                `INSERT INTO journal (action, details, ref_id) VALUES ($1, $2, $3)`,
+                ["order.confirmed.telegram", `#${orderId} confirmée via Telegram`, orderId]
             );
             return { success: true, orderId };
         } catch (err) {
@@ -376,8 +376,8 @@ class CommerceEngine {
             const { orderId } = event.payload;
             await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [orderId]);
             await db.query(
-                `INSERT INTO journal (action, details) VALUES ($1, $2)`,
-                ["order.cancelled.telegram", `#${orderId} annulée via Telegram`]
+                `INSERT INTO journal (action, details, ref_id) VALUES ($1, $2, $3)`,
+                ["order.cancelled.telegram", `#${orderId} annulée via Telegram`, orderId]
             );
             return { success: true, orderId };
         } catch (err) {
@@ -415,8 +415,8 @@ class CommerceEngine {
                 [orderId, workspaceId, name || "Client", args.telephone || "", args.adresse || "", args.produit || "", source || "chat", montant, chatId ? String(chatId) : null]
             );
             await db.query(
-                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                [`order.created.${source || "chat"}`, `#${orderId} — ${name || "Client"}`, workspaceId]
+                `INSERT INTO journal (action, details, workspace_id, montant, ref_id) VALUES ($1, $2, $3, $4, $5)`,
+                [`order.created.${source || "chat"}`, `#${orderId} — ${name || "Client"}`, workspaceId, montant, orderId]
             );
             socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
             notify.notifyWorkspace(workspaceId, {
@@ -468,8 +468,8 @@ class CommerceEngine {
             );
             const rdvId = `RDV-${rows[0].id}`;
             await db.query(
-                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                [`rdv.created.${source || "chat"}`, `#${rdvId} — ${name || "Client"}`, workspaceId]
+                `INSERT INTO journal (action, details, workspace_id, ref_id) VALUES ($1, $2, $3, $4)`,
+                [`rdv.created.${source || "chat"}`, `#${rdvId} — ${name || "Client"}`, workspaceId, rdvId]
             );
             socketService.emitToShop(workspaceId, "nouveau-rdv", { id: rdvId });
             notify.notifyWorkspace(workspaceId, {
@@ -613,8 +613,8 @@ class CommerceEngine {
             const rdvId = `RDV-${rdv.id}`;
 
             await db.query(
-                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                [`rdv.created.telegram`, `#${rdvId} — ${rdv.client_nom}`, rdv.workspace_id]
+                `INSERT INTO journal (action, details, workspace_id, ref_id) VALUES ($1, $2, $3, $4)`,
+                [`rdv.created.telegram`, `#${rdvId} — ${rdv.client_nom}`, rdv.workspace_id, rdvId]
             );
             socketService.emitToShop(rdv.workspace_id, "nouveau-rdv", { id: rdvId });
             notify.notifyWorkspace(rdv.workspace_id, {

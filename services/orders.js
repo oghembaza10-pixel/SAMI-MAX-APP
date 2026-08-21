@@ -36,8 +36,8 @@ async function confirmChargilyPayment(checkoutId) {
 
     const workspaceId = rows[0].workspace_id;
     await db.query(
-        `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-        ["order.paid.chargily", `#${orderId} payée via Chargily (${checkoutId})`, workspaceId]
+        `INSERT INTO journal (action, details, workspace_id, montant, ref_id) VALUES ($1, $2, $3, $4, $5)`,
+        ["order.paid.chargily", `#${orderId} payée via Chargily (${checkoutId})`, workspaceId, checkout.amount || null, orderId]
     );
     socketService.emitToShop(workspaceId, "commande-payee", { id: orderId });
     notify.notifyWorkspace(workspaceId, {
@@ -74,8 +74,8 @@ async function confirmChargilyCartePurchase(checkoutId) {
     if (!rows[0]) return { updated: false };
 
     await db.query(
-        `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-        ["carte.achetee", `Carte "${carteId}" débloquée ${dureeJours} jours via Chargily (${checkoutId})`, workspaceId]
+        `INSERT INTO journal (action, details, workspace_id, montant, ref_id) VALUES ($1, $2, $3, $4, $5)`,
+        ["carte.achetee", `Carte "${carteId}" débloquée ${dureeJours} jours via Chargily (${checkoutId})`, workspaceId, checkout.amount || null, carteId]
     );
     socketService.emitToShop(workspaceId, "carte-debloquee", { carteId, expireLe });
     notify.notifyWorkspace(workspaceId, {
@@ -113,8 +113,8 @@ async function confirmChargilyAbonnement(checkoutId) {
     await abonnementService.activerPalier(workspaceId, plan);
 
     await db.query(
-        `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-        ["abonnement.paye", `Abonnement "${plan}" activé 30 jours via Chargily (${checkoutId})`, workspaceId]
+        `INSERT INTO journal (action, details, workspace_id, montant, ref_id) VALUES ($1, $2, $3, $4, $5)`,
+        ["abonnement.paye", `Abonnement "${plan}" activé 30 jours via Chargily (${checkoutId})`, workspaceId, checkout.amount || null, plan]
     );
     socketService.emitToShop(workspaceId, "abonnement-active", { plan, expireLe });
     notify.notifyWorkspace(workspaceId, {
@@ -164,8 +164,8 @@ async function confirmCcpAbonnement(abonnementId) {
     }
 
     await db.query(
-        `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-        ["abonnement.paye", `Abonnement "${plan}" activé 30 jours via CCP (confirmé manuellement)`, workspaceId]
+        `INSERT INTO journal (action, details, workspace_id, ref_id) VALUES ($1, $2, $3, $4)`,
+        ["abonnement.paye", `Abonnement "${plan}" activé 30 jours via CCP (confirmé manuellement)`, workspaceId, plan]
     );
     socketService.emitToShop(workspaceId, "abonnement-active", { plan, expireLe });
     notify.notifyWorkspace(workspaceId, {

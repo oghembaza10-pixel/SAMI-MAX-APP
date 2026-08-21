@@ -235,6 +235,8 @@ async function run() {
                 details TEXT,
                 workspace_id TEXT,
                 user_id TEXT,
+                montant NUMERIC,
+                ref_id TEXT,
                 created_at TIMESTAMP DEFAULT NOW()
             );
         `);
