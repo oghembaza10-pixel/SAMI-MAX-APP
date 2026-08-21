@@ -237,10 +237,10 @@ router.get("/", requireAuth, async (req, res) => {
             <div class="bill-card-rule"></div>
             <ul>
                 <li data-i18n="billing.free.li1">150 confirmations & suivi / mois</li>
-                <li data-i18n="billing.free.li2">Mode Ombre + Copilote (SAMII propose, tu valides)</li>
+                <li data-i18n="billing.free.li2">SAMII te propose chaque action, tu valides avant qu'elle parte</li>
                 <li data-i18n="billing.free.li3">30 messages SAMII toutes les 7h</li>
                 <li data-i18n="billing.free.li4">Suivi de colis basique</li>
-                <li>🃏 ${NB_CARTES_PAR_PALIER.free} cartes débloquées</li>
+                <li>🃏 ${NB_CARTES_PAR_PALIER.free} <span data-i18n="billing.cards.unlocked">fonctionnalités bonus débloquées</span></li>
             </ul>
             <button class="bill-btn bill-btn--free" disabled data-i18n="billing.free.btn">Palier actuel</button>
             ${dailyNote("free")}
@@ -255,9 +255,9 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.standard.li1">2 100 confirmations & suivi / mois (+0,50 $ au-delà)</li>
                 <li data-i18n="billing.standard.li2">WhatsApp + Telegram + Shopify connectés</li>
                 <li data-i18n="billing.standard.li3">Client fidèle (VIP) + liste noire automatiques</li>
-                <li data-i18n="billing.standard.li5">1 Forteresse offerte chaque mois</li>
+                <li data-i18n="billing.standard.li5">1 carte premium offerte chaque mois</li>
                 <li data-i18n="billing.standard.li6">50 messages SAMII toutes les 7h (+0,12 $/message au-delà)</li>
-                <li>🃏 ${NB_CARTES_PAR_PALIER.standard} cartes débloquées</li>
+                <li>🃏 ${NB_CARTES_PAR_PALIER.standard} <span data-i18n="billing.cards.unlocked">fonctionnalités bonus débloquées</span></li>
             </ul>
             ${chargilyBlock("standard")}
             ${ccpBlock("standard")}
@@ -274,11 +274,11 @@ router.get("/", requireAuth, async (req, res) => {
             <ul>
                 <li data-i18n="billing.pro.li1">30 000 confirmations & suivi / mois (+0,50 $ au-delà)</li>
                 <li data-i18n="billing.pro.li2">Tout le plan Actif, en plus généreux</li>
-                <li data-i18n="billing.pro.li3">Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)</li>
-                <li data-i18n="billing.pro.li4">2 Forteresse + 1 Boost offerts chaque mois</li>
+                <li data-i18n="billing.pro.li3">SAMII lance directement tes pubs prêtes, sans attendre ta validation</li>
+                <li data-i18n="billing.pro.li4">3 cartes premium offertes chaque mois</li>
                 <li data-i18n="billing.pro.li5">Support prioritaire</li>
                 <li data-i18n="billing.pro.li6">150 messages SAMII toutes les 7h (+0,12 $/message au-delà)</li>
-                <li>🃏 ${NB_CARTES_PAR_PALIER.pro} cartes débloquées</li>
+                <li>🃏 ${NB_CARTES_PAR_PALIER.pro} <span data-i18n="billing.cards.unlocked">fonctionnalités bonus débloquées</span></li>
             </ul>
             ${chargilyBlock("pro")}
             ${ccpBlock("pro")}
@@ -293,7 +293,7 @@ router.get("/", requireAuth, async (req, res) => {
             <div class="bill-price" data-free data-i18n="billing.societe.price">Sur devis</div>
             <div class="bill-card-rule"></div>
             <ul>
-                <li data-i18n="billing.societe.li1">Toutes les cartes débloquées (${NB_CARTES_PAR_PALIER.societe}/${NB_CARTES_PAR_PALIER.societe})</li>
+                <li><span data-i18n="billing.societe.li1">Toutes les fonctionnalités bonus débloquées</span> (${NB_CARTES_PAR_PALIER.societe}/${NB_CARTES_PAR_PALIER.societe})</li>
                 <li data-i18n="billing.societe.li2">Multi-comptes, multi-boutiques</li>
                 <li data-i18n="billing.societe.li3">Contrat et facturation dédiés</li>
                 <li data-i18n="billing.societe.li4">Accompagnement personnalisé</li>
@@ -331,23 +331,24 @@ const I18N = {
         'billing.free.eyebrow': 'Palier I', 'billing.free.tagline': 'Pour tester SAMII sans engagement.',
         'billing.free.title': '🌑 Découverte', 'billing.free.price': 'Gratuit',
         'billing.free.li1': '150 confirmations & suivi / mois',
-        'billing.free.li2': 'Mode Ombre + Copilote (SAMII propose, tu valides)',
+        'billing.free.li2': "SAMII te propose chaque action, tu valides avant qu'elle parte",
         'billing.free.li3': '30 messages SAMII toutes les 7h',
         'billing.free.li4': 'Suivi de colis basique',
         'billing.free.btn': 'Plan actuel',
+        'billing.cards.unlocked': 'fonctionnalités bonus débloquées',
         'billing.standard.eyebrow': 'Palier II', 'billing.standard.tagline': 'Pour un commerce qui tourne déjà.',
         'billing.standard.title': '🚀 Actif',
         'billing.standard.li1': '2 100 confirmations & suivi / mois (+0,50 $ au-delà)',
         'billing.standard.li2': 'WhatsApp + Telegram + Shopify connectés',
         'billing.standard.li3': 'Client fidèle (VIP) + liste noire automatiques',
-        'billing.standard.li5': '1 Forteresse offerte chaque mois',
+        'billing.standard.li5': '1 carte premium offerte chaque mois',
         'billing.standard.li6': '50 messages SAMII toutes les 7h (+0,12 $/message au-delà)',
         'billing.pro.eyebrow': 'Palier III · Recommandé', 'billing.pro.tagline': 'Pour ne plus jamais attendre une validation.',
         'billing.pro.title': '👑 Souverain',
         'billing.pro.li1': '30 000 confirmations & suivi / mois (+0,50 $ au-delà)',
         'billing.pro.li2': 'Tout le plan Actif, en plus généreux',
-        'billing.pro.li3': 'Modes Autonome + Souverain (SAMII lance directement tes pubs déjà prêtes, sans attendre ta validation)',
-        'billing.pro.li4': '2 Forteresse + 1 Boost offerts chaque mois',
+        'billing.pro.li3': 'SAMII lance directement tes pubs prêtes, sans attendre ta validation',
+        'billing.pro.li4': '3 cartes premium offertes chaque mois',
         'billing.pro.li5': 'Support prioritaire',
         'billing.pro.li6': '150 messages SAMII toutes les 7h (+0,12 $/message au-delà)',
         'billing.griot.note': '🎨 Génération IA (Griot) : 0,20 $/seconde',
@@ -358,7 +359,7 @@ const I18N = {
         'billing.step3': "Règle et c'est parti", 'billing.step3b': 'Règle',
         'billing.societe.eyebrow': 'Palier IV', 'billing.societe.title': '🏛️ Société',
         'billing.societe.tagline': 'Pour plusieurs comptes, un seul contrat.', 'billing.societe.price': 'Sur devis',
-        'billing.societe.li1': 'Toutes les cartes débloquées', 'billing.societe.li2': 'Multi-comptes, multi-boutiques',
+        'billing.societe.li1': 'Toutes les fonctionnalités bonus débloquées', 'billing.societe.li2': 'Multi-comptes, multi-boutiques',
         'billing.societe.li3': 'Contrat et facturation dédiés', 'billing.societe.li4': 'Accompagnement personnalisé',
         'billing.societe.ph.email': 'Ton email', 'billing.societe.ph.message': 'Décris ton besoin (nombre de boutiques, volume...)',
         'billing.societe.btn': 'Nous contacter',
@@ -382,23 +383,24 @@ const I18N = {
         'billing.free.eyebrow': 'Tier I', 'billing.free.tagline': 'To try SAMII with no commitment.',
         'billing.free.title': '🌑 Discovery', 'billing.free.price': 'Free',
         'billing.free.li1': '150 confirmations & tracking / month',
-        'billing.free.li2': 'Shadow Mode + Copilot (SAMII suggests, you approve)',
+        'billing.free.li2': "SAMII suggests every action, you approve before it's sent",
         'billing.free.li3': '30 SAMII messages every 7h',
         'billing.free.li4': 'Basic package tracking',
         'billing.free.btn': 'Current plan',
+        'billing.cards.unlocked': 'bonus features unlocked',
         'billing.standard.eyebrow': 'Tier II', 'billing.standard.tagline': 'For a business that is already running.',
         'billing.standard.title': '🚀 Active',
         'billing.standard.li1': '2,100 confirmations & tracking / month (+$0.50 beyond)',
         'billing.standard.li2': 'WhatsApp + Telegram + Shopify connected',
         'billing.standard.li3': 'Automatic VIP client + blacklist detection',
-        'billing.standard.li5': '1 Fortress granted every month',
+        'billing.standard.li5': '1 premium card granted every month',
         'billing.standard.li6': '50 SAMII messages every 7h (+$0.12/message beyond)',
         'billing.pro.eyebrow': 'Tier III · Recommended', 'billing.pro.tagline': 'To never wait for approval again.',
         'billing.pro.title': '👑 Sovereign',
         'billing.pro.li1': '30,000 confirmations & tracking / month (+$0.50 beyond)',
         'billing.pro.li2': 'Everything in the Active plan, more generous',
-        'billing.pro.li3': 'Autonomous + Sovereign Modes (SAMII launches your ready ads instantly, no validation wait)',
-        'billing.pro.li4': '2 Fortresses + 1 Boost granted every month',
+        'billing.pro.li3': 'SAMII launches your ready ads instantly, no approval needed',
+        'billing.pro.li4': '3 premium cards granted every month',
         'billing.pro.li5': 'Priority support',
         'billing.pro.li6': '150 SAMII messages every 7h (+$0.12/message beyond)',
         'billing.griot.note': '🎨 AI generation (Griot): $0.20/second',
@@ -409,7 +411,7 @@ const I18N = {
         'billing.step3': "Pay and you're set", 'billing.step3b': 'Pay',
         'billing.societe.eyebrow': 'Tier IV', 'billing.societe.title': '🏛️ Enterprise',
         'billing.societe.tagline': 'For several accounts, one contract.', 'billing.societe.price': 'Custom quote',
-        'billing.societe.li1': 'All cards unlocked', 'billing.societe.li2': 'Multi-account, multi-store',
+        'billing.societe.li1': 'All bonus features unlocked', 'billing.societe.li2': 'Multi-account, multi-store',
         'billing.societe.li3': 'Dedicated contract and billing', 'billing.societe.li4': 'Personalized onboarding',
         'billing.societe.ph.email': 'Your email', 'billing.societe.ph.message': 'Describe your needs (number of stores, volume...)',
         'billing.societe.btn': 'Contact us',
@@ -433,23 +435,24 @@ const I18N = {
         'billing.free.eyebrow': 'الباقة الأولى', 'billing.free.tagline': 'لتجربة SAMII بدون التزام.',
         'billing.free.title': '🌑 الاكتشاف', 'billing.free.price': 'مجاني',
         'billing.free.li1': '150 تأكيد وتتبع / شهريًا',
-        'billing.free.li2': 'وضع الظل + المساعد (SAMII يقترح، أنت توافق)',
+        'billing.free.li2': 'SAMII يقترح كل إجراء، وأنت توافق قبل تنفيذه',
         'billing.free.li3': '30 رسالة SAMII كل 7 ساعات',
         'billing.free.li4': 'تتبع أساسي للطرود',
         'billing.free.btn': 'الباقة الحالية',
+        'billing.cards.unlocked': 'ميزة إضافية مفتوحة',
         'billing.standard.eyebrow': 'الباقة الثانية', 'billing.standard.tagline': 'لتجارة تعمل بالفعل.',
         'billing.standard.title': '🚀 نشط',
         'billing.standard.li1': '2100 تأكيد وتتبع / شهريًا (+0.50$ لكل تأكيد إضافي)',
         'billing.standard.li2': 'ربط WhatsApp + Telegram + Shopify',
         'billing.standard.li3': 'عميل مخلص (VIP) + قائمة سوداء تلقائية',
-        'billing.standard.li5': 'حصن واحد مجانًا كل شهر',
+        'billing.standard.li5': 'بطاقة مميزة واحدة مجانًا كل شهر',
         'billing.standard.li6': '50 رسالة SAMII كل 7 ساعات (+0.12$ لكل رسالة إضافية)',
         'billing.pro.eyebrow': 'الباقة الثالثة · موصى بها', 'billing.pro.tagline': 'لكي لا تنتظر موافقة أبدًا.',
         'billing.pro.title': '👑 سيادي',
         'billing.pro.li1': '30000 تأكيد وتتبع / شهريًا (+0.50$ لكل تأكيد إضافي)',
         'billing.pro.li2': 'كل مزايا باقة نشط، بسخاء أكبر',
-        'billing.pro.li3': 'وضعا مستقل + سيادي (SAMII يُطلق إعلاناتك الجاهزة فورًا، دون انتظار موافقتك)',
-        'billing.pro.li4': 'حصنان + تعزيز واحد مجانًا كل شهر',
+        'billing.pro.li3': 'SAMII يُطلق إعلاناتك الجاهزة فورًا، دون الحاجة لموافقتك',
+        'billing.pro.li4': '3 بطاقات مميزة مجانًا كل شهر',
         'billing.pro.li5': 'دعم ذو أولوية',
         'billing.pro.li6': '150 رسالة SAMII كل 7 ساعات (+0.12$ لكل رسالة إضافية)',
         'billing.griot.note': '🎨 توليد بالذكاء الاصطناعي (Griot): 0.20$/ثانية',
@@ -460,7 +463,7 @@ const I18N = {
         'billing.step3': 'ادفع وانطلق', 'billing.step3b': 'ادفع',
         'billing.societe.eyebrow': 'الباقة الرابعة', 'billing.societe.title': '🏛️ شركة',
         'billing.societe.tagline': 'لعدة حسابات، عقد واحد.', 'billing.societe.price': 'عرض سعر مخصص',
-        'billing.societe.li1': 'جميع البطاقات مفتوحة', 'billing.societe.li2': 'حسابات ومتاجر متعددة',
+        'billing.societe.li1': 'جميع الميزات الإضافية مفتوحة', 'billing.societe.li2': 'حسابات ومتاجر متعددة',
         'billing.societe.li3': 'عقد وفوترة مخصصة', 'billing.societe.li4': 'مرافقة شخصية',
         'billing.societe.ph.email': 'بريدك الإلكتروني', 'billing.societe.ph.message': 'صف احتياجك (عدد المتاجر، الحجم...)',
         'billing.societe.btn': 'تواصل معنا',
@@ -484,23 +487,24 @@ const I18N = {
         'billing.free.eyebrow': '第一档', 'billing.free.tagline': '无需承诺，体验 SAMII。',
         'billing.free.title': '🌑 探索版', 'billing.free.price': '免费',
         'billing.free.li1': '每月150次确认与跟踪',
-        'billing.free.li2': '影子模式 + 副驾驶模式（SAMII 提议，你来确认）',
+        'billing.free.li2': 'SAMII 会为每个操作先给出建议，你确认后才会发送',
         'billing.free.li3': '每7小时30条 SAMII 消息',
         'billing.free.li4': '基础包裹跟踪',
         'billing.free.btn': '当前方案',
+        'billing.cards.unlocked': '解锁的额外功能',
         'billing.standard.eyebrow': '第二档', 'billing.standard.tagline': '适合已在运营的生意。',
         'billing.standard.title': '🚀 活跃版',
         'billing.standard.li1': '每月2100次确认与跟踪（超出部分每次+0.50$）',
         'billing.standard.li2': '已连接 WhatsApp + Telegram + Shopify',
         'billing.standard.li3': '自动识别VIP忠实客户 + 黑名单',
-        'billing.standard.li5': '每月赠送1座堡垒',
+        'billing.standard.li5': '每月赠送1张高级卡牌',
         'billing.standard.li6': '每7小时50条 SAMII 消息（超出部分每条+0.12$）',
         'billing.pro.eyebrow': '第三档 · 推荐', 'billing.pro.tagline': '再也不用等待批准。',
         'billing.pro.title': '👑 至尊版',
         'billing.pro.li1': '每月30000次确认与跟踪（超出部分每次+0.50$）',
         'billing.pro.li2': '活跃版全部功能，额度更高',
-        'billing.pro.li3': '自主模式 + 至尊模式（准备好的广告无需等待确认，SAMII 立即启动）',
-        'billing.pro.li4': '每月赠送2座堡垒 + 1次加速',
+        'billing.pro.li3': '准备好的广告无需等待确认，SAMII 立即启动',
+        'billing.pro.li4': '每月赠送3张高级卡牌',
         'billing.pro.li5': '优先支持',
         'billing.pro.li6': '每7小时150条 SAMII 消息（超出部分每条+0.12$）',
         'billing.griot.note': '🎨 AI生成（Griot）：0.20$/秒',
@@ -511,7 +515,7 @@ const I18N = {
         'billing.step3': '支付，立即开始', 'billing.step3b': '支付',
         'billing.societe.eyebrow': '第四档', 'billing.societe.title': '🏛️ 企业版',
         'billing.societe.tagline': '多账户，单一合同。', 'billing.societe.price': '定制报价',
-        'billing.societe.li1': '解锁全部卡牌', 'billing.societe.li2': '多账户、多店铺',
+        'billing.societe.li1': '解锁全部额外功能', 'billing.societe.li2': '多账户、多店铺',
         'billing.societe.li3': '专属合同与结算', 'billing.societe.li4': '专属服务支持',
         'billing.societe.ph.email': '你的邮箱', 'billing.societe.ph.message': '描述你的需求（店铺数量、业务量……）',
         'billing.societe.btn': '联系我们',
