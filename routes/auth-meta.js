@@ -40,6 +40,12 @@ const GRAPH_VERSION = "v23.0";
 // instagram_manage_messages (ancien nom) affiche "Prête pour le test",
 // alors qu'instagram_business_manage_messages n'affiche aucun statut. On
 // utilise donc l'ancien nommage, confirmé actif sur cette app.
+//
+// instagram_content_publish et instagram_manage_comments retirées le 22/08 :
+// Facebook rejette l'écran de consentement entier avec "Invalid Scopes" tant
+// qu'elles sont demandées — pas encore activées/validées pour cette app,
+// contrairement à instagram_manage_messages. À réintroduire seulement une
+// fois confirmées "Prête pour le test" dans Autorisations et fonctionnalités.
 const SCOPES = [
     "public_profile",
     "email",
@@ -53,8 +59,6 @@ const SCOPES = [
     "pages_manage_metadata",
     "pages_read_engagement",
     "instagram_basic",
-    "instagram_content_publish",
-    "instagram_manage_comments",
     "instagram_manage_messages",
 ].join(",");
 
