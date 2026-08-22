@@ -256,6 +256,23 @@
         <section class="qg-table-section" id="gmail-section" style="display:none;">
             <ul id="gmail-list" style="list-style:none;margin:0;padding:0;max-height:280px;overflow-y:auto;"></ul>
         </section>
+        <div class="qg-section-title" id="youtube-title" style="display:none;">
+            <i data-lucide="youtube"></i>
+            <span data-i18n="qg.section.youtube">YouTube</span>
+        </div>
+        <section class="qg-table-section" id="youtube-section" style="display:none;">
+            <div id="youtube-stats" style="display:flex;gap:14px;flex-wrap:wrap;padding:14px;"></div>
+            <div style="display:flex;gap:18px;flex-wrap:wrap;padding:0 14px 14px;">
+                <div style="flex:1;min-width:240px;">
+                    <p style="color:#999;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;" data-i18n="qg.youtube.videos">Dernières vidéos</p>
+                    <ul id="youtube-videos-list" style="list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto;"></ul>
+                </div>
+                <div style="flex:1;min-width:240px;">
+                    <p style="color:#999;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;" data-i18n="qg.youtube.comments">Derniers commentaires</p>
+                    <ul id="youtube-comments-list" style="list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto;"></ul>
+                </div>
+            </div>
+        </section>
         <div class="qg-section-title">
             <i data-lucide="shopping-bag"></i>
             <span data-i18n="qg.section.recentOrders">Dernières commandes</span>
@@ -386,6 +403,12 @@
             'qg.section.calendar': 'Calendrier des rendez-vous',
             'qg.section.emails': 'Derniers emails',
             'qg.emails.empty': 'Aucun email pour l\'instant.',
+            'qg.section.youtube': 'YouTube',
+            'qg.youtube.videos': 'Dernières vidéos',
+            'qg.youtube.comments': 'Derniers commentaires',
+            'qg.youtube.subs': 'Abonnés', 'qg.youtube.views': 'Vues', 'qg.youtube.videosCount': 'Vidéos',
+            'qg.youtube.emptyVideos': 'Aucune vidéo pour l\'instant.',
+            'qg.youtube.emptyComments': 'Aucun commentaire pour l\'instant.',
             'qg.table.client': 'Client', 'qg.table.phone': 'Téléphone', 'qg.table.product': 'Produit',
             'qg.table.total': 'Total', 'qg.table.status': 'Statut',
             'qg.loading': 'Chargement...',
@@ -429,6 +452,12 @@
             'qg.section.calendar': 'Appointments Calendar',
             'qg.section.emails': 'Recent Emails',
             'qg.emails.empty': 'No emails yet.',
+            'qg.section.youtube': 'YouTube',
+            'qg.youtube.videos': 'Latest videos',
+            'qg.youtube.comments': 'Recent comments',
+            'qg.youtube.subs': 'Subscribers', 'qg.youtube.views': 'Views', 'qg.youtube.videosCount': 'Videos',
+            'qg.youtube.emptyVideos': 'No videos yet.',
+            'qg.youtube.emptyComments': 'No comments yet.',
             'qg.table.client': 'Client', 'qg.table.phone': 'Phone', 'qg.table.product': 'Product',
             'qg.table.total': 'Total', 'qg.table.status': 'Status',
             'qg.loading': 'Loading...',
@@ -472,6 +501,12 @@
             'qg.section.calendar': 'تقويم المواعيد',
             'qg.section.emails': 'آخر الرسائل الإلكترونية',
             'qg.emails.empty': 'لا توجد رسائل إلكترونية بعد.',
+            'qg.section.youtube': 'يوتيوب',
+            'qg.youtube.videos': 'أحدث الفيديوهات',
+            'qg.youtube.comments': 'أحدث التعليقات',
+            'qg.youtube.subs': 'المشتركون', 'qg.youtube.views': 'المشاهدات', 'qg.youtube.videosCount': 'الفيديوهات',
+            'qg.youtube.emptyVideos': 'لا توجد فيديوهات بعد.',
+            'qg.youtube.emptyComments': 'لا توجد تعليقات بعد.',
             'qg.table.client': 'العميل', 'qg.table.phone': 'الهاتف', 'qg.table.product': 'المنتج',
             'qg.table.total': 'المجموع', 'qg.table.status': 'الحالة',
             'qg.loading': 'جاري التحميل...',
@@ -515,6 +550,12 @@
             'qg.section.calendar': '预约日历',
             'qg.section.emails': '最新邮件',
             'qg.emails.empty': '暂无邮件。',
+            'qg.section.youtube': 'YouTube',
+            'qg.youtube.videos': '最新视频',
+            'qg.youtube.comments': '最新评论',
+            'qg.youtube.subs': '订阅者', 'qg.youtube.views': '观看次数', 'qg.youtube.videosCount': '视频数',
+            'qg.youtube.emptyVideos': '暂无视频。',
+            'qg.youtube.emptyComments': '暂无评论。',
             'qg.table.client': '客户', 'qg.table.phone': '电话', 'qg.table.product': '产品',
             'qg.table.total': '总计', 'qg.table.status': '状态',
             'qg.loading': '加载中...',

@@ -296,6 +296,102 @@ async function uploadYoutubeVideo(workspaceId, { buffer, mimeType, title, descri
     }
 }
 
+// Résout une fois l'ID de la chaîne du marchand connecté — réutilisé par
+// les stats, les vidéos (playlist "uploads" liée à la chaîne) et les
+// commentaires (liés au channelId, pas à une vidéo précise).
+async function getMyChannel(token) {
+    const res = await axios.get("https://www.googleapis.com/youtube/v3/channels", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { part: "snippet,statistics,contentDetails", mine: true },
+    });
+    return res.data.items?.[0] || null;
+}
+
+// Abonnés, vues totales, nombre de vidéos — aperçu chiffré de la chaîne
+// affiché dans le QG.
+async function getYoutubeStats(workspaceId) {
+    const token = await getValidAccessToken(workspaceId);
+    if (!token) return { connected: false, stats: null };
+
+    try {
+        const channel = await getMyChannel(token);
+        if (!channel) return { connected: true, stats: null };
+        return {
+            connected: true,
+            stats: {
+                titre: channel.snippet?.title || "",
+                abonnes: channel.statistics?.subscriberCount || "0",
+                vues: channel.statistics?.viewCount || "0",
+                videos: channel.statistics?.videoCount || "0",
+            },
+        };
+    } catch (err) {
+        console.error("❌ google.getYoutubeStats :", err.response?.data || err.message);
+        return { connected: true, stats: null, error: true };
+    }
+}
+
+// Dernières vidéos publiées — lues depuis la playlist "uploads" liée à la
+// chaîne (contentDetails.relatedPlaylists.uploads), la façon standard de
+// lister les vidéos d'une chaîne sans avoir à les indexer nous-mêmes.
+async function listMyVideos(workspaceId, max = 8) {
+    const token = await getValidAccessToken(workspaceId);
+    if (!token) return { connected: false, videos: [] };
+
+    try {
+        const channel = await getMyChannel(token);
+        const uploadsId = channel?.contentDetails?.relatedPlaylists?.uploads;
+        if (!uploadsId) return { connected: true, videos: [] };
+
+        const res = await axios.get("https://www.googleapis.com/youtube/v3/playlistItems", {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { part: "snippet", playlistId: uploadsId, maxResults: max },
+        });
+        const videos = (res.data.items || []).map(v => ({
+            titre: v.snippet?.title || "",
+            date: v.snippet?.publishedAt || "",
+            videoId: v.snippet?.resourceId?.videoId || "",
+            lien: v.snippet?.resourceId?.videoId ? `https://youtube.com/watch?v=${v.snippet.resourceId.videoId}` : "",
+        }));
+        return { connected: true, videos };
+    } catch (err) {
+        console.error("❌ google.listMyVideos :", err.response?.data || err.message);
+        return { connected: true, videos: [], error: true };
+    }
+}
+
+// Derniers commentaires laissés sur les vidéos de la chaîne — pour que le
+// marchand puisse les voir sans quitter le QG.
+async function listRecentComments(workspaceId, max = 8) {
+    const token = await getValidAccessToken(workspaceId);
+    if (!token) return { connected: false, comments: [] };
+
+    try {
+        const channel = await getMyChannel(token);
+        if (!channel?.id) return { connected: true, comments: [] };
+
+        const res = await axios.get("https://www.googleapis.com/youtube/v3/commentThreads", {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { part: "snippet", allThreadsRelatedToChannelId: channel.id, order: "time", maxResults: max, textFormat: "plainText" },
+        });
+        const comments = (res.data.items || []).map(c => {
+            const top = c.snippet?.topLevelComment?.snippet;
+            return {
+                auteur: top?.authorDisplayName || "",
+                texte: top?.textDisplay || "",
+                date: top?.publishedAt || "",
+                videoId: c.snippet?.videoId || "",
+            };
+        });
+        return { connected: true, comments };
+    } catch (err) {
+        // Les commentaires peuvent être désactivés sur certaines chaînes/vidéos
+        // (commentsDisabled) — traité comme "aucun commentaire", pas une erreur.
+        console.error("❌ google.listRecentComments :", err.response?.data || err.message);
+        return { connected: true, comments: [] };
+    }
+}
+
 // ── Sheets ─────────────────────────────────────────────────────────────
 // Crée une nouvelle feuille Google Sheets et l'écrit en une passe — sert
 // aux rapports que Sami génère à la demande du marchand (ventes, stock...),
@@ -340,5 +436,8 @@ module.exports = {
     syncRdvToCalendar,
     listDriveFiles,
     uploadYoutubeVideo,
+    getYoutubeStats,
+    listMyVideos,
+    listRecentComments,
     creerRapportSheets,
 };

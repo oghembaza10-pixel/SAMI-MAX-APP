@@ -441,6 +441,30 @@ async function getEmails(workspaceId) {
     }
 }
 
+// ── YouTube (stats chaîne, dernières vidéos, derniers commentaires) ──
+// Même principe que getEmails : ne fait un vrai appel Google que si le
+// marchand a réellement connecté Google pour ce workspace.
+async function getYoutube(workspaceId) {
+    try {
+        const connecteur = await connectorService.getOne(workspaceId, "google");
+        if (!connecteur?.actif) return { stats: null, videos: [], comments: [] };
+
+        const [statsRes, videosRes, commentsRes] = await Promise.all([
+            google.getYoutubeStats(workspaceId),
+            google.listMyVideos(workspaceId, 6),
+            google.listRecentComments(workspaceId, 6),
+        ]);
+        return {
+            stats: statsRes.stats || null,
+            videos: videosRes.videos || [],
+            comments: commentsRes.comments || [],
+        };
+    } catch (err) {
+        console.error("❌ getYoutube :", err.message);
+        return { stats: null, videos: [], comments: [] };
+    }
+}
+
 // ── Activité récente (journal) — alimente le panneau temps réel du QG ──
 async function getJournal(workspaceId) {
     try {
@@ -521,6 +545,7 @@ async function buildProduitResponse(res, workspace, workspaceId, userId) {
     const journal = await getJournal(workspaceId);
     const grade = await getGrade(userId);
     const emails = await getEmails(workspaceId);
+    const youtube = await getYoutube(workspaceId);
 
     // Un métier "produit" (e-commerce...) peut quand même recevoir des
     // rendez-vous (consultation, retrait en boutique...) via le chat SAMII —
@@ -557,6 +582,7 @@ async function buildProduitResponse(res, workspace, workspaceId, userId) {
         grade,
         rendezVous,
         emails,
+        youtube,
     });
 }
 
@@ -608,6 +634,7 @@ async function buildRdvResponse(res, workspace, workspaceId, userId) {
     const journal = await getJournal(workspaceId);
     const grade = await getGrade(userId);
     const emails = await getEmails(workspaceId);
+    const youtube = await getYoutube(workspaceId);
 
     res.json({
         success: true,
@@ -625,6 +652,7 @@ async function buildRdvResponse(res, workspace, workspaceId, userId) {
         journal,
         grade,
         emails,
+        youtube,
     });
 }
 

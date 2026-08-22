@@ -124,6 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
         all:              { fr: 'Tout',                        en: 'All',                          ar: 'الكل',                       zh: '全部' },
         noActivity:       { fr: 'Aucune activité pour le moment', en: 'No activity for now',        ar: 'لا يوجد نشاط حاليًا',        zh: '暂无活动' },
         noAppointments:   { fr: 'Aucun rendez-vous pour le moment', en: 'No appointments for now',  ar: 'لا توجد مواعيد حاليًا',      zh: '暂无预约' },
+        youtubeSubs:        { fr: 'Abonnés', en: 'Subscribers', ar: 'المشتركون', zh: '订阅者' },
+        youtubeViews:       { fr: 'Vues', en: 'Views', ar: 'المشاهدات', zh: '观看次数' },
+        youtubeVideosCount: { fr: 'Vidéos', en: 'Videos', ar: 'الفيديوهات', zh: '视频数' },
+        youtubeEmptyVideos:   { fr: 'Aucune vidéo pour l\'instant.', en: 'No videos yet.', ar: 'لا توجد فيديوهات بعد.', zh: '暂无视频。' },
+        youtubeEmptyComments: { fr: 'Aucun commentaire pour l\'instant.', en: 'No comments yet.', ar: 'لا توجد تعليقات بعد.', zh: '暂无评论。' },
         noOrders:         { fr: 'Aucune commande pour le moment', en: 'No orders for now',          ar: 'لا توجد طلبات حاليًا',       zh: '暂无订单' },
         noClients:        { fr: 'Aucun client',                en: 'No clients',                    ar: 'لا يوجد عملاء',              zh: '暂无客户' },
         actionError:      { fr: "Erreur lors de l'action.",    en: 'An error occurred.',             ar: 'حدث خطأ أثناء تنفيذ الإجراء.', zh: '操作出错。' },
@@ -612,6 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appliquerModule(canalActif || '');
             renderActivite(data.journal);
             renderEmails(data.emails);
+            renderYoutube(data.youtube);
 
         } catch (err) {
             console.error('❌ QG data :', err.message);
@@ -662,6 +668,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="color:#aaa;font-size:.8rem;margin-top:4px;">${escapeHtml(e.extrait || '')}</div>
             </li>
         `).join('');
+    }
+
+    // Panneau YouTube (stats chaîne + dernières vidéos + derniers commentaires),
+    // affiché seulement si le marchand a connecté Google et qu'au moins une
+    // des trois sources renvoie quelque chose.
+    function renderYoutube(youtube) {
+        const title = document.getElementById('youtube-title');
+        const section = document.getElementById('youtube-section');
+        const statsEl = document.getElementById('youtube-stats');
+        const videosEl = document.getElementById('youtube-videos-list');
+        const commentsEl = document.getElementById('youtube-comments-list');
+        if (!title || !section || !statsEl || !videosEl || !commentsEl) return;
+
+        const hasData = youtube && (youtube.stats || (youtube.videos && youtube.videos.length) || (youtube.comments && youtube.comments.length));
+        if (!hasData) {
+            title.style.display = 'none';
+            section.style.display = 'none';
+            return;
+        }
+        title.style.display = '';
+        section.style.display = '';
+
+        if (youtube.stats) {
+            const s = youtube.stats;
+            statsEl.innerHTML = `
+                <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 16px;">
+                    <strong style="color:#d4af37;font-size:1.1rem;">${Number(s.abonnes).toLocaleString('fr-FR')}</strong>
+                    <div style="color:#999;font-size:.72rem;">${qm('youtubeSubs')}</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 16px;">
+                    <strong style="color:#d4af37;font-size:1.1rem;">${Number(s.vues).toLocaleString('fr-FR')}</strong>
+                    <div style="color:#999;font-size:.72rem;">${qm('youtubeViews')}</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 16px;">
+                    <strong style="color:#d4af37;font-size:1.1rem;">${Number(s.videos).toLocaleString('fr-FR')}</strong>
+                    <div style="color:#999;font-size:.72rem;">${qm('youtubeVideosCount')}</div>
+                </div>
+            `;
+        } else {
+            statsEl.innerHTML = '';
+        }
+
+        videosEl.innerHTML = (youtube.videos && youtube.videos.length)
+            ? youtube.videos.map(v => `
+                <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.82rem;">
+                    <a href="${escapeHtml(v.lien)}" target="_blank" rel="noopener" style="color:#ddd;text-decoration:none;">${escapeHtml(v.titre)}</a>
+                    <div style="color:#888;font-size:.72rem;margin-top:2px;">${v.date ? new Date(v.date).toLocaleDateString('fr-FR') : ''}</div>
+                </li>
+            `).join('')
+            : `<li style="padding:10px 0;color:#888;font-size:.82rem;">${qm('youtubeEmptyVideos')}</li>`;
+
+        commentsEl.innerHTML = (youtube.comments && youtube.comments.length)
+            ? youtube.comments.map(c => `
+                <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.82rem;">
+                    <strong style="color:#d4af37;">${escapeHtml(c.auteur)}</strong>
+                    <div style="color:#ccc;margin-top:2px;">${escapeHtml(c.texte)}</div>
+                </li>
+            `).join('')
+            : `<li style="padding:10px 0;color:#888;font-size:.82rem;">${qm('youtubeEmptyComments')}</li>`;
     }
 
     function dateValide(v) {
