@@ -100,7 +100,15 @@ async function registerWebhooks(shop, accessToken) {
             await axios.post(`https://${shop}/admin/api/2026-07/webhooks.json`, { webhook: { topic, address: `${APP_URL}/webhook`, format: "json" } }, { headers: { "X-Shopify-Access-Token": accessToken, "Content-Type": "application/json" } });
             console.log(`✅ Webhook enregistré : ${topic}`);
         } catch (err) {
-            console.warn(`⚠️ Webhook ${topic} :`, err.response?.data || err.message);
+            const dejaPresent = (err.response?.data?.errors?.address || []).some(m => m.includes("already been taken"));
+            if (dejaPresent) {
+                // Shopify n'autorise qu'un seul webhook par topic par app — sur
+                // une reconnexion, celui déjà enregistré (lors de la première
+                // connexion) est déjà actif, rien à refaire. Pas une erreur.
+                console.log(`ℹ️ Webhook déjà actif : ${topic}`);
+            } else {
+                console.warn(`⚠️ Webhook ${topic} :`, err.response?.data || err.message);
+            }
         }
     }
 
