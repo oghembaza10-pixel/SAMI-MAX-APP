@@ -611,6 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
             afficherGrade(data.grade?.actuel, data.grade?.score);
             appliquerModule(canalActif || '');
             renderActivite(data.journal);
+            renderEmails(data.emails);
 
         } catch (err) {
             console.error('❌ QG data :', err.message);
@@ -628,6 +629,37 @@ document.addEventListener('DOMContentLoaded', () => {
             <li style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.85rem;color:#ddd;">
                 <span style="color:#d4af37;">${new Date(j.created_at).toLocaleString('fr-FR')}</span>
                 — ${j.details || j.action || ''}
+            </li>
+        `).join('');
+    }
+
+    function escapeHtml(str) {
+        return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // Gmail n'est affiché que si le marchand a réellement connecté Google —
+    // le bouton "Gmail" existait déjà comme filtre de commandes (toujours
+    // vide, une commande n'arrive jamais par email), sans jamais montrer de
+    // vrais emails malgré une connexion Google active.
+    function renderEmails(emails) {
+        const section = document.getElementById('gmail-section');
+        const title   = document.getElementById('gmail-title');
+        const list    = document.getElementById('gmail-list');
+        if (!section || !title || !list) return;
+
+        if (!emails || emails.length === 0) {
+            section.style.display = 'none';
+            title.style.display   = 'none';
+            return;
+        }
+
+        section.style.display = '';
+        title.style.display   = '';
+        list.innerHTML = emails.map(e => `
+            <li style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.85rem;color:#ddd;">
+                <strong style="color:#d4af37;">${escapeHtml(e.sujet || '(sans objet)')}</strong>
+                <div style="color:#999;font-size:.78rem;margin-top:2px;">${escapeHtml(e.de || '')}</div>
+                <div style="color:#aaa;font-size:.8rem;margin-top:4px;">${escapeHtml(e.extrait || '')}</div>
             </li>
         `).join('');
     }

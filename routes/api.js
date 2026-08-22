@@ -16,6 +16,8 @@ const memoireUtilisateur = require("../services/memoireUtilisateur");
 const transcription = require("../services/transcription");
 const connaissances = require("../services/connaissances");
 const geminiService = require("../services/geminiService");
+const connectorService = require("../services/connectorService");
+const google = require("../services/google");
 
 // Notes vocales du chat QG : jamais plus de ~2 minutes d'audio en usage
 // normal, 10 Mo est très large pour ça (webm/opus compresse énormément).
@@ -420,6 +422,25 @@ async function getGrade(userId) {
     }
 }
 
+// ── Derniers emails Gmail — le bouton "Gmail" du QG ne filtrait jusqu'ici
+// que les commandes par source (toujours vide, une commande n'arrive
+// jamais par email) : aucune vraie boîte de réception n'était affichée,
+// malgré la connexion Google active. Vérifie d'abord que Google est bien
+// connecté pour ce workspace avant de faire un vrai appel Gmail (évite un
+// aller-retour API inutile à chaque chargement du QG pour un marchand qui
+// n'a pas connecté Google).
+async function getEmails(workspaceId) {
+    try {
+        const connecteur = await connectorService.getOne(workspaceId, "google");
+        if (!connecteur?.actif) return [];
+        const result = await google.listRecentEmails(workspaceId, 8);
+        return result.emails || [];
+    } catch (err) {
+        console.error("❌ getEmails :", err.message);
+        return [];
+    }
+}
+
 // ── Activité récente (journal) — alimente le panneau temps réel du QG ──
 async function getJournal(workspaceId) {
     try {
@@ -499,6 +520,7 @@ async function buildProduitResponse(res, workspace, workspaceId, userId) {
     const evolution = rev_moisP > 0 ? (((rev_mois - rev_moisP) / rev_moisP) * 100).toFixed(1) + "%" : "—";
     const journal = await getJournal(workspaceId);
     const grade = await getGrade(userId);
+    const emails = await getEmails(workspaceId);
 
     // Un métier "produit" (e-commerce...) peut quand même recevoir des
     // rendez-vous (consultation, retrait en boutique...) via le chat SAMII —
@@ -534,6 +556,7 @@ async function buildProduitResponse(res, workspace, workspaceId, userId) {
         journal,
         grade,
         rendezVous,
+        emails,
     });
 }
 
@@ -584,6 +607,7 @@ async function buildRdvResponse(res, workspace, workspaceId, userId) {
         : "—";
     const journal = await getJournal(workspaceId);
     const grade = await getGrade(userId);
+    const emails = await getEmails(workspaceId);
 
     res.json({
         success: true,
@@ -600,6 +624,7 @@ async function buildRdvResponse(res, workspace, workspaceId, userId) {
         clients: [],
         journal,
         grade,
+        emails,
     });
 }
 
