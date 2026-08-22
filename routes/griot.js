@@ -435,6 +435,7 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
     try {
         const { reseau, format, objectif, sujet, ton, type_creation, duree, nombre_variantes, moteur } = req.body;
         const moteurChoisi = ["wan", "h3"].includes(moteur) ? moteur : "runware";
+        console.log(`🔍 DEBUG Griot — moteur reçu du formulaire : "${moteur}" | moteur retenu : "${moteurChoisi}"`);
 
         if (!sujet || !sujet.trim()) {
             return res.json({ success: false, error: "Décris ton produit ou ton sujet." });
