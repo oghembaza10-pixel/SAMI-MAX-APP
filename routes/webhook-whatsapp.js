@@ -13,6 +13,7 @@ const db            = require("../services/db");
 const journalService = require("../services/journalService");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const transcription  = require("../services/transcription");
+const produitsService = require("../services/produitsService");
 
 const router = express.Router();
 
@@ -97,15 +98,6 @@ async function getMetierWorkspace(workspaceId) {
     } catch { return ""; }
 }
 
-async function getProduitsDuWorkspace(workspaceId) {
-    try {
-        return await db.query(
-            `SELECT id, nom, prix, options FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom`,
-            [workspaceId]
-        );
-    } catch { return []; }
-}
-
 router.post("/", async (req, res) => {
     res.sendStatus(200);
     try {
@@ -174,7 +166,7 @@ router.post("/", async (req, res) => {
         const conversation = session.history || [];
 
         const metier   = await getMetierWorkspace(workspaceId);
-        const produits = await getProduitsDuWorkspace(workspaceId);
+        const produits = await produitsService.getProduitsDuWorkspace(workspaceId);
 
         const geminiReply = await planner.ask(text, {
             source: "whatsapp", chatId: sender, name: senderName, audience: "client",

@@ -13,6 +13,7 @@ const memory = require("../brain/memory");
 const socketService = require("../services/socketService");
 const db = require("../services/db");
 const journalService = require("../services/journalService");
+const produitsService = require("../services/produitsService");
 const router = express.Router();
 
 const APP_ID = CONFIG.META.APP_ID;
@@ -86,15 +87,6 @@ async function getMetierWorkspace(workspaceId) {
         const rows = await db.query(`SELECT metier FROM workspaces WHERE id = $1`, [workspaceId]);
         return rows[0]?.metier || "";
     } catch { return ""; }
-}
-
-async function getProduitsDuWorkspace(workspaceId) {
-    try {
-        return await db.query(
-            `SELECT id, nom, prix, options FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom`,
-            [workspaceId]
-        );
-    } catch { return []; }
 }
 
 router.get("/webhook/meta", (req, res) => {
@@ -210,7 +202,7 @@ router.post("/webhook/meta", async (req, res) => {
                 const conversation = session.history || [];
 
                 const metier = await getMetierWorkspace(workspaceId);
-                const produits = await getProduitsDuWorkspace(workspaceId);
+                const produits = await produitsService.getProduitsDuWorkspace(workspaceId);
 
                 const geminiReply = await planner.ask(text, {
                     source: canal, chatId: senderId, name: senderId, audience: "client",
@@ -250,7 +242,7 @@ router.post("/webhook/meta", async (req, res) => {
                         });
 
                         const metier = await getMetierWorkspace(workspaceId);
-                        const produits = await getProduitsDuWorkspace(workspaceId);
+                        const produits = await produitsService.getProduitsDuWorkspace(workspaceId);
                         const reply = await planner.ask(value.message, {
                             source: "facebook_comment", chatId: value.comment_id,
                             name: value.sender_name || "client", audience: "client",
@@ -278,7 +270,7 @@ router.post("/webhook/meta", async (req, res) => {
                         });
 
                         const metier = await getMetierWorkspace(workspaceId);
-                        const produits = await getProduitsDuWorkspace(workspaceId);
+                        const produits = await produitsService.getProduitsDuWorkspace(workspaceId);
                         const reply = await planner.ask(value.text, {
                             source: "instagram_comment", chatId: value.id,
                             name: value.from?.username || "client", audience: "client",

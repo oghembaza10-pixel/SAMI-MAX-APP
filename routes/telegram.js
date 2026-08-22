@@ -12,6 +12,7 @@ const socketService = require("../services/socketService");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const telegramCommunity = require("../services/telegramCommunity");
 const transcription = require("../services/transcription");
+const produitsService = require("../services/produitsService");
 
 const router = express.Router();
 const TOKEN  = CONFIG.TELEGRAM.BOT_TOKEN;
@@ -199,15 +200,6 @@ async function getMetierWorkspace(workspaceId) {
     } catch { return ""; }
 }
 
-async function getProduitsDuWorkspace(workspaceId) {
-    try {
-        return await db.query(
-            `SELECT id, nom, prix, options FROM produits WHERE workspace_id = $1 AND actif = true ORDER BY nom`,
-            [workspaceId]
-        );
-    } catch { return []; }
-}
-
 // ── Traite une mise à jour Telegram, pour n'importe quel bot ──────────────
 async function handleUpdate(body, base, forcedWorkspaceId) {
     try {
@@ -347,7 +339,7 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
             if (!workspaceId) workspaceId = await getWorkspaceByChatId(chatId);
         }
         const metier   = await getMetierWorkspace(workspaceId);
-        const produits = workspaceId ? await getProduitsDuWorkspace(workspaceId) : [];
+        const produits = workspaceId ? await produitsService.getProduitsDuWorkspace(workspaceId) : [];
 
         const session      = await memory.get(memKey(chatId)) || {};
         const conversation = session.history || [];
