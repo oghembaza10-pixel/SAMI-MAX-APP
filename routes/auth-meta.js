@@ -413,6 +413,27 @@ router.get("/auth/meta/callback", requireAuth, async (req, res) => {
             pageAccessToken: page?.access_token || "",
             connectedAt: new Date().toISOString(),
         });
+
+        // Sans cet appel, la Page ne pousse JAMAIS d'événement vers notre
+        // webhook (POST /webhook/meta) même si l'app a la permission et le
+        // webhook produit est configuré côté Meta — l'abonnement se fait
+        // Page par Page, pas au niveau de l'app. C'est ce qui manquait pour
+        // que la réponse auto Messenger/Instagram/commentaires se déclenche
+        // réellement après une connexion.
+        if (page?.id && page?.access_token) {
+            try {
+                await axios.post(`https://graph.facebook.com/${GRAPH_VERSION}/${page.id}/subscribed_apps`, null, {
+                    params: {
+                        subscribed_fields: "messages,messaging_postbacks,feed",
+                        access_token: page.access_token,
+                    },
+                });
+                console.log(`✅ Page ${page.id} abonnée au webhook Meta (workspace ${workspaceId})`);
+            } catch (subErr) {
+                console.error("❌ Abonnement subscribed_apps :", subErr.response?.data?.error?.message || subErr.message);
+            }
+        }
+
         if (igAccountId) {
             await connectorService.save(workspaceId, "instagram", {
                 igAccountId,
