@@ -86,7 +86,7 @@ router.get("/", requireAuth, async (req, res) => {
         <button class="bill-btn bill-btn--regulariser" id="regulariser-confirm">Régulariser →</button>
     </div>` : "";
     const dailyNote = (plan) => `<p class="bill-daily-note">≈ ${confirmationsQuota.QUOTA_PAR_PALIER[plan]}/jour</p>`;
-    const griotNote = `<p class="bill-daily-note" data-i18n="billing.griot.note">🎨 Génération IA (Griot) : 0,20 $/seconde</p>`;
+    const griotNote = `<p class="bill-daily-note" data-i18n="billing.griot.note">🎨 Génération IA (Griot) : 0,80 $/seconde</p>`;
 
     // Prix affiché toujours converti depuis le prix de référence en USD, dans
     // la devise du marchand (marché parallèle pour le DZD, marché réel pour
@@ -352,7 +352,7 @@ const I18N = {
         'billing.pro.li4': '3 cartes premium offertes chaque mois',
         'billing.pro.li5': 'Support prioritaire',
         'billing.pro.li6': '150 messages SAMII toutes les 7h (+0,12 $/message au-delà)',
-        'billing.griot.note': '🎨 Génération IA (Griot) : 0,20 $/seconde',
+        'billing.griot.note': '🎨 Génération IA (Griot) : 0,80 $/seconde',
         'billing.bientot.label': '🔜 Bientôt disponible',
         'billing.bientot.meta': 'Pubs Meta + réponses automatiques Messenger/Instagram',
         'billing.step1': 'Découvre les paliers', 'billing.step1b': 'Découvre',
@@ -404,7 +404,7 @@ const I18N = {
         'billing.pro.li4': '3 premium cards granted every month',
         'billing.pro.li5': 'Priority support',
         'billing.pro.li6': '150 SAMII messages every 7h (+$0.12/message beyond)',
-        'billing.griot.note': '🎨 AI generation (Griot): $0.20/second',
+        'billing.griot.note': '🎨 AI generation (Griot): $0.80/second',
         'billing.bientot.label': '🔜 Coming soon',
         'billing.bientot.meta': 'Meta ads + automatic Messenger/Instagram replies',
         'billing.step1': 'Discover the tiers', 'billing.step1b': 'Discover',
@@ -456,7 +456,7 @@ const I18N = {
         'billing.pro.li4': '3 بطاقات مميزة مجانًا كل شهر',
         'billing.pro.li5': 'دعم ذو أولوية',
         'billing.pro.li6': '150 رسالة SAMII كل 7 ساعات (+0.12$ لكل رسالة إضافية)',
-        'billing.griot.note': '🎨 توليد بالذكاء الاصطناعي (Griot): 0.20$/ثانية',
+        'billing.griot.note': '🎨 توليد بالذكاء الاصطناعي (Griot): 0.80$/ثانية',
         'billing.bientot.label': '🔜 قريبًا',
         'billing.bientot.meta': 'إعلانات Meta + ردود تلقائية على Messenger/Instagram',
         'billing.step1': 'اكتشف الباقات', 'billing.step1b': 'اكتشف',
@@ -508,7 +508,7 @@ const I18N = {
         'billing.pro.li4': '每月赠送3张高级卡牌',
         'billing.pro.li5': '优先支持',
         'billing.pro.li6': '每7小时150条 SAMII 消息（超出部分每条+0.12$）',
-        'billing.griot.note': '🎨 AI生成（Griot）：0.20$/秒',
+        'billing.griot.note': '🎨 AI生成（Griot）：0.80$/秒',
         'billing.bientot.label': '🔜 即将推出',
         'billing.bientot.meta': 'Meta 广告 + Messenger/Instagram 自动回复',
         'billing.step1': '了解各档位', 'billing.step1b': '了解',

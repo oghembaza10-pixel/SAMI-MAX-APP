@@ -25,8 +25,8 @@ async function genererLienRenouvellement(workspaceId, plan) {
     // Chargily/CCP n'ont pas de prélèvement automatique (voir en-tête du
     // fichier) — les dépassements de quota confirmations (services/
     // confirmationsQuota.js), messages (services/samiiQuota.js) et le coût
-    // de génération Griot (services/griotCoutService.js, 0,20$/seconde, pas
-    // de volume gratuit) ne peuvent donc pas être débités en temps réel :
+    // de génération Griot (services/griotCoutService.js, tarif par moteur,
+    // pas de volume gratuit) ne peuvent donc pas être débités en temps réel :
     // ajoutés ici, une fois, au montant du prochain renouvellement.
     const etatQuota = await confirmationsQuota.getEtatQuota(workspaceId, plan);
     const depassementMessages = await samiiQuota.getDepassementMessagesMois(workspaceId);

@@ -247,7 +247,7 @@ router.get("/", requireAuth, async (req, res) => {
 
             <label>Moteur de génération</label>
             <select name="moteur" id="select-moteur">
-                <option value="runware">Runware — standard (0,20$/s)</option>
+                <option value="runware">Runware — standard (0,80$/s)</option>
                 <option value="wan">WAN 2.6 (Alibaba) — rapide, sans son (0,48$/s)</option>
                 <option value="h3">H3 (MiniMax) — vidéo + son natif (0,78$/s)</option>
             </select>

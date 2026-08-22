@@ -10,7 +10,7 @@
 //
 // Trois moteurs possibles (le client choisit sur /samii/griot selon son
 // besoin) :
-// - Runware : tarif client fixe déjà en place, inchangé.
+// - Runware : tarif client fixe.
 // - WAN 2.6 (Alibaba, via OpenRouter) et H3 (MiniMax, via OpenRouter) :
 //   nouveaux moteurs — prix client = 6x le prix payé au fournisseur
 //   (OpenRouter), marge fixe demandée. Le prix H3 (0,13$/s) est confirmé
@@ -19,7 +19,7 @@
 //   OpenRouter réelle dès le premier appel — à ajuster ici si différent.
 const db = require("../services/db");
 
-const PRIX_PAR_SECONDE_USD = 0.2; // Runware — tarif client historique, inchangé
+const PRIX_PAR_SECONDE_USD = 0.8; // Runware — tarif client
 
 const MOTEURS = {
     runware: { label: "Runware", prixClientParSeconde: PRIX_PAR_SECONDE_USD },
