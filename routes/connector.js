@@ -6,6 +6,7 @@ const axios            = require("axios");
 const router           = express.Router();
 const connectorService = require("../services/connectorService");
 const workspaceService = require("../services/workspaceService");
+const db                = require("../services/db");
 const CONFIG            = require("../config");
 
 function requireAuth(req, res, next) {
@@ -53,11 +54,20 @@ router.get("/tools", requireAuth, async (req, res) => {
         const workspace = await workspaceService.getById(workspaceId);
         if (!workspace) return res.redirect("/hub");
         const connecteurs = await connectorService.getByWorkspace(workspaceId);
+        // La vraie connexion Shopify (routes/auth-shopify.js, installation de
+        // l'app via OAuth) écrit directement sur workspaces.shopify_shop_url —
+        // jamais dans `connecteurs`, contrairement à toutes les autres cartes
+        // de cette page. Sans ça, la carte Shopify affichait "non connecté"
+        // même quand la boutique était réellement connectée et recevait des
+        // commandes (le badge se basait uniquement sur `connecteurs`).
+        const shopifyRows = await db.query(`SELECT shopify_shop_url FROM workspaces WHERE id = $1`, [workspaceId]);
+        const shopifyShopUrl = shopifyRows[0]?.shopify_shop_url || "";
         res.render("connect-tools", {
             workspaceId,
             nom: workspace.nom || "",
             tools: TOOLS,
             connecteurs,
+            shopifyShopUrl,
             error: null,
             from: req.query.from || "qg",
         });

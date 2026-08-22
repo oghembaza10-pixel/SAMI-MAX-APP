@@ -121,8 +121,15 @@
 
                 <% tools.forEach(tool => {
                     const connector  = connecteurs.find(c => c.type === tool.id);
-                    const isConnected = connector && connector.actif;
-                %> 
+                    // Shopify se connecte aussi via l'installation OAuth de l'app
+                    // (routes/auth-shopify.js), qui n'écrit jamais dans `connecteurs`
+                    // mais directement sur workspaces.shopify_shop_url — sans ce
+                    // second cas, la carte affichait "non connecté" pour une
+                    // boutique pourtant bien connectée et recevant des commandes.
+                    const isConnected = tool.id === 'shopify'
+                        ? (!!(connector && connector.actif) || !!shopifyShopUrl)
+                        : (connector && connector.actif);
+                %>
                 <div class="connect-tool-card <%= isConnected ? 'connected' : '' %> <%= !tool.available ? 'soon' : '' %>"
                      id="card-<%= tool.id %>"
                      data-tool="<%= tool.id %>"
@@ -157,7 +164,7 @@
                         <% } else if (tool.id === 'shopify') { %>
                             <% if (isConnected) { %>
                                 <p class="connect-tool-card__connected-info">
-                                    🟢 <%= connector.config?.shop || 'Boutique connectée' %>
+                                    🟢 <%= connector?.config?.shop || shopifyShopUrl || 'Boutique connectée' %>
                                 </p>
                                 <button class="connect-btn connect-btn--disconnect"
                                         data-tool="shopify" data-action="disconnect" data-i18n="connectTools.disconnect">
