@@ -131,7 +131,7 @@ async function linkClientToWorkspace(chatId, workspaceId) {
     try {
         const existing = await db.query(
             `SELECT id FROM connecteurs WHERE type = 'telegram_client' AND config LIKE $1`,
-            [`%${chatId}%`]
+            [`%"chatId":"${chatId}"%`]
         );
         if (existing.length > 0) return;
         await db.query(
@@ -168,9 +168,14 @@ async function linkMerchantToWorkspace(chatId, workspaceId) {
 
 async function getClientWorkspace(chatId) {
     try {
+        // Correspondance exacte sur la clé JSON "chatId" — un LIKE brut sur le
+        // chatId matchait aussi n'importe quel autre chatId qui le contient
+        // comme sous-chaîne (ex: "12345" matchait aussi "112345"), ce qui
+        // pouvait relier un client/marchand à la mauvaise boutique dès qu'il
+        // existait plusieurs connecteurs Telegram en base.
         const rows = await db.query(
-            `SELECT workspace_id FROM connecteurs WHERE type = 'telegram_client' AND config LIKE $1`,
-            [`%${chatId}%`]
+            `SELECT workspace_id FROM connecteurs WHERE type = 'telegram_client' AND config LIKE $1 ORDER BY id DESC LIMIT 1`,
+            [`%"chatId":"${chatId}"%`]
         );
         return rows[0]?.workspace_id || "";
     } catch { return ""; }
@@ -179,8 +184,8 @@ async function getClientWorkspace(chatId) {
 async function getWorkspaceByChatId(chatId) {
     try {
         const rows = await db.query(
-            `SELECT workspace_id FROM connecteurs WHERE type = 'telegram' AND actif = true AND config LIKE $1`,
-            [`%${chatId}%`]
+            `SELECT workspace_id FROM connecteurs WHERE type = 'telegram' AND actif = true AND config LIKE $1 ORDER BY id DESC LIMIT 1`,
+            [`%"chatId":"${chatId}"%`]
         );
         return rows[0]?.workspace_id || "";
     } catch { return ""; }
