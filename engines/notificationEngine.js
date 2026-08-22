@@ -137,4 +137,5 @@ module.exports = {
     whatsapp,
     email,
     meta,
+    getCoords,
 };
