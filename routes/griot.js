@@ -354,7 +354,7 @@ function renderPack(data) {
         const peutPublierPhoto = reseauPhoto === 'facebook' || reseauPhoto === 'instagram';
         let photoHtml = '<div><img src="' + data.photoOriginale + '" style="width:100%;border-radius:8px;" alt="Ta photo">';
         if (peutPublierPhoto) {
-            photoHtml += '<button type="button" class="griot-publish-btn" onclick="publierSurReseau(' + JSON.stringify(data.photoOriginale) + ')">📤 Publier ta photo (sans IA) sur ' + (reseauPhoto === 'instagram' ? 'Instagram' : 'Facebook') + '</button>';
+            photoHtml += '<button type="button" class="griot-publish-btn" onclick=\\'publierSurReseau(' + JSON.stringify(data.photoOriginale) + ')\\'>📤 Publier ta photo (sans IA) sur ' + (reseauPhoto === 'instagram' ? 'Instagram' : 'Facebook') + '</button>';
         }
         photoHtml += '</div>';
         html += block('image', 'Ta photo, prête à publier avec le texte ci-dessus', photoHtml);
@@ -371,7 +371,7 @@ function renderPack(data) {
                     + '<button type="button" class="griot-publish-btn" onclick=\\'publierSurReseau(' + JSON.stringify(url) + ', ' + JSON.stringify('youtube') + ')\\'>📤 Publier maintenant sur YouTube</button></div>';
             } else {
                 const publierBtn = peutPublier
-                    ? '<button type="button" class="griot-publish-btn" onclick="publierSurReseau(' + JSON.stringify(url) + ')">📤 Publier maintenant sur ' + (reseauActuel === 'instagram' ? 'Instagram' : 'Facebook') + '</button>'
+                    ? '<button type="button" class="griot-publish-btn" onclick=\\'publierSurReseau(' + JSON.stringify(url) + ')\\'>📤 Publier maintenant sur ' + (reseauActuel === 'instagram' ? 'Instagram' : 'Facebook') + '</button>'
                     : '';
                 mediaHtml += '<div><p style="font-size:.75rem;color:var(--gold-og);margin-bottom:4px;">Variante image #' + (idx + 1) + '</p>'
                     + '<img src="' + url + '" style="width:100%;border-radius:8px;" alt="Généré par Runware">' + publierBtn + '</div>';
