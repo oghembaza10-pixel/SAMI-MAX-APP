@@ -5,6 +5,7 @@ const express = require("express");
 const axios   = require("axios");
 const router  = express.Router();
 const db             = require("../services/db");
+const journalService = require("../services/journalService");
 const socketService  = require("../services/socketService");
 
 const APP_URL = "https://samii.souverain-store.com";
@@ -72,10 +73,7 @@ router.post("/webhook/woocommerce", express.json(), async (req, res) => {
             [orderId, workspaceId, client, phone, address, produits, montant]
         );
 
-        await db.query(
-            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-            ["order.created.woocommerce", `#${order.number} — ${client}`, workspaceId]
-        );
+        await journalService.log({ action: "order.created.woocommerce", details: `#${order.number} — ${client}`, workspaceId });
 
         socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
 

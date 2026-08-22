@@ -5,6 +5,7 @@
 // ce que "passer au palier standard/pro" veut dire concrètement.
 // ==========================================================================
 const db = require("./db");
+const journalService = require("./journalService");
 const workspaceService = require("./workspaceService");
 
 const PLAN_GRANTS = {
@@ -41,10 +42,7 @@ async function activerPalier(workspaceId, plan) {
 
 async function retrograderVersFree(workspaceId) {
     await db.query(`UPDATE workspaces SET palier_abonnement = 'free' WHERE id = $1`, [workspaceId]);
-    await db.query(
-        `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-        ["abonnement.expire", "Palier repassé à free (pas de renouvellement dans le délai de grâce)", workspaceId]
-    );
+    await journalService.log({ action: "abonnement.expire", details: "Palier repassé à free (pas de renouvellement dans le délai de grâce)", workspaceId });
 }
 
 module.exports = { activerPalier, retrograderVersFree, PLAN_GRANTS, DUREE_JOURS };

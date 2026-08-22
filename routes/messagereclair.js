@@ -4,6 +4,7 @@
 const express = require("express");
 const router  = express.Router();
 const db = require("../services/db");
+const journalService = require("../services/journalService");
 const workspaceService = require("../services/workspaceService");
 const notificationEngine = require("../engines/notificationEngine");
 const socketService = require("../services/socketService");
@@ -196,10 +197,7 @@ router.post("/activer", requireAuth, async (req, res) => {
 
         const { telephone } = rows[0];
 
-        await db.query(
-            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-            ["tracking.activated", `Suivi activé pour #${commandeId} (${transporteur} — ${numero})`, workspaceId]
-        );
+        await journalService.log({ action: "tracking.activated", details: `Suivi activé pour #${commandeId} (${transporteur} — ${numero})`, workspaceId });
 
         if (telephone) {
             notificationEngine.send({

@@ -11,6 +11,7 @@ const socketService = require("./socketService");
 const notify = require("./notify");
 const { CARTES } = require("../config/cartes-catalog");
 const abonnementService = require("./abonnementService");
+const journalService = require("./journalService");
 // Les 33 lois de l'Arsenal partagent la même table cartes_achats (voir
 // routes/arsenal.js) — nécessaire ici pour retrouver leur durée exacte.
 const ARSENAL_CARDS = require("../routes/arsenal").CARDS;
@@ -35,10 +36,7 @@ async function confirmChargilyPayment(checkoutId) {
     if (!rows[0]) return { updated: false, orderId };
 
     const workspaceId = rows[0].workspace_id;
-    await db.query(
-        `INSERT INTO journal (action, details, workspace_id, montant, ref_id) VALUES ($1, $2, $3, $4, $5)`,
-        ["order.paid.chargily", `#${orderId} payée via Chargily (${checkoutId})`, workspaceId, checkout.amount || null, orderId]
-    );
+    await journalService.log({ action: "order.paid.chargily", details: `#${orderId} payée via Chargily (${checkoutId})`, workspaceId, montant: checkout.amount || null, refId: orderId });
     socketService.emitToShop(workspaceId, "commande-payee", { id: orderId });
     notify.notifyWorkspace(workspaceId, {
         title: "💳 Paiement reçu",
@@ -73,10 +71,7 @@ async function confirmChargilyCartePurchase(checkoutId) {
 
     if (!rows[0]) return { updated: false };
 
-    await db.query(
-        `INSERT INTO journal (action, details, workspace_id, montant, ref_id) VALUES ($1, $2, $3, $4, $5)`,
-        ["carte.achetee", `Carte "${carteId}" débloquée ${dureeJours} jours via Chargily (${checkoutId})`, workspaceId, checkout.amount || null, carteId]
-    );
+    await journalService.log({ action: "carte.achetee", details: `Carte "${carteId}" débloquée ${dureeJours} jours via Chargily (${checkoutId})`, workspaceId, montant: checkout.amount || null, refId: carteId });
     socketService.emitToShop(workspaceId, "carte-debloquee", { carteId, expireLe });
     notify.notifyWorkspace(workspaceId, {
         title: "🔓 Carte débloquée",
@@ -112,10 +107,7 @@ async function confirmChargilyAbonnement(checkoutId) {
 
     await abonnementService.activerPalier(workspaceId, plan);
 
-    await db.query(
-        `INSERT INTO journal (action, details, workspace_id, montant, ref_id) VALUES ($1, $2, $3, $4, $5)`,
-        ["abonnement.paye", `Abonnement "${plan}" activé 30 jours via Chargily (${checkoutId})`, workspaceId, checkout.amount || null, plan]
-    );
+    await journalService.log({ action: "abonnement.paye", details: `Abonnement "${plan}" activé 30 jours via Chargily (${checkoutId})`, workspaceId, montant: checkout.amount || null, refId: plan });
     socketService.emitToShop(workspaceId, "abonnement-active", { plan, expireLe });
     notify.notifyWorkspace(workspaceId, {
         title: "👑 Abonnement activé",
@@ -163,10 +155,7 @@ async function confirmCcpAbonnement(abonnementId) {
         }
     }
 
-    await db.query(
-        `INSERT INTO journal (action, details, workspace_id, ref_id) VALUES ($1, $2, $3, $4)`,
-        ["abonnement.paye", `Abonnement "${plan}" activé 30 jours via CCP (confirmé manuellement)`, workspaceId, plan]
-    );
+    await journalService.log({ action: "abonnement.paye", details: `Abonnement "${plan}" activé 30 jours via CCP (confirmé manuellement)`, workspaceId, refId: plan });
     socketService.emitToShop(workspaceId, "abonnement-active", { plan, expireLe });
     notify.notifyWorkspace(workspaceId, {
         title: "👑 Abonnement activé",

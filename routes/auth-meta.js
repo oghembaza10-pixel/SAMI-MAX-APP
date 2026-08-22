@@ -12,6 +12,7 @@ const planner = require("../brain/planner");
 const memory = require("../brain/memory");
 const socketService = require("../services/socketService");
 const db = require("../services/db");
+const journalService = require("../services/journalService");
 const router = express.Router();
 
 const APP_ID = CONFIG.META.APP_ID;
@@ -138,10 +139,7 @@ router.post("/webhook/meta", async (req, res) => {
 
                         console.log(`💬 WhatsApp Cloud [${senderName}] (workspace ${workspaceId}) : ${text}`);
 
-                        await db.query(
-                            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                            ["whatsapp.message", `${senderName}: ${text}`, workspaceId]
-                        );
+                        await journalService.log({ action: "whatsapp.message", details: `${senderName}: ${text}`, workspaceId });
 
                         try {
                             await orchestrator.process({
@@ -193,10 +191,7 @@ router.post("/webhook/meta", async (req, res) => {
 
                 console.log(`💬 ${canal} [${senderId}] (workspace ${workspaceId}) : ${text}`);
 
-                await db.query(
-                    `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                    [`${canal}.message`, `${senderId}: ${text}`, workspaceId]
-                );
+                await journalService.log({ action: `${canal}.message`, details: `${senderId}: ${text}`, workspaceId });
 
                 try {
                     await orchestrator.process({
@@ -248,10 +243,7 @@ router.post("/webhook/meta", async (req, res) => {
 
                         console.log(`💬 [commentaire FB] workspace ${workspaceId} : ${value.message}`);
 
-                        await db.query(
-                            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                            ["facebook.comment", `${value.sender_name || value.sender_id}: ${value.message}`, workspaceId]
-                        );
+                        await journalService.log({ action: "facebook.comment", details: `${value.sender_name || value.sender_id}: ${value.message}`, workspaceId });
                         socketService.emitToShop(workspaceId, "facebook.comment", {
                             senderId: value.sender_id, senderName: value.sender_name,
                             message: value.message, postId: value.post_id,
@@ -279,10 +271,7 @@ router.post("/webhook/meta", async (req, res) => {
 
                         console.log(`💬 [commentaire IG] workspace ${workspaceId} : ${value.text}`);
 
-                        await db.query(
-                            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                            ["instagram.comment", `${value.from?.username || value.from?.id}: ${value.text}`, workspaceId]
-                        );
+                        await journalService.log({ action: "instagram.comment", details: `${value.from?.username || value.from?.id}: ${value.text}`, workspaceId });
                         socketService.emitToShop(workspaceId, "instagram.comment", {
                             senderId: value.from?.id, senderName: value.from?.username,
                             message: value.text, mediaId: value.media?.id,
@@ -310,10 +299,7 @@ router.post("/webhook/meta", async (req, res) => {
                         if (!connecteur) continue;
                         const { workspaceId } = connecteur;
 
-                        await db.query(
-                            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                            ["facebook.review", `${value.reviewer_name || value.reviewer_id} (${value.rating ?? "?"}/5) : ${value.review_text || ""}`, workspaceId]
-                        );
+                        await journalService.log({ action: "facebook.review", details: `${value.reviewer_name || value.reviewer_id} (${value.rating ?? "?"}/5) : ${value.review_text || ""}`, workspaceId });
                         socketService.emitToShop(workspaceId, "facebook.review", {
                             reviewerName: value.reviewer_name, rating: value.rating, text: value.review_text,
                         });

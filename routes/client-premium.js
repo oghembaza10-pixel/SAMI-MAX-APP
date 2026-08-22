@@ -6,6 +6,7 @@ const router  = express.Router();
 const stripe  = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const CONFIG  = require("../config");
 const db      = require("../services/db");
+const journalService = require("../services/journalService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -314,10 +315,7 @@ router.post("/ccp", requireAuth, async (req, res) => {
         // Pas de file d'attente admin dédiée pour ce palier individuel (contrairement
         // aux abonnements marchand — voir routes/admin.js) : au minimum, la demande
         // reste visible dans le journal plutôt que de s'évaporer silencieusement.
-        await db.query(
-            `INSERT INTO journal (action, details) VALUES ($1, $2)`,
-            ["premium.ccp.demande", `Demande CCP Premium — utilisateur ${userId} — preuve: ${preuve || "aucune"}`]
-        ).catch(() => {});
+        await journalService.log({ action: "premium.ccp.demande", details: `Demande CCP Premium — utilisateur ${userId} — preuve: ${preuve || "aucune"}` });
 
         res.json({ success: true });
     } catch (err) {

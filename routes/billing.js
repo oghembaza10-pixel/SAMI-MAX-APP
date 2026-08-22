@@ -10,6 +10,7 @@ const express = require("express");
 const router   = express.Router();
 const workspaceService = require("../services/workspaceService");
 const db = require("../services/db");
+const journalService = require("../services/journalService");
 const referralService = require("../services/referralService");
 const abonnementService = require("../services/abonnementService");
 const devises = require("../services/devises");
@@ -665,10 +666,7 @@ router.post("/contact-societe", requireAuth, async (req, res) => {
         const { email, message } = req.body;
         if (!email || !/^\S+@\S+\.\S+$/.test(email)) return res.json({ success: false, error: "Email invalide." });
 
-        await db.query(
-            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-            ["abonnement.demande.societe", `Demande de contrat Société — ${email} — ${(message || "").trim()}`, req.session.workspaceId]
-        );
+        await journalService.log({ action: "abonnement.demande.societe", details: `Demande de contrat Société — ${email} — ${(message || "").trim()}`, workspaceId: req.session.workspaceId });
 
         gmail.send({
             to: ADMIN_EMAIL,
@@ -786,10 +784,7 @@ router.post("/ccp-request", requireAuth, async (req, res) => {
         const workspaceId = req.session.workspaceId;
         const montantDzd = Math.round(devises.depuisUSD(PRIX_AFFICHE[plan], "DZD"));
 
-        await db.query(
-            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-            ["abonnement.demande.ccp", `Demande d'activation ${plan} par virement CCP`, workspaceId]
-        );
+        await journalService.log({ action: "abonnement.demande.ccp", details: `Demande d'activation ${plan} par virement CCP`, workspaceId });
         // Ligne "en attente" que l'équipe confirme d'un clic dans le Centre de
         // contrôle une fois le virement CCP vérifié (pas d'API Algérie Poste).
         await db.query(

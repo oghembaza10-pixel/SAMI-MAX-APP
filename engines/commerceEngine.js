@@ -12,6 +12,7 @@ const db = require("../services/db");
 const notify = require("../services/notify");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const geminiService = require("../services/geminiService");
+const journalService = require("../services/journalService");
 // require() tardif de services/shopify.js et routes/auth-shopify.js (dans
 // abandonedCheckout ci-dessous) : services/shopify.js requiert lui-même
 // brain/orchestrator, qui requiert ce fichier — même cycle que pour
@@ -357,10 +358,7 @@ class CommerceEngine {
             const { orderId } = event.payload;
             const rows = await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1 RETURNING workspace_id`, [orderId]);
             if (rows[0]?.workspace_id) confirmationsQuota.enregistrerSiDepassement(rows[0].workspace_id).catch(() => {});
-            await db.query(
-                `INSERT INTO journal (action, details, ref_id) VALUES ($1, $2, $3)`,
-                ["order.confirmed.telegram", `#${orderId} confirmée via Telegram`, orderId]
-            );
+            await journalService.log({ action: "order.confirmed.telegram", details: `#${orderId} confirmée via Telegram`, refId: orderId });
             return { success: true, orderId };
         } catch (err) {
             console.error("❌ CommerceEngine.confirmTelegramOrder :", err.message);
@@ -375,10 +373,7 @@ class CommerceEngine {
         try {
             const { orderId } = event.payload;
             await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [orderId]);
-            await db.query(
-                `INSERT INTO journal (action, details, ref_id) VALUES ($1, $2, $3)`,
-                ["order.cancelled.telegram", `#${orderId} annulée via Telegram`, orderId]
-            );
+            await journalService.log({ action: "order.cancelled.telegram", details: `#${orderId} annulée via Telegram`, refId: orderId });
             return { success: true, orderId };
         } catch (err) {
             console.error("❌ CommerceEngine.cancelTelegramOrder :", err.message);
@@ -414,10 +409,7 @@ class CommerceEngine {
                  VALUES ($1, $2, $3, $4, $5, $6, 'en attente', $7, $8, $9)`,
                 [orderId, workspaceId, name || "Client", args.telephone || "", args.adresse || "", args.produit || "", source || "chat", montant, chatId ? String(chatId) : null]
             );
-            await db.query(
-                `INSERT INTO journal (action, details, workspace_id, montant, ref_id) VALUES ($1, $2, $3, $4, $5)`,
-                [`order.created.${source || "chat"}`, `#${orderId} — ${name || "Client"}`, workspaceId, montant, orderId]
-            );
+            await journalService.log({ action: `order.created.${source || "chat"}`, details: `#${orderId} — ${name || "Client"}`, workspaceId, montant, refId: orderId });
             socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
             notify.notifyWorkspace(workspaceId, {
                 title: "🛒 Nouvelle commande",
@@ -467,10 +459,7 @@ class CommerceEngine {
                 [workspaceId, name || "Client", args.telephone || "", motif, dateParsee, source || "chat"]
             );
             const rdvId = `RDV-${rows[0].id}`;
-            await db.query(
-                `INSERT INTO journal (action, details, workspace_id, ref_id) VALUES ($1, $2, $3, $4)`,
-                [`rdv.created.${source || "chat"}`, `#${rdvId} — ${name || "Client"}`, workspaceId, rdvId]
-            );
+            await journalService.log({ action: `rdv.created.${source || "chat"}`, details: `#${rdvId} — ${name || "Client"}`, workspaceId, refId: rdvId });
             socketService.emitToShop(workspaceId, "nouveau-rdv", { id: rdvId });
             notify.notifyWorkspace(workspaceId, {
                 title: "📅 Nouveau rendez-vous",
@@ -612,10 +601,7 @@ class CommerceEngine {
             if (!rdv) return null;
             const rdvId = `RDV-${rdv.id}`;
 
-            await db.query(
-                `INSERT INTO journal (action, details, workspace_id, ref_id) VALUES ($1, $2, $3, $4)`,
-                [`rdv.created.telegram`, `#${rdvId} — ${rdv.client_nom}`, rdv.workspace_id, rdvId]
-            );
+            await journalService.log({ action: "rdv.created.telegram", details: `#${rdvId} — ${rdv.client_nom}`, workspaceId: rdv.workspace_id, refId: rdvId });
             socketService.emitToShop(rdv.workspace_id, "nouveau-rdv", { id: rdvId });
             notify.notifyWorkspace(rdv.workspace_id, {
                 title: "📅 Nouveau rendez-vous",

@@ -7,6 +7,7 @@ const express = require("express");
 const crypto = require("crypto");
 const router = express.Router();
 const db = require("../services/db");
+const journalService = require("../services/journalService");
 const gradeService = require("../services/gradeService");
 const chargily = require("../services/chargily");
 const { confirmChargilyPayment } = require("../services/orders");
@@ -3482,10 +3483,7 @@ async function resoudreWorkspaceBoutique(req) {
 async function notifierNouvelleCommandeBoutique(workspaceId, orderId, resume) {
     if (!workspaceId) return;
     try {
-        await db.query(
-            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-            ["commande.creee.boutique", `#${orderId.slice(0, 8)} — ${resume.nom} (${resume.montant} ${resume.devise})`, workspaceId]
-        );
+        await journalService.log({ action: "commande.creee.boutique", details: `#${orderId.slice(0, 8)} — ${resume.nom} (${resume.montant} ${resume.devise})`, workspaceId, montant: resume.montant, refId: orderId });
         socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
         notify.notifyWorkspace(workspaceId, {
             title: "🛍️ Nouvelle commande boutique",

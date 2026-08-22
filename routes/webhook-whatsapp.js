@@ -10,6 +10,7 @@ const memory        = require("../brain/memory");
 const socketService = require("../services/socketService");
 const whatsapp       = require("../services/whatsapp");
 const db            = require("../services/db");
+const journalService = require("../services/journalService");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const transcription  = require("../services/transcription");
 
@@ -144,10 +145,7 @@ router.post("/", async (req, res) => {
 
         console.log(`💬 WhatsApp [${senderName}] (workspace ${workspaceId}) : ${text}`);
 
-        await db.query(
-            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-            ["whatsapp.message", `${senderName}: ${text}`, workspaceId]
-        );
+        await journalService.log({ action: "whatsapp.message", details: `${senderName}: ${text}`, workspaceId });
 
         try {
             await orchestrator.process({
@@ -157,10 +155,7 @@ router.post("/", async (req, res) => {
             });
         } catch (procErr) {
             console.error("❌ WhatsApp orchestrator :", procErr.message);
-            await db.query(
-                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                ["error.whatsapp.message", procErr.message, workspaceId]
-            );
+            await journalService.log({ action: "error.whatsapp.message", details: procErr.message, workspaceId });
         }
 
         socketService.emitToShop(workspaceId, "whatsapp.message", { senderName, message: text });

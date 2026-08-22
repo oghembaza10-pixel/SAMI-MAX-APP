@@ -7,6 +7,7 @@ const multer = require("multer");
 const router = express.Router();
 const planner = require("../brain/planner");
 const db = require("../services/db");
+const journalService = require("../services/journalService");
 const samiiQuota = require("../services/samiiQuota");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const samiiMemoire = require("../services/samiiMemoire");
@@ -665,10 +666,7 @@ router.post("/feedback", requireAuth, async (req, res) => {
         const { text } = req.body;
         if (!text || !text.trim()) return res.json({ success: false, error: "Message vide." });
 
-        await db.query(
-            `INSERT INTO journal (action, details, workspace_id, user_id) VALUES ($1, $2, $3, $4)`,
-            ["feedback", text.trim(), req.session.workspaceId || null, req.session.userId || null]
-        );
+        await journalService.log({ action: "feedback", details: text.trim(), workspaceId: req.session.workspaceId || null, userId: req.session.userId || null });
 
         res.json({ success: true });
     } catch (err) {

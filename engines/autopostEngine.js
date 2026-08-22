@@ -12,6 +12,7 @@
 const crypto = require("crypto");
 const axios = require("axios");
 const db = require("../services/db");
+const journalService = require("../services/journalService");
 const gemini = require("../services/geminiService");
 const meta = require("../services/meta");
 const google = require("../services/google");
@@ -165,10 +166,7 @@ async function traiterWorkspace(w) {
         auto_post_config: { ...config, dernierPost: new Date().toISOString() },
     });
 
-    await db.query(
-        `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-        ["autopost.publication", JSON.stringify(resultats), w.id]
-    );
+    await journalService.log({ action: "autopost.publication", details: JSON.stringify(resultats), workspaceId: w.id });
 
     console.log(`📤 Auto-post (workspace ${w.id}) :`, resultats);
 }

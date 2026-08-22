@@ -5,6 +5,7 @@
 // recalculés jusqu'ici — score_grade montait mais grade_actuel restait figé).
 // ==========================================================================
 const db = require("./db");
+const journalService = require("./journalService");
 
 // Mêmes seuils que ceux déjà affichés côté QG marchand (public/js/qg.js) —
 // on les reprend ici pour que le grade soit enfin réellement stocké et pas
@@ -70,10 +71,7 @@ async function ajouterPoints(userId, points, raison) {
         }
 
         if (raison) {
-            db.query(
-                `INSERT INTO journal (action, details) VALUES ($1, $2)`,
-                ["grade.points", `user=${userId} +${points} — ${raison}`]
-            ).catch(() => {});
+            journalService.log({ action: "grade.points", details: `user=${userId} +${points} — ${raison}` });
         }
 
         return { score: nouveauScore, grade: nouveauGrade, promu: nouveauGrade !== ancienGrade };

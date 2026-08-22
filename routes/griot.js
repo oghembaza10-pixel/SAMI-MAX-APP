@@ -9,6 +9,7 @@ const workspaceService = require("../services/workspaceService");
 const connectorService = require("../services/connectorService");
 const meta = require("../services/meta");
 const db = require("../services/db");
+const journalService = require("../services/journalService");
 const CONFIG  = require("../config");
 const griotCoutService = require("../services/griotCoutService");
 
@@ -634,10 +635,7 @@ router.post("/publier", requireAuth, async (req, res) => {
             });
             if (!resultat.success) return res.json({ success: false, error: resultat.error });
 
-            await db.query(
-                `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-                ["youtube.publication", `Vidéo publiée via Griot — ${resultat.link}`, workspaceId]
-            );
+            await journalService.log({ action: "youtube.publication", details: `Vidéo publiée via Griot — ${resultat.link}`, workspaceId });
             return res.json({ success: true, link: resultat.link });
         }
 
@@ -659,10 +657,7 @@ router.post("/publier", requireAuth, async (req, res) => {
             );
         }
 
-        await db.query(
-            `INSERT INTO journal (action, details, workspace_id) VALUES ($1, $2, $3)`,
-            [`${reseau}.publication`, `Post publié via Griot`, workspaceId]
-        );
+        await journalService.log({ action: `${reseau}.publication`, details: "Post publié via Griot", workspaceId });
 
         res.json({ success: true });
     } catch (err) {
