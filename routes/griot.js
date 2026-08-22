@@ -349,6 +349,17 @@ function renderPack(data) {
         html += block('message-circle', 'Version courte / légende', data.legende, data.legende);
     }
 
+    if (data.photoOriginale) {
+        const reseauPhoto = selectReseau.value;
+        const peutPublierPhoto = reseauPhoto === 'facebook' || reseauPhoto === 'instagram';
+        let photoHtml = '<div><img src="' + data.photoOriginale + '" style="width:100%;border-radius:8px;" alt="Ta photo">';
+        if (peutPublierPhoto) {
+            photoHtml += '<button type="button" class="griot-publish-btn" onclick="publierSurReseau(' + JSON.stringify(data.photoOriginale) + ')">📤 Publier ta photo (sans IA) sur ' + (reseauPhoto === 'instagram' ? 'Instagram' : 'Facebook') + '</button>';
+        }
+        photoHtml += '</div>';
+        html += block('image', 'Ta photo, prête à publier avec le texte ci-dessus', photoHtml);
+    }
+
     if (data.medias && data.medias.length > 0) {
         const reseauActuel = selectReseau.value;
         const peutPublier = reseauActuel === 'facebook' || reseauActuel === 'instagram';
@@ -496,6 +507,30 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
        console.log("🔍 DEBUG pack complet reçu de Gemini :", JSON.stringify(pack, null, 2)); 
 
         pack.medias = [];
+
+        // ── Photo fournie par le marchand, publiable directement sans IA ──
+        // Indépendant du moteur choisi et de son succès/échec : un marchand
+        // qui a déjà sa propre photo doit pouvoir publier avec le texte
+        // généré par SAMII sans dépendre d'un crédit Runware/OpenRouter.
+        if (req.file && req.file.buffer) {
+            try {
+                const cloudForm = new FormData();
+                cloudForm.append("file", new Blob([req.file.buffer], { type: req.file.mimetype }), "griot-photo.jpg");
+                cloudForm.append("upload_preset", "MARKETPLACE OG");
+                const cloudRes = await fetch("https://api.cloudinary.com/v1_1/ojwx5hft/image/upload", {
+                    method: "POST",
+                    body: cloudForm,
+                });
+                const cloudData = await cloudRes.json();
+                if (cloudData.secure_url) {
+                    pack.photoOriginale = cloudData.secure_url;
+                } else {
+                    console.error("⚠️ Upload photo Griot (Cloudinary) :", JSON.stringify(cloudData));
+                }
+            } catch (uploadErr) {
+                console.error("⚠️ Erreur upload photo Griot (Cloudinary) :", uploadErr.message);
+            }
+        }
 
         // ── WAN 2.6 / H3 (OpenRouter) — génération vidéo asynchrone, facturée
         // au temps réel mesuré (6x le prix fournisseur, services/griotCoutService.js) ──
