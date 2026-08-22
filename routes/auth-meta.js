@@ -46,6 +46,17 @@ const GRAPH_VERSION = "v23.0";
 // qu'elles sont demandées — pas encore activées/validées pour cette app,
 // contrairement à instagram_manage_messages. À réintroduire seulement une
 // fois confirmées "Prête pour le test" dans Autorisations et fonctionnalités.
+//
+// pages_manage_engagement retirée le 22/08 : cette permission a une
+// dépendance obligatoire côté Facebook envers pages_read_user_content (pour
+// pouvoir gérer des commentaires, il faut d'abord pouvoir les lire) — or
+// pages_read_user_content n'est pas activée pour cette app (seule permission
+// du lot 3 qui n'affiche pas "Prête pour le test"). Facebook rejetait donc
+// TOUT le login avec "Invalid Scopes: pages_read_user_content" à cause de
+// cette dépendance manquante, même si elle n'était jamais demandée
+// directement. La réponse auto aux commentaires Facebook
+// (meta.replyToFacebookComment) reste indisponible tant que
+// pages_read_user_content n'est pas activée pour l'app.
 const SCOPES = [
     "public_profile",
     "email",
@@ -55,7 +66,6 @@ const SCOPES = [
     "ads_read",
     "pages_manage_ads",
     "pages_manage_posts",
-    "pages_manage_engagement",
     "pages_manage_metadata",
     "pages_read_engagement",
     "instagram_basic",
