@@ -6,6 +6,7 @@
 const axiosBase = require("axios");
 const CONFIG = require("../config");
 const connectorService = require("../services/connectorService");
+const workspaceService = require("../services/workspaceService");
 
 // Délai par défaut sur tous les appels Google — sans ça, un appel qui coince
 // (réseau, proxy intermédiaire) laisse la requête pendre indéfiniment côté
@@ -163,11 +164,17 @@ async function createCalendarEvent(workspaceId, { summary, description = "", sta
     if (!token) return { success: false, error: "Google non connecté." };
 
     try {
+        // Google Calendar refuse l'événement ("Missing time zone definition
+        // for start time") si dateTime n'a pas d'offset ET qu'aucun timeZone
+        // explicite n'est fourni — startISO/endISO viennent d'un appel
+        // function-calling de Sami et n'ont pas toujours d'offset.
+        const workspace = await workspaceService.getById(workspaceId);
+        const timeZone = workspace?.timezone || "Africa/Algiers";
         const body = {
             summary,
             description,
-            start: { dateTime: startISO },
-            end: { dateTime: endISO },
+            start: { dateTime: startISO, timeZone },
+            end: { dateTime: endISO, timeZone },
         };
         if (invites.length) body.attendees = invites.map(email => ({ email }));
         // Le lien Meet est généré par l'API Agenda elle-même (pas Drive) —

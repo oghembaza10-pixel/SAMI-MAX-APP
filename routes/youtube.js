@@ -20,16 +20,36 @@ function requireAuth(req, res, next) {
 }
 
 router.get("/upload", requireAuth, async (req, res) => {
-    const workspaceId = req.session?.workspaceId || "";
-    const connecteur = workspaceId ? await connectorService.getOne(workspaceId, "google") : null;
-    res.render("youtube-upload", {
-        connected: !!connecteur?.actif,
-        error: null,
-        success: false,
-    });
+    try {
+        const workspaceId = req.session?.workspaceId || "";
+        const connecteur = workspaceId ? await connectorService.getOne(workspaceId, "google") : null;
+        res.render("youtube-upload", {
+            connected: !!connecteur?.actif,
+            error: null,
+            success: false,
+        });
+    } catch (err) {
+        console.error("❌ GET /youtube/upload :", err.message);
+        res.status(500).send("Erreur serveur.");
+    }
 });
 
-router.post("/upload", requireAuth, upload.single("video"), async (req, res) => {
+// Multer rejette un fichier trop lourd en levant une erreur *avant* le
+// handler ci-dessous — sans ce filet, Express affichait une page
+// "Internal Server Error" brute au lieu du message clair habituel.
+function uploadMiddleware(req, res, next) {
+    upload.single("video")(req, res, (err) => {
+        if (err) {
+            const message = err.code === "LIMIT_FILE_SIZE"
+                ? "Vidéo trop lourde — 50 Mo maximum."
+                : "Erreur lors de la lecture du fichier.";
+            return res.render("youtube-upload", { connected: true, error: message, success: false });
+        }
+        next();
+    });
+}
+
+router.post("/upload", requireAuth, uploadMiddleware, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
         if (!workspaceId) return res.redirect("/hub");
