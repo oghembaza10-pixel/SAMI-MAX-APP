@@ -370,6 +370,10 @@ function renderPack(data) {
         html += block('sparkles', 'Médias générés (Runware)', mediaHtml);
     }
 
+    if (data.erreur_media) {
+        html += '<div style="background:rgba(220,53,69,.12);border:1px solid rgba(220,53,69,.4);border-radius:8px;padding:12px;color:#ff8a8a;font-size:.85rem;margin-bottom:12px;">⚠️ ' + data.erreur_media + '</div>';
+    }
+
     if (data.hashtags?.length) {
         const tagsHtml = '<div class="griot-tags">' + data.hashtags.map(t => '<span class="griot-tag">' + (t.startsWith('#') ? t : '#' + t) + '</span>').join('') + '</div>';
         html += block('hash', 'Hashtags', tagsHtml, data.hashtags.map(t => t.startsWith('#') ? t : '#' + t).join(' '));
@@ -518,7 +522,8 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
                 // notre propre route, qui elle porte la clé côté serveur.
                 pack.medias.push(`/samii/griot/media/${resultat.jobId}`);
             } else {
-                console.error(`⚠️ Erreur génération ${moteurChoisi} (OpenRouter, non bloquant) :`, resultat.error);
+                console.error(`⚠️ Erreur génération ${moteurChoisi} (OpenRouter) :`, resultat.error);
+                pack.erreur_media = `Génération vidéo échouée (${moteurChoisi.toUpperCase()}) : ${resultat.error}`;
             }
         }
 
@@ -560,15 +565,27 @@ console.log("📸 DEBUG Runware — statut HTTP :", runwareRes.status, "| répon
                 griotCoutService.enregistrerGeneration(req.session.workspaceId, Date.now() - debutGeneration).catch(() => {});
 
 if (runwareData && Array.isArray(runwareData.data)) {
-               
+
                     runwareData.data.forEach(item => {
                         if (item.imageURL) pack.medias.push(item.imageURL);
                         if (item.videoURL) pack.medias.push(item.videoURL);
                     });
                 }
+                if (pack.medias.length === 0) {
+                    const raisonRunware = runwareData?.errors?.[0]?.message || runwareData?.error?.message || `statut HTTP ${runwareRes.status}`;
+                    console.error("⚠️ Runware n'a renvoyé aucun média :", raisonRunware);
+                    pack.erreur_media = `Génération média échouée (Runware) : ${raisonRunware}`;
+                }
            } catch (runwareErr) {
-    console.error("⚠️ Erreur appel Runware (non bloquant) :", runwareErr.message, runwareErr.stack);
+    console.error("⚠️ Erreur appel Runware :", runwareErr.message, runwareErr.stack);
+    pack.erreur_media = `Génération média échouée (Runware) : ${runwareErr.message}`;
 }
+        } else if (moteurChoisi === "runware" && !runwareApiKey) {
+            pack.erreur_media = "Génération média indisponible : clé Runware non configurée côté serveur.";
+        }
+
+        if (pack.medias.length === 0 && !pack.erreur_media && !pack.prompt_visuel) {
+            pack.erreur_media = "SAMII n'a pas généré de description visuelle (prompt_visuel manquant) — aucun média n'a pu être créé.";
         }
 
         res.json({ success: true, pack });
