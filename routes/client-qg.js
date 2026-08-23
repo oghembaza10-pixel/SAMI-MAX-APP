@@ -37,6 +37,7 @@ router.get("/", requireAuth, async (req, res) => {
         codeParrainage,
         telephone,
         commandes,
+        estAgence: req.session.estAgence === true,
     });
 });
 

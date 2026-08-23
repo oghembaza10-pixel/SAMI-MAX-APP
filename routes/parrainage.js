@@ -44,7 +44,6 @@ router.get("/resume", requireAuth, async (req, res) => {
 
 router.get("/", requireAuth, async (req, res) => {
     const userId = req.session.userId;
-    const estAgence = req.session.estAgence === true;
     let code = "";
     let resume = { filleuls: [], commissions: [], confirme: 0, enAttente: 0 };
 
@@ -66,11 +65,6 @@ router.get("/", requireAuth, async (req, res) => {
         const boutiqueLigne = f.boutique_nom
             ? `<span class="pr-filleul-boutique">🏪 ${escapeHtml(f.boutique_nom)}${f.boutique_metier ? ` · ${escapeHtml(f.boutique_metier)}` : ""}</span>`
             : "";
-        const abandonBtn = estAgence
-            ? (f.abandon_signale_par_agence
-                ? `<button class="pr-abandon-btn" disabled>Abandon signalé</button>`
-                : `<button class="pr-abandon-btn" data-id="${f.id}">Client abandonné</button>`)
-            : "";
         return `
         <div class="pr-filleul">
             <div class="pr-filleul-avatar">${escapeHtml((f.prenom || f.email || "?").charAt(0).toUpperCase())}</div>
@@ -80,7 +74,6 @@ router.get("/", requireAuth, async (req, res) => {
                 <span><span class="pr-count">${commissionsFilleul.length}</span> <span data-i18n="parrainage.payments_word">paiement(s) généré(s)</span></span>
             </div>
             <div class="pr-filleul-gain">+${totalFilleul.toFixed(2)}</div>
-            ${abandonBtn}
         </div>`;
     }).join("") : `<div class="pr-empty"><i data-lucide="users"></i><p data-i18n="parrainage.empty.filleuls">Aucun filleul pour l'instant. Partage ton lien !</p></div>`;
 
@@ -135,8 +128,6 @@ h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10
 .pr-filleul-info span { font-size:11px; color:var(--muted); }
 .pr-filleul-boutique { font-size:11.5px; color:var(--blue); }
 .pr-filleul-gain { font-family:"JetBrains Mono"; color:var(--green); font-weight:700; }
-.pr-abandon-btn { padding:7px 11px; border-radius:8px; border:1px solid rgba(215,179,76,.4); background:rgba(215,179,76,.1); color:var(--gold); font-size:10.5px; font-weight:700; cursor:pointer; white-space:nowrap; margin-left:10px; }
-.pr-abandon-btn:disabled { opacity:.5; cursor:default; }
 .pr-gain-row { display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:11px 14px; margin-bottom:8px; font-size:12.5px; }
 .pr-gain-plan { flex:1; color:var(--muted); }
 .pr-gain-statut { font-size:10px; font-family:"JetBrains Mono"; padding:3px 9px; border-radius:20px; }
@@ -181,24 +172,6 @@ h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10
         <div class="pr-stat"><strong class="attente" id="stat-attente">${resume.enAttente.toFixed(2)}</strong><span data-i18n="parrainage.stat.pending">En attente</span></div>
         <div class="pr-stat"><strong id="stat-filleuls">${resume.filleuls.length}</strong><span data-i18n="parrainage.stat.filleuls">Filleuls</span></div>
     </div>
-
-    ${estAgence ? `
-    <div class="section-title"><i data-lucide="building-2"></i> Espace Agence — créer un client</div>
-    <div class="pr-link-card" style="margin-bottom:24px;">
-        <form id="form-creer-client">
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <input name="prenom" placeholder="Prénom" required style="flex:1;min-width:120px;padding:11px;border-radius:9px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);">
-                <input name="nom" placeholder="Nom" required style="flex:1;min-width:120px;padding:11px;border-radius:9px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);">
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-                <input name="email" type="email" placeholder="Email du client" required style="flex:1;min-width:180px;padding:11px;border-radius:9px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);">
-                <input name="telephone" placeholder="Téléphone" style="flex:1;min-width:120px;padding:11px;border-radius:9px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);">
-            </div>
-            <input name="metier" placeholder="Métier (optionnel)" style="width:100%;margin-top:10px;padding:11px;border-radius:9px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);box-sizing:border-box;">
-            <button type="submit" class="pr-copy-btn" style="width:100%;margin-top:14px;padding:12px;">Créer le client</button>
-        </form>
-        <div class="msg" id="creer-client-msg" style="margin-top:10px;text-align:center;font-size:.88rem;min-height:20px;color:var(--muted);"></div>
-    </div>` : ""}
 
     <div class="section-title"><i data-lucide="users"></i> <span data-i18n="parrainage.section.filleuls">Tes filleuls</span></div>
     <div id="liste-filleuls">${filleulsHtml}</div>
@@ -379,58 +352,6 @@ socket.on("parrainage:gain", (gain) => {
         "<span class=\\"pr-gain-statut pr-gain-statut--" + (statutOk ? "ok" : "attente") + "\\">" + (statutOk ? t("parrainage.status.confirmed") : t("parrainage.status.pending")) + "</span>" +
         "<span class=\\"pr-gain-montant\\">+" + parseFloat(gain.commission_montant).toFixed(2) + " " + gain.devise + "</span>";
     liste.prepend(row);
-});
-
-const formCreerClient = document.getElementById("form-creer-client");
-if (formCreerClient) {
-    formCreerClient.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const msg = document.getElementById("creer-client-msg");
-        const data = Object.fromEntries(new FormData(e.target));
-        msg.textContent = "⏳ Création en cours...";
-        msg.style.color = "var(--muted)";
-        try {
-            const res = await fetch("/agence/clients", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-            const json = await res.json();
-            if (json.success) {
-                msg.textContent = "✅ Client créé — un email d'invitation lui a été envoyé.";
-                msg.style.color = "var(--green)";
-                formCreerClient.reset();
-                setTimeout(() => window.location.reload(), 1500);
-            } else {
-                msg.textContent = "❌ " + (json.error || "Erreur.");
-                msg.style.color = "#e55";
-            }
-        } catch {
-            msg.textContent = "❌ Erreur réseau.";
-            msg.style.color = "#e55";
-        }
-    });
-}
-
-document.getElementById("liste-filleuls").addEventListener("click", async (e) => {
-    const btn = e.target.closest(".pr-abandon-btn");
-    if (!btn || btn.disabled) return;
-    if (!confirm("Signaler ce client comme abandonné ? OG Technology fermera son espace après vérification.")) return;
-
-    btn.disabled = true;
-    try {
-        const res = await fetch("/agence/clients/" + btn.dataset.id + "/abandon", { method: "POST" });
-        const json = await res.json();
-        if (json.success) {
-            btn.textContent = "Abandon signalé";
-        } else {
-            alert(json.error || "Erreur.");
-            btn.disabled = false;
-        }
-    } catch {
-        alert("Erreur réseau.");
-        btn.disabled = false;
-    }
 });
 </script>
 </body>

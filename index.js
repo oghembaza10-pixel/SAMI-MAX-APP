@@ -175,6 +175,7 @@ app.use("/profile",   requireAuth, require("./routes/profile"));
 app.use("/vitrine", require("./routes/vitrine"));
 app.use("/settings",  requireAuth, require("./routes/settings"));
 app.use("/parrainage", requireAuth, require("./routes/parrainage"));
+app.use("/qg-partenaire", requireAuth, require("./routes/qg-partenaire"));
 app.use("/agence", requireAuth, require("./routes/agence"));
 app.use("/partenariat", require("./routes/partenariat"));
 app.use("/admin", require("./routes/admin"));
@@ -294,6 +295,7 @@ app.get("/qg", requireAuth, async (req, res) => {
             shop        : req.session.shop      || "",
             themeVisuel,
             attente     : false,
+            estAgence   : req.session.estAgence === true,
         });
     } catch (err) {
         console.error("❌ GET /qg :", err);

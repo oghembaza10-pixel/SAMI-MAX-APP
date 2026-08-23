@@ -414,6 +414,14 @@ router.get("/", requireAdmin, async (req, res) => {
              FROM commandes WHERE source = 'lien_externe' AND statut IN ('payée','achetée')
              ORDER BY date_commande ASC LIMIT 100`
         );
+        abandonsSignales = await db.query(
+            `SELECT u.id, u.nom, u.prenom, u.email, u.abandon_signale_le,
+                    a.nom AS agence_nom, a.prenom AS agence_prenom, a.email AS agence_email
+             FROM utilisateurs u
+             LEFT JOIN utilisateurs a ON a.id = u.parraine_par
+             WHERE u.abandon_signale_par_agence = true
+             ORDER BY u.abandon_signale_le ASC LIMIT 100`
+        );
     } catch (err) {
         console.error("❌ GET /admin :", err.message);
     }
@@ -447,6 +455,16 @@ router.get("/", requireAdmin, async (req, res) => {
             <div class="pa-contact">${escapeHtml(v.email || "")}${v.telephone ? ` · <a href="tel:${escapeHtml(v.telephone)}">${escapeHtml(v.telephone)}</a>` : ""}</div>
             ${v.verification_document_url ? `<a href="${escapeHtml(v.verification_document_url)}" target="_blank" rel="noopener" style="display:inline-block;margin:6px 0;"><img src="${escapeHtml(v.verification_document_url)}" style="max-width:220px;max-height:140px;border-radius:8px;border:1px solid var(--border);"></a>` : ""}
             <span class="pa-date">Soumis le ${v.verification_soumis_le ? new Date(v.verification_soumis_le).toLocaleString("fr-FR") : "-"}</span>
+        </div>`;
+
+    const ligneAbandonHtml = (u) => `
+        <div class="pa-row" data-abandon-id="${u.id}">
+            <div class="pa-row-top">
+                <span class="pa-cat">🚪 ${escapeHtml(`${u.prenom || ""} ${u.nom || ""}`.trim() || u.email)}</span>
+                <button class="verif-approuver-btn abandon-traiter-btn" data-id="${u.id}">✅ Fermer l'espace</button>
+            </div>
+            <div class="pa-contact">${escapeHtml(u.email || "")} — signalé par ${escapeHtml(`${u.agence_prenom || ""} ${u.agence_nom || ""}`.trim() || u.agence_email || "agence inconnue")}</div>
+            <span class="pa-date">Signalé le ${u.abandon_signale_le ? new Date(u.abandon_signale_le).toLocaleString("fr-FR") : "-"}</span>
         </div>`;
 
     const ligneAchatExterneHtml = (c) => `
@@ -534,6 +552,7 @@ router.get("/", requireAdmin, async (req, res) => {
         ${statCard("🆕", stats.candidaturesNouvelles, "Nouvelles candidatures", "var(--blue)")}
         ${statCard("🪪", stats.verifsEnAttente, "Vérifications en attente", stats.verifsEnAttente ? "var(--gold)" : "var(--text)")}
         ${statCard("🔗", stats.achatsExternes, "Achats externes à traiter", stats.achatsExternes ? "var(--gold)" : "var(--text)")}
+        ${statCard("🏢", stats.agences, "Agences actives")}
     </div>
 
     <div class="section-title">🪪 Vérifications d'identité en attente (livreurs / location)</div>
@@ -570,6 +589,19 @@ router.get("/", requireAdmin, async (req, res) => {
         <button id="community-poster-btn" class="ccp-confirm-btn">📤 Lancer un sujet (test)</button>
         <div id="community-poster-resultat" style="margin-top:12px; font-size:12.5px; white-space:pre-wrap;"></div>
     </div>
+
+    <div class="section-title">🏢 Agences</div>
+    <div class="pa-row" style="margin-bottom:14px;">
+        <div class="pa-contact" style="margin-bottom:12px;">Active ou désactive le statut "agence" sur un compte existant (par email).</div>
+        <form id="form-toggle-agence" style="display:flex;gap:10px;flex-wrap:wrap;">
+            <input name="email" type="email" placeholder="Email du compte" required style="flex:1;min-width:200px;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,.3);color:var(--text);">
+            <button type="submit" name="action" value="activer" class="ccp-confirm-btn">✅ Activer agence</button>
+            <button type="submit" name="action" value="desactiver" class="verif-refuser-btn" style="padding:7px 13px;border-radius:8px;border:1px solid #e55;background:rgba(229,85,85,.1);color:#e55;font-size:11.5px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono';">❌ Désactiver</button>
+        </form>
+        <div id="toggle-agence-msg" style="margin-top:10px;font-size:12.5px;"></div>
+    </div>
+    <div class="section-title">🚪 Clients abandonnés — à fermer</div>
+    <div id="abandon-list" style="margin-bottom:30px;">${abandonsSignales.length ? abandonsSignales.map(ligneAbandonHtml).join("") : `<div class="pa-empty">Aucun abandon signalé.</div>`}</div>
 
     <div class="section-title">🤝 Candidatures Partenariat</div>
     <div class="pa-filters" id="pa-filters">
@@ -812,6 +844,51 @@ document.getElementById("verif-list").addEventListener("click", async (e) => {
     }
 });
 
+document.getElementById("form-toggle-agence").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("toggle-agence-msg");
+    const submitter = e.submitter;
+    const data = Object.fromEntries(new FormData(e.target));
+    data.action = submitter ? submitter.value : "activer";
+    msg.textContent = "⏳...";
+    msg.style.color = "var(--muted)";
+    try {
+        const res = await fetch("/admin/agence/toggle", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+        });
+        const json = await res.json();
+        msg.textContent = json.success ? "✅ " + (json.message || "Statut mis à jour.") : "❌ " + (json.error || "Erreur.");
+        msg.style.color = json.success ? "var(--green)" : "#e55";
+    } catch {
+        msg.textContent = "❌ Erreur réseau.";
+        msg.style.color = "#e55";
+    }
+});
+
+document.getElementById("abandon-list").addEventListener("click", async (e) => {
+    const btn = e.target.closest(".abandon-traiter-btn");
+    if (!btn) return;
+    if (!confirm("Fermer l'espace de ce client ? Il sera détaché de son agence.")) return;
+
+    btn.disabled = true;
+    try {
+        const res = await fetch("/admin/agence/abandon/" + btn.dataset.id + "/traiter", { method: "POST" });
+        const json = await res.json();
+        if (json.success) {
+            btn.closest(".pa-row").remove();
+            if (!document.querySelector("#abandon-list .pa-row")) {
+                document.getElementById("abandon-list").innerHTML = '<div class="pa-empty">Aucun abandon signalé.</div>';
+            }
+        } else {
+            alert(json.error || "Erreur.");
+            btn.disabled = false;
+        }
+    } catch {
+        alert("Erreur réseau.");
+        btn.disabled = false;
+    }
+});
+
 document.getElementById("pa-filters").addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-filter]");
     if (!btn) return;
@@ -985,6 +1062,40 @@ router.post("/verification/:id/refuser", requireAdmin, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error("❌ POST /admin/verification/:id/refuser :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/agence/toggle", requireAdmin, async (req, res) => {
+    try {
+        const { email, action } = req.body;
+        if (!email) return res.json({ success: false, error: "Email requis." });
+        const estAgence = action === "activer";
+
+        const rows = await db.query(
+            `UPDATE utilisateurs SET est_agence = $1 WHERE email = $2 RETURNING id`,
+            [estAgence, email.trim()]
+        );
+        if (!rows.length) return res.json({ success: false, error: "Aucun compte avec cet email." });
+
+        res.json({ success: true, message: estAgence ? "Statut agence activé." : "Statut agence désactivé." });
+    } catch (err) {
+        console.error("❌ POST /admin/agence/toggle :", err.message);
+        res.json({ success: false, error: "Erreur serveur." });
+    }
+});
+
+router.post("/agence/abandon/:id/traiter", requireAdmin, async (req, res) => {
+    try {
+        const rows = await db.query(
+            `UPDATE utilisateurs SET parraine_par = NULL, abandon_signale_par_agence = false, abandon_signale_le = NULL
+             WHERE id = $1 RETURNING id`,
+            [req.params.id]
+        );
+        if (!rows.length) return res.json({ success: false, error: "Compte introuvable." });
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /admin/agence/abandon/:id/traiter :", err.message);
         res.json({ success: false, error: "Erreur serveur." });
     }
 });

@@ -77,6 +77,11 @@
 <a href="/parrainage" class="qg-nav__item">
     <i data-lucide="handshake"></i><span data-i18n="qg.nav.parrainage">Parrainage</span><span id="badge-gains-parrainage" style="color:#3ddc84;"></span>
 </a>
+<% if (typeof estAgence !== "undefined" && estAgence) { %>
+<a href="/qg-partenaire" class="qg-nav__item">
+    <i data-lucide="building-2"></i><span>Partenaire OG</span>
+</a>
+<% } %>
 <a href="/billing" class="qg-nav__item">
     <i data-lucide="crown"></i><span data-i18n="qg.nav.billing">Abonnement</span>
 </a>
