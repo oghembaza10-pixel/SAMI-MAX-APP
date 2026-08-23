@@ -363,7 +363,7 @@ router.post("/", async (req, res) => {
                 );
             }
 
-            const typeCompteExistant = user.type_compte === "marchand" ? "marchand" : "client";
+            const typeCompteExistant = user.type_compte === "client" ? "client" : user.type_compte;
             req.session.regenerate(async (sessErr) => {
                 if (sessErr) return res.json({ success: false, error: "Erreur session." });
 

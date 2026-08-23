@@ -219,7 +219,11 @@ router.post("/", async (req, res) => {
 
         await db.query(`UPDATE utilisateurs SET last_login = CURRENT_DATE WHERE id = $1`, [user.id]);
 
-        const typeCompte = user.type_compte === "marchand" ? "marchand" : "client";
+        // "client" reste "client" ; toute autre valeur ("marchand", "agence",
+        // et les futures) est préservée telle quelle — avant, tout ce qui
+        // n'était pas exactement "marchand" retombait sur "client", ce qui
+        // aurait cassé la connexion d'un compte agence.
+        const typeCompte = user.type_compte === "client" ? "client" : user.type_compte;
 
         // ── Compte Client : direction QG Client, pas de workspace ──
         if (typeCompte === "client") {
@@ -249,7 +253,7 @@ router.post("/", async (req, res) => {
             req.session.email      = email;
             req.session.userId     = user.id;
             req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
-            req.session.typeCompte = "marchand";
+            req.session.typeCompte = typeCompte;
 
             if (workspace) {
                 req.session.workspaceId = workspace.id;
