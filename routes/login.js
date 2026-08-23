@@ -232,6 +232,7 @@ router.post("/", async (req, res) => {
                 req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
                 req.session.typeCompte = "client";
                 req.session.workspaceId = null;
+                req.session.estAgence  = user.est_agence === true;
 
                 res.json({ success: true, redirect: "/client-qg" });
             });
@@ -250,6 +251,7 @@ router.post("/", async (req, res) => {
             req.session.userId     = user.id;
             req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
             req.session.typeCompte = "marchand";
+            req.session.estAgence  = user.est_agence === true;
 
             if (workspace) {
                 req.session.workspaceId = workspace.id;

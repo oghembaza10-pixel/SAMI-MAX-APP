@@ -356,12 +356,13 @@ router.get("/", requireAdmin, async (req, res) => {
     let ccpDemandes = [];
     let verifications = [];
     let achatsExternes = [];
+    let abandonsSignales = [];
 
     try {
         const [
             utilisateurs, marchands, clients, workspacesRows, commandesTotal, commandesJour,
             commissionsRows, ccpDemandesRows, candidaturesRows, candidaturesNouvelles, verifsRows,
-            achatsExternesRows,
+            achatsExternesRows, agencesRows,
         ] = await Promise.all([
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs`),
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE type_compte = 'marchand'`),
@@ -375,6 +376,7 @@ router.get("/", requireAdmin, async (req, res) => {
             db.query(`SELECT COUNT(*)::int AS n FROM candidatures_partenariat WHERE statut = 'nouveau'`),
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE verification_statut = 'en_attente'`),
             db.query(`SELECT COUNT(*)::int AS n FROM commandes WHERE source = 'lien_externe' AND statut IN ('payée','achetée')`),
+            db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE est_agence = true`),
         ]);
 
         stats = {
@@ -391,6 +393,7 @@ router.get("/", requireAdmin, async (req, res) => {
             candidaturesNouvelles: candidaturesNouvelles[0].n,
             verifsEnAttente: verifsRows[0].n,
             achatsExternes: achatsExternesRows[0].n,
+            agences: agencesRows[0].n,
         };
 
         candidatures = await db.query(`SELECT * FROM candidatures_partenariat ORDER BY created_at DESC LIMIT 200`);

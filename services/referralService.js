@@ -121,7 +121,7 @@ async function resumeParrain(userId) {
     // "mes clients" (nom de boutique, métier) plutôt qu'une simple liste de
     // comptes — c'est ce qui transforme la page parrainage en QG partenaire.
     const filleuls = await db.query(
-        `SELECT u.id, u.nom, u.prenom, u.email, u.parrainage_le,
+        `SELECT u.id, u.nom, u.prenom, u.email, u.parrainage_le, u.abandon_signale_par_agence,
                 w.nom AS boutique_nom, w.metier AS boutique_metier
          FROM utilisateurs u
          LEFT JOIN workspaces w ON w.owner_email = u.email

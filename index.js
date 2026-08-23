@@ -175,6 +175,7 @@ app.use("/profile",   requireAuth, require("./routes/profile"));
 app.use("/vitrine", require("./routes/vitrine"));
 app.use("/settings",  requireAuth, require("./routes/settings"));
 app.use("/parrainage", requireAuth, require("./routes/parrainage"));
+app.use("/agence", requireAuth, require("./routes/agence"));
 app.use("/partenariat", require("./routes/partenariat"));
 app.use("/admin", require("./routes/admin"));
 app.use("/ads",       requireAuth, require("./routes/ads"));

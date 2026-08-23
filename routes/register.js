@@ -372,6 +372,7 @@ router.post("/", async (req, res) => {
                 req.session.userId     = user.id;
                 req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
                 req.session.typeCompte = typeCompteExistant;
+                req.session.estAgence  = user.est_agence === true;
 
                 if (typeCompteExistant === "client") {
                     req.session.workspaceId = null;
