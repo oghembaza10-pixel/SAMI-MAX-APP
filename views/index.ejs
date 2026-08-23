@@ -502,7 +502,7 @@
         .hero h1 {
             position: relative;
             font-family: var(--font-display);
-            font-size: clamp(2rem, 7vw, 3.7rem);
+            font-size: clamp(1.7rem, 5.5vw, 2.75rem);
             font-weight: 800;
             color: #fff;
             line-height: 1.13;
@@ -574,6 +574,18 @@
             color: var(--text-muted);
             margin-top: -18px;
             margin-bottom: 27px;
+        }
+
+        .hero-verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-mono);
+            font-size: .62rem;
+            letter-spacing: .05em;
+            color: var(--gold-bright);
+            opacity: .85;
+            margin-bottom: 18px;
         }
 
         .hero-proof {
@@ -2277,7 +2289,7 @@
             }
 
             .hero h1 {
-                font-size: clamp(1.85rem, 9vw, 2.7rem);
+                font-size: clamp(1.5rem, 7vw, 2.1rem);
             }
 
             .hero-tagline {
@@ -2361,6 +2373,7 @@
     <section class="hero">
         <span class="hero-badge"><span class="dot"></span><span data-i18n="hero.badge">OG Technology</span></span>
         <span class="hero-badge-sub" data-i18n="hero.badgeSub">éditeur de SAMII</span>
+        <div class="hero-verified-badge">✓ <span data-i18n="hero.verified">Fournisseur de technologie vérifié par Meta</span></div>
         <h1><span data-i18n="hero.title1">La plateforme qui automatise</span> <span class="accent" data-i18n="hero.title2">votre commerce</span></h1>
         <div class="hero-divider" aria-hidden="true"></div>
         <div class="hero-tagline"><b data-i18n="hero.tag1">Automatisez.</b> <span data-i18n="hero.tag2">Vendez.</span> <b data-i18n="hero.tag3">Prospérez.</b></div>
@@ -2740,6 +2753,7 @@
                 'brand.sub': 'Éditeur de SAMII', 'nav.login': 'Se connecter',
                 'banner.welcome': 'Content de te revoir,', 'banner.continue': 'Continuer vers mon QG →',
                 'hero.badge': 'OG Technology', 'hero.badgeSub': 'éditeur de SAMII',
+                'hero.verified': 'Fournisseur de technologie vérifié par Meta',
                 'hero.title1': 'La plateforme qui automatise', 'hero.title2': 'votre commerce',
                 'hero.tag1': 'Automatisez.', 'hero.tag2': 'Vendez.', 'hero.tag3': 'Prospérez.',
                 'hero.desc': "Une plateforme. Un espace de travail. Vos ventes, votre publicité et votre service client, orchestrés par une seule intelligence.",
@@ -2811,6 +2825,7 @@
                 'brand.sub': 'The company behind SAMII', 'nav.login': 'Log in',
                 'banner.welcome': 'Welcome back,', 'banner.continue': 'Go to my HQ →',
                 'hero.badge': 'OG Technology', 'hero.badgeSub': 'the company behind SAMII',
+                'hero.verified': 'Verified technology provider by Meta',
                 'hero.title1': 'The platform that automates', 'hero.title2': 'your business',
                 'hero.tag1': 'Automate.', 'hero.tag2': 'Sell.', 'hero.tag3': 'Thrive.',
                 'hero.desc': "One platform. One workspace. Your sales, advertising and customer service, orchestrated by a single intelligence.",
@@ -2882,6 +2897,7 @@
                 'brand.sub': 'الشركة المطوّرة لـ SAMII', 'nav.login': 'تسجيل الدخول',
                 'banner.welcome': 'سعداء بعودتك،', 'banner.continue': 'الذهاب إلى مقري ←',
                 'hero.badge': 'OG Technology', 'hero.badgeSub': 'الشركة المطوّرة لـ SAMII',
+                'hero.verified': 'مزوّد تقنية موثّق من Meta',
                 'hero.title1': 'المنصة التي تُؤتمت', 'hero.title2': 'تجارتك',
                 'hero.tag1': 'أتمتة.', 'hero.tag2': 'بِع.', 'hero.tag3': 'ازدهر.',
                 'hero.desc': 'منصة واحدة. مساحة عمل واحدة. مبيعاتك وإعلاناتك وخدمة عملائك، بذكاء واحد يدير كل شيء.',
@@ -2953,6 +2969,7 @@
                 'brand.sub': '全球总部', 'nav.login': '登录',
                 'banner.welcome': '欢迎回来，', 'banner.continue': '进入我的总部 →',
                 'hero.badge': 'SAMII OS · 运行中',
+                'hero.verified': 'Meta 认可的经验证技术供应商',
                 'hero.title1': '掌控你的', 'hero.title2': '数字帝国',
                 'hero.tag1': '自动化。', 'hero.tag2': '发展。', 'hero.tag3': '统治。',
                 'hero.desc': '为帝国缔造者打造的平台：管理你的业务，连接你的工具，掌控你的市场——无论你身在何处。',
