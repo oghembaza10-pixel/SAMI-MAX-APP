@@ -117,8 +117,16 @@ async function crediterCommission({ filleulId, montantPaye, devise = "USD", plan
 }
 
 async function resumeParrain(userId) {
+    // Jointure sur workspaces.owner_email : donne au parrain une vraie vue
+    // "mes clients" (nom de boutique, métier) plutôt qu'une simple liste de
+    // comptes — c'est ce qui transforme la page parrainage en QG partenaire.
     const filleuls = await db.query(
-        `SELECT id, nom, prenom, email, parrainage_le FROM utilisateurs WHERE parraine_par = $1 ORDER BY parrainage_le DESC`,
+        `SELECT u.id, u.nom, u.prenom, u.email, u.parrainage_le,
+                w.nom AS boutique_nom, w.metier AS boutique_metier
+         FROM utilisateurs u
+         LEFT JOIN workspaces w ON w.owner_email = u.email
+         WHERE u.parraine_par = $1
+         ORDER BY u.parrainage_le DESC`,
         [userId]
     );
     const commissions = await db.query(

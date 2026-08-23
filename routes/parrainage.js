@@ -62,11 +62,15 @@ router.get("/", requireAuth, async (req, res) => {
         const nomAffiche = nomComplet ? escapeHtml(nomComplet) : `<span data-i18n="parrainage.filleul_default">Filleul</span>`;
         const commissionsFilleul = resume.commissions.filter(c => c.filleul_id === f.id);
         const totalFilleul = commissionsFilleul.reduce((s, c) => s + (parseFloat(c.commission_montant) || 0), 0);
+        const boutiqueLigne = f.boutique_nom
+            ? `<span class="pr-filleul-boutique">🏪 ${escapeHtml(f.boutique_nom)}${f.boutique_metier ? ` · ${escapeHtml(f.boutique_metier)}` : ""}</span>`
+            : "";
         return `
         <div class="pr-filleul">
             <div class="pr-filleul-avatar">${escapeHtml((f.prenom || f.email || "?").charAt(0).toUpperCase())}</div>
             <div class="pr-filleul-info">
                 <strong>${nomAffiche}</strong>
+                ${boutiqueLigne}
                 <span><span class="pr-count">${commissionsFilleul.length}</span> <span data-i18n="parrainage.payments_word">paiement(s) généré(s)</span></span>
             </div>
             <div class="pr-filleul-gain">+${totalFilleul.toFixed(2)}</div>
@@ -122,6 +126,7 @@ h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10
 .pr-filleul-info { flex:1; display:flex; flex-direction:column; }
 .pr-filleul-info strong { font-size:13.5px; }
 .pr-filleul-info span { font-size:11px; color:var(--muted); }
+.pr-filleul-boutique { font-size:11.5px; color:var(--blue); }
 .pr-filleul-gain { font-family:"JetBrains Mono"; color:var(--green); font-weight:700; }
 .pr-gain-row { display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:11px 14px; margin-bottom:8px; font-size:12.5px; }
 .pr-gain-plan { flex:1; color:var(--muted); }
