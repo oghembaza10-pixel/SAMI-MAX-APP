@@ -175,6 +175,7 @@ app.use("/profile",   requireAuth, require("./routes/profile"));
 app.use("/vitrine", require("./routes/vitrine"));
 app.use("/settings",  requireAuth, require("./routes/settings"));
 app.use("/parrainage", requireAuth, require("./routes/parrainage"));
+app.use("/agence", require("./routes/agence"));
 app.use("/partenariat", require("./routes/partenariat"));
 app.use("/admin", require("./routes/admin"));
 app.use("/ads",       requireAuth, require("./routes/ads"));
@@ -267,7 +268,10 @@ app.get("/qg", requireAuth, async (req, res) => {
         if (!workspace) {
             return clearWorkspaceSession(req, () => res.redirect("/hub"));
         }
-        if (workspace.owner !== req.session.email) {
+        const estAgenceProprietaire = req.session.typeCompte === "agence"
+            && workspace.agenceId
+            && workspace.agenceId === req.session.userId;
+        if (workspace.owner !== req.session.email && !estAgenceProprietaire) {
             return clearWorkspaceSession(req, () => res.redirect("/hub"));
         }
 
@@ -293,6 +297,7 @@ app.get("/qg", requireAuth, async (req, res) => {
             shop        : req.session.shop      || "",
             themeVisuel,
             attente     : false,
+            vueAgence   : estAgenceProprietaire,
         });
     } catch (err) {
         console.error("❌ GET /qg :", err);

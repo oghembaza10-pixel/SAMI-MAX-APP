@@ -264,7 +264,7 @@ router.post("/", async (req, res) => {
 
             res.json({
                 success : true,
-                redirect: workspace ? "/qg" : "/hub",
+                redirect: workspace ? "/qg" : (typeCompte === "agence" ? "/agence" : "/hub"),
             });
         });
 

@@ -48,6 +48,8 @@ function mapRow(r) {
         metaPageId: r.meta_page_id || "",
         timezone: r.timezone || "Africa/Algiers",
         palierAbonnement: r.palier_abonnement || "free",
+        agenceId: r.agence_id || null,
+        agenceStatut: r.agence_statut || "actif",
         statut: r.statut || "actif",
         actif: r.statut === "actif" || !r.statut,
         created_at: r.created_at || "",
@@ -136,17 +138,31 @@ async function belongsToOwner(workspaceId, owner) {
     }
 }
 
-async function create({ workspaceId, owner, nom, metier, logo = "", pays = "", devise = "", langue = "fr" }) {
+async function create({ workspaceId, owner, nom, metier, logo = "", pays = "", devise = "", langue = "fr", agenceId = null }) {
     try {
         await db.query(
-            `INSERT INTO workspaces (id, owner, owner_email, nom, metier, logo, pays, devise, langue, statut)
-             VALUES ($1, $2, $2, $3, $4, $5, $6, $7, $8, 'actif')`,
-            [workspaceId, owner, nom, metier, logo, pays, devise || "DZD", langue]
+            `INSERT INTO workspaces (id, owner, owner_email, nom, metier, logo, pays, devise, langue, statut, agence_id)
+             VALUES ($1, $2, $2, $3, $4, $5, $6, $7, $8, 'actif', $9)`,
+            [workspaceId, owner, nom, metier, logo, pays, devise || "DZD", langue, agenceId]
         );
         return await getById(workspaceId);
     } catch (err) {
         console.error("❌ workspaceService.create :", err.message);
         return null;
+    }
+}
+
+// Boutiques créées par une agence donnée, pour son "QG Agence".
+async function getByAgence(agenceId) {
+    try {
+        const rows = await db.query(
+            `SELECT * FROM workspaces WHERE agence_id = $1 ORDER BY created_at DESC`,
+            [agenceId]
+        );
+        return rows.map(mapRow);
+    } catch (err) {
+        console.error("❌ workspaceService.getByAgence :", err.message);
+        return [];
     }
 }
 
@@ -203,5 +219,6 @@ module.exports = {
     belongsToOwner,
     create,
     update,
+    getByAgence,
     delete: remove,
 };
