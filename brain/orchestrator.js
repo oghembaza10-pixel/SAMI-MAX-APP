@@ -3,11 +3,34 @@
  * Cerveau central de SAMII — VERSION COMPLÈTE
  */
 
+const axios = require("axios");
 const E = require("./events");
 
 const commerceEngine   = require("../engines/commerceEngine");
 const crmEngine        = require("../engines/crmEngine");
 const automationEngine = require("../engines/automationEngine");
+
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
+const TABLE_BOUTIQUES  = process.env.TABLE_BOUTIQUES;
+
+async function desactiverBoutique(shop) {
+    if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID || !TABLE_BOUTIQUES) return;
+    const headers = { Authorization: `Bearer ${AIRTABLE_API_KEY}`, "Content-Type": "application/json" };
+    const searchUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}?filterByFormula={shop_url}="${shop}"`;
+    const search = await axios.get(searchUrl, { headers });
+    const record = search.data.records[0];
+    if (!record) {
+        console.warn(`⚠️ Désinstallation : boutique introuvable dans Airtable — ${shop}`);
+        return;
+    }
+    await axios.patch(
+        `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${TABLE_BOUTIQUES}/${record.id}`,
+        { fields: { status: "inactif", webhooks_actifs: false } },
+        { headers }
+    );
+    console.log(`✅ Boutique désactivée dans Airtable : ${shop}`);
+}
 
 // ── TABLE DE ROUTAGE ────────────────────────────────────────
 const routes = {
@@ -17,9 +40,13 @@ const routes = {
         console.log(`✅ Boutique connectée : ${e.shop}`);
     },
 
-    [E.SHOP_UNINSTALLED]: (e) => {
+    [E.SHOP_UNINSTALLED]: async (e) => {
         console.log(`🗑️ Boutique désinstallée : ${e.shop}`);
-        // TODO : désactiver la boutique dans Airtable
+        try {
+            await desactiverBoutique(e.shop);
+        } catch (err) {
+            console.error("❌ Désactivation boutique Airtable :", err.response?.data || err.message);
+        }
     },
 
     // ── SHOPIFY ORDERS ──────────────────────────────────
