@@ -1,0 +1,456 @@
+<title>SAMII OS</title>
+<style>
+  :root {
+    --ground: #faf9f6;
+    --surface: #ffffff;
+    --surface-2: #f2efe8;
+    --line: rgba(20,18,12,.12);
+    --line-soft: rgba(20,18,12,.07);
+    --ink: #16140f;
+    --ink-muted: #57523f;
+    --ink-faint: #918c78;
+    --gold: #a3791f;
+    --gold-bright: #c9962c;
+    --gold-soft: rgba(163,121,31,.10);
+    --blue: #0091a8;
+    --blue-soft: rgba(0,145,168,.08);
+    --ok: #2f7d4f;
+    --ok-soft: rgba(47,125,79,.10);
+    --warn: #b1591f;
+    --warn-soft: rgba(177,89,31,.10);
+    --skip: #918c78;
+    --skip-soft: rgba(145,140,120,.12);
+    --font-display: 'Cinzel', Georgia, serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --ground: #070809;
+      --surface: #0e1012;
+      --surface-2: #13171a;
+      --line: rgba(255,255,255,.09);
+      --line-soft: rgba(255,255,255,.05);
+      --ink: #F7F7F5;
+      --ink-muted: #9a9fa1;
+      --ink-faint: #5b6063;
+      --gold: #D4A94A;
+      --gold-bright: #F2CC78;
+      --gold-soft: rgba(212,169,74,.10);
+      --blue: #00D4FF;
+      --blue-soft: rgba(0,212,255,.07);
+      --ok: #3FA66B;
+      --ok-soft: rgba(63,166,107,.12);
+      --warn: #D97757;
+      --warn-soft: rgba(217,119,87,.12);
+      --skip: #6b7073;
+      --skip-soft: rgba(107,112,115,.10);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #070809;
+    --surface: #0e1012;
+    --surface-2: #13171a;
+    --line: rgba(255,255,255,.09);
+    --line-soft: rgba(255,255,255,.05);
+    --ink: #F7F7F5;
+    --ink-muted: #9a9fa1;
+    --ink-faint: #5b6063;
+    --gold: #D4A94A;
+    --gold-bright: #F2CC78;
+    --gold-soft: rgba(212,169,74,.10);
+    --blue: #00D4FF;
+    --blue-soft: rgba(0,212,255,.07);
+    --ok: #3FA66B;
+    --ok-soft: rgba(63,166,107,.12);
+    --warn: #D97757;
+    --warn-soft: rgba(217,119,87,.12);
+    --skip: #6b7073;
+    --skip-soft: rgba(107,112,115,.10);
+  }
+
+  * { box-sizing: border-box; }
+  html { background: var(--ground); }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(ellipse 800px 420px at 50% 0%, var(--gold-soft), transparent 60%),
+      var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: rgba(212,169,74,.28); }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 72px 24px 140px; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+  }
+  .eyebrow::after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg, var(--gold), transparent); opacity: .4; }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.1rem, 5vw, 3.1rem);
+    line-height: 1.12;
+    letter-spacing: -.01em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  h1 span { color: var(--gold); }
+
+  .lede { font-size: 1.05rem; color: var(--ink-muted); max-width: 64ch; margin: 0 0 8px; }
+
+  .meta-row {
+    display: flex; gap: 20px; flex-wrap: wrap;
+    margin-top: 30px; padding-top: 22px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono); font-size: .74rem; color: var(--ink-faint);
+  }
+  .meta-row b { color: var(--ink-muted); font-weight: 600; }
+
+  section { margin-top: 76px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+  .sec-num { font-family: var(--font-mono); font-size: .78rem; color: var(--gold); letter-spacing: .05em; }
+  h2 {
+    font-family: var(--font-display); font-size: 1.6rem; font-weight: 700;
+    color: var(--ink); margin: 0; text-wrap: balance;
+  }
+  .sec-sub { color: var(--ink-muted); font-size: .95rem; max-width: 66ch; margin: 10px 0 28px; }
+
+  p { color: var(--ink-muted); max-width: 70ch; }
+  strong { color: var(--ink); font-weight: 600; }
+  code {
+    font-family: var(--font-mono); font-size: .85em;
+    background: var(--surface-2); border: 1px solid var(--line-soft);
+    padding: 1px 6px; border-radius: 4px; color: var(--blue);
+  }
+
+  /* ARCHITECTURE STACK */
+  .stack { display: flex; flex-direction: column; gap: 2px; margin: 26px 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+  .stack-row {
+    display: grid; grid-template-columns: 170px 1fr 108px;
+    background: var(--surface);
+  }
+  .stack-row + .stack-row { border-top: 1px solid var(--line-soft); }
+  .stack-row.head {
+    background: transparent; font-family: var(--font-mono); font-size: .66rem;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .stack-row > div { padding: 15px 18px; }
+  .stack-layer { font-family: var(--font-mono); font-size: .74rem; letter-spacing: .04em; color: var(--gold); display: flex; align-items: center; }
+  .stack-desc { color: var(--ink-muted); font-size: .89rem; border-left: 1px solid var(--line-soft); border-right: 1px solid var(--line-soft); }
+  .stack-desc b { color: var(--ink); }
+  .stack-status { display: flex; align-items: center; }
+
+  .pill {
+    font-family: var(--font-mono); font-size: .64rem; font-weight: 700;
+    letter-spacing: .05em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 20px; white-space: nowrap;
+  }
+  .pill.ok   { background: var(--ok-soft);   color: var(--ok);   border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent); }
+  .pill.skip { background: var(--skip-soft); color: var(--skip); border: 1px solid color-mix(in srgb, var(--skip) 40%, transparent); }
+
+  @media (max-width: 640px) {
+    .stack-row { grid-template-columns: 1fr; }
+    .stack-row > div { padding: 12px 16px; }
+    .stack-desc { border-left: none; border-right: none; border-top: 1px dashed var(--line-soft); }
+    .stack-row.head { display: none; }
+  }
+
+  /* TIERS */
+  .tiers { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 22px; }
+  .tier {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 13px;
+    padding: 18px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .tier .name { font-family: var(--font-mono); font-size: .78rem; color: var(--gold); letter-spacing: .03em; }
+  .tier .who { color: var(--ink); font-size: .93rem; font-weight: 600; }
+  .tier .desc { color: var(--ink-muted); font-size: .82rem; line-height: 1.5; }
+
+  /* PHASES */
+  .phases { display: flex; flex-direction: column; margin-top: 24px; }
+  .phase { display: grid; grid-template-columns: 130px 1fr; gap: 22px; padding: 22px 0; border-top: 1px solid var(--line-soft); }
+  .phase:last-child { border-bottom: 1px solid var(--line-soft); }
+  .phase-when { font-family: var(--font-mono); font-size: .78rem; color: var(--gold); letter-spacing: .02em; padding-top: 2px; }
+  .phase-title { font-weight: 600; color: var(--ink); margin: 0 0 8px; font-size: 1rem; }
+  .phase-list { margin: 0; padding-left: 18px; color: var(--ink-muted); font-size: .9rem; }
+  .phase-list li { margin-bottom: 5px; }
+  .phase-cond {
+    display: inline-block; font-family: var(--font-mono); font-size: .68rem;
+    color: var(--blue); background: var(--blue-soft); border-radius: 6px; padding: 3px 8px; margin-top: 10px;
+  }
+
+  .callout {
+    background: var(--gold-soft); border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+    border-radius: 13px; padding: 18px 20px; font-size: .92rem; color: var(--ink-muted); margin-top: 26px;
+  }
+  .callout strong { color: var(--gold); }
+
+  hr.div { border: none; height: 1px; background: linear-gradient(90deg, transparent, var(--line), transparent); margin: 72px 0; }
+
+  footer {
+    margin-top: 84px; padding-top: 24px; border-top: 1px solid var(--line);
+    font-family: var(--font-mono); font-size: .72rem; color: var(--ink-faint);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<div class="wrap">
+
+  <div class="eyebrow">Feuille de route · OG Technology</div>
+  <h1>De l'assistant à l'<span>infrastructure</span></h1>
+  <p class="lede">
+    Ce document fixe l'ambition entière de SAMII — sept couches, du cerveau conversationnel
+    jusqu'à l'infrastructure ouverte aux développeurs. Chaque ligne est notée contre le code
+    réel, pas contre l'intention : ce qui tourne déjà, ce qui reste à construire, et dans quel
+    ordre. Rien n'est perdu ici — c'est la carte complète, gardée entière.
+  </p>
+  <div class="meta-row">
+    <span><b>Ambition</b> — AI Commerce Operating System</span>
+    <span><b>Départ</b> — Algérie / Maghreb</span>
+    <span><b>Horizon</b> — MENA → Afrique → Monde</span>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span></div>
+    <h2>Les sept couches de SAMII</h2>
+    <p class="sec-sub">
+      L'architecture complète, telle qu'elle est visée — avec l'état réel de chacune, vérifié
+      dans le code ce soir même, pas supposé.
+    </p>
+
+    <div class="stack">
+      <div class="stack-row head"><div>Couche</div><div>Ce qu'elle fait</div><div>État</div></div>
+      <div class="stack-row">
+        <div class="stack-layer">Cerveau</div>
+        <div class="stack-desc"><b>Le raisonnement.</b> Comprend une demande, décide quoi faire, orchestre les outils — pas un chatbot à mots-clés.</div>
+        <div class="stack-status"><span class="pill ok">Construit</span></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-layer">Connect</div>
+        <div class="stack-desc"><b>L'unification des canaux.</b> WhatsApp, Telegram, Gmail, Agenda, Shopify, WooCommerce, Meta — un marchand connecte, SAMII orchestre.</div>
+        <div class="stack-status"><span class="pill ok">Construit</span></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-layer">Commerce</div>
+        <div class="stack-desc"><b>La chaîne complète.</b> Produit → commande → paiement (CCP/COD) → livraison → SAV, orchestrée de bout en bout.</div>
+        <div class="stack-status"><span class="pill ok">Construit</span></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-layer">QG / Cockpit</div>
+        <div class="stack-desc"><b>Le centre de contrôle.</b> Vue temps réel de l'activité, notifications, tableau de bord marchand.</div>
+        <div class="stack-status"><span class="pill ok">Construit</span></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-layer">Bus d'événements</div>
+        <div class="stack-desc"><b>Le système nerveux.</b> Chaque fait (<code>order.created</code>, <code>message.received</code>, <code>payment.confirmed</code>) devient un événement que les règles, agents et workflows peuvent écouter — la base d'automatisations qui s'enchaînent sans code figé à chaque fois.</div>
+        <div class="stack-status"><span class="pill warn">À construire</span></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-layer">Policy Engine</div>
+        <div class="stack-desc"><b>Le curseur de confiance, avec des règles.</b> Pas juste Manuel/Assisté/Autopilot — le marchand définit ce qui est autorisé (répondre, relancer), ce qui demande confirmation (rembourser, annuler) et ce qui est interdit (transférer de l'argent). SAMII agit dans ces limites, jamais au-delà.</div>
+        <div class="stack-status"><span class="pill warn">À construire</span></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-layer">Trust / Governance</div>
+        <div class="stack-desc"><b>Ce qui rend tout ça exploitable à l'échelle.</b> Permissions, secrets, logs d'audit, isolation par marchand, limites de débit — pas visible pour un utilisateur, mais ce qui sépare une démo d'une infrastructure fiable.</div>
+        <div class="stack-status"><span class="pill warn">À construire</span></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-layer">Marketplace d'agents</div>
+        <div class="stack-desc"><b>L'écosystème.</b> Des agents spécialisés (SAV, prospection, finance) installables par un marchand, publiés par des développeurs tiers.</div>
+        <div class="stack-status"><span class="pill warn">À construire</span></div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-layer">SAMII API</div>
+        <div class="stack-desc"><b>La porte d'entrée, pas une couche isolée.</b> Pas un ajout final — un contrat interne (authentification, connecteurs, événements, actions) qui traverse déjà les couches ci-dessus. Elle existe en interne dès le départ ; ce qui change avec le temps, c'est si elle s'ouvre à des développeurs externes.</div>
+        <div class="stack-status"><span class="pill warn">À construire</span></div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Constat honnête</strong> — les quatre premières couches, celles qui servent directement un marchand aujourd'hui, sont déjà construites et tournent en conditions réelles ce soir, vérifié dans le code, pas supposé. Les cinq suivantes restent à bâtir — pas une question de vision, une question de temps et de premiers clients qui financent la suite. "Construit" ici veut dire "le code existe et fonctionne en conditions réelles" — pas "prêt pour un investisseur ou un développeur externe", ce sont deux niveaux de preuve différents.
+    </div>
+  </section>
+
+  <!-- TIERS -->
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span></div>
+    <h2>Les paliers, une fois l'infrastructure prête</h2>
+    <p class="sec-sub">Le modèle économique complet, du marchand solo jusqu'au développeur qui bâtit sur SAMII.</p>
+
+    <div class="tiers">
+      <div class="tier"><div class="name">SAMII FREE</div><div class="who">Découverte</div><div class="desc">Un canal, réponses automatiques de base. Pour essayer sans risque.</div></div>
+      <div class="tier"><div class="name">SAMII PRO</div><div class="who">Marchand solo</div><div class="desc">WhatsApp + Telegram, commandes, agenda. Le cœur de ce qui existe déjà.</div></div>
+      <div class="tier"><div class="name">SAMII BUSINESS</div><div class="who">Commerce établi</div><div class="desc">Tous les canaux, Gmail, automatisations avancées, Autopilot.</div></div>
+      <div class="tier"><div class="name">SAMII AGENCY</div><div class="who">Multi-boutiques</div><div class="desc">Gérer plusieurs marchands/clients depuis un seul tableau de bord.</div></div>
+      <div class="tier"><div class="name">SAMII API</div><div class="who">Développeurs</div><div class="desc">Clés API, SDK, webhooks — construire sa propre application dessus.</div></div>
+      <div class="tier"><div class="name">SAMII WHITE LABEL</div><div class="who">Partenaires</div><div class="desc">Sa propre marque, son propre domaine, l'infrastructure SAMII dessous.</div></div>
+    </div>
+  </section>
+
+  <!-- PHASES -->
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span></div>
+    <h2>L'ordre de construction</h2>
+    <p class="sec-sub">Chaque phase est conditionnée par la précédente — jamais par le calendrier, toujours par la preuve.</p>
+
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-when">Phase 1</div>
+        <div>
+          <div class="phase-title">Prouver SAMII PRO</div>
+          <ul class="phase-list">
+            <li>Premiers clients payants réels, via démarchage direct et Fiverr/Malt</li>
+            <li>L'équipe marketing amplifie l'acquisition</li>
+            <li>Stabiliser WhatsApp à pleine échelle (paiement, enregistrement, modèles)</li>
+          </ul>
+          <span class="phase-cond">Condition pour la suite : du revenu récurrent réel</span>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-when">Phase 2</div>
+        <div>
+          <div class="phase-title">Construire Autopilot</div>
+          <ul class="phase-list">
+            <li>Le curseur de confiance Manuel → Assisté → Autopilot</li>
+            <li>Financé par le revenu de la Phase 1, pas avant</li>
+          </ul>
+          <span class="phase-cond">Condition pour la suite : Autopilot utilisé et fiable en production</span>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-when">Phase 3</div>
+        <div>
+          <div class="phase-title">Ouvrir SAMII API</div>
+          <ul class="phase-list">
+            <li>Clés API, documentation, SDK, sandbox pour développeurs</li>
+            <li>Premier partenaire développeur pilote, en Afrique francophone en priorité</li>
+          </ul>
+          <span class="phase-cond">Condition pour la suite : au moins une vraie application tierce en production</span>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-when">Phase 4</div>
+        <div>
+          <div class="phase-title">Lancer le Marketplace d'agents</div>
+          <ul class="phase-list">
+            <li>Agents spécialisés publiés par des développeurs externes</li>
+            <li>SAMII devient la plateforme sur laquelle d'autres construisent, pas seulement l'application que les marchands utilisent</li>
+          </ul>
+          <span class="phase-cond">Horizon : MENA → Afrique élargie → international</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="div">
+
+  <section style="margin-top:0;">
+    <div class="sec-head"><span class="sec-num">04</span></div>
+    <h2>OGAPI — l'infrastructure sœur</h2>
+    <p class="sec-sub">
+      Une marque distincte, même maison-mère OG Technology, même identité noir et or.
+      Pas un concurrent de SAMII — l'accès API brut pour des entreprises qui veulent
+      construire elles-mêmes, plutôt qu'utiliser l'assistant complet.
+    </p>
+    <div class="callout">
+      <strong>Démarre en interne, pas en produit public</strong> — OGAPI ne se lance pas comme une deuxième entreprise séparée dès le départ. Elle commence comme l'infrastructure interne qui fait déjà tourner SAMII (le contrat API dont on parle plus haut) — et s'ouvre publiquement à des clients externes seulement une fois stable. Ça évite de disperser l'énergie sur deux produits publics en même temps.
+    </div>
+    <div class="callout">
+      <strong>Terrain, corrigé après vérification</strong> — le Kenya et le Nigeria ont de vrais fournisseurs locaux établis. Pour l'Afrique francophone, "aucun acteur" serait faux : <a href="https://www.fiitsa.com" target="_blank" rel="noopener">Fiitsa</a>, <a href="https://genuka.com" target="_blank" rel="noopener">Genuka</a> et <a href="https://medium.com/lygos" target="_blank" rel="noopener">Lygos</a> opèrent déjà sur des morceaux du problème (ventes WhatsApp, service client, paiements Mobile Money). Ce qui reste ouvert, c'est une infrastructure plus large — multi-canal, orientée développeurs, pas juste un outil de plus — pas un terrain vide.
+    </div>
+  </section>
+
+  <hr class="div">
+
+  <section style="margin-top:0;">
+    <div class="sec-head"><span class="sec-num">05</span></div>
+    <h2>SAMII Partner Program — le réseau de distribution</h2>
+    <p class="sec-sub">
+      Ne pas démarcher 1 000 clients un par un — construire 50 canaux qui en apportent 20 chacun.
+      Un freelance ou une agence n'apporte pas juste un lien d'affiliation : il intègre SAMII à sa
+      propre prestation, facture son installation/formation/accompagnement, et touche en plus une
+      commission récurrente tant que le client reste actif. SAMII ne lui prend pas ses clients —
+      SAMII lui donne plus de valeur à vendre.
+    </p>
+
+    <div class="callout">
+      <strong>Déjà construit, ce soir, vérifié dans le code</strong> — le moteur de commission existe
+      et tourne réellement : <code>services/referralService.js</code> + la page <code>/parrainage</code>.
+      20% de commission récurrente pendant 12 mois sur chaque paiement du filleul, 5% de réduction pour
+      le filleul, lien personnel, liste des filleuls, gains en temps réel (confirmé/en attente), déjà
+      branché sur les trois moyens de paiement (Stripe, Chargily, CCP). Ce n'est pas à construire — c'est
+      à repositionner et à faire connaître.
+    </div>
+
+    <div class="tiers">
+      <div class="tier"><div class="name">SAMII PARTNER</div><div class="who">20% récurrent</div><div class="desc">Le palier de base, déjà actif aujourd'hui pour tout le monde — celui qui tourne dans <code>referralService.js</code>.</div></div>
+      <div class="tier"><div class="name">SAMII PRO PARTNER</div><div class="who">25% récurrent</div><div class="desc">Pour un partenaire qui apporte des clients régulièrement — palier à activer une fois qu'un premier partenaire prouve le volume.</div></div>
+      <div class="tier"><div class="name">SAMII AGENCY PARTNER</div><div class="who">Multi-clients</div><div class="desc">Pour une agence qui gère plusieurs comptes marchands à la fois — s'appuie sur le palier Agency déjà prévu dans la grille tarifaire.</div></div>
+      <div class="tier"><div class="name">STRATEGIC PARTNER</div><div class="who">Sur négociation</div><div class="desc">Pour un acteur capable de distribuer SAMII à grande échelle — plus qu'un pourcentage, un vrai accord commercial.</div></div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-when">Cible 1</div>
+      <div>
+        <div class="phase-title">SAMII Technology Partners</div>
+        <ul class="phase-list">
+          <li>Freelances Shopify / WooCommerce, agences e-commerce, intégrateurs n8n/Make, consultants CRM, agences IA</li>
+        </ul>
+        <span class="phase-cond">Ils apportent des clients techniques — SAMII devient une ligne de plus dans leur prestation</span>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-when">Cible 2</div>
+      <div>
+        <div class="phase-title">SAMII Growth Partners</div>
+        <ul class="phase-list">
+          <li>Créateurs de contenu, formateurs, communautés entrepreneuriales, agences marketing</li>
+        </ul>
+        <span class="phase-cond">Ils font connaître SAMII — même moteur de commission, audience différente</span>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Le message qui change tout</strong> — pas « aidez-nous à trouver des clients », mais
+      « devenez partenaire SAMII : vous gardez la relation avec votre client, nous fournissons la
+      technologie ». Ça retire d'emblée la peur qu'un freelance a toujours en tête — que l'outil lui
+      vole son client — et la remplace par l'inverse : SAMII l'aide à mieux le servir, et à lui facturer
+      davantage (installation, configuration, formation, gestion de compte).
+    </div>
+
+    <div class="callout">
+      <strong>Ce qui reste réellement à faire</strong> — pas une nouvelle infrastructure, juste 3 ajustements
+      sur ce qui existe déjà : distinguer les paliers de commission (aujourd'hui tout le monde est à 20%
+      dans <code>TAUX_COMMISSION_PARRAIN</code>), habiller <code>/parrainage</code> en page "Devenez
+      partenaire" avec les arguments ci-dessus au lieu d'un simple lien d'invitation, et ajouter de quoi
+      inviter un client directement (pas seulement partager un lien) avec un support marketing minimal
+      (présentation, démo). Un chantier de code léger, pas un nouveau système à inventer.
+    </div>
+  </section>
+
+  <footer>
+    <span>SAMII OS — document de travail, mis à jour au fil des décisions</span>
+    <span>OG Technology</span>
+  </footer>
+
+</div>
