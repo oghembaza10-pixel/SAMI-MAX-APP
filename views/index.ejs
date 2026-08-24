@@ -1936,6 +1936,20 @@
             margin-bottom: 14px;
         }
 
+        /* Note affichée uniquement quand "Agence" est sélectionné : l'agence
+           doit savoir avant de s'inscrire que la création de clients passe
+           par une validation — pas la découvrir en butant dessus. */
+        .type-note {
+            margin: -6px 0 14px;
+            padding: 10px 13px;
+            border-radius: 9px;
+            background: var(--gold-soft);
+            border: 1px solid var(--gold-border);
+            color: var(--text-muted);
+            font-size: .755rem;
+            line-height: 1.6;
+        }
+
         .type-choice label {
             flex: 1;
             display: flex;
@@ -2978,7 +2992,12 @@
                             <input type="radio" name="type_compte" value="marchand">
                             <span class="icon">🏪</span><span data-i18n="auth.type.marchand">Marchand</span>
                         </label>
+                        <label>
+                            <input type="radio" name="type_compte" value="agence">
+                            <span class="icon">🏢</span><span data-i18n="auth.type.agence">Agence</span>
+                        </label>
                     </div>
+                    <p class="type-note" id="type-note-agence" style="display:none;" data-i18n="auth.type.agenceNote">Vous entrez directement dans votre QG Agence. La création des espaces de vos clients s'ouvre après un échange avec notre équipe, sous 24 h.</p>
 
                     <div class="field-row">
                         <div class="field-group"><label data-i18n="auth.field.nom">Nom</label><input name="nom" placeholder="Ton nom" data-i18n-ph="auth.ph.nom" required></div>
@@ -3203,7 +3222,8 @@
                 'partenariat.ph.description': 'Explique-nous ton idée en quelques lignes...',
                 'partenariat.submit': 'Envoyer ma candidature →',
                 'partenariat.sent': '✅ Candidature envoyée ! On te recontacte vite.',
-                'auth.type.client': 'Particulier', 'auth.type.marchand': 'Marchand',
+                'auth.type.client': 'Particulier', 'auth.type.marchand': 'Marchand', 'auth.type.agence': 'Agence',
+                'auth.type.agenceNote': "Vous entrez directement dans votre QG Agence. La création des espaces de vos clients s'ouvre après un échange avec notre équipe, sous 24 h.",
                 'auth.field.nom': 'Nom', 'auth.ph.nom': 'Ton nom',
                 'auth.field.prenom': 'Prénom', 'auth.ph.prenom': 'Ton prénom',
                 'auth.field.email': 'Email', 'auth.field.telephone': 'Téléphone', 'auth.field.pays': 'Pays',
@@ -3295,7 +3315,8 @@
                 'partenariat.ph.description': 'Tell us about your idea in a few lines...',
                 'partenariat.submit': 'Send my application →',
                 'partenariat.sent': "✅ Application sent! We'll get back to you soon.",
-                'auth.type.client': 'Individual', 'auth.type.marchand': 'Merchant',
+                'auth.type.client': 'Individual', 'auth.type.marchand': 'Merchant', 'auth.type.agence': 'Agency',
+                'auth.type.agenceNote': 'You go straight into your Agency HQ. Creating your clients\u2019 workspaces opens after a quick call with our team, within 24h.',
                 'auth.field.nom': 'Last name', 'auth.ph.nom': 'Your last name',
                 'auth.field.prenom': 'First name', 'auth.ph.prenom': 'Your first name',
                 'auth.field.email': 'Email', 'auth.field.telephone': 'Phone', 'auth.field.pays': 'Country',
@@ -3387,7 +3408,8 @@
                 'partenariat.ph.description': 'اشرح لنا فكرتك في بضعة أسطر...',
                 'partenariat.submit': 'إرسال طلبي ←',
                 'partenariat.sent': '✅ تم إرسال الطلب! سنتواصل معك قريبًا.',
-                'auth.type.client': 'فرد', 'auth.type.marchand': 'تاجر',
+                'auth.type.client': 'فرد', 'auth.type.marchand': 'تاجر', 'auth.type.agence': 'وكالة',
+                'auth.type.agenceNote': 'تدخل مباشرة إلى مقر وكالتك. إنشاء مساحات عملائك يُفتح بعد تواصل مع فريقنا، خلال 24 ساعة.',
                 'auth.field.nom': 'اللقب', 'auth.ph.nom': 'لقبك',
                 'auth.field.prenom': 'الاسم', 'auth.ph.prenom': 'اسمك',
                 'auth.field.email': 'البريد الإلكتروني', 'auth.field.telephone': 'الهاتف', 'auth.field.pays': 'البلد',
@@ -3481,7 +3503,8 @@
                 'partenariat.ph.description': '用几行字介绍一下你的想法...',
                 'partenariat.submit': '提交申请 →',
                 'partenariat.sent': '✅ 申请已发送！我们会尽快联系你。',
-                'auth.type.client': '个人', 'auth.type.marchand': '商家',
+                'auth.type.client': '个人', 'auth.type.marchand': '商家', 'auth.type.agence': '代理机构',
+                'auth.type.agenceNote': '您将直接进入代理总部。为客户创建空间的权限将在与我们团队沟通后开放，24 小时内完成。',
                 'auth.field.nom': '姓', 'auth.ph.nom': '你的姓',
                 'auth.field.prenom': '名', 'auth.ph.prenom': '你的名',
                 'auth.field.email': '邮箱', 'auth.field.telephone': '电话', 'auth.field.pays': '国家',
@@ -3714,6 +3737,15 @@
             goToStep(2);
         });
         document.getElementById('btn-step2-back').addEventListener('click', () => goToStep(1));
+
+        // Note "Agence" : affichée seulement quand ce type est choisi, pour
+        // annoncer la validation avant l'inscription et pas après.
+        document.querySelectorAll('input[name="type_compte"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const note = document.getElementById('type-note-agence');
+                if (note) note.style.display = radio.value === 'agence' && radio.checked ? 'block' : 'none';
+            });
+        });
 
         document.getElementById('form-register').addEventListener('submit', async (e) => {
             e.preventDefault();

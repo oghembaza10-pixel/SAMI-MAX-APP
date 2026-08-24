@@ -21,6 +21,29 @@ function requireAgence(req, res, next) {
     next();
 }
 
+// Une agence peut s'inscrire seule (type_compte = 'agence' choisi à
+// l'inscription) et entre tout de suite dans son QG. En revanche, créer la
+// boutique d'un client se fait sur un email QUELCONQUE : sans validation,
+// n'importe qui pourrait s'inscrire comme agence et pré-réserver l'espace
+// d'un email qui ne lui appartient pas, puis y garder un accès permanent
+// (workspaces.agence_id) le jour où le vrai propriétaire s'inscrit.
+// D'où ce verrou : le compte vit normalement, seule la création de clients
+// attend qu'OG Technology ait validé l'agence.
+// Le statut vit dans utilisateurs.statut_acces, colonne qui existe déjà —
+// aucune migration à passer. login.js ne bloque que "suspendu", donc une
+// agence en validation se connecte et navigue sans aucune gêne.
+async function agenceEstValidee(userId) {
+    try {
+        const rows = await db.query(`SELECT statut_acces FROM utilisateurs WHERE id = $1`, [userId]);
+        return rows[0]?.statut_acces !== "agence_en_validation";
+    } catch (err) {
+        // En cas de doute (base indisponible), on refuse : mieux vaut une
+        // agence légitime qui réessaie qu'un espace réservé à tort.
+        console.error("❌ agenceEstValidee :", err.message);
+        return false;
+    }
+}
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -55,6 +78,16 @@ router.get("/", requireAgence, async (req, res) => {
     const clients = await workspaceService.getByAgence(req.session.userId);
     const nbActifs = clients.filter(c => c.agenceStatut === "actif").length;
     const nbAbandon = clients.filter(c => c.agenceStatut === "abandon_demande").length;
+
+    // Une agence auto-inscrite voit son QG complet dès la première seconde,
+    // mais doit savoir noir sur blanc pourquoi "Ajouter un client" ne
+    // fonctionne pas encore — sinon elle croit à un bug et s'en va.
+    const validee = await agenceEstValidee(req.session.userId);
+    const bandeauValidation = validee ? "" : `
+        <div class="ag-validation">
+            <strong>⏳ Compte agence en cours de validation</strong>
+            <p>Vous avez accès à votre QG, mais la création d'espaces clients est ouverte après un échange avec notre équipe — nous vous contactons sous 24 h. C'est ce qui garantit qu'une agence ne puisse pas réserver l'espace d'un email qui ne lui appartient pas.</p>
+        </div>`;
 
     const paysOptions = Object.entries(PAYS_DEVISE)
         .map(([code, p]) => `<option value="${code}">${escapeHtml(p.label)}</option>`)
@@ -100,6 +133,9 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 .back-link:hover { color:var(--blue); }
 h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10px; }
 .ag-sub { color:var(--muted); font-size:13.5px; margin-bottom:24px; }
+.ag-validation { background:rgba(215,179,76,.09); border:1px solid rgba(215,179,76,.34); border-radius:var(--radius); padding:16px 18px; margin-bottom:22px; }
+.ag-validation strong { display:block; color:var(--gold); font-size:14px; margin-bottom:6px; }
+.ag-validation p { margin:0; color:var(--muted); font-size:12.8px; line-height:1.65; }
 .ag-stats-bar { display:flex; gap:14px; margin:20px 0; }
 .ag-stat { flex:1; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; text-align:center; }
 .ag-stat strong { display:block; font-family:"JetBrains Mono"; font-size:22px; color:var(--green); }
@@ -137,6 +173,7 @@ h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10
 <div class="ag-wrap">
     <h1>🏢 QG Agence</h1>
     <p class="ag-sub">Créez et gérez les boutiques de vos clients depuis un seul endroit. Chaque client garde aussi son propre accès direct à sa boutique.</p>
+    ${bandeauValidation}
 
     <div class="ag-stats-bar">
         <div class="ag-stat"><strong>${clients.length}</strong><span>Clients</span></div>
@@ -214,6 +251,13 @@ document.querySelectorAll(".ag-btn-abandon").forEach(btn => {
 
 router.post("/creer-client", requireAgence, async (req, res) => {
     try {
+        if (!await agenceEstValidee(req.session.userId)) {
+            return res.json({
+                success: false,
+                error: "Votre compte agence est en cours de validation. Nous vous contactons sous 24 h pour l'activer — vous pourrez alors créer les espaces de vos clients.",
+            });
+        }
+
         const { nom, metier, email, pays } = req.body;
         if (!nom || !nom.trim()) return res.json({ success: false, error: "Le nom de la boutique est obligatoire." });
         if (!METIERS_VALIDES.has(metier)) return res.json({ success: false, error: "Métier invalide." });

@@ -86,6 +86,10 @@ router.get("/", (req, res) => {
                 <input type="radio" name="type_compte" value="marchand">
                 <span class="icon">🏪</span><span data-i18n="register.type.marchand">Marchand</span>
             </label>
+            <label>
+                <input type="radio" name="type_compte" value="agence">
+                <span class="icon">🏢</span><span data-i18n="register.type.agence">Agence</span>
+            </label>
         </div>
 
         <input name="password" type="password" placeholder="Mot de passe" data-i18n-ph="register.ph.password" required minlength="6">
@@ -102,7 +106,7 @@ const I18N = {
         'register.sub.metier_prefix': 'Pour votre activité', 'register.sub.default': 'Rejoignez OG Technology',
         'register.ph.nom': 'Nom', 'register.ph.prenom': 'Prénom', 'register.ph.email': 'Email', 'register.ph.telephone': 'Téléphone',
         'register.type_label': "Je m'inscris en tant que :",
-        'register.type.client': 'Particulier', 'register.type.marchand': 'Marchand',
+        'register.type.client': 'Particulier', 'register.type.marchand': 'Marchand', 'register.type.agence': 'Agence',
         'register.metier.ecommerce': 'E-commerçant', 'register.metier.restaurant': 'Restaurateur', 'register.metier.immobilier': 'Immobilier',
         'register.metier.livreur': 'Livreur (bientôt)', 'register.metier.fournisseur': 'Fournisseur (bientôt)',
         'register.ph.password': 'Mot de passe', 'register.submit': 'Créer mon compte',
@@ -115,7 +119,7 @@ const I18N = {
         'register.sub.metier_prefix': 'For your business', 'register.sub.default': 'Join OG Technology',
         'register.ph.nom': 'Last name', 'register.ph.prenom': 'First name', 'register.ph.email': 'Email', 'register.ph.telephone': 'Phone',
         'register.type_label': 'I am signing up as:',
-        'register.type.client': 'Individual', 'register.type.marchand': 'Merchant',
+        'register.type.client': 'Individual', 'register.type.marchand': 'Merchant', 'register.type.agence': 'Agency',
         'register.metier.ecommerce': 'E-commerce seller', 'register.metier.restaurant': 'Restaurant owner', 'register.metier.immobilier': 'Real estate',
         'register.metier.livreur': 'Delivery (coming soon)', 'register.metier.fournisseur': 'Supplier (coming soon)',
         'register.ph.password': 'Password', 'register.submit': 'Create my account',
@@ -128,7 +132,7 @@ const I18N = {
         'register.sub.metier_prefix': 'من أجل نشاطك', 'register.sub.default': 'انضم إلى OG Technology',
         'register.ph.nom': 'اللقب', 'register.ph.prenom': 'الاسم', 'register.ph.email': 'البريد الإلكتروني', 'register.ph.telephone': 'الهاتف',
         'register.type_label': 'أسجّل بصفتي:',
-        'register.type.client': 'فرد', 'register.type.marchand': 'تاجر',
+        'register.type.client': 'فرد', 'register.type.marchand': 'تاجر', 'register.type.agence': 'وكالة',
         'register.metier.ecommerce': 'تاجر إلكتروني', 'register.metier.restaurant': 'صاحب مطعم', 'register.metier.immobilier': 'عقارات',
         'register.metier.livreur': 'موصل (قريبًا)', 'register.metier.fournisseur': 'مورّد (قريبًا)',
         'register.ph.password': 'كلمة المرور', 'register.submit': 'إنشاء حسابي',
@@ -141,7 +145,7 @@ const I18N = {
         'register.sub.metier_prefix': '为您的', 'register.sub.default': '加入 OG Technology',
         'register.ph.nom': '姓', 'register.ph.prenom': '名', 'register.ph.email': '电子邮箱', 'register.ph.telephone': '电话号码',
         'register.type_label': '我要以以下身份注册：',
-        'register.type.client': '个人', 'register.type.marchand': '商家',
+        'register.type.client': '个人', 'register.type.marchand': '商家', 'register.type.agence': '代理机构',
         'register.metier.ecommerce': '电商卖家', 'register.metier.restaurant': '餐饮业主', 'register.metier.immobilier': '房地产',
         'register.metier.livreur': '配送员（即将推出）', 'register.metier.fournisseur': '供应商（即将推出）',
         'register.ph.password': '密码', 'register.submit': '创建我的账号',
@@ -325,7 +329,17 @@ router.get("/confirmer", async (req, res) => {
 // ── POST /register ───────────────────────────────────────────────
 router.post("/", async (req, res) => {
     const { nom, prenom, email, telephone, metier, password, type_compte, theme_visuel, ref } = req.body;
-    const typeCompte = type_compte === "marchand" ? "marchand" : "client";
+    // "agence" est un type d'inscription à part entière (l'agence entre
+    // directement dans son QG Agence), mais elle démarre EN VALIDATION :
+    // créer la boutique d'un client se fait sur un email quelconque, donc
+    // sans ce garde-fou n'importe qui pourrait s'inscrire comme agence et
+    // pré-réserver l'espace d'un email qui ne lui appartient pas — puis y
+    // garder un accès le jour où le vrai propriétaire s'inscrit.
+    // Le compte est utilisable tout de suite ; seule la création de clients
+    // attend la validation d'OG Technology (voir routes/agence.js).
+    const TYPES_VALIDES = ["client", "marchand", "agence"];
+    const typeCompte = TYPES_VALIDES.includes(type_compte) ? type_compte : "client";
+    const statutAcces = typeCompte === "agence" ? "agence_en_validation" : "actif";
 
     // Un nouveau compte démarre toujours au grade Soldat : seuls les thèmes
     // débloqués dès le départ sont acceptés à l'inscription (pas de triche
@@ -397,12 +411,12 @@ router.post("/", async (req, res) => {
             `INSERT INTO utilisateurs
                 (nom, prenom, email, telephone, metier, type_compte, password_hash, role, statut_acces, last_login, actif, email_verifie, token_verification, token_expire_le, theme_visuel)
              VALUES
-                ($1, $2, $3, $4, $5, $6, $7, 'owner', 'actif', CURRENT_DATE, true, false, $8, $9, $10)
+                ($1, $2, $3, $4, $5, $6, $7, 'owner', $11, CURRENT_DATE, true, false, $8, $9, $10)
              RETURNING id`,
             [
                 nom, prenom, email, telephone,
                 typeCompte === "marchand" ? (metier || "ecommerce") : "",
-                typeCompte, passwordHash, token, expireLe, themeChoisi,
+                typeCompte, passwordHash, token, expireLe, themeChoisi, statutAcces,
             ]
         );
 
@@ -461,11 +475,12 @@ router.post("/", async (req, res) => {
             req.session.workspaceId = workspaceExistant?.workspaceId || null;
             if (workspaceExistant) req.session.metier = workspaceExistant.metier;
 
-            res.json({
-                success : true,
-                message : "✅ Compte créé !",
-                redirect: typeCompte === "client" ? "/client-qg" : (workspaceExistant ? "/qg" : "/hub"),
-            });
+            const redirection =
+                typeCompte === "agence"  ? "/agence" :
+                typeCompte === "client"  ? "/client-qg" :
+                workspaceExistant        ? "/qg" : "/hub";
+
+            res.json({ success: true, message: "✅ Compte créé !", redirect: redirection });
         });
 
     } catch (err) {

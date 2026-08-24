@@ -262,9 +262,12 @@ router.post("/", async (req, res) => {
                 req.session.workspaceId = null;
             }
 
+            // Une agence atterrit toujours sur son QG Agence, même si elle
+            // possède aussi une boutique à elle : son point d'entrée, c'est
+            // la vue d'ensemble de ses clients, pas une boutique isolée.
             res.json({
                 success : true,
-                redirect: workspace ? "/qg" : (typeCompte === "agence" ? "/agence" : "/hub"),
+                redirect: typeCompte === "agence" ? "/agence" : (workspace ? "/qg" : "/hub"),
             });
         });
 
