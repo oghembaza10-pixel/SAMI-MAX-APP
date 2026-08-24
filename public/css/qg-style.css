@@ -479,25 +479,31 @@ body {
 .row--blacklist td { border-left: 2px solid #e55; opacity: .8; }
 
 /* CALENDRIER RDV */
-.rdv-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; color: var(--text-main); font-size: .95rem; }
+#rdv-calendar {
+    background: var(--bg-panel); border: var(--border-gold); border-radius: 18px;
+    padding: 22px; box-shadow: var(--gold-glow);
+}
+.rdv-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; color: var(--text-main); font-size: .95rem; font-weight: 600; }
 .rdv-cal-header button {
     background: var(--bg-glass); border: var(--border-soft); color: var(--gold-og);
-    width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; line-height: 1;
+    width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 1.15rem; line-height: 1;
+    transition: border-color .2s, box-shadow .2s, transform .15s;
 }
-.rdv-cal-header button:hover { border-color: var(--gold-og); }
-.rdv-cal-weekdays, .rdv-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-.rdv-cal-weekdays { margin-bottom: 6px; }
-.rdv-cal-weekdays span { text-align: center; font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+.rdv-cal-header button:hover { border-color: var(--gold-og); box-shadow: var(--gold-glow); transform: translateY(-1px); }
+.rdv-cal-weekdays, .rdv-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.rdv-cal-weekdays { margin-bottom: 10px; }
+.rdv-cal-weekdays span { text-align: center; font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
 .rdv-cal-cell {
     position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-    border-radius: 10px; background: var(--bg-glass); border: var(--border-soft);
+    border-radius: 11px; background: var(--bg-glass); border: var(--border-soft);
     color: var(--text-main); font-size: .82rem;
+    transition: border-color .2s, background .2s, transform .15s;
 }
 .rdv-cal-cell--empty { background: transparent; border-color: transparent; }
-.rdv-cal-cell--today { border-color: var(--cyan-tech); color: var(--cyan-tech); font-weight: 700; }
+.rdv-cal-cell--today { border-color: var(--cyan-tech); color: var(--cyan-tech); font-weight: 700; box-shadow: var(--cyan-glow); }
 .rdv-cal-cell--has { cursor: pointer; border-color: var(--gold-og); }
-.rdv-cal-cell--has:hover { background: rgba(197,160,89,0.12); }
-.rdv-cal-cell--selected { background: var(--gold-og); color: #1a1206; font-weight: 700; }
+.rdv-cal-cell--has:hover { background: rgba(197,160,89,0.14); transform: translateY(-1px); box-shadow: var(--gold-glow); }
+.rdv-cal-cell--selected { background: linear-gradient(135deg, var(--gold-hover), var(--gold-og)); color: #1a1206; font-weight: 700; box-shadow: var(--gold-glow); }
 .rdv-cal-dot {
     position: absolute; bottom: 3px; right: 3px; min-width: 15px; height: 15px; padding: 0 3px;
     background: var(--gold-og); color: #1a1206; border-radius: 999px;
@@ -513,8 +519,10 @@ body {
 .rdv-cal-agenda-empty { text-align: center; color: var(--text-muted); font-size: .82rem; margin-top: 16px; }
 .rdv-cal-agenda-item {
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    background: var(--bg-glass); border: var(--border-soft); border-radius: 12px; padding: 10px 14px;
+    background: var(--bg-glass); border: var(--border-soft); border-radius: 12px; padding: 12px 16px;
+    transition: border-color .2s;
 }
+.rdv-cal-agenda-item:hover { border-color: var(--gold-og); }
 .rdv-cal-agenda-item strong { color: var(--text-main); font-size: .88rem; margin-right: 8px; }
 .rdv-cal-agenda-heure { color: var(--cyan-tech); font-family: var(--font-mono); font-size: .78rem; margin-right: 8px; }
 .rdv-cal-agenda-motif { margin: 4px 0 0; color: var(--text-muted); font-size: .8rem; }
