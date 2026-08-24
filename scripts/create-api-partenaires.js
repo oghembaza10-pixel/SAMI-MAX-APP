@@ -41,7 +41,6 @@ const db = require("../services/db");
         `);
         await db.query(`CREATE INDEX IF NOT EXISTS idx_api_cles_hash ON api_cles (cle_hash) WHERE actif;`);
         await db.query(`CREATE INDEX IF NOT EXISTS idx_api_cles_ws ON api_cles (workspace_id);`);
-        await db.query(`CREATE INDEX IF NOT EXISTS idx_api_cles_agence ON api_cles (agence_id);`);
 
         // Webhooks sortants : SAMII appelle ces URL quand un événement se
         // produit. Le `secret` sert à signer le corps de la requête (HMAC),
@@ -67,7 +66,6 @@ const db = require("../services/db");
             );
         `);
         await db.query(`CREATE INDEX IF NOT EXISTS idx_webhooks_ws ON webhooks_sortants (workspace_id) WHERE actif;`);
-        await db.query(`CREATE INDEX IF NOT EXISTS idx_webhooks_agence ON webhooks_sortants (agence_id) WHERE actif;`);
 
         // ── Rattrapage ────────────────────────────────────────────────────
         // Les tables ont pu être créées par une première version de ce script,
