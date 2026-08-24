@@ -440,6 +440,56 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
     }
 }
 
+// ── CHAT LIBRE (prompt système fourni par l'appelant) ──────────────────
+// Utilisé par la vitrine publique : le prompt SAMII complet (personnalité +
+// tables + catalogue + guide plateforme) n'a rien à faire dans une réponse à
+// un visiteur anonyme — trop de tokens payés pour rien, et il expose du
+// contenu interne. Cette fonction garde toute la chaîne de secours
+// (Gemini → Groq → OpenRouter → DeepSeek) mais avec un prompt maîtrisé et
+// aucun outil : impossible d'agir sur un compte depuis cette porte.
+async function chatLibre({ systemPrompt, message, history = [] }) {
+    const contents = [
+        { role: "user", parts: [{ text: systemPrompt }] },
+        { role: "model", parts: [{ text: "Compris." }] },
+        ...history.map(h => ({ role: h.role === "model" ? "model" : "user", parts: [{ text: h.message }] })),
+        { role: "user", parts: [{ text: message }] },
+    ];
+
+    try {
+        const response = await postWithRotation({ contents });
+        const parts = response.data.candidates?.[0]?.content?.parts || [];
+        const texte = parts.find(p => p.text)?.text;
+        if (texte) return { text: texte, provider: "gemini" };
+        throw new Error("Réponse Gemini vide.");
+    } catch (err) {
+        console.error("❌ chatLibre / Gemini :", err.response?.data?.error?.message || err.message);
+
+        // Même ordre de secours que chat() : Groq (gratuit, rapide), puis
+        // OpenRouter, puis DeepSeek. Format OpenAI pour les trois.
+        const messagesOpenAi = [
+            { role: "system", content: systemPrompt },
+            ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.message })),
+            { role: "user", content: message },
+        ];
+        const relais = [
+            { nom: "groq", model: GROQ_MODEL, poster: postGroq },
+            { nom: "openrouter", model: OPENROUTER_MODEL, poster: postOpenRouter },
+            { nom: "deepseek", model: DEEPSEEK_MODEL, poster: postDeepSeek },
+        ];
+        for (const r of relais) {
+            try {
+                console.warn(`🔀 chatLibre — relais ${r.nom}...`);
+                const res = await r.poster({ model: r.model, messages: messagesOpenAi });
+                const texte = res.data.choices?.[0]?.message?.content;
+                if (texte) return { text: texte, provider: r.nom };
+            } catch (relaisErr) {
+                console.error(`❌ chatLibre / ${r.nom} :`, relaisErr.response?.data || relaisErr.message);
+            }
+        }
+        return { text: null, provider: null };
+    }
+}
+
 async function chatWithSearch({ message, context = {} }) {
     try {
         const prompt = await SAMII_PROMPT(message, context);
@@ -573,4 +623,4 @@ async function receive(msg) {
     console.log("📥 Gemini receive :", msg);
 }
 
-module.exports = { send, chat, chatWithFunctionResult, chatWithSearch, chatViaOpenRouter, summarize, receive, TOOLS };
+module.exports = { send, chat, chatLibre, chatWithFunctionResult, chatWithSearch, chatViaOpenRouter, summarize, receive, TOOLS };

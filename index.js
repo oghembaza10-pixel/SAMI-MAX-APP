@@ -213,6 +213,9 @@ app.use("/stories",     require("./routes/stories"));
 app.use("/marketplace", require("./routes/marketplace"));
 app.use("/drivers",     require("./routes/drivers"));
 app.use("/api", apiLimiter, require("./routes/api"));
+// Chat public de la page d'accueil — porte non authentifiée, sa propre
+// limite (bien plus stricte) est définie dans le routeur lui-même.
+app.use("/vitrine", require("./routes/vitrine"));
 
 app.get("/inscription", requireAuth, (req, res) => {
     const metier = req.query.metier || "";

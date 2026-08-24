@@ -651,6 +651,178 @@
             margin-top: 30px;
         }
 
+        /* ══ SAMII EN DIRECT (chat public du hero) ══════════════════════
+           La preuve du produit, pas une promesse : le visiteur parle à
+           SAMII avant de créer quoi que ce soit. */
+        .samii-live {
+            max-width: 620px;
+            margin: 42px auto 0;
+            text-align: left;
+            background: linear-gradient(180deg, rgba(18,21,24,.96), rgba(10,12,14,.98));
+            border: 1px solid var(--gold-border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow:
+                0 24px 70px rgba(0,0,0,.6),
+                0 0 40px rgba(212,169,74,.09),
+                inset 0 1px 0 rgba(255,255,255,.05);
+        }
+
+        .samii-live__head {
+            display: flex; align-items: center; gap: 13px;
+            padding: 15px 18px;
+            border-bottom: 1px solid rgba(212,169,74,.16);
+            background: linear-gradient(90deg, rgba(212,169,74,.09), transparent 70%);
+        }
+
+        .samii-live__orb {
+            position: relative;
+            width: 40px; height: 40px; flex-shrink: 0;
+            display: grid; place-items: center;
+            font-size: 1.05rem;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, rgba(212,169,74,.34), rgba(212,169,74,.09));
+            border: 1px solid var(--gold-border);
+        }
+        .samii-live__pulse {
+            position: absolute; inset: -3px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,212,255,.4);
+            animation: samii-live-pulse 2.6s ease-out infinite;
+        }
+        .samii-live__pulse--2 { animation-delay: 1.3s; }
+        @keyframes samii-live-pulse {
+            0%   { transform: scale(1);   opacity: .65; }
+            100% { transform: scale(1.7); opacity: 0; }
+        }
+
+        .samii-live__id strong {
+            display: block;
+            font-family: var(--font-display, inherit);
+            font-size: .95rem; color: var(--gold-bright);
+            letter-spacing: .04em;
+        }
+        .samii-live__status {
+            display: flex; align-items: center; gap: 6px;
+            font-size: .73rem; color: var(--text-muted); margin-top: 2px;
+        }
+        .samii-live__status i {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 7px var(--green);
+            animation: samii-live-blink 2s ease-in-out infinite;
+        }
+        @keyframes samii-live-blink { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+        .samii-live__thread {
+            padding: 18px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: flex; flex-direction: column; gap: 11px;
+            scroll-behavior: smooth;
+        }
+
+        .samii-live__msg {
+            padding: 11px 15px;
+            border-radius: 14px;
+            font-size: .855rem;
+            line-height: 1.62;
+            max-width: 88%;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .samii-live__msg--bot {
+            background: rgba(212,169,74,.07);
+            border: 1px solid rgba(212,169,74,.17);
+            color: var(--text-main);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        .samii-live__msg--me {
+            background: rgba(0,212,255,.09);
+            border: 1px solid rgba(0,212,255,.24);
+            color: var(--silver-bright);
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        .samii-live__msg--typing { display: flex; gap: 5px; align-items: center; }
+        .samii-live__msg--typing span {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--gold);
+            animation: samii-live-type 1.3s ease-in-out infinite;
+        }
+        .samii-live__msg--typing span:nth-child(2) { animation-delay: .18s; }
+        .samii-live__msg--typing span:nth-child(3) { animation-delay: .36s; }
+        @keyframes samii-live-type {
+            0%,60%,100% { opacity: .28; transform: translateY(0); }
+            30%         { opacity: 1;   transform: translateY(-4px); }
+        }
+
+        .samii-live__chips {
+            display: flex; flex-wrap: wrap; gap: 7px;
+            padding: 0 18px 14px;
+        }
+        .samii-live__chip {
+            padding: 7px 13px;
+            border-radius: 20px;
+            background: rgba(255,255,255,.035);
+            border: 1px solid rgba(255,255,255,.09);
+            color: var(--text-muted);
+            font-size: .755rem;
+            font-family: var(--font-body);
+            cursor: pointer;
+            transition: all .2s ease;
+        }
+        .samii-live__chip:hover {
+            border-color: var(--gold-border);
+            color: var(--gold-bright);
+            background: var(--gold-soft);
+        }
+
+        .samii-live__form {
+            display: flex; gap: 9px;
+            padding: 14px 18px 18px;
+            border-top: 1px solid rgba(255,255,255,.055);
+        }
+        .samii-live__form input {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 11px;
+            background: rgba(0,0,0,.42);
+            border: 1px solid rgba(255,255,255,.09);
+            color: var(--text-main);
+            font-size: .855rem;
+            font-family: var(--font-body);
+            outline: none;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+        .samii-live__form input:focus {
+            border-color: var(--gold-border);
+            box-shadow: 0 0 0 3px rgba(212,169,74,.09);
+        }
+        .samii-live__form input::placeholder { color: var(--text-faint); }
+        .samii-live__form button {
+            width: 46px; flex-shrink: 0;
+            border-radius: 11px;
+            border: 1px solid rgba(255,220,145,.35);
+            background: linear-gradient(135deg, #D4A94A, #F0C878);
+            color: #050505;
+            font-size: .95rem;
+            cursor: pointer;
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        .samii-live__form button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(212,169,74,.28);
+        }
+        .samii-live__form button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+        @media (max-width: 560px) {
+            .samii-live { margin-top: 32px; border-radius: 16px; }
+            .samii-live__thread { max-height: 260px; padding: 15px; }
+            .samii-live__msg { max-width: 93%; font-size: .83rem; }
+        }
+
         /* PREMIUM BUTTONS */
 
         .btn-primary {
@@ -2383,6 +2555,36 @@
             <a href="#preview" class="btn-primary" data-i18n="hero.cta1">Voir SAMII en action</a>
             <a href="#auth" class="btn-secondary" data-i18n="hero.cta2">Créer mon compte</a>
         </div>
+
+        <!-- ══ SAMII EN DIRECT ══════════════════════════════════════════
+             Le visiteur parle à SAMII avant même de créer un compte : la
+             page ne promet pas le produit, elle EST le produit. -->
+        <div class="samii-live" id="samii-live">
+            <div class="samii-live__head">
+                <span class="samii-live__orb"><span class="samii-live__pulse"></span><span class="samii-live__pulse samii-live__pulse--2"></span>🧠</span>
+                <div class="samii-live__id">
+                    <strong>SAMII</strong>
+                    <span class="samii-live__status"><i></i> <span data-i18n="live.status">en ligne — parlez-lui maintenant</span></span>
+                </div>
+            </div>
+
+            <div class="samii-live__thread" id="samii-live-thread">
+                <div class="samii-live__msg samii-live__msg--bot" data-i18n="live.welcome">Bonjour 👋 Je suis SAMII. Posez-moi n'importe quelle question sur ce que je peux faire pour votre commerce ou pour votre agence — je réponds tout de suite.</div>
+            </div>
+
+            <div class="samii-live__chips" id="samii-live-chips">
+                <button type="button" class="samii-live__chip" data-i18n="live.chip1">Que fais-tu concrètement ?</button>
+                <button type="button" class="samii-live__chip" data-i18n="live.chip2">Je suis une agence</button>
+                <button type="button" class="samii-live__chip" data-i18n="live.chip3">Tu gères WhatsApp ?</button>
+            </div>
+
+            <form class="samii-live__form" id="samii-live-form" autocomplete="off">
+                <input type="text" id="samii-live-input" maxlength="500"
+                       data-i18n-ph="live.placeholder"
+                       placeholder="Écrivez votre question à SAMII...">
+                <button type="submit" aria-label="Envoyer">➤</button>
+            </form>
+        </div>
         <div class="hero-proof">
             <p class="hero-proof__connected" data-i18n="proof.connected">Connecté à Shopify · WooCommerce · Telegram · WhatsApp · Google</p>
             <p class="hero-proof__soon" data-i18n="proof.soon">Bientôt — TikTok, Meta</p>
@@ -2759,6 +2961,11 @@
                 'hero.desc': "Une plateforme. Un espace de travail. Vos ventes, votre publicité et votre service client, orchestrés par une seule intelligence.",
                 'hero.descTech': "Connecté à Gmail, Google Agenda, Drive, YouTube et Google Ads, SAMII répond à vos emails, organise vos rendez-vous, publie votre contenu et gère vos campagnes — toujours sur votre demande.",
                 'hero.cta1': 'Voir SAMII en action', 'hero.cta2': 'Créer mon compte',
+                'live.status': 'en ligne — parlez-lui maintenant',
+                'live.welcome': "Bonjour 👋 Je suis SAMII. Posez-moi n'importe quelle question sur ce que je peux faire pour votre commerce ou pour votre agence — je réponds tout de suite.",
+                'live.chip1': 'Que fais-tu concrètement ?', 'live.chip2': 'Je suis une agence', 'live.chip3': 'Tu gères WhatsApp ?',
+                'live.placeholder': 'Écrivez votre question à SAMII...',
+                'live.error': "SAMII est momentanément indisponible. Réessayez dans un instant.",
                 'proof.connected': 'Connecté à Shopify · WooCommerce · Telegram · WhatsApp · Google',
                 'proof.soon': 'Bientôt — TikTok, Meta',
                 'proof.step1': 'Vous connectez vos outils — deux minutes, sans technique.',
@@ -2831,6 +3038,11 @@
                 'hero.desc': "One platform. One workspace. Your sales, advertising and customer service, orchestrated by a single intelligence.",
                 'hero.descTech': "Connected to Gmail, Google Calendar, Drive, YouTube and Google Ads, SAMII replies to your emails, organizes your meetings, publishes your content and manages your campaigns — always at your request.",
                 'hero.cta1': 'See SAMII in action', 'hero.cta2': 'Create my account',
+                'live.status': 'online — talk to it now',
+                'live.welcome': "Hello 👋 I'm SAMII. Ask me anything about what I can do for your business or your agency — I'll answer right away.",
+                'live.chip1': 'What do you actually do?', 'live.chip2': "I'm an agency", 'live.chip3': 'Do you handle WhatsApp?',
+                'live.placeholder': 'Type your question to SAMII...',
+                'live.error': 'SAMII is momentarily unavailable. Please try again shortly.',
                 'proof.connected': 'Connected to Shopify · WooCommerce · Telegram · WhatsApp · Google',
                 'proof.soon': 'Coming soon — TikTok, Meta',
                 'proof.step1': 'Connect your tools — two minutes, no tech skills needed.',
@@ -2903,6 +3115,11 @@
                 'hero.desc': 'منصة واحدة. مساحة عمل واحدة. مبيعاتك وإعلاناتك وخدمة عملائك، بذكاء واحد يدير كل شيء.',
                 'hero.descTech': 'متصل بـ Gmail وGoogle Calendar وDrive وYouTube وGoogle Ads، يرد سامي على رسائلك، وينظم مواعيدك، وينشر محتواك، ويدير حملاتك — دائمًا بناءً على طلبك.',
                 'hero.cta1': 'شاهد سامي أثناء العمل', 'hero.cta2': 'أنشئ حسابي',
+                'live.status': 'متصل — تحدث معه الآن',
+                'live.welcome': 'مرحبا 👋 أنا سامي. اسألني أي شيء عما يمكنني فعله لتجارتك أو لوكالتك — سأجيبك فورا.',
+                'live.chip1': 'ماذا تفعل بالضبط؟', 'live.chip2': 'أنا وكالة', 'live.chip3': 'هل تدير واتساب؟',
+                'live.placeholder': 'اكتب سؤالك لسامي...',
+                'live.error': 'سامي غير متاح مؤقتا. حاول مرة أخرى بعد قليل.',
                 'proof.connected': 'متصل بـ Shopify · WooCommerce · Telegram · WhatsApp · Google',
                 'proof.soon': 'قريبًا — TikTok، Meta',
                 'proof.step1': 'تربط أدواتك — دقيقتان، دون أي خبرة تقنية.',
@@ -2974,6 +3191,11 @@
                 'hero.tag1': '自动化。', 'hero.tag2': '发展。', 'hero.tag3': '统治。',
                 'hero.desc': '为帝国缔造者打造的平台：管理你的业务，连接你的工具，掌控你的市场——无论你身在何处。',
                 'hero.cta1': '👑 创建账户', 'hero.cta2': '探索 SAMII ↓',
+                'live.status': '在线 — 现在就与它对话',
+                'live.welcome': '您好 👋 我是 SAMII。关于我能为您的生意或代理机构做什么，尽管问我 — 我会立即回答。',
+                'live.chip1': '你具体能做什么？', 'live.chip2': '我是一家代理机构', 'live.chip3': '你能管理 WhatsApp 吗？',
+                'live.placeholder': '向 SAMII 提问...',
+                'live.error': 'SAMII 暂时不可用，请稍后再试。',
                 'preview.title': '总部预览', 'preview.sub': '即将拥有',
                 'preview.samii.desc': '你的私人策略师', 'preview.samii.stat': '每日可用消息数', 'preview.samii.btn': '与 SAMII 对话 →',
                 'preview.shopify.desc': '连接你的店铺', 'preview.shopify.btn': '连接 Shopify →',
@@ -3064,6 +3286,90 @@
         });
 
         applyLang(currentLang);
+
+        // ══ SAMII EN DIRECT ═══════════════════════════════════════════════
+        // Le chat public du hero. L'historique reste côté navigateur (aucune
+        // session, aucun compte) et est renvoyé tronqué à chaque appel — le
+        // serveur ne lui fait pas confiance et le re-borne de son côté.
+        (function samiiLive() {
+            const form   = document.getElementById('samii-live-form');
+            const input  = document.getElementById('samii-live-input');
+            const thread = document.getElementById('samii-live-thread');
+            const chips  = document.getElementById('samii-live-chips');
+            if (!form || !input || !thread) return;
+
+            let historique = [];
+            let enCours = false;
+
+            function ajouterMessage(texte, qui) {
+                const div = document.createElement('div');
+                div.className = 'samii-live__msg samii-live__msg--' + qui;
+                div.textContent = texte;
+                thread.appendChild(div);
+                thread.scrollTop = thread.scrollHeight;
+                return div;
+            }
+
+            function afficherFrappe() {
+                const div = document.createElement('div');
+                div.className = 'samii-live__msg samii-live__msg--bot samii-live__msg--typing';
+                div.innerHTML = '<span></span><span></span><span></span>';
+                thread.appendChild(div);
+                thread.scrollTop = thread.scrollHeight;
+                return div;
+            }
+
+            async function envoyer(texte) {
+                const message = (texte || '').trim();
+                if (!message || enCours) return;
+
+                enCours = true;
+                input.value = '';
+                form.querySelector('button').disabled = true;
+                if (chips) chips.style.display = 'none';
+
+                ajouterMessage(message, 'me');
+                const frappe = afficherFrappe();
+
+                try {
+                    const res = await fetch('/vitrine/chat', {
+                        method : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body   : JSON.stringify({ message, langue: currentLang, historique }),
+                    });
+                    const data = await res.json();
+                    frappe.remove();
+
+                    const reponse = data.reply || t('live.error');
+                    ajouterMessage(reponse, 'bot');
+
+                    // On ne garde que les 6 derniers tours côté navigateur :
+                    // au-delà, c'est du contexte payé pour rien à chaque appel.
+                    historique.push({ role: 'user', message });
+                    historique.push({ role: 'model', message: reponse });
+                    historique = historique.slice(-6);
+                } catch (err) {
+                    frappe.remove();
+                    ajouterMessage(t('live.error'), 'bot');
+                } finally {
+                    enCours = false;
+                    form.querySelector('button').disabled = false;
+                    input.focus();
+                }
+            }
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                envoyer(input.value);
+            });
+
+            if (chips) {
+                chips.addEventListener('click', (e) => {
+                    const chip = e.target.closest('.samii-live__chip');
+                    if (chip) envoyer(chip.textContent);
+                });
+            }
+        })();
 
         document.querySelectorAll('.auth-tab').forEach(tab => {
             tab.addEventListener('click', () => {
