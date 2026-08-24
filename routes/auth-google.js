@@ -20,13 +20,16 @@ const SCOPES = [
     "https://www.googleapis.com/auth/calendar",
     "https://www.googleapis.com/auth/drive.readonly",
     "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/youtube.upload",
-    "https://www.googleapis.com/auth/youtube.readonly",
-    // Requis par commentThreads.list (voir services/google.js
-    // listRecentComments) : youtube.readonly ne suffit PAS pour lire les
-    // commentaires, l'API exige force-ssl et renvoie sinon un 403
-    // "Request had insufficient authentication scopes".
-    "https://www.googleapis.com/auth/youtube.force-ssl",
+    // ── YouTube retiré volontairement ────────────────────────────────
+    // Les scopes youtube.upload / youtube.readonly / youtube.force-ssl
+    // étaient demandés par le code mais absents de la Google Cloud Console :
+    // c'est l'un des deux écarts qui bloquaient la vérification ("Scope
+    // Discrepancy"), et Google interdit explicitement de déployer un scope
+    // non vérifié en production. On passe la vérification sur le strict
+    // nécessaire — Google évalue au moindre privilège — puis YouTube fera
+    // l'objet d'une demande séparée. Le code de services/google.js
+    // (upload, stats, commentaires) reste en place et se réactivera dès que
+    // ces scopes seront accordés.
     "https://www.googleapis.com/auth/userinfo.email",
 ].join(" ");
 

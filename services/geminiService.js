@@ -556,7 +556,32 @@ const OPENAI_COMPATIBLE_PROVIDERS = {
     deepseek:   { poster: postDeepSeek,   model: DEEPSEEK_MODEL },
 };
 
+// Outils qui rapportent des données Google Workspace (contenu de la boîte
+// mail, agenda, fichiers Drive). Le résultat de ces outils est réinjecté
+// dans le modèle pour qu'il formule sa réponse : ces données ne doivent
+// donc JAMAIS partir chez un fournisseur d'IA tiers.
+//
+// La politique Google (Workspace API User Data and Developer Policy,
+// section Limited Use) interdit de transférer des données Workspace — brutes
+// ou dérivées — à des services qui pourraient s'en servir pour entraîner
+// leurs modèles. Nos relais de secours (Groq, OpenRouter et ses modèles
+// gratuits, DeepSeek) n'offrent pas cette garantie.
+//
+// Ces résultats restent donc sur l'API Google elle-même. Si elle est
+// indisponible, SAMII répond sans reformulation plutôt que de faire sortir
+// la donnée — une dégradation, jamais une fuite.
+const OUTILS_DONNEES_GOOGLE = new Set([
+    "consulter_gmail",
+    "consulter_agenda",
+    "lister_fichiers_drive",
+]);
+
 async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult, thoughtSignature, provider = "gemini", toolCallId, assistantMessage, history = [] }) {
+    if (OUTILS_DONNEES_GOOGLE.has(functionName) && provider !== "gemini") {
+        console.warn(`🔒 ${functionName} : résultat non transmis à ${provider} (données Google Workspace, Limited Use).`);
+        return "J'ai bien récupéré l'information, mais je ne peux pas la reformuler pour l'instant — réessaie dans un instant.";
+    }
+
     // Le tour a démarré sur un relais de secours (Gemini indisponible pour
     // ce tour) — on doit continuer sur le MÊME fournisseur : les formats
     // "suite d'appel de fonction" de Gemini et OpenAI sont structurellement
