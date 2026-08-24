@@ -720,5 +720,51 @@
       "client": "client",
       "metier": "métier"
     }
+  },
+  "agency": {
+    "eyebrow": "Pour les agences & intégrateurs",
+    "title1": "Vous amenez les clients.",
+    "title2": "Nous portons la technologie.",
+    "lead": "Déployez SAMII sous votre propre marque commerciale, chez vos clients, sans construire ni maintenir l'infrastructure. Vous gardez la relation client — nous tenons la machine.",
+    "c1": {
+      "title": "Un QG Agence",
+      "desc": "Créez l'espace de chaque client en quelques minutes. Vous les voyez tous depuis un seul tableau de bord, et vous entrez dans n'importe lequel quand vous voulez."
+    },
+    "c2": {
+      "title": "L'API Meta déjà en place",
+      "desc": "WhatsApp, Instagram, Facebook : l'accès est déjà construit et actif de notre côté. Aucune validation à passer, aucun mois d'attente."
+    },
+    "c3": {
+      "title": "Vos clients restent vos clients",
+      "desc": "Chaque client garde son accès indépendant à son espace, et vous gardez le contrôle et la visibilité sur l'ensemble. Rien ne se fait dans votre dos."
+    },
+    "c4": {
+      "title": "Un module manque ? On le construit",
+      "desc": "Vos clients ont un besoin qui n'existe pas encore dans la plateforme : notre équipe technique le développe. C'est à ça qu'elle sert."
+    },
+    "cta": "Ouvrir mon QG Agence →",
+    "note": "Inscription immédiate — votre QG Agence est actif dès la création du compte."
+  },
+  "dev": {
+    "eyebrow": "Pour les développeurs & les outils d'automatisation",
+    "title1": "Une API, pas une intégration à négocier.",
+    "title2": "Branchez n8n en trois minutes.",
+    "lead": "REST, JSON, jeton Bearer. Le nœud HTTP standard suffit — aucun nœud communautaire, aucun SDK à installer. Lisez et créez commandes et rendez-vous, et recevez chaque événement en temps réel.",
+    "p1": {
+      "title": "Une clé d'agence pour tout un portefeuille",
+      "desc": "Un seul flux couvre tous vos clients : l'espace visé se désigne par un en-tête. Pas un flux à reconstruire par boutique."
+    },
+    "p2": {
+      "title": "Des webhooks signés, quel que soit le canal",
+      "desc": "Une commande prise en conversation WhatsApp déclenche exactement le même webhook qu'une commande créée par l'API. Vous branchez une fois, vous couvrez tous les canaux du marchand."
+    },
+    "p3": {
+      "title": "Des permissions que le marchand accorde",
+      "desc": "Votre application déclare ce dont elle a besoin, le marchand approuve, et chaque appel est inscrit dans son journal. C'est ce qui le décide à dire oui."
+    },
+    "code1": "Lire les commandes d'un client",
+    "code2": "Ce que vous recevez à chaque événement",
+    "cta": "Lire la documentation →",
+    "note": "Documentation publique, sans compte ni inscription. Les clés se créent depuis votre espace, en un clic."
   }
 }

@@ -720,5 +720,51 @@
       "client": "client",
       "metier": "industry"
     }
+  },
+  "agency": {
+    "eyebrow": "For agencies & integrators",
+    "title1": "You bring the clients.",
+    "title2": "We carry the technology.",
+    "lead": "Deploy SAMII under your own brand, at your clients', without building or maintaining the infrastructure. You keep the client relationship — we run the machine.",
+    "c1": {
+      "title": "An Agency HQ",
+      "desc": "Create each client's space in minutes. See them all from a single dashboard, and step into any one of them whenever you want."
+    },
+    "c2": {
+      "title": "The Meta API already in place",
+      "desc": "WhatsApp, Instagram, Facebook: access is already built and live on our side. No approval to pass, no months of waiting."
+    },
+    "c3": {
+      "title": "Your clients stay your clients",
+      "desc": "Each client keeps independent access to their own space, and you keep control and visibility over the whole portfolio. Nothing happens behind your back."
+    },
+    "c4": {
+      "title": "Missing a module? We build it",
+      "desc": "Your clients need something the platform doesn't cover yet: our engineering team builds it. That's what it's there for."
+    },
+    "cta": "Open my Agency HQ →",
+    "note": "Immediate sign-up — your Agency HQ is live as soon as the account is created."
+  },
+  "dev": {
+    "eyebrow": "For developers & automation tools",
+    "title1": "An API, not an integration to negotiate.",
+    "title2": "Wire up n8n in three minutes.",
+    "lead": "REST, JSON, Bearer token. The standard HTTP node is enough — no community node, no SDK to install. Read and create orders and appointments, and receive every event in real time.",
+    "p1": {
+      "title": "One agency key for a whole portfolio",
+      "desc": "A single flow covers all your clients: the target space is named in a header. No flow to rebuild per shop."
+    },
+    "p2": {
+      "title": "Signed webhooks, whatever the channel",
+      "desc": "An order taken in a WhatsApp conversation fires exactly the same webhook as one created through the API. Wire it once, cover every channel the merchant uses."
+    },
+    "p3": {
+      "title": "Permissions the merchant grants",
+      "desc": "Your app declares what it needs, the merchant approves, and every call is written to their log. That's what makes them say yes."
+    },
+    "code1": "Read a client's orders",
+    "code2": "What you receive on every event",
+    "cta": "Read the documentation →",
+    "note": "Public documentation, no account or sign-up. Keys are created from your own space, in one click."
   }
 }

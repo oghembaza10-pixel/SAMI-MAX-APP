@@ -1451,6 +1451,85 @@
             text-align: left;
         }
 
+        /* ── Section développeurs ─────────────────────────────────────
+           Même grammaire visuelle que la section agence : une agence et un
+           intégrateur arrivent par le même chemin, ils doivent sentir une
+           continuité, pas deux sites différents. */
+        .dev-section {
+            position: relative;
+            max-width: 1180px;
+            margin: 34px auto 0;
+            padding: 50px 42px 46px;
+            border-radius: 26px;
+            overflow: hidden;
+            background: linear-gradient(160deg, rgba(10,13,16,.97) 0%, rgba(6,8,10,.99) 100%);
+            border: 1px solid rgba(255,255,255,.06);
+        }
+        .dev-split {
+            display: grid;
+            grid-template-columns: 1.05fr .95fr;
+            gap: 38px;
+            align-items: start;
+            margin-top: 34px;
+            text-align: left;
+        }
+        .dev-point { padding: 16px 0; border-top: 1px solid rgba(255,255,255,.06); }
+        .dev-point:first-child { border-top: none; padding-top: 0; }
+        .dev-point h3 {
+            margin: 0 0 5px;
+            font-size: .92rem;
+            font-weight: 650;
+            color: var(--text-main);
+        }
+        .dev-point p { margin: 0; color: var(--text-muted); font-size: .84rem; line-height: 1.7; }
+        .dev-point code {
+            font-family: var(--font-mono, monospace);
+            font-size: .78em;
+            color: var(--gold-bright);
+        }
+
+        .dev-code {
+            background: rgba(0,0,0,.5);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 16px;
+            padding: 20px 20px 18px;
+            overflow-x: auto;
+        }
+        .dev-code__titre {
+            font-family: var(--font-mono, monospace);
+            font-size: .66rem;
+            letter-spacing: .09em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin: 0 0 12px;
+        }
+        /* Un <pre> sépare toujours deux titres : c'est APRÈS lui qu'il faut
+           respirer, pas entre deux titres adjacents (cas qui n'existe pas). */
+        .dev-code pre + .dev-code__titre { margin-top: 24px; }
+        .dev-code pre {
+            margin: 0;
+            font-family: var(--font-mono, monospace);
+            font-size: .72rem;
+            line-height: 1.75;
+            color: #b9c7d6;
+            white-space: pre;
+        }
+        .dev-code .c-cle { color: var(--gold-bright); }
+        .dev-code .c-txt { color: #7fd3a5; }
+
+        .dev-cta { margin-top: 34px; }
+        .dev-cta__note {
+            display: block;
+            margin-top: 12px;
+            color: var(--text-muted);
+            font-size: .78rem;
+        }
+
+        @media (max-width: 860px) {
+            .dev-section { padding: 38px 22px 34px; border-radius: 20px; }
+            .dev-split { grid-template-columns: 1fr; gap: 26px; }
+        }
+
         .agency-card {
             position: relative;
             padding: 24px 24px 24px 26px;
@@ -2916,6 +2995,57 @@
             <div class="agency-cta">
                 <a href="#auth" class="btn-primary" id="btn-agency" data-i18n="agency.cta">Ouvrir mon QG Agence →</a>
                 <span class="agency-cta__note" data-i18n="agency.note">Inscription immédiate — votre QG Agence est actif dès la création du compte.</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="dev-section" id="developpeurs">
+        <div class="agency-inner">
+            <span class="agency-eyebrow" data-i18n="dev.eyebrow">Pour les développeurs &amp; les outils d'automatisation</span>
+            <h2 class="agency-title">
+                <span data-i18n="dev.title1">Une API, pas une intégration à négocier.</span>
+                <span class="agency-title__accent" data-i18n="dev.title2">Branchez n8n en trois minutes.</span>
+            </h2>
+            <p class="agency-lead" data-i18n="dev.lead">REST, JSON, jeton Bearer. Le nœud HTTP standard suffit — aucun nœud communautaire, aucun SDK à installer. Lisez et créez commandes et rendez-vous, et recevez chaque événement en temps réel.</p>
+
+            <div class="dev-split">
+                <div>
+                    <div class="dev-point">
+                        <h3 data-i18n="dev.p1.title">Une clé d'agence pour tout un portefeuille</h3>
+                        <p data-i18n="dev.p1.desc">Un seul flux couvre tous vos clients : l'espace visé se désigne par un en-tête. Pas un flux à reconstruire par boutique.</p>
+                    </div>
+                    <div class="dev-point">
+                        <h3 data-i18n="dev.p2.title">Des webhooks signés, quel que soit le canal</h3>
+                        <p data-i18n="dev.p2.desc">Une commande prise en conversation WhatsApp déclenche exactement le même webhook qu'une commande créée par l'API. Vous branchez une fois, vous couvrez tous les canaux du marchand.</p>
+                    </div>
+                    <div class="dev-point">
+                        <h3 data-i18n="dev.p3.title">Des permissions que le marchand accorde</h3>
+                        <p data-i18n="dev.p3.desc">Votre application déclare ce dont elle a besoin, le marchand approuve, et chaque appel est inscrit dans son journal. C'est ce qui le décide à dire oui.</p>
+                    </div>
+                </div>
+
+                <div class="dev-code">
+                    <p class="dev-code__titre" data-i18n="dev.code1">Lire les commandes d'un client</p>
+<pre>curl https://samii.souverain-store.com/api/v1/commandes \
+  -H <span class="c-txt">"Authorization: Bearer sk_samii_…"</span> \
+  -H <span class="c-txt">"X-SAMII-Espace: WS-…"</span></pre>
+
+                    <p class="dev-code__titre" data-i18n="dev.code2">Ce que vous recevez à chaque événement</p>
+<pre>{
+  <span class="c-cle">"evenement"</span>: <span class="c-txt">"rendezvous.cree"</span>,
+  <span class="c-cle">"espace"</span>: { <span class="c-cle">"id"</span>: <span class="c-txt">"WS-…"</span>, <span class="c-cle">"nom"</span>: <span class="c-txt">"Cabinet Dr K."</span> },
+  <span class="c-cle">"donnees"</span>: {
+    <span class="c-cle">"clientNom"</span>: <span class="c-txt">"Sofia M."</span>,
+    <span class="c-cle">"dateRdv"</span>: <span class="c-txt">"2026-09-12T14:30:00Z"</span>,
+    <span class="c-cle">"source"</span>: <span class="c-txt">"telegram"</span>
+  }
+}</pre>
+                </div>
+            </div>
+
+            <div class="dev-cta">
+                <a href="/api-docs" class="btn-primary" target="_blank" rel="noopener" data-i18n="dev.cta">Lire la documentation →</a>
+                <span class="dev-cta__note" data-i18n="dev.note">Documentation publique, sans compte ni inscription. Les clés se créent depuis votre espace, en un clic.</span>
             </div>
         </div>
     </section>
