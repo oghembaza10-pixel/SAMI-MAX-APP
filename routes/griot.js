@@ -12,6 +12,7 @@ const db = require("../services/db");
 const journalService = require("../services/journalService");
 const CONFIG  = require("../config");
 const griotCoutService = require("../services/griotCoutService");
+const pexelsService = require("../services/pexelsService");
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -247,8 +248,9 @@ router.get("/", requireAuth, async (req, res) => {
 
             <label>Moteur de génération</label>
             <select name="moteur" id="select-moteur">
-                <option value="runware">Runware — standard (0,80$/s)</option>
-                <option value="wan">WAN 2.6 (Alibaba) — rapide, sans son (0,48$/s)</option>
+                <option value="photo">📷 Photo réelle — GRATUIT, aucun crédit consommé</option>
+                <option value="runware">Runware — image générée par IA (0,80$/s)</option>
+                <option value="wan">WAN 2.6 (Alibaba) — vidéo rapide, sans son (0,48$/s)</option>
                 <option value="h3">H3 (MiniMax) — vidéo + son natif (0,78$/s)</option>
             </select>
 
@@ -360,7 +362,32 @@ function renderPack(data) {
         html += block('image', 'Ta photo, prête à publier avec le texte ci-dessus', photoHtml);
     }
 
-    if (data.medias && data.medias.length > 0) {
+    // ── Photos libres de droit (Pexels) ───────────────────────────────
+    // Bloc séparé des médias IA : les conditions d'API de Pexels imposent
+    // d'afficher le nom du photographe (lié à la photo) ET un lien vers
+    // Pexels partout où ces photos apparaissent. Ne pas retirer ces liens.
+    if (data.photos && data.photos.length > 0) {
+        const reseauPx = selectReseau.value;
+        const peutPublierPx = reseauPx === 'facebook' || reseauPx === 'instagram';
+        let pxHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">';
+        data.photos.forEach(p => {
+            pxHtml += '<div style="border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;">'
+                + '<img src="' + p.apercu + '" style="width:100%;display:block;aspect-ratio:1;object-fit:cover;" alt="' + (p.alt || '') + '">'
+                + '<div style="padding:8px 10px;">'
+                + '<a href="' + p.pageUrl + '" target="_blank" rel="noopener" style="font-size:.7rem;color:#9aa;text-decoration:none;">📷 ' + p.photographe + '</a>'
+                + (peutPublierPx
+                    ? '<button type="button" class="griot-publish-btn" style="margin-top:6px;" onclick=\\'publierSurReseau(' + JSON.stringify(p.url) + ')\\'>📤 Publier sur ' + (reseauPx === 'instagram' ? 'Instagram' : 'Facebook') + '</button>'
+                    : '')
+                + '</div></div>';
+        });
+        pxHtml += '</div>'
+            + '<p style="font-size:.72rem;color:#888;margin-top:10px;">'
+            + '<a href="https://www.pexels.com" target="_blank" rel="noopener" style="color:#9aa;">Photos fournies par Pexels</a>'
+            + ' — libres de droit, utilisation commerciale autorisée. Aucun crédit SAMII consommé.</p>';
+        html += block('image', 'Photos réelles (gratuit)', pxHtml);
+    }
+
+    if (!data.photos && data.medias && data.medias.length > 0) {
         const reseauActuel = selectReseau.value;
         const peutPublier = reseauActuel === 'facebook' || reseauActuel === 'instagram';
         let mediaHtml = '<div style="display:flex;flex-direction:column;gap:12px;">';
@@ -445,7 +472,7 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
 router.post("/", requireAuth, upload.single("client_image"), async (req, res) => {
     try {
         const { reseau, format, objectif, sujet, ton, type_creation, duree, nombre_variantes, moteur } = req.body;
-        const moteurChoisi = ["wan", "h3"].includes(moteur) ? moteur : "runware";
+        const moteurChoisi = ["wan", "h3", "photo"].includes(moteur) ? moteur : "runware";
         console.log(`🔍 DEBUG Griot — moteur reçu du formulaire : "${moteur}" | moteur retenu : "${moteurChoisi}"`);
 
         if (!sujet || !sujet.trim()) {
@@ -487,9 +514,14 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
                 + `Objectif : ${objectifsLabel[objectif] || objectif}\n`
                 + `Sujet / produit : ${sujet}\n`
                 + (ton ? `Ton souhaité : ${ton}\n` : "Ton : adapté au réseau, orienté conversion.\n")
-                + "\nGénère aussi une description visuelle précise du plan principal (pour piloter une génération d'image/vidéo IA), dans le champ \"prompt_visuel\".\n\n"
+                + "\nGénère aussi une description visuelle précise du plan principal (pour piloter une génération d'image/vidéo IA), dans le champ \"prompt_visuel\".\n"
+                // Une banque de photos indexe des sujets courts en anglais
+                // ("leather watch", "coffee shop"), pas des descriptions de
+                // scène. Sans ce champ dédié, la recherche gratuite ne
+                // renvoyait rien sur des prompts de 40 mots en français.
+                + "Ajoute aussi \"mots_cles_photo\" : 2 à 3 mots EN ANGLAIS décrivant simplement le sujet à photographier, pour chercher dans une banque de photos (ex : \"leather watch\", \"coffee shop interior\", \"fresh vegetables\"). Pas de phrase, pas de style, juste le sujet.\n\n"
                 + "Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :\n"
-                + '{\n  "hooks": ["accroche 1", "accroche 2", "accroche 3"],\n  "script": "le script complet",\n  "legende": "la légende prête à publier",\n  "hashtags": ["motcle1", "motcle2", "motcle3", "motcle4", "motcle5"],\n  "miniature": "description pour la miniature",\n  "cta": ["cta 1", "cta 2", "cta 3"],\n  "meilleur_moment": "jour et heure recommandés",\n  "prompt_visuel": "description visuelle détaillée du produit/scène, style photo pro"\n}';
+                + '{\n  "hooks": ["accroche 1", "accroche 2", "accroche 3"],\n  "script": "le script complet",\n  "legende": "la légende prête à publier",\n  "hashtags": ["motcle1", "motcle2", "motcle3", "motcle4", "motcle5"],\n  "miniature": "description pour la miniature",\n  "cta": ["cta 1", "cta 2", "cta 3"],\n  "meilleur_moment": "jour et heure recommandés",\n  "prompt_visuel": "description visuelle détaillée du produit/scène, style photo pro",\n  "mots_cles_photo": "leather watch"\n}';
         }
 
         const result = await gemini.chat({
@@ -560,6 +592,28 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
             } else {
                 console.error(`⚠️ Erreur génération ${moteurChoisi} (OpenRouter) :`, resultat.error);
                 pack.erreur_media = `Génération vidéo échouée (${moteurChoisi.toUpperCase()}) : ${resultat.error}`;
+            }
+        }
+
+        // ── Photo réelle (Pexels) — moteur GRATUIT, aucun crédit consommé ──
+        // On cherche à partir de mots-clés simples plutôt que du prompt
+        // visuel complet : une banque de photos indexe des sujets ("café",
+        // "montre en cuir"), pas des descriptions de scène de 40 mots.
+        if (moteurChoisi === "photo") {
+            const motsCles = (pack.mots_cles_photo || sujet || pack.prompt_visuel || "")
+                .toString().split(/[,\n]/)[0].trim().slice(0, 60);
+
+            const recherche = await pexelsService.chercher(motsCles, { nb: 4, orientation: "square" });
+            if (recherche.success && recherche.photos.length) {
+                pack.photos = recherche.photos;
+                pack.medias = recherche.photos.map(p => p.url);
+                // Obligation Pexels : ce crédit doit rester visible partout où
+                // ces photos apparaissent (voir services/pexelsService.js).
+                pack.creditPhotos = "Photos fournies par Pexels";
+            } else {
+                pack.erreur_media = recherche.error
+                    ? `Recherche de photos : ${recherche.error}`
+                    : `Aucune photo trouvée pour « ${motsCles} ». Essaie un mot-clé plus simple, ou choisis un moteur IA.`;
             }
         }
 

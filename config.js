@@ -106,6 +106,16 @@ module.exports = {
     RUNWARE: {
     API_KEY: process.env.RUNWARE_API_KEY || "",
 },
+    // Banque de photos libres de droit (usage commercial autorisé). Sert de
+    // moteur GRATUIT à Griot, à côté des moteurs IA payants : un marchand
+    // sans budget peut publier avec une vraie photo professionnelle plutôt
+    // que de rester bloqué sur "crédits insuffisants".
+    // Contrainte imposée par leurs conditions d'API : afficher le nom du
+    // photographe (lien vers la photo) ET un lien visible vers Pexels
+    // partout où ces photos apparaissent — voir routes/griot.js.
+    PEXELS: {
+        API_KEY: process.env.PEXELS_API_KEY || "",
+    },
     OPENROUTER: {
         // Nom réel de la variable sur Render : OPENROUTE_API_TOKEN (vérifié
         // sur le dashboard) — fallback sur l'ancien nom au cas où il serait
