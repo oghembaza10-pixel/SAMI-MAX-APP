@@ -17,7 +17,7 @@
 // ==========================================================================
 const express = require("express");
 const crypto = require("crypto");
-const rateLimit = require("express-rate-limit");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const router = express.Router();
 const db = require("../services/db");
 const apiPartenaire = require("../services/apiPartenaire");
@@ -31,7 +31,11 @@ const limiteur = rateLimit({
     max: 120,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => req.headers.authorization || req.ip,
+    // Repli sur l'IP quand aucune clé n'est envoyée (appel anonyme, refusé
+    // juste après en 401). ipKeyGenerator regroupe les adresses IPv6 par
+    // préfixe /64 : sans lui, un appelant IPv6 change d'adresse à volonté
+    // dans son propre bloc et la limite ne retient plus rien.
+    keyGenerator: (req) => req.headers.authorization || ipKeyGenerator(req.ip),
     message: { erreur: "Trop de requêtes. Limite : 120 par minute." },
 });
 
