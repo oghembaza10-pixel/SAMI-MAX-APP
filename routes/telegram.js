@@ -9,6 +9,7 @@ const planner      = require("../brain/planner");
 const memory       = require("../brain/memory");
 const db           = require("../services/db");
 const socketService = require("../services/socketService");
+const apiPartenaire = require("../services/apiPartenaire");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const telegramCommunity = require("../services/telegramCommunity");
 const transcription = require("../services/transcription");
@@ -228,6 +229,7 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
                 if (rows[0]?.workspace_id) confirmationsQuota.enregistrerSiDepassement(rows[0].workspace_id).catch(() => {});
                 await orchestrator.process({ type: "order.confirmed", shop: "", payload: { orderId, chatId } });
                 socketService.emitToShop(rows[0]?.workspace_id, "commande-confirmee", { id: orderId });
+                apiPartenaire.emettre(rows[0]?.workspace_id, "commande.confirmee", { id: orderId, source: "telegram" });
                 await reply(chatId, tr(lang, "commandeConfirmee", orderId), base);
                 return;
             }
@@ -236,6 +238,7 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
                 const rows = await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1 RETURNING workspace_id`, [orderId]);
                 await orchestrator.process({ type: "order.cancelled.telegram", shop: "", payload: { orderId, chatId } });
                 socketService.emitToShop(rows[0]?.workspace_id, "commande-annulee", { id: orderId });
+                apiPartenaire.emettre(rows[0]?.workspace_id, "commande.annulee", { id: orderId, source: "telegram" });
                 await reply(chatId, tr(lang, "commandeAnnuleeId", orderId), base);
                 return;
             }
@@ -243,6 +246,7 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
                 const rdvId = data.replace("rdvconfirm_", "");
                 const rows = await db.query(`UPDATE rendez_vous SET statut = 'confirmé' WHERE id = $1 RETURNING workspace_id`, [rdvId.replace("RDV-", "")]);
                 socketService.emitToShop(rows[0]?.workspace_id, "rdv-confirme", { id: rdvId });
+                apiPartenaire.emettre(rows[0]?.workspace_id, "rendezvous.confirme", { id: rdvId, source: "telegram" });
                 await reply(chatId, tr(lang, "rdvConfirme", rdvId), base);
                 return;
             }

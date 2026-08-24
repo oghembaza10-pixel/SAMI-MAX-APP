@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAMII — API & Webhooks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #08090B; color: #E8E8E8; font-family: 'Inter', sans-serif;
+            padding: 28px 18px 70px; line-height: 1.6;
+        }
+        .wrap { max-width: 880px; margin: 0 auto; }
+        .retour { color: #777; font-size: .8rem; text-decoration: none; display: inline-block; margin-bottom: 22px; }
+        .retour:hover { color: #C9A227; }
+        h1 { font-family: 'Cinzel', serif; font-size: 1.7rem; color: #C9A227; letter-spacing: .5px; }
+        .sub { color: #8a8a8a; font-size: .86rem; margin: 6px 0 30px; }
+
+        .bloc {
+            background: #0E1013; border: 1px solid #1C1F24; border-radius: 16px;
+            padding: 22px; margin-bottom: 20px;
+        }
+        .bloc h2 { font-size: 1rem; color: #fff; margin-bottom: 4px; }
+        .bloc .aide { color: #7d7d7d; font-size: .78rem; margin-bottom: 18px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+        th { text-align: left; color: #6d6d6d; font-weight: 500; font-size: .72rem;
+             text-transform: uppercase; letter-spacing: .6px; padding-bottom: 8px; }
+        td { padding: 10px 8px 10px 0; border-top: 1px solid #16181C; color: #c8c8c8; vertical-align: middle; }
+        code, .mono { font-family: 'JetBrains Mono', monospace; font-size: .76rem; }
+        .vide { color: #5c5c5c; font-size: .8rem; font-style: italic; padding: 10px 0; }
+
+        input[type=text], input[type=url] {
+            background: #121418; border: 1px solid #24272D; color: #eee; border-radius: 10px;
+            padding: 11px 13px; font-size: .84rem; width: 100%; font-family: inherit;
+        }
+        input:focus { outline: none; border-color: #C9A227; }
+        .ligne { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+        .ligne > input { flex: 1 1 240px; }
+
+        button {
+            background: #C9A227; color: #0A0A0A; border: none; border-radius: 10px;
+            padding: 11px 20px; font-weight: 700; font-size: .82rem; cursor: pointer;
+            font-family: inherit; white-space: nowrap;
+        }
+        button:hover { background: #DDB63A; }
+        button.mini {
+            background: none; border: 1px solid #2A2E35; color: #999;
+            padding: 5px 11px; font-size: .72rem; font-weight: 500;
+        }
+        button.mini:hover { border-color: #8B2E2E; color: #E06060; background: none; }
+
+        .cases { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+        .cases label {
+            display: flex; align-items: center; gap: 6px; background: #121418;
+            border: 1px solid #24272D; border-radius: 8px; padding: 7px 11px;
+            font-size: .74rem; color: #b5b5b5; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+        }
+        .cases input { accent-color: #C9A227; }
+
+        .nouvelle-cle {
+            display: none; margin-top: 16px; background: rgba(201,162,39,.07);
+            border: 1px solid rgba(201,162,39,.35); border-radius: 12px; padding: 16px;
+        }
+        .nouvelle-cle strong { color: #C9A227; font-size: .82rem; display: block; margin-bottom: 8px; }
+        .nouvelle-cle .val {
+            background: #0A0B0D; border-radius: 8px; padding: 12px; word-break: break-all;
+            color: #fff; font-family: 'JetBrains Mono', monospace; font-size: .78rem;
+        }
+        .nouvelle-cle p { color: #9c8a4e; font-size: .74rem; margin-top: 10px; }
+
+        pre {
+            background: #0A0B0D; border: 1px solid #1C1F24; border-radius: 10px;
+            padding: 14px; overflow-x: auto; color: #b9c7d6;
+            font-family: 'JetBrains Mono', monospace; font-size: .74rem; line-height: 1.7;
+        }
+        .badge { font-size: .68rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+        .badge.on  { background: rgba(46,160,67,.15); color: #4CC76A; }
+        .badge.off { background: rgba(180,60,60,.15); color: #D06060; }
+        .doc-lien { color: #C9A227; font-size: .8rem; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <a href="/qg" class="retour">← Retour au QG</a>
+    <h1>API & Webhooks</h1>
+    <p class="sub">
+        Branche ton espace SAMII à n'importe quel outil externe — n8n, Make, Zapier, ton ERP.
+        Une clé pour lire et écrire, des webhooks pour être prévenu en temps réel.
+        <a href="/api-docs" class="doc-lien">Voir la documentation →</a>
+    </p>
+
+    <!-- ── CLÉS ────────────────────────────────────────────────── -->
+    <div class="bloc">
+        <h2>Clés d'accès</h2>
+        <p class="aide">
+            Une clé s'affiche une seule fois, au moment où tu la crées : nous n'en gardons
+            qu'une empreinte, jamais la clé elle-même. Perdue = à recréer.
+        </p>
+
+        <table>
+            <thead><tr><th>Nom</th><th>Clé</th><th>Dernier usage</th><th>État</th><th></th></tr></thead>
+            <tbody>
+            <% if (!cles.length) { %>
+                <tr><td colspan="5" class="vide">Aucune clé pour l'instant.</td></tr>
+            <% } %>
+            <% cles.forEach(c => { %>
+                <tr>
+                    <td><%= c.nom %></td>
+                    <td class="mono"><%= c.cle_prefixe %>…</td>
+                    <td><%= c.derniere_utilisation ? new Date(c.derniere_utilisation).toLocaleString('fr-FR') : "jamais" %></td>
+                    <td><span class="badge <%= c.actif ? 'on' : 'off' %>"><%= c.actif ? "active" : "révoquée" %></span></td>
+                    <td>
+                        <% if (c.actif) { %>
+                            <button class="mini" data-revoquer="<%= c.id %>">Révoquer</button>
+                        <% } %>
+                    </td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+
+        <div class="ligne">
+            <input type="text" id="nom-cle" placeholder="Nom de la clé (ex : n8n production)">
+            <button id="creer-cle">Créer une clé</button>
+        </div>
+
+        <div class="nouvelle-cle" id="nouvelle-cle">
+            <strong>Voici ta clé — copie-la maintenant</strong>
+            <div class="val" id="valeur-cle"></div>
+            <p>Elle ne sera plus jamais affichée. Traite-la comme un mot de passe.</p>
+        </div>
+    </div>
+
+    <!-- ── WEBHOOKS ────────────────────────────────────────────── -->
+    <div class="bloc">
+        <h2>Webhooks sortants</h2>
+        <p class="aide">
+            SAMII appelle ton URL dès qu'un événement se produit — quel que soit le canal
+            d'origine (WhatsApp, Telegram, Shopify, le QG ou l'API elle-même). Chaque appel
+            est signé : en-tête <code>X-SAMII-Signature: sha256=…</code>, HMAC du corps brut
+            avec le secret affiché à la création.
+        </p>
+
+        <table>
+            <thead><tr><th>URL</th><th>Événements</th><th>Dernier code</th><th>État</th><th></th></tr></thead>
+            <tbody>
+            <% if (!webhooks.length) { %>
+                <tr><td colspan="5" class="vide">Aucun webhook enregistré.</td></tr>
+            <% } %>
+            <% webhooks.forEach(w => { %>
+                <tr>
+                    <td class="mono" style="word-break:break-all"><%= w.url %></td>
+                    <td class="mono" style="font-size:.7rem"><%= (w.evenements || []).join(", ") %></td>
+                    <td><%= w.dernier_statut || "—" %></td>
+                    <td><span class="badge <%= w.actif ? 'on' : 'off' %>"><%= w.actif ? "actif" : "désactivé" %></span></td>
+                    <td><button class="mini" data-suppr-webhook="<%= w.id %>">Supprimer</button></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+
+        <div class="ligne">
+            <input type="url" id="url-webhook" placeholder="https://ton-n8n.com/webhook/samii">
+        </div>
+        <div class="cases">
+            <% evenements.forEach(e => { %>
+                <label><input type="checkbox" class="ev" value="<%= e %>" checked> <%= e %></label>
+            <% }) %>
+        </div>
+        <div class="ligne"><button id="creer-webhook">Enregistrer le webhook</button></div>
+    </div>
+
+    <!-- ── DÉMARRAGE RAPIDE ────────────────────────────────────── -->
+    <div class="bloc">
+        <h2>Démarrage rapide</h2>
+        <p class="aide">Premier appel à faire pour vérifier que ta clé fonctionne.</p>
+<pre>curl <%= baseUrl %>/api/v1/moi \
+  -H "Authorization: Bearer sk_samii_…"</pre>
+        <p class="aide" style="margin:16px 0 0">
+            Dans n8n : nœud <strong>HTTP Request</strong>, méthode GET,
+            authentification <strong>Header Auth</strong>, nom <code>Authorization</code>,
+            valeur <code>Bearer sk_samii_…</code>. Aucun nœud ni SDK spécifique à installer.
+        </p>
+    </div>
+</div>
+
+<script>
+async function poster(url, corps) {
+    const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corps || {}),
+    });
+    return r.json();
+}
+
+document.getElementById("creer-cle").addEventListener("click", async (e) => {
+    e.target.disabled = true;
+    const nom = document.getElementById("nom-cle").value.trim() || "Clé API";
+    const rep = await poster("/developpeurs/cles", { nom });
+    if (rep.success) {
+        document.getElementById("valeur-cle").textContent = rep.cle;
+        document.getElementById("nouvelle-cle").style.display = "block";
+        // On ne recharge pas la page : ça effacerait la clé affichée, qui
+        // n'est visible qu'une seule fois.
+    } else {
+        alert(rep.error || "Erreur.");
+        e.target.disabled = false;
+    }
+});
+
+document.querySelectorAll("[data-revoquer]").forEach(b => {
+    b.addEventListener("click", async () => {
+        if (!confirm("Révoquer cette clé ? Tout système qui l'utilise perdra l'accès immédiatement.")) return;
+        const rep = await poster(`/developpeurs/cles/${b.dataset.revoquer}/revoquer`);
+        if (rep.success) location.reload(); else alert("Erreur.");
+    });
+});
+
+document.getElementById("creer-webhook").addEventListener("click", async () => {
+    const url = document.getElementById("url-webhook").value.trim();
+    const evenements = [...document.querySelectorAll(".ev:checked")].map(c => c.value);
+    const rep = await poster("/developpeurs/webhooks", { url, evenements });
+    if (rep.success) {
+        alert("Webhook enregistré.\n\nSecret de signature (à garder) :\n" + rep.webhook.secret);
+        location.reload();
+    } else {
+        alert(rep.error || "Erreur.");
+    }
+});
+
+document.querySelectorAll("[data-suppr-webhook]").forEach(b => {
+    b.addEventListener("click", async () => {
+        if (!confirm("Supprimer ce webhook ?")) return;
+        const rep = await poster(`/developpeurs/webhooks/${b.dataset.supprWebhook}/supprimer`);
+        if (rep.success) location.reload(); else alert("Erreur.");
+    });
+});
+</script>
+</body>
+</html>

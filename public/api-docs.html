@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAMII — API partenaires v1</title>
+    <meta name="description" content="Documentation de l'API publique SAMII : commandes, rendez-vous, clients et webhooks temps réel. Compatible n8n, Make, Zapier et tout ERP.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #08090B; color: #D8D8D8; font-family: 'Inter', sans-serif; line-height: 1.7; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 46px 20px 90px; }
+
+        header { border-bottom: 1px solid #1C1F24; padding-bottom: 26px; margin-bottom: 36px; }
+        .marque { font-family: 'Cinzel', serif; color: #C9A227; font-size: 1.05rem; letter-spacing: 2.4px; }
+        h1 { font-size: 2rem; color: #fff; margin: 12px 0 8px; font-weight: 700; letter-spacing: -.5px; }
+        header p { color: #8a8a8a; font-size: .92rem; max-width: 640px; }
+
+        h2 {
+            font-size: 1.15rem; color: #fff; margin: 46px 0 6px;
+            padding-top: 22px; border-top: 1px solid #16181C;
+        }
+        h2:first-of-type { border-top: none; padding-top: 0; }
+        h3 { font-size: .92rem; color: #C9A227; margin: 28px 0 6px; font-family: 'JetBrains Mono', monospace; }
+        p { color: #9d9d9d; font-size: .87rem; margin-bottom: 12px; }
+        p strong, li strong { color: #DCDCDC; }
+        ul { margin: 0 0 14px 20px; color: #9d9d9d; font-size: .87rem; }
+        li { margin-bottom: 6px; }
+        a { color: #C9A227; }
+
+        pre {
+            background: #0C0E11; border: 1px solid #1C1F24; border-radius: 10px;
+            padding: 15px 16px; overflow-x: auto; margin: 12px 0 18px;
+            font-family: 'JetBrains Mono', monospace; font-size: .76rem;
+            line-height: 1.75; color: #b9c7d6;
+        }
+        code {
+            font-family: 'JetBrains Mono', monospace; font-size: .82em;
+            background: #14171B; border-radius: 5px; padding: 1.5px 6px; color: #D5B44A;
+        }
+        pre code { background: none; padding: 0; color: inherit; font-size: 1em; }
+
+        table { width: 100%; border-collapse: collapse; font-size: .82rem; margin: 12px 0 20px; }
+        th { text-align: left; color: #6d6d6d; font-size: .7rem; text-transform: uppercase;
+             letter-spacing: .7px; font-weight: 500; padding-bottom: 8px; }
+        td { padding: 9px 12px 9px 0; border-top: 1px solid #16181C; color: #a8a8a8; vertical-align: top; }
+        td:first-child { color: #DCDCDC; font-family: 'JetBrains Mono', monospace; font-size: .76rem; white-space: nowrap; }
+
+        .verbe {
+            display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: .68rem;
+            font-weight: 600; padding: 2px 8px; border-radius: 5px; margin-right: 8px;
+        }
+        .get  { background: rgba(60,130,220,.15); color: #6BA6F0; }
+        .post { background: rgba(46,160,67,.15); color: #4CC76A; }
+
+        .note {
+            background: rgba(201,162,39,.05); border-left: 2px solid #C9A227;
+            padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 18px 0;
+        }
+        .note p { margin: 0; color: #b8a76e; font-size: .83rem; }
+
+        footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid #16181C;
+                 color: #5c5c5c; font-size: .78rem; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+    <div class="marque">SAMII OS</div>
+    <h1>API partenaires — v1</h1>
+    <p>
+        Lire et écrire des commandes, des rendez-vous et des clients dans un espace SAMII
+        depuis n'importe quel système externe, et recevoir en temps réel tout ce qui s'y passe.
+        REST, JSON, jeton Bearer — rien à installer, un nœud HTTP standard suffit.
+    </p>
+</header>
+
+<h2>Base</h2>
+<pre><code>https://samii.souverain-store.com/api/v1</code></pre>
+<p>
+    Toutes les réponses sont en JSON. Les erreurs renvoient un objet
+    <code>{ "erreur": "…" }</code> avec un code HTTP explicite
+    (<code>400</code> requête invalide, <code>401</code> clé refusée,
+    <code>429</code> limite atteinte, <code>500</code> erreur interne).
+</p>
+
+<h2>Authentification</h2>
+<p>
+    Chaque appel porte une clé dans l'en-tête <code>Authorization</code>. Le marchand la
+    génère lui-même depuis son QG, page <strong>API &amp; Webhooks</strong>. Une clé donne
+    accès à <strong>un seul espace de travail</strong> : tout ce qui est lu ou écrit y est
+    automatiquement borné, il n'existe aucun paramètre permettant d'en désigner un autre.
+</p>
+<pre><code>Authorization: Bearer sk_samii_xxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+<div class="note">
+    <p>
+        Nous ne stockons jamais la clé en clair, seulement son empreinte SHA-256 : elle
+        s'affiche une seule fois, à la création. Une clé perdue se remplace, elle ne se
+        retrouve pas. Le marchand peut révoquer n'importe quelle clé en un clic — l'accès
+        est coupé immédiatement.
+    </p>
+</div>
+
+<h3>Limite d'appels</h3>
+<p>
+    120 requêtes par minute et par clé. La limite est comptée par clé, pas par adresse IP :
+    plusieurs partenaires derrière la même instance n8n mutualisée ne se pénalisent pas
+    entre eux. Les en-têtes standard <code>RateLimit-*</code> sont renvoyés à chaque réponse.
+</p>
+
+<h2>Vérifier sa clé</h2>
+<h3><span class="verbe get">GET</span> /moi</h3>
+<p>Premier appel à faire. Retourne l'espace auquel la clé donne accès.</p>
+<pre><code>curl https://samii.souverain-store.com/api/v1/moi \
+  -H "Authorization: Bearer sk_samii_…"</code></pre>
+<pre><code>{
+  "espace": {
+    "id": "ws_a1b2c3",
+    "nom": "Boutique Amine",
+    "metier": "boutique",
+    "metierLabel": "Boutique / prêt-à-porter",
+    "parcours": "commandes",
+    "pays": "DZ",
+    "devise": "DZD"
+  }
+}</code></pre>
+<p>
+    <code>parcours</code> vaut <code>commandes</code> ou <code>rendez-vous</code> selon le
+    métier du marchand : c'est ce qui te dit quelle ressource utiliser. Un restaurant ou une
+    boutique travaille en commandes ; un cabinet, un salon ou un garage travaille en
+    rendez-vous.
+</p>
+
+<h2>Commandes</h2>
+
+<h3><span class="verbe get">GET</span> /commandes</h3>
+<table>
+    <thead><tr><th>Paramètre</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td>limite</td><td>Nombre de résultats, 50 par défaut, 200 au maximum.</td></tr>
+        <tr><td>statut</td><td>Filtre facultatif : <code>en attente</code>, <code>confirmée</code>, <code>expédiée</code>, <code>livrée</code>, <code>annulée</code>.</td></tr>
+    </tbody>
+</table>
+<pre><code>curl "https://samii.souverain-store.com/api/v1/commandes?statut=confirmée&limite=20" \
+  -H "Authorization: Bearer sk_samii_…"</code></pre>
+<pre><code>{
+  "commandes": [
+    {
+      "id": "TG-482913",
+      "nom_client": "Yacine B.",
+      "telephone": "+213…",
+      "adresse": "Bab Ezzouar, Alger",
+      "produit": "Veste cuir noir — L",
+      "statut": "confirmée",
+      "montant": 8500,
+      "source": "telegram",
+      "date_commande": "2026-08-24T09:12:44.000Z",
+      "confirme_le": "2026-08-24T09:19:02.000Z"
+    }
+  ],
+  "total": 1
+}</code></pre>
+<p>
+    <code>source</code> indique par quel canal la commande est arrivée :
+    <code>telegram</code>, <code>whatsapp</code>, <code>shopify</code>,
+    <code>woocommerce</code>, <code>api</code>…
+</p>
+
+<h3><span class="verbe post">POST</span> /commandes</h3>
+<table>
+    <thead><tr><th>Champ</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td>nomClient</td><td><strong>Obligatoire.</strong> Nom du client.</td></tr>
+        <tr><td>telephone</td><td>Numéro de contact.</td></tr>
+        <tr><td>adresse</td><td>Adresse de livraison.</td></tr>
+        <tr><td>produit</td><td>Description libre de ce qui est commandé.</td></tr>
+        <tr><td>montant</td><td>Nombre, dans la devise de l'espace.</td></tr>
+    </tbody>
+</table>
+<pre><code>curl -X POST https://samii.souverain-store.com/api/v1/commandes \
+  -H "Authorization: Bearer sk_samii_…" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nomClient": "Yacine B.",
+    "telephone": "+213555000111",
+    "adresse": "Bab Ezzouar, Alger",
+    "produit": "Veste cuir noir — L",
+    "montant": 8500
+  }'</code></pre>
+<pre><code>{ "commande": { "id": "API-9F3A1C22B7", "statut": "en attente" } }</code></pre>
+<p>
+    La commande apparaît immédiatement dans le QG du marchand, comme n'importe quelle
+    autre, et déclenche l'événement <code>commande.creee</code> sur les webhooks abonnés.
+</p>
+
+<h2>Rendez-vous</h2>
+
+<h3><span class="verbe get">GET</span> /rendez-vous</h3>
+<pre><code>curl "https://samii.souverain-store.com/api/v1/rendez-vous?limite=50" \
+  -H "Authorization: Bearer sk_samii_…"</code></pre>
+
+<h3><span class="verbe post">POST</span> /rendez-vous</h3>
+<table>
+    <thead><tr><th>Champ</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td>clientNom</td><td><strong>Obligatoire.</strong></td></tr>
+        <tr><td>dateRdv</td><td><strong>Obligatoire.</strong> Date ISO 8601, ex. <code>2026-09-12T14:30:00Z</code>.</td></tr>
+        <tr><td>telephone</td><td>Numéro de contact.</td></tr>
+        <tr><td>motif</td><td>Objet du rendez-vous.</td></tr>
+    </tbody>
+</table>
+<pre><code>curl -X POST https://samii.souverain-store.com/api/v1/rendez-vous \
+  -H "Authorization: Bearer sk_samii_…" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clientNom": "Sofia M.",
+    "telephone": "+212600112233",
+    "motif": "Consultation",
+    "dateRdv": "2026-09-12T14:30:00Z"
+  }'</code></pre>
+
+<h2>Clients</h2>
+<h3><span class="verbe get">GET</span> /clients</h3>
+<p>
+    Les clients de l'espace, agrégés par numéro : nombre de commandes, total dépensé,
+    date du dernier achat. Triés du plus gros au plus petit — de quoi alimenter une
+    segmentation, une relance ou un tableau de bord externe.
+</p>
+<pre><code>{
+  "clients": [
+    { "nom": "Yacine B.", "telephone": "+213…", "commandes": 7,
+      "total_depense": 54200, "derniere_commande": "2026-08-21T17:40:00.000Z" }
+  ],
+  "total": 1
+}</code></pre>
+
+<h2>Webhooks temps réel</h2>
+<p>
+    Plutôt que d'interroger l'API en boucle, déclare une URL et laisse SAMII te prévenir.
+    Le marchand ajoute ton URL depuis son QG, page <strong>API &amp; Webhooks</strong>,
+    et choisit les événements qu'il veut envoyer.
+</p>
+<table>
+    <thead><tr><th>Événement</th><th>Déclenché quand</th></tr></thead>
+    <tbody>
+        <tr><td>commande.creee</td><td>Une commande est enregistrée, quel que soit le canal.</td></tr>
+        <tr><td>commande.confirmee</td><td>Le client ou le marchand confirme la commande.</td></tr>
+        <tr><td>commande.annulee</td><td>La commande est annulée.</td></tr>
+        <tr><td>rendezvous.cree</td><td>Un rendez-vous est pris.</td></tr>
+        <tr><td>rendezvous.confirme</td><td>Le rendez-vous est confirmé.</td></tr>
+        <tr><td>message.recu</td><td>Un client écrit sur un canal connecté (WhatsApp…).</td></tr>
+    </tbody>
+</table>
+
+<div class="note">
+    <p>
+        Un point important : les événements sont émis <strong>quelle que soit l'origine</strong>.
+        Une commande prise par SAMII dans une conversation WhatsApp déclenche exactement le
+        même webhook qu'une commande créée par l'API. Pour ton automatisation, la provenance
+        ne change rien — c'est ce qui permet de brancher un flux une fois et de couvrir tous
+        les canaux du marchand.
+    </p>
+</div>
+
+<h3>Corps envoyé</h3>
+<pre><code>POST https://ton-n8n.com/webhook/samii
+X-SAMII-Event: commande.creee
+X-SAMII-Signature: sha256=9c1f…
+
+{
+  "evenement": "commande.creee",
+  "workspaceId": "ws_a1b2c3",
+  "donnees": {
+    "id": "TG-482913",
+    "nomClient": "Yacine B.",
+    "telephone": "+213555000111",
+    "produit": "Veste cuir noir — L",
+    "montant": 8500,
+    "source": "telegram"
+  },
+  "emisLe": "2026-08-24T09:12:44.512Z"
+}</code></pre>
+
+<h3>Vérifier la signature</h3>
+<p>
+    Chaque appel est signé en HMAC-SHA256 sur le <strong>corps brut</strong>, avec le secret
+    affiché à la création du webhook. Vérifie-la avant de traiter l'événement : c'est ce qui
+    garantit que l'appel vient bien de nous.
+</p>
+<pre><code>const crypto = require("crypto");
+
+function signatureValide(corpsBrut, entete, secret) {
+    const attendue = "sha256=" + crypto
+        .createHmac("sha256", secret)
+        .update(corpsBrut)
+        .digest("hex");
+    return crypto.timingSafeEqual(Buffer.from(entete), Buffer.from(attendue));
+}</code></pre>
+
+<h3>Nouvelles tentatives</h3>
+<p>
+    L'appel est en « meilleur effort », avec un délai d'attente de 8 secondes : une commande
+    ne doit jamais échouer parce qu'un système externe est momentanément hors service. Le
+    code HTTP de ta dernière réponse est visible par le marchand. Après 20 échecs
+    consécutifs, le webhook se désactive tout seul et le marchand doit le réactiver — une
+    URL morte n'est pas rappelée indéfiniment.
+</p>
+
+<h2>Brancher n8n en trois minutes</h2>
+<ul>
+    <li><strong>Lire ou écrire dans SAMII</strong> — nœud <em>HTTP Request</em>, authentification
+        <em>Header Auth</em>, nom <code>Authorization</code>, valeur <code>Bearer sk_samii_…</code>.
+        Aucun nœud communautaire, aucun SDK.</li>
+    <li><strong>Être déclenché par SAMII</strong> — nœud <em>Webhook</em>, copie l'URL de
+        production, colle-la dans la page API &amp; Webhooks du marchand, coche les
+        événements voulus.</li>
+    <li><strong>Vérifier la signature</strong> — nœud <em>Code</em> avec la fonction ci-dessus,
+        avant le reste du flux.</li>
+</ul>
+<p>Le même schéma fonctionne à l'identique avec Make, Zapier, Pipedream ou un appel serveur direct.</p>
+
+<h2>Nous écrire</h2>
+<p>
+    Un endpoint qui te manque, un événement à ajouter, un volume particulier :
+    <a href="mailto:contact@og-technology.com">contact@og-technology.com</a>. Cette API est
+    faite pour les intégrateurs — si ton flux a besoin de quelque chose qui n'est pas là,
+    dis-le-nous, c'est exactement le retour qu'on cherche.
+</p>
+
+<footer>
+    SAMII OS — OG Technology · API partenaires v1 · Documentation mise à jour en août 2026.
+</footer>
+
+</div>
+</body>
+</html>

@@ -172,7 +172,6 @@ app.use("/client-qg", require("./routes/client-qg"));
 app.use("/dashboard", requireAuth, require("./routes/dashboard"));
 app.use("/tools",     requireAuth, require("./routes/tools"));
 app.use("/profile",   requireAuth, require("./routes/profile"));
-app.use("/vitrine", require("./routes/vitrine"));
 app.use("/settings",  requireAuth, require("./routes/settings"));
 app.use("/parrainage", requireAuth, require("./routes/parrainage"));
 app.use("/agence", require("./routes/agence"));
@@ -212,10 +211,17 @@ app.use("/discussions", require("./routes/discussions"));
 app.use("/stories",     require("./routes/stories"));
 app.use("/marketplace", require("./routes/marketplace"));
 app.use("/drivers",     require("./routes/drivers"));
+// API publique partenaires (n8n, Make, ERP...) : authentifiée par clé, pas
+// par session. Montée AVANT /api pour ne pas passer par apiLimiter (limité
+// par IP), qui pénaliserait tous les partenaires sortant d'une même IP —
+// api-v1 applique sa propre limite, par clé.
+app.use("/api/v1", require("./routes/api-v1"));
+app.use("/developpeurs", require("./routes/developpeurs"));
 app.use("/api", apiLimiter, require("./routes/api"));
 // Chat public de la page d'accueil — porte non authentifiée, sa propre
 // limite (bien plus stricte) est définie dans le routeur lui-même.
 app.use("/vitrine", require("./routes/vitrine"));
+app.get("/api-docs", (req, res) => res.sendFile(path.join(__dirname, "public", "api-docs.html")));
 
 app.get("/inscription", requireAuth, (req, res) => {
     const metier = req.query.metier || "";

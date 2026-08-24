@@ -19,6 +19,7 @@ const geminiService = require("../services/geminiService");
 const connectorService = require("../services/connectorService");
 const google = require("../services/google");
 const metiers = require("../services/metiers");
+const apiPartenaire = require("../services/apiPartenaire");
 
 // Notes vocales du chat QG : jamais plus de ~2 minutes d'audio en usage
 // normal, 10 Mo est très large pour ça (webm/opus compresse énormément).
@@ -673,6 +674,7 @@ router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
         if (checkCmd.length) {
             await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [req.params.id]);
             confirmationsQuota.enregistrerSiDepassement(req.session.workspaceId).catch(() => {});
+            apiPartenaire.emettre(req.session.workspaceId, "commande.confirmee", { id: req.params.id, source: "qg" });
             return res.json({ success: true });
         }
 
@@ -682,6 +684,7 @@ router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
         );
         if (checkRdv.length) {
             await db.query(`UPDATE rendez_vous SET statut = 'confirmé' WHERE id = $1`, [req.params.id]);
+            apiPartenaire.emettre(req.session.workspaceId, "rendezvous.confirme", { id: `RDV-${req.params.id}`, source: "qg" });
             return res.json({ success: true });
         }
 
@@ -701,6 +704,7 @@ router.post("/commandes/:id/annuler", requireAuth, async (req, res) => {
         );
         if (checkCmd.length) {
             await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [req.params.id]);
+            apiPartenaire.emettre(req.session.workspaceId, "commande.annulee", { id: req.params.id, source: "qg" });
             return res.json({ success: true });
         }
 

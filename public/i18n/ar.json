@@ -119,7 +119,8 @@
       "samii": "سامي",
       "settings": "الإعدادات",
       "backToQG": "مقري",
-      "logout": "تسجيل الخروج"
+      "logout": "تسجيل الخروج",
+      "api": "واجهة برمجية وWebhooks"
     },
     "hero": {
       "eyebrow": "مركز القيادة",

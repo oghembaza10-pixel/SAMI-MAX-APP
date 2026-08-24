@@ -119,7 +119,8 @@
       "samii": "SAMII",
       "settings": "Paramètres",
       "backToQG": "Mon QG",
-      "logout": "Déconnexion"
+      "logout": "Déconnexion",
+      "api": "API & Webhooks"
     },
     "hero": {
       "eyebrow": "Centre de commandement",

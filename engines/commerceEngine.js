@@ -13,6 +13,7 @@ const notify = require("../services/notify");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const geminiService = require("../services/geminiService");
 const journalService = require("../services/journalService");
+const apiPartenaire = require("../services/apiPartenaire");
 // require() tardif de services/shopify.js et routes/auth-shopify.js (dans
 // abandonedCheckout ci-dessous) : services/shopify.js requiert lui-même
 // brain/orchestrator, qui requiert ce fichier — même cycle que pour
@@ -103,6 +104,11 @@ class CommerceEngine {
             );
 
             await automationEngine.run("order.created", { shop, payload: order });
+            apiPartenaire.emettre(workspaceId, "commande.creee", {
+                id: orderId, nomClient: client, telephone: phone,
+                produit: order.line_items?.map(i => i.title).join(", ") || "",
+                montant: montantCommande, source: "shopify",
+            });
 
             const message =
                 `👑 *SAMII — Commande #${order.order_number} enregistrée*\n\n` +
@@ -411,6 +417,10 @@ class CommerceEngine {
             );
             await journalService.log({ action: `order.created.${source || "chat"}`, details: `#${orderId} — ${name || "Client"}`, workspaceId, montant, refId: orderId });
             socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
+            apiPartenaire.emettre(workspaceId, "commande.creee", {
+                id: orderId, nomClient: name || "Client", telephone: args.telephone || "",
+                produit: args.produit || "", montant, source: source || "chat",
+            });
             notify.notifyWorkspace(workspaceId, {
                 title: "🛒 Nouvelle commande",
                 body : `${name || "Client"} — ${args.produit}`,
@@ -461,6 +471,10 @@ class CommerceEngine {
             const rdvId = `RDV-${rows[0].id}`;
             await journalService.log({ action: `rdv.created.${source || "chat"}`, details: `#${rdvId} — ${name || "Client"}`, workspaceId, refId: rdvId });
             socketService.emitToShop(workspaceId, "nouveau-rdv", { id: rdvId });
+            apiPartenaire.emettre(workspaceId, "rendezvous.cree", {
+                id: rdvId, clientNom: name || "Client", telephone: args.telephone || "",
+                motif, dateRdv: dateParsee ? dateParsee.toISOString() : null, source: source || "chat",
+            });
             notify.notifyWorkspace(workspaceId, {
                 title: "📅 Nouveau rendez-vous",
                 body : `${name || "Client"} — ${args.motif}`,

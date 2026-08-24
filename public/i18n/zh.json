@@ -101,7 +101,8 @@
       "samii": "SAMII",
       "settings": "设置",
       "backToQG": "我的总部",
-      "logout": "退出登录"
+      "logout": "退出登录",
+      "api": "API 与 Webhooks"
     },
     "hero": {
       "eyebrow": "指挥中心",
