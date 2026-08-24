@@ -13,6 +13,11 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "ghembazao@gmail.com";
 const ROOM_ADMIN = "partenariat-admin";
 
 const CATEGORIES = {
+    // Cible prioritaire : une agence amène plusieurs marchands d'un coup.
+    // Volontairement une CANDIDATURE et pas une case à cocher à l'inscription :
+    // le type de compte "agence" donne le droit de créer les espaces d'autres
+    // marchands et d'y entrer — ça ne s'auto-attribue pas, ça se valide.
+    agence: "🏢 Agence / Intégrateur",
     investisseur: "💰 Investisseur",
     createur: "🎥 Créateur de contenu",
     developpeur: "💻 Développeur",

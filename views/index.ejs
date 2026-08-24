@@ -1375,6 +1375,142 @@
             color: #000;
         }
 
+        /* ══ AGENCES ═══════════════════════════════════════════════════════
+           Bloc volontairement plus sombre et plus large que le reste de la
+           page : c'est une rupture visuelle assumée, l'agence doit sentir
+           qu'on lui parle à elle, pas au marchand. */
+        .agency-section {
+            position: relative;
+            max-width: 1180px;
+            margin: 74px auto 0;
+            padding: 54px 42px 48px;
+            border-radius: 26px;
+            overflow: hidden;
+            background:
+                linear-gradient(160deg, rgba(16,19,22,.96) 0%, rgba(8,10,12,.99) 100%);
+            border: 1px solid var(--gold-border);
+            box-shadow:
+                0 30px 90px rgba(0,0,0,.55),
+                inset 0 1px 0 rgba(255,255,255,.045);
+        }
+
+        .agency-glow {
+            position: absolute;
+            top: -170px; left: 50%;
+            width: 640px; height: 340px;
+            transform: translateX(-50%);
+            background: radial-gradient(ellipse at center, rgba(212,169,74,.15), transparent 68%);
+            pointer-events: none;
+        }
+
+        .agency-inner { position: relative; text-align: center; }
+
+        .agency-eyebrow {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            background: var(--gold-soft);
+            border: 1px solid var(--gold-border);
+            color: var(--gold-bright);
+            font-family: var(--font-mono, monospace);
+            font-size: .69rem;
+            letter-spacing: .13em;
+            text-transform: uppercase;
+        }
+
+        .agency-title {
+            margin: 20px auto 0;
+            max-width: 780px;
+            font-family: var(--font-display, inherit);
+            font-size: clamp(1.5rem, 3.4vw, 2.35rem);
+            line-height: 1.28;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .agency-title span { display: block; }
+        .agency-title__accent {
+            background: linear-gradient(100deg, var(--gold) 0%, var(--gold-bright) 48%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .agency-lead {
+            max-width: 620px;
+            margin: 17px auto 0;
+            color: var(--text-muted);
+            font-size: .9rem;
+            line-height: 1.72;
+        }
+
+        .agency-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .agency-card {
+            position: relative;
+            padding: 24px 24px 24px 26px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.022);
+            border: 1px solid rgba(255,255,255,.07);
+            transition: border-color .25s ease, background .25s ease, transform .25s ease;
+        }
+        .agency-card:hover {
+            border-color: var(--gold-border);
+            background: rgba(212,169,74,.045);
+            transform: translateY(-2px);
+        }
+        .agency-card__num {
+            font-family: var(--font-mono, monospace);
+            font-size: .7rem;
+            letter-spacing: .1em;
+            color: var(--gold);
+            opacity: .75;
+        }
+        .agency-card h3 {
+            margin: 9px 0 8px;
+            font-size: .97rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -.01em;
+        }
+        .agency-card p {
+            margin: 0;
+            font-size: .84rem;
+            line-height: 1.68;
+            color: var(--text-muted);
+        }
+
+        .agency-cta {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 11px;
+            margin-top: 38px;
+        }
+        .agency-cta__note {
+            font-size: .74rem;
+            color: var(--text-dim);
+            max-width: 400px;
+            line-height: 1.55;
+        }
+
+        @media (max-width: 780px) {
+            .agency-section { margin-top: 52px; padding: 40px 20px 36px; border-radius: 20px; }
+            .agency-grid { grid-template-columns: 1fr; gap: 12px; }
+            .agency-card { padding: 20px; }
+        }
+
+        /* Catégorie prioritaire dans l'onglet Partenariat (agences) */
+        .partner-card--priority {
+            border-color: var(--gold-border) !important;
+            background: var(--gold-soft) !important;
+        }
+
         /* SOON */
 
         .soon-section {
@@ -2586,8 +2722,8 @@
             </form>
         </div>
         <div class="hero-proof">
-            <p class="hero-proof__connected" data-i18n="proof.connected">Connecté à Shopify · WooCommerce · Telegram · WhatsApp · Google</p>
-            <p class="hero-proof__soon" data-i18n="proof.soon">Bientôt — TikTok, Meta</p>
+            <p class="hero-proof__connected" data-i18n="proof.connected">Connecté à Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google</p>
+            <p class="hero-proof__soon" data-i18n="proof.soon">Bientôt — TikTok, LinkedIn</p>
             <div class="hero-proof__steps">
                 <div class="hero-proof__step"><span class="n">01</span><p data-i18n="proof.step1">Vous connectez vos outils — deux minutes, sans technique.</p></div>
                 <div class="hero-proof__step"><span class="n">02</span><p data-i18n="proof.step2">Sami répond, vend et publie à votre place, jour et nuit.</p></div>
@@ -2722,6 +2858,50 @@
                 <div class="m-card__icon">🤝</div>
                 <div><div class="m-card__name" data-i18n="modules.parrainage.name">Parrainage</div><div class="m-card__desc" data-i18n="modules.parrainage.desc">20% + 5%, pendant 12 mois</div></div>
                 <div class="m-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ AGENCES ═══════════════════════════════════════════════════════
+         Cible prioritaire : une agence amène plusieurs marchands d'un coup.
+         Jusqu'ici la page ne parlait qu'au marchand — une agence arrivait,
+         ne se reconnaissait nulle part, et repartait. -->
+    <section class="agency-section" id="agences">
+        <div class="agency-glow" aria-hidden="true"></div>
+        <div class="agency-inner">
+            <span class="agency-eyebrow" data-i18n="agency.eyebrow">Pour les agences &amp; intégrateurs</span>
+            <h2 class="agency-title">
+                <span data-i18n="agency.title1">Vous amenez les clients.</span>
+                <span class="agency-title__accent" data-i18n="agency.title2">Nous portons la technologie.</span>
+            </h2>
+            <p class="agency-lead" data-i18n="agency.lead">Déployez SAMII sous votre propre marque commerciale, chez vos clients, sans construire ni maintenir l'infrastructure. Vous gardez la relation client — nous tenons la machine.</p>
+
+            <div class="agency-grid">
+                <article class="agency-card">
+                    <div class="agency-card__num">01</div>
+                    <h3 data-i18n="agency.c1.title">Un QG Agence</h3>
+                    <p data-i18n="agency.c1.desc">Créez l'espace de chaque client en quelques minutes. Vous les voyez tous depuis un seul tableau de bord, et vous entrez dans n'importe lequel quand vous voulez.</p>
+                </article>
+                <article class="agency-card">
+                    <div class="agency-card__num">02</div>
+                    <h3 data-i18n="agency.c2.title">L'API Meta déjà en place</h3>
+                    <p data-i18n="agency.c2.desc">WhatsApp, Instagram, Facebook : l'accès est déjà construit et actif de notre côté. Aucune validation à passer, aucun mois d'attente.</p>
+                </article>
+                <article class="agency-card">
+                    <div class="agency-card__num">03</div>
+                    <h3 data-i18n="agency.c3.title">Vos clients restent vos clients</h3>
+                    <p data-i18n="agency.c3.desc">Chaque client garde son accès indépendant à son espace, et vous gardez le contrôle et la visibilité sur l'ensemble. Rien ne se fait dans votre dos.</p>
+                </article>
+                <article class="agency-card">
+                    <div class="agency-card__num">04</div>
+                    <h3 data-i18n="agency.c4.title">Un module manque ? On le construit</h3>
+                    <p data-i18n="agency.c4.desc">Vos clients ont un besoin qui n'existe pas encore dans la plateforme : notre équipe technique le développe. C'est à ça qu'elle sert.</p>
+                </article>
+            </div>
+
+            <div class="agency-cta">
+                <a href="#auth" class="btn-primary" id="btn-agency" data-i18n="agency.cta">Devenir agence partenaire →</a>
+                <span class="agency-cta__note" data-i18n="agency.note">Candidature étudiée une par une — nous n'ouvrons pas l'accès agence automatiquement.</span>
             </div>
         </div>
     </section>
@@ -2905,6 +3085,7 @@
             <div id="form-partenariat" style="display:none;">
                 <p class="pa-intro" data-i18n="partenariat.intro">Investisseur, créateur de contenu, développeur, fournisseur... Dis-nous comment tu veux construire l'Empire avec nous.</p>
                 <div class="partner-grid" id="partner-grid">
+                    <label class="partner-card partner-card--priority"><input type="radio" name="partner_categorie" value="agence"><span class="icon">🏢</span><span data-i18n="partenariat.cat.agence">Agence / Intégrateur</span></label>
                     <label class="partner-card"><input type="radio" name="partner_categorie" value="investisseur"><span class="icon">💰</span><span data-i18n="partenariat.cat.investisseur">Investisseur</span></label>
                     <label class="partner-card"><input type="radio" name="partner_categorie" value="createur"><span class="icon">🎥</span><span data-i18n="partenariat.cat.createur">Créateur de contenu</span></label>
                     <label class="partner-card"><input type="radio" name="partner_categorie" value="developpeur"><span class="icon">💻</span><span data-i18n="partenariat.cat.developpeur">Développeur</span></label>
@@ -2966,8 +3147,22 @@
                 'live.chip1': 'Que fais-tu concrètement ?', 'live.chip2': 'Je suis une agence', 'live.chip3': 'Tu gères WhatsApp ?',
                 'live.placeholder': 'Écrivez votre question à SAMII...',
                 'live.error': "SAMII est momentanément indisponible. Réessayez dans un instant.",
-                'proof.connected': 'Connecté à Shopify · WooCommerce · Telegram · WhatsApp · Google',
-                'proof.soon': 'Bientôt — TikTok, Meta',
+                'agency.eyebrow': 'Pour les agences & intégrateurs',
+                'agency.title1': 'Vous amenez les clients.', 'agency.title2': 'Nous portons la technologie.',
+                'agency.lead': "Déployez SAMII chez vos clients sans construire ni maintenir l'infrastructure. Vous gardez la relation client — nous tenons la machine.",
+                'agency.c1.title': 'Un QG Agence',
+                'agency.c1.desc': "Créez l'espace de chaque client en quelques minutes. Vous les voyez tous depuis un seul tableau de bord, et vous entrez dans n'importe lequel quand vous voulez.",
+                'agency.c2.title': "L'API Meta déjà en place",
+                'agency.c2.desc': "WhatsApp, Instagram, Facebook : l'accès est déjà construit et actif de notre côté. Aucune validation à passer, aucun mois d'attente.",
+                'agency.c3.title': 'Vos clients restent vos clients',
+                'agency.c3.desc': "Chaque client garde son accès indépendant à son espace, et vous gardez le contrôle et la visibilité sur l'ensemble. Rien ne se fait dans votre dos.",
+                'agency.c4.title': "Un module manque ? On le construit",
+                'agency.c4.desc': "Vos clients ont un besoin qui n'existe pas encore dans la plateforme : notre équipe technique le développe. C'est à ça qu'elle sert.",
+                'agency.cta': 'Devenir agence partenaire →',
+                'agency.note': "Candidature étudiée une par une — nous n'ouvrons pas l'accès agence automatiquement.",
+                'partenariat.cat.agence': 'Agence / Intégrateur',
+                'proof.connected': 'Connecté à Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
+                'proof.soon': 'Bientôt — TikTok, LinkedIn',
                 'proof.step1': 'Vous connectez vos outils — deux minutes, sans technique.',
                 'proof.step2': 'Sami répond, vend et publie à votre place, jour et nuit.',
                 'proof.step3': 'Vous gardez le dernier mot, toujours, sur tout.',
@@ -2985,6 +3180,7 @@
                 'modules.services.name': 'Services', 'modules.services.desc': 'Livraison, garde...',
                 'modules.emploi.name': 'Emploi', 'modules.emploi.desc': 'Missions & postes',
                 'modules.parrainage.name': 'Parrainage', 'modules.parrainage.desc': '20% + 5%, pendant 12 mois',
+                'modules.metaads': 'Pubs Facebook & Instagram',
                 'soon.title': 'Bientôt disponible',
                 'soon.reseau.name': 'Réseau Mondial', 'soon.reseau.desc': 'Connectez-vous',
                 'soon.logistique.name': 'Logistique', 'soon.logistique.desc': 'Livraison & suivi',
@@ -3043,8 +3239,22 @@
                 'live.chip1': 'What do you actually do?', 'live.chip2': "I'm an agency", 'live.chip3': 'Do you handle WhatsApp?',
                 'live.placeholder': 'Type your question to SAMII...',
                 'live.error': 'SAMII is momentarily unavailable. Please try again shortly.',
-                'proof.connected': 'Connected to Shopify · WooCommerce · Telegram · WhatsApp · Google',
-                'proof.soon': 'Coming soon — TikTok, Meta',
+                'agency.eyebrow': 'For agencies & integrators',
+                'agency.title1': 'You bring the clients.', 'agency.title2': 'We carry the technology.',
+                'agency.lead': 'Deploy SAMII for your clients without building or maintaining the infrastructure. You keep the client relationship — we run the machine.',
+                'agency.c1.title': 'An Agency HQ',
+                'agency.c1.desc': 'Create each client workspace in minutes. See them all from a single dashboard, and step into any one of them whenever you want.',
+                'agency.c2.title': 'Meta API already in place',
+                'agency.c2.desc': 'WhatsApp, Instagram, Facebook: access is already built and live on our side. No review to pass, no months of waiting.',
+                'agency.c3.title': 'Your clients stay your clients',
+                'agency.c3.desc': 'Each client keeps independent access to their own space, and you keep control and visibility over all of them. Nothing happens behind your back.',
+                'agency.c4.title': 'Missing a module? We build it',
+                'agency.c4.desc': "Your clients need something the platform doesn't cover yet: our engineering team builds it. That's what it's for.",
+                'agency.cta': 'Become a partner agency →',
+                'agency.note': "Applications reviewed one by one — we don't open agency access automatically.",
+                'partenariat.cat.agence': 'Agency / Integrator',
+                'proof.connected': 'Connected to Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
+                'proof.soon': 'Coming soon — TikTok, LinkedIn',
                 'proof.step1': 'Connect your tools — two minutes, no tech skills needed.',
                 'proof.step2': 'Sami replies, sells and publishes on your behalf, day and night.',
                 'proof.step3': 'You always keep the final say, on everything.',
@@ -3062,6 +3272,7 @@
                 'modules.services.name': 'Services', 'modules.services.desc': 'Delivery, care...',
                 'modules.emploi.name': 'Jobs', 'modules.emploi.desc': 'Missions & positions',
                 'modules.parrainage.name': 'Referral program', 'modules.parrainage.desc': '20% + 5%, for 12 months',
+                'modules.metaads': 'Facebook & Instagram ads',
                 'soon.title': 'Coming soon',
                 'soon.reseau.name': 'Global Network', 'soon.reseau.desc': 'Connect',
                 'soon.logistique.name': 'Logistics', 'soon.logistique.desc': 'Delivery & tracking',
@@ -3120,8 +3331,22 @@
                 'live.chip1': 'ماذا تفعل بالضبط؟', 'live.chip2': 'أنا وكالة', 'live.chip3': 'هل تدير واتساب؟',
                 'live.placeholder': 'اكتب سؤالك لسامي...',
                 'live.error': 'سامي غير متاح مؤقتا. حاول مرة أخرى بعد قليل.',
-                'proof.connected': 'متصل بـ Shopify · WooCommerce · Telegram · WhatsApp · Google',
-                'proof.soon': 'قريبًا — TikTok، Meta',
+                'agency.eyebrow': 'للوكالات والمُدمِجين',
+                'agency.title1': 'أنتم تجلبون العملاء.', 'agency.title2': 'ونحن نتكفل بالتقنية.',
+                'agency.lead': 'انشر سامي لدى عملائك دون بناء أو صيانة البنية التقنية. تحتفظ بعلاقتك مع العميل — ونحن نُشغّل الآلة.',
+                'agency.c1.title': 'مقر خاص بالوكالة',
+                'agency.c1.desc': 'أنشئ مساحة كل عميل في دقائق. تراهم جميعا من لوحة واحدة، وتدخل إلى أي منها متى شئت.',
+                'agency.c2.title': 'واجهة Meta جاهزة بالفعل',
+                'agency.c2.desc': 'واتساب وإنستغرام وفيسبوك: الوصول مبني ومفعّل من جهتنا. لا مراجعة تنتظرها، ولا أشهر انتظار.',
+                'agency.c3.title': 'عملاؤك يبقون عملاءك',
+                'agency.c3.desc': 'كل عميل يحتفظ بوصول مستقل إلى مساحته، وأنت تحتفظ بالتحكم والرؤية على الجميع. لا شيء يحدث من وراء ظهرك.',
+                'agency.c4.title': 'تنقصك وحدة؟ نبنيها لك',
+                'agency.c4.desc': 'عملاؤك يحتاجون شيئا غير موجود بعد في المنصة: فريقنا التقني يطوّره. لهذا هو موجود.',
+                'agency.cta': 'كن وكالة شريكة →',
+                'agency.note': 'تُدرس الطلبات واحدا واحدا — لا نفتح وصول الوكالات تلقائيا.',
+                'partenariat.cat.agence': 'وكالة / مُدمِج',
+                'proof.connected': 'متصل بـ Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
+                'proof.soon': 'قريبًا — TikTok، LinkedIn',
                 'proof.step1': 'تربط أدواتك — دقيقتان، دون أي خبرة تقنية.',
                 'proof.step2': 'سامي يرد، يبيع وينشر بدلاً عنك، ليل نهار.',
                 'proof.step3': 'تبقى الكلمة الأخيرة لك، دائمًا، في كل شيء.',
@@ -3139,6 +3364,7 @@
                 'modules.services.name': 'خدمات', 'modules.services.desc': 'توصيل، رعاية...',
                 'modules.emploi.name': 'وظائف', 'modules.emploi.desc': 'مهام ومناصب',
                 'modules.parrainage.name': 'برنامج الإحالة', 'modules.parrainage.desc': '20% + 5%، لمدة 12 شهرًا',
+                'modules.metaads': 'إعلانات فيسبوك وإنستغرام',
                 'soon.title': 'قريبًا',
                 'soon.reseau.name': 'شبكة عالمية', 'soon.reseau.desc': 'تواصل',
                 'soon.logistique.name': 'الخدمات اللوجستية', 'soon.logistique.desc': 'توصيل وتتبع',
@@ -3191,11 +3417,33 @@
                 'hero.tag1': '自动化。', 'hero.tag2': '发展。', 'hero.tag3': '统治。',
                 'hero.desc': '为帝国缔造者打造的平台：管理你的业务，连接你的工具，掌控你的市场——无论你身在何处。',
                 'hero.cta1': '👑 创建账户', 'hero.cta2': '探索 SAMII ↓',
+                'hero.badgeSub': 'SAMII 出品方',
+                'hero.descTech': '已连接 Gmail、Google 日历、云端硬盘、YouTube 与 Google Ads，SAMII 代您回复邮件、安排约会、发布内容并管理广告 — 始终听从您的指令。',
+                'proof.step1': '连接您的工具 — 两分钟，无需技术。',
+                'proof.step2': 'SAMII 代您回复、销售与发布，日夜不停。',
+                'proof.step3': '最终决定权始终在您手中。',
+                'footer.privacy': '隐私政策', 'footer.terms': '使用条款',
                 'live.status': '在线 — 现在就与它对话',
                 'live.welcome': '您好 👋 我是 SAMII。关于我能为您的生意或代理机构做什么，尽管问我 — 我会立即回答。',
                 'live.chip1': '你具体能做什么？', 'live.chip2': '我是一家代理机构', 'live.chip3': '你能管理 WhatsApp 吗？',
                 'live.placeholder': '向 SAMII 提问...',
                 'live.error': 'SAMII 暂时不可用，请稍后再试。',
+                'agency.eyebrow': '面向代理机构与集成商',
+                'agency.title1': '您带来客户。', 'agency.title2': '我们提供技术。',
+                'agency.lead': '为您的客户部署 SAMII，无需自建或维护基础设施。您保有客户关系 — 我们负责运转。',
+                'agency.c1.title': '代理总部',
+                'agency.c1.desc': '几分钟内创建每位客户的空间。从单一面板查看全部客户，并随时进入其中任意一个。',
+                'agency.c2.title': 'Meta 接口已就绪',
+                'agency.c2.desc': 'WhatsApp、Instagram、Facebook：接入已在我方构建并上线。无需审核，无需等待数月。',
+                'agency.c3.title': '您的客户始终是您的客户',
+                'agency.c3.desc': '每位客户保有其空间的独立访问权，而您保有对全部客户的控制与可见性。绝无暗箱操作。',
+                'agency.c4.title': '缺少某个模块？我们来构建',
+                'agency.c4.desc': '您的客户需要平台尚未覆盖的功能：由我们的技术团队开发。这正是它的用途。',
+                'agency.cta': '成为合作代理机构 →',
+                'agency.note': '申请逐一审核 — 我们不会自动开放代理权限。',
+                'partenariat.cat.agence': '代理机构 / 集成商',
+                'proof.connected': '已连接 Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
+                'proof.soon': '即将支持 — TikTok、LinkedIn',
                 'preview.title': '总部预览', 'preview.sub': '即将拥有',
                 'preview.samii.desc': '你的私人策略师', 'preview.samii.stat': '每日可用消息数', 'preview.samii.btn': '与 SAMII 对话 →',
                 'preview.shopify.desc': '连接你的店铺', 'preview.shopify.btn': '连接 Shopify →',
@@ -3210,6 +3458,7 @@
                 'modules.services.name': '服务', 'modules.services.desc': '配送、看护...',
                 'modules.emploi.name': '招聘', 'modules.emploi.desc': '任务与职位',
                 'modules.parrainage.name': '推荐计划', 'modules.parrainage.desc': '20% + 5%，持续12个月',
+                'modules.metaads': 'Facebook 与 Instagram 广告',
                 'soon.title': '即将推出',
                 'soon.reseau.name': '全球网络', 'soon.reseau.desc': '互联互通',
                 'soon.logistique.name': '物流', 'soon.logistique.desc': '配送与跟踪',
@@ -3388,6 +3637,22 @@
                 document.getElementById('partner-details').style.display = 'block';
             });
         });
+
+        // Bouton "Devenir agence partenaire" de la section Agences : ouvre
+        // directement l'onglet Partenariat avec la catégorie Agence déjà
+        // cochée et le formulaire déplié — une agence qui clique ne doit
+        // pas avoir à re-chercher où se déclarer.
+        const btnAgency = document.getElementById('btn-agency');
+        if (btnAgency) {
+            btnAgency.addEventListener('click', () => {
+                document.querySelector('.auth-tab[data-tab="partenariat"]')?.click();
+                const radioAgence = document.querySelector('input[name="partner_categorie"][value="agence"]');
+                if (radioAgence) {
+                    radioAgence.checked = true;
+                    radioAgence.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        }
 
         document.getElementById('btn-partner-submit').addEventListener('click', async () => {
             const msg = document.getElementById('partner-msg');

@@ -60,7 +60,15 @@ function getMontant(c) {
 }
 
 // ── CHAT SAMII ──────────────────────────────────────────
-router.post("/chat", async (req, res) => {
+// requireAuth ajouté : cette route lance le planner complet (prompt SAMII
+// entier + outils + audience "souverain") et le quota de messages ne
+// s'applique que s'il y a un userId — un visiteur anonyme pouvait donc
+// consommer des tokens payants sans aucune limite de quota. Ses deux seuls
+// appelants (public/js/hub.js et public/js/samii-page.js) sont servis par
+// des pages déjà protégées par requireAuth : personne de légitime ne
+// l'appelle sans session. Le chat public de la page d'accueil a sa propre
+// porte, volontairement bridée (routes/vitrine.js).
+router.post("/chat", requireAuth, async (req, res) => {
     try {
         const message = req.body.message;
         const imageUrl = req.body.imageUrl;
