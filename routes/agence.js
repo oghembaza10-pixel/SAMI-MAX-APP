@@ -222,9 +222,23 @@ router.get("/", requireAgence, async (req, res) => {
 
 router.post("/creer-client", requireAgence, async (req, res) => {
     try {
-        const { nom, metier, email, pays } = req.body;
+        const { nom, metier, metierCustom, email, pays } = req.body;
         if (!nom || !nom.trim()) return res.json({ success: false, error: "Le nom de la boutique est obligatoire." });
-        if (!metiers.estValide(metier)) return res.json({ success: false, error: "Métier invalide." });
+
+        // "Autre" ouvre la saisie libre : aucune liste ne couvrira jamais
+        // tous les métiers d'Afrique et du Maghreb, et une agence ne doit
+        // pas être bloquée parce que son client fait un métier auquel on
+        // n'avait pas pensé. Le métier libre est enregistré tel quel, comme
+        // le fait déjà l'onboarding conversationnel (routes/workspace.js).
+        let metierFinal = String(metier || "").trim().toLowerCase();
+        if (metierFinal === "autre") {
+            const libre = String(metierCustom || "").trim();
+            if (!libre) return res.json({ success: false, error: "Précise le métier de ton client." });
+            if (libre.length > 40) return res.json({ success: false, error: "Métier trop long (40 caractères maximum)." });
+            metierFinal = libre.toLowerCase();
+        } else if (!metiers.estValide(metierFinal)) {
+            return res.json({ success: false, error: "Métier invalide." });
+        }
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.json({ success: false, error: "Email client invalide." });
         if (!PAYS_DEVISE[pays]) return res.json({ success: false, error: "Pays invalide." });
 
@@ -235,7 +249,7 @@ router.post("/creer-client", requireAgence, async (req, res) => {
             workspaceId: generateWorkspaceId(),
             owner: email.trim().toLowerCase(),
             nom: nom.trim(),
-            metier,
+            metier: metierFinal,
             pays,
             devise: PAYS_DEVISE[pays].devise || "USD",
             agenceId: req.session.userId,

@@ -332,6 +332,62 @@
         }
         .tc-form input:focus, .tc-form select:focus { outline: none; border-color: var(--gold-og); }
         .tc-form__pied { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+
+        /* ── Choix du métier en deux temps ───────────────────────────── */
+        .tc-champ-large { grid-column: 1 / -1; }
+
+        .tc-familles {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+        }
+        .tc-famille {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 13px; border-radius: 11px; cursor: pointer;
+            background: var(--bg-glass); border: var(--border-soft);
+            color: var(--text-main); font-family: var(--font-body);
+            font-size: .82rem; text-align: left;
+            transition: border-color .2s var(--ease), background .2s var(--ease);
+        }
+        .tc-famille:hover { border-color: var(--gold-og); background: rgba(156,122,50,.06); }
+        .tc-famille__icone { font-size: 1.1rem; flex-shrink: 0; }
+        .tc-famille__nom { flex: 1; min-width: 0; }
+        .tc-famille__nb {
+            font-family: var(--font-mono); font-size: .68rem;
+            color: var(--text-muted); flex-shrink: 0;
+        }
+
+        .tc-sous { display: none; }
+        .tc-sous--ouvert { display: block; animation: tc-ouvre .22s var(--ease); }
+        .tc-retour {
+            background: none; border: none; cursor: pointer; padding: 0 0 10px;
+            color: var(--text-muted); font-family: var(--font-body); font-size: .76rem;
+        }
+        .tc-retour:hover { color: var(--gold-og); }
+        .tc-sous__liste { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tc-metier {
+            padding: 11px 15px; border-radius: 10px; cursor: pointer;
+            background: var(--bg-glass); border: var(--border-soft);
+            color: var(--text-main); font-family: var(--font-body); font-size: .82rem;
+            transition: border-color .2s var(--ease), background .2s var(--ease);
+        }
+        .tc-metier:hover { border-color: var(--gold-og); background: rgba(156,122,50,.06); }
+        .tc-metier--choisi {
+            border-color: var(--gold-og);
+            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover));
+            color: #07090e; font-weight: 700;
+        }
+
+        .tc-libre { display: none; margin-top: 12px; }
+        .tc-libre--ouvert { display: block; animation: tc-ouvre .22s var(--ease); }
+        .tc-choix { margin: 10px 0 0; font-size: .78rem; color: var(--green-on); min-height: 18px; }
+
+        @media (max-width: 560px) {
+            /* Au doigt : deux familles par ligne, cibles bien hautes. */
+            .tc-familles { grid-template-columns: repeat(2, 1fr); }
+            .tc-famille { padding: 14px 12px; font-size: .78rem; }
+            .tc-metier { padding: 13px 16px; }
+        }
         .tc-msg { font-size: .78rem; }
         .tc-msg--ok { color: var(--green-on); }
         .tc-msg--ko { color: #e5533d; }
@@ -459,19 +515,51 @@
                         <label for="c-nom" data-i18n="agence.form.nom">Nom de la boutique</label>
                         <input id="c-nom" name="nom" required placeholder="Boutique de Karim">
                     </div>
-                    <div>
-                        <label for="c-metier" data-i18n="agence.form.metier">Métier</label>
-                        <%# Métiers regroupés (Santé, Beauté, Restauration...) :
-                            une liste à plat de trente entrées est illisible. %>
-                        <select id="c-metier" name="metier" required>
+                    <%# Sélection en DEUX TEMPS : on choisit d'abord la famille,
+                        puis le métier à l'intérieur. Une liste déroulante de
+                        trente entrées est impraticable au doigt sur téléphone —
+                        ici on ne voit jamais plus de sept ou huit choix à la
+                        fois, en boutons assez grands pour être touchés. %>
+                    <div class="tc-champ-large">
+                        <label data-i18n="agence.form.metier">Métier</label>
+                        <%# Pas de "required" ici : un champ caché est exclu de la
+                            validation native du navigateur, l'attribut ne ferait
+                            rien. Le contrôle se fait à l'envoi (voir plus bas). %>
+                        <input type="hidden" id="c-metier" name="metier">
+
+                        <div class="tc-familles" id="tc-familles">
                             <% metiers.forEach(groupe => { %>
-                            <optgroup label="<%= groupe.nom %>">
-                                <% groupe.metiers.forEach(m => { %>
-                                <option value="<%= m.id %>"><%= m.icone %> <%= m.label %></option>
-                                <% }) %>
-                            </optgroup>
+                            <button type="button" class="tc-famille" data-famille="<%= groupe.nom %>">
+                                <span class="tc-famille__icone"><%= groupe.metiers[0].icone %></span>
+                                <span class="tc-famille__nom"><%= groupe.nom %></span>
+                                <span class="tc-famille__nb"><%= groupe.metiers.length %></span>
+                            </button>
                             <% }) %>
-                        </select>
+                        </div>
+
+                        <% metiers.forEach(groupe => { %>
+                        <div class="tc-sous" data-sous="<%= groupe.nom %>">
+                            <button type="button" class="tc-retour">← <span data-i18n="agence.form.retourFamilles">Toutes les familles</span></button>
+                            <div class="tc-sous__liste">
+                                <% groupe.metiers.forEach(m => { %>
+                                <button type="button" class="tc-metier" data-id="<%= m.id %>" data-label="<%= m.label %>">
+                                    <span><%= m.icone %></span> <%= m.label %>
+                                </button>
+                                <% }) %>
+                            </div>
+                        </div>
+                        <% }) %>
+
+                        <%# Saisie libre quand aucune famille ne correspond :
+                            aucune liste ne couvrira tous les métiers du
+                            Maghreb et d'Afrique, l'agence ne doit jamais être
+                            bloquée par un métier auquel on n'a pas pensé. %>
+                        <div class="tc-libre" id="tc-libre">
+                            <label for="c-metier-libre" data-i18n="agence.form.metierLibre">Précise le métier de ton client</label>
+                            <input id="c-metier-libre" name="metierCustom" maxlength="40" placeholder="Ex : Torréfacteur, Pressing, Menuisier...">
+                        </div>
+
+                        <p class="tc-choix" id="tc-choix"></p>
                     </div>
                     <div>
                         <label for="c-email" data-i18n="agence.form.email">Email du client</label>
@@ -628,6 +716,51 @@
     const rail = document.getElementById("tc-rail");
     document.getElementById("tc-burger")?.addEventListener("click", () => rail.classList.toggle("tc-rail--ouvert"));
 
+    // ── Métier en deux temps : famille → métier ───────────────────────
+    const familles = document.getElementById("tc-familles");
+    const champMetier = document.getElementById("c-metier");
+    const choixTexte = document.getElementById("tc-choix");
+
+    function montrerFamilles() {
+        if (familles) familles.style.display = "";
+        document.querySelectorAll(".tc-sous").forEach(s => s.classList.remove("tc-sous--ouvert"));
+    }
+
+    document.querySelectorAll(".tc-famille").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const cible = document.querySelector('.tc-sous[data-sous="' + btn.dataset.famille + '"]');
+            if (!cible) return;
+            familles.style.display = "none";
+            document.querySelectorAll(".tc-sous").forEach(s => s.classList.remove("tc-sous--ouvert"));
+            cible.classList.add("tc-sous--ouvert");
+        });
+    });
+
+    document.querySelectorAll(".tc-retour").forEach(btn => {
+        btn.addEventListener("click", montrerFamilles);
+    });
+
+    const champLibre = document.getElementById("tc-libre");
+    const saisieLibre = document.getElementById("c-metier-libre");
+
+    document.querySelectorAll(".tc-metier").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".tc-metier").forEach(b => b.classList.remove("tc-metier--choisi"));
+            btn.classList.add("tc-metier--choisi");
+            if (champMetier) champMetier.value = btn.dataset.id;
+
+            const estAutre = btn.dataset.id === "autre";
+            if (champLibre) champLibre.classList.toggle("tc-libre--ouvert", estAutre);
+            if (estAutre) {
+                if (choixTexte) choixTexte.textContent = "";
+                saisieLibre?.focus();
+            } else {
+                if (saisieLibre) saisieLibre.value = "";
+                if (choixTexte) choixTexte.textContent = "✓ " + btn.dataset.label;
+            }
+        });
+    });
+
     const panneau = document.getElementById("panneau-ajout");
     const btnOuvrir = document.getElementById("btn-ouvrir-form");
     btnOuvrir?.addEventListener("click", () => {
@@ -641,6 +774,20 @@
         const msg = document.getElementById("msg-client");
         const btn = document.getElementById("btn-creer");
         const data = Object.fromEntries(new FormData(e.target));
+
+        if (data.metier === "autre" && !String(data.metierCustom || "").trim()) {
+            msg.textContent = "Précise le métier de ton client.";
+            msg.className = "tc-msg tc-msg--ko";
+            document.getElementById("c-metier-libre")?.focus();
+            return;
+        }
+        if (!data.metier) {
+            msg.textContent = "Choisis le métier de ton client.";
+            msg.className = "tc-msg tc-msg--ko";
+            montrerFamilles();
+            document.getElementById("tc-familles")?.scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+        }
 
         btn.disabled = true;
         msg.textContent = "Ouverture en cours...";

@@ -695,7 +695,9 @@
       "metier": "Métier",
       "email": "Email du client",
       "pays": "Pays",
-      "creer": "Ouvrir l'espace client"
+      "creer": "Ouvrir l'espace client",
+      "metierLibre": "Précise le métier de ton client",
+      "retourFamilles": "Toutes les familles"
     },
     "section": {
       "escadrilles": "Escadrilles"

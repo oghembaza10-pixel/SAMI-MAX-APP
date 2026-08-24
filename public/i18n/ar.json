@@ -695,7 +695,9 @@
       "metier": "المجال",
       "email": "بريد العميل",
       "pays": "البلد",
-      "creer": "افتح مساحة العميل"
+      "creer": "افتح مساحة العميل",
+      "metierLibre": "حدّد مجال عميلك",
+      "retourFamilles": "كل الفئات"
     },
     "section": {
       "escadrilles": "الأسراب"

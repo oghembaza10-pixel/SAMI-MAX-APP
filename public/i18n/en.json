@@ -695,7 +695,9 @@
       "metier": "Industry",
       "email": "Client email",
       "pays": "Country",
-      "creer": "Open client workspace"
+      "creer": "Open client workspace",
+      "metierLibre": "Specify your client's business",
+      "retourFamilles": "All categories"
     },
     "section": {
       "escadrilles": "Squadrons"

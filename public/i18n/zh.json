@@ -677,7 +677,9 @@
       "metier": "行业",
       "email": "客户邮箱",
       "pays": "国家",
-      "creer": "开通客户空间"
+      "creer": "开通客户空间",
+      "metierLibre": "请说明客户的行业",
+      "retourFamilles": "所有类别"
     },
     "section": {
       "escadrilles": "编队"
