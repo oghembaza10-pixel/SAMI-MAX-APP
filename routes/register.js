@@ -10,6 +10,7 @@ const CONFIG  = require("../config");
 const db      = require("../services/db");
 const gradeService = require("../services/gradeService");
 const referralService = require("../services/referralService");
+const workspaceService = require("../services/workspaceService");
 
 const TOKEN_VALIDITE_HEURES = 24;
 
@@ -437,7 +438,18 @@ router.post("/", async (req, res) => {
         // ── Accès immédiat, sans attendre la confirmation email ──
         // Comme les grandes plateformes : on facilite l'entrée, la vérification
         // email reste utile (récupération de compte) mais ne bloque plus rien.
+        //
+        // Cas particulier "QG Agence" : une agence peut avoir créé la boutique
+        // AVANT que ce marchand n'ait de compte (workspaces.owner_email déjà
+        // renseigné). On le détecte ici pour l'envoyer direct sur /qg plutôt
+        // que de le faire passer par /hub → créer un workspace en double.
         const userId = nouveauRows[0].id;
+        let workspaceExistant = null;
+        if (typeCompte === "marchand") {
+            const workspaces = await workspaceService.getByOwner(email);
+            workspaceExistant = workspaces[0] || null;
+        }
+
         req.session.regenerate((sessErr) => {
             if (sessErr) return res.json({ success: false, error: "Erreur session." });
 
@@ -446,12 +458,13 @@ router.post("/", async (req, res) => {
             req.session.userId      = userId;
             req.session.nom         = `${prenom || ""} ${nom || ""}`.trim();
             req.session.typeCompte  = typeCompte;
-            req.session.workspaceId = null;
+            req.session.workspaceId = workspaceExistant?.workspaceId || null;
+            if (workspaceExistant) req.session.metier = workspaceExistant.metier;
 
             res.json({
                 success : true,
                 message : "✅ Compte créé !",
-                redirect: typeCompte === "client" ? "/client-qg" : "/hub",
+                redirect: typeCompte === "client" ? "/client-qg" : (workspaceExistant ? "/qg" : "/hub"),
             });
         });
 
