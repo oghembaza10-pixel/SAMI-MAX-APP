@@ -10,21 +10,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // explicite de l'utilisateur (bouton ou préférence déjà enregistrée)
     // active [data-mode="light"] sur <body>. ──
     (function initModeLumiere() {
-        const btn = document.getElementById('btn-toggle-mode');
         const modeActuel = localStorage.getItem('samii_mode') === 'light' ? 'light' : 'dark';
         appliquerMode(modeActuel);
 
-        if (btn) {
-            btn.addEventListener('click', () => {
-                const prochain = document.body.getAttribute('data-mode') === 'light' ? 'dark' : 'light';
-                localStorage.setItem('samii_mode', prochain);
-                appliquerMode(prochain);
-            });
-        }
+        // Délégation sur document : marche même si le bouton est recréé
+        // plus tard, pas de dépendance à l'ordre de chargement des scripts.
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('#btn-toggle-mode');
+            if (!btn) return;
+            const prochain = document.body.getAttribute('data-mode') === 'light' ? 'dark' : 'light';
+            localStorage.setItem('samii_mode', prochain);
+            appliquerMode(prochain);
+        });
 
         function appliquerMode(mode) {
             if (mode === 'light') document.body.setAttribute('data-mode', 'light');
             else document.body.removeAttribute('data-mode');
+            const btn = document.getElementById('btn-toggle-mode');
             if (btn) {
                 btn.innerHTML = mode === 'light' ? '<i data-lucide="moon"></i>' : '<i data-lucide="sun"></i>';
                 if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -537,6 +539,18 @@ document.addEventListener('DOMContentLoaded', () => {
         setCard('stat-annulees',   stats.annulees);
         setCard('stat-vip',        stats.vip);
         setCard('stat-blacklist',  stats.blacklist);
+
+        // Batterie du topbar : taux de confirmation réel, remplace l'ancienne
+        // barre de grade (gamification) par une vraie donnée business.
+        const batteryFill = document.getElementById('qg-battery-fill');
+        const batteryPct  = document.getElementById('qg-battery-pct');
+        if (batteryFill && batteryPct) {
+            const taux = stats.total_commandes > 0
+                ? Math.round((stats.confirmees / stats.total_commandes) * 100)
+                : 0;
+            batteryFill.style.width = taux + '%';
+            batteryPct.textContent = taux + '%';
+        }
 
         renderCommandes(commandes);
 
