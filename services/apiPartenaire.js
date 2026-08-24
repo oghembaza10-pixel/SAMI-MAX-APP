@@ -154,6 +154,10 @@ const EVENEMENTS = [
     "commande.annulee",
     "rendezvous.cree",
     "rendezvous.confirme",
+    // Une annulation compte autant qu'une prise : sans elle, l'agenda d'un
+    // partenaire dérive silencieusement — il garde un créneau que le
+    // marchand a libéré.
+    "rendezvous.annule",
     "message.recu",
 ];
 
