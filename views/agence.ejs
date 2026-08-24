@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour de contrôle · <%= nomAgence %></title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#05070c">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <%# On importe la feuille du QG UNIQUEMENT pour son système de design
+        (variables de couleur, mode clair/sombre, thèmes). Aucune de ses
+        classes de mise en page n'est réutilisée : l'agence ne doit pas se
+        croire dans le QG d'un de ses clients, elle doit sentir qu'elle
+        pilote une flotte. %>
+    <link rel="stylesheet" href="/css/qg-style.css?v=8">
+    <style>
+        /* ══════════════════════════════════════════════════════════════
+           TOUR DE CONTRÔLE — langage visuel propre à l'agence :
+           dense, tabulaire, chiffres en monospace, règles fines.
+           Là où le QG marchand respire et raconte, ici on pilote.
+           ══════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh;
+            background: var(--bg-deep); color: var(--text-main);
+            font-family: var(--font-body);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .tc { display: flex; min-height: 100vh; }
+
+        /* ── RAIL GAUCHE ─────────────────────────────────────────────── */
+        .tc-rail {
+            width: 216px; flex-shrink: 0;
+            display: flex; flex-direction: column;
+            border-right: var(--border-soft);
+            background: var(--bg-panel);
+            position: sticky; top: 0; height: 100vh;
+        }
+        .tc-rail__marque {
+            padding: 20px 18px 16px;
+            border-bottom: var(--border-soft);
+        }
+        .tc-rail__logo {
+            display: block; font-family: var(--font-mono); font-size: .78rem;
+            font-weight: 700; letter-spacing: .14em; color: var(--gold-og);
+            text-decoration: none;
+        }
+        .tc-rail__role {
+            display: block; margin-top: 5px;
+            font-size: .68rem; color: var(--text-muted); letter-spacing: .04em;
+        }
+
+        .tc-rail__section {
+            padding: 16px 12px 8px;
+            font-family: var(--font-mono); font-size: .62rem;
+            letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted);
+        }
+        .tc-rail__lien {
+            display: flex; align-items: center; gap: 11px;
+            padding: 9px 14px; margin: 0 8px 2px;
+            border-radius: 9px; text-decoration: none;
+            color: var(--text-muted); font-size: .82rem;
+            transition: background .2s var(--ease), color .2s var(--ease);
+        }
+        .tc-rail__lien i { width: 15px; height: 15px; }
+        .tc-rail__lien:hover { background: var(--bg-glass); color: var(--text-main); }
+        .tc-rail__lien.actif {
+            background: var(--bg-glass); color: var(--gold-og);
+            box-shadow: inset 2px 0 0 var(--gold-og);
+        }
+
+        /* Bloc vitrine : nos produits, sous les yeux d'une agence qui
+           déploie SAMII chez d'autres — c'est notre meilleur relais. */
+        .tc-rail__vitrine { margin-top: auto; padding: 14px 12px 16px; border-top: var(--border-soft); }
+        .tc-rail__promo {
+            display: block; padding: 12px 13px; border-radius: 12px;
+            background: var(--bg-glass); border: var(--border-gold);
+            text-decoration: none; margin-bottom: 8px;
+        }
+        .tc-rail__promo strong { display: block; font-size: .78rem; color: var(--text-main); }
+        .tc-rail__promo span { display: block; font-size: .68rem; color: var(--text-muted); margin-top: 3px; line-height: 1.45; }
+
+        /* ── BANDEAU DE COMMANDE ─────────────────────────────────────── */
+        .tc-corps { flex: 1; min-width: 0; }
+
+        .tc-bandeau {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 20px; flex-wrap: wrap;
+            padding: 18px 28px;
+            border-bottom: var(--border-soft);
+            background: var(--bg-panel);
+            position: sticky; top: 0; z-index: 20;
+        }
+        .tc-bandeau__id h1 {
+            margin: 0; font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em;
+        }
+        .tc-bandeau__id p {
+            margin: 3px 0 0; font-size: .74rem; color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        /* Les vitaux : lecture d'instrument, pas grosses cartes. */
+        .tc-vitaux { display: flex; align-items: stretch; gap: 0; }
+        .tc-vital { padding: 0 20px; border-left: var(--border-soft); }
+        .tc-vital:first-child { border-left: none; padding-left: 0; }
+        .tc-vital strong {
+            display: block; font-family: var(--font-mono);
+            font-size: 1.4rem; font-weight: 700; line-height: 1.1;
+            color: var(--text-main);
+        }
+        .tc-vital span {
+            display: block; margin-top: 3px;
+            font-size: .63rem; letter-spacing: .1em; text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .tc-vital--attente strong { color: #ffb020; }
+        .tc-vital--alerte strong  { color: #e5533d; }
+        .tc-vital--vif strong     { color: var(--green-on); }
+
+        .tc-actions { display: flex; align-items: center; gap: 9px; }
+        .tc-icone {
+            width: 34px; height: 34px; border-radius: 9px; cursor: pointer;
+            display: grid; place-items: center;
+            background: transparent; border: var(--border-soft); color: var(--text-muted);
+        }
+        .tc-icone:hover { color: var(--gold-og); border-color: var(--gold-og); }
+
+        .tc-btn {
+            padding: 9px 17px; border-radius: 10px; cursor: pointer;
+            font-family: var(--font-body); font-size: .8rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover));
+            border: none; color: #07090e; white-space: nowrap;
+        }
+        .tc-btn:hover { filter: brightness(1.08); }
+        .tc-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* ── ZONE PRINCIPALE ─────────────────────────────────────────── */
+        .tc-zone { padding: 26px 28px 70px; }
+
+        .tc-titre {
+            display: flex; align-items: center; gap: 10px;
+            font-family: var(--font-mono); font-size: .66rem;
+            letter-spacing: .14em; text-transform: uppercase;
+            color: var(--text-muted); margin: 0 0 16px;
+        }
+        .tc-titre::after {
+            content: ""; flex: 1; height: 1px;
+            background: linear-gradient(90deg, var(--text-muted), transparent);
+            opacity: .25;
+        }
+
+        /* ── ESCADRILLES (cartes métier) ─────────────────────────────── */
+        .tc-flotte {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+        }
+
+        .tc-esc {
+            position: relative; cursor: pointer;
+            padding: 18px; border-radius: 14px;
+            background: var(--bg-panel); border: var(--border-soft);
+            transition: border-color .24s var(--ease), transform .24s var(--ease);
+        }
+        .tc-esc:hover { border-color: var(--gold-og); transform: translateY(-2px); }
+        .tc-esc--ouvert {
+            border-color: var(--gold-og);
+            box-shadow: inset 0 0 0 1px var(--gold-og);
+        }
+        /* Trait d'état à gauche : vert = tout roule, ambre = en attente. */
+        .tc-esc::before {
+            content: ""; position: absolute; left: 0; top: 14px; bottom: 14px;
+            width: 2px; border-radius: 2px;
+            background: var(--green-on); opacity: .5;
+        }
+        .tc-esc--attente::before { background: #ffb020; opacity: .9; }
+        .tc-esc--dormant::before { background: var(--text-muted); opacity: .4; }
+
+        .tc-esc__tete { display: flex; align-items: center; gap: 11px; }
+        .tc-esc__icone {
+            width: 38px; height: 38px; flex-shrink: 0;
+            display: grid; place-items: center; font-size: 1.05rem;
+            border-radius: 11px; background: var(--bg-glass); border: var(--border-soft);
+        }
+        .tc-esc__nom {
+            font-size: .88rem; font-weight: 700; text-transform: capitalize;
+            letter-spacing: -.01em;
+        }
+        .tc-esc__nb {
+            font-family: var(--font-mono); font-size: .68rem;
+            color: var(--text-muted); margin-top: 2px;
+        }
+
+        .tc-esc__jauges { display: flex; gap: 16px; margin-top: 15px; padding-top: 13px; border-top: var(--border-soft); }
+        .tc-esc__jauge strong {
+            display: block; font-family: var(--font-mono);
+            font-size: 1.02rem; font-weight: 600; color: var(--gold-og); line-height: 1.15;
+        }
+        .tc-esc__jauge span {
+            display: block; margin-top: 2px; font-size: .6rem;
+            letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted);
+        }
+        .tc-esc__flag {
+            position: absolute; top: 14px; right: 14px;
+            font-family: var(--font-mono); font-size: .6rem; font-weight: 600;
+            padding: 3px 8px; border-radius: 20px;
+            background: rgba(255,176,32,.14); color: #ffb020;
+            border: 1px solid rgba(255,176,32,.32);
+        }
+        .tc-esc__chev {
+            position: absolute; bottom: 15px; right: 15px;
+            width: 14px; height: 14px; color: var(--text-muted);
+            transition: transform .24s var(--ease), color .24s var(--ease);
+        }
+        .tc-esc--ouvert .tc-esc__chev { transform: rotate(180deg); color: var(--gold-og); }
+
+        /* ── TIROIR CLIENTS (tabulaire, dense) ───────────────────────── */
+        .tc-tiroir { display: none; margin-top: 16px; }
+        .tc-tiroir--ouvert { display: block; animation: tc-ouvre .28s var(--ease); }
+        @keyframes tc-ouvre { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+        .tc-table {
+            border: var(--border-soft); border-radius: 14px;
+            overflow: hidden; background: var(--bg-panel);
+        }
+        .tc-ligne {
+            display: grid;
+            grid-template-columns: 34px minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)) auto;
+            gap: 14px; align-items: center;
+            padding: 13px 18px;
+            border-bottom: var(--border-soft);
+            transition: background .18s var(--ease);
+        }
+        .tc-ligne:last-child { border-bottom: none; }
+        .tc-ligne:hover { background: var(--bg-glass); }
+        .tc-ligne--entete {
+            padding: 10px 18px;
+            font-family: var(--font-mono); font-size: .6rem;
+            letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted);
+            background: var(--bg-glass);
+        }
+        .tc-ligne--entete:hover { background: var(--bg-glass); }
+
+        .tc-pastille {
+            width: 34px; height: 34px; border-radius: 10px;
+            display: grid; place-items: center; font-size: .95rem;
+            background: var(--bg-glass); border: var(--border-soft);
+        }
+        .tc-cli__nom { font-size: .85rem; font-weight: 600; }
+        .tc-cli__mail {
+            font-size: .71rem; color: var(--text-muted); margin-top: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .tc-num { font-family: var(--font-mono); font-size: .88rem; font-weight: 600; }
+        .tc-num small { display: block; font-family: var(--font-body); font-size: .62rem; font-weight: 400; color: var(--text-muted); letter-spacing: .06em; text-transform: uppercase; margin-top: 2px; }
+
+        .tc-etat { font-family: var(--font-mono); font-size: .64rem; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
+        .tc-etat--actif   { color: var(--green-on);   background: rgba(61,220,132,.11); }
+        .tc-etat--alerte  { color: #ffb020;           background: rgba(255,176,32,.13); }
+        .tc-etat--dormant { color: var(--text-muted); background: var(--bg-glass); }
+
+        .tc-cli__actions { display: flex; gap: 7px; align-items: center; }
+        .tc-entrer {
+            padding: 7px 14px; border-radius: 9px; text-decoration: none;
+            font-size: .74rem; font-weight: 700; white-space: nowrap;
+            border: 1px solid var(--gold-og); color: var(--gold-og);
+        }
+        .tc-entrer:hover { background: var(--gold-og); color: #07090e; }
+        .tc-abandon {
+            padding: 7px 11px; border-radius: 9px; cursor: pointer;
+            font-size: .7rem; font-family: var(--font-body);
+            background: transparent; border: var(--border-soft); color: var(--text-muted);
+        }
+        .tc-abandon:hover { border-color: #e5533d; color: #e5533d; }
+
+        /* ── PANNEAU D'AJOUT ─────────────────────────────────────────── */
+        .tc-ajout {
+            display: none; margin-bottom: 26px;
+            padding: 20px; border-radius: 14px;
+            background: var(--bg-panel); border: var(--border-gold);
+        }
+        .tc-ajout--ouvert { display: block; animation: tc-ouvre .28s var(--ease); }
+        .tc-form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
+        .tc-form label {
+            display: block; font-family: var(--font-mono); font-size: .62rem;
+            letter-spacing: .1em; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 6px;
+        }
+        .tc-form input, .tc-form select {
+            width: 100%; padding: 10px 13px; border-radius: 10px;
+            background: var(--bg-glass); border: var(--border-soft);
+            color: var(--text-main); font-family: var(--font-body); font-size: .84rem;
+        }
+        .tc-form input:focus, .tc-form select:focus { outline: none; border-color: var(--gold-og); }
+        .tc-form__pied { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
+        .tc-msg { font-size: .78rem; }
+        .tc-msg--ok { color: var(--green-on); }
+        .tc-msg--ko { color: #e5533d; }
+
+        .tc-vide {
+            padding: 46px 24px; text-align: center;
+            border: 1px dashed var(--border-soft); border-radius: 14px;
+            color: var(--text-muted); font-size: .85rem; line-height: 1.7;
+        }
+
+        .tc-note {
+            display: flex; gap: 11px; align-items: flex-start;
+            padding: 13px 16px; margin-bottom: 22px;
+            border-radius: 12px;
+            background: rgba(61,220,132,.06); border: 1px solid rgba(61,220,132,.22);
+        }
+        .tc-note i { width: 15px; height: 15px; color: var(--green-on); flex-shrink: 0; margin-top: 2px; }
+        .tc-note p { margin: 0; font-size: .76rem; line-height: 1.6; color: var(--text-muted); }
+        .tc-note b { color: var(--text-main); font-weight: 600; }
+
+        /* ── MOBILE ──────────────────────────────────────────────────── */
+        .tc-burger { display: none; }
+        @media (max-width: 900px) {
+            .tc-rail {
+                position: fixed; left: 0; top: 0; bottom: 0; z-index: 60;
+                transform: translateX(-100%); transition: transform .3s var(--ease);
+            }
+            .tc-rail--ouvert { transform: none; }
+            .tc-burger { display: grid; }
+            .tc-zone { padding: 20px 16px 70px; }
+            .tc-bandeau { padding: 14px 16px; }
+            .tc-vitaux { width: 100%; overflow-x: auto; }
+            .tc-vital { padding: 0 14px; }
+            .tc-form { grid-template-columns: 1fr; }
+            .tc-ligne {
+                grid-template-columns: 34px minmax(0, 1fr);
+                row-gap: 10px;
+            }
+            .tc-ligne--entete { display: none; }
+            .tc-ligne > .tc-num, .tc-ligne > .tc-etat { grid-column: 2; }
+            .tc-cli__actions { grid-column: 1 / -1; justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body data-theme="og">
+
+<div class="tc">
+
+    <aside class="tc-rail" id="tc-rail">
+        <div class="tc-rail__marque">
+            <a href="/agence" class="tc-rail__logo">OG · TECHNOLOGY</a>
+            <span class="tc-rail__role">Tour de contrôle — Agence</span>
+        </div>
+
+        <div class="tc-rail__section">Pilotage</div>
+        <a href="/agence" class="tc-rail__lien actif"><i data-lucide="radar"></i><span>Ma flotte</span></a>
+        <a href="/parrainage" class="tc-rail__lien"><i data-lucide="handshake"></i><span>Parrainage</span></a>
+        <a href="/settings" class="tc-rail__lien"><i data-lucide="settings"></i><span>Paramètres</span></a>
+
+        <div class="tc-rail__section">Ressources OG</div>
+        <a href="/marketplace" class="tc-rail__lien"><i data-lucide="store"></i><span>Marketplace</span></a>
+        <a href="/academy" class="tc-rail__lien"><i data-lucide="graduation-cap"></i><span>Academy</span></a>
+        <a href="/community" class="tc-rail__lien"><i data-lucide="users"></i><span>Community</span></a>
+
+        <div class="tc-rail__vitrine">
+            <a href="/marketplace" class="tc-rail__promo">
+                <strong>🛍️ Marketplace</strong>
+                <span>Sourcez des produits pour vos clients e-commerce, sans stock.</span>
+            </a>
+            <a href="/logout" class="tc-rail__lien" style="color:#e5533d;"><i data-lucide="log-out"></i><span>Déconnexion</span></a>
+        </div>
+    </aside>
+
+    <div class="tc-corps">
+
+        <header class="tc-bandeau">
+            <div class="tc-bandeau__id">
+                <h1><%= nomAgence %></h1>
+                <p><%= clients.length %> client<%= clients.length > 1 ? "s" : "" %> · <%= groupes.length %> métier<%= groupes.length > 1 ? "s" : "" %></p>
+            </div>
+
+            <div class="tc-vitaux">
+                <div class="tc-vital tc-vital--vif">
+                    <strong><%= totalJour %></strong>
+                    <span>Aujourd'hui</span>
+                </div>
+                <div class="tc-vital <%= totalAttente > 0 ? 'tc-vital--attente' : '' %>">
+                    <strong><%= totalAttente %></strong>
+                    <span>À traiter</span>
+                </div>
+                <div class="tc-vital <%= enAlerte > 0 ? 'tc-vital--alerte' : '' %>">
+                    <strong><%= enAlerte %></strong>
+                    <span>Attention</span>
+                </div>
+            </div>
+
+            <div class="tc-actions">
+                <button type="button" class="tc-icone tc-burger" id="tc-burger" aria-label="Menu">
+                    <i data-lucide="menu"></i>
+                </button>
+                <button type="button" class="tc-icone" id="btn-toggle-mode" title="Mode clair / sombre">
+                    <i data-lucide="sun"></i>
+                </button>
+                <button type="button" class="tc-btn" id="btn-ouvrir-form">+ Client</button>
+            </div>
+        </header>
+
+        <div class="tc-zone">
+
+            <div class="tc-ajout" id="panneau-ajout">
+                <form class="tc-form" id="form-client">
+                    <div>
+                        <label for="c-nom">Nom de la boutique</label>
+                        <input id="c-nom" name="nom" required placeholder="Boutique de Karim">
+                    </div>
+                    <div>
+                        <label for="c-metier">Métier</label>
+                        <select id="c-metier" name="metier" required>
+                            <% metiers.forEach(m => { %>
+                            <option value="<%= m.id %>"><%= m.label %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="c-email">Email du client</label>
+                        <input id="c-email" name="email" type="email" required placeholder="client@exemple.com">
+                    </div>
+                    <div>
+                        <label for="c-pays">Pays</label>
+                        <select id="c-pays" name="pays" required>
+                            <% Object.entries(pays).forEach(([code, p]) => { %>
+                            <option value="<%= code %>"><%= p.label %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                    <div class="tc-form__pied">
+                        <button type="submit" class="tc-btn" id="btn-creer">Ouvrir l'espace client</button>
+                        <span class="tc-msg" id="msg-client"></span>
+                    </div>
+                </form>
+            </div>
+
+            <div class="tc-note">
+                <i data-lucide="shield-check"></i>
+                <p><b>Vous pilotez, vos clients gardent la main.</b> Chaque client est prévenu par email à l'ouverture de son espace et y accède directement avec son propre compte — vous conservez la vue et le contrôle sur l'ensemble de la flotte.</p>
+            </div>
+
+            <% if (!clients.length) { %>
+                <div class="tc-vide">
+                    Votre flotte est vide.<br>
+                    Ouvrez le premier espace client avec le bouton <b>+ Client</b> — il apparaîtra ici, regroupé par métier.
+                </div>
+            <% } else { %>
+
+                <div class="tc-titre"><span>Escadrilles</span></div>
+                <div class="tc-flotte">
+                    <% groupes.forEach(g => { %>
+                    <article class="tc-esc <%= g.attente > 0 ? 'tc-esc--attente' : (g.jour === 0 && g.semaine === 0 ? 'tc-esc--dormant' : '') %>" data-metier="<%= g.metier %>">
+                        <% if (g.attente > 0) { %><span class="tc-esc__flag"><%= g.attente %> en attente</span><% } %>
+                        <div class="tc-esc__tete">
+                            <div class="tc-esc__icone"><%= g.icone %></div>
+                            <div>
+                                <div class="tc-esc__nom"><%= g.label %></div>
+                                <div class="tc-esc__nb"><%= g.clients.length %> client<%= g.clients.length > 1 ? "s" : "" %></div>
+                            </div>
+                        </div>
+                        <div class="tc-esc__jauges">
+                            <div class="tc-esc__jauge">
+                                <strong><%= g.estRdv ? g.rdvAVenir : g.jour %></strong>
+                                <span><%= g.estRdv ? "RDV à venir" : "Aujourd'hui" %></span>
+                            </div>
+                            <div class="tc-esc__jauge">
+                                <strong><%= g.semaine %></strong>
+                                <span>7 jours</span>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-down" class="tc-esc__chev"></i>
+                    </article>
+                    <% }) %>
+                </div>
+
+                <% groupes.forEach(g => { %>
+                <div class="tc-tiroir" id="tiroir-<%= g.metier %>">
+                    <div class="tc-titre"><span><%= g.icone %> <%= g.label %> — <%= g.clients.length %> client<%= g.clients.length > 1 ? "s" : "" %></span></div>
+                    <div class="tc-table">
+                        <div class="tc-ligne tc-ligne--entete">
+                            <span></span>
+                            <span>Client</span>
+                            <span><%= g.estRdv ? "RDV à venir" : "Aujourd'hui" %></span>
+                            <span>7 jours</span>
+                            <span>Activité</span>
+                            <span></span>
+                        </div>
+                        <% g.clients.forEach(c => { %>
+                        <div class="tc-ligne">
+                            <div class="tc-pastille"><%= g.icone %></div>
+                            <div>
+                                <div class="tc-cli__nom"><%= c.nom %></div>
+                                <div class="tc-cli__mail"><%= c.owner %></div>
+                            </div>
+                            <div class="tc-num">
+                                <%= g.estRdv ? c.rdvAVenir : c.jour %>
+                                <small><%= g.estRdv ? "à venir" : "auj." %></small>
+                            </div>
+                            <div class="tc-num">
+                                <%= c.semaine %>
+                                <small><%= c.caMois > 0 ? c.caMoisFormate + " " + c.devise : "7 jours" %></small>
+                            </div>
+                            <span class="tc-etat tc-etat--<%= c.etat %>"><%= c.derniereActivite %></span>
+                            <div class="tc-cli__actions">
+                                <a href="/agence/entrer/<%= encodeURIComponent(c.workspaceId) %>" class="tc-entrer">Entrer</a>
+                                <% if (c.agenceStatut === "actif") { %>
+                                <button type="button" class="tc-abandon" data-id="<%= c.workspaceId %>" title="Signaler ce client comme abandonné">✕</button>
+                                <% } %>
+                            </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                </div>
+                <% }) %>
+
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+(function () {
+    // ── Mode clair / sombre : même mécanique et même clé de stockage que
+    // le reste de l'app, pour que le choix suive l'utilisateur partout.
+    // L'icône du bouton est posée AVANT le premier createIcons() : sinon on
+    // remplace un <svg> déjà généré par un <i> brut que plus rien ne
+    // convertit, et le bouton reste vide.
+    function appliquerMode(mode, rafraichirIcones) {
+        if (mode === "light") document.body.setAttribute("data-mode", "light");
+        else document.body.removeAttribute("data-mode");
+        const btn = document.getElementById("btn-toggle-mode");
+        if (btn) {
+            btn.innerHTML = mode === "light" ? '<i data-lucide="moon"></i>' : '<i data-lucide="sun"></i>';
+            if (rafraichirIcones && typeof lucide !== "undefined") lucide.createIcons();
+        }
+    }
+    appliquerMode(localStorage.getItem("samii_mode") === "light" ? "light" : "dark", false);
+
+    if (typeof lucide !== "undefined") lucide.createIcons();
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest("#btn-toggle-mode")) return;
+        const suivant = document.body.getAttribute("data-mode") === "light" ? "dark" : "light";
+        localStorage.setItem("samii_mode", suivant);
+        appliquerMode(suivant, true);
+    });
+
+    // ── Une escadrille ouvre son tiroir et referme les autres : on
+    // inspecte une activité à la fois, pas un mur de tout.
+    document.querySelectorAll(".tc-esc").forEach(carte => {
+        carte.addEventListener("click", () => {
+            const tiroir = document.getElementById("tiroir-" + carte.dataset.metier);
+            const dejaOuvert = carte.classList.contains("tc-esc--ouvert");
+            document.querySelectorAll(".tc-esc").forEach(c => c.classList.remove("tc-esc--ouvert"));
+            document.querySelectorAll(".tc-tiroir").forEach(t => t.classList.remove("tc-tiroir--ouvert"));
+            if (!dejaOuvert && tiroir) {
+                carte.classList.add("tc-esc--ouvert");
+                tiroir.classList.add("tc-tiroir--ouvert");
+                tiroir.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+        });
+    });
+
+    const rail = document.getElementById("tc-rail");
+    document.getElementById("tc-burger")?.addEventListener("click", () => rail.classList.toggle("tc-rail--ouvert"));
+
+    const panneau = document.getElementById("panneau-ajout");
+    const btnOuvrir = document.getElementById("btn-ouvrir-form");
+    btnOuvrir?.addEventListener("click", () => {
+        const ouvert = panneau.classList.toggle("tc-ajout--ouvert");
+        btnOuvrir.textContent = ouvert ? "Annuler" : "+ Client";
+        if (ouvert) document.getElementById("c-nom")?.focus();
+    });
+
+    document.getElementById("form-client")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById("msg-client");
+        const btn = document.getElementById("btn-creer");
+        const data = Object.fromEntries(new FormData(e.target));
+
+        btn.disabled = true;
+        msg.textContent = "Ouverture en cours...";
+        msg.className = "tc-msg";
+
+        try {
+            const res = await fetch("/agence/creer-client", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            const json = await res.json();
+            if (json.success) {
+                msg.textContent = "✅ Espace ouvert — le client vient d'être prévenu par email.";
+                msg.className = "tc-msg tc-msg--ok";
+                setTimeout(() => location.reload(), 1200);
+            } else {
+                msg.textContent = "❌ " + (json.error || "Erreur.");
+                msg.className = "tc-msg tc-msg--ko";
+                btn.disabled = false;
+            }
+        } catch (err) {
+            msg.textContent = "❌ Erreur réseau.";
+            msg.className = "tc-msg tc-msg--ko";
+            btn.disabled = false;
+        }
+    });
+
+    document.querySelectorAll(".tc-abandon").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (!confirm("Signaler ce client comme abandonné ? OG Technology validera la fermeture de son espace.")) return;
+            try {
+                const res = await fetch("/agence/abandonner/" + btn.dataset.id, { method: "POST" });
+                const json = await res.json();
+                if (json.success) location.reload();
+                else alert("❌ " + (json.error || "Erreur."));
+            } catch (err) {
+                alert("❌ Erreur réseau.");
+            }
+        });
+    });
+})();
+</script>
+</body>
+</html>
