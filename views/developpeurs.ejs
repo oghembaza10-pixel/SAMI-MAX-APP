@@ -4,99 +4,156 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAMII — API & Webhooks</title>
+    <meta name="theme-color" content="#05070c">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <%# On hérite du système de design du QG (couleurs, mode clair/sombre)
+        plutôt que de redéfinir des couleurs en dur : sans ça, un marchand qui
+        travaille en mode lumière basculait sur une page restée noire. %>
+    <link rel="stylesheet" href="/css/qg-style.css?v=8">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { box-sizing: border-box; }
         body {
-            background: #08090B; color: #E8E8E8; font-family: 'Inter', sans-serif;
-            padding: 28px 18px 70px; line-height: 1.6;
+            margin: 0; min-height: 100vh; padding: 24px 18px 80px;
+            background: var(--bg-deep); color: var(--text-main);
+            font-family: var(--font-body); -webkit-font-smoothing: antialiased;
         }
-        .wrap { max-width: 880px; margin: 0 auto; }
-        .retour { color: #777; font-size: .8rem; text-decoration: none; display: inline-block; margin-bottom: 22px; }
-        .retour:hover { color: #C9A227; }
-        h1 { font-family: 'Cinzel', serif; font-size: 1.7rem; color: #C9A227; letter-spacing: .5px; }
-        .sub { color: #8a8a8a; font-size: .86rem; margin: 6px 0 30px; }
+        .dv { max-width: 900px; margin: 0 auto; }
 
-        .bloc {
-            background: #0E1013; border: 1px solid #1C1F24; border-radius: 16px;
-            padding: 22px; margin-bottom: 20px;
+        /* ── En-tête ─────────────────────────────────────────────── */
+        .dv-haut { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 22px; }
+        .dv-retour {
+            display: inline-flex; align-items: center; gap: 7px;
+            color: var(--text-muted); font-size: .8rem; text-decoration: none;
         }
-        .bloc h2 { font-size: 1rem; color: #fff; margin-bottom: 4px; }
-        .bloc .aide { color: #7d7d7d; font-size: .78rem; margin-bottom: 18px; }
+        .dv-retour:hover { color: var(--gold-og); }
+        .dv-mode {
+            background: var(--bg-panel); border: var(--border-soft); color: var(--text-muted);
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: .95rem;
+            flex-shrink: 0; padding: 0;
+        }
+        .dv-mode:hover { color: var(--gold-og); border-color: var(--gold-og); }
+        .dv-ico-clair { display: none; }
+        body[data-mode="light"] .dv-ico-sombre { display: none; }
+        body[data-mode="light"] .dv-ico-clair { display: inline; }
 
-        table { width: 100%; border-collapse: collapse; font-size: .8rem; }
-        th { text-align: left; color: #6d6d6d; font-weight: 500; font-size: .72rem;
-             text-transform: uppercase; letter-spacing: .6px; padding-bottom: 8px; }
-        td { padding: 10px 8px 10px 0; border-top: 1px solid #16181C; color: #c8c8c8; vertical-align: middle; }
-        code, .mono { font-family: 'JetBrains Mono', monospace; font-size: .76rem; }
-        .vide { color: #5c5c5c; font-size: .8rem; font-style: italic; padding: 10px 0; }
+        .dv-tete { border-bottom: var(--border-soft); padding-bottom: 22px; margin-bottom: 26px; }
+        .dv-tete h1 {
+            margin: 0; font-family: var(--font-display); font-size: 1.6rem;
+            color: var(--gold-og); letter-spacing: .5px;
+        }
+        .dv-tete p { margin: 8px 0 0; color: var(--text-muted); font-size: .85rem; max-width: 640px; line-height: 1.65; }
+        .dv-tete a { color: var(--gold-og); }
+
+        /* ── Blocs ───────────────────────────────────────────────── */
+        .dv-bloc {
+            background: var(--bg-panel); border: var(--border-soft); border-radius: 16px;
+            padding: 22px; margin-bottom: 18px; box-shadow: var(--gold-glow);
+        }
+        .dv-bloc h2 { margin: 0 0 5px; font-size: 1rem; font-weight: 700; }
+        .dv-aide { color: var(--text-muted); font-size: .79rem; margin: 0 0 18px; line-height: 1.65; }
+
+        table { width: 100%; border-collapse: collapse; font-size: .81rem; }
+        th {
+            text-align: left; color: var(--text-muted); font-size: .66rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .8px; padding-bottom: 9px;
+        }
+        td { padding: 11px 10px 11px 0; border-top: var(--border-soft); vertical-align: middle; }
+        .mono { font-family: var(--font-mono); font-size: .74rem; }
+        .dv-vide { color: var(--text-muted); font-size: .8rem; font-style: italic; padding: 12px 0; }
 
         input[type=text], input[type=url] {
-            background: #121418; border: 1px solid #24272D; color: #eee; border-radius: 10px;
-            padding: 11px 13px; font-size: .84rem; width: 100%; font-family: inherit;
+            background: var(--bg-deep); border: var(--border-soft); color: var(--text-main);
+            border-radius: 10px; padding: 12px 14px; font-size: .84rem; width: 100%; font-family: inherit;
         }
-        input:focus { outline: none; border-color: #C9A227; }
-        .ligne { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-        .ligne > input { flex: 1 1 240px; }
+        input::placeholder { color: var(--text-muted); }
+        input:focus { outline: none; border-color: var(--gold-og); }
+        .dv-ligne { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+        .dv-ligne > input { flex: 1 1 250px; }
 
         button {
-            background: #C9A227; color: #0A0A0A; border: none; border-radius: 10px;
-            padding: 11px 20px; font-weight: 700; font-size: .82rem; cursor: pointer;
+            background: var(--gold-og); color: #0A0A0A; border: none; border-radius: 10px;
+            padding: 12px 22px; font-weight: 700; font-size: .82rem; cursor: pointer;
             font-family: inherit; white-space: nowrap;
         }
-        button:hover { background: #DDB63A; }
-        button.mini {
-            background: none; border: 1px solid #2A2E35; color: #999;
-            padding: 5px 11px; font-size: .72rem; font-weight: 500;
+        button:hover { background: var(--gold-hover); }
+        button:disabled { opacity: .5; cursor: default; }
+        button.dv-mini {
+            background: none; border: var(--border-soft); color: var(--text-muted);
+            padding: 6px 12px; font-size: .72rem; font-weight: 500;
         }
-        button.mini:hover { border-color: #8B2E2E; color: #E06060; background: none; }
+        button.dv-mini:hover { border-color: #b34a3a; color: #e5533d; background: none; }
 
-        .cases { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-        .cases label {
-            display: flex; align-items: center; gap: 6px; background: #121418;
-            border: 1px solid #24272D; border-radius: 8px; padding: 7px 11px;
-            font-size: .74rem; color: #b5b5b5; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+        .dv-cases { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+        .dv-cases label {
+            display: flex; align-items: center; gap: 7px; background: var(--bg-deep);
+            border: var(--border-soft); border-radius: 9px; padding: 8px 12px;
+            font-size: .73rem; color: var(--text-main); cursor: pointer; font-family: var(--font-mono);
         }
-        .cases input { accent-color: #C9A227; }
+        .dv-cases label:hover { border-color: var(--gold-og); }
+        .dv-cases input { accent-color: var(--gold-og); }
 
-        .nouvelle-cle {
-            display: none; margin-top: 16px; background: rgba(201,162,39,.07);
-            border: 1px solid rgba(201,162,39,.35); border-radius: 12px; padding: 16px;
+        .dv-nouvelle {
+            display: none; margin-top: 16px; background: var(--bg-deep);
+            border: var(--border-gold); border-radius: 12px; padding: 18px;
         }
-        .nouvelle-cle strong { color: #C9A227; font-size: .82rem; display: block; margin-bottom: 8px; }
-        .nouvelle-cle .val {
-            background: #0A0B0D; border-radius: 8px; padding: 12px; word-break: break-all;
-            color: #fff; font-family: 'JetBrains Mono', monospace; font-size: .78rem;
+        .dv-nouvelle strong { color: var(--gold-og); font-size: .82rem; display: block; margin-bottom: 9px; }
+        .dv-val {
+            background: var(--bg-panel); border: var(--border-soft); border-radius: 9px;
+            padding: 13px; word-break: break-all; font-family: var(--font-mono); font-size: .77rem;
         }
-        .nouvelle-cle p { color: #9c8a4e; font-size: .74rem; margin-top: 10px; }
+        .dv-nouvelle p { color: var(--text-muted); font-size: .74rem; margin: 11px 0 0; }
+        .dv-copier { margin-top: 11px; font-size: .75rem; padding: 8px 16px; }
 
         pre {
-            background: #0A0B0D; border: 1px solid #1C1F24; border-radius: 10px;
-            padding: 14px; overflow-x: auto; color: #b9c7d6;
-            font-family: 'JetBrains Mono', monospace; font-size: .74rem; line-height: 1.7;
+            background: var(--bg-deep); border: var(--border-soft); border-radius: 11px;
+            padding: 15px; overflow-x: auto; margin: 12px 0 0;
+            font-family: var(--font-mono); font-size: .74rem; line-height: 1.75; color: var(--text-main);
         }
-        .badge { font-size: .68rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
-        .badge.on  { background: rgba(46,160,67,.15); color: #4CC76A; }
-        .badge.off { background: rgba(180,60,60,.15); color: #D06060; }
-        .doc-lien { color: #C9A227; font-size: .8rem; }
+        code {
+            font-family: var(--font-mono); font-size: .84em;
+            background: var(--bg-deep); border-radius: 5px; padding: 2px 6px; color: var(--gold-og);
+        }
+        pre code { background: none; padding: 0; color: inherit; font-size: 1em; }
+
+        .dv-etat { font-size: .66rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+        .dv-etat--on  { background: rgba(61, 220, 132, .14); color: var(--green-on); }
+        .dv-etat--off { background: rgba(229, 83, 61, .14); color: #e5533d; }
+
+        @media (max-width: 620px) {
+            th:nth-child(3), td:nth-child(3) { display: none; }
+            .dv-tete h1 { font-size: 1.3rem; }
+            .dv-bloc { padding: 18px 15px; }
+        }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <a href="/qg" class="retour">← Retour au QG</a>
-    <h1>API & Webhooks</h1>
-    <p class="sub">
-        Branche ton espace SAMII à n'importe quel outil externe — n8n, Make, Zapier, ton ERP.
-        Une clé pour lire et écrire, des webhooks pour être prévenu en temps réel.
-        <a href="/api-docs" class="doc-lien">Voir la documentation →</a>
-    </p>
+<div class="dv">
+
+    <div class="dv-haut">
+        <a href="/qg" class="dv-retour">← Retour au QG</a>
+        <%# Deux icônes présentes dans le DOM, permutées par CSS selon
+            data-mode : rien à réinjecter en JavaScript. %>
+        <button type="button" class="dv-mode" id="dv-mode" title="Changer de mode">
+            <span class="dv-ico-sombre">☾</span><span class="dv-ico-clair">☀</span>
+        </button>
+    </div>
+
+    <div class="dv-tete">
+        <h1>API &amp; Webhooks</h1>
+        <p>
+            Branche ton espace SAMII à n'importe quel outil externe — n8n, Make, Zapier,
+            ton ERP. Une clé pour lire et écrire, des webhooks pour être prévenu en temps réel.
+            <a href="/api-docs" target="_blank" rel="noopener">Voir la documentation →</a>
+        </p>
+    </div>
 
     <!-- ── CLÉS ────────────────────────────────────────────────── -->
-    <div class="bloc">
+    <div class="dv-bloc">
         <h2>Clés d'accès</h2>
-        <p class="aide">
+        <p class="dv-aide">
             Une clé s'affiche une seule fois, au moment où tu la crées : nous n'en gardons
             qu'une empreinte, jamais la clé elle-même. Perdue = à recréer.
         </p>
@@ -105,17 +162,17 @@
             <thead><tr><th>Nom</th><th>Clé</th><th>Dernier usage</th><th>État</th><th></th></tr></thead>
             <tbody>
             <% if (!cles.length) { %>
-                <tr><td colspan="5" class="vide">Aucune clé pour l'instant.</td></tr>
+                <tr><td colspan="5" class="dv-vide">Aucune clé pour l'instant.</td></tr>
             <% } %>
             <% cles.forEach(c => { %>
                 <tr>
                     <td><%= c.nom %></td>
                     <td class="mono"><%= c.cle_prefixe %>…</td>
-                    <td><%= c.derniere_utilisation ? new Date(c.derniere_utilisation).toLocaleString('fr-FR') : "jamais" %></td>
-                    <td><span class="badge <%= c.actif ? 'on' : 'off' %>"><%= c.actif ? "active" : "révoquée" %></span></td>
+                    <td class="mono"><%= c.derniere_utilisation ? new Date(c.derniere_utilisation).toLocaleString('fr-FR') : "jamais" %></td>
+                    <td><span class="dv-etat <%= c.actif ? 'dv-etat--on' : 'dv-etat--off' %>"><%= c.actif ? "active" : "révoquée" %></span></td>
                     <td>
                         <% if (c.actif) { %>
-                            <button class="mini" data-revoquer="<%= c.id %>">Révoquer</button>
+                            <button class="dv-mini" data-revoquer="<%= c.id %>">Révoquer</button>
                         <% } %>
                     </td>
                 </tr>
@@ -123,24 +180,25 @@
             </tbody>
         </table>
 
-        <div class="ligne">
-            <input type="text" id="nom-cle" placeholder="Nom de la clé (ex : n8n production)">
-            <button id="creer-cle">Créer une clé</button>
+        <div class="dv-ligne">
+            <input type="text" id="dv-nom-cle" placeholder="Nom de la clé (ex : n8n production)">
+            <button id="dv-creer-cle">Créer une clé</button>
         </div>
 
-        <div class="nouvelle-cle" id="nouvelle-cle">
+        <div class="dv-nouvelle" id="dv-nouvelle">
             <strong>Voici ta clé — copie-la maintenant</strong>
-            <div class="val" id="valeur-cle"></div>
+            <div class="dv-val" id="dv-valeur-cle"></div>
+            <button type="button" class="dv-copier" id="dv-copier">Copier</button>
             <p>Elle ne sera plus jamais affichée. Traite-la comme un mot de passe.</p>
         </div>
     </div>
 
     <!-- ── WEBHOOKS ────────────────────────────────────────────── -->
-    <div class="bloc">
+    <div class="dv-bloc">
         <h2>Webhooks sortants</h2>
-        <p class="aide">
+        <p class="dv-aide">
             SAMII appelle ton URL dès qu'un événement se produit — quel que soit le canal
-            d'origine (WhatsApp, Telegram, Shopify, le QG ou l'API elle-même). Chaque appel
+            d'origine : WhatsApp, Telegram, Shopify, le QG ou l'API elle-même. Chaque appel
             est signé : en-tête <code>X-SAMII-Signature: sha256=…</code>, HMAC du corps brut
             avec le secret affiché à la création.
         </p>
@@ -149,47 +207,59 @@
             <thead><tr><th>URL</th><th>Événements</th><th>Dernier code</th><th>État</th><th></th></tr></thead>
             <tbody>
             <% if (!webhooks.length) { %>
-                <tr><td colspan="5" class="vide">Aucun webhook enregistré.</td></tr>
+                <tr><td colspan="5" class="dv-vide">Aucun webhook enregistré.</td></tr>
             <% } %>
             <% webhooks.forEach(w => { %>
                 <tr>
                     <td class="mono" style="word-break:break-all"><%= w.url %></td>
-                    <td class="mono" style="font-size:.7rem"><%= (w.evenements || []).join(", ") %></td>
-                    <td><%= w.dernier_statut || "—" %></td>
-                    <td><span class="badge <%= w.actif ? 'on' : 'off' %>"><%= w.actif ? "actif" : "désactivé" %></span></td>
-                    <td><button class="mini" data-suppr-webhook="<%= w.id %>">Supprimer</button></td>
+                    <td class="mono" style="font-size:.68rem"><%= (w.evenements || []).join(", ") %></td>
+                    <td class="mono"><%= w.dernier_statut || "—" %></td>
+                    <td><span class="dv-etat <%= w.actif ? 'dv-etat--on' : 'dv-etat--off' %>"><%= w.actif ? "actif" : "désactivé" %></span></td>
+                    <td><button class="dv-mini" data-suppr-webhook="<%= w.id %>">Supprimer</button></td>
                 </tr>
             <% }) %>
             </tbody>
         </table>
 
-        <div class="ligne">
-            <input type="url" id="url-webhook" placeholder="https://ton-n8n.com/webhook/samii">
+        <div class="dv-ligne">
+            <input type="url" id="dv-url-webhook" placeholder="https://ton-n8n.com/webhook/samii">
         </div>
-        <div class="cases">
+        <div class="dv-cases">
             <% evenements.forEach(e => { %>
-                <label><input type="checkbox" class="ev" value="<%= e %>" checked> <%= e %></label>
+                <label><input type="checkbox" class="dv-ev" value="<%= e %>" checked> <%= e %></label>
             <% }) %>
         </div>
-        <div class="ligne"><button id="creer-webhook">Enregistrer le webhook</button></div>
+        <div class="dv-ligne"><button id="dv-creer-webhook">Enregistrer le webhook</button></div>
     </div>
 
     <!-- ── DÉMARRAGE RAPIDE ────────────────────────────────────── -->
-    <div class="bloc">
+    <div class="dv-bloc">
         <h2>Démarrage rapide</h2>
-        <p class="aide">Premier appel à faire pour vérifier que ta clé fonctionne.</p>
-<pre>curl <%= baseUrl %>/api/v1/moi \
-  -H "Authorization: Bearer sk_samii_…"</pre>
-        <p class="aide" style="margin:16px 0 0">
-            Dans n8n : nœud <strong>HTTP Request</strong>, méthode GET,
-            authentification <strong>Header Auth</strong>, nom <code>Authorization</code>,
-            valeur <code>Bearer sk_samii_…</code>. Aucun nœud ni SDK spécifique à installer.
+        <p class="dv-aide">Premier appel à faire pour vérifier que ta clé fonctionne.</p>
+<pre><code>curl <%= baseUrl %>/api/v1/moi \
+  -H "Authorization: Bearer sk_samii_…"</code></pre>
+        <p class="dv-aide" style="margin:16px 0 0">
+            Dans n8n : nœud <strong>HTTP Request</strong>, méthode GET, authentification
+            <strong>Header Auth</strong>, nom <code>Authorization</code>, valeur
+            <code>Bearer sk_samii_…</code>. Aucun nœud ni SDK spécifique à installer.
         </p>
     </div>
 </div>
 
 <script>
-async function poster(url, corps) {
+// ── Mode clair / sombre — même préférence que le QG (samii_mode) ──
+function dvAppliquerMode(mode) {
+    if (mode === "light") document.body.setAttribute("data-mode", "light");
+    else document.body.removeAttribute("data-mode");
+}
+dvAppliquerMode(localStorage.getItem("samii_mode") === "light" ? "light" : "dark");
+document.getElementById("dv-mode").addEventListener("click", () => {
+    const suivant = document.body.getAttribute("data-mode") === "light" ? "dark" : "light";
+    localStorage.setItem("samii_mode", suivant);
+    dvAppliquerMode(suivant);
+});
+
+async function dvPoster(url, corps) {
     const r = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -198,13 +268,13 @@ async function poster(url, corps) {
     return r.json();
 }
 
-document.getElementById("creer-cle").addEventListener("click", async (e) => {
+document.getElementById("dv-creer-cle").addEventListener("click", async (e) => {
     e.target.disabled = true;
-    const nom = document.getElementById("nom-cle").value.trim() || "Clé API";
-    const rep = await poster("/developpeurs/cles", { nom });
+    const nom = document.getElementById("dv-nom-cle").value.trim() || "Clé API";
+    const rep = await dvPoster("/developpeurs/cles", { nom });
     if (rep.success) {
-        document.getElementById("valeur-cle").textContent = rep.cle;
-        document.getElementById("nouvelle-cle").style.display = "block";
+        document.getElementById("dv-valeur-cle").textContent = rep.cle;
+        document.getElementById("dv-nouvelle").style.display = "block";
         // On ne recharge pas la page : ça effacerait la clé affichée, qui
         // n'est visible qu'une seule fois.
     } else {
@@ -213,18 +283,33 @@ document.getElementById("creer-cle").addEventListener("click", async (e) => {
     }
 });
 
+document.getElementById("dv-copier").addEventListener("click", async (e) => {
+    try {
+        await navigator.clipboard.writeText(document.getElementById("dv-valeur-cle").textContent);
+        e.target.textContent = "Copié ✓";
+    } catch {
+        // Le presse-papiers peut être refusé (contexte non sécurisé, permission) :
+        // on sélectionne le texte pour que la copie manuelle reste possible.
+        const plage = document.createRange();
+        plage.selectNodeContents(document.getElementById("dv-valeur-cle"));
+        const sel = window.getSelection();
+        sel.removeAllRanges(); sel.addRange(plage);
+        e.target.textContent = "Copie avec Ctrl+C";
+    }
+});
+
 document.querySelectorAll("[data-revoquer]").forEach(b => {
     b.addEventListener("click", async () => {
         if (!confirm("Révoquer cette clé ? Tout système qui l'utilise perdra l'accès immédiatement.")) return;
-        const rep = await poster(`/developpeurs/cles/${b.dataset.revoquer}/revoquer`);
+        const rep = await dvPoster(`/developpeurs/cles/${b.dataset.revoquer}/revoquer`);
         if (rep.success) location.reload(); else alert("Erreur.");
     });
 });
 
-document.getElementById("creer-webhook").addEventListener("click", async () => {
-    const url = document.getElementById("url-webhook").value.trim();
-    const evenements = [...document.querySelectorAll(".ev:checked")].map(c => c.value);
-    const rep = await poster("/developpeurs/webhooks", { url, evenements });
+document.getElementById("dv-creer-webhook").addEventListener("click", async () => {
+    const url = document.getElementById("dv-url-webhook").value.trim();
+    const evenements = [...document.querySelectorAll(".dv-ev:checked")].map(c => c.value);
+    const rep = await dvPoster("/developpeurs/webhooks", { url, evenements });
     if (rep.success) {
         alert("Webhook enregistré.\n\nSecret de signature (à garder) :\n" + rep.webhook.secret);
         location.reload();
@@ -236,7 +321,7 @@ document.getElementById("creer-webhook").addEventListener("click", async () => {
 document.querySelectorAll("[data-suppr-webhook]").forEach(b => {
     b.addEventListener("click", async () => {
         if (!confirm("Supprimer ce webhook ?")) return;
-        const rep = await poster(`/developpeurs/webhooks/${b.dataset.supprWebhook}/supprimer`);
+        const rep = await dvPoster(`/developpeurs/webhooks/${b.dataset.supprWebhook}/supprimer`);
         if (rep.success) location.reload(); else alert("Erreur.");
     });
 });

@@ -28,6 +28,18 @@
         .ap-retour:hover { color: var(--gold-og); }
         .ap-retour i { width: 14px; height: 14px; }
 
+        .ap-haut { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+        .ap-mode {
+            background: var(--bg-panel); border: var(--border-soft); color: var(--text-muted);
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer; padding: 0;
+            display: flex; align-items: center; justify-content: center; font-size: .95rem;
+            flex-shrink: 0; margin-bottom: 20px;
+        }
+        .ap-mode:hover { color: var(--gold-og); border-color: var(--gold-og); filter: none; }
+        .ap-ico-clair { display: none; }
+        body[data-mode="light"] .ap-ico-sombre { display: none; }
+        body[data-mode="light"] .ap-ico-clair { display: inline; }
+
         .ap-tete { border-bottom: var(--border-soft); padding-bottom: 20px; margin-bottom: 26px; }
         .ap-tete h1 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -.4px; }
         .ap-tete p { margin: 7px 0 0; color: var(--text-muted); font-size: .84rem; max-width: 620px; line-height: 1.6; }
@@ -112,7 +124,14 @@
 </head>
 <body>
 <div class="ap">
-    <a href="/agence" class="ap-retour"><i data-lucide="arrow-left"></i> Tour de contrôle</a>
+    <div class="ap-haut">
+        <a href="/agence" class="ap-retour"><i data-lucide="arrow-left"></i> Tour de contrôle</a>
+        <%# Deux icônes dans le DOM, permutées par CSS selon data-mode :
+            rien à réinjecter en JavaScript. %>
+        <button type="button" class="ap-mode" id="ap-mode" title="Changer de mode">
+            <span class="ap-ico-sombre">☾</span><span class="ap-ico-clair">☀</span>
+        </button>
+    </div>
 
     <div class="ap-tete">
         <h1>API &amp; Webhooks</h1>
@@ -255,6 +274,18 @@ curl <%= baseUrl %>/api/v1/commandes \
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script>
 if (window.lucide) lucide.createIcons();
+
+// ── Mode clair / sombre — même préférence que la tour de contrôle ──
+function apAppliquerMode(mode) {
+    if (mode === "light") document.body.setAttribute("data-mode", "light");
+    else document.body.removeAttribute("data-mode");
+}
+apAppliquerMode(localStorage.getItem("samii_mode") === "light" ? "light" : "dark");
+document.getElementById("ap-mode").addEventListener("click", () => {
+    const suivant = document.body.getAttribute("data-mode") === "light" ? "dark" : "light";
+    localStorage.setItem("samii_mode", suivant);
+    apAppliquerMode(suivant);
+});
 
 async function apPoster(url, corps) {
     const r = await fetch(url, {
