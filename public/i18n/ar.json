@@ -676,7 +676,8 @@
       "parametres": "الإعدادات",
       "ressources": "موارد OG",
       "deconnexion": "تسجيل الخروج",
-      "contrat": "شروط الشراكة"
+      "contrat": "شروط الشراكة",
+      "api": "واجهة برمجية وWebhooks"
     },
     "promo": {
       "titre": "المتجر",

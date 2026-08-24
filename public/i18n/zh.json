@@ -658,7 +658,8 @@
       "parametres": "设置",
       "ressources": "OG 资源",
       "deconnexion": "退出登录",
-      "contrat": "合作条款"
+      "contrat": "合作条款",
+      "api": "API 与 Webhooks"
     },
     "promo": {
       "titre": "商城",

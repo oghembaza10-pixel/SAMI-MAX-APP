@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API & Webhooks · <%= nomAgence %></title>
+    <meta name="theme-color" content="#05070c">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <%# Même feuille que la tour de contrôle, pour hériter du système de
+        couleurs et du mode clair/sombre. La mise en page reste celle de
+        l'agence : dense, tabulaire, chiffres en monospace. %>
+    <link rel="stylesheet" href="/css/qg-style.css?v=8">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; padding: 26px 18px 80px;
+            background: var(--bg-deep); color: var(--text-main);
+            font-family: var(--font-body); -webkit-font-smoothing: antialiased;
+        }
+        .ap { max-width: 940px; margin: 0 auto; }
+
+        .ap-retour {
+            display: inline-flex; align-items: center; gap: 7px;
+            color: var(--text-muted); font-size: .78rem; text-decoration: none; margin-bottom: 20px;
+        }
+        .ap-retour:hover { color: var(--gold-og); }
+        .ap-retour i { width: 14px; height: 14px; }
+
+        .ap-tete { border-bottom: var(--border-soft); padding-bottom: 20px; margin-bottom: 26px; }
+        .ap-tete h1 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -.4px; }
+        .ap-tete p { margin: 7px 0 0; color: var(--text-muted); font-size: .84rem; max-width: 620px; line-height: 1.6; }
+        .ap-tete a { color: var(--gold-og); }
+
+        .ap-bloc {
+            background: var(--bg-panel); border: var(--border-soft); border-radius: 14px;
+            padding: 20px; margin-bottom: 18px;
+        }
+        .ap-bloc h2 { margin: 0 0 4px; font-size: .95rem; font-weight: 700; }
+        .ap-bloc .ap-aide { color: var(--text-muted); font-size: .78rem; margin: 0 0 16px; line-height: 1.6; }
+
+        table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+        th {
+            text-align: left; color: var(--text-muted); font-size: .66rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .8px; padding-bottom: 9px;
+        }
+        td { padding: 10px 10px 10px 0; border-top: var(--border-soft); vertical-align: middle; }
+        .mono { font-family: 'JetBrains Mono', monospace; font-size: .74rem; }
+        .ap-vide { color: var(--text-muted); font-size: .8rem; font-style: italic; padding: 12px 0; }
+
+        input[type=text], input[type=url] {
+            background: var(--bg-deep); border: var(--border-soft); color: var(--text-main);
+            border-radius: 9px; padding: 11px 13px; font-size: .83rem; width: 100%; font-family: inherit;
+        }
+        input:focus { outline: none; border-color: var(--gold-og); }
+        .ap-ligne { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+        .ap-ligne > input { flex: 1 1 240px; }
+
+        button {
+            background: var(--gold-og); color: #0A0A0A; border: none; border-radius: 9px;
+            padding: 11px 20px; font-weight: 700; font-size: .8rem; cursor: pointer;
+            font-family: inherit; white-space: nowrap;
+        }
+        button:hover { filter: brightness(1.12); }
+        button.ap-mini {
+            background: none; border: var(--border-soft); color: var(--text-muted);
+            padding: 5px 11px; font-size: .71rem; font-weight: 500;
+        }
+        button.ap-mini:hover { border-color: #b34a3a; color: #e5533d; filter: none; }
+
+        .ap-cases { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+        .ap-cases label {
+            display: flex; align-items: center; gap: 6px; background: var(--bg-deep);
+            border: var(--border-soft); border-radius: 8px; padding: 7px 11px;
+            font-size: .72rem; color: var(--text-soft); cursor: pointer;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .ap-cases input { accent-color: var(--gold-og); }
+
+        .ap-nouvelle {
+            display: none; margin-top: 16px; background: var(--bg-deep);
+            border: 1px solid var(--gold-og); border-radius: 12px; padding: 16px;
+        }
+        .ap-nouvelle strong { color: var(--gold-og); font-size: .8rem; display: block; margin-bottom: 8px; }
+        .ap-nouvelle .ap-val {
+            background: var(--bg-panel); border-radius: 8px; padding: 12px; word-break: break-all;
+            font-family: 'JetBrains Mono', monospace; font-size: .77rem;
+        }
+        .ap-nouvelle p { color: var(--text-muted); font-size: .73rem; margin: 10px 0 0; }
+
+        pre {
+            background: var(--bg-deep); border: var(--border-soft); border-radius: 10px;
+            padding: 14px; overflow-x: auto; margin: 12px 0 0;
+            font-family: 'JetBrains Mono', monospace; font-size: .73rem; line-height: 1.75;
+            color: var(--text-soft);
+        }
+        code {
+            font-family: 'JetBrains Mono', monospace; font-size: .82em;
+            background: var(--bg-deep); border-radius: 5px; padding: 1.5px 6px; color: var(--gold-og);
+        }
+        pre code { background: none; padding: 0; color: inherit; font-size: 1em; }
+
+        .ap-etat { font-size: .66rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; }
+        .ap-etat--on  { background: rgba(46,160,67,.15); color: #4CC76A; }
+        .ap-etat--off { background: rgba(180,60,60,.15); color: #e5533d; }
+
+        @media (max-width: 640px) {
+            th:nth-child(3), td:nth-child(3) { display: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="ap">
+    <a href="/agence" class="ap-retour"><i data-lucide="arrow-left"></i> Tour de contrôle</a>
+
+    <div class="ap-tete">
+        <h1>API &amp; Webhooks</h1>
+        <p>
+            Une seule clé pour <strong>tout ton portefeuille</strong> : tu branches ton n8n
+            une fois, il pilote les <%= espaces.length %> espace<%= espaces.length > 1 ? "s" : "" %>
+            de tes clients. Pas un flux à reconstruire par boutique.
+            <a href="/api-docs" target="_blank" rel="noopener">Documentation complète →</a>
+        </p>
+    </div>
+
+    <!-- ── CLÉS ────────────────────────────────────────────────── -->
+    <div class="ap-bloc">
+        <h2>Clés d'agence</h2>
+        <p class="ap-aide">
+            Une clé s'affiche une seule fois, à sa création : nous n'en gardons qu'une
+            empreinte, jamais la clé elle-même. Elle donne accès aux espaces de ton
+            portefeuille — et à eux seuls. Un client qui te quitte sort automatiquement
+            du périmètre, sans rien à révoquer.
+        </p>
+
+        <table>
+            <thead><tr><th>Nom</th><th>Clé</th><th>Dernier usage</th><th>État</th><th></th></tr></thead>
+            <tbody>
+            <% if (!cles.length) { %>
+                <tr><td colspan="5" class="ap-vide">Aucune clé pour l'instant.</td></tr>
+            <% } %>
+            <% cles.forEach(c => { %>
+                <tr>
+                    <td><%= c.nom %></td>
+                    <td class="mono"><%= c.cle_prefixe %>…</td>
+                    <td class="mono"><%= c.derniere_utilisation ? new Date(c.derniere_utilisation).toLocaleString('fr-FR') : "jamais" %></td>
+                    <td><span class="ap-etat <%= c.actif ? 'ap-etat--on' : 'ap-etat--off' %>"><%= c.actif ? "active" : "révoquée" %></span></td>
+                    <td><% if (c.actif) { %><button class="ap-mini" data-revoquer="<%= c.id %>">Révoquer</button><% } %></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+
+        <div class="ap-ligne">
+            <input type="text" id="ap-nom-cle" placeholder="Nom de la clé (ex : n8n production)">
+            <button id="ap-creer-cle">Créer une clé</button>
+        </div>
+
+        <div class="ap-nouvelle" id="ap-nouvelle">
+            <strong>Voici ta clé — copie-la maintenant</strong>
+            <div class="ap-val" id="ap-valeur-cle"></div>
+            <p>Elle ne sera plus jamais affichée. Traite-la comme un mot de passe.</p>
+        </div>
+    </div>
+
+    <!-- ── WEBHOOKS ────────────────────────────────────────────── -->
+    <div class="ap-bloc">
+        <h2>Webhooks — tout le portefeuille sur une URL</h2>
+        <p class="ap-aide">
+            SAMII appelle ton URL dès qu'un événement se produit chez <em>n'importe lequel</em>
+            de tes clients, quel que soit le canal d'origine : WhatsApp, Telegram, Shopify,
+            le QG ou l'API. Le bloc <code>espace</code> du corps envoyé, et l'en-tête
+            <code>X-SAMII-Espace</code>, te disent duquel il s'agit. Chaque appel est signé :
+            <code>X-SAMII-Signature: sha256=…</code>, HMAC du corps brut avec le secret
+            affiché à la création.
+        </p>
+
+        <table>
+            <thead><tr><th>URL</th><th>Événements</th><th>Dernier code</th><th>État</th><th></th></tr></thead>
+            <tbody>
+            <% if (!webhooks.length) { %>
+                <tr><td colspan="5" class="ap-vide">Aucun webhook enregistré.</td></tr>
+            <% } %>
+            <% webhooks.forEach(w => { %>
+                <tr>
+                    <td class="mono" style="word-break:break-all"><%= w.url %></td>
+                    <td class="mono" style="font-size:.68rem"><%= (w.evenements || []).join(", ") %></td>
+                    <td class="mono"><%= w.dernier_statut || "—" %></td>
+                    <td><span class="ap-etat <%= w.actif ? 'ap-etat--on' : 'ap-etat--off' %>"><%= w.actif ? "actif" : "désactivé" %></span></td>
+                    <td><button class="ap-mini" data-suppr-webhook="<%= w.id %>">Supprimer</button></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+
+        <div class="ap-ligne">
+            <input type="url" id="ap-url-webhook" placeholder="https://ton-n8n.com/webhook/samii">
+        </div>
+        <div class="ap-cases">
+            <% evenements.forEach(e => { %>
+                <label><input type="checkbox" class="ap-ev" value="<%= e %>" checked> <%= e %></label>
+            <% }) %>
+        </div>
+        <div class="ap-ligne"><button id="ap-creer-webhook">Enregistrer le webhook</button></div>
+    </div>
+
+    <!-- ── PORTEFEUILLE ────────────────────────────────────────── -->
+    <div class="ap-bloc">
+        <h2>Identifiants de tes espaces</h2>
+        <p class="ap-aide">
+            C'est la valeur à mettre dans l'en-tête <code>X-SAMII-Espace</code> pour cibler
+            un client. <code>GET /api/v1/espaces</code> renvoie exactement cette liste, si tu
+            préfères la lire depuis ton automatisation plutôt que la recopier.
+        </p>
+        <table>
+            <thead><tr><th>Client</th><th>Identifiant d'espace</th><th>Métier</th><th>Parcours</th></tr></thead>
+            <tbody>
+            <% if (!espaces.length) { %>
+                <tr><td colspan="4" class="ap-vide">Aucun client dans ton portefeuille pour l'instant.</td></tr>
+            <% } %>
+            <% espaces.forEach(e => { %>
+                <tr>
+                    <td><%= e.nom %></td>
+                    <td class="mono" style="word-break:break-all"><%= e.id %></td>
+                    <td><%= e.metierLabel %></td>
+                    <td class="mono"><%= e.parcours %></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ── DÉMARRAGE ───────────────────────────────────────────── -->
+    <div class="ap-bloc">
+        <h2>Démarrage</h2>
+        <p class="ap-aide">Deux appels pour tout comprendre : la liste de tes clients, puis les commandes de l'un d'eux.</p>
+<pre><code># 1. tes espaces
+curl <%= baseUrl %>/api/v1/espaces \
+  -H "Authorization: Bearer sk_samii_…"
+
+# 2. les commandes d'un client
+curl <%= baseUrl %>/api/v1/commandes \
+  -H "Authorization: Bearer sk_samii_…" \
+  -H "X-SAMII-Espace: WS-…"</code></pre>
+        <p class="ap-aide" style="margin:16px 0 0">
+            Dans n8n : nœud <strong>HTTP Request</strong>, authentification <strong>Header Auth</strong>
+            (<code>Authorization</code> = <code>Bearer sk_samii_…</code>), et un second en-tête
+            <code>X-SAMII-Espace</code> alimenté par la boucle sur tes clients. Aucun nœud
+            communautaire, aucun SDK à installer.
+        </p>
+    </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script>
+if (window.lucide) lucide.createIcons();
+
+async function apPoster(url, corps) {
+    const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corps || {}),
+    });
+    return r.json();
+}
+
+document.getElementById("ap-creer-cle").addEventListener("click", async (e) => {
+    e.target.disabled = true;
+    const nom = document.getElementById("ap-nom-cle").value.trim() || "Clé agence";
+    const rep = await apPoster("/agence/api/cles", { nom });
+    if (rep.success) {
+        document.getElementById("ap-valeur-cle").textContent = rep.cle;
+        document.getElementById("ap-nouvelle").style.display = "block";
+        // On ne recharge pas la page : ça effacerait la clé, visible une seule fois.
+    } else {
+        alert(rep.error || "Erreur.");
+        e.target.disabled = false;
+    }
+});
+
+document.querySelectorAll("[data-revoquer]").forEach(b => {
+    b.addEventListener("click", async () => {
+        if (!confirm("Révoquer cette clé ? Tout système qui l'utilise perdra l'accès immédiatement.")) return;
+        const rep = await apPoster(`/agence/api/cles/${b.dataset.revoquer}/revoquer`);
+        if (rep.success) location.reload(); else alert("Erreur.");
+    });
+});
+
+document.getElementById("ap-creer-webhook").addEventListener("click", async () => {
+    const url = document.getElementById("ap-url-webhook").value.trim();
+    const evenements = [...document.querySelectorAll(".ap-ev:checked")].map(c => c.value);
+    const rep = await apPoster("/agence/api/webhooks", { url, evenements });
+    if (rep.success) {
+        alert("Webhook enregistré.\n\nSecret de signature (à garder) :\n" + rep.webhook.secret);
+        location.reload();
+    } else {
+        alert(rep.error || "Erreur.");
+    }
+});
+
+document.querySelectorAll("[data-suppr-webhook]").forEach(b => {
+    b.addEventListener("click", async () => {
+        if (!confirm("Supprimer ce webhook ?")) return;
+        const rep = await apPoster(`/agence/api/webhooks/${b.dataset.supprWebhook}/supprimer`);
+        if (rep.success) location.reload(); else alert("Erreur.");
+    });
+});
+</script>
+</body>
+</html>

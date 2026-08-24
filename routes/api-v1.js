@@ -2,10 +2,14 @@
 // SAMII OS — API PUBLIQUE v1 (partenaires, n8n, Make, ERP...)
 //
 // Authentification par clé, pas par session : c'est ce qui permet à un
-// système externe de nous appeler. Chaque clé est liée à UN espace de
-// travail, et tout ce que la clé peut lire ou écrire est automatiquement
-// borné à cet espace — un partenaire ne peut jamais atteindre les données
-// d'un autre marchand, même en falsifiant un identifiant dans l'URL.
+// système externe de nous appeler.
+//
+// Une clé de MARCHAND est liée à un seul espace : tout ce qu'elle lit ou
+// écrit y est borné, elle ne peut atteindre aucun autre espace même en
+// falsifiant un identifiant. Une clé d'AGENCE couvre le portefeuille de
+// l'agence : l'appelant désigne l'espace visé, et son appartenance est
+// revérifiée en base à chaque appel — désigner l'espace d'un marchand qui
+// n'est pas au portefeuille renvoie 403, pas des données.
 //
 // Conventions volontairement classiques (Bearer token, JSON, verbes REST)
 // pour que ça se branche dans n8n avec le nœud HTTP standard, sans nœud
@@ -31,26 +35,115 @@ const limiteur = rateLimit({
     message: { erreur: "Trop de requêtes. Limite : 120 par minute." },
 });
 
+// Deux portées de clé :
+//   • marchand — la clé désigne son espace, il n'y a rien à préciser ;
+//   • agence   — la clé couvre tout le portefeuille, l'appelant désigne
+//                l'espace visé par l'en-tête X-SAMII-Espace (ou ?espace=).
+//                L'appartenance de cet espace à l'agence est revérifiée à
+//                chaque appel, jamais déduite de la clé seule.
 async function authentifier(req, res, next) {
     const entete = req.headers.authorization || "";
     const cle = entete.startsWith("Bearer ") ? entete.slice(7).trim() : "";
-    const workspaceId = await apiPartenaire.resoudreCle(cle);
-    if (!workspaceId) {
+    const portee = await apiPartenaire.resoudreCle(cle);
+    if (!portee) {
         return res.status(401).json({
             erreur: "Clé API absente, invalide ou révoquée.",
             aide: "Envoyez l'en-tête : Authorization: Bearer sk_samii_…",
         });
     }
-    req.workspaceId = workspaceId;
+
+    req.agenceId = portee.agenceId;
+
+    if (portee.workspaceId) {
+        req.workspaceId = portee.workspaceId;
+        return next();
+    }
+
+    // Clé d'agence : /espaces et /moi restent accessibles sans cibler un
+    // client — c'est précisément là qu'on découvre les identifiants à viser.
+    const vise = String(
+        req.headers["x-samii-espace"] || req.query.espace || req.body?.espace || "",
+    ).trim();
+
+    if (!vise) {
+        req.workspaceId = null;
+        return next();
+    }
+
+    const espace = await apiPartenaire.espaceDeLAgence(portee.agenceId, vise);
+    if (!espace) {
+        return res.status(403).json({
+            erreur: "Cet espace ne fait pas partie de votre portefeuille.",
+            aide: "GET /api/v1/espaces liste les espaces accessibles avec cette clé.",
+        });
+    }
+    req.workspaceId = espace;
     next();
 }
 
+// Toutes les routes ci-dessous, sauf /espaces et /moi, ont besoin d'un espace
+// cible. Avec une clé marchand il est implicite ; avec une clé d'agence il
+// doit être désigné.
+function exigerEspace(req, res, next) {
+    if (req.workspaceId) return next();
+    res.status(400).json({
+        erreur: "Aucun espace ciblé.",
+        aide: "Clé d'agence : précisez l'en-tête X-SAMII-Espace (ou ?espace=). GET /api/v1/espaces donne la liste.",
+    });
+}
+
 router.use(limiteur, express.json({ limit: "256kb" }), authentifier);
+
+// ── PORTEFEUILLE (clés d'agence) ─────────────────────────────────────────
+// Les espaces que cette clé peut atteindre. Sur une clé marchand, il n'y en
+// a qu'un — le sien — pour que le même flux n8n fonctionne dans les deux cas
+// sans être réécrit.
+router.get("/espaces", async (req, res) => {
+    try {
+        if (req.agenceId) {
+            const espaces = await apiPartenaire.listerEspacesAgence(req.agenceId);
+            return res.json({
+                espaces: espaces.map(e => ({
+                    id: e.id, nom: e.nom, metier: e.metier,
+                    metierLabel: metiers.label(e.metier),
+                    parcours: metiers.estRdv(e.metier) ? "rendez-vous" : "commandes",
+                    pays: e.pays, devise: e.devise,
+                })),
+                total: espaces.length,
+            });
+        }
+        const rows = await db.query(
+            `SELECT id, nom, metier, pays, devise FROM workspaces WHERE id = $1`,
+            [req.workspaceId],
+        );
+        res.json({
+            espaces: rows.map(e => ({
+                id: e.id, nom: e.nom, metier: e.metier,
+                metierLabel: metiers.label(e.metier),
+                parcours: metiers.estRdv(e.metier) ? "rendez-vous" : "commandes",
+                pays: e.pays, devise: e.devise,
+            })),
+            total: rows.length,
+        });
+    } catch (err) {
+        console.error("❌ API v1 /espaces :", err.message);
+        res.status(500).json({ erreur: "Erreur interne." });
+    }
+});
 
 // ── IDENTITÉ ─────────────────────────────────────────────────────────────
 // Premier appel que fait tout intégrateur pour valider sa clé.
 router.get("/moi", async (req, res) => {
     try {
+        // Clé d'agence sans espace ciblé : on décrit l'agence elle-même.
+        if (!req.workspaceId && req.agenceId) {
+            const espaces = await apiPartenaire.listerEspacesAgence(req.agenceId);
+            return res.json({
+                portee: "agence",
+                agence: { id: req.agenceId, espaces: espaces.length },
+                aide: "Ciblez un espace avec l'en-tête X-SAMII-Espace. GET /api/v1/espaces donne la liste.",
+            });
+        }
         const rows = await db.query(
             `SELECT id, nom, metier, pays, devise FROM workspaces WHERE id = $1`,
             [req.workspaceId],
@@ -58,6 +151,7 @@ router.get("/moi", async (req, res) => {
         if (!rows[0]) return res.status(404).json({ erreur: "Espace introuvable." });
         const w = rows[0];
         res.json({
+            portee: req.agenceId ? "agence" : "marchand",
             espace: {
                 id: w.id,
                 nom: w.nom,
@@ -75,7 +169,7 @@ router.get("/moi", async (req, res) => {
 });
 
 // ── COMMANDES ────────────────────────────────────────────────────────────
-router.get("/commandes", async (req, res) => {
+router.get("/commandes", exigerEspace, async (req, res) => {
     try {
         const limite = Math.min(parseInt(req.query.limite, 10) || 50, 200);
         const statut = req.query.statut;
@@ -100,7 +194,7 @@ router.get("/commandes", async (req, res) => {
     }
 });
 
-router.post("/commandes", async (req, res) => {
+router.post("/commandes", exigerEspace, async (req, res) => {
     try {
         const { nomClient, telephone, adresse, produit, montant } = req.body || {};
         if (!nomClient || !String(nomClient).trim()) {
@@ -133,7 +227,7 @@ router.post("/commandes", async (req, res) => {
 });
 
 // ── RENDEZ-VOUS ──────────────────────────────────────────────────────────
-router.get("/rendez-vous", async (req, res) => {
+router.get("/rendez-vous", exigerEspace, async (req, res) => {
     try {
         const limite = Math.min(parseInt(req.query.limite, 10) || 50, 200);
         const rows = await db.query(
@@ -151,7 +245,7 @@ router.get("/rendez-vous", async (req, res) => {
     }
 });
 
-router.post("/rendez-vous", async (req, res) => {
+router.post("/rendez-vous", exigerEspace, async (req, res) => {
     try {
         const { clientNom, telephone, motif, dateRdv } = req.body || {};
         if (!clientNom || !dateRdv) {
@@ -179,7 +273,7 @@ router.post("/rendez-vous", async (req, res) => {
 });
 
 // ── CLIENTS ──────────────────────────────────────────────────────────────
-router.get("/clients", async (req, res) => {
+router.get("/clients", exigerEspace, async (req, res) => {
     try {
         const limite = Math.min(parseInt(req.query.limite, 10) || 50, 200);
         const rows = await db.query(

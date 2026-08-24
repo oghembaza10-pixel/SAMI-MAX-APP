@@ -17,6 +17,7 @@ const CONFIG = require("../config");
 const workspaceService = require("../services/workspaceService");
 const journalService = require("../services/journalService");
 const metiers = require("../services/metiers");
+const apiPartenaire = require("../services/apiPartenaire");
 
 function requireAgence(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -218,6 +219,83 @@ router.get("/", requireAgence, async (req, res) => {
         metiers: metiers.parGroupe(),
         pays: PAYS_DEVISE,
     });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// API & WEBHOOKS DE L'AGENCE
+//
+// Une agence ne veut pas reconstruire un flux d'automatisation par client :
+// une seule clé couvre tout son portefeuille, et une seule URL de webhook
+// reçoit les événements de tous ses clients (le bloc `espace` du corps envoyé
+// dit lequel). L'appartenance d'un espace à l'agence est revérifiée à chaque
+// appel — un client qui quitte le portefeuille sort du périmètre de la clé
+// sans qu'il y ait quoi que ce soit à révoquer.
+// ══════════════════════════════════════════════════════════════════════════
+router.get("/api", requireAgence, async (req, res) => {
+    try {
+        const [cles, webhooks, espaces] = await Promise.all([
+            apiPartenaire.listerClesAgence(req.session.userId),
+            apiPartenaire.listerWebhooksAgence(req.session.userId),
+            apiPartenaire.listerEspacesAgence(req.session.userId),
+        ]);
+        res.render("agence-api", {
+            nomAgence: req.session.nom || "Mon agence",
+            cles, webhooks,
+            espaces: espaces.map(e => ({
+                ...e,
+                metierLabel: metiers.label(e.metier) || e.metier || "—",
+                parcours: metiers.estRdv(e.metier) ? "rendez-vous" : "commandes",
+            })),
+            evenements: apiPartenaire.EVENEMENTS,
+            baseUrl: `${req.protocol}://${req.get("host")}`,
+        });
+    } catch (err) {
+        console.error("❌ /agence/api :", err.message);
+        res.status(500).send("Erreur de chargement.");
+    }
+});
+
+// La clé en clair n'existe que dans cette réponse : elle n'est stockée nulle
+// part en clair, donc une clé perdue se remplace, elle ne se retrouve pas.
+router.post("/api/cles", requireAgence, async (req, res) => {
+    try {
+        const cle = await apiPartenaire.creerCleAgence(req.session.userId, req.body?.nom || "Clé agence");
+        await journalService.log({
+            action: "agence.api.cle.creee",
+            details: `${req.session.nom || "Agence"} — ${req.body?.nom || "Clé agence"}`,
+        });
+        res.json({ success: true, cle });
+    } catch (err) {
+        console.error("❌ /agence/api/cles :", err.message);
+        res.json({ success: false, error: "Impossible de créer la clé." });
+    }
+});
+
+router.post("/api/cles/:id/revoquer", requireAgence, async (req, res) => {
+    const ok = await apiPartenaire.revoquerCleAgence(req.session.userId, req.params.id);
+    res.json({ success: ok });
+});
+
+router.post("/api/webhooks", requireAgence, async (req, res) => {
+    try {
+        const url = String(req.body?.url || "").trim();
+        if (!/^https:\/\/.+/i.test(url)) {
+            return res.json({ success: false, error: "L'URL doit commencer par https://" });
+        }
+        const evenements = Array.isArray(req.body?.evenements)
+            ? req.body.evenements
+            : String(req.body?.evenements || "").split(",").map(e => e.trim()).filter(Boolean);
+
+        const cree = await apiPartenaire.creerWebhookAgence(req.session.userId, { url, evenements });
+        res.json({ success: true, webhook: cree });
+    } catch (err) {
+        res.json({ success: false, error: err.message });
+    }
+});
+
+router.post("/api/webhooks/:id/supprimer", requireAgence, async (req, res) => {
+    const ok = await apiPartenaire.supprimerWebhookAgence(req.session.userId, req.params.id);
+    res.json({ success: ok });
 });
 
 router.post("/creer-client", requireAgence, async (req, res) => {

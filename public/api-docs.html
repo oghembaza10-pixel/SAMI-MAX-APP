@@ -74,7 +74,8 @@
     <p>
         Lire et écrire des commandes, des rendez-vous et des clients dans un espace SAMII
         depuis n'importe quel système externe, et recevoir en temps réel tout ce qui s'y passe.
-        REST, JSON, jeton Bearer — rien à installer, un nœud HTTP standard suffit.
+        Un marchand branche son espace ; une agence branche tout son portefeuille avec une
+        seule clé. REST, JSON, jeton Bearer — rien à installer, un nœud HTTP standard suffit.
     </p>
 </header>
 
@@ -89,20 +90,62 @@
 
 <h2>Authentification</h2>
 <p>
-    Chaque appel porte une clé dans l'en-tête <code>Authorization</code>. Le marchand la
-    génère lui-même depuis son QG, page <strong>API &amp; Webhooks</strong>. Une clé donne
-    accès à <strong>un seul espace de travail</strong> : tout ce qui est lu ou écrit y est
-    automatiquement borné, il n'existe aucun paramètre permettant d'en désigner un autre.
+    Chaque appel porte une clé dans l'en-tête <code>Authorization</code>. Elle se génère
+    depuis la page <strong>API &amp; Webhooks</strong> — dans le QG pour un marchand, dans
+    la tour de contrôle pour une agence. Une clé ne donne accès qu'aux espaces de son
+    propriétaire : tout ce qui est lu ou écrit y est automatiquement borné, et cette limite
+    est appliquée côté serveur à chaque requête.
 </p>
 <pre><code>Authorization: Bearer sk_samii_xxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
 <div class="note">
     <p>
         Nous ne stockons jamais la clé en clair, seulement son empreinte SHA-256 : elle
         s'affiche une seule fois, à la création. Une clé perdue se remplace, elle ne se
-        retrouve pas. Le marchand peut révoquer n'importe quelle clé en un clic — l'accès
-        est coupé immédiatement.
+        retrouve pas. Le propriétaire peut révoquer n'importe quelle clé en un clic —
+        l'accès est coupé immédiatement.
     </p>
 </div>
+
+<h3>Deux portées de clé</h3>
+<p>
+    <strong>Clé marchand</strong> — générée par un marchand depuis son QG. Elle désigne son
+    espace : il n'y a rien à préciser dans les appels.
+</p>
+<p>
+    <strong>Clé agence</strong> — générée par un compte agence depuis sa tour de contrôle.
+    Elle couvre <strong>tout son portefeuille</strong> : une agence branche son automatisation
+    une seule fois pour l'ensemble de ses clients, au lieu de reconstruire un flux par
+    boutique. L'espace visé se désigne alors par un en-tête :
+</p>
+<pre><code>Authorization: Bearer sk_samii_…
+X-SAMII-Espace: WS-a1b2c3        (ou ?espace=WS-a1b2c3)</code></pre>
+<p>
+    L'appartenance de cet espace au portefeuille est <strong>revérifiée en base à chaque
+    appel</strong>, jamais déduite de la clé : viser l'espace d'un marchand qui n'est pas
+    au portefeuille renvoie <code>403</code>, pas des données. Un client qui quitte l'agence
+    sort du périmètre de la clé immédiatement, sans qu'il y ait quoi que ce soit à révoquer.
+</p>
+<p>
+    Sans en-tête, une clé d'agence n'atteint aucune donnée client : seuls
+    <code>/moi</code> et <code>/espaces</code> répondent, et c'est précisément là qu'on
+    découvre les identifiants à viser.
+</p>
+
+<h3><span class="verbe get">GET</span> /espaces</h3>
+<p>
+    Les espaces que la clé peut atteindre. Une clé marchand renvoie le sien, une clé
+    d'agence renvoie tout le portefeuille — le même flux n8n fonctionne donc dans les deux
+    cas sans être réécrit.
+</p>
+<pre><code>{
+  "espaces": [
+    { "id": "WS-a1b2c3", "nom": "Resto Yasmine", "metier": "restaurant",
+      "metierLabel": "Restaurant", "parcours": "commandes", "pays": "DZ", "devise": "DZD" },
+    { "id": "WS-d4e5f6", "nom": "Cabinet Dr K.", "metier": "sante",
+      "metierLabel": "Santé", "parcours": "rendez-vous", "pays": "MA", "devise": "MAD" }
+  ],
+  "total": 2
+}</code></pre>
 
 <h3>Limite d'appels</h3>
 <p>
@@ -117,8 +160,9 @@
 <pre><code>curl https://samii.souverain-store.com/api/v1/moi \
   -H "Authorization: Bearer sk_samii_…"</code></pre>
 <pre><code>{
+  "portee": "marchand",
   "espace": {
-    "id": "ws_a1b2c3",
+    "id": "WS-a1b2c3",
     "nom": "Boutique Amine",
     "metier": "boutique",
     "metierLabel": "Boutique / prêt-à-porter",
@@ -268,11 +312,13 @@
 <h3>Corps envoyé</h3>
 <pre><code>POST https://ton-n8n.com/webhook/samii
 X-SAMII-Event: commande.creee
+X-SAMII-Espace: WS-a1b2c3
 X-SAMII-Signature: sha256=9c1f…
 
 {
   "evenement": "commande.creee",
-  "workspaceId": "ws_a1b2c3",
+  "workspaceId": "WS-a1b2c3",
+  "espace": { "id": "WS-a1b2c3", "nom": "Resto Yasmine" },
   "donnees": {
     "id": "TG-482913",
     "nomClient": "Yacine B.",
@@ -283,6 +329,15 @@ X-SAMII-Signature: sha256=9c1f…
   },
   "emisLe": "2026-08-24T09:12:44.512Z"
 }</code></pre>
+
+<h3>Une seule URL pour toute une agence</h3>
+<p>
+    Un webhook déclaré par un compte agence reçoit les événements de
+    <strong>tous ses clients</strong>. Le bloc <code>espace</code> du corps, et l'en-tête
+    <code>X-SAMII-Espace</code>, disent duquel il s'agit — de quoi router dans un seul flux
+    n8n plutôt que d'en dupliquer un par boutique. Un webhook déclaré par un marchand ne
+    reçoit que le sien.
+</p>
 
 <h3>Vérifier la signature</h3>
 <p>
@@ -314,6 +369,10 @@ function signatureValide(corpsBrut, entete, secret) {
     <li><strong>Lire ou écrire dans SAMII</strong> — nœud <em>HTTP Request</em>, authentification
         <em>Header Auth</em>, nom <code>Authorization</code>, valeur <code>Bearer sk_samii_…</code>.
         Aucun nœud communautaire, aucun SDK.</li>
+    <li><strong>Couvrir un portefeuille entier</strong> (clé d'agence) — un premier nœud sur
+        <code>GET /espaces</code>, puis une boucle qui rappelle le même nœud HTTP avec
+        l'en-tête <code>X-SAMII-Espace</code> alimenté par l'<code>id</code> de chaque
+        espace. Un seul flux, tous tes clients.</li>
     <li><strong>Être déclenché par SAMII</strong> — nœud <em>Webhook</em>, copie l'URL de
         production, colle-la dans la page API &amp; Webhooks du marchand, coche les
         événements voulus.</li>

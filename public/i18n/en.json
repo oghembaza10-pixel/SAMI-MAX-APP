@@ -676,7 +676,8 @@
       "parametres": "Settings",
       "ressources": "OG resources",
       "deconnexion": "Sign out",
-      "contrat": "Partnership terms"
+      "contrat": "Partnership terms",
+      "api": "API & Webhooks"
     },
     "promo": {
       "titre": "Marketplace",
