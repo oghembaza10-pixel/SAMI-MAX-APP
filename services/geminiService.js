@@ -4,6 +4,11 @@
 const axios = require("axios");
 const CONFIG = require("../config");
 const SAMII_PROMPT = require("../brain/prompts/index");
+// La liste des métiers proposés à SAMII est générée depuis la source
+// unique : sans ça, elle divergeait de celle acceptée par le serveur et
+// SAMII proposait des valeurs qui étaient ensuite rejetées.
+const { METIERS } = require("./metiers");
+const LISTE_METIERS = METIERS.filter(m => m.id !== "autre").map(m => m.id).join(", ");
 const MODEL = "gemini-3.6-flash";
 const KEYS  = CONFIG.GEMINI.API_KEYS.length > 0 ? CONFIG.GEMINI.API_KEYS : [CONFIG.GEMINI.API_KEY];
 
@@ -334,7 +339,7 @@ const ONBOARDING_TOOLS = [
                     type: "OBJECT",
                     properties: {
                         nom: { type: "STRING", description: "Le nom de l'activité/du workspace, tel que donné par l'utilisateur." },
-                        metier: { type: "STRING", description: "Un des métiers suivants EXACTEMENT si l'activité correspond : ecommerce, restaurant, immobilier, livreur, sante, finance, education, technologie, agriculture, industrie, services, tourisme. Si aucun ne correspond vraiment, utilise 'autre'." },
+                        metier: { type: "STRING", description: `Un des métiers suivants EXACTEMENT si l'activité correspond : ${LISTE_METIERS}. Si aucun ne correspond vraiment, utilise 'autre'.` },
                         metierCustom: { type: "STRING", description: "Si metier vaut 'autre', le métier précis tel que décrit par l'utilisateur (ex: Avocat, Coiffeur, Dentiste). Chaîne vide sinon." },
                         pays: { type: "STRING", description: "Code pays sur 2 lettres parmi : DZ, MA, TN, FR, BE, CA, SN, CI. Si un autre pays est mentionné, utilise 'OTHER'." },
                         description: { type: "STRING", description: "Courte description optionnelle de l'activité, si l'utilisateur en donne une spontanément. Chaîne vide sinon." },

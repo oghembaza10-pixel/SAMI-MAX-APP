@@ -89,6 +89,8 @@ router.get("/", requireAuth, async (req, res) => {
             background: rgba(95,212,255,0.04);
         }
         .griot-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .hint { margin: 8px 0 0; font-size: .76rem; line-height: 1.55; color: var(--text-muted); }
+        select optgroup { background: #0a0d14; color: var(--gold-og); font-style: normal; font-weight: 700; }
 
         input[type="file"] { padding: 8px; cursor: pointer; font-size: .8rem; color: var(--text-muted); }
         input[type="file"]::file-selector-button {
@@ -195,7 +197,7 @@ router.get("/", requireAuth, async (req, res) => {
         <div class="griot-icon-box">🪶</div>
         <h1>Griot</h1>
     </div>
-    <p class="sub">Décris ce que tu veux promouvoir, ajoute la photo du produit — SAMII te livre ton pack de contenu et pilote Runware.</p>
+    <p class="sub">Décris ce que tu veux promouvoir, ajoute la photo du produit — SAMII te livre ton pack de contenu, visuel compris.</p>
 
     <div class="griot-card">
         <form id="form-griot" enctype="multipart/form-data">
@@ -246,13 +248,24 @@ router.get("/", requireAuth, async (req, res) => {
                 </div>
             </div>
 
-            <label>Moteur de génération</label>
+            <%# Le marchand choisit un RÉSULTAT, pas un fournisseur : les noms
+                de nos prestataires n'ont rien à faire ici (on ne leur fait pas
+                de publicité, et ils peuvent changer sans que le client s'en
+                aperçoive). Le gratuit passe en premier : c'est ce qui doit
+                donner envie d'essayer. %>
+            <label>Le visuel de ta publication</label>
             <select name="moteur" id="select-moteur">
-                <option value="photo">📷 Photo réelle — GRATUIT, aucun crédit consommé</option>
-                <option value="runware">Runware — image générée par IA (0,80$/s)</option>
-                <option value="wan">WAN 2.6 (Alibaba) — vidéo rapide, sans son (0,48$/s)</option>
-                <option value="h3">H3 (MiniMax) — vidéo + son natif (0,78$/s)</option>
+                <optgroup label="Inclus dans ton abonnement — aucun crédit">
+                    <option value="photo">📷 Photo réelle — offert</option>
+                    <option value="video">🎬 Vidéo réelle — offert</option>
+                </optgroup>
+                <optgroup label="Création par intelligence artificielle">
+                    <option value="runware">✨ Image SAMII Studio — visuel unique, créé pour toi</option>
+                    <option value="wan">🎥 Vidéo SAMII Max — animée, sans son</option>
+                    <option value="h3">🎬 Vidéo SAMII Ciné — animée, avec son</option>
+                </optgroup>
             </select>
+            <p class="hint" id="hint-moteur"></p>
 
             <label>De quoi parle le contenu ?</label>
             <textarea name="sujet" placeholder="Ex : ma nouvelle collection de vestes d'hiver..." required></textarea>
@@ -260,7 +273,7 @@ router.get("/", requireAuth, async (req, res) => {
             <label>Ton souhaité (optionnel)</label>
             <input name="ton" placeholder="Ex : dynamique et jeune, élégant et sobre...">
 
-            <label>Photo du produit (optionnel — utilisée par Runware)</label>
+            <label>Photo du produit (optionnel — sert de base au visuel)</label>
             <input type="file" name="client_image" accept="image/*">
 
             <button type="submit" class="griot-submit">🪶 Générer le pack &amp; média</button>
@@ -278,6 +291,25 @@ router.get("/", requireAuth, async (req, res) => {
 const selectReseau = document.getElementById('select-reseau');
 const selectFormat = document.getElementById('select-format');
 const formatWrapper = selectFormat.closest('div');
+
+// Explique le choix en une phrase, du point de vue du marchand : ce qu'il
+// obtient et ce que ça lui coûte — jamais quelle technologie tourne derrière.
+const AIDE_MOTEUR = {
+    photo   : "✅ Inclus dans ton abonnement. SAMII choisit de vraies photos professionnelles qui correspondent à ton produit.",
+    video   : "✅ Inclus dans ton abonnement. De vraies vidéos professionnelles, prêtes à publier.",
+    runware : "💎 Un visuel unique, créé spécialement pour toi à partir de ta description. Décompté de tes crédits.",
+    wan     : "💎 Une vidéo animée créée pour toi, sans son. Décomptée de tes crédits.",
+    h3      : "💎 Une vidéo animée avec son, la plus aboutie. Décomptée de tes crédits.",
+};
+const selectMoteur = document.getElementById('select-moteur');
+const hintMoteur   = document.getElementById('hint-moteur');
+function majAideMoteur() {
+    if (hintMoteur && selectMoteur) hintMoteur.textContent = AIDE_MOTEUR[selectMoteur.value] || '';
+}
+if (selectMoteur) {
+    selectMoteur.addEventListener('change', majAideMoteur);
+    majAideMoteur();
+}
 
 function updateFormatOptions() {
     const reseau = selectReseau.value;
@@ -362,6 +394,28 @@ function renderPack(data) {
         html += block('image', 'Ta photo, prête à publier avec le texte ci-dessus', photoHtml);
     }
 
+    // ── Vidéos libres de droit ────────────────────────────────────────
+    // Mêmes obligations d'attribution que les photos : nom de l'auteur lié
+    // à la vidéo d'origine, et lien visible vers Pexels sous le bloc.
+    if (data.videos && data.videos.length > 0) {
+        let vHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">';
+        data.videos.forEach(v => {
+            vHtml += '<div style="border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;">'
+                + '<video controls preload="none" poster="' + (v.apercu || '') + '" style="width:100%;display:block;background:#000;">'
+                + '<source src="' + v.url + '" type="video/mp4"></video>'
+                + '<div style="padding:8px 10px;">'
+                + '<a href="' + v.pageUrl + '" target="_blank" rel="noopener" style="font-size:.7rem;color:#9aa;text-decoration:none;">🎬 ' + v.photographe + '</a>'
+                + '<span style="font-size:.68rem;color:#777;float:right;">' + (v.duree ? v.duree + 's' : '') + '</span>'
+                + '<a href="' + v.url + '" download target="_blank" rel="noopener" class="griot-publish-btn" style="text-align:center;text-decoration:none;">⬇️ Télécharger pour publier</a>'
+                + '</div></div>';
+        });
+        vHtml += '</div>'
+            + '<p style="font-size:.72rem;color:#888;margin-top:10px;">'
+            + '<a href="https://www.pexels.com" target="_blank" rel="noopener" style="color:#9aa;">Vidéos fournies par Pexels</a>'
+            + ' — libres de droit, utilisation commerciale autorisée. Aucun crédit consommé.</p>';
+        html += block('video', 'Vidéos réelles (offert)', vHtml);
+    }
+
     // ── Photos libres de droit (Pexels) ───────────────────────────────
     // Bloc séparé des médias IA : les conditions d'API de Pexels imposent
     // d'afficher le nom du photographe (lié à la photo) ET un lien vers
@@ -387,7 +441,9 @@ function renderPack(data) {
         html += block('image', 'Photos réelles (gratuit)', pxHtml);
     }
 
-    if (!data.photos && data.medias && data.medias.length > 0) {
+    // Les paliers gratuits ont déjà leur propre bloc avec attribution ;
+    // celui-ci ne concerne que les visuels créés par IA.
+    if (!data.photos && !data.videos && data.medias && data.medias.length > 0) {
         const reseauActuel = selectReseau.value;
         const peutPublier = reseauActuel === 'facebook' || reseauActuel === 'instagram';
         let mediaHtml = '<div style="display:flex;flex-direction:column;gap:12px;">';
@@ -401,11 +457,11 @@ function renderPack(data) {
                     ? '<button type="button" class="griot-publish-btn" onclick=\\'publierSurReseau(' + JSON.stringify(url) + ')\\'>📤 Publier maintenant sur ' + (reseauActuel === 'instagram' ? 'Instagram' : 'Facebook') + '</button>'
                     : '';
                 mediaHtml += '<div><p style="font-size:.75rem;color:var(--gold-og);margin-bottom:4px;">Variante image #' + (idx + 1) + '</p>'
-                    + '<img src="' + url + '" style="width:100%;border-radius:8px;" alt="Généré par Runware">' + publierBtn + '</div>';
+                    + '<img src="' + url + '" style="width:100%;border-radius:8px;" alt="Visuel créé par SAMII">' + publierBtn + '</div>';
             }
         });
         mediaHtml += '</div>';
-        html += block('sparkles', 'Médias générés (Runware)', mediaHtml);
+        html += block('sparkles', 'Visuels créés par SAMII', mediaHtml);
     }
 
     if (data.erreur_media) {
@@ -442,7 +498,7 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
     const formData = new FormData(e.target);
 
     btn.disabled = true;
-    msg.textContent = "🪶 SAMII rédige et pilote Runware...";
+    msg.textContent = "🪶 SAMII rédige et prépare ton visuel...";
     pack.style.display = 'none';
 
     try {
@@ -472,7 +528,7 @@ document.getElementById('form-griot').addEventListener('submit', async (e) => {
 router.post("/", requireAuth, upload.single("client_image"), async (req, res) => {
     try {
         const { reseau, format, objectif, sujet, ton, type_creation, duree, nombre_variantes, moteur } = req.body;
-        const moteurChoisi = ["wan", "h3", "photo"].includes(moteur) ? moteur : "runware";
+        const moteurChoisi = ["wan", "h3", "photo", "video"].includes(moteur) ? moteur : "runware";
         console.log(`🔍 DEBUG Griot — moteur reçu du formulaire : "${moteur}" | moteur retenu : "${moteurChoisi}"`);
 
         if (!sujet || !sujet.trim()) {
@@ -591,7 +647,24 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
                 pack.medias.push(`/samii/griot/media/${resultat.jobId}`);
             } else {
                 console.error(`⚠️ Erreur génération ${moteurChoisi} (OpenRouter) :`, resultat.error);
-                pack.erreur_media = `Génération vidéo échouée (${moteurChoisi.toUpperCase()}) : ${resultat.error}`;
+                pack.erreur_media = `La création de la vidéo a échoué : ${resultat.error}`;
+            }
+        }
+
+        // ── Vidéo réelle — palier GRATUIT, aucun crédit consommé ──────────
+        if (moteurChoisi === "video") {
+            const motsCles = (pack.mots_cles_photo || sujet || "")
+                .toString().split(/[,\n]/)[0].trim().slice(0, 60);
+
+            const recherche = await pexelsService.chercherVideos(motsCles, { nb: 4 });
+            if (recherche.success && recherche.videos.length) {
+                pack.videos = recherche.videos;
+                pack.medias = recherche.videos.map(v => v.url);
+                pack.creditPhotos = "Vidéos fournies par Pexels";
+            } else {
+                pack.erreur_media = recherche.error
+                    ? `Recherche de vidéos : ${recherche.error}`
+                    : `Aucune vidéo trouvée pour « ${motsCles} ». Essaie un mot-clé plus simple, ou choisis une photo.`;
             }
         }
 
@@ -664,14 +737,14 @@ if (runwareData && Array.isArray(runwareData.data)) {
                 if (pack.medias.length === 0) {
                     const raisonRunware = runwareData?.errors?.[0]?.message || runwareData?.error?.message || `statut HTTP ${runwareRes.status}`;
                     console.error("⚠️ Runware n'a renvoyé aucun média :", raisonRunware);
-                    pack.erreur_media = `Génération média échouée (Runware) : ${raisonRunware}`;
+                    pack.erreur_media = `La création du visuel a échoué : ${raisonRunware}`;
                 }
            } catch (runwareErr) {
     console.error("⚠️ Erreur appel Runware :", runwareErr.message, runwareErr.stack);
-    pack.erreur_media = `Génération média échouée (Runware) : ${runwareErr.message}`;
+    pack.erreur_media = `La création du visuel a échoué : ${runwareErr.message}`;
 }
         } else if (moteurChoisi === "runware" && !runwareApiKey) {
-            pack.erreur_media = "Génération média indisponible : clé Runware non configurée côté serveur.";
+            pack.erreur_media = "La création de visuels par IA est momentanément indisponible — choisis « Photo réelle » ou « Vidéo réelle », c'est offert.";
         }
 
         if (pack.medias.length === 0 && !pack.erreur_media && !pack.prompt_visuel) {

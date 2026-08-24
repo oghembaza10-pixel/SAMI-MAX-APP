@@ -16,7 +16,8 @@
 const axios = require("axios");
 const CONFIG = require("../config");
 
-const API_URL = "https://api.pexels.com/v1/search";
+const API_URL   = "https://api.pexels.com/v1/search";
+const VIDEO_URL = "https://api.pexels.com/videos/search";
 
 // Cache mémoire : la même recherche ("café", "montre") revient souvent d'un
 // marchand à l'autre. Ça garde le volume de requêtes bas, comme annoncé à
@@ -92,4 +93,66 @@ async function chercher(requete, { nb = 6, orientation = "square" } = {}) {
     }
 }
 
-module.exports = { chercher, estConfigure };
+/**
+ * Cherche des VIDÉOS libres de droit (même clé, même compte que les photos).
+ * Permet un palier vidéo réellement gratuit : la génération vidéo par IA est
+ * facturée à la seconde chez tous les fournisseurs, et l'auto-héberger exige
+ * une carte graphique qui coûte plus cher que de la payer à l'usage.
+ * @returns {Promise<{success:boolean, videos:Array, error?:string}>}
+ *   Chaque vidéo : { url, apercu, duree, largeur, hauteur, photographe, photographeUrl, pageUrl }
+ */
+async function chercherVideos(requete, { nb = 4 } = {}) {
+    if (!estConfigure()) {
+        return { success: false, videos: [], error: "Clé Pexels non configurée côté serveur." };
+    }
+    const texte = String(requete || "").trim();
+    if (!texte) return { success: false, videos: [], error: "Aucun mot-clé de recherche." };
+
+    const cle = `video|${cleCache(texte, nb, "any")}`;
+    const enCache = cache.get(cle);
+    if (enCache && Date.now() - enCache.at < CACHE_MS) {
+        return { success: true, videos: enCache.photos };
+    }
+
+    try {
+        const res = await axios.get(VIDEO_URL, {
+            headers: { Authorization: CONFIG.PEXELS.API_KEY },
+            params: { query: texte, per_page: Math.min(nb, 15), orientation: "portrait" },
+            timeout: 12000,
+        });
+
+        const videos = (res.data?.videos || []).map(v => {
+            // On vise ~720p : au-delà le fichier est trop lourd pour une
+            // publication réseau, en dessous ça pique à l'écran.
+            const fichiers = (v.video_files || []).filter(f => f.link);
+            const choisi = fichiers.find(f => f.height >= 700 && f.height <= 1100)
+                || fichiers.sort((a, b) => (b.height || 0) - (a.height || 0))[0];
+            return {
+                url            : choisi?.link || "",
+                apercu         : v.image || "",
+                duree          : v.duration || 0,
+                largeur        : choisi?.width || v.width,
+                hauteur        : choisi?.height || v.height,
+                photographe    : v.user?.name || "",
+                photographeUrl : v.user?.url || "",
+                pageUrl        : v.url || "",
+            };
+        }).filter(v => v.url);
+
+        if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value);
+        cache.set(cle, { at: Date.now(), photos: videos });
+
+        return { success: true, videos };
+    } catch (err) {
+        const statut = err.response?.status;
+        const message = statut === 429
+            ? "Limite horaire de recherche atteinte. Réessaie dans quelques minutes."
+            : statut === 401
+                ? "Clé Pexels refusée — vérifie PEXELS_API_KEY côté serveur."
+                : err.message;
+        console.error("❌ pexelsService.chercherVideos :", statut || "", message);
+        return { success: false, videos: [], error: message };
+    }
+}
+
+module.exports = { chercher, chercherVideos, estConfigure };

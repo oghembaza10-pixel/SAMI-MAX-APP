@@ -16,6 +16,7 @@ const gmail = require("../services/gmail");
 const CONFIG = require("../config");
 const workspaceService = require("../services/workspaceService");
 const journalService = require("../services/journalService");
+const metiers = require("../services/metiers");
 
 function requireAgence(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -48,10 +49,6 @@ function generateWorkspaceId() {
     return `WS-${crypto.randomUUID()}`;
 }
 
-const METIERS_VALIDES = new Set([
-    "ecommerce", "restaurant", "immobilier", "livreur", "sante", "finance",
-    "education", "technologie", "agriculture", "industrie", "services", "tourisme",
-]);
 
 const PAYS_DEVISE = {
     DZ: { label: "Algérie",  devise: "DZD" },
@@ -65,26 +62,11 @@ const PAYS_DEVISE = {
     autre: { label: "Autre", devise: "" },
 };
 
-// Métiers qui fonctionnent en rendez-vous (médical, hôtellerie, immobilier,
-// services...) plutôt qu'en commandes : une agence gère souvent les deux
-// mondes en même temps — un resto, une clinique, un hôtel, une boutique en
-// ligne — et chaque fiche doit montrer le chiffre qui compte pour CE métier.
-const METIERS_RDV = new Set(["sante", "immobilier", "services", "tourisme", "education", "finance"]);
-
-const ICONE_METIER = {
-    ecommerce: "🛍️", restaurant: "🍽️", sante: "🩺", tourisme: "🏨",
-    immobilier: "🏘️", livreur: "🚚", finance: "💳", education: "🎓",
-    technologie: "💻", agriculture: "🌾", industrie: "🏭", services: "🧰",
-};
-
-// Les identifiants de métier sont sans accent en base (contrainte technique),
-// mais ce qui s'affiche à une agence doit être écrit correctement.
-const LABEL_METIER = {
-    ecommerce: "E-commerce", restaurant: "Restauration", sante: "Santé",
-    tourisme: "Hôtellerie & Tourisme", immobilier: "Immobilier", livreur: "Livraison",
-    finance: "Finance", education: "Éducation", technologie: "Technologie",
-    agriculture: "Agriculture", industrie: "Industrie", services: "Services",
-};
+// Une agence gère souvent des mondes différents en même temps — un resto,
+// une clinique, un hôtel, une boutique en ligne — et chaque fiche doit
+// montrer le chiffre qui compte pour CE métier : commandes du jour pour un
+// commerce, rendez-vous à venir pour un cabinet. Le parcours de chaque
+// métier est défini une seule fois dans services/metiers.js.
 
 // Une agence qui ne voit qu'une liste de noms doit entrer dans chaque espace
 // pour savoir si ça tourne. Ces agrégats lui donnent l'état réel de tout son
@@ -184,9 +166,9 @@ router.get("/", requireAgence, async (req, res) => {
         if (!g) {
             g = {
                 metier,
-                label: LABEL_METIER[metier] || (metier.charAt(0).toUpperCase() + metier.slice(1)),
-                icone: ICONE_METIER[metier] || "🏢",
-                estRdv: METIERS_RDV.has(metier),
+                label: metiers.label(metier),
+                icone: metiers.icone(metier),
+                estRdv: metiers.estRdv(metier),
                 clients: [], jour: 0, semaine: 0, attente: 0, rdvAVenir: 0,
             };
             groupes.push(g);
@@ -233,7 +215,7 @@ router.get("/", requireAgence, async (req, res) => {
         totalJour,
         totalAttente,
         enAlerte,
-        metiers: [...METIERS_VALIDES].map(m => ({ id: m, label: LABEL_METIER[m] || m })),
+        metiers: metiers.parGroupe(),
         pays: PAYS_DEVISE,
     });
 });
@@ -242,7 +224,7 @@ router.post("/creer-client", requireAgence, async (req, res) => {
     try {
         const { nom, metier, email, pays } = req.body;
         if (!nom || !nom.trim()) return res.json({ success: false, error: "Le nom de la boutique est obligatoire." });
-        if (!METIERS_VALIDES.has(metier)) return res.json({ success: false, error: "Métier invalide." });
+        if (!metiers.estValide(metier)) return res.json({ success: false, error: "Métier invalide." });
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.json({ success: false, error: "Email client invalide." });
         if (!PAYS_DEVISE[pays]) return res.json({ success: false, error: "Pays invalide." });
 

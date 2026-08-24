@@ -18,6 +18,7 @@ const connaissances = require("../services/connaissances");
 const geminiService = require("../services/geminiService");
 const connectorService = require("../services/connectorService");
 const google = require("../services/google");
+const metiers = require("../services/metiers");
 
 // Notes vocales du chat QG : jamais plus de ~2 minutes d'audio en usage
 // normal, 10 Mo est très large pour ça (webm/opus compresse énormément).
@@ -38,16 +39,14 @@ async function chargerPieceJointe(url) {
     }
 }
 
-const METIERS_RDV = [
-    "dentiste", "medecin", "avocat", "comptable", "coiffeur", "kine",
-    "veterinaire", "notaire", "courtier", "immobilier", "garage",
-    "lavage", "mecanicien", "esthetique", "tatoueur", "photographe",
-    "formateur", "architecte", "agence", "service",
-];
-
+// Les métiers "rendez-vous" sont définis une seule fois dans
+// services/metiers.js. Cette liste vivait ici en double et avait déjà
+// divergé (elle contenait des métiers absents de la liste d'inscription,
+// et inversement) : un QG pouvait afficher des commandes à un cabinet.
+// Les métiers libres saisis à l'onboarding restent traités en "produit",
+// comportement inchangé.
 function typeParcours(metier) {
-    const m = (metier || "").toLowerCase();
-    return METIERS_RDV.includes(m) ? "rdv" : "produit";
+    return metiers.estRdv(metier) ? "rdv" : "produit";
 }
 
 function requireAuth(req, res, next) {

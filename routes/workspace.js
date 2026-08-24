@@ -5,6 +5,7 @@ const express = require("express");
 const router = express.Router();
 const crypto = require("crypto");
 const workspaceService = require("../services/workspaceService");
+const metiers = require("../services/metiers");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -306,10 +307,6 @@ try {
 // mêmes règles, même workspaceService.create() que POST /create ci-dessus —
 // seule la façon de les recueillir change. Le formulaire classique reste
 // disponible (GET /create) en repli, rien n'est retiré.
-const METIERS_VALIDES = new Set([
-    "ecommerce", "restaurant", "immobilier", "livreur", "sante", "finance",
-    "education", "technologie", "agriculture", "industrie", "services", "tourisme",
-]);
 const PAYS_VALIDES = new Set(["DZ", "MA", "TN", "FR", "BE", "CA", "SN", "CI", "OTHER"]);
 
 router.post("/onboarding-chat", requireAuth, async (req, res) => {
@@ -352,7 +349,7 @@ router.post("/onboarding-chat", requireAuth, async (req, res) => {
         if (!nom) {
             return res.json({ success: true, reply: "Il me manque le nom de ton activité — comment tu veux l'appeler ?", redirect: null });
         }
-        if (metierFinal === "autre" || !METIERS_VALIDES.has(metierFinal)) {
+        if (metierFinal === "autre" || !metiers.estValide(metierFinal)) {
             const custom = (args.metierCustom || "").trim();
             metierFinal = custom ? custom.toLowerCase() : "autre";
         }

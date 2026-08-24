@@ -461,9 +461,15 @@
                     </div>
                     <div>
                         <label for="c-metier" data-i18n="agence.form.metier">Métier</label>
+                        <%# Métiers regroupés (Santé, Beauté, Restauration...) :
+                            une liste à plat de trente entrées est illisible. %>
                         <select id="c-metier" name="metier" required>
-                            <% metiers.forEach(m => { %>
-                            <option value="<%= m.id %>"><%= m.label %></option>
+                            <% metiers.forEach(groupe => { %>
+                            <optgroup label="<%= groupe.nom %>">
+                                <% groupe.metiers.forEach(m => { %>
+                                <option value="<%= m.id %>"><%= m.icone %> <%= m.label %></option>
+                                <% }) %>
+                            </optgroup>
                             <% }) %>
                         </select>
                     </div>
