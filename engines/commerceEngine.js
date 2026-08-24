@@ -617,6 +617,13 @@ class CommerceEngine {
 
             await journalService.log({ action: "rdv.created.telegram", details: `#${rdvId} — ${rdv.client_nom}`, workspaceId: rdv.workspace_id, refId: rdvId });
             socketService.emitToShop(rdv.workspace_id, "nouveau-rdv", { id: rdvId });
+            // Un rendez-vous pris par les boutons de créneau est un rendez-vous
+            // comme un autre : il doit sortir vers les partenaires au même titre
+            // que celui pris en conversation libre (createRdvFromChat).
+            apiPartenaire.emettre(rdv.workspace_id, "rendezvous.cree", {
+                id: rdvId, clientNom: rdv.client_nom, telephone: rdv.client_telephone,
+                motif: rdv.motif, dateRdv: rdv.date_rdv, source: "telegram",
+            });
             notify.notifyWorkspace(rdv.workspace_id, {
                 title: "📅 Nouveau rendez-vous",
                 body : `${rdv.client_nom} — ${rdv.motif}`,
