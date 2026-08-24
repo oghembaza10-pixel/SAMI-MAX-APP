@@ -5,6 +5,33 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // ── Mode clair / sombre — indépendant des univers visuels (data-theme).
+    // Le mode sombre reste la valeur par défaut inchangée ; seul un choix
+    // explicite de l'utilisateur (bouton ou préférence déjà enregistrée)
+    // active [data-mode="light"] sur <body>. ──
+    (function initModeLumiere() {
+        const btn = document.getElementById('btn-toggle-mode');
+        const modeActuel = localStorage.getItem('samii_mode') === 'light' ? 'light' : 'dark';
+        appliquerMode(modeActuel);
+
+        if (btn) {
+            btn.addEventListener('click', () => {
+                const prochain = document.body.getAttribute('data-mode') === 'light' ? 'dark' : 'light';
+                localStorage.setItem('samii_mode', prochain);
+                appliquerMode(prochain);
+            });
+        }
+
+        function appliquerMode(mode) {
+            if (mode === 'light') document.body.setAttribute('data-mode', 'light');
+            else document.body.removeAttribute('data-mode');
+            if (btn) {
+                btn.innerHTML = mode === 'light' ? '<i data-lucide="moon"></i>' : '<i data-lucide="sun"></i>';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        }
+    })();
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     // ==========================================================================
