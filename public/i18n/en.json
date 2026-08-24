@@ -710,7 +710,9 @@
       "clients": "clients",
       "metiers": "industries",
       "enAttente": "pending",
-      "rdvAVenir": "upcoming appts"
+      "rdvAVenir": "upcoming appts",
+      "client": "client",
+      "metier": "industry"
     }
   }
 }

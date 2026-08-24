@@ -417,7 +417,7 @@
         <header class="tc-bandeau">
             <div class="tc-bandeau__id">
                 <h1><%= nomAgence %></h1>
-                <p><%= clients.length %> <span data-i18n="agence.mot.clients">clients</span> · <%= groupes.length %> <span data-i18n="agence.mot.metiers">métiers</span></p>
+                <p><%= clients.length %> <span data-i18n="<%= clients.length > 1 ? 'agence.mot.clients' : 'agence.mot.client' %>"><%= clients.length > 1 ? "clients" : "client" %></span> · <%= groupes.length %> <span data-i18n="<%= groupes.length > 1 ? 'agence.mot.metiers' : 'agence.mot.metier' %>"><%= groupes.length > 1 ? "métiers" : "métier" %></span></p>
             </div>
 
             <div class="tc-vitaux">
@@ -507,7 +507,7 @@
                             <div class="tc-esc__icone"><%= g.icone %></div>
                             <div>
                                 <div class="tc-esc__nom"><%= g.label %></div>
-                                <div class="tc-esc__nb"><%= g.clients.length %> <span data-i18n="agence.mot.clients">clients</span></div>
+                                <div class="tc-esc__nb"><%= g.clients.length %> <span data-i18n="<%= g.clients.length > 1 ? 'agence.mot.clients' : 'agence.mot.client' %>"><%= g.clients.length > 1 ? "clients" : "client" %></span></div>
                             </div>
                         </div>
                         <div class="tc-esc__jauges">
@@ -527,7 +527,7 @@
 
                 <% groupes.forEach(g => { %>
                 <div class="tc-tiroir" id="tiroir-<%= g.metier %>">
-                    <div class="tc-titre"><span><%= g.icone %> <%= g.label %> — <%= g.clients.length %> <span data-i18n="agence.mot.clients">clients</span></span></div>
+                    <div class="tc-titre"><span><%= g.icone %> <%= g.label %> — <%= g.clients.length %> <span data-i18n="<%= g.clients.length > 1 ? 'agence.mot.clients' : 'agence.mot.client' %>"><%= g.clients.length > 1 ? "clients" : "client" %></span></span></div>
                     <div class="tc-table">
                         <div class="tc-ligne tc-ligne--entete">
                             <span></span>

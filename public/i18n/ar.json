@@ -710,7 +710,9 @@
       "clients": "عملاء",
       "metiers": "مجالات",
       "enAttente": "قيد الانتظار",
-      "rdvAVenir": "مواعيد قادمة"
+      "rdvAVenir": "مواعيد قادمة",
+      "client": "عميل",
+      "metier": "مجال"
     }
   }
 }

@@ -710,7 +710,9 @@
       "clients": "clients",
       "metiers": "métiers",
       "enAttente": "en attente",
-      "rdvAVenir": "RDV à venir"
+      "rdvAVenir": "RDV à venir",
+      "client": "client",
+      "metier": "métier"
     }
   }
 }

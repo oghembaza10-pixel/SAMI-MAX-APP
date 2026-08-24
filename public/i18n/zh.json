@@ -692,7 +692,9 @@
       "clients": "客户",
       "metiers": "行业",
       "enAttente": "待处理",
-      "rdvAVenir": "即将到来的预约"
+      "rdvAVenir": "即将到来的预约",
+      "client": "客户",
+      "metier": "行业"
     }
   }
 }
