@@ -5,9 +5,7 @@ const express = require("express");
 const axios   = require("axios");
 const router  = express.Router();
 const db             = require("../services/db");
-const journalService = require("../services/journalService");
-const socketService  = require("../services/socketService");
-const apiPartenaire  = require("../services/apiPartenaire");
+const evenements     = require("../services/evenements");
 
 const APP_URL = "https://samii.souverain-store.com";
 
@@ -74,12 +72,9 @@ router.post("/webhook/woocommerce", express.json(), async (req, res) => {
             [orderId, workspaceId, client, phone, address, produits, montant]
         );
 
-        await journalService.log({ action: "order.created.woocommerce", details: `#${order.number} — ${client}`, workspaceId });
-
-        socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
-        apiPartenaire.emettre(workspaceId, "commande.creee", {
+        evenements.publier(workspaceId, "commande.creee", {
             id: orderId, nomClient: client, telephone: phone, produit: produits, montant, source: "woocommerce",
-        });
+        }, { socketDonnees: { id: orderId } });
 
         console.log(`✅ Commande WooCommerce ${orderId} enregistrée sur workspace ${workspaceId}`);
 

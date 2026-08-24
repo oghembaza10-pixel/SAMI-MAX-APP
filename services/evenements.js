@@ -132,8 +132,15 @@ function publier(workspaceId, type, donnees = {}, options = {}) {
 
     if (regle.journal) {
         const ligne = regle.journal(donnees);
-        journalService.log({ ...ligne, workspaceId, refId: donnees.id ? String(donnees.id) : null })
-            .catch(err => console.error(`❌ bus[${type}] journal :`, err.message));
+        journalService.log({
+            ...ligne,
+            workspaceId,
+            refId: donnees.id ? String(donnees.id) : null,
+            // Le journal sait porter un montant : c'est ce qui alimente le
+            // chiffre d'affaires du QG. On le transmet quand l'événement en a
+            // un, pour ne rien perdre de ce que faisaient les appels directs.
+            montant: typeof donnees.montant === "number" ? donnees.montant : null,
+        }).catch(err => console.error(`❌ bus[${type}] journal :`, err.message));
     }
 
     if (regle.partenaire) {

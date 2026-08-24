@@ -21,6 +21,7 @@ const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const router = express.Router();
 const db = require("../services/db");
 const apiPartenaire = require("../services/apiPartenaire");
+const evenements = require("../services/evenements");
 const metiers = require("../services/metiers");
 
 // Limite par clé plutôt que par IP : plusieurs partenaires peuvent sortir
@@ -216,12 +217,13 @@ router.post("/commandes", exigerEspace, async (req, res) => {
             ],
         );
 
-        // Une commande créée par l'API déclenche les mêmes webhooks qu'une
-        // commande venue de WhatsApp : pour un partenaire, la provenance ne
-        // doit rien changer au comportement.
-        apiPartenaire.emettre(req.workspaceId, "commande.creee", {
-            id, nomClient, telephone, produit, montant: parseFloat(montant) || 0,
-        });
+        // Une commande créée par l'API passe par le même bus qu'une commande
+        // venue de WhatsApp : pour un partenaire, la provenance ne doit rien
+        // changer au comportement.
+        evenements.publier(req.workspaceId, "commande.creee", {
+            id, nomClient, telephone, produit,
+            montant: parseFloat(montant) || 0, source: "api",
+        }, { socketDonnees: { id } });
 
         res.status(201).json({ commande: { id, statut: "en attente" } });
     } catch (err) {
@@ -268,7 +270,9 @@ router.post("/rendez-vous", exigerEspace, async (req, res) => {
             ],
         );
         const id = rows[0].id;
-        apiPartenaire.emettre(req.workspaceId, "rendezvous.cree", { id, clientNom, telephone, motif, dateRdv });
+        evenements.publier(req.workspaceId, "rendezvous.cree",
+            { id, clientNom, telephone, motif, dateRdv, source: "api" },
+            { socketDonnees: { id } });
         res.status(201).json({ rendezVous: { id, statut: "en_attente" } });
     } catch (err) {
         console.error("❌ API v1 POST /rendez-vous :", err.message);

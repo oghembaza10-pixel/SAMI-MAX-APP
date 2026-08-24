@@ -7,8 +7,7 @@ const express      = require("express");
 const orchestrator = require("../brain/orchestrator");
 const planner       = require("../brain/planner");
 const memory        = require("../brain/memory");
-const socketService = require("../services/socketService");
-const apiPartenaire = require("../services/apiPartenaire");
+const evenements = require("../services/evenements");
 const whatsapp       = require("../services/whatsapp");
 const db            = require("../services/db");
 const journalService = require("../services/journalService");
@@ -45,13 +44,11 @@ async function traiterReponseConfirmation(sender, workspaceId, text) {
     if (REPONSES_OUI.includes(normalise)) {
         await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [orderId]);
         confirmationsQuota.enregistrerSiDepassement(workspaceId).catch(() => {});
-        socketService.emitToShop(workspaceId, "commande-confirmee", { id: orderId });
-        apiPartenaire.emettre(workspaceId, "commande.confirmee", { id: orderId, source: "whatsapp" });
+        evenements.publier(workspaceId, "commande.confirmee", { id: orderId, source: "whatsapp" });
         await reply(sender, workspaceId, `✅ Commande ${orderId} confirmée ! Merci 🙏`);
     } else {
         await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [orderId]);
-        socketService.emitToShop(workspaceId, "commande-annulee", { id: orderId });
-        apiPartenaire.emettre(workspaceId, "commande.annulee", { id: orderId, source: "whatsapp" });
+        evenements.publier(workspaceId, "commande.annulee", { id: orderId, source: "whatsapp" });
         await reply(sender, workspaceId, `❌ Commande ${orderId} annulée.`);
     }
     return true;
@@ -140,7 +137,7 @@ router.post("/", async (req, res) => {
 
         console.log(`💬 WhatsApp [${senderName}] (workspace ${workspaceId}) : ${text}`);
 
-        await journalService.log({ action: "whatsapp.message", details: `${senderName}: ${text}`, workspaceId });
+
 
         try {
             await orchestrator.process({
@@ -153,8 +150,9 @@ router.post("/", async (req, res) => {
             await journalService.log({ action: "error.whatsapp.message", details: procErr.message, workspaceId });
         }
 
-        socketService.emitToShop(workspaceId, "whatsapp.message", { senderName, message: text });
-        apiPartenaire.emettre(workspaceId, "message.recu", { canal: "whatsapp", expediteur: sender, nom: senderName, message: text });
+        evenements.publier(workspaceId, "message.recu",
+            { canal: "whatsapp", expediteur: sender, nom: senderName, message: text },
+            { socketDonnees: { senderName, message: text } });
 
         // Réponse directe à une demande de confirmation de commande en cours —
         // traitée avant le raisonnement Gemini général (action sensible, pas

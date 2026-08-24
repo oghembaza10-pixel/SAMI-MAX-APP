@@ -9,11 +9,10 @@ const shopifyBoutiqueService = require("../services/shopifyBoutiqueService");
 const notificationEngine = require("../engines/notificationEngine");
 const automationEngine   = require("../engines/automationEngine");
 const db = require("../services/db");
-const notify = require("../services/notify");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const geminiService = require("../services/geminiService");
 const journalService = require("../services/journalService");
-const apiPartenaire = require("../services/apiPartenaire");
+const evenements = require("../services/evenements");
 // require() tardif de services/shopify.js et routes/auth-shopify.js (dans
 // abandonedCheckout ci-dessous) : services/shopify.js requiert lui-même
 // brain/orchestrator, qui requiert ce fichier — même cycle que pour
@@ -104,7 +103,7 @@ class CommerceEngine {
             );
 
             await automationEngine.run("order.created", { shop, payload: order });
-            apiPartenaire.emettre(workspaceId, "commande.creee", {
+            evenements.publier(workspaceId, "commande.creee", {
                 id: orderId, nomClient: client, telephone: phone,
                 produit: order.line_items?.map(i => i.title).join(", ") || "",
                 montant: montantCommande, source: "shopify",
@@ -415,17 +414,10 @@ class CommerceEngine {
                  VALUES ($1, $2, $3, $4, $5, $6, 'en attente', $7, $8, $9)`,
                 [orderId, workspaceId, name || "Client", args.telephone || "", args.adresse || "", args.produit || "", source || "chat", montant, chatId ? String(chatId) : null]
             );
-            await journalService.log({ action: `order.created.${source || "chat"}`, details: `#${orderId} — ${name || "Client"}`, workspaceId, montant, refId: orderId });
-            socketService.emitToShop(workspaceId, "nouvelle-commande", { id: orderId });
-            apiPartenaire.emettre(workspaceId, "commande.creee", {
+            evenements.publier(workspaceId, "commande.creee", {
                 id: orderId, nomClient: name || "Client", telephone: args.telephone || "",
                 produit: args.produit || "", montant, source: source || "chat",
-            });
-            notify.notifyWorkspace(workspaceId, {
-                title: "🛒 Nouvelle commande",
-                body : `${name || "Client"} — ${args.produit}`,
-                url  : "/qg",
-            });
+            }, { socketDonnees: { id: orderId } });
 
             // Le client final confirme directement lui-même (IA, sans agent humain) —
             // le marchand n'a donc plus qu'à regarder la commande une fois validée
@@ -469,17 +461,10 @@ class CommerceEngine {
                 [workspaceId, name || "Client", args.telephone || "", motif, dateParsee, source || "chat"]
             );
             const rdvId = `RDV-${rows[0].id}`;
-            await journalService.log({ action: `rdv.created.${source || "chat"}`, details: `#${rdvId} — ${name || "Client"}`, workspaceId, refId: rdvId });
-            socketService.emitToShop(workspaceId, "nouveau-rdv", { id: rdvId });
-            apiPartenaire.emettre(workspaceId, "rendezvous.cree", {
+            evenements.publier(workspaceId, "rendezvous.cree", {
                 id: rdvId, clientNom: name || "Client", telephone: args.telephone || "",
                 motif, dateRdv: dateParsee ? dateParsee.toISOString() : null, source: source || "chat",
-            });
-            notify.notifyWorkspace(workspaceId, {
-                title: "📅 Nouveau rendez-vous",
-                body : `${name || "Client"} — ${args.motif}`,
-                url  : "/qg",
-            });
+            }, { socketDonnees: { id: rdvId } });
 
             // Best-effort : si le marchand a connecté Google, le RDV apparaît
             // aussi dans son vrai agenda — silencieux et sans impact si non
@@ -615,20 +600,12 @@ class CommerceEngine {
             if (!rdv) return null;
             const rdvId = `RDV-${rdv.id}`;
 
-            await journalService.log({ action: "rdv.created.telegram", details: `#${rdvId} — ${rdv.client_nom}`, workspaceId: rdv.workspace_id, refId: rdvId });
-            socketService.emitToShop(rdv.workspace_id, "nouveau-rdv", { id: rdvId });
             // Un rendez-vous pris par les boutons de créneau est un rendez-vous
-            // comme un autre : il doit sortir vers les partenaires au même titre
-            // que celui pris en conversation libre (createRdvFromChat).
-            apiPartenaire.emettre(rdv.workspace_id, "rendezvous.cree", {
+            // comme un autre : même événement que celui pris en conversation libre.
+            evenements.publier(rdv.workspace_id, "rendezvous.cree", {
                 id: rdvId, clientNom: rdv.client_nom, telephone: rdv.client_telephone,
                 motif: rdv.motif, dateRdv: rdv.date_rdv, source: "telegram",
-            });
-            notify.notifyWorkspace(rdv.workspace_id, {
-                title: "📅 Nouveau rendez-vous",
-                body : `${rdv.client_nom} — ${rdv.motif}`,
-                url  : "/qg",
-            });
+            }, { socketDonnees: { id: rdvId } });
             await require("../services/telegramService").notifyAdmin(
                 rdv.workspace_id,
                 `📅 *Nouveau rendez-vous !*\n\n🆔 *Numéro :* \`${rdvId}\`\n👤 *Client :* ${rdv.client_nom}\n📞 *Tél :* ${rdv.client_telephone}\n📝 *Motif :* ${rdv.motif}\n🗓️ *Date :* ${new Date(rdv.date_rdv).toLocaleString("fr-FR")}`,
