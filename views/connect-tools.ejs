@@ -211,7 +211,11 @@
                                         data-url="/connect/<%= tool.id %>">
                                     Continuer avec <%= tool.label %> →
                                 </button>
-                                <button type="button" class="tool-guide-toggle" data-guide="meta" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
+                                <%# Google partage ce bloc OAuth avec Facebook/Instagram, mais
+                                    pas le même guide : la carte Google affichait les étapes
+                                    Facebook ("Continuer avec Facebook/Instagram"), ce qui
+                                    n'aide en rien quelqu'un qui veut connecter Gmail. %>
+                                <button type="button" class="tool-guide-toggle" data-guide="<%= tool.id === 'google' ? 'google' : 'meta' %>" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
 
                         <% } else if (tool.id === 'telegram') { %>
@@ -296,7 +300,12 @@
                                 <a href="/connect/<%= tool.id %>" class="connect-btn connect-btn--primary" style="display:block;text-align:center;text-decoration:none;">
                                     Connecter <%= tool.label %> →
                                 </a>
-                                <button type="button" class="tool-guide-toggle" data-guide="transporteur" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
+                                <%# WhatsApp partage le mode "transporteur" (même formulaire clé API)
+                                    mais a son propre guide détaillé Green API, qui restait
+                                    inaccessible : le marchand tombait sur le guide générique
+                                    transporteur au lieu des vraies étapes (créer l'instance,
+                                    scanner le QR code, copier idInstance + apiToken). %>
+                                <button type="button" class="tool-guide-toggle" data-guide="<%= tool.id === 'whatsapp' ? 'whatsapp' : 'transporteur' %>" data-i18n="connectTools.guideBtn">📖 Comment se connecter ?</button>
                             <% } %>
 
                         <% } else if (tool.mode === 'impression') { %>
@@ -375,6 +384,16 @@
             { title: "Connecte-toi et autorise SAMII", desc: "Choisis la page ou le compte à connecter, puis accepte les permissions demandées." },
             { title: "C'est fait", desc: "Tu reviens automatiquement sur cette page — ta carte affiche désormais « Connecté »." },
           ] },
+
+        { id: "google", icon: "🔷", label: "Google (Gmail, Agenda, Drive, YouTube)",
+          steps: [
+            { title: "Clique sur « Connecter Google »", desc: "Tu es redirigé vers l'écran de connexion Google officiel." },
+            { title: "Choisis ton compte", desc: "Sélectionne le compte Google qui gère ta boîte mail, ton agenda et ta chaîne — c'est celui-là que SAMII utilisera." },
+            { title: "Coche toutes les cases", desc: "Google affiche la liste des accès demandés. Si tu en décoches un, la fonction correspondante ne marchera pas (par exemple : sans l'accès YouTube, SAMII ne pourra pas lire tes commentaires)." },
+            { title: "Écran « Google n'a pas validé cette application »", desc: "C'est normal tant que la vérification Google est en cours. Clique sur « Paramètres avancés », puis sur « Accéder à SAMII (non sécurisé) » — l'application est bien la nôtre." },
+            { title: "C'est fait", desc: "Tu reviens sur cette page. Tes emails, rendez-vous et statistiques YouTube apparaissent dans ton QG." },
+          ],
+          warn: "SAMII lit uniquement l'expéditeur, l'objet et la date de tes emails — jamais leur contenu. Rien de ce que contient ta boîte mail n'est envoyé à une IA." },
 
         { id: "woocommerce", icon: "🛒",
           steps: [

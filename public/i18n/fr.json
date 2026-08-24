@@ -509,6 +509,31 @@
           "title": "En attendant",
           "desc": "Tu peux continuer à l'utiliser normalement, rien ne change de ton côté."
         }
+      },
+      "google": {
+        "title": "🔷 Google (Gmail, Agenda, Drive, YouTube) — comment se connecter",
+        "subtitle": "Suis ces étapes pour connecter cet outil à SAMII.",
+        "step1": {
+          "title": "Clique sur « Connecter Google »",
+          "desc": "Tu es redirigé vers l'écran de connexion Google officiel."
+        },
+        "step2": {
+          "title": "Choisis ton compte",
+          "desc": "Sélectionne le compte Google qui gère ta boîte mail, ton agenda et ta chaîne — c'est celui-là que SAMII utilisera."
+        },
+        "step3": {
+          "title": "Coche toutes les cases",
+          "desc": "Google affiche la liste des accès demandés. Si tu en décoches un, la fonction correspondante ne marchera pas (par exemple : sans l'accès YouTube, SAMII ne pourra pas lire tes commentaires)."
+        },
+        "step4": {
+          "title": "Écran « Google n'a pas validé cette application »",
+          "desc": "C'est normal tant que la vérification Google est en cours. Clique sur « Paramètres avancés », puis sur « Accéder à SAMII (non sécurisé) » — l'application est bien la nôtre."
+        },
+        "step5": {
+          "title": "C'est fait",
+          "desc": "Tu reviens sur cette page. Tes emails, rendez-vous et statistiques YouTube apparaissent dans ton QG."
+        },
+        "warn": "SAMII lit uniquement l'expéditeur, l'objet et la date de tes emails — jamais leur contenu. Rien de ce que contient ta boîte mail n'est envoyé à une IA."
       }
     }
   },

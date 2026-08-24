@@ -509,6 +509,31 @@
           "title": "In the meantime",
           "desc": "You can keep using it normally — nothing changes on your end."
         }
+      },
+      "google": {
+        "title": "🔷 Google (Gmail, Calendar, Drive, YouTube) — how to connect",
+        "subtitle": "Follow these steps to connect this tool to SAMII.",
+        "step1": {
+          "title": "Click « Connect Google »",
+          "desc": "You are redirected to the official Google sign-in screen."
+        },
+        "step2": {
+          "title": "Pick your account",
+          "desc": "Select the Google account that runs your inbox, calendar and channel — that is the one SAMII will use."
+        },
+        "step3": {
+          "title": "Tick every box",
+          "desc": "Google lists the requested permissions. If you untick one, the matching feature won't work (for example: without YouTube access, SAMII cannot read your comments)."
+        },
+        "step4": {
+          "title": "« Google hasn't verified this app » screen",
+          "desc": "This is expected while Google verification is in progress. Click « Advanced », then « Go to SAMII (unsafe) » — the app is genuinely ours."
+        },
+        "step5": {
+          "title": "Done",
+          "desc": "You come back to this page. Your emails, appointments and YouTube stats now show in your HQ."
+        },
+        "warn": "SAMII only reads the sender, subject and date of your emails — never their content. Nothing inside your inbox is ever sent to an AI."
       }
     }
   },

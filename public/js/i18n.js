@@ -4,8 +4,15 @@
 
 const Language = (function () {
     const SUPPORTED = ["fr", "en", "ar", "zh"];
-    const DEFAULT_LANG = "en";
-    const STORAGE_KEY = "og_lang";
+    const DEFAULT_LANG = "fr";
+    // Même clé que le reste de l'app (page d'accueil, QG, hub, espace client,
+    // qui lisent tous localStorage "samii_lang"). Avant, ce module stockait la
+    // langue sous "og_lang" : la langue choisie ailleurs n'était jamais reprise
+    // ici, et ces pages s'affichaient en anglais alors que tout le reste était
+    // en français. "og_lang" reste lu en secours pour ne pas perdre le choix
+    // des utilisateurs déjà passés par ces pages.
+    const STORAGE_KEY = "samii_lang";
+    const STORAGE_KEY_LEGACY = "og_lang";
 
     let currentLang = DEFAULT_LANG;
     let dict = {};
@@ -14,6 +21,8 @@ const Language = (function () {
     function detectLang() {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored && SUPPORTED.includes(stored)) return stored;
+        const ancien = localStorage.getItem(STORAGE_KEY_LEGACY);
+        if (ancien && SUPPORTED.includes(ancien)) return ancien;
         const navLang = (navigator.language || navigator.userLanguage || "").slice(0, 2).toLowerCase();
         if (SUPPORTED.includes(navLang)) return navLang;
         return DEFAULT_LANG;
