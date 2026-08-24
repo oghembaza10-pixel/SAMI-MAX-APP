@@ -23,6 +23,19 @@ document.addEventListener('DOMContentLoaded', () => {
             appliquerMode(prochain);
         });
 
+        // Calendrier RDV replié par défaut (prend moins de place) — se
+        // déploie au clic sur le titre, même logique que le clic sur un
+        // jour pour voir l'agenda.
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#rdv-calendar-title')) return;
+            const holder = document.getElementById('rdv-calendar');
+            const chevron = document.getElementById('rdv-calendar-chevron');
+            if (!holder) return;
+            const ouvert = holder.style.display !== 'none';
+            holder.style.display = ouvert ? 'none' : '';
+            if (chevron) chevron.style.transform = ouvert ? '' : 'rotate(180deg)';
+        });
+
         function appliquerMode(mode) {
             if (mode === 'light') document.body.setAttribute('data-mode', 'light');
             else document.body.removeAttribute('data-mode');

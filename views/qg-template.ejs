@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/qg-style.css?v=6">
+    <link rel="stylesheet" href="/css/qg-style.css?v=7">
 </head>
 <body data-shop="<%= shop %>" data-workspace-id="<%= workspaceId %>" data-user-id="<%= userId %>" data-theme="<%= typeof themeVisuel !== 'undefined' ? themeVisuel : 'og' %>">
 <% if (typeof vueAgence !== 'undefined' && vueAgence) { %>
@@ -258,12 +258,13 @@
                 <li style="padding:12px;color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</li>
             </ul>
         </section>
-        <div class="qg-section-title" id="rdv-calendar-title" style="display:none;">
+        <div class="qg-section-title qg-section-title--toggle" id="rdv-calendar-title" style="display:none;">
             <i data-lucide="calendar"></i>
             <span data-i18n="qg.section.calendar">Calendrier des rendez-vous</span>
+            <i data-lucide="chevron-down" class="qg-section-title__chevron" id="rdv-calendar-chevron"></i>
         </div>
         <section class="qg-table-section" id="rdv-calendar-section" style="display:none;">
-            <div id="rdv-calendar"></div>
+            <div id="rdv-calendar" style="display:none;"></div>
         </section>
         <div class="qg-section-title" id="gmail-title" style="display:none;">
             <i data-lucide="mail"></i>
@@ -631,7 +632,7 @@
 
     applyLang(currentLang);
 </script>
-<script src="/js/qg.js?v=2"></script>
+<script src="/js/qg.js?v=3"></script>
 <script>
 document.getElementById("feedback-submit")?.addEventListener("click", async () => {
     const text = document.getElementById("feedback-text").value.trim();

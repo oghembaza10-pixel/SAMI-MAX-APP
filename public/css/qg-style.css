@@ -293,6 +293,8 @@ body {
     color: var(--text-muted); margin: 30px 36px 16px;
 }
 .qg-section-title i { width: 14px; height: 14px; color: var(--cyan-tech); }
+.qg-section-title--toggle { cursor: pointer; user-select: none; }
+.qg-section-title__chevron { margin-left: auto; transition: transform .25s var(--ease); }
 
 .qg-dashboard {
     display: grid;
