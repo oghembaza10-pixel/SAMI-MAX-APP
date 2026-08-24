@@ -68,10 +68,17 @@ async function genererPost(reseau) {
 // dans connecteurs — tolérant aux deux formats rencontrés (ancienne
 // connexion incomplète "pages: [...]" + "accessToken", ou format actuel
 // "pageId" + "pageAccessToken" produit par le flux OAuth /auth/meta).
+// Publier sur une Page exige un TOKEN DE PAGE. Retomber sur le token
+// utilisateur (config.accessToken) ne marche pas et produit une erreur
+// Graph "(#200) ... requires both pages_read_engagement and
+// pages_manage_posts" qui fait croire à un problème de permissions alors
+// que c'est simplement le mauvais type de token. On distingue donc les deux
+// cas pour que le log dise quoi faire.
 function resolveFacebookCreds(config = {}) {
     return {
         pageId: config.pageId || config.pages?.[0]?.id || "",
-        accessToken: config.pageAccessToken || config.accessToken || "",
+        accessToken: config.pageAccessToken || "",
+        tokenUtilisateurSeul: !config.pageAccessToken && Boolean(config.accessToken),
     };
 }
 
@@ -88,12 +95,25 @@ async function publierFacebook(texte) {
         const connecteur = await connectorService.getOne(CONFIG.META.OG_WORKSPACE_ID, "facebook");
         const creds = resolveFacebookCreds(connecteur?.config);
         if (!creds.pageId || !creds.accessToken) {
-            return { success: false, error: "Page Facebook non connectée (pageId ou token manquant) — reconnecte Meta depuis le QG." };
+            return {
+                success: false,
+                error: creds.tokenUtilisateurSeul
+                    ? "Connexion Meta périmée : un token utilisateur est enregistré, pas un token de Page. Reconnecte Meta depuis /connect/tools pour régénérer le token de Page."
+                    : "Page Facebook non connectée (pageId ou token manquant) — reconnecte Meta depuis /connect/tools.",
+            };
         }
         await meta.publishPagePost(creds, { message: texte });
         return { success: true };
     } catch (err) {
-        console.error("❌ Page Engine (Facebook) :", err.response?.data || err.message);
+        const graph = err.response?.data?.error;
+        if (graph?.code === 200) {
+            // Le token de Page existe mais n'embarque pas les permissions
+            // d'écriture : il a été généré avant que pages_manage_posts /
+            // pages_read_engagement soient demandés dans les SCOPES.
+            console.error("❌ Page Engine (Facebook) : token de Page sans droit de publication — reconnecte Meta depuis /connect/tools pour régénérer le token avec pages_manage_posts + pages_read_engagement.");
+            return { success: false, error: "Token de Page sans droit de publication — reconnecte Meta depuis /connect/tools." };
+        }
+        console.error("❌ Page Engine (Facebook) :", graph?.message || err.message);
         return { success: false, error: err.response?.data?.error?.message || err.message };
     }
 }
