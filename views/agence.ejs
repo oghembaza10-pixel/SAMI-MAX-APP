@@ -83,6 +83,37 @@
         .tc-rail__promo strong { display: block; font-size: .78rem; color: var(--text-main); }
         .tc-rail__promo span { display: block; font-size: .68rem; color: var(--text-muted); margin-top: 3px; line-height: 1.45; }
 
+        .tc-langues { display: flex; gap: 4px; padding: 4px 2px 10px; }
+        .tc-langues span {
+            flex: 1; text-align: center; padding: 5px 0; cursor: pointer;
+            border-radius: 7px; border: var(--border-soft);
+            font-family: var(--font-mono); font-size: .62rem; color: var(--text-muted);
+            transition: color .2s var(--ease), border-color .2s var(--ease);
+        }
+        .tc-langues span:hover,
+        .tc-langues span.active { color: var(--gold-og); border-color: var(--gold-og); }
+
+        /* ── SAMII : bulle flottante, comme dans le QG marchand ───────── */
+        .tc-orbe {
+            position: fixed; right: 22px; bottom: 22px; z-index: 50;
+            width: 54px; height: 54px; border-radius: 50%;
+            display: grid; place-items: center; text-decoration: none;
+            background: linear-gradient(135deg, var(--gold-og), var(--gold-hover));
+            color: #07090e; box-shadow: 0 8px 26px rgba(0,0,0,.4);
+            transition: transform .24s var(--ease);
+        }
+        .tc-orbe:hover { transform: scale(1.07); }
+        .tc-orbe i { width: 23px; height: 23px; }
+        .tc-orbe__halo {
+            position: absolute; inset: -4px; border-radius: 50%;
+            border: 1px solid var(--gold-og);
+            animation: tc-pulse 2.6s ease-out infinite;
+        }
+        @keyframes tc-pulse {
+            0%   { transform: scale(1);   opacity: .6; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
         /* ── BANDEAU DE COMMANDE ─────────────────────────────────────── */
         .tc-corps { flex: 1; min-width: 0; }
 
@@ -127,6 +158,11 @@
             background: transparent; border: var(--border-soft); color: var(--text-muted);
         }
         .tc-icone:hover { color: var(--gold-og); border-color: var(--gold-og); }
+        .tc-icone i, .tc-icone svg { width: 16px; height: 16px; }
+        /* En sombre on propose de passer en clair (soleil), et inversement. */
+        .tc-ico-clair { display: none; }
+        body[data-mode="light"] .tc-ico-sombre { display: none; }
+        body[data-mode="light"] .tc-ico-clair { display: block; }
 
         .tc-btn {
             padding: 9px 17px; border-radius: 10px; cursor: pointer;
@@ -350,22 +386,29 @@
             <span class="tc-rail__role">Tour de contrôle — Agence</span>
         </div>
 
-        <div class="tc-rail__section">Pilotage</div>
-        <a href="/agence" class="tc-rail__lien actif"><i data-lucide="radar"></i><span>Ma flotte</span></a>
-        <a href="/parrainage" class="tc-rail__lien"><i data-lucide="handshake"></i><span>Parrainage</span></a>
-        <a href="/settings" class="tc-rail__lien"><i data-lucide="settings"></i><span>Paramètres</span></a>
+        <div class="tc-rail__section" data-i18n="agence.nav.pilotage">Pilotage</div>
+        <a href="/agence" class="tc-rail__lien actif"><i data-lucide="radar"></i><span data-i18n="agence.nav.flotte">Ma flotte</span></a>
+        <a href="/samii" class="tc-rail__lien"><i data-lucide="bot"></i><span data-i18n="agence.nav.samii">SAMII</span><span class="qg-status-dot qg-status-dot--on"></span></a>
+        <a href="/parrainage" class="tc-rail__lien"><i data-lucide="handshake"></i><span data-i18n="agence.nav.parrainage">Parrainage</span></a>
+        <a href="/settings" class="tc-rail__lien"><i data-lucide="settings"></i><span data-i18n="agence.nav.parametres">Paramètres</span></a>
 
-        <div class="tc-rail__section">Ressources OG</div>
+        <div class="tc-rail__section" data-i18n="agence.nav.ressources">Ressources OG</div>
         <a href="/marketplace" class="tc-rail__lien"><i data-lucide="store"></i><span>Marketplace</span></a>
         <a href="/academy" class="tc-rail__lien"><i data-lucide="graduation-cap"></i><span>Academy</span></a>
         <a href="/community" class="tc-rail__lien"><i data-lucide="users"></i><span>Community</span></a>
 
         <div class="tc-rail__vitrine">
             <a href="/marketplace" class="tc-rail__promo">
-                <strong>🛍️ Marketplace</strong>
-                <span>Sourcez des produits pour vos clients e-commerce, sans stock.</span>
+                <strong>🛍️ <span data-i18n="agence.promo.titre">Marketplace</span></strong>
+                <span data-i18n="agence.promo.texte">Sourcez des produits pour vos clients e-commerce, sans stock.</span>
             </a>
-            <a href="/logout" class="tc-rail__lien" style="color:#e5533d;"><i data-lucide="log-out"></i><span>Déconnexion</span></a>
+            <div class="tc-langues">
+                <span data-lang-btn="fr">FR</span>
+                <span data-lang-btn="en">EN</span>
+                <span data-lang-btn="ar">AR</span>
+                <span data-lang-btn="zh">ZH</span>
+            </div>
+            <a href="/logout" class="tc-rail__lien" style="color:#e5533d;"><i data-lucide="log-out"></i><span data-i18n="agence.nav.deconnexion">Déconnexion</span></a>
         </div>
     </aside>
 
@@ -374,21 +417,21 @@
         <header class="tc-bandeau">
             <div class="tc-bandeau__id">
                 <h1><%= nomAgence %></h1>
-                <p><%= clients.length %> client<%= clients.length > 1 ? "s" : "" %> · <%= groupes.length %> métier<%= groupes.length > 1 ? "s" : "" %></p>
+                <p><%= clients.length %> <span data-i18n="agence.mot.clients">clients</span> · <%= groupes.length %> <span data-i18n="agence.mot.metiers">métiers</span></p>
             </div>
 
             <div class="tc-vitaux">
                 <div class="tc-vital tc-vital--vif">
                     <strong><%= totalJour %></strong>
-                    <span>Aujourd'hui</span>
+                    <span data-i18n="agence.vital.jour">Aujourd'hui</span>
                 </div>
                 <div class="tc-vital <%= totalAttente > 0 ? 'tc-vital--attente' : '' %>">
                     <strong><%= totalAttente %></strong>
-                    <span>À traiter</span>
+                    <span data-i18n="agence.vital.attente">À traiter</span>
                 </div>
                 <div class="tc-vital <%= enAlerte > 0 ? 'tc-vital--alerte' : '' %>">
                     <strong><%= enAlerte %></strong>
-                    <span>Attention</span>
+                    <span data-i18n="agence.vital.alerte">Attention</span>
                 </div>
             </div>
 
@@ -396,10 +439,15 @@
                 <button type="button" class="tc-icone tc-burger" id="tc-burger" aria-label="Menu">
                     <i data-lucide="menu"></i>
                 </button>
-                <button type="button" class="tc-icone" id="btn-toggle-mode" title="Mode clair / sombre">
-                    <i data-lucide="sun"></i>
+                <%# Les deux icônes sont présentes dès le rendu et basculées en
+                    CSS : réinjecter un <i data-lucide> après coup ne le
+                    convertit pas en SVG (lucide ne rescanne pas), le bouton
+                    restait vide. %>
+                <button type="button" class="tc-icone" id="btn-toggle-mode" title="Mode clair / sombre" data-i18n-title="agence.btn.mode">
+                    <i data-lucide="sun" class="tc-ico-sombre"></i>
+                    <i data-lucide="moon" class="tc-ico-clair"></i>
                 </button>
-                <button type="button" class="tc-btn" id="btn-ouvrir-form">+ Client</button>
+                <button type="button" class="tc-btn" id="btn-ouvrir-form" data-i18n="agence.btn.client">+ Client</button>
             </div>
         </header>
 
@@ -408,11 +456,11 @@
             <div class="tc-ajout" id="panneau-ajout">
                 <form class="tc-form" id="form-client">
                     <div>
-                        <label for="c-nom">Nom de la boutique</label>
+                        <label for="c-nom" data-i18n="agence.form.nom">Nom de la boutique</label>
                         <input id="c-nom" name="nom" required placeholder="Boutique de Karim">
                     </div>
                     <div>
-                        <label for="c-metier">Métier</label>
+                        <label for="c-metier" data-i18n="agence.form.metier">Métier</label>
                         <select id="c-metier" name="metier" required>
                             <% metiers.forEach(m => { %>
                             <option value="<%= m.id %>"><%= m.label %></option>
@@ -420,11 +468,11 @@
                         </select>
                     </div>
                     <div>
-                        <label for="c-email">Email du client</label>
+                        <label for="c-email" data-i18n="agence.form.email">Email du client</label>
                         <input id="c-email" name="email" type="email" required placeholder="client@exemple.com">
                     </div>
                     <div>
-                        <label for="c-pays">Pays</label>
+                        <label for="c-pays" data-i18n="agence.form.pays">Pays</label>
                         <select id="c-pays" name="pays" required>
                             <% Object.entries(pays).forEach(([code, p]) => { %>
                             <option value="<%= code %>"><%= p.label %></option>
@@ -432,7 +480,7 @@
                         </select>
                     </div>
                     <div class="tc-form__pied">
-                        <button type="submit" class="tc-btn" id="btn-creer">Ouvrir l'espace client</button>
+                        <button type="submit" class="tc-btn" id="btn-creer" data-i18n="agence.form.creer">Ouvrir l'espace client</button>
                         <span class="tc-msg" id="msg-client"></span>
                     </div>
                 </form>
@@ -440,7 +488,7 @@
 
             <div class="tc-note">
                 <i data-lucide="shield-check"></i>
-                <p><b>Vous pilotez, vos clients gardent la main.</b> Chaque client est prévenu par email à l'ouverture de son espace et y accède directement avec son propre compte — vous conservez la vue et le contrôle sur l'ensemble de la flotte.</p>
+                <p data-i18n="agence.note"><b>Vous pilotez, vos clients gardent la main.</b> Chaque client est prévenu par email à l'ouverture de son espace et y accède directement avec son propre compte — vous conservez la vue et le contrôle sur l'ensemble de la flotte.</p>
             </div>
 
             <% if (!clients.length) { %>
@@ -450,26 +498,26 @@
                 </div>
             <% } else { %>
 
-                <div class="tc-titre"><span>Escadrilles</span></div>
+                <div class="tc-titre"><span data-i18n="agence.section.escadrilles">Escadrilles</span></div>
                 <div class="tc-flotte">
                     <% groupes.forEach(g => { %>
                     <article class="tc-esc <%= g.attente > 0 ? 'tc-esc--attente' : (g.jour === 0 && g.semaine === 0 ? 'tc-esc--dormant' : '') %>" data-metier="<%= g.metier %>">
-                        <% if (g.attente > 0) { %><span class="tc-esc__flag"><%= g.attente %> en attente</span><% } %>
+                        <% if (g.attente > 0) { %><span class="tc-esc__flag"><%= g.attente %> <span data-i18n="agence.mot.enAttente">en attente</span></span><% } %>
                         <div class="tc-esc__tete">
                             <div class="tc-esc__icone"><%= g.icone %></div>
                             <div>
                                 <div class="tc-esc__nom"><%= g.label %></div>
-                                <div class="tc-esc__nb"><%= g.clients.length %> client<%= g.clients.length > 1 ? "s" : "" %></div>
+                                <div class="tc-esc__nb"><%= g.clients.length %> <span data-i18n="agence.mot.clients">clients</span></div>
                             </div>
                         </div>
                         <div class="tc-esc__jauges">
                             <div class="tc-esc__jauge">
                                 <strong><%= g.estRdv ? g.rdvAVenir : g.jour %></strong>
-                                <span><%= g.estRdv ? "RDV à venir" : "Aujourd'hui" %></span>
+                                <span data-i18n="<%= g.estRdv ? 'agence.mot.rdvAVenir' : 'agence.vital.jour' %>"><%= g.estRdv ? "RDV à venir" : "Aujourd'hui" %></span>
                             </div>
                             <div class="tc-esc__jauge">
                                 <strong><%= g.semaine %></strong>
-                                <span>7 jours</span>
+                                <span data-i18n="agence.table.semaine">7 jours</span>
                             </div>
                         </div>
                         <i data-lucide="chevron-down" class="tc-esc__chev"></i>
@@ -479,14 +527,14 @@
 
                 <% groupes.forEach(g => { %>
                 <div class="tc-tiroir" id="tiroir-<%= g.metier %>">
-                    <div class="tc-titre"><span><%= g.icone %> <%= g.label %> — <%= g.clients.length %> client<%= g.clients.length > 1 ? "s" : "" %></span></div>
+                    <div class="tc-titre"><span><%= g.icone %> <%= g.label %> — <%= g.clients.length %> <span data-i18n="agence.mot.clients">clients</span></span></div>
                     <div class="tc-table">
                         <div class="tc-ligne tc-ligne--entete">
                             <span></span>
-                            <span>Client</span>
-                            <span><%= g.estRdv ? "RDV à venir" : "Aujourd'hui" %></span>
-                            <span>7 jours</span>
-                            <span>Activité</span>
+                            <span data-i18n="agence.table.client">Client</span>
+                            <span data-i18n="<%= g.estRdv ? 'agence.mot.rdvAVenir' : 'agence.vital.jour' %>"><%= g.estRdv ? "RDV à venir" : "Aujourd'hui" %></span>
+                            <span data-i18n="agence.table.semaine">7 jours</span>
+                            <span data-i18n="agence.table.activite">Activité</span>
                             <span></span>
                         </div>
                         <% g.clients.forEach(c => { %>
@@ -506,7 +554,7 @@
                             </div>
                             <span class="tc-etat tc-etat--<%= c.etat %>"><%= c.derniereActivite %></span>
                             <div class="tc-cli__actions">
-                                <a href="/agence/entrer/<%= encodeURIComponent(c.workspaceId) %>" class="tc-entrer">Entrer</a>
+                                <a href="/agence/entrer/<%= encodeURIComponent(c.workspaceId) %>" class="tc-entrer" data-i18n="agence.btn.entrer">Entrer</a>
                                 <% if (c.agenceStatut === "actif") { %>
                                 <button type="button" class="tc-abandon" data-id="<%= c.workspaceId %>" title="Signaler ce client comme abandonné">✕</button>
                                 <% } %>
@@ -522,7 +570,16 @@
     </div>
 </div>
 
+<%# SAMII reste accessible depuis la tour de contrôle : une agence a autant
+    besoin d'un stratège que ses marchands — rédiger un message à un client,
+    comprendre pourquoi une boutique décroche, préparer une relance. %>
+<a href="/samii" class="tc-orbe" aria-label="Ouvrir SAMII" title="Demander à SAMII">
+    <span class="tc-orbe__halo"></span>
+    <i data-lucide="bot"></i>
+</a>
+
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="/js/i18n.js"></script>
 <script>
 (function () {
     // ── Mode clair / sombre : même mécanique et même clé de stockage que
@@ -530,16 +587,13 @@
     // L'icône du bouton est posée AVANT le premier createIcons() : sinon on
     // remplace un <svg> déjà généré par un <i> brut que plus rien ne
     // convertit, et le bouton reste vide.
-    function appliquerMode(mode, rafraichirIcones) {
+    // Les deux icônes (soleil/lune) sont déjà dans le bouton et basculées
+    // par CSS selon data-mode — rien à réinjecter ici.
+    function appliquerMode(mode) {
         if (mode === "light") document.body.setAttribute("data-mode", "light");
         else document.body.removeAttribute("data-mode");
-        const btn = document.getElementById("btn-toggle-mode");
-        if (btn) {
-            btn.innerHTML = mode === "light" ? '<i data-lucide="moon"></i>' : '<i data-lucide="sun"></i>';
-            if (rafraichirIcones && typeof lucide !== "undefined") lucide.createIcons();
-        }
     }
-    appliquerMode(localStorage.getItem("samii_mode") === "light" ? "light" : "dark", false);
+    appliquerMode(localStorage.getItem("samii_mode") === "light" ? "light" : "dark");
 
     if (typeof lucide !== "undefined") lucide.createIcons();
     document.addEventListener("click", (e) => {

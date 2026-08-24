@@ -665,5 +665,52 @@
         "ph": "Your apiTokenInstance"
       }
     }
+  },
+  "agence": {
+    "nav": {
+      "pilotage": "Control",
+      "flotte": "My fleet",
+      "samii": "SAMII",
+      "parrainage": "Referrals",
+      "parametres": "Settings",
+      "ressources": "OG resources",
+      "deconnexion": "Sign out"
+    },
+    "promo": {
+      "titre": "Marketplace",
+      "texte": "Source products for your e-commerce clients, no stock needed."
+    },
+    "vital": {
+      "jour": "Today",
+      "attente": "To handle",
+      "alerte": "Attention"
+    },
+    "btn": {
+      "client": "+ Client",
+      "entrer": "Enter",
+      "mode": "Light / dark mode"
+    },
+    "form": {
+      "nom": "Store name",
+      "metier": "Industry",
+      "email": "Client email",
+      "pays": "Country",
+      "creer": "Open client workspace"
+    },
+    "section": {
+      "escadrilles": "Squadrons"
+    },
+    "table": {
+      "client": "Client",
+      "semaine": "7 days",
+      "activite": "Activity"
+    },
+    "note": "You pilot, your clients keep control. Each client is notified by email when their workspace opens and signs in with their own account — you keep full visibility and control over the whole fleet.",
+    "mot": {
+      "clients": "clients",
+      "metiers": "industries",
+      "enAttente": "pending",
+      "rdvAVenir": "upcoming appts"
+    }
   }
 }

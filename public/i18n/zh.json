@@ -647,5 +647,52 @@
         "ph": "你的 apiTokenInstance"
       }
     }
+  },
+  "agence": {
+    "nav": {
+      "pilotage": "指挥",
+      "flotte": "我的舰队",
+      "samii": "SAMII",
+      "parrainage": "推荐计划",
+      "parametres": "设置",
+      "ressources": "OG 资源",
+      "deconnexion": "退出登录"
+    },
+    "promo": {
+      "titre": "商城",
+      "texte": "为您的电商客户采购产品，无需库存。"
+    },
+    "vital": {
+      "jour": "今日",
+      "attente": "待处理",
+      "alerte": "需关注"
+    },
+    "btn": {
+      "client": "+ 客户",
+      "entrer": "进入",
+      "mode": "浅色 / 深色模式"
+    },
+    "form": {
+      "nom": "店铺名称",
+      "metier": "行业",
+      "email": "客户邮箱",
+      "pays": "国家",
+      "creer": "开通客户空间"
+    },
+    "section": {
+      "escadrilles": "编队"
+    },
+    "table": {
+      "client": "客户",
+      "semaine": "7 天",
+      "activite": "活动"
+    },
+    "note": "您掌控全局，客户保有自主权。每位客户在其空间开通时会收到邮件通知，并使用自己的账户登录 — 您始终保有对整个舰队的可见性与控制权。",
+    "mot": {
+      "clients": "客户",
+      "metiers": "行业",
+      "enAttente": "待处理",
+      "rdvAVenir": "即将到来的预约"
+    }
   }
 }

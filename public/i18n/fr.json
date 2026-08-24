@@ -665,5 +665,52 @@
         "ph": "Ton apiTokenInstance"
       }
     }
+  },
+  "agence": {
+    "nav": {
+      "pilotage": "Pilotage",
+      "flotte": "Ma flotte",
+      "samii": "SAMII",
+      "parrainage": "Parrainage",
+      "parametres": "Paramètres",
+      "ressources": "Ressources OG",
+      "deconnexion": "Déconnexion"
+    },
+    "promo": {
+      "titre": "Marketplace",
+      "texte": "Sourcez des produits pour vos clients e-commerce, sans stock."
+    },
+    "vital": {
+      "jour": "Aujourd'hui",
+      "attente": "À traiter",
+      "alerte": "Attention"
+    },
+    "btn": {
+      "client": "+ Client",
+      "entrer": "Entrer",
+      "mode": "Mode clair / sombre"
+    },
+    "form": {
+      "nom": "Nom de la boutique",
+      "metier": "Métier",
+      "email": "Email du client",
+      "pays": "Pays",
+      "creer": "Ouvrir l'espace client"
+    },
+    "section": {
+      "escadrilles": "Escadrilles"
+    },
+    "table": {
+      "client": "Client",
+      "semaine": "7 jours",
+      "activite": "Activité"
+    },
+    "note": "Vous pilotez, vos clients gardent la main. Chaque client est prévenu par email à l'ouverture de son espace et y accède directement avec son propre compte — vous conservez la vue et le contrôle sur l'ensemble de la flotte.",
+    "mot": {
+      "clients": "clients",
+      "metiers": "métiers",
+      "enAttente": "en attente",
+      "rdvAVenir": "RDV à venir"
+    }
   }
 }

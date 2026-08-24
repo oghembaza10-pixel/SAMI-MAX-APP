@@ -60,6 +60,17 @@ const Language = (function () {
                 el.setAttribute("placeholder", value);
             }
         });
+
+        // Les infobulles étaient déjà annotées data-i18n-title dans plusieurs
+        // vues (QG, tour de contrôle) mais rien ne les traduisait : elles
+        // restaient en français quelle que soit la langue choisie.
+        document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+            const key = el.getAttribute("data-i18n-title");
+            const value = getNested(dict, key);
+            if (value !== null) {
+                el.setAttribute("title", value);
+            }
+        });
     }
 
     function updateDirection(lang) {
