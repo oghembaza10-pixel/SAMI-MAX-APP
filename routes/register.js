@@ -329,17 +329,12 @@ router.get("/confirmer", async (req, res) => {
 // ── POST /register ───────────────────────────────────────────────
 router.post("/", async (req, res) => {
     const { nom, prenom, email, telephone, metier, password, type_compte, theme_visuel, ref } = req.body;
-    // "agence" est un type d'inscription à part entière (l'agence entre
-    // directement dans son QG Agence), mais elle démarre EN VALIDATION :
-    // créer la boutique d'un client se fait sur un email quelconque, donc
-    // sans ce garde-fou n'importe qui pourrait s'inscrire comme agence et
-    // pré-réserver l'espace d'un email qui ne lui appartient pas — puis y
-    // garder un accès le jour où le vrai propriétaire s'inscrit.
-    // Le compte est utilisable tout de suite ; seule la création de clients
-    // attend la validation d'OG Technology (voir routes/agence.js).
+    // "agence" est un type d'inscription à part entière : l'agence entre
+    // directement dans son QG Agence et crée les espaces de ses clients en
+    // autonomie. Le contrôle se fait en aval (trace admin + email envoyé au
+    // client concerné), pas par un verrou à l'entrée — voir routes/agence.js.
     const TYPES_VALIDES = ["client", "marchand", "agence"];
     const typeCompte = TYPES_VALIDES.includes(type_compte) ? type_compte : "client";
-    const statutAcces = typeCompte === "agence" ? "agence_en_validation" : "actif";
 
     // Un nouveau compte démarre toujours au grade Soldat : seuls les thèmes
     // débloqués dès le départ sont acceptés à l'inscription (pas de triche
@@ -411,12 +406,12 @@ router.post("/", async (req, res) => {
             `INSERT INTO utilisateurs
                 (nom, prenom, email, telephone, metier, type_compte, password_hash, role, statut_acces, last_login, actif, email_verifie, token_verification, token_expire_le, theme_visuel)
              VALUES
-                ($1, $2, $3, $4, $5, $6, $7, 'owner', $11, CURRENT_DATE, true, false, $8, $9, $10)
+                ($1, $2, $3, $4, $5, $6, $7, 'owner', 'actif', CURRENT_DATE, true, false, $8, $9, $10)
              RETURNING id`,
             [
                 nom, prenom, email, telephone,
                 typeCompte === "marchand" ? (metier || "ecommerce") : "",
-                typeCompte, passwordHash, token, expireLe, themeChoisi, statutAcces,
+                typeCompte, passwordHash, token, expireLe, themeChoisi,
             ]
         );
 

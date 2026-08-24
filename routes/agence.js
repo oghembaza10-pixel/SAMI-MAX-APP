@@ -1,17 +1,19 @@
 // ==========================================================================
 // SAMII OS — QG AGENCE
-// Un compte "agence" (utilisateurs.type_compte = 'agence', activé
-// manuellement par OG Technology) crée et pilote les boutiques de ses
-// clients. Chaque client garde son propre accès direct (mêmes règles que
-// n'importe quel compte SAMII — connexion par email, workspace lié via
-// owner_email) ; l'agence, elle, entre dans ces mêmes boutiques via le lien
-// supplémentaire workspaces.agence_id → utilisateurs.id (voir
+// Un compte "agence" (utilisateurs.type_compte = 'agence', choisi à
+// l'inscription) crée et pilote les boutiques de ses clients, en autonomie.
+// Chaque client garde son propre accès direct (mêmes règles que n'importe
+// quel compte SAMII — connexion par email, workspace lié via owner_email) ;
+// l'agence, elle, entre dans ces mêmes boutiques via le lien supplémentaire
+// workspaces.agence_id → utilisateurs.id (voir
 // scripts/alter-workspaces-agence.js et services/workspaceService.js).
 // ==========================================================================
 const express = require("express");
 const crypto = require("crypto");
 const router = express.Router();
 const db = require("../services/db");
+const gmail = require("../services/gmail");
+const CONFIG = require("../config");
 const workspaceService = require("../services/workspaceService");
 const journalService = require("../services/journalService");
 
@@ -21,28 +23,17 @@ function requireAgence(req, res, next) {
     next();
 }
 
-// Une agence peut s'inscrire seule (type_compte = 'agence' choisi à
-// l'inscription) et entre tout de suite dans son QG. En revanche, créer la
-// boutique d'un client se fait sur un email QUELCONQUE : sans validation,
-// n'importe qui pourrait s'inscrire comme agence et pré-réserver l'espace
-// d'un email qui ne lui appartient pas, puis y garder un accès permanent
-// (workspaces.agence_id) le jour où le vrai propriétaire s'inscrit.
-// D'où ce verrou : le compte vit normalement, seule la création de clients
-// attend qu'OG Technology ait validé l'agence.
-// Le statut vit dans utilisateurs.statut_acces, colonne qui existe déjà —
-// aucune migration à passer. login.js ne bloque que "suspendu", donc une
-// agence en validation se connecte et navigue sans aucune gêne.
-async function agenceEstValidee(userId) {
-    try {
-        const rows = await db.query(`SELECT statut_acces FROM utilisateurs WHERE id = $1`, [userId]);
-        return rows[0]?.statut_acces !== "agence_en_validation";
-    } catch (err) {
-        // En cas de doute (base indisponible), on refuse : mieux vaut une
-        // agence légitime qui réessaie qu'un espace réservé à tort.
-        console.error("❌ agenceEstValidee :", err.message);
-        return false;
-    }
-}
+// L'agence est autonome : elle crée les espaces de ses clients quand elle
+// veut, sans validation préalable — c'est elle qui tient la relation client.
+//
+// Le contrôle se fait donc EN AVAL, pas en amont :
+//   1. chaque création est tracée dans le journal (action agence.client.cree)
+//      et remonte en direct dans l'espace admin ;
+//   2. le client est prévenu par email dès que son espace est créé, avec le
+//      nom de l'agence — le vrai propriétaire de l'adresse sait donc
+//      immédiatement qu'un espace existe à son nom, et peut le signaler.
+// Un abus reste visible et réversible, sans jamais ralentir une agence
+// légitime.
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -79,14 +70,13 @@ router.get("/", requireAgence, async (req, res) => {
     const nbActifs = clients.filter(c => c.agenceStatut === "actif").length;
     const nbAbandon = clients.filter(c => c.agenceStatut === "abandon_demande").length;
 
-    // Une agence auto-inscrite voit son QG complet dès la première seconde,
-    // mais doit savoir noir sur blanc pourquoi "Ajouter un client" ne
-    // fonctionne pas encore — sinon elle croit à un bug et s'en va.
-    const validee = await agenceEstValidee(req.session.userId);
-    const bandeauValidation = validee ? "" : `
+    // L'agence est autonome, mais elle doit savoir que son client est
+    // prévenu : c'est ce qui rend la démarche propre vis-à-vis du client
+    // final, et ça évite qu'elle découvre l'email après coup.
+    const bandeauValidation = `
         <div class="ag-validation">
-            <strong>⏳ Compte agence en cours de validation</strong>
-            <p>Vous avez accès à votre QG, mais la création d'espaces clients est ouverte après un échange avec notre équipe — nous vous contactons sous 24 h. C'est ce qui garantit qu'une agence ne puisse pas réserver l'espace d'un email qui ne lui appartient pas.</p>
+            <strong>✅ Votre espace est actif</strong>
+            <p>Vous créez les espaces de vos clients librement. Chaque client reçoit un email l'informant que son espace SAMII a été ouvert par votre agence, et garde son propre accès direct — vous, vous gardez la vue et le contrôle sur l'ensemble.</p>
         </div>`;
 
     const paysOptions = Object.entries(PAYS_DEVISE)
@@ -133,8 +123,8 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 .back-link:hover { color:var(--blue); }
 h1 { font-size:24px; margin:18px 0 4px; display:flex; align-items:center; gap:10px; }
 .ag-sub { color:var(--muted); font-size:13.5px; margin-bottom:24px; }
-.ag-validation { background:rgba(215,179,76,.09); border:1px solid rgba(215,179,76,.34); border-radius:var(--radius); padding:16px 18px; margin-bottom:22px; }
-.ag-validation strong { display:block; color:var(--gold); font-size:14px; margin-bottom:6px; }
+.ag-validation { background:rgba(61,220,132,.07); border:1px solid rgba(61,220,132,.3); border-radius:var(--radius); padding:16px 18px; margin-bottom:22px; }
+.ag-validation strong { display:block; color:var(--green); font-size:14px; margin-bottom:6px; }
 .ag-validation p { margin:0; color:var(--muted); font-size:12.8px; line-height:1.65; }
 .ag-stats-bar { display:flex; gap:14px; margin:20px 0; }
 .ag-stat { flex:1; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px; text-align:center; }
@@ -251,13 +241,6 @@ document.querySelectorAll(".ag-btn-abandon").forEach(btn => {
 
 router.post("/creer-client", requireAgence, async (req, res) => {
     try {
-        if (!await agenceEstValidee(req.session.userId)) {
-            return res.json({
-                success: false,
-                error: "Votre compte agence est en cours de validation. Nous vous contactons sous 24 h pour l'activer — vous pourrez alors créer les espaces de vos clients.",
-            });
-        }
-
         const { nom, metier, email, pays } = req.body;
         if (!nom || !nom.trim()) return res.json({ success: false, error: "Le nom de la boutique est obligatoire." });
         if (!METIERS_VALIDES.has(metier)) return res.json({ success: false, error: "Métier invalide." });
@@ -278,12 +261,36 @@ router.post("/creer-client", requireAgence, async (req, res) => {
         });
         if (!workspace) return res.json({ success: false, error: "Erreur lors de la création. Réessayez." });
 
+        const emailClient = email.trim().toLowerCase();
+        const nomAgence = req.session.nom || "votre agence";
+
         await journalService.log({
             action: "agence.client.cree",
-            details: `Boutique "${nom.trim()}" créée par l'agence pour ${email.trim().toLowerCase()}`,
+            details: `Boutique "${nom.trim()}" créée par l'agence ${nomAgence} pour ${emailClient}`,
             workspaceId: workspace.workspaceId,
             userId: req.session.userId,
         });
+
+        // Le client est prévenu tout de suite : il apprend qu'un espace
+        // existe à son nom, par qui, et comment y accéder lui-même. C'est ce
+        // qui rend la démarche propre — le propriétaire réel de l'adresse
+        // n'est jamais mis devant le fait accompli. En tâche de fond : un
+        // souci d'envoi ne doit pas faire échouer la création côté agence.
+        gmail.send({
+            to: emailClient,
+            subject: `Votre espace SAMII "${nom.trim()}" a été créé`,
+            html: `
+    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
+        <h2 style="color:#C5A059;">Votre espace SAMII est prêt 👑</h2>
+        <p><strong>${escapeHtml(nomAgence)}</strong> vient de créer l'espace <strong>${escapeHtml(nom.trim())}</strong> pour vous sur SAMII OS.</p>
+        <p>Pour y accéder, créez votre compte avec <strong>cette adresse email</strong> : votre espace vous sera automatiquement rattaché, et vous en serez le propriétaire.</p>
+        <a href="${CONFIG.APP_URL}/register" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;background:#C5A059;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;font-size:16px;">
+            👉 Accéder à mon espace
+        </a>
+        <p style="color:#888;font-size:.82rem;line-height:1.6;">Votre agence garde une vue sur cet espace pour vous accompagner. Vous en restez le propriétaire et pouvez nous contacter à tout moment.</p>
+        <p style="color:#888;font-size:.82rem;">Vous ne connaissez pas cette agence ? Répondez simplement à cet email, nous fermerons l'espace.</p>
+    </div>`,
+        }).catch(err => console.warn("⚠️ Email création espace client (agence) :", err.message));
 
         res.json({ success: true, workspaceId: workspace.workspaceId });
     } catch (err) {

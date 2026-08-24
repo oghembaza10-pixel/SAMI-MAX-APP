@@ -356,16 +356,20 @@ router.get("/", requireAdmin, async (req, res) => {
     let ccpDemandes = [];
     let verifications = [];
     let achatsExternes = [];
+    let clientsAgences = [];
 
     try {
         const [
-            utilisateurs, marchands, clients, workspacesRows, commandesTotal, commandesJour,
+            utilisateurs, marchands, clients, agencesRows, clientsAgenceRows,
+            workspacesRows, commandesTotal, commandesJour,
             commissionsRows, ccpDemandesRows, candidaturesRows, candidaturesNouvelles, verifsRows,
             achatsExternesRows,
         ] = await Promise.all([
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs`),
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE type_compte = 'marchand'`),
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE type_compte = 'client'`),
+            db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE type_compte = 'agence'`),
+            db.query(`SELECT COUNT(*)::int AS n FROM workspaces WHERE agence_id IS NOT NULL`),
             db.query(`SELECT COUNT(*)::int AS n FROM workspaces`),
             db.query(`SELECT COUNT(*)::int AS n FROM commandes`),
             db.query(`SELECT COUNT(*)::int AS n FROM commandes WHERE date_commande >= CURRENT_DATE`),
@@ -381,6 +385,8 @@ router.get("/", requireAdmin, async (req, res) => {
             utilisateurs: utilisateurs[0].n,
             marchands: marchands[0].n,
             clients: clients[0].n,
+            agences: agencesRows[0].n,
+            clientsAgence: clientsAgenceRows[0].n,
             workspaces: workspacesRows[0].n,
             commandesTotal: commandesTotal[0].n,
             commandesJour: commandesJour[0].n,
@@ -392,6 +398,19 @@ router.get("/", requireAdmin, async (req, res) => {
             verifsEnAttente: verifsRows[0].n,
             achatsExternes: achatsExternesRows[0].n,
         };
+
+        // Chaque espace client ouvert par une agence remonte ici, avec le nom
+        // de l'agence qui l'a créé : les agences sont autonomes, le contrôle
+        // se fait en aval par cette visibilité (voir routes/agence.js).
+        clientsAgences = await db.query(
+            `SELECT w.id, w.nom, w.metier, w.owner, w.created_at, w.agence_statut,
+                    u.nom AS agence_nom, u.prenom AS agence_prenom, u.email AS agence_email
+               FROM workspaces w
+               JOIN utilisateurs u ON u.id = w.agence_id
+              WHERE w.agence_id IS NOT NULL
+              ORDER BY w.created_at DESC
+              LIMIT 100`
+        );
 
         candidatures = await db.query(`SELECT * FROM candidatures_partenariat ORDER BY created_at DESC LIMIT 200`);
         ccpDemandes = await db.query(
@@ -431,6 +450,27 @@ router.get("/", requireAdmin, async (req, res) => {
             <div class="pa-contact">${escapeHtml(a.workspace_nom || a.workspace_id)} · ${escapeHtml(a.workspace_owner || "")}</div>
             <span class="pa-date">Demandé le ${new Date(a.date_debut).toLocaleString("fr-FR")}</span>
         </div>`;
+
+    // Les agences créent leurs clients en autonomie ; cette ligne est la
+    // trace de contrôle en aval — qui a ouvert quoi, pour quel email, quand.
+    const ligneAgenceHtml = (c) => {
+        const agence = `${c.agence_prenom || ""} ${c.agence_nom || ""}`.trim() || c.agence_email;
+        const badge = c.agence_statut === "abandon_demande"
+            ? `<span style="color:var(--gold);font-size:11.5px;">⏳ Fermeture demandée</span>`
+            : `<span style="color:var(--green);font-size:11.5px;">● Actif</span>`;
+        return `
+        <div class="pa-row">
+            <div class="pa-row-top">
+                <span class="pa-cat">🏢 ${escapeHtml(c.nom || "Sans nom")}${c.metier ? ` · ${escapeHtml(c.metier)}` : ""}</span>
+                ${badge}
+            </div>
+            <div class="pa-contact">
+                Client : <strong>${escapeHtml(c.owner || "")}</strong><br>
+                Ouvert par : ${escapeHtml(agence)} (${escapeHtml(c.agence_email || "")})
+            </div>
+            <span class="pa-date">Créé le ${c.created_at ? new Date(c.created_at).toLocaleString("fr-FR") : "-"}</span>
+        </div>`;
+    };
 
     const ligneVerifHtml = (v) => `
         <div class="pa-row" data-verif-id="${v.id}">
@@ -521,7 +561,9 @@ router.get("/", requireAdmin, async (req, res) => {
         ${statCard("👥", stats.utilisateurs, "Utilisateurs totaux")}
         ${statCard("🏪", stats.marchands, "Marchands")}
         ${statCard("👤", stats.clients, "Clients")}
-        ${statCard("🏢", stats.workspaces, "Workspaces")}
+        ${statCard("🏢", stats.agences, "Agences", stats.agences ? "var(--blue)" : "var(--text)")}
+        ${statCard("🤝", stats.clientsAgence, "Clients via agences", stats.clientsAgence ? "var(--green)" : "var(--text)")}
+        ${statCard("🏬", stats.workspaces, "Workspaces")}
         ${statCard("📦", stats.commandesTotal, "Commandes totales")}
         ${statCard("📦", stats.commandesJour, "Commandes aujourd'hui", "var(--green)")}
         ${statCard("💸", stats.commissionConfirmee.toFixed(2) + "$", "Parrainage confirmé", "var(--green)")}
@@ -532,6 +574,9 @@ router.get("/", requireAdmin, async (req, res) => {
         ${statCard("🪪", stats.verifsEnAttente, "Vérifications en attente", stats.verifsEnAttente ? "var(--gold)" : "var(--text)")}
         ${statCard("🔗", stats.achatsExternes, "Achats externes à traiter", stats.achatsExternes ? "var(--gold)" : "var(--text)")}
     </div>
+
+    <div class="section-title">🏢 Espaces clients ouverts par des agences</div>
+    <div id="agence-list" style="margin-bottom:30px;">${clientsAgences.length ? clientsAgences.map(ligneAgenceHtml).join("") : `<div class="pa-empty">Aucun espace client créé par une agence pour l'instant.</div>`}</div>
 
     <div class="section-title">🪪 Vérifications d'identité en attente (livreurs / location)</div>
     <div id="verif-list" style="margin-bottom:30px;">${verifications.length ? verifications.map(ligneVerifHtml).join("") : `<div class="pa-empty">Aucune vérification en attente.</div>`}</div>
