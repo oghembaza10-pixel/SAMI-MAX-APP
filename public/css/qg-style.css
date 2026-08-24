@@ -91,30 +91,146 @@
    d'un pixel, ce bloc ne s'applique que quand [data-mode="light"] est
    posé sur <body> par le bouton de bascule (voir qg.js).
    ========================================================================== */
+/* Principe : en mode sombre la profondeur vient des lueurs (glow) et des
+   bordures claires. Sur fond blanc, ces mêmes lueurs deviennent des taches
+   grises sales — c'est ce qui donnait ce rendu terne et voilé. Le mode
+   clair inverse donc la logique : fond blanc cassé légèrement chaud (papier),
+   panneaux BLANCS qui ressortent nettement dessus, et profondeur donnée par
+   de vraies ombres portées plutôt que par des halos. */
 [data-mode="light"] {
-    --bg-deep: #e9ebf0;
-    --bg-panel: #f4f5f8;
-    --bg-glass: rgba(20, 24, 32, 0.035);
-    --text-main: #23262e;
-    --text-muted: #656c79;
-    --border-soft: 1px solid rgba(20, 24, 32, 0.09);
-    --border-gold: 1px solid rgba(197, 160, 89, 0.35);
+    --bg-deep: #F7F6F3;
+    --bg-panel: #FFFFFF;
+    --bg-glass: rgba(22, 24, 29, 0.028);
+    /* L'or clair (#C5A059) est illisible sur blanc : version assombrie,
+       même teinte, pour garder la signature OG sans fatiguer l'œil. */
+    --gold-og: #9C7A32;
+    --gold-hover: #7E611F;
+    --cyan-tech: #0A7EA4;
+    --text-main: #14161A;
+    --text-muted: #5F6672;
+    --border-soft: 1px solid rgba(22, 24, 29, 0.07);
+    --border-gold: 1px solid rgba(156, 122, 50, 0.22);
+    /* Les halos deviennent des ombres portées : la carte se détache du fond
+       au lieu de rayonner. */
+    --gold-glow: 0 2px 10px rgba(22, 24, 29, 0.05);
+    --cyan-glow: 0 2px 10px rgba(22, 24, 29, 0.05);
 }
 
-[data-mode="light"] body {
-    background:
-        radial-gradient(ellipse 1000px 600px at 8% -10%, rgba(217, 179, 108, 0.07), transparent 55%),
-        radial-gradient(ellipse 900px 600px at 100% 0%, rgba(95, 212, 255, 0.04), transparent 55%),
-        radial-gradient(ellipse 1200px 800px at 50% 130%, rgba(217, 179, 108, 0.04), transparent 60%),
-        linear-gradient(180deg, #f2f3f6 0%, var(--bg-deep) 45%, #e2e4ea 100%);
+/* ATTENTION au sélecteur : data-mode est posé SUR <body>, donc
+   `[data-mode="light"] body` (un body DANS un élément en mode clair) ne
+   correspond à rien et n'a jamais rien changé — le fond restait le dégradé
+   sombre, d'où ce rendu gris voilé par-dessus lequel les panneaux clairs
+   semblaient ternes. Il faut bien `body[data-mode="light"]`. */
+body[data-mode="light"] {
+    background: var(--bg-deep);
+    color: var(--text-main);
 }
 
-[data-mode="light"] .qg-sidebar {
-    background:
-        linear-gradient(180deg, rgba(217,179,108,0.06) 0%, transparent 18%),
-        linear-gradient(0deg, rgba(95,212,255,0.04) 0%, transparent 30%),
-        var(--bg-panel);
-    box-shadow: 1px 0 0 rgba(20,24,32,.05);
+/* Textes forcés en blanc pour le mode sombre : invisibles sur fond blanc. */
+body[data-mode="light"] .qg-hero__content h1,
+body[data-mode="light"] .qg-card__value,
+body[data-mode="light"] .qg-table td,
+body[data-mode="light"] .qg-client-card__name {
+    color: var(--text-main);
+    -webkit-text-fill-color: var(--text-main);
+}
+
+body[data-mode="light"] .qg-logo__text {
+    color: var(--text-main);
+    -webkit-text-fill-color: var(--text-main);
+    background: none;
+}
+
+body[data-mode="light"] .qg-sidebar {
+    background: var(--bg-panel);
+    border-right: 1px solid rgba(22, 24, 29, 0.06);
+    box-shadow: none;
+}
+
+/* Cartes, panneaux et sections : blancs, détachés par une ombre douce.
+   Sans ça, panneau et fond avaient presque la même valeur et tout se
+   confondait en une bouillie grise. */
+body[data-mode="light"] .qg-card,
+body[data-mode="light"] .qg-table-section,
+body[data-mode="light"] .qg-clients-section,
+body[data-mode="light"] .qg-arsenal-card,
+body[data-mode="light"] #rdv-calendar {
+    background: var(--bg-panel);
+    border: 1px solid rgba(22, 24, 29, 0.07);
+    box-shadow: 0 1px 2px rgba(22, 24, 29, 0.04), 0 4px 14px rgba(22, 24, 29, 0.045);
+}
+
+body[data-mode="light"] .qg-card:hover,
+body[data-mode="light"] .qg-arsenal-card:hover {
+    border-color: rgba(156, 122, 50, 0.32);
+    box-shadow: 0 2px 4px rgba(22, 24, 29, 0.05), 0 10px 26px rgba(22, 24, 29, 0.08);
+}
+
+/* La topbar en verre dépoli sombre devient une barre blanche nette. */
+body[data-mode="light"] .qg-topbar {
+    background: rgba(255, 255, 255, 0.86);
+    border-bottom: 1px solid rgba(22, 24, 29, 0.07);
+}
+
+/* Le hero garde ses accents dorés, mais sur fond clair et sans halo diffus. */
+body[data-mode="light"] .qg-hero {
+    background: linear-gradient(180deg, #FFFFFF 0%, var(--bg-deep) 100%);
+    border-bottom: 1px solid rgba(22, 24, 29, 0.07);
+}
+body[data-mode="light"] .qg-hero__glow,
+body[data-mode="light"] .qg-hero__grid,
+body[data-mode="light"] .qg-hero::before,
+body[data-mode="light"] .qg-hero::after {
+    opacity: .25;
+}
+
+/* Lignes de tableau : séparateurs sombres très légers au lieu des lignes
+   blanches du mode sombre, invisibles sur blanc. */
+body[data-mode="light"] .qg-table th {
+    background: #FBFAF8;
+    color: var(--text-muted);
+}
+body[data-mode="light"] .qg-table tr:hover td {
+    background: #FBFAF8;
+}
+
+/* Élément actif de la navigation : pastille dorée douce, lisible. */
+body[data-mode="light"] .qg-nav__item:hover {
+    background: rgba(156, 122, 50, 0.07);
+    color: var(--text-main);
+}
+body[data-mode="light"] .qg-nav__item.active {
+    background: rgba(156, 122, 50, 0.1);
+    color: var(--gold-hover);
+}
+body[data-mode="light"] .qg-nav__item.active i {
+    color: var(--gold-og);
+    filter: none;
+}
+
+/* Badges : les fonds translucides blancs disparaissent sur blanc. */
+body[data-mode="light"] .qg-badge--grey {
+    background: rgba(22, 24, 29, 0.05);
+    color: var(--text-muted);
+    border: 1px solid rgba(22, 24, 29, 0.09);
+}
+
+/* Cellules du calendrier : fond légèrement teinté pour rester distinctes
+   de la carte blanche qui les contient. */
+body[data-mode="light"] .rdv-cal-cell {
+    background: #FBFAF8;
+    border: 1px solid rgba(22, 24, 29, 0.07);
+}
+body[data-mode="light"] .rdv-cal-cell--selected {
+    color: #FFFFFF;
+}
+
+/* Toast : sur fond clair, la version sombre reste plus lisible qu'un toast
+   blanc sur blanc — on la garde, juste réajustée. */
+body[data-mode="light"] .qg-toast {
+    background: rgba(20, 22, 26, 0.95);
+    color: #FFFFFF;
+    border: 1px solid rgba(156, 122, 50, 0.4);
 }
 
 /* Signature du Mode OG : le wordmark reprend le dégradé or→argent du
