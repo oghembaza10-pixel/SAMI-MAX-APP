@@ -120,7 +120,8 @@
       "settings": "الإعدادات",
       "backToQG": "مقري",
       "logout": "تسجيل الخروج",
-      "api": "واجهة برمجية وWebhooks"
+      "api": "واجهة برمجية وWebhooks",
+      "apps": "التطبيقات"
     },
     "hero": {
       "eyebrow": "مركز القيادة",

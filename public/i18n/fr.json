@@ -120,7 +120,8 @@
       "settings": "Paramètres",
       "backToQG": "Mon QG",
       "logout": "Déconnexion",
-      "api": "API & Webhooks"
+      "api": "API & Webhooks",
+      "apps": "Applications"
     },
     "hero": {
       "eyebrow": "Centre de commandement",

@@ -217,6 +217,7 @@ app.use("/drivers",     require("./routes/drivers"));
 // api-v1 applique sa propre limite, par clé.
 app.use("/api/v1", require("./routes/api-v1"));
 app.use("/developpeurs", require("./routes/developpeurs"));
+app.use("/apps", require("./routes/apps"));
 app.use("/api", apiLimiter, require("./routes/api"));
 // Chat public de la page d'accueil — porte non authentifiée, sa propre
 // limite (bien plus stricte) est définie dans le routeur lui-même.

@@ -40,26 +40,34 @@ async function creerCleAvecPortee({ workspaceId = null, agenceId = null }, nom, 
     // Une clé créée sans cocher quoi que ce soit doit donc être refusée en
     // amont par l'interface plutôt que silencieusement toute-puissante.
     const propres = portees.nettoyer(droits);
-    await db.query(
+    const rows = await db.query(
         `INSERT INTO api_cles (workspace_id, agence_id, nom, cle_hash, cle_prefixe, portees)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         [workspaceId, agenceId, String(nom || "Clé API").slice(0, 60),
          empreinte(cle), cle.slice(0, 16), propres.length ? propres : null],
     );
-    return cle;
+    // On retourne l'identifiant en plus de la clé : une installation
+    // d'application doit pouvoir rattacher SA clé sans la rechercher par
+    // préfixe après coup, méthode approximative par nature.
+    return { cle, id: rows[0].id };
 }
 
 /**
  * Crée une clé de marchand. La valeur en clair n'est retournée qu'ICI, une
  * seule fois — elle n'est plus jamais consultable ensuite.
  */
-function creerCle(workspaceId, nom = "Clé API", droits = []) {
+async function creerCle(workspaceId, nom = "Clé API", droits = []) {
+    return (await creerCleAvecPortee({ workspaceId }, nom, droits)).cle;
+}
+
+/** Même chose, mais en rendant aussi l'identifiant de la clé créée. */
+function creerCleDetaillee(workspaceId, nom, droits) {
     return creerCleAvecPortee({ workspaceId }, nom, droits);
 }
 
 /** Crée une clé d'agence, valable sur tout son portefeuille. */
-function creerCleAgence(agenceId, nom = "Clé agence", droits = []) {
-    return creerCleAvecPortee({ agenceId: String(agenceId) }, nom, droits);
+async function creerCleAgence(agenceId, nom = "Clé agence", droits = []) {
+    return (await creerCleAvecPortee({ agenceId: String(agenceId) }, nom, droits)).cle;
 }
 
 function listerCles(workspaceId) {
@@ -338,7 +346,7 @@ function listerAccesAgence(agenceId, limite = 20) {
 
 module.exports = {
     PREFIXE, EVENEMENTS,
-    creerCle, listerCles, revoquerCle, resoudreCle,
+    creerCle, creerCleDetaillee, listerCles, revoquerCle, resoudreCle,
     creerCleAgence, listerClesAgence, revoquerCleAgence,
     espaceDeLAgence, listerEspacesAgence,
     creerWebhook, listerWebhooks, supprimerWebhook,

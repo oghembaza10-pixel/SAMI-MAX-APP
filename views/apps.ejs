@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applications — SAMII</title>
+    <meta name="theme-color" content="#05070c">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/qg-style.css?v=8">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; padding: 24px 18px 80px;
+            background: var(--bg-deep); color: var(--text-main);
+            font-family: var(--font-body); -webkit-font-smoothing: antialiased;
+        }
+        .ap { max-width: 900px; margin: 0 auto; }
+        .ap-retour { color: var(--text-muted); font-size: .8rem; text-decoration: none; }
+        .ap-retour:hover { color: var(--gold-og); }
+
+        .ap-tete { border-bottom: var(--border-soft); padding: 20px 0 22px; margin-bottom: 26px; }
+        .ap-tete h1 {
+            margin: 0; font-family: var(--font-display); font-size: 1.55rem;
+            color: var(--gold-og); letter-spacing: .5px;
+        }
+        .ap-tete p { margin: 8px 0 0; color: var(--text-muted); font-size: .85rem; max-width: 640px; line-height: 1.65; }
+
+        .ap-bloc {
+            background: var(--bg-panel); border: var(--border-soft); border-radius: 16px;
+            padding: 22px; margin-bottom: 18px; box-shadow: var(--gold-glow);
+        }
+        .ap-bloc h2 { margin: 0 0 5px; font-size: 1rem; font-weight: 700; }
+        .ap-aide { color: var(--text-muted); font-size: .79rem; margin: 0 0 18px; line-height: 1.65; }
+        .ap-vide { color: var(--text-muted); font-size: .8rem; font-style: italic; }
+
+        .ap-item {
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+            padding: 15px 0; border-top: var(--border-soft); flex-wrap: wrap;
+        }
+        .ap-item:first-of-type { border-top: none; }
+        .ap-item h3 { margin: 0 0 3px; font-size: .9rem; font-weight: 600; }
+        .ap-item p { margin: 0; color: var(--text-muted); font-size: .78rem; line-height: 1.55; }
+        .ap-meta {
+            font-family: var(--font-mono); font-size: .67rem; color: var(--text-muted);
+            margin-top: 6px; word-break: break-all;
+        }
+
+        a.ap-btn, button {
+            border: none; border-radius: 10px; padding: 10px 18px; cursor: pointer;
+            font-family: inherit; font-weight: 700; font-size: .78rem;
+            background: var(--gold-og); color: #0A0A0A; text-decoration: none;
+            display: inline-block; white-space: nowrap;
+        }
+        a.ap-btn:hover, button:hover { background: var(--gold-hover); }
+        button.ap-mini {
+            background: none; border: var(--border-soft); color: var(--text-muted);
+            padding: 6px 12px; font-weight: 500; font-size: .72rem;
+        }
+        button.ap-mini:hover { border-color: #b34a3a; color: #e5533d; background: none; }
+
+        input[type=text], input[type=url], textarea {
+            background: var(--bg-deep); border: var(--border-soft); color: var(--text-main);
+            border-radius: 10px; padding: 12px 14px; font-size: .84rem; width: 100%;
+            font-family: inherit; margin-top: 10px; resize: vertical;
+        }
+        input::placeholder, textarea::placeholder { color: var(--text-muted); }
+        input:focus, textarea:focus { outline: none; border-color: var(--gold-og); }
+
+        .ap-cases { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .ap-cases label {
+            display: flex; align-items: center; gap: 7px; background: var(--bg-deep);
+            border: var(--border-soft); border-radius: 9px; padding: 8px 12px;
+            font-size: .72rem; cursor: pointer; font-family: var(--font-mono);
+        }
+        .ap-cases input { accent-color: var(--gold-og); }
+
+        .ap-etat { font-size: .64rem; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
+        .ap-etat--on { background: rgba(61,220,132,.14); color: var(--green-on); }
+        .ap-etat--off { background: rgba(197,160,89,.14); color: var(--gold-og); }
+
+        .ap-lien-install {
+            margin-top: 10px; background: var(--bg-deep); border: var(--border-soft);
+            border-radius: 9px; padding: 10px 12px; font-family: var(--font-mono);
+            font-size: .69rem; word-break: break-all; color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+<div class="ap">
+    <a href="/qg" class="ap-retour">← Retour au QG</a>
+
+    <div class="ap-tete">
+        <h1>Applications</h1>
+        <p>
+            Une application demande des permissions, tu décides de les accorder, et tu
+            reprends l'accès quand tu veux. C'est plus sûr qu'une clé remise à la main :
+            tu vois ce qui est demandé avant de dire oui, et tout ce qu'elle fait ensuite
+            est inscrit dans ton journal.
+        </p>
+    </div>
+
+    <!-- ── INSTALLÉES ──────────────────────────────────────────── -->
+    <% if (aEspace) { %>
+    <div class="ap-bloc">
+        <h2>Installées sur ton espace</h2>
+        <p class="ap-aide">Révoquer coupe l'accès immédiatement — la clé de l'application cesse de fonctionner dans la seconde.</p>
+        <% if (!installees.length) { %>
+            <p class="ap-vide">Aucune application installée.</p>
+        <% } %>
+        <% installees.forEach(i => { %>
+            <div class="ap-item">
+                <div>
+                    <h3><%= i.nom %></h3>
+                    <% if (i.description) { %><p><%= i.description %></p><% } %>
+                    <div class="ap-meta">
+                        <%= (i.portees_accordees || []).join(", ") %>
+                        · installée le <%= new Date(i.installee_le).toLocaleDateString('fr-FR') %>
+                    </div>
+                </div>
+                <button class="ap-mini" data-revoquer="<%= i.id %>">Révoquer</button>
+            </div>
+        <% }) %>
+    </div>
+    <% } %>
+
+    <!-- ── CATALOGUE ───────────────────────────────────────────── -->
+    <div class="ap-bloc">
+        <h2>Disponibles</h2>
+        <p class="ap-aide">Les applications publiées par des développeurs sur SAMII.</p>
+        <% if (!publiees.length) { %>
+            <p class="ap-vide">Aucune application publiée pour l'instant — le catalogue s'ouvre à peine.</p>
+        <% } %>
+        <% publiees.forEach(a => { %>
+            <div class="ap-item">
+                <div>
+                    <h3><%= a.nom %></h3>
+                    <% if (a.description) { %><p><%= a.description %></p><% } %>
+                    <div class="ap-meta"><%= (a.portees_demandees || []).join(", ") %></div>
+                </div>
+                <% if (aEspace) { %>
+                    <a class="ap-btn" href="/apps/<%= a.slug %>/installer">Installer</a>
+                <% } %>
+            </div>
+        <% }) %>
+    </div>
+
+    <!-- ── MES APPLICATIONS (développeur) ──────────────────────── -->
+    <div class="ap-bloc">
+        <h2>Publier une application</h2>
+        <p class="ap-aide">
+            Déclare ce que ton application veut toucher. Elle reste en brouillon : toi seul
+            peux l'installer, le temps de la mettre au point. Le lien d'installation
+            s'affiche ici dès la création — c'est celui que tu enverras à tes clients.
+        </p>
+
+        <% if (miennes.length) { %>
+            <% miennes.forEach(a => { %>
+                <div class="ap-item">
+                    <div>
+                        <h3>
+                            <%= a.nom %>
+                            <span class="ap-etat <%= a.statut === 'publiee' ? 'ap-etat--on' : 'ap-etat--off' %>"><%= a.statut %></span>
+                        </h3>
+                        <% if (a.description) { %><p><%= a.description %></p><% } %>
+                        <div class="ap-meta">
+                            <%= (a.portees_demandees || []).join(", ") %>
+                            · <%= a.installations %> installation<%= a.installations > 1 ? "s" : "" %>
+                        </div>
+                        <div class="ap-lien-install">/apps/<%= a.slug %>/installer</div>
+                    </div>
+                </div>
+            <% }) %>
+        <% } %>
+
+        <input type="text" id="ap-nom" placeholder="Nom de l'application">
+        <textarea id="ap-desc" rows="2" placeholder="Ce qu'elle fait, en une phrase — c'est ce que le marchand lira avant d'accepter"></textarea>
+        <input type="url" id="ap-site" placeholder="https://ton-site.com (facultatif)">
+
+        <div class="ap-cases">
+            <% domaines.forEach(d => { %>
+                <% d.portees.forEach(p => { %>
+                    <label title="<%= p.label %>">
+                        <input type="checkbox" class="ap-portee" value="<%= p.id %>"
+                               <%= p.niveau === "lire" ? "checked" : "" %>>
+                        <%= p.id %>
+                    </label>
+                <% }) %>
+            <% }) %>
+        </div>
+
+        <div style="margin-top:16px"><button id="ap-creer">Créer l'application</button></div>
+    </div>
+</div>
+
+<script>
+function apAppliquerMode(mode) {
+    if (mode === "light") document.body.setAttribute("data-mode", "light");
+    else document.body.removeAttribute("data-mode");
+}
+apAppliquerMode(localStorage.getItem("samii_mode") === "light" ? "light" : "dark");
+
+async function apPoster(url, corps) {
+    const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corps || {}),
+    });
+    return r.json();
+}
+
+document.getElementById("ap-creer").addEventListener("click", async (e) => {
+    const portees = [...document.querySelectorAll(".ap-portee:checked")].map(c => c.value);
+    e.target.disabled = true;
+    const rep = await apPoster("/apps/creer", {
+        nom: document.getElementById("ap-nom").value,
+        description: document.getElementById("ap-desc").value,
+        urlSite: document.getElementById("ap-site").value,
+        portees,
+    });
+    if (rep.success) location.reload();
+    else { alert(rep.error || "Erreur."); e.target.disabled = false; }
+});
+
+document.querySelectorAll("[data-revoquer]").forEach(b => {
+    b.addEventListener("click", async () => {
+        if (!confirm("Révoquer cette application ? Son accès sera coupé immédiatement.")) return;
+        const rep = await apPoster(`/apps/installations/${b.dataset.revoquer}/revoquer`);
+        if (rep.success) location.reload(); else alert("Erreur.");
+    });
+});
+</script>
+</body>
+</html>

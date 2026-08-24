@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installer <%= app.nom %> — SAMII</title>
+    <meta name="theme-color" content="#05070c">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/qg-style.css?v=8">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; padding: 40px 18px 70px;
+            background: var(--bg-deep); color: var(--text-main);
+            font-family: var(--font-body); -webkit-font-smoothing: antialiased;
+            display: flex; align-items: flex-start; justify-content: center;
+        }
+        .ai { width: 100%; max-width: 520px; }
+
+        .ai-carte {
+            background: var(--bg-panel); border: var(--border-soft);
+            border-radius: 18px; padding: 30px; box-shadow: var(--gold-glow);
+        }
+        .ai-marque {
+            font-family: var(--font-display); color: var(--gold-og);
+            font-size: .82rem; letter-spacing: 2.2px; text-align: center; margin-bottom: 22px;
+        }
+        .ai-carte h1 { margin: 0 0 6px; font-size: 1.25rem; font-weight: 800; line-height: 1.35; }
+        .ai-carte h1 span { color: var(--gold-og); }
+        .ai-desc { color: var(--text-muted); font-size: .84rem; line-height: 1.65; margin: 0 0 6px; }
+        .ai-lien { font-size: .76rem; }
+        .ai-lien a { color: var(--gold-og); }
+
+        .ai-brouillon {
+            background: rgba(229, 83, 61, .1); border: 1px solid rgba(229, 83, 61, .35);
+            border-radius: 10px; padding: 11px 14px; margin: 18px 0 0;
+            color: #e5533d; font-size: .76rem; line-height: 1.55;
+        }
+
+        .ai-titre {
+            margin: 26px 0 12px; font-size: .68rem; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text-muted); font-weight: 600;
+        }
+        .ai-perm {
+            display: flex; align-items: flex-start; gap: 11px;
+            background: var(--bg-deep); border: var(--border-soft);
+            border-radius: 11px; padding: 13px 15px; margin-bottom: 8px; cursor: pointer;
+        }
+        .ai-perm:hover { border-color: var(--gold-og); }
+        .ai-perm input { accent-color: var(--gold-og); margin-top: 2px; flex-shrink: 0; }
+        .ai-perm b { display: block; font-size: .84rem; font-weight: 600; }
+        .ai-perm code {
+            font-family: var(--font-mono); font-size: .68rem; color: var(--text-muted);
+            background: none; padding: 0;
+        }
+
+        .ai-rassure {
+            margin: 20px 0 0; padding: 14px 16px; border-radius: 11px;
+            background: var(--bg-glass); border: var(--border-soft);
+            color: var(--text-muted); font-size: .77rem; line-height: 1.65;
+        }
+        .ai-rassure strong { color: var(--text-main); }
+
+        .ai-actions { display: flex; gap: 10px; margin-top: 22px; }
+        button {
+            flex: 1; border: none; border-radius: 11px; padding: 13px 18px;
+            font-family: inherit; font-weight: 700; font-size: .85rem; cursor: pointer;
+        }
+        .ai-ok { background: var(--gold-og); color: #0A0A0A; }
+        .ai-ok:hover { background: var(--gold-hover); }
+        .ai-ok:disabled { opacity: .5; cursor: default; }
+        .ai-non { background: none; border: var(--border-soft); color: var(--text-muted); }
+        .ai-non:hover { color: var(--text-main); }
+
+        .ai-fait { display: none; }
+        .ai-fait h2 { margin: 0 0 8px; font-size: 1.05rem; color: var(--gold-og); }
+        .ai-fait p { color: var(--text-muted); font-size: .8rem; line-height: 1.65; margin: 0 0 14px; }
+        .ai-cle {
+            background: var(--bg-deep); border: var(--border-gold); border-radius: 11px;
+            padding: 14px; word-break: break-all; font-family: var(--font-mono); font-size: .76rem;
+        }
+    </style>
+</head>
+<body>
+<div class="ai">
+    <div class="ai-carte" id="ai-demande">
+        <div class="ai-marque">SAMII OS</div>
+
+        <h1><span><%= app.nom %></span> demande l'accès à ton espace</h1>
+        <% if (app.description) { %><p class="ai-desc"><%= app.description %></p><% } %>
+        <% if (app.url_site) { %>
+            <p class="ai-lien"><a href="<%= app.url_site %>" target="_blank" rel="noopener noreferrer"><%= app.url_site %></a></p>
+        <% } %>
+
+        <% if (brouillon) { %>
+            <div class="ai-brouillon">
+                Cette application n'est pas encore publiée. Tu la vois parce que tu en es
+                le développeur — personne d'autre ne peut l'installer pour l'instant.
+            </div>
+        <% } %>
+
+        <div class="ai-titre">Ce qu'elle pourra faire</div>
+        <% demandees.forEach(p => { %>
+            <label class="ai-perm">
+                <input type="checkbox" class="ai-portee" value="<%= p.id %>" checked>
+                <span>
+                    <b><%= p.label %></b>
+                    <code><%= p.id %></code>
+                </span>
+            </label>
+        <% }) %>
+
+        <div class="ai-rassure">
+            Tu peux décocher ce que tu ne veux pas accorder — l'application n'aura
+            réellement que ce qui reste coché. <strong>Chaque appel qu'elle fera sera
+            inscrit dans ton journal</strong>, et tu peux tout reprendre en un clic
+            depuis ton QG, à n'importe quel moment.
+        </div>
+
+        <div class="ai-actions">
+            <button type="button" class="ai-non" onclick="history.back()">Refuser</button>
+            <button type="button" class="ai-ok" id="ai-ok">Autoriser</button>
+        </div>
+    </div>
+
+    <div class="ai-carte ai-fait" id="ai-fait">
+        <div class="ai-marque">SAMII OS</div>
+        <h2>Accès accordé</h2>
+        <p>
+            Voici la clé à remettre à <strong><%= app.nom %></strong>. Elle ne s'affichera
+            plus jamais — copie-la maintenant. Nous ne l'envoyons pas nous-mêmes à
+            l'application : c'est à toi de décider à qui tu la donnes.
+        </p>
+        <div class="ai-cle" id="ai-cle"></div>
+        <div class="ai-actions">
+            <button type="button" class="ai-non" id="ai-copier">Copier</button>
+            <button type="button" class="ai-ok" onclick="location.href='/apps'">Terminé</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById("ai-ok").addEventListener("click", async (e) => {
+    const portees = [...document.querySelectorAll(".ai-portee:checked")].map(c => c.value);
+    if (!portees.length) { alert("Accorde au moins une permission, ou refuse."); return; }
+    e.target.disabled = true;
+
+    const r = await fetch(location.pathname, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ portees }),
+    });
+    const rep = await r.json();
+    if (rep.success) {
+        document.getElementById("ai-cle").textContent = rep.cle;
+        document.getElementById("ai-demande").style.display = "none";
+        document.getElementById("ai-fait").style.display = "block";
+    } else {
+        alert(rep.error || "Erreur.");
+        e.target.disabled = false;
+    }
+});
+
+document.getElementById("ai-copier").addEventListener("click", async (e) => {
+    try {
+        await navigator.clipboard.writeText(document.getElementById("ai-cle").textContent);
+        e.target.textContent = "Copié ✓";
+    } catch {
+        // Presse-papiers refusé (contexte non sécurisé, permission) : on
+        // sélectionne le texte pour que la copie manuelle reste possible.
+        const plage = document.createRange();
+        plage.selectNodeContents(document.getElementById("ai-cle"));
+        const sel = window.getSelection();
+        sel.removeAllRanges(); sel.addRange(plage);
+        e.target.textContent = "Ctrl+C";
+    }
+});
+</script>
+</body>
+</html>
