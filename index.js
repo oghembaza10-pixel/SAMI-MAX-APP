@@ -298,6 +298,7 @@ app.get("/qg", requireAuth, async (req, res) => {
             themeVisuel,
             attente     : false,
             vueAgence   : estAgenceProprietaire,
+            typeCompte  : req.session.typeCompte || "marchand",
         });
     } catch (err) {
         console.error("❌ GET /qg :", err);
