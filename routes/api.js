@@ -457,6 +457,16 @@ async function getYoutube(workspaceId) {
         const connecteur = await connectorService.getOne(workspaceId, "google");
         if (!connecteur?.actif) return { stats: null, videos: [], comments: [] };
 
+        // Les autorisations YouTube ont été retirées de la demande OAuth en
+        // attendant la vérification Google. Sans elles, chaque chargement du
+        // QG lançait trois appels YouTube qui échouaient en 403 : inutile et
+        // bruyant dans les journaux. On s'appuie sur les autorisations
+        // réellement accordées, telles que Google les a renvoyées à la
+        // connexion — ainsi, le jour où elles reviennent, le bloc se
+        // réactive tout seul, sans toucher au code.
+        const accordees = String(connecteur.config?.scope || "");
+        if (!accordees.includes("youtube")) return { stats: null, videos: [], comments: [] };
+
         const [statsRes, videosRes, commentsRes] = await Promise.all([
             google.getYoutubeStats(workspaceId),
             google.listMyVideos(workspaceId, 6),
