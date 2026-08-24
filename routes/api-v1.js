@@ -23,6 +23,7 @@ const db = require("../services/db");
 const apiPartenaire = require("../services/apiPartenaire");
 const evenements = require("../services/evenements");
 const metiers = require("../services/metiers");
+const portees = require("../services/portees");
 
 // Limite par clé plutôt que par IP : plusieurs partenaires peuvent sortir
 // de la même IP (un n8n auto-hébergé mutualisé), et une clé qui s'emballe
@@ -57,6 +58,8 @@ async function authentifier(req, res, next) {
         });
     }
 
+    req.cleId = portee.cleId;
+    req.portees = portee.portees;
     req.agenceId = portee.agenceId;
 
     if (portee.workspaceId) {
@@ -97,13 +100,48 @@ function exigerEspace(req, res, next) {
     });
 }
 
+// Policy Engine : la permission est vérifiée ICI, à l'entrée de chaque route,
+// et jamais déduite de ce que l'appelant prétend être. Le refus nomme la
+// portée manquante — un intégrateur doit pouvoir corriger sans nous écrire.
+function exiger(portee) {
+    return (req, res, next) => {
+        if (portees.autorise(req.portees, portee)) return next();
+        req.porteeRefusee = portee;
+        res.status(403).json({
+            erreur: "Cette clé n'a pas la permission nécessaire.",
+            porteeRequise: portee,
+            aide: `Ajoutez « ${portees.label(portee)} » aux permissions de la clé, ou créez-en une nouvelle.`,
+        });
+    };
+}
+
 router.use(limiteur, express.json({ limit: "256kb" }), authentifier);
+
+// Traçabilité : on écrit la trace quand la réponse part, pour connaître son
+// code réel. Le journal répond à la question que pose tout marchand avant de
+// confier son espace — « qu'est-ce que cette clé a fait chez moi ? ».
+router.use((req, res, next) => {
+    res.on("finish", () => {
+        apiPartenaire.tracer({
+            cleId: req.cleId,
+            workspaceId: req.workspaceId,
+            agenceId: req.agenceId,
+            methode: req.method,
+            chemin: req.originalUrl.split("?")[0],
+            statut: res.statusCode,
+            portee: req.porteeRefusee || null,
+            refusee: res.statusCode === 403,
+            ip: req.ip,
+        });
+    });
+    next();
+});
 
 // ── PORTEFEUILLE (clés d'agence) ─────────────────────────────────────────
 // Les espaces que cette clé peut atteindre. Sur une clé marchand, il n'y en
 // a qu'un — le sien — pour que le même flux n8n fonctionne dans les deux cas
 // sans être réécrit.
-router.get("/espaces", async (req, res) => {
+router.get("/espaces", exiger("espaces:lire"), async (req, res) => {
     try {
         if (req.agenceId) {
             const espaces = await apiPartenaire.listerEspacesAgence(req.agenceId);
@@ -138,7 +176,7 @@ router.get("/espaces", async (req, res) => {
 
 // ── IDENTITÉ ─────────────────────────────────────────────────────────────
 // Premier appel que fait tout intégrateur pour valider sa clé.
-router.get("/moi", async (req, res) => {
+router.get("/moi", exiger("espaces:lire"), async (req, res) => {
     try {
         // Clé d'agence sans espace ciblé : on décrit l'agence elle-même.
         if (!req.workspaceId && req.agenceId) {
@@ -174,7 +212,7 @@ router.get("/moi", async (req, res) => {
 });
 
 // ── COMMANDES ────────────────────────────────────────────────────────────
-router.get("/commandes", exigerEspace, async (req, res) => {
+router.get("/commandes", exigerEspace, exiger("commandes:lire"), async (req, res) => {
     try {
         const limite = Math.min(parseInt(req.query.limite, 10) || 50, 200);
         const statut = req.query.statut;
@@ -199,7 +237,7 @@ router.get("/commandes", exigerEspace, async (req, res) => {
     }
 });
 
-router.post("/commandes", exigerEspace, async (req, res) => {
+router.post("/commandes", exigerEspace, exiger("commandes:ecrire"), async (req, res) => {
     try {
         const { nomClient, telephone, adresse, produit, montant } = req.body || {};
         if (!nomClient || !String(nomClient).trim()) {
@@ -233,7 +271,7 @@ router.post("/commandes", exigerEspace, async (req, res) => {
 });
 
 // ── RENDEZ-VOUS ──────────────────────────────────────────────────────────
-router.get("/rendez-vous", exigerEspace, async (req, res) => {
+router.get("/rendez-vous", exigerEspace, exiger("rendezvous:lire"), async (req, res) => {
     try {
         const limite = Math.min(parseInt(req.query.limite, 10) || 50, 200);
         const rows = await db.query(
@@ -251,7 +289,7 @@ router.get("/rendez-vous", exigerEspace, async (req, res) => {
     }
 });
 
-router.post("/rendez-vous", exigerEspace, async (req, res) => {
+router.post("/rendez-vous", exigerEspace, exiger("rendezvous:ecrire"), async (req, res) => {
     try {
         const { clientNom, telephone, motif, dateRdv } = req.body || {};
         if (!clientNom || !dateRdv) {
@@ -281,7 +319,7 @@ router.post("/rendez-vous", exigerEspace, async (req, res) => {
 });
 
 // ── CLIENTS ──────────────────────────────────────────────────────────────
-router.get("/clients", exigerEspace, async (req, res) => {
+router.get("/clients", exigerEspace, exiger("clients:lire"), async (req, res) => {
     try {
         const limite = Math.min(parseInt(req.query.limite, 10) || 50, 200);
         const rows = await db.query(

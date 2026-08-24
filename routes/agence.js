@@ -18,6 +18,7 @@ const workspaceService = require("../services/workspaceService");
 const journalService = require("../services/journalService");
 const metiers = require("../services/metiers");
 const apiPartenaire = require("../services/apiPartenaire");
+const portees = require("../services/portees");
 
 function requireAgence(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -233,14 +234,16 @@ router.get("/", requireAgence, async (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════
 router.get("/api", requireAgence, async (req, res) => {
     try {
-        const [cles, webhooks, espaces] = await Promise.all([
+        const [cles, webhooks, espaces, acces] = await Promise.all([
             apiPartenaire.listerClesAgence(req.session.userId),
             apiPartenaire.listerWebhooksAgence(req.session.userId),
             apiPartenaire.listerEspacesAgence(req.session.userId),
+            apiPartenaire.listerAccesAgence(req.session.userId, 15).catch(() => []),
         ]);
         res.render("agence-api", {
             nomAgence: req.session.nom || "Mon agence",
-            cles, webhooks,
+            cles, webhooks, acces,
+            domaines: portees.parDomaine(),
             espaces: espaces.map(e => ({
                 ...e,
                 metierLabel: metiers.label(e.metier) || e.metier || "—",
@@ -259,7 +262,11 @@ router.get("/api", requireAgence, async (req, res) => {
 // part en clair, donc une clé perdue se remplace, elle ne se retrouve pas.
 router.post("/api/cles", requireAgence, async (req, res) => {
     try {
-        const cle = await apiPartenaire.creerCleAgence(req.session.userId, req.body?.nom || "Clé agence");
+        const droits = portees.nettoyer(req.body?.portees);
+        if (!droits.length) {
+            return res.json({ success: false, error: "Choisis au moins une permission pour cette clé." });
+        }
+        const cle = await apiPartenaire.creerCleAgence(req.session.userId, req.body?.nom || "Clé agence", droits);
         await journalService.log({
             action: "agence.api.cle.creee",
             details: `${req.session.nom || "Agence"} — ${req.body?.nom || "Clé agence"}`,

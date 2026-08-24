@@ -147,6 +147,41 @@ X-SAMII-Espace: WS-a1b2c3        (ou ?espace=WS-a1b2c3)</code></pre>
   "total": 2
 }</code></pre>
 
+<h3>Permissions</h3>
+<p>
+    Chaque clé porte la liste de ce qu'elle a le droit de faire. C'est le propriétaire
+    de l'espace qui coche, à la création — pas l'intégrateur. Une clé de lecture ne peut
+    rien écrire, même si l'appel est parfaitement formé.
+</p>
+<table>
+    <thead><tr><th>Permission</th><th>Donne accès à</th></tr></thead>
+    <tbody>
+        <tr><td>espaces:lire</td><td><code>GET /moi</code>, <code>GET /espaces</code></td></tr>
+        <tr><td>commandes:lire</td><td><code>GET /commandes</code></td></tr>
+        <tr><td>commandes:ecrire</td><td><code>POST /commandes</code></td></tr>
+        <tr><td>rendezvous:lire</td><td><code>GET /rendez-vous</code></td></tr>
+        <tr><td>rendezvous:ecrire</td><td><code>POST /rendez-vous</code></td></tr>
+        <tr><td>clients:lire</td><td><code>GET /clients</code></td></tr>
+    </tbody>
+</table>
+<p>
+    Un appel hors permission renvoie <code>403</code> en nommant ce qui manque, pour que
+    vous puissiez corriger sans nous écrire :
+</p>
+<pre><code>{
+  "erreur": "Cette clé n'a pas la permission nécessaire.",
+  "porteeRequise": "commandes:ecrire",
+  "aide": "Ajoutez « Créer et modifier des commandes » aux permissions de la clé…"
+}</code></pre>
+
+<h3>Traçabilité</h3>
+<p>
+    Chaque appel est enregistré — méthode, chemin, code de réponse, clé utilisée — et
+    le propriétaire de l'espace le voit depuis sa page <strong>API &amp; Webhooks</strong>,
+    refus compris. Demander un accès à un marchand est plus simple quand il peut vérifier
+    lui-même ce qui en est fait.
+</p>
+
 <h3>Limite d'appels</h3>
 <p>
     120 requêtes par minute et par clé. La limite est comptée par clé, pas par adresse IP :

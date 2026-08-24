@@ -96,7 +96,37 @@ const db = require("../services/db");
         await db.query(`CREATE INDEX IF NOT EXISTS idx_api_cles_agence ON api_cles (agence_id);`);
         await db.query(`CREATE INDEX IF NOT EXISTS idx_webhooks_agence ON webhooks_sortants (agence_id) WHERE actif;`);
 
-        console.log("✅ Tables api_cles et webhooks_sortants prêtes (marchand + agence).");
+        // ── Portées d'accès (Policy Engine) ───────────────────────────────
+        // Une clé sans portées enregistrées garde l'accès complet : toutes
+        // celles créées avant ce mécanisme continuent de fonctionner. Ne pas
+        // mettre de valeur par défaut ici — un tableau vide DOIT vouloir dire
+        // « clé historique », pas « clé sans aucun droit ».
+        await db.query(`ALTER TABLE api_cles ADD COLUMN IF NOT EXISTS portees TEXT[];`);
+
+        // ── Traçabilité des accès API ─────────────────────────────────────
+        // Une permission qu'on ne peut pas vérifier après coup ne rassure
+        // personne. Ce journal répond à « qu'est-ce que cette clé a fait chez
+        // moi ? » — la question que pose tout marchand avant de confier son
+        // espace à une agence ou à un agent tiers.
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS api_journal (
+                id           BIGSERIAL PRIMARY KEY,
+                cle_id       BIGINT,
+                workspace_id TEXT,
+                agence_id    TEXT,
+                methode      TEXT NOT NULL,
+                chemin       TEXT NOT NULL,
+                statut       INTEGER NOT NULL,
+                portee       TEXT,
+                refusee      BOOLEAN NOT NULL DEFAULT FALSE,
+                ip           TEXT,
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+        `);
+        await db.query(`CREATE INDEX IF NOT EXISTS idx_api_journal_ws ON api_journal (workspace_id, created_at DESC);`);
+        await db.query(`CREATE INDEX IF NOT EXISTS idx_api_journal_cle ON api_journal (cle_id, created_at DESC);`);
+
+        console.log("✅ Tables API prêtes : clés (portées incluses), webhooks, journal d'accès.");
     } catch (err) {
         console.error("❌ Création tables API partenaires :", err.message);
         process.exitCode = 1;

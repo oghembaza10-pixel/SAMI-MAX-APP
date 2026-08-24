@@ -159,15 +159,19 @@
         </p>
 
         <table>
-            <thead><tr><th>Nom</th><th>Clé</th><th>Dernier usage</th><th>État</th><th></th></tr></thead>
+            <thead><tr><th>Nom</th><th>Clé</th><th>Permissions</th><th>Dernier usage</th><th>État</th><th></th></tr></thead>
             <tbody>
             <% if (!cles.length) { %>
-                <tr><td colspan="5" class="dv-vide">Aucune clé pour l'instant.</td></tr>
+                <tr><td colspan="6" class="dv-vide">Aucune clé pour l'instant.</td></tr>
             <% } %>
             <% cles.forEach(c => { %>
                 <tr>
                     <td><%= c.nom %></td>
                     <td class="mono"><%= c.cle_prefixe %>…</td>
+                    <%# Portées absentes = clé créée avant les permissions : accès complet. %>
+                    <td class="mono" style="font-size:.68rem">
+                        <%= (c.portees && c.portees.length) ? c.portees.join(", ") : "accès complet (clé historique)" %>
+                    </td>
                     <td class="mono"><%= c.derniere_utilisation ? new Date(c.derniere_utilisation).toLocaleString('fr-FR') : "jamais" %></td>
                     <td><span class="dv-etat <%= c.actif ? 'dv-etat--on' : 'dv-etat--off' %>"><%= c.actif ? "active" : "révoquée" %></span></td>
                     <td>
@@ -179,6 +183,23 @@
             <% }) %>
             </tbody>
         </table>
+
+        <p class="dv-aide" style="margin:20px 0 0">
+            <strong>Ce que cette clé aura le droit de faire.</strong> Ne coche que le
+            nécessaire : une clé qui ne sait que lire ne peut rien casser, même entre
+            de mauvaises mains.
+        </p>
+        <div class="dv-cases">
+            <% domaines.forEach(d => { %>
+                <% d.portees.forEach(p => { %>
+                    <label title="<%= p.label %>">
+                        <input type="checkbox" class="dv-portee" value="<%= p.id %>"
+                               <%= p.niveau === "lire" ? "checked" : "" %>>
+                        <%= p.id %>
+                    </label>
+                <% }) %>
+            <% }) %>
+        </div>
 
         <div class="dv-ligne">
             <input type="text" id="dv-nom-cle" placeholder="Nom de la clé (ex : n8n production)">
@@ -232,6 +253,38 @@
         <div class="dv-ligne"><button id="dv-creer-webhook">Enregistrer le webhook</button></div>
     </div>
 
+    <!-- ── JOURNAL D'ACCÈS ─────────────────────────────────────── -->
+    <div class="dv-bloc">
+        <h2>Ce que les clés ont fait chez toi</h2>
+        <p class="dv-aide">
+            Les quinze derniers appels reçus par ton espace. C'est la contrepartie
+            des permissions : donner un accès n'a de sens que si tu peux vérifier
+            ensuite ce qui en a été fait. Un appel refusé apparaît en rouge, avec
+            la permission qui manquait.
+        </p>
+        <table>
+            <thead><tr><th>Quand</th><th>Clé</th><th>Appel</th><th>Réponse</th></tr></thead>
+            <tbody>
+            <% if (!acces || !acces.length) { %>
+                <tr><td colspan="4" class="dv-vide">Aucun appel pour l'instant.</td></tr>
+            <% } %>
+            <% (acces || []).forEach(a => { %>
+                <tr>
+                    <td class="mono"><%= new Date(a.created_at).toLocaleString('fr-FR') %></td>
+                    <td><%= a.cle_nom || "—" %></td>
+                    <td class="mono" style="font-size:.7rem"><%= a.methode %> <%= a.chemin %></td>
+                    <td class="mono">
+                        <span class="dv-etat <%= a.refusee ? 'dv-etat--off' : 'dv-etat--on' %>"><%= a.statut %></span>
+                        <% if (a.refusee && a.portee) { %>
+                            <span style="font-size:.66rem;color:var(--text-muted)"> manque <%= a.portee %></span>
+                        <% } %>
+                    </td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+
     <!-- ── DÉMARRAGE RAPIDE ────────────────────────────────────── -->
     <div class="dv-bloc">
         <h2>Démarrage rapide</h2>
@@ -271,7 +324,8 @@ async function dvPoster(url, corps) {
 document.getElementById("dv-creer-cle").addEventListener("click", async (e) => {
     e.target.disabled = true;
     const nom = document.getElementById("dv-nom-cle").value.trim() || "Clé API";
-    const rep = await dvPoster("/developpeurs/cles", { nom });
+    const portees = [...document.querySelectorAll(".dv-portee:checked")].map(c => c.value);
+    const rep = await dvPoster("/developpeurs/cles", { nom, portees });
     if (rep.success) {
         document.getElementById("dv-valeur-cle").textContent = rep.cle;
         document.getElementById("dv-nouvelle").style.display = "block";

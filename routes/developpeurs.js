@@ -9,6 +9,7 @@
 const express = require("express");
 const router = express.Router();
 const apiPartenaire = require("../services/apiPartenaire");
+const portees = require("../services/portees");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -18,13 +19,16 @@ function requireAuth(req, res, next) {
 
 router.get("/", requireAuth, async (req, res) => {
     try {
-        const [cles, webhooks] = await Promise.all([
+        const [cles, webhooks, acces] = await Promise.all([
             apiPartenaire.listerCles(req.session.workspaceId),
             apiPartenaire.listerWebhooks(req.session.workspaceId),
+            apiPartenaire.listerAcces(req.session.workspaceId, 15).catch(() => []),
         ]);
         res.render("developpeurs", {
             cles,
             webhooks,
+            acces,
+            domaines: portees.parDomaine(),
             evenements: apiPartenaire.EVENEMENTS,
             workspaceId: req.session.workspaceId,
             baseUrl: `${req.protocol}://${req.get("host")}`,
@@ -39,7 +43,14 @@ router.get("/", requireAuth, async (req, res) => {
 // nulle part en clair, donc si le marchand la perd il doit en créer une autre.
 router.post("/cles", requireAuth, async (req, res) => {
     try {
-        const cle = await apiPartenaire.creerCle(req.session.workspaceId, req.body?.nom || "Clé API");
+        // Une clé sans aucune permission serait enregistrée avec portees NULL,
+        // ce qui vaut « accès complet » côté base : on refuse ici plutôt que
+        // de livrer au marchand l'inverse exact de ce qu'il croit créer.
+        const droits = portees.nettoyer(req.body?.portees);
+        if (!droits.length) {
+            return res.json({ success: false, error: "Choisis au moins une permission pour cette clé." });
+        }
+        const cle = await apiPartenaire.creerCle(req.session.workspaceId, req.body?.nom || "Clé API", droits);
         res.json({ success: true, cle });
     } catch (err) {
         console.error("❌ /developpeurs/cles :", err.message);

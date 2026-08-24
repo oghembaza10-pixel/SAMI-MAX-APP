@@ -24,6 +24,7 @@
 const crypto = require("crypto");
 const axios = require("axios");
 const db = require("../services/db");
+const portees = require("./portees");
 
 const PREFIXE = "sk_samii_";
 
@@ -33,12 +34,17 @@ function empreinte(cle) {
 
 // ── CLÉS ─────────────────────────────────────────────────────────────────
 
-async function creerCleAvecPortee({ workspaceId = null, agenceId = null }, nom) {
+async function creerCleAvecPortee({ workspaceId = null, agenceId = null }, nom, droits) {
     const cle = PREFIXE + crypto.randomBytes(24).toString("hex");
+    // Liste vide → NULL en base, ce qui vaut « accès complet » (clé historique).
+    // Une clé créée sans cocher quoi que ce soit doit donc être refusée en
+    // amont par l'interface plutôt que silencieusement toute-puissante.
+    const propres = portees.nettoyer(droits);
     await db.query(
-        `INSERT INTO api_cles (workspace_id, agence_id, nom, cle_hash, cle_prefixe)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [workspaceId, agenceId, String(nom || "Clé API").slice(0, 60), empreinte(cle), cle.slice(0, 16)],
+        `INSERT INTO api_cles (workspace_id, agence_id, nom, cle_hash, cle_prefixe, portees)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [workspaceId, agenceId, String(nom || "Clé API").slice(0, 60),
+         empreinte(cle), cle.slice(0, 16), propres.length ? propres : null],
     );
     return cle;
 }
@@ -47,18 +53,18 @@ async function creerCleAvecPortee({ workspaceId = null, agenceId = null }, nom) 
  * Crée une clé de marchand. La valeur en clair n'est retournée qu'ICI, une
  * seule fois — elle n'est plus jamais consultable ensuite.
  */
-function creerCle(workspaceId, nom = "Clé API") {
-    return creerCleAvecPortee({ workspaceId }, nom);
+function creerCle(workspaceId, nom = "Clé API", droits = []) {
+    return creerCleAvecPortee({ workspaceId }, nom, droits);
 }
 
 /** Crée une clé d'agence, valable sur tout son portefeuille. */
-function creerCleAgence(agenceId, nom = "Clé agence") {
-    return creerCleAvecPortee({ agenceId: String(agenceId) }, nom);
+function creerCleAgence(agenceId, nom = "Clé agence", droits = []) {
+    return creerCleAvecPortee({ agenceId: String(agenceId) }, nom, droits);
 }
 
 function listerCles(workspaceId) {
     return db.query(
-        `SELECT id, nom, cle_prefixe, actif, derniere_utilisation, created_at
+        `SELECT id, nom, cle_prefixe, actif, portees, derniere_utilisation, created_at
            FROM api_cles WHERE workspace_id = $1 ORDER BY created_at DESC`,
         [workspaceId],
     );
@@ -66,7 +72,7 @@ function listerCles(workspaceId) {
 
 function listerClesAgence(agenceId) {
     return db.query(
-        `SELECT id, nom, cle_prefixe, actif, derniere_utilisation, created_at
+        `SELECT id, nom, cle_prefixe, actif, portees, derniere_utilisation, created_at
            FROM api_cles WHERE agence_id = $1 ORDER BY created_at DESC`,
         [String(agenceId)],
     );
@@ -99,7 +105,7 @@ async function resoudreCle(cle) {
     if (!cle || !cle.startsWith(PREFIXE)) return null;
     try {
         const rows = await db.query(
-            `SELECT id, workspace_id, agence_id FROM api_cles
+            `SELECT id, workspace_id, agence_id, portees FROM api_cles
               WHERE cle_hash = $1 AND actif = TRUE`,
             [empreinte(cle)],
         );
@@ -109,8 +115,10 @@ async function resoudreCle(cle) {
         db.query(`UPDATE api_cles SET derniere_utilisation = NOW() WHERE id = $1`, [rows[0].id])
             .catch(() => {});
         return {
+            cleId: rows[0].id,
             workspaceId: rows[0].workspace_id || null,
             agenceId: rows[0].agence_id || null,
+            portees: rows[0].portees || [],
         };
     } catch (err) {
         console.error("❌ apiPartenaire.resoudreCle :", err.message);
@@ -291,6 +299,43 @@ async function emettre(workspaceId, evenement, donnees) {
     }
 }
 
+/**
+ * Trace un accès API. Jamais bloquant, jamais attendu : la traçabilité ne
+ * doit pas ralentir la réponse faite au partenaire, ni la faire échouer si
+ * la table manque sur cet environnement.
+ */
+function tracer({ cleId, workspaceId, agenceId, methode, chemin, statut, portee, refusee, ip }) {
+    db.query(
+        `INSERT INTO api_journal (cle_id, workspace_id, agence_id, methode, chemin, statut, portee, refusee, ip)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [cleId || null, workspaceId || null, agenceId || null, methode, String(chemin).slice(0, 200),
+         statut, portee || null, !!refusee, (ip || "").slice(0, 60)],
+    ).catch(err => {
+        if (err.code !== "42P01") console.error("❌ apiPartenaire.tracer :", err.message);
+    });
+}
+
+function listerAcces(workspaceId, limite = 20) {
+    return db.query(
+        `SELECT j.methode, j.chemin, j.statut, j.portee, j.refusee, j.created_at, c.nom AS cle_nom
+           FROM api_journal j LEFT JOIN api_cles c ON c.id = j.cle_id
+          WHERE j.workspace_id = $1 ORDER BY j.created_at DESC LIMIT $2`,
+        [workspaceId, limite],
+    );
+}
+
+function listerAccesAgence(agenceId, limite = 20) {
+    return db.query(
+        `SELECT j.methode, j.chemin, j.statut, j.portee, j.refusee, j.created_at,
+                c.nom AS cle_nom, w.nom AS espace_nom
+           FROM api_journal j
+           LEFT JOIN api_cles c ON c.id = j.cle_id
+           LEFT JOIN workspaces w ON w.id = j.workspace_id
+          WHERE j.agence_id = $1 ORDER BY j.created_at DESC LIMIT $2`,
+        [String(agenceId), limite],
+    );
+}
+
 module.exports = {
     PREFIXE, EVENEMENTS,
     creerCle, listerCles, revoquerCle, resoudreCle,
@@ -298,5 +343,5 @@ module.exports = {
     espaceDeLAgence, listerEspacesAgence,
     creerWebhook, listerWebhooks, supprimerWebhook,
     creerWebhookAgence, listerWebhooksAgence, supprimerWebhookAgence,
-    emettre,
+    emettre, tracer, listerAcces, listerAccesAgence,
 };
