@@ -23,14 +23,18 @@ document.addEventListener('DOMContentLoaded', () => {
             appliquerMode(prochain);
         });
 
-        // Calendrier RDV replié par défaut (prend moins de place) — se
-        // déploie au clic sur le titre, même logique que le clic sur un
-        // jour pour voir l'agenda.
+        // Panneaux repliés par défaut (calendrier RDV, Gmail, YouTube...) —
+        // se déploient au clic sur leur titre, pour ne pas charger le QG :
+        // le marchand/client ouvre seulement ce qu'il veut voir. Délégation
+        // générique via data-toggle-target, marche pour tout panneau qui
+        // porte la classe qg-section-title--toggle, même ajouté plus tard.
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('#rdv-calendar-title')) return;
-            const holder = document.getElementById('rdv-calendar');
-            const chevron = document.getElementById('rdv-calendar-chevron');
+            const titre = e.target.closest('.qg-section-title--toggle');
+            if (!titre) return;
+            const cibleId = titre.dataset.toggleTarget;
+            const holder = cibleId && document.getElementById(cibleId);
             if (!holder) return;
+            const chevron = titre.querySelector('.qg-section-title__chevron');
             const ouvert = holder.style.display !== 'none';
             holder.style.display = ouvert ? 'none' : '';
             if (chevron) chevron.style.transform = ouvert ? '' : 'rotate(180deg)';
@@ -682,11 +686,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = document.getElementById('activite-list');
         if (!list) return;
         if (!journal || journal.length === 0) {
-            list.innerHTML = `<li style="padding:12px;color:#888;font-size:.85rem;">${qm('noActivity')}</li>`;
+            list.innerHTML = `<li style="padding:12px;color:var(--text-muted);font-size:.85rem;">${qm('noActivity')}</li>`;
             return;
         }
         list.innerHTML = journal.map(j => `
-            <li style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.85rem;color:#ddd;">
+            <li style="padding:10px 12px;border-bottom:var(--border-soft);font-size:.85rem;color:var(--text-main);">
                 <span style="color:#d4af37;">${new Date(j.created_at).toLocaleString('fr-FR')}</span>
                 — ${j.details || j.action || ''}
             </li>
@@ -716,10 +720,10 @@ document.addEventListener('DOMContentLoaded', () => {
         section.style.display = '';
         title.style.display   = '';
         list.innerHTML = emails.map(e => `
-            <li style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.85rem;color:#ddd;">
+            <li style="padding:10px 12px;border-bottom:var(--border-soft);font-size:.85rem;color:var(--text-main);">
                 <strong style="color:#d4af37;">${escapeHtml(e.sujet || '(sans objet)')}</strong>
-                <div style="color:#999;font-size:.78rem;margin-top:2px;">${escapeHtml(e.de || '')}</div>
-                <div style="color:#aaa;font-size:.8rem;margin-top:4px;">${escapeHtml(e.extrait || '')}</div>
+                <div style="color:var(--text-muted);font-size:.78rem;margin-top:2px;">${escapeHtml(e.de || '')}</div>
+                <div style="color:var(--text-muted);font-size:.8rem;margin-top:4px;">${escapeHtml(e.extrait || '')}</div>
             </li>
         `).join('');
     }
@@ -747,17 +751,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (youtube.stats) {
             const s = youtube.stats;
             statsEl.innerHTML = `
-                <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 16px;">
+                <div style="background:var(--bg-glass);border-radius:10px;padding:10px 16px;">
                     <strong style="color:#d4af37;font-size:1.1rem;">${Number(s.abonnes).toLocaleString('fr-FR')}</strong>
-                    <div style="color:#999;font-size:.72rem;">${qm('youtubeSubs')}</div>
+                    <div style="color:var(--text-muted);font-size:.72rem;">${qm('youtubeSubs')}</div>
                 </div>
-                <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 16px;">
+                <div style="background:var(--bg-glass);border-radius:10px;padding:10px 16px;">
                     <strong style="color:#d4af37;font-size:1.1rem;">${Number(s.vues).toLocaleString('fr-FR')}</strong>
-                    <div style="color:#999;font-size:.72rem;">${qm('youtubeViews')}</div>
+                    <div style="color:var(--text-muted);font-size:.72rem;">${qm('youtubeViews')}</div>
                 </div>
-                <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 16px;">
+                <div style="background:var(--bg-glass);border-radius:10px;padding:10px 16px;">
                     <strong style="color:#d4af37;font-size:1.1rem;">${Number(s.videos).toLocaleString('fr-FR')}</strong>
-                    <div style="color:#999;font-size:.72rem;">${qm('youtubeVideosCount')}</div>
+                    <div style="color:var(--text-muted);font-size:.72rem;">${qm('youtubeVideosCount')}</div>
                 </div>
             `;
         } else {
@@ -766,21 +770,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         videosEl.innerHTML = (youtube.videos && youtube.videos.length)
             ? youtube.videos.map(v => `
-                <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.82rem;">
-                    <a href="${escapeHtml(v.lien)}" target="_blank" rel="noopener" style="color:#ddd;text-decoration:none;">${escapeHtml(v.titre)}</a>
-                    <div style="color:#888;font-size:.72rem;margin-top:2px;">${v.date ? new Date(v.date).toLocaleDateString('fr-FR') : ''}</div>
+                <li style="padding:8px 0;border-bottom:var(--border-soft);font-size:.82rem;">
+                    <a href="${escapeHtml(v.lien)}" target="_blank" rel="noopener" style="color:var(--text-main);text-decoration:none;">${escapeHtml(v.titre)}</a>
+                    <div style="color:var(--text-muted);font-size:.72rem;margin-top:2px;">${v.date ? new Date(v.date).toLocaleDateString('fr-FR') : ''}</div>
                 </li>
             `).join('')
-            : `<li style="padding:10px 0;color:#888;font-size:.82rem;">${qm('youtubeEmptyVideos')}</li>`;
+            : `<li style="padding:10px 0;color:var(--text-muted);font-size:.82rem;">${qm('youtubeEmptyVideos')}</li>`;
 
         commentsEl.innerHTML = (youtube.comments && youtube.comments.length)
             ? youtube.comments.map(c => `
-                <li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:.82rem;">
+                <li style="padding:8px 0;border-bottom:var(--border-soft);font-size:.82rem;">
                     <strong style="color:#d4af37;">${escapeHtml(c.auteur)}</strong>
-                    <div style="color:#ccc;margin-top:2px;">${escapeHtml(c.texte)}</div>
+                    <div style="color:var(--text-main);margin-top:2px;">${escapeHtml(c.texte)}</div>
                 </li>
             `).join('')
-            : `<li style="padding:10px 0;color:#888;font-size:.82rem;">${qm('youtubeEmptyComments')}</li>`;
+            : `<li style="padding:10px 0;color:var(--text-muted);font-size:.82rem;">${qm('youtubeEmptyComments')}</li>`;
     }
 
     function dateValide(v) {
@@ -892,15 +896,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tbody) return;
         if (!commandes || commandes.length === 0) {
             const texteVide = parcoursActuel === 'rdv' ? qm('noAppointments') : qm('noOrders');
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#888;padding:20px;">${texteVide}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">${texteVide}</td></tr>`;
             return;
         }
 
         if (parcoursActuel === 'rdv') {
             tbody.innerHTML = commandes.slice(0, 20).map(c => `
-                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <tr style="border-bottom: var(--border-soft);">
                     <td style="padding: 12px;">#${String(c['ID Commande'] || '').toString().slice(-4) || '—'}</td>
-                    <td style="padding: 12px; font-weight: 500; color: #fff;">${c['Nom Client'] || '—'}</td>
+                    <td style="padding: 12px; font-weight: 500; color: var(--text-main);">${c['Nom Client'] || '—'}</td>
                     <td style="padding: 12px;">${c['Téléphone'] || '—'}</td>
                     <td style="padding: 12px;">${c['Produit'] || '—'}</td>
                     <td style="padding: 12px; color: #d4af37; font-weight: 600;">${c['DateRdv'] || '—'}</td>
@@ -915,9 +919,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         tbody.innerHTML = commandes.slice(0, 20).map(c => `
-            <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+            <tr style="border-bottom: var(--border-soft);">
                 <td style="padding: 12px;">#${c['ID Commande'] || c.airtableId?.slice(-4) || '—'}</td>
-                <td style="padding: 12px; font-weight: 500; color: #fff;">${c['Nom Client'] || c['Nom'] || '—'}</td>
+                <td style="padding: 12px; font-weight: 500; color: var(--text-main);">${c['Nom Client'] || c['Nom'] || '—'}</td>
                 <td style="padding: 12px;">${c['Téléphone'] || '—'}</td>
                 <td style="padding: 12px;">${c['Produit'] || '—'}</td>
                 <td style="padding: 12px; color: #d4af37; font-weight: 600;">${parseFloat(c['montant'] || c['Total'] || 0).toFixed(2)} ${c['Devise'] || 'DZD'}</td>
@@ -964,7 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = document.getElementById(containerId);
         if (!el) return;
         if (!clients || clients.length === 0) {
-            el.innerHTML = `<p style="color:#888;font-size:.85rem;">${qm('noClients')}</p>`;
+            el.innerHTML = `<p style="color:var(--text-muted);font-size:.85rem;">${qm('noClients')}</p>`;
             return;
         }
         el.innerHTML = clients.map(c => `

@@ -207,7 +207,7 @@
             <article class="qg-card" style="grid-column:span 3;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <span style="color:#d4af37;font-weight:700;font-size:1rem;" data-i18n="qg.mission.objective">Objectif du jour</span>
-                    <span class="qg-mono" id="mission-date" style="color:#555;font-size:.8rem;"></span>
+                    <span class="qg-mono" id="mission-date" style="color:var(--text-muted);font-size:.8rem;"></span>
                 </div>
                 <div style="display:flex;gap:32px;flex-wrap:wrap;margin-bottom:16px;">
                     <div style="text-align:center;">
@@ -220,7 +220,7 @@
                     </div>
                 </div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-                    <span style="color:#888;font-size:.82rem;" data-i18n="qg.mission.progressLabel">Progression vers objectif (10 cmd)</span>
+                    <span style="color:var(--text-muted);font-size:.82rem;" data-i18n="qg.mission.progressLabel">Progression vers objectif (10 cmd)</span>
                     <span style="color:#d4af37;font-size:.82rem;" id="mission-pct">0%</span>
                 </div>
                 <div style="background:#1a1a1a;border-radius:8px;height:8px;">
@@ -255,38 +255,42 @@
         </div>
         <section class="qg-table-section">
             <ul id="activite-list" style="list-style:none;margin:0;padding:0;max-height:260px;overflow-y:auto;">
-                <li style="padding:12px;color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</li>
+                <li style="padding:12px;color:var(--text-muted);font-size:.85rem;" data-i18n="qg.loading">Chargement...</li>
             </ul>
         </section>
-        <div class="qg-section-title qg-section-title--toggle" id="rdv-calendar-title" style="display:none;">
+        <div class="qg-section-title qg-section-title--toggle" id="rdv-calendar-title" data-toggle-target="rdv-calendar" style="display:none;">
             <i data-lucide="calendar"></i>
             <span data-i18n="qg.section.calendar">Calendrier des rendez-vous</span>
-            <i data-lucide="chevron-down" class="qg-section-title__chevron" id="rdv-calendar-chevron"></i>
+            <i data-lucide="chevron-down" class="qg-section-title__chevron"></i>
         </div>
         <section class="qg-table-section" id="rdv-calendar-section" style="display:none;">
             <div id="rdv-calendar" style="display:none;"></div>
         </section>
-        <div class="qg-section-title" id="gmail-title" style="display:none;">
+        <div class="qg-section-title qg-section-title--toggle" id="gmail-title" data-toggle-target="gmail-list" style="display:none;">
             <i data-lucide="mail"></i>
             <span data-i18n="qg.section.emails">Derniers emails</span>
+            <i data-lucide="chevron-down" class="qg-section-title__chevron"></i>
         </div>
         <section class="qg-table-section" id="gmail-section" style="display:none;">
-            <ul id="gmail-list" style="list-style:none;margin:0;padding:0;max-height:280px;overflow-y:auto;"></ul>
+            <ul id="gmail-list" style="display:none;list-style:none;margin:0;padding:0;max-height:280px;overflow-y:auto;"></ul>
         </section>
-        <div class="qg-section-title" id="youtube-title" style="display:none;">
+        <div class="qg-section-title qg-section-title--toggle" id="youtube-title" data-toggle-target="youtube-content" style="display:none;">
             <i data-lucide="youtube"></i>
             <span data-i18n="qg.section.youtube">YouTube</span>
+            <i data-lucide="chevron-down" class="qg-section-title__chevron"></i>
         </div>
         <section class="qg-table-section" id="youtube-section" style="display:none;">
-            <div id="youtube-stats" style="display:flex;gap:14px;flex-wrap:wrap;padding:14px;"></div>
-            <div style="display:flex;gap:18px;flex-wrap:wrap;padding:0 14px 14px;">
-                <div style="flex:1;min-width:240px;">
-                    <p style="color:#999;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;" data-i18n="qg.youtube.videos">Dernières vidéos</p>
-                    <ul id="youtube-videos-list" style="list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto;"></ul>
-                </div>
-                <div style="flex:1;min-width:240px;">
-                    <p style="color:#999;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;" data-i18n="qg.youtube.comments">Derniers commentaires</p>
-                    <ul id="youtube-comments-list" style="list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto;"></ul>
+            <div id="youtube-content" style="display:none;">
+                <div id="youtube-stats" style="display:flex;gap:14px;flex-wrap:wrap;padding:14px;"></div>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;padding:0 14px 14px;">
+                    <div style="flex:1;min-width:240px;">
+                        <p style="color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;" data-i18n="qg.youtube.videos">Dernières vidéos</p>
+                        <ul id="youtube-videos-list" style="list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto;"></ul>
+                    </div>
+                    <div style="flex:1;min-width:240px;">
+                        <p style="color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;" data-i18n="qg.youtube.comments">Derniers commentaires</p>
+                        <ul id="youtube-comments-list" style="list-style:none;margin:0;padding:0;max-height:240px;overflow-y:auto;"></ul>
+                    </div>
                 </div>
             </div>
         </section>
@@ -308,7 +312,7 @@
                 </thead>
                 <tbody id="commandes-tbody">
                     <tr>
-                        <td colspan="6" style="text-align:center;color:#888;padding:20px;" data-i18n="qg.loading">
+                        <td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;" data-i18n="qg.loading">
                             Chargement...
                         </td>
                     </tr>
@@ -321,7 +325,7 @@
         </div>
         <section class="qg-clients-section">
             <div id="vip-list" class="qg-client-grid">
-                <p style="color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
+                <p style="color:var(--text-muted);font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
             </div>
         </section>
         <div class="qg-section-title" style="--accent:#e55;">
@@ -330,7 +334,7 @@
         </div>
         <section class="qg-clients-section">
             <div id="black-list" class="qg-client-grid">
-                <p style="color:#888;font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
+                <p style="color:var(--text-muted);font-size:.85rem;" data-i18n="qg.loading">Chargement...</p>
             </div>
         </section>
         <div class="qg-section-title">
@@ -632,7 +636,7 @@
 
     applyLang(currentLang);
 </script>
-<script src="/js/qg.js?v=3"></script>
+<script src="/js/qg.js?v=4"></script>
 <script>
 document.getElementById("feedback-submit")?.addEventListener("click", async () => {
     const text = document.getElementById("feedback-text").value.trim();
