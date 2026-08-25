@@ -10,6 +10,14 @@ const express = require("express");
 const router = express.Router();
 const apiPartenaire = require("../services/apiPartenaire");
 const portees = require("../services/portees");
+const abonnementService = require("../services/abonnementService");
+
+// L'API publique et les webhooks sont annoncés au palier Souverain sur la
+// page d'accueil : ils doivent donc être fermés en dessous, sinon la vitrine
+// ment. La page reste visible aux paliers inférieurs — c'est elle qui donne
+// envie — mais fabriquer une clé ou un webhook demande le palier.
+const PALIER_MINIMUM_API = "pro";
+const REFUS_PALIER = "L'API et les webhooks sont inclus à partir du palier Souverain.";
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -28,6 +36,7 @@ router.get("/", requireAuth, async (req, res) => {
             cles,
             webhooks,
             acces,
+            palierOk: await abonnementService.auMoins(req.session.workspaceId, PALIER_MINIMUM_API),
             domaines: portees.parDomaine(),
             evenements: apiPartenaire.EVENEMENTS,
             workspaceId: req.session.workspaceId,
@@ -46,6 +55,9 @@ router.post("/cles", requireAuth, async (req, res) => {
         // Une clé sans aucune permission serait enregistrée avec portees NULL,
         // ce qui vaut « accès complet » côté base : on refuse ici plutôt que
         // de livrer au marchand l'inverse exact de ce qu'il croit créer.
+        if (!await abonnementService.auMoins(req.session.workspaceId, PALIER_MINIMUM_API)) {
+            return res.json({ success: false, error: REFUS_PALIER });
+        }
         const droits = portees.nettoyer(req.body?.portees);
         if (!droits.length) {
             return res.json({ success: false, error: "Choisis au moins une permission pour cette clé." });
@@ -65,6 +77,9 @@ router.post("/cles/:id/revoquer", requireAuth, async (req, res) => {
 
 router.post("/webhooks", requireAuth, async (req, res) => {
     try {
+        if (!await abonnementService.auMoins(req.session.workspaceId, PALIER_MINIMUM_API)) {
+            return res.json({ success: false, error: REFUS_PALIER });
+        }
         const url = String(req.body?.url || "").trim();
         if (!/^https:\/\/.+/i.test(url)) {
             return res.json({ success: false, error: "L'URL doit commencer par https://" });

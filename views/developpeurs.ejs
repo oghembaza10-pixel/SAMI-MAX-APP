@@ -85,6 +85,12 @@
             padding: 6px 12px; font-size: .72rem; font-weight: 500;
         }
         button.dv-mini:hover { border-color: #b34a3a; color: #e5533d; background: none; }
+        .dv-btn {
+            display: inline-block; background: var(--gold-og); color: #0A0A0A;
+            border-radius: 10px; padding: 12px 22px; font-weight: 700; font-size: .82rem;
+            text-decoration: none;
+        }
+        .dv-btn:hover { background: var(--gold-hover); }
 
         .dv-cases { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
         .dv-cases label {
@@ -149,6 +155,21 @@
             <a href="/api-docs" target="_blank" rel="noopener">Voir la documentation →</a>
         </p>
     </div>
+
+    <% if (typeof palierOk !== "undefined" && !palierOk) { %>
+        <%# La page reste visible au palier gratuit — c'est elle qui donne
+            envie de l'API. Seule la fabrication d'une clé demande Actif
+            (routes/developpeurs.js). %>
+        <div class="dv-bloc" style="border-color:rgba(212,169,74,.35);background:rgba(212,169,74,.05);">
+            <h2 style="margin-top:0">🔒 Inclus à partir du palier Souverain</h2>
+            <p class="dv-aide" style="margin-bottom:14px">
+                L'API, les webhooks et les applications tierces font partie du palier
+                Souverain. Tu peux tout lire ici et préparer ton intégration ; la création
+                d'une clé s'ouvre dès l'abonnement.
+            </p>
+            <a href="/billing" class="dv-btn">Voir le palier Souverain →</a>
+        </div>
+    <% } %>
 
     <!-- ── CLÉS ────────────────────────────────────────────────── -->
     <div class="dv-bloc">

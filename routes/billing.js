@@ -247,6 +247,8 @@ router.get("/", requireAuth, async (req, res) => {
             <div class="bill-price" data-free data-i18n="billing.free.price">Gratuit</div>
             <div class="bill-card-rule"></div>
             <ul>
+                <li data-i18n="billing.free.canaux">1 canal au choix — Telegram, par exemple</li>
+                <li data-i18n="billing.free.whatsapp">WhatsApp : 3 jours d'essai, une seule fois</li>
                 <li data-i18n="billing.free.li1">150 confirmations & suivi / mois</li>
                 <li data-i18n="billing.free.li2">SAMII te propose chaque action, tu valides avant qu'elle parte</li>
                 <li data-i18n="billing.free.li3">30 messages SAMII toutes les 7h</li>
@@ -265,7 +267,8 @@ router.get("/", requireAuth, async (req, res) => {
             <div class="bill-card-rule"></div>
             <ul>
                 <li data-i18n="billing.standard.li1">2 100 confirmations & suivi / mois (+0,50 $ au-delà)</li>
-                <li data-i18n="billing.standard.li2">WhatsApp + Telegram + Shopify connectés</li>
+                <li data-i18n="billing.standard.canaux">3 canaux au choix — WhatsApp, Telegram, Gmail, Instagram…</li>
+                <li data-i18n="billing.standard.publication">Publication automatique 3× par semaine</li>
                 <li data-i18n="billing.standard.li3">Client fidèle (VIP) + liste noire automatiques</li>
                 <li data-i18n="billing.standard.li5">1 carte premium offerte chaque mois</li>
                 <li data-i18n="billing.standard.li6">50 messages SAMII toutes les 7h (+0,12 $/message au-delà)</li>
@@ -285,7 +288,11 @@ router.get("/", requireAuth, async (req, res) => {
             <div class="bill-card-rule"></div>
             <ul>
                 <li data-i18n="billing.pro.li1">30 000 confirmations & suivi / mois (+0,50 $ au-delà)</li>
-                <li data-i18n="billing.pro.li2">Tout le plan Actif, en plus généreux</li>
+                <li data-i18n="billing.pro.li2">Tout le palier Actif, plus :</li>
+                <li data-i18n="billing.pro.canaux">Canaux illimités — Facebook, Drive, YouTube, TikTok…</li>
+                <li data-i18n="billing.pro.api">API et webhooks : n8n, Make, Zapier, ton ERP</li>
+                <li data-i18n="billing.pro.apps">Applications tierces installables</li>
+                <li data-i18n="billing.pro.publication">Publication automatique tous les jours</li>
                 <li data-i18n="billing.pro.li3">SAMII lance directement tes pubs prêtes, sans attendre ta validation</li>
                 <li data-i18n="billing.pro.li4">3 cartes premium offertes chaque mois</li>
                 <li data-i18n="billing.pro.li5">Support prioritaire</li>
@@ -307,6 +314,7 @@ router.get("/", requireAuth, async (req, res) => {
             <ul>
                 <li><span data-i18n="billing.societe.li1">Toutes les fonctionnalités bonus débloquées</span> (${NB_CARTES_PAR_PALIER.societe}/${NB_CARTES_PAR_PALIER.societe})</li>
                 <li data-i18n="billing.societe.li2">Multi-comptes, multi-boutiques</li>
+                <li data-i18n="billing.societe.illimite">Confirmations et messages sans limite</li>
                 <li data-i18n="billing.societe.li3">Contrat et facturation dédiés</li>
                 <li data-i18n="billing.societe.li4">Accompagnement personnalisé</li>
             </ul>
@@ -358,12 +366,21 @@ const I18N = {
         'billing.pro.eyebrow': 'Palier III · Recommandé', 'billing.pro.tagline': 'Pour ne plus jamais attendre une validation.',
         'billing.pro.title': '👑 Souverain',
         'billing.pro.li1': '30 000 confirmations & suivi / mois (+0,50 $ au-delà)',
-        'billing.pro.li2': 'Tout le plan Actif, en plus généreux',
+        'billing.pro.li2': 'Tout le palier Actif, plus :',
         'billing.pro.li3': 'SAMII lance directement tes pubs prêtes, sans attendre ta validation',
         'billing.pro.li4': '3 cartes premium offertes chaque mois',
         'billing.pro.li5': 'Support prioritaire',
         'billing.pro.li6': '150 messages SAMII toutes les 7h (+0,12 $/message au-delà)',
         'billing.griot.note': '🎨 Génération IA (Griot) : 0,80 $/seconde',
+        'billing.free.canaux': '1 canal au choix — Telegram, par exemple',
+        'billing.free.whatsapp': "WhatsApp : 3 jours d'essai, une seule fois",
+        'billing.standard.canaux': '3 canaux au choix — WhatsApp, Telegram, Gmail, Instagram…',
+        'billing.standard.publication': 'Publication automatique 3× par semaine',
+        'billing.pro.canaux': 'Canaux illimités — Facebook, Drive, YouTube, TikTok…',
+        'billing.pro.api': 'API et webhooks : n8n, Make, Zapier, ton ERP',
+        'billing.pro.apps': 'Applications tierces installables',
+        'billing.pro.publication': 'Publication automatique tous les jours',
+        'billing.societe.illimite': 'Confirmations et messages sans limite',
         'billing.lancement': 'Prix de lancement',
         'billing.bientot.label': '🔜 Bientôt disponible',
         'billing.bientot.meta': 'Pubs Meta + réponses automatiques Messenger/Instagram',
@@ -411,12 +428,21 @@ const I18N = {
         'billing.pro.eyebrow': 'Tier III · Recommended', 'billing.pro.tagline': 'To never wait for approval again.',
         'billing.pro.title': '👑 Sovereign',
         'billing.pro.li1': '30,000 confirmations & tracking / month (+$0.50 beyond)',
-        'billing.pro.li2': 'Everything in the Active plan, more generous',
+        'billing.pro.li2': 'Everything in the Active tier, plus:',
         'billing.pro.li3': 'SAMII launches your ready ads instantly, no approval needed',
         'billing.pro.li4': '3 premium cards granted every month',
         'billing.pro.li5': 'Priority support',
         'billing.pro.li6': '150 SAMII messages every 7h (+$0.12/message beyond)',
         'billing.griot.note': '🎨 AI generation (Griot): $0.80/second',
+        'billing.free.canaux': '1 channel of your choice — Telegram, for instance',
+        'billing.free.whatsapp': 'WhatsApp: 3-day trial, once',
+        'billing.standard.canaux': '3 channels of your choice — WhatsApp, Telegram, Gmail, Instagram…',
+        'billing.standard.publication': 'Automatic publishing 3× a week',
+        'billing.pro.canaux': 'Unlimited channels — Facebook, Drive, YouTube, TikTok…',
+        'billing.pro.api': 'API and webhooks: n8n, Make, Zapier, your ERP',
+        'billing.pro.apps': 'Third-party apps you can install',
+        'billing.pro.publication': 'Automatic publishing every day',
+        'billing.societe.illimite': 'Confirmations and messages with no limit',
         'billing.lancement': 'Launch price',
         'billing.bientot.label': '🔜 Coming soon',
         'billing.bientot.meta': 'Meta ads + automatic Messenger/Instagram replies',
@@ -464,12 +490,21 @@ const I18N = {
         'billing.pro.eyebrow': 'الباقة الثالثة · موصى بها', 'billing.pro.tagline': 'لكي لا تنتظر موافقة أبدًا.',
         'billing.pro.title': '👑 سيادي',
         'billing.pro.li1': '30000 تأكيد وتتبع / شهريًا (+0.50$ لكل تأكيد إضافي)',
-        'billing.pro.li2': 'كل مزايا باقة نشط، بسخاء أكبر',
+        'billing.pro.li2': 'كل ما في باقة نشِط، بالإضافة إلى:',
         'billing.pro.li3': 'SAMII يُطلق إعلاناتك الجاهزة فورًا، دون الحاجة لموافقتك',
         'billing.pro.li4': '3 بطاقات مميزة مجانًا كل شهر',
         'billing.pro.li5': 'دعم ذو أولوية',
         'billing.pro.li6': '150 رسالة SAMII كل 7 ساعات (+0.12$ لكل رسالة إضافية)',
         'billing.griot.note': '🎨 توليد بالذكاء الاصطناعي (Griot): 0.80$/ثانية',
+        'billing.free.canaux': 'قناة واحدة من اختيارك — تيليغرام مثلًا',
+        'billing.free.whatsapp': 'واتساب: 3 أيام تجربة، مرة واحدة',
+        'billing.standard.canaux': '3 قنوات من اختيارك — واتساب، تيليغرام، جيميل، إنستغرام…',
+        'billing.standard.publication': 'نشر تلقائي 3 مرات أسبوعيًا',
+        'billing.pro.canaux': 'قنوات بلا حدود — فيسبوك، درايف، يوتيوب، تيك توك…',
+        'billing.pro.api': 'واجهة برمجية وويب‑هوك: n8n، Make، Zapier، نظامك',
+        'billing.pro.apps': 'تطبيقات خارجية قابلة للتثبيت',
+        'billing.pro.publication': 'نشر تلقائي كل يوم',
+        'billing.societe.illimite': 'تأكيدات ورسائل بلا حدود',
         'billing.lancement': 'سعر الإطلاق',
         'billing.bientot.label': '🔜 قريبًا',
         'billing.bientot.meta': 'إعلانات Meta + ردود تلقائية على Messenger/Instagram',
@@ -517,12 +552,21 @@ const I18N = {
         'billing.pro.eyebrow': '第三档 · 推荐', 'billing.pro.tagline': '再也不用等待批准。',
         'billing.pro.title': '👑 至尊版',
         'billing.pro.li1': '每月30000次确认与跟踪（超出部分每次+0.50$）',
-        'billing.pro.li2': '活跃版全部功能，额度更高',
+        'billing.pro.li2': '包含活跃版全部，另加：',
         'billing.pro.li3': '准备好的广告无需等待确认，SAMII 立即启动',
         'billing.pro.li4': '每月赠送3张高级卡牌',
         'billing.pro.li5': '优先支持',
         'billing.pro.li6': '每7小时150条 SAMII 消息（超出部分每条+0.12$）',
         'billing.griot.note': '🎨 AI生成（Griot）：0.80$/秒',
+        'billing.free.canaux': '任选 1 个渠道 — 例如 Telegram',
+        'billing.free.whatsapp': 'WhatsApp：3 天试用，仅一次',
+        'billing.standard.canaux': '任选 3 个渠道 — WhatsApp、Telegram、Gmail、Instagram…',
+        'billing.standard.publication': '每周自动发布 3 次',
+        'billing.pro.canaux': '渠道不限 — Facebook、Drive、YouTube、TikTok…',
+        'billing.pro.api': 'API 与 webhook：n8n、Make、Zapier、您的 ERP',
+        'billing.pro.apps': '可安装第三方应用',
+        'billing.pro.publication': '每天自动发布',
+        'billing.societe.illimite': '确认与消息不设上限',
         'billing.lancement': '首发价格',
         'billing.bientot.label': '🔜 即将推出',
         'billing.bientot.meta': 'Meta 广告 + Messenger/Instagram 自动回复',

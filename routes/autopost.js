@@ -6,6 +6,12 @@ const router = express.Router();
 const db = require("../services/db");
 const workspaceService = require("../services/workspaceService");
 const connectorService = require("../services/connectorService");
+const abonnementService = require("../services/abonnementService");
+const paliers = require("../config/paliers");
+
+// La publication automatique fait partie de ce qu'on vend : aucune au palier
+// gratuit, 3 fois par semaine à Actif, tous les jours au-dessus. La règle
+// vit dans config/paliers.js avec le reste des paliers.
 
 // workspaceService.getById() ne renvoie qu'une liste blanche de champs (voir
 // mapRow) qui n'inclut pas auto_post_config — même limitation déjà présente
@@ -54,12 +60,16 @@ router.post("/", requireAuth, async (req, res) => {
         if (typeof canaux === "string") canaux = [canaux];
 
         const ancienConfig = await getAutoPostConfig(workspaceId);
+        const palier = await abonnementService.getPalier(workspaceId);
+        const cadence = paliers.cadencePublication(palier, frequence || "quotidien");
 
         const nouveauConfig = {
             ...ancienConfig,
-            actif: actif === "on",
+            // Palier sans publication automatique : la case reste décochée,
+            // quoi que le formulaire ait envoyé.
+            actif: cadence !== null && actif === "on",
             canaux,
-            frequence: frequence || "quotidien",
+            frequence: cadence || "quotidien",
             sujet: sujet || "",
         };
         await workspaceService.update(workspaceId, { auto_post_config: nouveauConfig });
@@ -70,7 +80,15 @@ router.post("/", requireAuth, async (req, res) => {
             connecte: connecteurs.some(x => x.type === c.type && x.actif),
         }));
 
-        res.render("autopost", { canaux: canauxConnectes, config: nouveauConfig, error: null, success: true });
+        // Message honnête plutôt qu'un enregistrement silencieusement modifié :
+        // le marchand doit savoir que sa demande a été ramenée à son palier.
+        let avertissement = null;
+        if (cadence === null) {
+            avertissement = "La publication automatique fait partie du palier Actif. Ton réglage est gardé, il s'activera dès l'abonnement.";
+        } else if (frequence && cadence !== frequence) {
+            avertissement = `Ton palier permet la cadence « ${cadence.replace("_", " ")} ». Passe au palier supérieur pour publier plus souvent.`;
+        }
+        res.render("autopost", { canaux: canauxConnectes, config: nouveauConfig, error: avertissement, success: !avertissement });
     } catch (err) {
         console.error("❌ POST /autopost :", err.message);
         res.render("autopost", { canaux: CANAUX_DISPONIBLES, config: {}, error: "Erreur lors de l'enregistrement.", success: false });

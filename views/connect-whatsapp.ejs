@@ -60,6 +60,19 @@
           Solution définitive et gratuite pour démarrer : connecte ton propre compte Green API en 5 étapes.
         </p>
 
+        <% if (typeof palierOk !== "undefined" && !palierOk) { %>
+          <!-- WhatsApp est le levier du palier Actif (routes/connector.js) :
+               ici on explique pourquoi, on rappelle ce qui reste gratuit, et
+               on donne le chemin — pas un simple "accès refusé". -->
+          <div style="padding:16px;background:#f5a62311;border:1px solid #f5a62333;border-radius:12px;margin-bottom:16px;">
+            <p style="color:#f5a623;font-weight:700;font-size:0.9rem;margin:0 0 8px;" data-i18n="connect.whatsapp.palier.title">🔒 Inclus à partir du palier Actif</p>
+            <p style="color:#999;font-size:0.83rem;line-height:1.65;margin:0 0 14px;" data-i18n="connect.whatsapp.palier.desc">
+              Telegram et ta boutique restent gratuits, sans limite de temps. WhatsApp demande un numéro dédié et un suivi de notre côté : il fait partie du palier Actif. Tu peux l'essayer 3 jours avec le numéro partagé ci-dessus.
+            </p>
+            <a href="/billing" style="display:block;text-align:center;padding:12px;background:#f5a623;border-radius:10px;color:#000;text-decoration:none;font-weight:700;font-size:0.9rem;" data-i18n="connect.whatsapp.palier.cta">Voir le palier Actif →</a>
+          </div>
+        <% } %>
+
         <ol style="color:#999;font-size:0.82rem;line-height:1.9;margin:0 0 18px;padding-left:20px;">
           <li data-i18n="connect.whatsapp.perso.step1">Va sur <b style="color:#25D366;">green-api.com</b> et crée un compte gratuit.</li>
           <li data-i18n="connect.whatsapp.perso.step2">Clique sur <b>"Create an instance"</b> (choisis le plan "Developer" pour tester).</li>
@@ -77,9 +90,10 @@
           <input type="password" name="api_token" data-i18n-placeholder="connect.whatsapp.apiToken.ph" placeholder="Ton apiTokenInstance"
                  style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
 
-          <button type="submit"
-                  style="display:block;width:100%;padding:13px;background:<%= tool.color %>;border:none;border-radius:10px;color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">
-            🔗 <span data-i18n="connect.submit">Utiliser ma clé</span> <%= tool.label %>
+          <% const verrouille = (typeof palierOk !== "undefined" && !palierOk); %>
+          <button type="submit" <%= verrouille ? "disabled" : "" %>
+                  style="display:block;width:100%;padding:13px;background:<%= verrouille ? "#2a2a2a" : tool.color %>;border:none;border-radius:10px;color:<%= verrouille ? "#666" : "#fff" %>;font-weight:700;font-size:0.95rem;cursor:<%= verrouille ? "not-allowed" : "pointer" %>;">
+            <% if (verrouille) { %>🔒 <span data-i18n="connect.whatsapp.palier.locked">Palier Actif requis</span><% } else { %>🔗 <span data-i18n="connect.submit">Utiliser ma clé</span> <%= tool.label %><% } %>
           </button>
         </form>
       </div>

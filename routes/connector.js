@@ -8,6 +8,7 @@ const connectorService = require("../services/connectorService");
 const workspaceService = require("../services/workspaceService");
 const db                = require("../services/db");
 const CONFIG            = require("../config");
+const abonnementService = require("../services/abonnementService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -87,6 +88,9 @@ router.post("/tools/save", requireAuth, async (req, res) => {
         if (!result) return res.json({ success: false, error: "Erreur Airtable." });
         res.json({ success: true, toolId, connected: true });
     } catch (err) {
+        // Un quota de canaux atteint n'est pas une panne : le marchand doit
+        // lire la vraie raison, sinon il croit que l'outil est cassé.
+        if (err.code === "QUOTA_CANAUX") return res.json({ success: false, error: err.message, quota: true });
         console.error("❌ POST /connect/tools/save :", err);
         res.json({ success: false, error: "Erreur interne." });
     }
@@ -208,7 +212,7 @@ router.post("/telegram", requireAuth, async (req, res) => {
             error: null,
         });
     } catch (err) {
-        console.error("❌ POST /connect/telegram :", err);
+        if (err.code !== "QUOTA_CANAUX") console.error("❌ POST /connect/telegram :", err);
         res.render("connect-telegram", {
             workspaceId: req.session?.workspaceId || "",
             shop: req.session?.shop || "",
@@ -216,7 +220,7 @@ router.post("/telegram", requireAuth, async (req, res) => {
             telegramActif: false,
             botUsername: "",
             botActif: false,
-            error: "Erreur interne. Réessayez.",
+            error: err.code === "QUOTA_CANAUX" ? err.message : "Erreur interne. Réessayez.",
         });
     }
 });
@@ -416,6 +420,15 @@ TRANSPORTEUR_TOOLS.forEach(toolId => {
 //    présentées ensemble.
 const DEPANNAGE_DUREE_MS = 3 * 24 * 60 * 60 * 1000;
 
+// WhatsApp est un canal payant, Telegram non. Un numéro WhatsApp coûte cher à
+// tenir (instance Green API dédiée, support, risque de blocage Meta) et c'est
+// la première chose qu'un marchand vient chercher : c'est donc le levier du
+// palier Actif, annoncé comme tel sur la page d'accueil et sur /billing. Le
+// dépannage 3 jours reste ouvert au palier gratuit — c'est l'essai, pas le
+// service. Sans ce contrôle, la page promettrait un palier et le produit en
+// donnerait un autre.
+const PALIER_MINIMUM_WHATSAPP = "standard";
+
 function depannageState(config) {
     if (!config || config.mode !== "depannage") {
         return config?.depannageUsedAt ? { dejaUtilise: true, active: false, joursRestants: 0 } : null;
@@ -446,12 +459,14 @@ router.get("/whatsapp", requireAuth, async (req, res) => {
     } catch (err) {
         console.error("❌ GET /connect/whatsapp (lecture) :", err.message);
     }
+    const palierOk = await abonnementService.auMoins(workspaceId, PALIER_MINIMUM_WHATSAPP);
     res.render("connect-whatsapp", {
         workspaceId,
         tool: TOOLS.find(t => t.id === "whatsapp"),
         actif,
         apiId,
         depannage,
+        palierOk,
         error: null,
     });
 });
@@ -460,6 +475,19 @@ router.post("/whatsapp", requireAuth, async (req, res) => {
     const workspaceId = req.session?.workspaceId;
     if (!workspaceId) return res.redirect("/hub");
     try {
+        const palierOk = await abonnementService.auMoins(workspaceId, PALIER_MINIMUM_WHATSAPP);
+        if (!palierOk) {
+            const c = await connectorService.getOne(workspaceId, "whatsapp");
+            return res.render("connect-whatsapp", {
+                workspaceId,
+                tool: TOOLS.find(t => t.id === "whatsapp"),
+                actif: false,
+                apiId: "",
+                depannage: depannageState(c?.config),
+                palierOk: false,
+                error: "WhatsApp est inclus à partir du palier Actif. Telegram reste disponible sans abonnement.",
+            });
+        }
         const apiId = (req.body.api_id || "").trim();
         const apiToken = (req.body.api_token || "").trim();
         if (!apiId || !apiToken) {
@@ -470,6 +498,7 @@ router.post("/whatsapp", requireAuth, async (req, res) => {
                 actif: false,
                 apiId: "",
                 depannage: depannageState(c?.config),
+                palierOk: true,
                 error: "Renseigne ton ID API et ton Token API.",
             });
         }
@@ -482,6 +511,7 @@ router.post("/whatsapp", requireAuth, async (req, res) => {
             actif: true,
             apiId,
             depannage: null,
+            palierOk: true,
             error: null,
         });
     } catch (err) {
@@ -492,6 +522,7 @@ router.post("/whatsapp", requireAuth, async (req, res) => {
             actif: false,
             apiId: "",
             depannage: null,
+            palierOk: true,
             error: "Erreur interne. Réessaie.",
         });
     }

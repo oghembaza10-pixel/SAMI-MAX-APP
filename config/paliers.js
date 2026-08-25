@@ -27,6 +27,16 @@
 // Ordre croissant — sert aussi à savoir si un palier en couvre un autre.
 const ORDRE = ["free", "standard", "pro", "societe"];
 
+// CE QUI COMPTE COMME UN CANAL. Un marchand ne doit pas « brûler » son quota
+// de canaux en branchant son transporteur ou son moyen de paiement : livrer
+// et encaisser ne sont pas des canaux de vente. Seuls les endroits où un
+// client parle ou achète sont comptés — c'est là qu'est la valeur, et le coût.
+const CANAUX_COMPTES = [
+    "whatsapp", "telegram", "discord",
+    "facebook", "instagram", "tiktok", "youtube", "linkedin",
+    "gmail", "google", "shopify", "woocommerce",
+];
+
 const PALIERS = {
     free: {
         id: "free",
@@ -37,6 +47,11 @@ const PALIERS = {
         // complets (config/cartes-catalog.js). C'est lui qui doit donner envie
         // du palier suivant, pas une page de vente.
         payant: false,
+        // Un seul canal : de quoi démarrer pour de vrai (Telegram), pas de quoi
+        // faire tourner un commerce à plusieurs canaux sans jamais payer.
+        canauxMax: 1,
+        publication: null,   // aucune publication automatique
+        integrations: false, // ni API ni webhooks
     },
     standard: {
         id: "standard",
@@ -49,6 +64,11 @@ const PALIERS = {
         // promotion à durée limitée codée en dur, c'est le prix du moment.
         prixDeLancement: true,
         payant: true,
+        // Trois canaux : le trio qui fait tourner un commerce (WhatsApp,
+        // Telegram, Gmail) sans ouvrir toute la façade sociale d'un coup.
+        canauxMax: 3,
+        publication: "3x_semaine", // cadence maximale dans /autopost
+        integrations: false,
     },
     pro: {
         id: "pro",
@@ -56,6 +76,12 @@ const PALIERS = {
         icone: "👑",
         prix: 49,
         payant: true,
+        canauxMax: null,          // tous les canaux
+        publication: "quotidien", // cadence maximale dans /autopost
+        // C'est ici que l'API publique et les webhooks s'ouvrent : brancher
+        // n8n, Make ou un ERP, c'est ce que demande une structure qui a déjà
+        // ses outils — pas un marchand qui démarre.
+        integrations: true,
     },
     societe: {
         id: "societe",
@@ -66,6 +92,9 @@ const PALIERS = {
         // clients, et se négocie. Aucun bouton de paiement, un formulaire.
         prix: null,
         payant: false,
+        canauxMax: null,
+        publication: "quotidien",
+        integrations: true,
     },
 };
 
@@ -83,9 +112,43 @@ function estAchetable(palier) {
     return PAYANTS.includes(palier);
 }
 
+// Nombre de canaux autorisés, ou null pour « sans limite ».
+// Attention au `??` ici : « sans limite » s'écrit null, donc un ?? ferait
+// retomber les paliers illimités sur la valeur du gratuit — c'est-à-dire un
+// seul canal pour un client à 49 $. On distingue donc « palier inconnu » de
+// « palier sans plafond ».
+function canauxMax(palier) {
+    return Object.prototype.hasOwnProperty.call(PALIERS, palier)
+        ? PALIERS[palier].canauxMax
+        : PALIERS.free.canauxMax;
+}
+
+// Cadences de publication, de la plus rare à la plus fréquente. Mêmes clés
+// que engines/autopostEngine.js (INTERVALLES_MS) — ne pas renommer.
+const CADENCES = ["hebdo", "3x_semaine", "quotidien"];
+
+// Ramène une cadence demandée à ce que le palier autorise. Renvoie null si le
+// palier n'ouvre aucune publication automatique. On ne masque pas les autres
+// choix dans le formulaire — le marchand doit voir ce qu'il gagnerait à
+// monter — on refuse simplement d'enregistrer plus que ce qui est vendu.
+function cadencePublication(palier, demandee) {
+    const plafond = PALIERS[palier]?.publication ?? null;
+    if (plafond === null) return null;
+    const i = CADENCES.indexOf(demandee);
+    return i !== -1 && i <= CADENCES.indexOf(plafond) ? demandee : plafond;
+}
+
+// Vrai si ce palier ouvre l'API publique et les webhooks.
+function aLesIntegrations(palier) {
+    return PALIERS[palier]?.integrations === true;
+}
+
 function rang(palier) {
     const i = ORDRE.indexOf(palier || "free");
     return i === -1 ? 0 : i;
 }
 
-module.exports = { PALIERS, ORDRE, PAYANTS, prixUSD, estAchetable, rang };
+module.exports = {
+    PALIERS, ORDRE, PAYANTS, CANAUX_COMPTES, CADENCES,
+    prixUSD, estAchetable, canauxMax, cadencePublication, aLesIntegrations, rang,
+};

@@ -14,6 +14,7 @@ const router = express.Router();
 const apps = require("../services/apps");
 const portees = require("../services/portees");
 const journalService = require("../services/journalService");
+const abonnementService = require("../services/abonnementService");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -93,6 +94,12 @@ router.post("/:slug/installer", requireEspace, async (req, res) => {
         const app = await apps.parSlug(req.params.slug);
         if (!apps.installable(app, req.session.userId)) {
             return res.json({ success: false, error: "Application indisponible." });
+        }
+        // Installer une application, c'est fabriquer une clé API : même porte,
+        // même palier que /developpeurs, sinon l'API s'ouvrirait par ici au
+        // palier gratuit alors que la page d'accueil l'annonce à partir d'Actif.
+        if (!await abonnementService.auMoins(req.session.workspaceId, "pro")) {
+            return res.json({ success: false, error: "Les applications tierces sont incluses à partir du palier Souverain." });
         }
         const { cle, accordees } = await apps.installer(
             app, req.session.workspaceId, req.body?.portees,

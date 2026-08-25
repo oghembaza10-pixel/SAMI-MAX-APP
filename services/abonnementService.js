@@ -7,6 +7,7 @@
 const db = require("./db");
 const journalService = require("./journalService");
 const workspaceService = require("./workspaceService");
+const paliers = require("../config/paliers");
 
 const PLAN_GRANTS = {
     standard: { forteresse: 1, boost: 0 },
@@ -45,4 +46,24 @@ async function retrograderVersFree(workspaceId) {
     await journalService.log({ action: "abonnement.expire", details: "Palier repassé à free (pas de renouvellement dans le délai de grâce)", workspaceId });
 }
 
-module.exports = { activerPalier, retrograderVersFree, PLAN_GRANTS, DUREE_JOURS };
+// Le palier réellement actif d'un espace. En cas de doute (espace inconnu,
+// base injoignable) on renvoie "free" : une erreur technique ne doit jamais
+// ouvrir une fonctionnalité payante, elle doit la fermer.
+async function getPalier(workspaceId) {
+    if (!workspaceId) return "free";
+    try {
+        const rows = await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [workspaceId]);
+        return rows[0]?.palier_abonnement || "free";
+    } catch {
+        return "free";
+    }
+}
+
+// Vrai si l'espace atteint au moins ce palier. C'est le seul contrôle à
+// utiliser pour ouvrir une fonctionnalité annoncée comme payante sur la page
+// d'accueil — sinon la page promet un palier et le produit en donne un autre.
+async function auMoins(workspaceId, minimum) {
+    return paliers.rang(await getPalier(workspaceId)) >= paliers.rang(minimum);
+}
+
+module.exports = { activerPalier, retrograderVersFree, getPalier, auMoins, PLAN_GRANTS, DUREE_JOURS };
