@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mon espace développeur — SAMII OS</title>
+  <link rel="stylesheet" href="/css/qg-style.css">
+  <style>
+    :root {
+      --enc:#07070a; --pan:#101013; --pan2:#16161a; --or:#c9a961; --or-clair:#f0d99b;
+      --ivoire:#f3f1e9; --gris:#8b8d95; --faible:#6c6e77; --bord:rgba(201,169,97,.18);
+      --cyan:#5fd4ff; --vert:#3ddc84;
+    }
+    body { background:var(--enc); color:var(--ivoire); }
+    .de { max-width:1120px; margin:0 auto; padding:32px 20px 80px; }
+    .de-haut { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:26px; }
+    .de-marque { font-family:Georgia,serif; font-size:10px; letter-spacing:.46em; text-indent:.46em; color:var(--or); text-transform:uppercase; }
+    .de-menu { display:flex; gap:8px; flex-wrap:wrap; }
+    .de-menu a { padding:8px 14px; border-radius:4px; border:1px solid rgba(255,255,255,.09); color:var(--gris); text-decoration:none; font-size:.78rem; }
+    .de-menu a:hover { border-color:var(--bord); color:var(--ivoire); }
+
+    h1 { font-family:"Didot","Bodoni MT",Georgia,serif; font-weight:400; font-size:1.95rem; margin:0 0 8px; }
+    .de-lead { color:var(--gris); font-size:.88rem; line-height:1.7; margin:0 0 30px; max-width:62ch; }
+
+    .de-bloc { margin-bottom:44px; }
+    .de-bloc > h2 { font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gris); font-weight:600; margin:0 0 6px; }
+    .de-bloc > .de-sous { color:var(--faible); font-size:.8rem; line-height:1.65; margin:0 0 18px; max-width:64ch; }
+
+    .de-msg { padding:13px 16px; border-radius:6px; margin-bottom:22px; font-size:.85rem; line-height:1.6;
+              background:rgba(61,220,132,.08); border:1px solid rgba(61,220,132,.28); color:#9fe7bd; }
+    .de-cle { margin-bottom:22px; padding:16px 18px; border-radius:6px; background:rgba(201,169,97,.06); border:1px solid var(--bord); }
+    .de-cle__t { font-size:.74rem; color:var(--or); letter-spacing:.1em; text-transform:uppercase; margin-bottom:9px; }
+    .de-cle code { display:block; font-family:var(--font-mono,monospace); font-size:.82rem; color:var(--or-clair); word-break:break-all; }
+
+    .de-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px; }
+    .de-carte { padding:20px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:linear-gradient(180deg,var(--pan2),var(--pan)); }
+    .de-carte h3 { margin:0 0 5px; font-size:.95rem; font-weight:650; }
+    .de-carte p { margin:0 0 14px; font-size:.8rem; line-height:1.6; color:var(--gris); }
+    .de-id { font-family:var(--font-mono,monospace); font-size:.72rem; color:var(--cyan); word-break:break-all; }
+
+    .btn { display:inline-block; padding:10px 18px; border:none; border-radius:4px; background:var(--or); color:#07070a;
+           font-size:.74rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; text-decoration:none; font-family:inherit; }
+    .btn:hover { background:var(--or-clair); }
+    .btn--fin { background:transparent; border:1px solid rgba(255,255,255,.14); color:var(--gris); }
+    .btn--fin:hover { background:rgba(255,255,255,.05); color:var(--ivoire); }
+    .btn--rouge { background:transparent; border:1px solid rgba(229,85,85,.3); color:#e88; }
+    .btn--rouge:hover { background:rgba(229,85,85,.1); }
+    .de-actions { display:flex; gap:7px; flex-wrap:wrap; }
+
+    .de-code { background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.07); border-radius:8px; padding:16px 18px; overflow-x:auto; }
+    .de-code pre { margin:0; font-family:var(--font-mono,monospace); font-size:.74rem; line-height:1.8; color:#b9c7d6; white-space:pre; }
+    .c-txt { color:#7fd3a5; } .c-cle { color:var(--or-clair); }
+    .de-copier { margin-top:11px; }
+
+    table { width:100%; border-collapse:collapse; font-size:.81rem; }
+    th { text-align:left; padding:9px 10px; color:var(--faible); font-weight:500; font-size:.7rem; text-transform:uppercase;
+         letter-spacing:.06em; border-bottom:1px solid rgba(255,255,255,.08); }
+    td { padding:11px 10px; border-bottom:1px solid rgba(255,255,255,.05); color:#c2c5cc; }
+    .mono { font-family:var(--font-mono,monospace); font-size:.74rem; }
+    .vide { color:var(--faible); font-style:italic; }
+    .etat { font-size:.68rem; padding:3px 9px; border-radius:20px; border:1px solid rgba(255,255,255,.12); color:var(--gris); }
+    .etat--publiee { color:var(--vert); border-color:rgba(61,220,132,.3); }
+    .etat--refusee { color:#e88; border-color:rgba(229,85,85,.3); }
+
+    .de-tuiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+    .de-tuile { padding:17px; border:1px solid rgba(255,255,255,.08); border-radius:8px; background:rgba(255,255,255,.02); }
+    .de-tuile b { display:block; font-family:var(--font-mono,monospace); font-size:1.3rem; color:var(--or); }
+    .de-tuile span { font-size:.7rem; color:var(--faible); text-transform:uppercase; letter-spacing:.06em; }
+  </style>
+</head>
+<body data-theme="og">
+<div class="de">
+
+  <div class="de-haut">
+    <div class="de-marque">O G &nbsp; T E C H N O L O G Y</div>
+    <nav class="de-menu">
+      <a href="/academy">La vitrine</a>
+      <a href="/academy/construire">Comment ça marche</a>
+      <a href="/api-docs" target="_blank" rel="noopener">Documentation</a>
+      <a href="/academy/mon-contrat">Mon contrat</a>
+    </nav>
+  </div>
+
+  <h1>Mon espace développeur</h1>
+  <p class="de-lead">
+    Un terrain d'essai déjà rempli, ta clé, tes applications et ce qu'elles rapportent.
+    Rien à installer, rien à configurer ailleurs.
+  </p>
+
+  <% if (message) { %><div class="de-msg"><%= message %></div><% } %>
+  <% if (cleCreee) { %>
+    <div class="de-cle">
+      <div class="de-cle__t">Ta clé d'essai — copie-la maintenant</div>
+      <code id="cle-neuve"><%= cleCreee %></code>
+      <button class="btn de-copier" type="button" onclick="copier('cle-neuve', this)">Copier</button>
+      <p style="margin:10px 0 0;font-size:.76rem;color:var(--gris);">
+        Nous n'en gardons qu'une empreinte : elle ne sera plus jamais affichée.
+      </p>
+    </div>
+  <% } %>
+
+  <!-- ══ 1. LE TERRAIN D'ESSAI ═══════════════════════════════════════════
+       Premier bloc de la page, volontairement. C'est le seul qui permette
+       d'écrire du code dans les cinq minutes. -->
+  <div class="de-bloc">
+    <h2>1 · Mon terrain d'essai</h2>
+    <p class="de-sous">
+      Un espace complet avec de vrais clients, de vraies commandes à tous les stades et des
+      rendez-vous passés et à venir. Aucun message n'en sort jamais : personne ne sera
+      dérangé, quoi que tu déclenches.
+    </p>
+
+    <% if (!bacs.length) { %>
+      <div class="de-grille">
+        <% Object.entries(decors).forEach(function ([id, d]) { %>
+          <div class="de-carte">
+            <h3><%= d.nom %></h3>
+            <p>
+              <% if (d.produits && d.produits.length) { %>14 commandes, <% } %>8 rendez-vous,
+              <%= d.clients.length %> clients — prêts à l'appel.
+            </p>
+            <form method="POST" action="/academy/espace/bac">
+              <input type="hidden" name="decor" value="<%= id %>">
+              <button class="btn" type="submit">Créer ce terrain</button>
+            </form>
+          </div>
+        <% }); %>
+      </div>
+    <% } else { %>
+      <div class="de-grille">
+        <% bacs.forEach(function (b) { %>
+          <div class="de-carte">
+            <h3><%= b.nom %></h3>
+            <p class="de-id" id="ws-<%= b.id %>"><%= b.id %></p>
+            <div class="de-actions" style="margin-top:14px;">
+              <form method="POST" action="/academy/espace/bac/<%= b.id %>/cle"><button class="btn" type="submit">Nouvelle clé</button></form>
+              <form method="POST" action="/academy/espace/bac/<%= b.id %>/reinitialiser"><button class="btn btn--fin" type="submit">Remettre à neuf</button></form>
+              <form method="POST" action="/academy/espace/bac/<%= b.id %>/supprimer"
+                    onsubmit="return confirm('Supprimer ce terrain et tout ce qu\'il contient ?');">
+                <button class="btn btn--rouge" type="submit">Supprimer</button>
+              </form>
+            </div>
+          </div>
+        <% }); %>
+        <% Object.entries(decors).filter(([id]) => !bacs.some(b => b.bac_decor === id)).forEach(function ([id, d]) { %>
+          <div class="de-carte" style="border-style:dashed;">
+            <h3 style="color:var(--gris);"><%= d.nom %></h3>
+            <p>Pas encore créé.</p>
+            <form method="POST" action="/academy/espace/bac">
+              <input type="hidden" name="decor" value="<%= id %>">
+              <button class="btn btn--fin" type="submit">Créer</button>
+            </form>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- ══ 2. LE PREMIER APPEL ══════════════════════════════════════════════
+       La commande est écrite avec SON espace, pas avec un exemple générique
+       à adapter. C'est la différence entre lire une doc et voir une réponse. -->
+  <div class="de-bloc">
+    <h2>2 · Mon premier appel</h2>
+    <p class="de-sous">
+      Colle ça dans un terminal après avoir remplacé la clé. Tu dois voir tes commandes d'essai
+      revenir en JSON — c'est le signe que tout est en place.
+    </p>
+    <div class="de-code">
+      <pre id="curl">curl <%= baseUrl %>/api/v1/commandes \
+  -H <span class="c-txt">"Authorization: Bearer <%= cleCreee || "sk_samii_…" %>"</span><% if (bacs.length) { %> \
+  -H <span class="c-txt">"X-SAMII-Espace: <%= bacs[0].id %>"</span><% } %></pre>
+    </div>
+    <button class="btn btn--fin de-copier" type="button" onclick="copier('curl', this)">Copier la commande</button>
+  </div>
+
+  <!-- ══ 3. MES APPLICATIONS ══════════════════════════════════════════════ -->
+  <div class="de-bloc">
+    <h2>3 · Mes applications</h2>
+    <p class="de-sous">
+      En brouillon, ton application n'est installable que par toi — de quoi la finir tranquillement.
+      Publiée, elle apparaît dans la vitrine et les marchands peuvent l'installer.
+    </p>
+    <table>
+      <thead><tr><th>Nom</th><th>État</th><th>Installations</th><th>Permissions demandées</th></tr></thead>
+      <tbody>
+        <% if (!mesApps.length) { %>
+          <tr><td colspan="4" class="vide">Aucune application déclarée.</td></tr>
+        <% } %>
+        <% mesApps.forEach(function (a) { %>
+          <tr>
+            <td><%= a.nom %></td>
+            <td><span class="etat etat--<%= a.statut %>"><%= a.statut %></span></td>
+            <td class="mono"><%= a.installations || 0 %></td>
+            <td class="mono" style="font-size:.68rem;color:var(--faible)"><%= (a.portees_demandees || []).join(", ") || "—" %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+    <a class="btn" href="/apps" style="margin-top:16px;">Déclarer une application →</a>
+  </div>
+
+  <!-- ══ 4. CE QUE MON TRAVAIL A FAIT ═════════════════════════════════════
+       L'angle mort des grands portails : ils montrent la configuration, pas
+       le travail. Quand une application échoue chez un marchand, il faut
+       aller chercher ailleurs. Ici, c'est sur la même page. -->
+  <div class="de-bloc">
+    <h2>4 · Ce que mes clés ont fait</h2>
+    <p class="de-sous">
+      Les derniers appels passés avec tes clés — y compris ceux qui ont été refusés, et pourquoi.
+      C'est là qu'on comprend une intégration qui ne marche pas.
+    </p>
+    <table>
+      <thead><tr><th>Quand</th><th>Appel</th><th>Réponse</th><th>Permission</th></tr></thead>
+      <tbody>
+        <% if (!acces.length) { %>
+          <tr><td colspan="4" class="vide">Aucun appel enregistré pour l'instant.</td></tr>
+        <% } %>
+        <% acces.forEach(function (a) { %>
+          <tr>
+            <td class="mono"><%= new Date(a.created_at).toLocaleString("fr-FR") %></td>
+            <td class="mono"><%= a.methode %> <%= a.chemin %></td>
+            <td class="mono" style="color:<%= a.statut >= 400 ? '#e88' : 'var(--vert)' %>"><%= a.statut %></td>
+            <td class="mono" style="font-size:.68rem;color:var(--faible)"><%= a.portee || "—" %><%= a.refusee ? " (refusé)" : "" %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══ 5. LES REVENUS ═══════════════════════════════════════════════════ -->
+  <div class="de-bloc">
+    <h2>5 · Ce que ça rapporte</h2>
+    <p class="de-sous">
+      Publier ne coûte rien. Installer gratuitement ne coûte rien. SAMII prend <%= taux %> % le jour
+      où tu vends, et rien avant.
+    </p>
+    <div class="de-tuiles">
+      <div class="de-tuile"><b><%= bilan.ventes %></b><span>ventes</span></div>
+      <div class="de-tuile"><b><%= Number(bilan.brut).toFixed(2) %> $</b><span>montant brut</span></div>
+      <div class="de-tuile"><b><%= Number(bilan.net).toFixed(2) %> $</b><span>ta part</span></div>
+      <div class="de-tuile"><b><%= Number(bilan.a_recevoir).toFixed(2) %> $</b><span>à te reverser</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // navigator.clipboard n'existe pas hors HTTPS ni sur d'anciens navigateurs :
+  // on retombe sur la sélection du texte, jamais sur rien du tout.
+  function copier(id, bouton) {
+    var noeud = document.getElementById(id);
+    var texte = noeud.textContent.trim();
+    var initial = bouton.textContent;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(texte).then(function () {
+        bouton.textContent = 'Copié ✓';
+        setTimeout(function () { bouton.textContent = initial; }, 2000);
+      });
+    } else {
+      var plage = document.createRange();
+      plage.selectNodeContents(noeud);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(plage);
+      bouton.textContent = 'Sélectionné — Ctrl+C';
+    }
+  }
+</script>
+</body>
+</html>

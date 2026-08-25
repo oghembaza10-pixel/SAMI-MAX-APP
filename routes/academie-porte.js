@@ -77,6 +77,12 @@ router.get("/construire", exigerMembre, (req, res) => {
     });
 });
 
+// ── L'espace développeur ─────────────────────────────────────────────────
+// Le poste de travail, derrière la porte. Monté ici plutôt que dans index.js
+// pour partager exigerMembre : on ne fabrique pas de clé ni de terrain d'essai
+// sans avoir accepté le contrat.
+router.use("/espace", exigerMembre, require("./dev-espace"));
+
 // ── La place : où l'on se rencontre ──────────────────────────────────────
 // Pas encore ouverte. On l'annonce comme telle plutôt que de la cacher : un
 // lieu à moitié construit qu'on présente comme fini se paie au premier client.

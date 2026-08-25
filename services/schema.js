@@ -62,6 +62,18 @@ const BLOCS = [
         ],
     },
     {
+        // Deux colonnes sur les espaces, et rien d'autre : un bac à sable est
+        // un espace ordinaire. Lui donner ses propres tables aurait dupliqué
+        // toute la logique métier — et un décor spécial ment toujours, tôt ou
+        // tard, sur le comportement réel de la production.
+        nom: "bac à sable",
+        sql: [
+            `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS est_bac_a_sable BOOLEAN NOT NULL DEFAULT FALSE`,
+            `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS bac_decor TEXT`,
+            `CREATE INDEX IF NOT EXISTS idx_ws_bac ON workspaces (owner) WHERE est_bac_a_sable`,
+        ],
+    },
+    {
         nom: "API partenaires — clés, webhooks, journal",
         sql: [
             `CREATE TABLE IF NOT EXISTS api_cles (
