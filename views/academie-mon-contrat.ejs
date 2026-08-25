@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mon contrat — Académie SAMII</title>
+  <link rel="stylesheet" href="/css/qg-style.css">
+  <style>
+    :root { --enc:#07070a; --or:#c9a961; --or-clair:#f0d99b; --ivoire:#f3f1e9; --gris:#8b8d95; --bord:rgba(201,169,97,.18); }
+    body { background: var(--enc); color: var(--ivoire); }
+    .ac-shell { max-width: 760px; margin: 0 auto; padding: 46px 22px 80px; }
+    .ac-shell h1 { font-family:"Didot","Bodoni MT",Georgia,serif; font-weight:400; font-size:1.9rem; margin:0 0 8px; }
+    .ac-sous { color: var(--gris); font-size:.86rem; margin:0 0 32px; }
+    .ac-bilan { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:34px; }
+    .ac-tuile { padding:18px; border:1px solid rgba(255,255,255,.08); border-radius:6px; background:rgba(255,255,255,.02); }
+    .ac-tuile b { display:block; font-family:var(--font-mono,monospace); font-size:1.35rem; color:var(--or); }
+    .ac-tuile span { font-size:.72rem; color:var(--gris); text-transform:uppercase; letter-spacing:.06em; }
+    h2 { font-size:.78rem; letter-spacing:.14em; text-transform:uppercase; color:var(--gris); margin:0 0 14px; font-weight:600; }
+    table { width:100%; border-collapse:collapse; font-size:.82rem; margin-bottom:34px; }
+    th { text-align:left; padding:9px 10px; color:var(--gris); font-weight:500; font-size:.72rem;
+         text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid rgba(255,255,255,.08); }
+    td { padding:11px 10px; border-bottom:1px solid rgba(255,255,255,.05); color:#c2c5cc; }
+    .mono { font-family:var(--font-mono,monospace); font-size:.72rem; color:var(--gris); }
+    .ac-article { padding:18px 0; border-top:1px solid rgba(255,255,255,.06); }
+    .ac-article h3 { margin:0 0 6px; font-size:.9rem; }
+    .ac-article p { margin:0; font-size:.85rem; line-height:1.75; color:#b9bcc4; }
+    .ac-retour { display:inline-block; margin-bottom:22px; color:var(--gris); text-decoration:none; font-size:.82rem; }
+    .ac-retour:hover { color: var(--or); }
+  </style>
+</head>
+<body data-theme="og">
+<div class="ac-shell">
+
+  <a href="/academy" class="ac-retour">← Retour à l'Académie</a>
+
+  <h1>Mon contrat</h1>
+  <p class="ac-sous">Ce qui te lie à l'Académie, et ce que ça t'a rapporté.</p>
+
+  <!-- On montre le brut ET ce que la commission a prélevé. Cacher la seconde
+       ligne serait le meilleur moyen de rendre les 10 % suspects. -->
+  <div class="ac-bilan">
+    <div class="ac-tuile"><b><%= bilan.ventes %></b><span>ventes conclues</span></div>
+    <div class="ac-tuile"><b><%= Number(bilan.brut).toFixed(2) %> $</b><span>montant brut</span></div>
+    <div class="ac-tuile"><b><%= Number(bilan.net).toFixed(2) %> $</b><span>ta part (<%= 100 - taux %> %)</span></div>
+    <div class="ac-tuile"><b><%= Number(bilan.a_recevoir).toFixed(2) %> $</b><span>à te reverser</span></div>
+  </div>
+
+  <h2>Ce que tu as accepté</h2>
+  <table>
+    <thead><tr><th>Version</th><th>Rôle</th><th>Date</th><th>Empreinte du texte</th></tr></thead>
+    <tbody>
+      <% if (!historique.length) { %>
+        <tr><td colspan="4" style="color:var(--gris)">Aucune acceptation enregistrée.</td></tr>
+      <% } %>
+      <% historique.forEach(function (h) { %>
+        <tr>
+          <td>v<%= h.contrat_version %></td>
+          <td><%= h.role === "developpeur" ? "Développeur" : "Client" %></td>
+          <td><%= new Date(h.accepte_le).toLocaleString("fr-FR") %></td>
+          <td class="mono"><%= String(h.empreinte_contrat).slice(0, 16) %>…</td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <h2>Le texte en vigueur — version <%= contrat.version %></h2>
+  <% contrat.articles.forEach(function (a) { %>
+    <div class="ac-article"><h3><%= a.titre %></h3><p><%= a.texte %></p></div>
+  <% }); %>
+
+</div>
+</body>
+</html>

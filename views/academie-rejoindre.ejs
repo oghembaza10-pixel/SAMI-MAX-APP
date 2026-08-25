@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= contrat.titre %> — SAMII OS</title>
+  <link rel="stylesheet" href="/css/qg-style.css">
+  <style>
+    :root {
+      --enc: #07070a; --pan: #101013; --or: #c9a961; --or-clair: #f0d99b;
+      --ivoire: #f3f1e9; --gris: #8b8d95; --bord: rgba(201,169,97,.18);
+    }
+    body { background: var(--enc); color: var(--ivoire); }
+    .ac-shell { max-width: 760px; margin: 0 auto; padding: 48px 22px 80px; }
+    .ac-marque {
+      text-align: center; font-family: Georgia, serif; font-size: 11px;
+      letter-spacing: .5em; text-indent: .5em; color: var(--or);
+      text-transform: uppercase; margin-bottom: 14px;
+    }
+    .ac-shell h1 {
+      font-family: "Didot", "Bodoni MT", Georgia, serif; font-weight: 400;
+      font-size: clamp(1.7rem, 4vw, 2.3rem); text-align: center; margin: 0 0 10px;
+    }
+    .ac-resume {
+      text-align: center; color: var(--or-clair); font-size: .92rem;
+      max-width: 52ch; margin: 0 auto 34px; line-height: 1.6;
+    }
+    /* Le chiffre est la première chose que l'on doit voir. Le cacher plus bas
+       dans le texte serait une façon polie de le dissimuler. */
+    .ac-taux {
+      display: flex; justify-content: center; gap: 26px; flex-wrap: wrap;
+      margin: 0 auto 36px; padding: 20px; max-width: 520px;
+      border: 1px solid var(--bord); border-radius: 6px; background: rgba(201,169,97,.04);
+    }
+    .ac-taux div { text-align: center; }
+    .ac-taux b { display: block; font-family: var(--font-mono, monospace); font-size: 1.5rem; color: var(--or); }
+    .ac-taux span { font-size: .72rem; color: var(--gris); letter-spacing: .06em; text-transform: uppercase; }
+    .ac-article { padding: 20px 0; border-top: 1px solid rgba(255,255,255,.06); }
+    .ac-article:first-of-type { border-top: none; }
+    .ac-article h3 { margin: 0 0 6px; font-size: .92rem; font-weight: 650; color: var(--ivoire); }
+    .ac-article p { margin: 0; font-size: .86rem; line-height: 1.75; color: #b9bcc4; }
+    .ac-role { display: flex; gap: 12px; flex-wrap: wrap; margin: 30px 0 18px; }
+    .ac-role label {
+      flex: 1 1 220px; padding: 16px 18px; border: 1px solid rgba(255,255,255,.1);
+      border-radius: 6px; cursor: pointer; transition: border-color .2s ease, background .2s ease;
+    }
+    .ac-role label:hover { border-color: var(--bord); }
+    .ac-role input { margin-right: 9px; accent-color: var(--or); }
+    .ac-role b { font-size: .88rem; }
+    .ac-role small { display: block; margin-top: 5px; color: var(--gris); font-size: .78rem; line-height: 1.55; }
+    .ac-case {
+      display: flex; align-items: flex-start; gap: 11px; padding: 18px;
+      border: 1px solid var(--bord); border-radius: 6px; background: rgba(201,169,97,.04);
+      font-size: .86rem; line-height: 1.6; cursor: pointer;
+    }
+    .ac-case input { margin-top: 3px; accent-color: var(--or); width: 17px; height: 17px; flex-shrink: 0; }
+    .ac-btn {
+      display: block; width: 100%; margin-top: 20px; padding: 15px;
+      background: var(--or); color: #07070a; border: none; border-radius: 4px;
+      font-size: .82rem; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; cursor: pointer;
+    }
+    .ac-btn:hover { background: var(--or-clair); }
+    .ac-err {
+      margin-bottom: 18px; padding: 12px 16px; border-radius: 4px;
+      background: rgba(229,85,85,.09); border: 1px solid rgba(229,85,85,.3);
+      color: #e88; font-size: .84rem; text-align: center;
+    }
+    .ac-pied { margin-top: 26px; text-align: center; font-size: .76rem; color: var(--gris); line-height: 1.7; }
+    .ac-pied a { color: var(--or); text-decoration: none; }
+  </style>
+</head>
+<body data-theme="og">
+<div class="ac-shell">
+
+  <div class="ac-marque">O G &nbsp; T E C H N O L O G Y</div>
+  <h1><%= contrat.titre %></h1>
+  <p class="ac-resume"><%= contrat.resume %></p>
+
+  <div class="ac-taux">
+    <div><b>0 $</b><span>pour entrer</span></div>
+    <div><b>0 $</b><span>pour publier</span></div>
+    <div><b><%= taux %> %</b><span>par transaction</span></div>
+  </div>
+
+  <% if (dejaMembre) { %>
+    <div class="ac-case" style="border-color:rgba(61,220,132,.3);background:rgba(61,220,132,.06);">
+      <span>✅ Tu as déjà accepté la version <%= contrat.version %> de ce contrat.
+      <a href="/academy" style="color:var(--or-clair);">Retourner à l'Académie →</a></span>
+    </div>
+  <% } %>
+
+  <% if (erreur) { %><div class="ac-err"><%= erreur %></div><% } %>
+
+  <% contrat.articles.forEach(function (a) { %>
+    <div class="ac-article">
+      <h3><%= a.titre %></h3>
+      <p><%= a.texte %></p>
+    </div>
+  <% }); %>
+
+  <% if (!dejaMembre) { %>
+  <form method="POST" action="/academy/rejoindre">
+    <input type="hidden" name="retour" value="<%= retour %>">
+
+    <div class="ac-role">
+      <label>
+        <input type="radio" name="role" value="developpeur" required>
+        <b>Je viens construire</b>
+        <small>Développeur, agence, intégrateur. Tu crées des applications sur SAMII et tu les vends ici.</small>
+      </label>
+      <label>
+        <input type="radio" name="role" value="client">
+        <b>Je viens chercher</b>
+        <small>Marchand ou entreprise. Tu cherches quelqu'un pour construire ce dont tu as besoin.</small>
+      </label>
+    </div>
+
+    <!-- Jamais pré-cochée : un consentement coché d'avance n'en est pas un,
+         et ne vaudrait rien le jour où il faudrait s'en servir. -->
+    <label class="ac-case">
+      <input type="checkbox" name="accepte" value="oui" required>
+      <span>J'ai lu et j'accepte le contrat de l'Académie SAMII (version <%= contrat.version %>).
+      Je comprends que SAMII est mon partenaire de commercialisation et prélève
+      <b><%= taux %> %</b> sur chaque transaction conclue ici, et que je reste propriétaire
+      de mon code, de ma marque et de mes clients.</span>
+    </label>
+
+    <button type="submit" class="ac-btn">Entrer dans l'Académie</button>
+  </form>
+  <% } %>
+
+  <p class="ac-pied">
+    Ce contrat est daté et conservé avec l'empreinte du texte exact que tu acceptes.<br>
+    Tu peux le relire à tout moment depuis <a href="/academy/mon-contrat">mon contrat</a>.
+  </p>
+
+</div>
+</body>
+</html>

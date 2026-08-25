@@ -206,6 +206,10 @@ app.use("/verification", require("./routes/verification"));
 // ══════════════════════════════════════════════════════
 // ROUTES — Vitrine (public)
 // ══════════════════════════════════════════════════════
+// La porte de l'Académie passe AVANT le reste : /academy/rejoindre doit
+// répondre même à quelqu'un qui n'a encore rien accepté, et les deux routeurs
+// se partagent le même préfixe.
+app.use("/academy",     require("./routes/academie-porte").router);
 app.use("/academy",     require("./routes/academy"));
 app.use("/community",   require("./routes/community"));
 app.use("/discussions", require("./routes/discussions"));
