@@ -130,6 +130,14 @@ function clearWorkspaceSession(req, callback) {
 // ══════════════════════════════════════════════════════
 // BOOTSTRAP MOTEURS
 // ══════════════════════════════════════════════════════
+// Le schéma se met en place tout seul, à chaque démarrage. Une fonctionnalité
+// livrée ne doit plus jamais rester morte parce qu'un script de création de
+// tables n'a pas été lancé à la main sur le serveur (voir services/schema.js).
+// Volontairement non bloquant : une base momentanément injoignable ne doit pas
+// empêcher le site de répondre.
+require("./services/schema").preparer()
+    .catch(err => console.error("❌ Préparation du schéma :", err.message));
+
 const { registerChannels, registerScheduledJobs, registerTrackingProviders } = require("./kernel/bootstrap");
 registerChannels();
 registerTrackingProviders();
