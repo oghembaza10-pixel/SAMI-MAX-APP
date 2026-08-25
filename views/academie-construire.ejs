@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Construire — Académie SAMII</title>
+  <link rel="stylesheet" href="/css/qg-style.css">
+  <style>
+    :root { --enc:#07070a; --or:#c9a961; --or-clair:#f0d99b; --ivoire:#f3f1e9; --gris:#8b8d95; --bord:rgba(201,169,97,.18); }
+    body { background: var(--enc); color: var(--ivoire); }
+    .cs { max-width: 900px; margin: 0 auto; padding: 44px 22px 80px; }
+    .cs-retour { display:inline-block; margin-bottom:22px; color:var(--gris); text-decoration:none; font-size:.82rem; }
+    .cs-retour:hover { color: var(--or); }
+    .cs h1 { font-family:"Didot","Bodoni MT",Georgia,serif; font-weight:400; font-size:2rem; margin:0 0 10px; }
+    .cs-lead { color:var(--gris); font-size:.9rem; line-height:1.75; max-width:60ch; margin:0 0 38px; }
+    h2 { font-size:.76rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gris); font-weight:600; margin:0 0 18px; }
+    /* Quatre étapes numérotées : un développeur veut savoir par où commencer,
+       pas lire une présentation. */
+    .cs-etapes { display:flex; flex-direction:column; gap:0; margin-bottom:48px; }
+    .cs-etape { display:flex; gap:20px; padding:22px 0; border-top:1px solid rgba(255,255,255,.06); }
+    .cs-etape:first-child { border-top:none; padding-top:0; }
+    .cs-num {
+      flex-shrink:0; width:30px; height:30px; border-radius:50%; border:1px solid var(--bord);
+      display:grid; place-items:center; font-family:var(--font-mono,monospace);
+      font-size:.72rem; color:var(--or); background:rgba(201,169,97,.05);
+    }
+    .cs-etape h3 { margin:4px 0 6px; font-size:.95rem; font-weight:650; }
+    .cs-etape p { margin:0 0 10px; font-size:.85rem; line-height:1.72; color:var(--gris); }
+    .cs-etape a { color:var(--or); font-size:.82rem; text-decoration:none; }
+    .cs-etape a:hover { color:var(--or-clair); }
+    .cs-code {
+      background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.07); border-radius:8px;
+      padding:16px 18px; overflow-x:auto; margin:12px 0 0;
+    }
+    .cs-code pre { margin:0; font-family:var(--font-mono,monospace); font-size:.74rem; line-height:1.75; color:#b9c7d6; white-space:pre; }
+    .c-cle { color: var(--or-clair); } .c-txt { color:#7fd3a5; }
+    .cs-regle {
+      padding:22px 24px; border:1px solid var(--bord); border-radius:8px;
+      background:rgba(201,169,97,.04); margin-bottom:14px;
+    }
+    .cs-regle h3 { margin:0 0 8px; font-size:.92rem; }
+    .cs-regle p { margin:0; font-size:.84rem; line-height:1.72; color:var(--gris); }
+    .cs-regle a { color:var(--or); text-decoration:none; }
+  </style>
+</head>
+<body data-theme="og">
+<div class="cs">
+
+  <a href="/academy" class="cs-retour">← L'Académie</a>
+
+  <h1>Construire sur SAMII</h1>
+  <p class="cs-lead">
+    Tu es dans l'atelier. Ton application demande des permissions, un marchand les accorde,
+    et elle travaille dans son espace — jamais au-delà de ce qu'il a donné.
+  </p>
+
+  <h2>Par où commencer</h2>
+  <div class="cs-etapes">
+
+    <div class="cs-etape">
+      <div class="cs-num">1</div>
+      <div>
+        <h3>Lis ce que l'API sait faire</h3>
+        <p>REST, JSON, jeton Bearer. Commandes, rendez-vous, clients, espaces. Aucun SDK à installer : un appel HTTP suffit.</p>
+        <a href="/api-docs" target="_blank" rel="noopener">Ouvrir la documentation →</a>
+      </div>
+    </div>
+
+    <div class="cs-etape">
+      <div class="cs-num">2</div>
+      <div>
+        <h3>Prends une clé sur ton propre espace</h3>
+        <p>Avant de déclarer une application, teste avec ta clé et tes propres données : c'est le chemin le plus court entre une idée et un premier appel qui répond.</p>
+        <a href="/developpeurs">Mes clés et webhooks →</a>
+        <div class="cs-code"><pre>curl https://samii.souverain-store.com/api/v1/commandes \
+  -H <span class="c-txt">"Authorization: Bearer sk_samii_…"</span></pre></div>
+      </div>
+    </div>
+
+    <div class="cs-etape">
+      <div class="cs-num">3</div>
+      <div>
+        <h3>Déclare ton application</h3>
+        <p>Nom, description, URL de webhook, et surtout : les permissions dont elle a réellement besoin. C'est ce que le marchand verra avant d'approuver — demander trop est le meilleur moyen d'être refusé.</p>
+        <a href="/apps">Déclarer une application →</a>
+      </div>
+    </div>
+
+    <div class="cs-etape">
+      <div class="cs-num">4</div>
+      <div>
+        <h3>Publie-la au catalogue</h3>
+        <p>En brouillon, elle n'est installable que par toi — de quoi la finir tranquillement. Publiée, elle apparaît chez les marchands de SAMII.</p>
+        <a href="/apps">Voir le catalogue →</a>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>Les trois règles qui ne bougeront pas</h2>
+
+  <div class="cs-regle">
+    <h3>Ton application ne choisit pas ses droits</h3>
+    <p>Elle demande. C'est l'approbation du marchand qui crée la clé, et cette clé ne peut jamais porter plus que ce qui a été demandé <em>et</em> accordé.</p>
+  </div>
+
+  <div class="cs-regle">
+    <h3>Le marchand reprend quand il veut</h3>
+    <p>Un bouton, et l'accès meurt dans la seconde. Il n'a pas à comprendre ce qu'est une clé pour reprendre ce qu'il a donné. Chaque appel que tu fais est inscrit à son journal.</p>
+  </div>
+
+  <div class="cs-regle">
+    <h3>Une installation vaut pour un seul espace</h3>
+    <p>Installer ton application chez un client n'ouvre rien chez les autres — même pour une agence qui gère les deux.</p>
+  </div>
+
+  <div class="cs-regle" style="border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.02);">
+    <h3>Et l'argent</h3>
+    <p>Publier ne coûte rien. Installer gratuitement ne coûte rien. SAMII prend <%= taux %> % le jour où ton application est vendue — et rien avant.
+    <a href="/academy/mon-contrat">Relire le contrat →</a></p>
+  </div>
+
+</div>
+</body>
+</html>

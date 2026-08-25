@@ -33,6 +33,38 @@ async function exigerMembre(req, res, next) {
     return res.redirect(`/academy/rejoindre?retour=${retour}`);
 }
 
+// ── Le hall ──────────────────────────────────────────────────────────────
+// Volontairement ouvert à tous, sans compte : c'est une page d'invitation.
+// Un développeur qui la découvre doit pouvoir tout lire — ce qu'on apporte,
+// ce qu'on prend, ce qu'il garde — avant qu'on lui demande quoi que ce soit.
+router.get("/", async (req, res) => {
+    const membre = req.session?.loggedIn ? await service.estMembre(req.session.userId) : false;
+    res.render("academie-hall", {
+        taux: Math.round(academie.TAUX_COMMISSION * 100),
+        membre,
+    });
+});
+
+// ── L'atelier : où l'on construit ────────────────────────────────────────
+// Derrière la porte. Rien à inventer côté outils : les clés, les webhooks et
+// le journal d'accès vivent déjà dans /developpeurs, la déclaration d'une
+// application dans /apps. L'Académie les rassemble et pose la règle.
+router.get("/construire", exigerMembre, (req, res) => {
+    res.render("academie-construire", {
+        taux: Math.round(academie.TAUX_COMMISSION * 100),
+    });
+});
+
+// ── La place : où l'on se rencontre ──────────────────────────────────────
+// Pas encore ouverte. On l'annonce comme telle plutôt que de la cacher : un
+// lieu à moitié construit qu'on présente comme fini se paie au premier client.
+router.get("/trouver", (req, res) => {
+    res.render("academie-trouver", {
+        taux: Math.round(academie.TAUX_COMMISSION * 100),
+        membre: !!req.session?.loggedIn,
+    });
+});
+
 // ── La page du contrat ───────────────────────────────────────────────────
 router.get("/rejoindre", requireAuth, async (req, res) => {
     const dejaMembre = await service.estMembre(req.session.userId);

@@ -265,9 +265,14 @@ router.post("/favoris/toggle", requireAuth, async (req, res) => {
     }
 });
 
+// La bibliothèque. Elle répondait à /academy ; ce chemin sert désormais le
+// hall à trois portes (routes/academie-porte.js), monté avant celui-ci. Rien
+// n'est perdu : le contenu, les catégories, les lives et les favoris sont
+// exactement les mêmes, à une adresse propre.
+//
 // Ouvert à tous, sans compte — s'inscrire/aimer/partager reste réservé aux
 // connectés, mais parcourir le contenu ne doit jamais demander de compte.
-router.get("/", async (req, res) => {
+router.get(["/bibliotheque", "/formations"], async (req, res) => {
     const { categorie, format, recherche, niveau } = req.query;
     let coursDB = [];
 
@@ -555,7 +560,7 @@ a { color: inherit; text-decoration: none; }
         <nav class="side-menu">
             <a href="/qg" class="side-link"><i data-lucide="layout-dashboard"></i> <span data-i18n="nav_qg">QG Central</span></a>
             <a href="/marketplace" class="side-link"><i data-lucide="shopping-bag"></i> <span data-i18n="nav_store">Marketplace</span></a>
-            <a href="/academy" class="side-link active"><i data-lucide="graduation-cap"></i> <span data-i18n="nav_academy">Académie & Feed</span></a>
+            <a href="/academy/bibliotheque" class="side-link active"><i data-lucide="graduation-cap"></i> <span data-i18n="nav_academy">Académie & Feed</span></a>
             <a href="/community" class="side-link"><i data-lucide="users"></i> <span data-i18n="nav_chat">Communauté</span></a>
             <a href="/client-qg" class="side-link"><i data-lucide="shield-check"></i> Client-QG</a>
         </nav>

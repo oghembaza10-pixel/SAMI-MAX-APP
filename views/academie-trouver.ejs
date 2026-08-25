@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Trouver quelqu'un — Académie SAMII</title>
+  <link rel="stylesheet" href="/css/qg-style.css">
+  <style>
+    :root { --enc:#07070a; --or:#c9a961; --or-clair:#f0d99b; --ivoire:#f3f1e9; --gris:#8b8d95; --bord:rgba(201,169,97,.18); }
+    body { background: var(--enc); color: var(--ivoire); }
+    .tr { max-width: 720px; margin: 0 auto; padding: 44px 22px 80px; text-align:center; }
+    .tr-retour { display:inline-block; margin-bottom:26px; color:var(--gris); text-decoration:none; font-size:.82rem; float:left; }
+    .tr-retour:hover { color: var(--or); }
+    .tr h1 { font-family:"Didot","Bodoni MT",Georgia,serif; font-weight:400; font-size:2rem; margin:34px 0 12px; clear:both; }
+    .tr-lead { color:var(--gris); font-size:.92rem; line-height:1.78; max-width:54ch; margin:0 auto 30px; }
+    .tr-badge {
+      display:inline-block; padding:6px 15px; border-radius:20px; background:rgba(201,169,97,.08);
+      border:1px solid var(--bord); color:var(--or); font-family:var(--font-mono,monospace);
+      font-size:.68rem; letter-spacing:.13em; text-transform:uppercase;
+    }
+    .tr-liste { text-align:left; max-width:520px; margin:0 auto 34px; display:flex; flex-direction:column; gap:14px; }
+    .tr-item { display:flex; gap:14px; align-items:flex-start; }
+    .tr-item span { color:var(--or); opacity:.6; font-family:var(--font-mono,monospace); font-size:.8rem; padding-top:2px; }
+    .tr-item p { margin:0; font-size:.86rem; line-height:1.7; color:var(--gris); }
+    .tr-item b { color: var(--ivoire); font-weight:600; }
+    .tr-btn {
+      display:inline-block; padding:14px 34px; background:var(--or); color:#07070a;
+      border-radius:4px; font-size:.78rem; font-weight:700; letter-spacing:.08em;
+      text-transform:uppercase; text-decoration:none;
+    }
+    .tr-btn:hover { background: var(--or-clair); }
+    .tr-note { display:block; margin-top:14px; font-size:.78rem; color:var(--gris); line-height:1.6; }
+    .tr-note a { color: var(--or); text-decoration:none; }
+  </style>
+</head>
+<body data-theme="og">
+<div class="tr">
+
+  <a href="/academy" class="tr-retour">← L'Académie</a>
+
+  <div style="clear:both"></div>
+  <span class="tr-badge">En construction</span>
+  <h1>Trouver quelqu'un</h1>
+  <p class="tr-lead">
+    La place où les marchands décrivent ce qu'il leur faut et où les développeurs
+    et agences de l'Académie répondent. Elle n'est pas encore ouverte — on préfère
+    le dire que de vous laisser la découvrir vide.
+  </p>
+
+  <!-- Annoncer ce qui vient, précisément. Une page « bientôt » qui ne dit pas
+       quoi ne donne à personne l'envie de revenir. -->
+  <div class="tr-liste">
+    <div class="tr-item"><span>01</span><p><b>Des profils avec un passé.</b> Compétences, langues, pays, réalisations — et les missions déjà livrées ici, que personne ne peut inventer.</p></div>
+    <div class="tr-item"><span>02</span><p><b>Un besoin décrit en clair.</b> Vous écrivez ce qu'il vous faut ; ceux qui savent le faire répondent avec un prix et un délai.</p></div>
+    <div class="tr-item"><span>03</span><p><b>L'accord fournit l'accès.</b> Quand vous validez, la clé est créée et les permissions posées — le développeur peut travailler tout de suite, sans que vous ayez à lui envoyer quoi que ce soit.</p></div>
+    <div class="tr-item"><span>04</span><p><b>L'argent est retenu jusqu'à la livraison.</b> Vous payez à l'accord, le développeur est réglé quand vous validez. SAMII prend <%= taux %> %, et rien tant que rien n'est vendu.</p></div>
+  </div>
+
+  <% if (membre) { %>
+    <a class="tr-btn" href="/academy/construire">En attendant, construire →</a>
+    <span class="tr-note">Tu es déjà dans l'Académie. Ton profil sera prêt le jour de l'ouverture.</span>
+  <% } else { %>
+    <a class="tr-btn" href="/academy/rejoindre">Prendre ma place →</a>
+    <span class="tr-note">
+      Entrer est gratuit — une page à lire, une case à cocher.<br>
+      Les premiers inscrits seront les premiers visibles.
+    </span>
+  <% } %>
+
+</div>
+</body>
+</html>

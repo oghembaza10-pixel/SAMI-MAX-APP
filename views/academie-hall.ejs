@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>L'Académie — SAMII OS</title>
+  <link rel="stylesheet" href="/css/qg-style.css">
+  <style>
+    :root {
+      --enc:#07070a; --pan:#101013; --or:#c9a961; --or-clair:#f0d99b;
+      --ivoire:#f3f1e9; --gris:#8b8d95; --bord:rgba(201,169,97,.18);
+    }
+    body { background: var(--enc); color: var(--ivoire); }
+    .ha { max-width: 1080px; margin: 0 auto; padding: 46px 22px 80px; }
+    .ha-marque {
+      text-align:center; font-family:Georgia,serif; font-size:11px; letter-spacing:.5em;
+      text-indent:.5em; color:var(--or); text-transform:uppercase; margin-bottom:14px;
+    }
+    .ha h1 {
+      font-family:"Didot","Bodoni MT",Georgia,serif; font-weight:400;
+      font-size:clamp(1.8rem,4.5vw,2.6rem); text-align:center; margin:0 0 12px; text-wrap:balance;
+    }
+    .ha-lead {
+      text-align:center; color:var(--gris); font-size:.94rem; line-height:1.75;
+      max-width:58ch; margin:0 auto 12px;
+    }
+    .ha-regle {
+      text-align:center; color:var(--or-clair); font-size:.86rem; margin:0 auto 44px;
+    }
+    /* Trois portes. Celle du milieu est la raison d'être du lieu : c'est elle
+       qu'on met en avant, sans écraser les deux autres. */
+    .ha-portes { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:56px; }
+    @media (max-width:880px) { .ha-portes { grid-template-columns:1fr; } }
+    .ha-porte {
+      display:flex; flex-direction:column; padding:30px 26px;
+      border:1px solid rgba(255,255,255,.08); border-radius:8px;
+      background:rgba(255,255,255,.02); text-decoration:none; color:inherit;
+      transition:border-color .25s ease, background .25s ease, transform .25s ease;
+    }
+    .ha-porte:hover { border-color:var(--bord); background:rgba(201,169,97,.04); transform:translateY(-2px); }
+    .ha-porte--phare { border-color:var(--bord); background:rgba(201,169,97,.05); }
+    .ha-porte__oeil { font-size:1.6rem; margin-bottom:14px; }
+    .ha-porte h2 { margin:0 0 8px; font-size:1.06rem; font-weight:650; color:var(--ivoire); }
+    .ha-porte p { margin:0 0 18px; font-size:.85rem; line-height:1.7; color:var(--gris); flex:1; }
+    .ha-porte span {
+      font-family:var(--font-mono,monospace); font-size:.7rem; letter-spacing:.1em;
+      text-transform:uppercase; color:var(--or);
+    }
+    .ha-sec { margin-bottom:56px; }
+    .ha-sec > h2 {
+      font-size:.76rem; letter-spacing:.16em; text-transform:uppercase;
+      color:var(--gris); font-weight:600; margin:0 0 22px;
+    }
+    .ha-points { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:0; }
+    .ha-point { padding:22px 24px; border-left:1px solid rgba(255,255,255,.07); }
+    .ha-point:first-child { border-left:none; padding-left:0; }
+    @media (max-width:700px) {
+      .ha-point { border-left:none; border-top:1px solid rgba(255,255,255,.07); padding:20px 0; }
+      .ha-point:first-child { border-top:none; }
+    }
+    .ha-point h3 { margin:0 0 6px; font-size:.9rem; font-weight:650; }
+    .ha-point p { margin:0; font-size:.83rem; line-height:1.7; color:var(--gris); }
+    /* Deux offres côte à côte : une agence doit pouvoir choisir en dix
+       secondes, pas lire une page de vente. */
+    .ha-offres { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    @media (max-width:760px) { .ha-offres { grid-template-columns:1fr; } }
+    .ha-offre { padding:26px 24px; border:1px solid rgba(255,255,255,.08); border-radius:8px; }
+    .ha-offre__num {
+      font-family:var(--font-mono,monospace); font-size:.7rem; letter-spacing:.1em; color:var(--or); opacity:.8;
+    }
+    .ha-offre h3 { margin:9px 0 8px; font-size:1rem; font-weight:650; }
+    .ha-offre p { margin:0 0 14px; font-size:.84rem; line-height:1.7; color:var(--gris); }
+    .ha-offre ul { list-style:none; margin:0 0 16px; padding:0; display:flex; flex-direction:column; gap:8px; }
+    .ha-offre li { position:relative; padding-left:15px; font-size:.81rem; line-height:1.6; color:var(--gris); }
+    .ha-offre li::before { content:"—"; position:absolute; left:0; color:var(--or); opacity:.55; }
+    .ha-offre a { color:var(--or); font-size:.82rem; text-decoration:none; }
+    .ha-offre a:hover { color:var(--or-clair); }
+    .ha-cta { text-align:center; padding-top:14px; }
+    .ha-btn {
+      display:inline-block; padding:15px 38px; background:var(--or); color:#07070a;
+      border-radius:4px; font-size:.8rem; font-weight:700; letter-spacing:.08em;
+      text-transform:uppercase; text-decoration:none;
+    }
+    .ha-btn:hover { background:var(--or-clair); }
+    .ha-note { display:block; margin-top:12px; font-size:.78rem; color:var(--gris); }
+    .ha-retour { display:inline-block; margin-bottom:22px; color:var(--gris); text-decoration:none; font-size:.82rem; }
+    .ha-retour:hover { color:var(--or); }
+  </style>
+</head>
+<body data-theme="og">
+<div class="ha">
+
+  <a href="/qg" class="ha-retour">← Retour au QG</a>
+
+  <div class="ha-marque">O G &nbsp; T E C H N O L O G Y</div>
+  <h1>L'Académie</h1>
+  <p class="ha-lead">
+    Le lieu où l'on construit sur SAMII, où l'on trouve quelqu'un pour le faire,
+    et où l'on apprend. Entrer est gratuit. Publier est gratuit.
+  </p>
+  <p class="ha-regle">SAMII ne prend rien tant que rien n'est vendu — puis <%= taux %> % sur la transaction.</p>
+
+  <div class="ha-portes">
+    <a class="ha-porte ha-porte--phare" href="/academy/construire">
+      <div class="ha-porte__oeil">⚒️</div>
+      <h2>Je construis</h2>
+      <p>Développeur, agence, intégrateur. Crée ton application sur l'API de SAMII, demande tes permissions, publie-la au catalogue et vends-la à ses marchands.</p>
+      <span><%= membre ? "Entrer →" : "Lire le contrat →" %></span>
+    </a>
+    <a class="ha-porte" href="/academy/trouver">
+      <div class="ha-porte__oeil">🤝</div>
+      <h2>Je cherche quelqu'un</h2>
+      <p>Marchand ou entreprise. Décris ce qu'il te faut, et trouve le développeur ou l'agence qui sait le construire — avec l'accès technique fourni au moment de l'accord.</p>
+      <span>Bientôt →</span>
+    </a>
+    <a class="ha-porte" href="/academy/bibliotheque">
+      <div class="ha-porte__oeil">📚</div>
+      <h2>J'apprends</h2>
+      <p>Formations, lives, guides et fichiers de configuration. E-commerce, automatisation, publicité, logistique — la bibliothèque de l'Académie, ouverte à tous.</p>
+      <span>Parcourir →</span>
+    </a>
+  </div>
+
+  <!-- ══ POURQUOI CONSTRUIRE ICI ══════════════════════════════════════════
+       Un développeur ne vient pas pour une plateforme : il vient pour des
+       clients et pour du temps gagné. C'est ce qu'on met en avant, pas la
+       liste de nos technologies. -->
+  <div class="ha-sec">
+    <h2>Pourquoi construire ici</h2>
+    <div class="ha-points">
+      <div class="ha-point">
+        <h3>Les clients sont déjà là</h3>
+        <p>Tu ne pars pas d'une page blanche. Ton application est proposée aux marchands qui utilisent SAMII tous les jours, dans leur écran de travail.</p>
+      </div>
+      <div class="ha-point">
+        <h3>L'infrastructure est faite</h3>
+        <p>Commandes, rendez-vous, clients, WhatsApp, Telegram, Instagram, Gmail, agenda : c'est branché. Tu écris ce que toi seul sais faire.</p>
+      </div>
+      <div class="ha-point">
+        <h3>Les permissions te protègent</h3>
+        <p>Ton application demande, le marchand accorde. Tu ne détiens jamais plus que ce qu'on t'a donné — et lui peut le reprendre d'un geste.</p>
+      </div>
+      <div class="ha-point">
+        <h3>Tu gardes tout</h3>
+        <p>Ton code, ta marque, tes clients. SAMII est ton partenaire de vente, pas le propriétaire de ton travail.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LES AGENCES : DEUX OFFRES ════════════════════════════════════════
+       Une agence arrive avec une question simple : est-ce que je garde mon
+       produit, ou est-ce que je revends le vôtre ? Les deux réponses sont
+       bonnes, et elles ne se ressemblent pas. -->
+  <div class="ha-sec">
+    <h2>Agences &amp; intégrateurs — deux façons de travailler avec nous</h2>
+    <div class="ha-offres">
+
+      <div class="ha-offre">
+        <div class="ha-offre__num">OFFRE 01</div>
+        <h3>Vous construisez, on porte la machine</h3>
+        <p>Vous gardez votre produit et votre marque. SAMII devient le moteur en dessous : une clé pour tout votre portefeuille, un espace isolé par client.</p>
+        <ul>
+          <li>Une seule clé d'agence, l'espace client visé tient dans un en-tête</li>
+          <li>Webhooks signés : une commande WhatsApp déclenche le même événement qu'un appel API</li>
+          <li>Vos clients restent vos clients — chacun garde son accès</li>
+          <li>Facturé à l'usage, pas au client</li>
+        </ul>
+        <a href="/api-docs" target="_blank" rel="noopener">Lire la documentation →</a>
+      </div>
+
+      <div class="ha-offre">
+        <div class="ha-offre__num">OFFRE 02</div>
+        <h3>Vous louez le QG, sous votre marque</h3>
+        <p>Rien à construire. Vous ouvrez l'espace d'un client en quelques minutes, vous les voyez tous d'un seul écran, et un besoin manquant, notre équipe le développe.</p>
+        <ul>
+          <li>Multi-espaces, un seul contrat</li>
+          <li>Confirmations et messages sans limite</li>
+          <li>Un module vous manque ? On le construit</li>
+          <li>Accompagnement dédié — sur devis</li>
+        </ul>
+        <a href="/billing">Voir le palier Société →</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ WHATSAPP : LE POINT QUI DÉCIDE ═══════════════════════════════════
+       C'est la première question d'une agence sérieuse, parce qu'un compte
+       WhatsApp Business approuvé se gagne difficilement et ne se jette pas. -->
+  <div class="ha-sec">
+    <h2>WhatsApp — deux offres, au choix</h2>
+    <div class="ha-offres">
+
+      <div class="ha-offre">
+        <div class="ha-offre__num">A · VOUS AVEZ DÉJÀ WHATSAPP</div>
+        <h3>On se pose au-dessus du vôtre</h3>
+        <p>Compte WhatsApp Business déjà approuvé, numéro déjà en service chez votre fournisseur officiel ? Ne changez rien. SAMII s'y branche.</p>
+        <ul>
+          <li>Votre numéro, votre compte Meta, votre fournisseur : inchangés</li>
+          <li>Fournisseur officiel ou API Cloud en direct</li>
+          <li>La réception des messages est déclarée pour vous, sans console tierce</li>
+          <li>Inclus dans votre abonnement, sans supplément</li>
+        </ul>
+        <a href="/connect/whatsapp">Brancher mon numéro →</a>
+      </div>
+
+      <div class="ha-offre">
+        <div class="ha-offre__num">B · VOUS N'AVEZ PAS WHATSAPP</div>
+        <h3>On vous le fournit</h3>
+        <p>Pas de compte approuvé, pas de vérification à attendre, pas de dossier à monter. Vous passez par le nôtre et vous démarrez aujourd'hui.</p>
+        <ul>
+          <li>WhatsApp Business API par notre compte vérifié</li>
+          <li>Aucune démarche de vérification de votre côté</li>
+          <li>Essai immédiat de 3 jours sur le numéro partagé</li>
+          <li>Sur devis, au palier Société</li>
+        </ul>
+        <a href="/billing">Nous contacter →</a>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="ha-cta">
+    <a class="ha-btn" href="<%= membre ? "/academy/construire" : "/academy/rejoindre" %>">
+      <%= membre ? "Créer mon application" : "Rejoindre l'Académie" %>
+    </a>
+    <span class="ha-note">
+      <% if (membre) { %>
+        Tu as accepté le contrat — <a href="/academy/mon-contrat" style="color:var(--or);">le relire</a>.
+      <% } else { %>
+        Gratuit. Une page à lire, une case à cocher.
+      <% } %>
+    </span>
+  </div>
+
+</div>
+</body>
+</html>
