@@ -1625,6 +1625,23 @@
             align-items: center;
             gap: 11px;
         }
+        /* Ce qui n'existe pas encore est écrit, pas caché : un client qui
+           découvre un manque après avoir payé ne revient jamais. */
+        .tarifs-pied__bientot {
+            font-family: var(--font-mono, monospace);
+            font-size: .68rem;
+            letter-spacing: .04em;
+            color: var(--text-dim);
+            opacity: .75;
+        }
+        /* Vraie pour les quatre paliers, donc écrite une seule fois sous la
+           grille plutôt que répétée dans chaque colonne. */
+        .tarifs-pied__assistance {
+            font-size: .78rem;
+            color: var(--text-muted);
+            max-width: 460px;
+            line-height: 1.55;
+        }
         .tarifs-pied__note {
             font-size: .74rem;
             color: var(--text-dim);
@@ -3078,6 +3095,7 @@
                 <span data-i18n="tarifs.title1">Commencez gratuitement.</span>
                 <span class="agency-title__accent" data-i18n="tarifs.title2">Montez quand ça rapporte.</span>
             </h2>
+            <p class="agency-lead" data-i18n="tarifs.lead">SAMII n'est pas un agent conversationnel. Il vend, relance, publie, cherche vos fournisseurs — et se souvient de chaque client.</p>
 
             <div class="tarifs-grid">
                 <article class="tarif">
@@ -3086,9 +3104,10 @@
                     <p class="tarif__cumul" data-i18n="tarifs.free.cumul">Pour démarrer, sans carte bancaire :</p>
                     <ul class="tarif__inclus">
                         <li data-i18n="tarifs.free.l1">1 canal au choix — Telegram, par exemple</li>
+                        <li data-i18n="tarifs.free.l6">Scripts, photos et vidéos réelles — sans limite</li>
                         <li data-i18n="tarifs.free.l2">150 confirmations de commande / mois</li>
                         <li data-i18n="tarifs.free.l3">30 messages avec SAMII toutes les 7 h</li>
-                        <li data-i18n="tarifs.free.l4">4 cartes débloquées</li>
+                        <li data-i18n="tarifs.free.l4">5 cartes débloquées</li>
                         <li data-i18n="tarifs.free.l5">WhatsApp : 3 jours d'essai, une seule fois</li>
                     </ul>
                 </article>
@@ -3101,9 +3120,12 @@
                         <li data-i18n="tarifs.standard.l1">3 canaux — WhatsApp, Telegram, Gmail, Instagram…</li>
                         <li data-i18n="tarifs.standard.l2">WhatsApp Business avec ton propre numéro</li>
                         <li data-i18n="tarifs.standard.l8">Emails et agenda : SAMII lit, répond, planifie</li>
+                        <li data-i18n="tarifs.standard.l9">Rendez-vous pris et confirmés sans toi</li>
+                        <li data-i18n="tarifs.standard.l10">Créations IA, image et vidéo — payées à la seconde</li>
                         <li data-i18n="tarifs.standard.l3">2 100 confirmations / mois, puis 0,50 $</li>
                         <li data-i18n="tarifs.standard.l4">50 messages toutes les 7 h, puis 0,12 $</li>
                         <li data-i18n="tarifs.standard.l5">Mémoire Client : SAMII se souvient de chacun</li>
+                        <li data-i18n="tarifs.standard.l11">Top Produits : ce qui se vend le mieux sur ton marché</li>
                         <li data-i18n="tarifs.standard.l6">Publication automatique 3× par semaine</li>
                         <li data-i18n="tarifs.standard.l7">9 cartes + 1 carte premium offerte / mois</li>
                     </ul>
@@ -3114,10 +3136,12 @@
                     <p class="tarif__cumul" data-i18n="tarifs.pro.cumul">Tout Actif, plus :</p>
                     <ul class="tarif__inclus">
                         <li data-i18n="tarifs.pro.l1">Canaux illimités — Facebook, Instagram, Drive, Sheets…</li>
-                        <li data-i18n="tarifs.pro.l2">API et webhooks : n8n, Make, Zapier, votre ERP</li>
+                        <li data-i18n="tarifs.pro.l8">SAMII cherche seul les opportunités, sources à l'appui</li>
+                        <li data-i18n="tarifs.pro.l9">Fournisseurs, prix du marché et concurrents surveillés</li>
+                        <li data-i18n="tarifs.pro.l5">Publication Facebook et Instagram jusqu'à 2× par jour</li>
+                        <li data-i18n="tarifs.pro.l2">API et webhooks : branchez vos propres outils</li>
                         <li data-i18n="tarifs.pro.l3">Applications tierces installables</li>
                         <li data-i18n="tarifs.pro.l4">SAMII agit seul, sans attendre ta validation</li>
-                        <li data-i18n="tarifs.pro.l5">Publication Facebook et Instagram jusqu'à 2× par jour</li>
                         <li data-i18n="tarifs.pro.l6">30 000 confirmations / mois · 150 messages / 7 h</li>
                         <li data-i18n="tarifs.pro.l7">Les 15 cartes + 3 cartes premium / mois</li>
                     </ul>
@@ -3127,6 +3151,7 @@
                     <div class="tarif__prix" data-i18n="tarifs.societe.prix">Sur devis</div>
                     <p class="tarif__cumul" data-i18n="tarifs.societe.cumul">Tout Souverain, plus :</p>
                     <ul class="tarif__inclus">
+                        <li data-i18n="tarifs.societe.l5">WhatsApp Business API par notre compte vérifié</li>
                         <li data-i18n="tarifs.societe.l1">Plusieurs espaces, un seul contrat</li>
                         <li data-i18n="tarifs.societe.l2">Confirmations et messages sans limite</li>
                         <li data-i18n="tarifs.societe.l3">Un module vous manque ? On le développe</li>
@@ -3137,7 +3162,9 @@
 
             <div class="tarifs-pied">
                 <a href="#auth" class="btn-primary" data-i18n="tarifs.cta">Commencer gratuitement →</a>
+                <span class="tarifs-pied__assistance" data-i18n="tarifs.assistance">Assistance 24 h/24, 7 j/7 sur tous les paliers — questions, réglages, intégrations.</span>
                 <span class="tarifs-pied__note" data-i18n="tarifs.note">Affiché en dollars, payé dans votre monnaie — Edahabia, CIB, CCP ou carte.</span>
+                <span class="tarifs-pied__bientot" data-i18n="tarifs.bientot">🔜 En construction : logistique et livraison mondiale.</span>
             </div>
         </div>
     </section>
@@ -3513,44 +3540,54 @@
                 'tarifs.eyebrow': "Tarifs",
                 'tarifs.title1': "Commencez gratuitement.",
                 'tarifs.title2': "Montez quand ça rapporte.",
+                'tarifs.lead': "SAMII n'est pas un agent conversationnel. Il vend, relance, publie, cherche vos fournisseurs — et se souvient de chaque client.",
                 'tarifs.mois': "/mois",
                 'tarifs.free.nom': "Découverte",
                 'tarifs.free.prix': "Gratuit",
                 'tarifs.free.cumul': "Pour démarrer, sans carte bancaire :",
                 'tarifs.free.l1': "1 canal au choix — Telegram, par exemple",
+                'tarifs.free.l6': "Scripts, photos et vidéos réelles — sans limite",
                 'tarifs.free.l2': "150 confirmations de commande / mois",
                 'tarifs.free.l3': "30 messages avec SAMII toutes les 7 h",
-                'tarifs.free.l4': "4 cartes débloquées",
+                'tarifs.free.l4': "5 cartes débloquées",
                 'tarifs.free.l5': "WhatsApp : 3 jours d'essai, une seule fois",
                 'tarifs.standard.nom': "Actif",
+                'tarifs.standard.note': "Prix de lancement",
                 'tarifs.standard.cumul': "Tout Découverte, plus :",
                 'tarifs.standard.l1': "3 canaux — WhatsApp, Telegram, Gmail, Instagram…",
                 'tarifs.standard.l2': "WhatsApp Business avec ton propre numéro",
+                'tarifs.standard.l8': "Emails et agenda : SAMII lit, répond, planifie",
+                'tarifs.standard.l9': "Rendez-vous pris et confirmés sans toi",
+                'tarifs.standard.l10': "Créations IA, image et vidéo — payées à la seconde",
                 'tarifs.standard.l3': "2 100 confirmations / mois, puis 0,50 $",
                 'tarifs.standard.l4': "50 messages toutes les 7 h, puis 0,12 $",
                 'tarifs.standard.l5': "Mémoire Client : SAMII se souvient de chacun",
+                'tarifs.standard.l11': "Top Produits : ce qui se vend le mieux sur ton marché",
                 'tarifs.standard.l6': "Publication automatique 3× par semaine",
                 'tarifs.standard.l7': "9 cartes + 1 carte premium offerte / mois",
-                'tarifs.standard.l8': "Emails et agenda : SAMII lit, répond, planifie",
-                'tarifs.standard.note': "Prix de lancement",
                 'tarifs.pro.nom': "Souverain",
                 'tarifs.pro.cumul': "Tout Actif, plus :",
                 'tarifs.pro.l1': "Canaux illimités — Facebook, Instagram, Drive, Sheets…",
-                'tarifs.pro.l2': "API et webhooks : n8n, Make, Zapier, votre ERP",
+                'tarifs.pro.l8': "SAMII cherche seul les opportunités, sources à l'appui",
+                'tarifs.pro.l9': "Fournisseurs, prix du marché et concurrents surveillés",
+                'tarifs.pro.l5': "Publication Facebook et Instagram jusqu'à 2× par jour",
+                'tarifs.pro.l2': "API et webhooks : branchez vos propres outils",
                 'tarifs.pro.l3': "Applications tierces installables",
                 'tarifs.pro.l4': "SAMII agit seul, sans attendre ta validation",
-                'tarifs.pro.l5': "Publication Facebook et Instagram jusqu'à 2× par jour",
                 'tarifs.pro.l6': "30 000 confirmations / mois · 150 messages / 7 h",
                 'tarifs.pro.l7': "Les 15 cartes + 3 cartes premium / mois",
                 'tarifs.societe.nom': "Société",
                 'tarifs.societe.prix': "Sur devis",
                 'tarifs.societe.cumul': "Tout Souverain, plus :",
+                'tarifs.societe.l5': "WhatsApp Business API par notre compte vérifié",
                 'tarifs.societe.l1': "Plusieurs espaces, un seul contrat",
                 'tarifs.societe.l2': "Confirmations et messages sans limite",
                 'tarifs.societe.l3': "Un module vous manque ? On le développe",
                 'tarifs.societe.l4': "Accompagnement dédié",
                 'tarifs.cta': "Commencer gratuitement →",
+                'tarifs.assistance': "Assistance 24 h/24, 7 j/7 sur tous les paliers — questions, réglages, intégrations.",
                 'tarifs.note': "Affiché en dollars, payé dans votre monnaie — Edahabia, CIB, CCP ou carte.",
+                'tarifs.bientot': "🔜 En construction : logistique et livraison mondiale.",
                 'partenariat.cat.agence': 'Agence / Intégrateur',
                 'proof.connected': 'Connecté à Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': 'Bientôt — TikTok, LinkedIn',
@@ -3660,44 +3697,54 @@
                 'tarifs.eyebrow': "Pricing",
                 'tarifs.title1': "Start for free.",
                 'tarifs.title2': "Move up when it pays.",
+                'tarifs.lead': "SAMII is not a chatbot. It sells, follows up, publishes, hunts your suppliers — and remembers every customer.",
                 'tarifs.mois': "/month",
                 'tarifs.free.nom': "Discovery",
                 'tarifs.free.prix': "Free",
                 'tarifs.free.cumul': "To get started, no credit card:",
                 'tarifs.free.l1': "1 channel of your choice — Telegram, for instance",
+                'tarifs.free.l6': "Scripts, real photos and videos — no limit",
                 'tarifs.free.l2': "150 order confirmations / month",
                 'tarifs.free.l3': "30 messages with SAMII every 7h",
-                'tarifs.free.l4': "4 cards unlocked",
+                'tarifs.free.l4': "5 cards unlocked",
                 'tarifs.free.l5': "WhatsApp: 3-day trial, once",
                 'tarifs.standard.nom': "Active",
+                'tarifs.standard.note': "Launch price",
                 'tarifs.standard.cumul': "Everything in Discovery, plus:",
                 'tarifs.standard.l1': "3 channels — WhatsApp, Telegram, Gmail, Instagram…",
                 'tarifs.standard.l2': "WhatsApp Business with your own number",
+                'tarifs.standard.l8': "Email and calendar: SAMII reads, replies, schedules",
+                'tarifs.standard.l9': "Appointments booked and confirmed without you",
+                'tarifs.standard.l10': "AI image and video creations — billed by the second",
                 'tarifs.standard.l3': "2,100 confirmations / month, then $0.50",
                 'tarifs.standard.l4': "50 messages every 7h, then $0.12",
                 'tarifs.standard.l5': "Client Memory: SAMII remembers every customer",
+                'tarifs.standard.l11': "Top Products: what sells best on your market",
                 'tarifs.standard.l6': "Automatic publishing 3× a week",
                 'tarifs.standard.l7': "9 cards + 1 premium card each month",
-                'tarifs.standard.l8': "Email and calendar: SAMII reads, replies, schedules",
-                'tarifs.standard.note': "Launch price",
                 'tarifs.pro.nom': "Sovereign",
                 'tarifs.pro.cumul': "Everything in Active, plus:",
                 'tarifs.pro.l1': "Unlimited channels — Facebook, Instagram, Drive, Sheets…",
-                'tarifs.pro.l2': "API and webhooks: n8n, Make, Zapier, your ERP",
+                'tarifs.pro.l8': "SAMII hunts opportunities on its own, with sources",
+                'tarifs.pro.l9': "Suppliers, market prices and competitors watched",
+                'tarifs.pro.l5': "Facebook and Instagram publishing up to 2× a day",
+                'tarifs.pro.l2': "API and webhooks: plug in your own tools",
                 'tarifs.pro.l3': "Third-party apps you can install",
                 'tarifs.pro.l4': "SAMII acts on its own, no approval needed",
-                'tarifs.pro.l5': "Facebook and Instagram publishing up to 2× a day",
                 'tarifs.pro.l6': "30,000 confirmations / month · 150 messages / 7h",
                 'tarifs.pro.l7': "All 15 cards + 3 premium cards each month",
                 'tarifs.societe.nom': "Enterprise",
                 'tarifs.societe.prix': "Custom quote",
                 'tarifs.societe.cumul': "Everything in Sovereign, plus:",
+                'tarifs.societe.l5': "WhatsApp Business API through our verified account",
                 'tarifs.societe.l1': "Several spaces, one contract",
                 'tarifs.societe.l2': "Confirmations and messages with no limit",
                 'tarifs.societe.l3': "Missing a module? We build it",
                 'tarifs.societe.l4': "Dedicated onboarding",
                 'tarifs.cta': "Start for free →",
+                'tarifs.assistance': "Support 24/7 on every tier — questions, setup, integrations.",
                 'tarifs.note': "Shown in dollars, paid in your currency — Edahabia, CIB, CCP or card.",
+                'tarifs.bientot': "🔜 In the works: global logistics and delivery.",
                 'partenariat.cat.agence': 'Agency / Integrator',
                 'proof.connected': 'Connected to Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': 'Coming soon — TikTok, LinkedIn',
@@ -3807,44 +3854,54 @@
                 'tarifs.eyebrow': "الأسعار",
                 'tarifs.title1': "ابدأ مجانًا.",
                 'tarifs.title2': "ارتقِ عندما تربح.",
+                'tarifs.lead': "سامي ليس روبوت دردشة. إنه يبيع ويتابع وينشر ويبحث عن مورّديك — ويتذكّر كل زبون.",
                 'tarifs.mois': "/شهريًا",
                 'tarifs.free.nom': "الاكتشاف",
                 'tarifs.free.prix': "مجاني",
                 'tarifs.free.cumul': "للانطلاق، دون بطاقة بنكية:",
                 'tarifs.free.l1': "قناة واحدة من اختيارك — تيليغرام مثلًا",
+                'tarifs.free.l6': "نصوص وصور وفيديوهات حقيقية — بلا حدود",
                 'tarifs.free.l2': "150 تأكيد طلب / شهريًا",
                 'tarifs.free.l3': "30 رسالة مع سامي كل 7 ساعات",
-                'tarifs.free.l4': "4 بطاقات مفتوحة",
+                'tarifs.free.l4': "5 بطاقات مفتوحة",
                 'tarifs.free.l5': "واتساب: 3 أيام تجربة، مرة واحدة",
                 'tarifs.standard.nom': "نشِط",
+                'tarifs.standard.note': "سعر الإطلاق",
                 'tarifs.standard.cumul': "كل ما في الاكتشاف، بالإضافة إلى:",
                 'tarifs.standard.l1': "3 قنوات — واتساب، تيليغرام، جيميل، إنستغرام…",
                 'tarifs.standard.l2': "واتساب بزنس برقمك الخاص",
+                'tarifs.standard.l8': "البريد والأجندة: سامي يقرأ ويردّ ويُبرمج المواعيد",
+                'tarifs.standard.l9': "مواعيد تُحجز وتُؤكَّد دون تدخّلك",
+                'tarifs.standard.l10': "إبداعات بالذكاء الاصطناعي، صورة وفيديو — تُحتسب بالثانية",
                 'tarifs.standard.l3': "2100 تأكيد / شهريًا، ثم 0.50$",
                 'tarifs.standard.l4': "50 رسالة كل 7 ساعات، ثم 0.12$",
                 'tarifs.standard.l5': "ذاكرة العميل: سامي يتذكّر كل زبون",
+                'tarifs.standard.l11': "أفضل المنتجات: ما يُباع أكثر في سوقك",
                 'tarifs.standard.l6': "نشر تلقائي 3 مرات أسبوعيًا",
                 'tarifs.standard.l7': "9 بطاقات + بطاقة مميّزة مجانية شهريًا",
-                'tarifs.standard.l8': "البريد والأجندة: سامي يقرأ ويردّ ويُبرمج المواعيد",
-                'tarifs.standard.note': "سعر الإطلاق",
                 'tarifs.pro.nom': "سيادي",
                 'tarifs.pro.cumul': "كل ما في نشِط، بالإضافة إلى:",
                 'tarifs.pro.l1': "قنوات بلا حدود — فيسبوك، إنستغرام، درايف، شيتس…",
-                'tarifs.pro.l2': "واجهة برمجية وويب‑هوك: n8n، Make، Zapier، نظامك",
+                'tarifs.pro.l8': "سامي يبحث وحده عن الفرص، مع المصادر",
+                'tarifs.pro.l9': "مراقبة المورّدين وأسعار السوق والمنافسين",
+                'tarifs.pro.l5': "نشر على فيسبوك وإنستغرام حتى مرتين يوميًا",
+                'tarifs.pro.l2': "واجهة برمجية وويب‑هوك: اربط أدواتك الخاصة",
                 'tarifs.pro.l3': "تطبيقات خارجية قابلة للتثبيت",
                 'tarifs.pro.l4': "سامي يتصرّف وحده، دون انتظار مصادقتك",
-                'tarifs.pro.l5': "نشر على فيسبوك وإنستغرام حتى مرتين يوميًا",
                 'tarifs.pro.l6': "30000 تأكيد / شهريًا · 150 رسالة / 7 ساعات",
                 'tarifs.pro.l7': "البطاقات الـ15 + 3 بطاقات مميّزة شهريًا",
                 'tarifs.societe.nom': "شركة",
                 'tarifs.societe.prix': "حسب الطلب",
                 'tarifs.societe.cumul': "كل ما في سيادي، بالإضافة إلى:",
+                'tarifs.societe.l5': "واجهة واتساب بزنس عبر حسابنا الموثّق",
                 'tarifs.societe.l1': "عدة مساحات، عقد واحد",
                 'tarifs.societe.l2': "تأكيدات ورسائل بلا حدود",
                 'tarifs.societe.l3': "تنقصكم وحدة؟ نطوّرها لكم",
                 'tarifs.societe.l4': "مرافقة مخصّصة",
                 'tarifs.cta': "ابدأ مجانًا ←",
+                'tarifs.assistance': "دعم على مدار الساعة طوال أيام الأسبوع لجميع الباقات — أسئلة، إعدادات، تكاملات.",
                 'tarifs.note': "معروض بالدولار، مدفوع بعملتك — الذهبية، CIB، CCP أو بطاقة.",
+                'tarifs.bientot': "🔜 قيد الإنجاز: الخدمات اللوجستية والتوصيل العالمي.",
                 'partenariat.cat.agence': 'وكالة / مُدمِج',
                 'proof.connected': 'متصل بـ Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': 'قريبًا — TikTok، LinkedIn',
@@ -3959,44 +4016,54 @@
                 'tarifs.eyebrow': "价格",
                 'tarifs.title1': "免费开始。",
                 'tarifs.title2': "有收益再升级。",
+                'tarifs.lead': "SAMII 不是聊天机器人。它销售、跟进、发布、寻找供应商 — 并记住每一位客户。",
                 'tarifs.mois': "/月",
                 'tarifs.free.nom': "探索版",
                 'tarifs.free.prix': "免费",
                 'tarifs.free.cumul': "开始使用，无需银行卡：",
                 'tarifs.free.l1': "任选 1 个渠道 — 例如 Telegram",
+                'tarifs.free.l6': "文案、真实照片与视频 — 不限量",
                 'tarifs.free.l2': "每月 150 次订单确认",
                 'tarifs.free.l3': "每 7 小时与 SAMII 对话 30 条",
-                'tarifs.free.l4': "解锁 4 张卡",
+                'tarifs.free.l4': "解锁 5 张卡",
                 'tarifs.free.l5': "WhatsApp：3 天试用，仅一次",
                 'tarifs.standard.nom': "活跃版",
+                'tarifs.standard.note': "首发价格",
                 'tarifs.standard.cumul': "包含探索版全部，另加：",
                 'tarifs.standard.l1': "3 个渠道 — WhatsApp、Telegram、Gmail、Instagram…",
                 'tarifs.standard.l2': "用您自己的号码接入 WhatsApp Business",
+                'tarifs.standard.l8': "邮件与日程：SAMII 阅读、回复、安排",
+                'tarifs.standard.l9': "预约自动接收并确认，无需您动手",
+                'tarifs.standard.l10': "AI 图片与视频创作 — 按秒计费",
                 'tarifs.standard.l3': "每月 2 100 次确认，超出每次 0.50$",
                 'tarifs.standard.l4': "每 7 小时 50 条消息，超出每条 0.12$",
                 'tarifs.standard.l5': "客户记忆：SAMII 记住每一位客户",
+                'tarifs.standard.l11': "热销产品：您所在市场卖得最好的",
                 'tarifs.standard.l6': "每周自动发布 3 次",
                 'tarifs.standard.l7': "9 张卡 + 每月赠 1 张高级卡",
-                'tarifs.standard.l8': "邮件与日程：SAMII 阅读、回复、安排",
-                'tarifs.standard.note': "首发价格",
                 'tarifs.pro.nom': "主权版",
                 'tarifs.pro.cumul': "包含活跃版全部，另加：",
                 'tarifs.pro.l1': "渠道不限 — Facebook、Instagram、Drive、Sheets…",
-                'tarifs.pro.l2': "API 与 webhook：n8n、Make、Zapier、您的 ERP",
+                'tarifs.pro.l8': "SAMII 自主搜寻商机，并附来源",
+                'tarifs.pro.l9': "持续监测供应商、市场价格与竞争对手",
+                'tarifs.pro.l5': "Facebook 与 Instagram 每天最多发布 2 次",
+                'tarifs.pro.l2': "API 与 webhook：接入您自己的工具",
                 'tarifs.pro.l3': "可安装第三方应用",
                 'tarifs.pro.l4': "SAMII 自主行动，无需等待确认",
-                'tarifs.pro.l5': "Facebook 与 Instagram 每天最多发布 2 次",
                 'tarifs.pro.l6': "每月 30 000 次确认 · 每 7 小时 150 条消息",
                 'tarifs.pro.l7': "全部 15 张卡 + 每月 3 张高级卡",
                 'tarifs.societe.nom': "企业版",
                 'tarifs.societe.prix': "定制报价",
                 'tarifs.societe.cumul': "包含主权版全部，另加：",
+                'tarifs.societe.l5': "通过我们已认证的账号接入 WhatsApp Business API",
                 'tarifs.societe.l1': "多个空间，一份合同",
                 'tarifs.societe.l2': "确认与消息不设上限",
                 'tarifs.societe.l3': "缺少某个模块？我们来开发",
                 'tarifs.societe.l4': "专属陪跑",
                 'tarifs.cta': "免费开始 →",
+                'tarifs.assistance': "全部套餐均享 7×24 小时支持 — 咨询、配置、集成。",
                 'tarifs.note': "以美元展示，按您的货币支付 — Edahabia、CIB、CCP 或银行卡。",
+                'tarifs.bientot': "🔜 建设中：全球物流与配送。",
                 'partenariat.cat.agence': '代理机构 / 集成商',
                 'proof.connected': '已连接 Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': '即将支持 — TikTok、LinkedIn',

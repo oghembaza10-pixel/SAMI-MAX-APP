@@ -52,6 +52,13 @@ const PALIERS = {
         canauxMax: 1,
         publication: null,   // aucune publication automatique
         integrations: false, // ni API ni webhooks
+        // Les moteurs gratuits de Griot (scripts, photos et vidéos réelles)
+        // sont ouverts ici : c'est l'appât, et ils ne nous coûtent rien.
+        // Les créations par IA, elles, se facturent à la seconde et sont
+        // ajoutées au prochain renouvellement — or un palier gratuit n'a
+        // aucun renouvellement auquel accrocher cette dette. Les ouvrir ici,
+        // c'est offrir une facture qu'on ne pourra jamais encaisser.
+        creationsIA: false,
     },
     standard: {
         id: "standard",
@@ -69,6 +76,7 @@ const PALIERS = {
         canauxMax: 3,
         publication: "3x_semaine", // cadence maximale dans /autopost
         integrations: false,
+        creationsIA: true,
     },
     pro: {
         id: "pro",
@@ -78,6 +86,7 @@ const PALIERS = {
         payant: true,
         canauxMax: null,          // tous les canaux
         publication: "2x_jour",   // cadence maximale dans /autopost
+        creationsIA: true,
         // C'est ici que l'API publique et les webhooks s'ouvrent : brancher
         // n8n, Make ou un ERP, c'est ce que demande une structure qui a déjà
         // ses outils — pas un marchand qui démarre.
@@ -95,6 +104,7 @@ const PALIERS = {
         canauxMax: null,
         publication: "2x_jour",
         integrations: true,
+        creationsIA: true,
     },
 };
 
@@ -143,6 +153,12 @@ function aLesIntegrations(palier) {
     return PALIERS[palier]?.integrations === true;
 }
 
+// Vrai si ce palier peut lancer une création par IA — c'est-à-dire engager
+// une dépense qu'on saura lui refacturer au renouvellement.
+function aLesCreationsIA(palier) {
+    return PALIERS[palier]?.creationsIA === true;
+}
+
 function rang(palier) {
     const i = ORDRE.indexOf(palier || "free");
     return i === -1 ? 0 : i;
@@ -150,5 +166,5 @@ function rang(palier) {
 
 module.exports = {
     PALIERS, ORDRE, PAYANTS, CANAUX_COMPTES, CADENCES,
-    prixUSD, estAchetable, canauxMax, cadencePublication, aLesIntegrations, rang,
+    prixUSD, estAchetable, canauxMax, cadencePublication, aLesIntegrations, aLesCreationsIA, rang,
 };

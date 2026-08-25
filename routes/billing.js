@@ -249,6 +249,7 @@ router.get("/", requireAuth, async (req, res) => {
             <ul>
                 <li data-i18n="billing.free.canaux">1 canal au choix — Telegram, par exemple</li>
                 <li data-i18n="billing.free.whatsapp">WhatsApp : 3 jours d'essai, une seule fois</li>
+                <li data-i18n="billing.free.creatif">Scripts, photos et vidéos réelles — sans limite</li>
                 <li data-i18n="billing.free.li1">150 confirmations & suivi / mois</li>
                 <li data-i18n="billing.free.li2">SAMII te propose chaque action, tu valides avant qu'elle parte</li>
                 <li data-i18n="billing.free.li3">30 messages SAMII toutes les 7h</li>
@@ -270,6 +271,9 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.standard.canaux">3 canaux au choix — WhatsApp, Telegram, Gmail, Instagram…</li>
                 <li data-i18n="billing.standard.publication">Publication automatique 3× par semaine</li>
                 <li data-i18n="billing.standard.google">Emails et agenda : SAMII lit, répond, planifie</li>
+                <li data-i18n="billing.standard.rdv">Rendez-vous pris et confirmés sans toi</li>
+                <li data-i18n="billing.standard.ia">Créations IA, image et vidéo — payées à la seconde</li>
+                <li data-i18n="billing.standard.topproduits">Top Produits : ce qui se vend le mieux sur ton marché</li>
                 <li data-i18n="billing.standard.li3">Client fidèle (VIP) + liste noire automatiques</li>
                 <li data-i18n="billing.standard.li5">1 carte premium offerte chaque mois</li>
                 <li data-i18n="billing.standard.li6">50 messages SAMII toutes les 7h (+0,12 $/message au-delà)</li>
@@ -291,7 +295,9 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.pro.li1">30 000 confirmations & suivi / mois (+0,50 $ au-delà)</li>
                 <li data-i18n="billing.pro.li2">Tout le palier Actif, plus :</li>
                 <li data-i18n="billing.pro.canaux">Canaux illimités — Facebook, Drive, YouTube, TikTok…</li>
-                <li data-i18n="billing.pro.api">API et webhooks : n8n, Make, Zapier, ton ERP</li>
+                <li data-i18n="billing.pro.radar">SAMII cherche seul les opportunités, sources à l'appui</li>
+                <li data-i18n="billing.pro.veille">Fournisseurs, prix du marché et concurrents surveillés</li>
+                <li data-i18n="billing.pro.api">API et webhooks : branche tes propres outils</li>
                 <li data-i18n="billing.pro.apps">Applications tierces installables</li>
                 <li data-i18n="billing.pro.publication">Publication Facebook et Instagram jusqu'à 2× par jour</li>
                 <li data-i18n="billing.pro.li3">SAMII lance directement tes pubs prêtes, sans attendre ta validation</li>
@@ -316,6 +322,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <li><span data-i18n="billing.societe.li1">Toutes les fonctionnalités bonus débloquées</span> (${NB_CARTES_PAR_PALIER.societe}/${NB_CARTES_PAR_PALIER.societe})</li>
                 <li data-i18n="billing.societe.li2">Multi-comptes, multi-boutiques</li>
                 <li data-i18n="billing.societe.illimite">Confirmations et messages sans limite</li>
+                <li data-i18n="billing.societe.wa">WhatsApp Business API par notre compte vérifié</li>
                 <li data-i18n="billing.societe.li3">Contrat et facturation dédiés</li>
                 <li data-i18n="billing.societe.li4">Accompagnement personnalisé</li>
             </ul>
@@ -334,6 +341,7 @@ router.get("/", requireAuth, async (req, res) => {
         <div class="bill-trust-item"><span class="dot"></span><span data-i18n="billing.trust1">Edahabia / CIB via Chargily</span></div>
         <div class="bill-trust-item"><span class="dot"></span><span data-i18n="billing.trust2">Virement CCP accepté</span></div>
         <div class="bill-trust-item"><span class="dot"></span><span data-i18n="billing.trust3">Changement de palier à tout moment</span></div>
+        <div class="bill-trust-item"><span class="dot"></span><span data-i18n="billing.trust4">Assistance 24 h/24, 7 j/7 sur tous les paliers</span></div>
     </div>
 
     <div class="bill-bientot">
@@ -378,8 +386,17 @@ const I18N = {
         'billing.standard.canaux': '3 canaux au choix — WhatsApp, Telegram, Gmail, Instagram…',
         'billing.standard.publication': 'Publication automatique 3× par semaine',
         'billing.pro.canaux': 'Canaux illimités — Facebook, Instagram, Drive, Sheets…',
+
         'billing.standard.google': 'Emails et agenda : SAMII lit, répond, planifie',
-        'billing.pro.api': 'API et webhooks : n8n, Make, Zapier, ton ERP',
+        'billing.free.creatif': 'Scripts, photos et vidéos réelles — sans limite',
+        'billing.standard.rdv': 'Rendez-vous pris et confirmés sans toi',
+        'billing.standard.ia': 'Créations IA, image et vidéo — payées à la seconde',
+        'billing.standard.topproduits': 'Top Produits : ce qui se vend le mieux sur ton marché',
+        'billing.pro.radar': "SAMII cherche seul les opportunités, sources à l'appui",
+        'billing.pro.veille': 'Fournisseurs, prix du marché et concurrents surveillés',
+        'billing.societe.wa': 'WhatsApp Business API par notre compte vérifié',
+        'billing.trust4': 'Assistance 24 h/24, 7 j/7 sur tous les paliers',
+        'billing.pro.api': 'API et webhooks : branche tes propres outils',
         'billing.pro.apps': 'Applications tierces installables',
         'billing.pro.publication': "Publication Facebook et Instagram jusqu'à 2× par jour",
         'billing.societe.illimite': 'Confirmations et messages sans limite',
@@ -441,8 +458,17 @@ const I18N = {
         'billing.standard.canaux': '3 channels of your choice — WhatsApp, Telegram, Gmail, Instagram…',
         'billing.standard.publication': 'Automatic publishing 3× a week',
         'billing.pro.canaux': 'Unlimited channels — Facebook, Instagram, Drive, Sheets…',
+
         'billing.standard.google': 'Email and calendar: SAMII reads, replies, schedules',
-        'billing.pro.api': 'API and webhooks: n8n, Make, Zapier, your ERP',
+        'billing.free.creatif': 'Scripts, real photos and videos — no limit',
+        'billing.standard.rdv': 'Appointments booked and confirmed without you',
+        'billing.standard.ia': 'AI image and video creations — billed by the second',
+        'billing.standard.topproduits': 'Top Products: what sells best on your market',
+        'billing.pro.radar': 'SAMII hunts opportunities on its own, with sources',
+        'billing.pro.veille': 'Suppliers, market prices and competitors watched',
+        'billing.societe.wa': 'WhatsApp Business API through our verified account',
+        'billing.trust4': 'Support 24/7 on every tier',
+        'billing.pro.api': 'API and webhooks: plug in your own tools',
         'billing.pro.apps': 'Third-party apps you can install',
         'billing.pro.publication': 'Facebook and Instagram publishing up to 2× a day',
         'billing.societe.illimite': 'Confirmations and messages with no limit',
@@ -504,8 +530,17 @@ const I18N = {
         'billing.standard.canaux': '3 قنوات من اختيارك — واتساب، تيليغرام، جيميل، إنستغرام…',
         'billing.standard.publication': 'نشر تلقائي 3 مرات أسبوعيًا',
         'billing.pro.canaux': 'قنوات بلا حدود — فيسبوك، إنستغرام، درايف، شيتس…',
+
         'billing.standard.google': 'البريد والأجندة: سامي يقرأ ويردّ ويُبرمج المواعيد',
-        'billing.pro.api': 'واجهة برمجية وويب‑هوك: n8n، Make، Zapier، نظامك',
+        'billing.free.creatif': 'نصوص وصور وفيديوهات حقيقية — بلا حدود',
+        'billing.standard.rdv': 'مواعيد تُحجز وتُؤكَّد دون تدخّلك',
+        'billing.standard.ia': 'إبداعات بالذكاء الاصطناعي، صورة وفيديو — تُحتسب بالثانية',
+        'billing.standard.topproduits': 'أفضل المنتجات: ما يُباع أكثر في سوقك',
+        'billing.pro.radar': 'سامي يبحث وحده عن الفرص، مع المصادر',
+        'billing.pro.veille': 'مراقبة المورّدين وأسعار السوق والمنافسين',
+        'billing.societe.wa': 'واجهة واتساب بزنس عبر حسابنا الموثّق',
+        'billing.trust4': 'دعم على مدار الساعة طوال أيام الأسبوع لجميع الباقات',
+        'billing.pro.api': 'واجهة برمجية وويب‑هوك: اربط أدواتك الخاصة',
         'billing.pro.apps': 'تطبيقات خارجية قابلة للتثبيت',
         'billing.pro.publication': 'نشر على فيسبوك وإنستغرام حتى مرتين يوميًا',
         'billing.societe.illimite': 'تأكيدات ورسائل بلا حدود',
@@ -567,8 +602,17 @@ const I18N = {
         'billing.standard.canaux': '任选 3 个渠道 — WhatsApp、Telegram、Gmail、Instagram…',
         'billing.standard.publication': '每周自动发布 3 次',
         'billing.pro.canaux': '渠道不限 — Facebook、Instagram、Drive、Sheets…',
+
         'billing.standard.google': '邮件与日程：SAMII 阅读、回复、安排',
-        'billing.pro.api': 'API 与 webhook：n8n、Make、Zapier、您的 ERP',
+        'billing.free.creatif': '文案、真实照片与视频 — 不限量',
+        'billing.standard.rdv': '预约自动接收并确认，无需您动手',
+        'billing.standard.ia': 'AI 图片与视频创作 — 按秒计费',
+        'billing.standard.topproduits': '热销产品：您所在市场卖得最好的',
+        'billing.pro.radar': 'SAMII 自主搜寻商机，并附来源',
+        'billing.pro.veille': '持续监测供应商、市场价格与竞争对手',
+        'billing.societe.wa': '通过我们已认证的账号接入 WhatsApp Business API',
+        'billing.trust4': '全部套餐均享 7×24 小时支持',
+        'billing.pro.api': 'API 与 webhook：接入您自己的工具',
         'billing.pro.apps': '可安装第三方应用',
         'billing.pro.publication': 'Facebook 与 Instagram 每天最多发布 2 次',
         'billing.societe.illimite': '确认与消息不设上限',

@@ -13,6 +13,8 @@ const journalService = require("../services/journalService");
 const CONFIG  = require("../config");
 const griotCoutService = require("../services/griotCoutService");
 const pexelsService = require("../services/pexelsService");
+const abonnementService = require("../services/abonnementService");
+const paliers = require("../config/paliers");
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -46,6 +48,12 @@ function extractJson(text) {
 router.get("/", requireAuth, async (req, res) => {
     const workspace = await getWorkspaceOrRedirect(req, res);
     if (!workspace) return;
+
+    // Les moteurs IA ne s'ouvrent qu'aux paliers payants (voir le POST) : on
+    // le montre au lieu de le laisser découvrir après un clic raté.
+    const creationsIA = paliers.aLesCreationsIA(
+        await abonnementService.getPalier(req.session.workspaceId),
+    );
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -259,10 +267,12 @@ router.get("/", requireAuth, async (req, res) => {
                     <option value="photo">📷 Photo réelle — offert</option>
                     <option value="video">🎬 Vidéo réelle — offert</option>
                 </optgroup>
-                <optgroup label="Création par intelligence artificielle">
-                    <option value="runware">✨ Image SAMII Studio — visuel unique, créé pour toi</option>
-                    <option value="wan">🎥 Vidéo SAMII Max — animée, sans son</option>
-                    <option value="h3">🎬 Vidéo SAMII Ciné — animée, avec son</option>
+                <optgroup label="${creationsIA
+                    ? "Création par intelligence artificielle — facturée à la seconde"
+                    : "Création par intelligence artificielle — à partir du palier Actif"}">
+                    <option value="runware"${creationsIA ? "" : " disabled"}>✨ Image SAMII Studio — visuel unique, créé pour toi</option>
+                    <option value="wan"${creationsIA ? "" : " disabled"}>🎥 Vidéo SAMII Max — animée, sans son</option>
+                    <option value="h3"${creationsIA ? "" : " disabled"}>🎬 Vidéo SAMII Ciné — animée, avec son</option>
                 </optgroup>
             </select>
             <p class="hint" id="hint-moteur"></p>
@@ -530,6 +540,26 @@ router.post("/", requireAuth, upload.single("client_image"), async (req, res) =>
         const { reseau, format, objectif, sujet, ton, type_creation, duree, nombre_variantes, moteur } = req.body;
         const moteurChoisi = ["wan", "h3", "photo", "video"].includes(moteur) ? moteur : "runware";
         console.log(`🔍 DEBUG Griot — moteur reçu du formulaire : "${moteur}" | moteur retenu : "${moteurChoisi}"`);
+
+        // Une création par IA se facture à la seconde (services/griotCoutService)
+        // et s'ajoute au prochain renouvellement. Un palier gratuit n'a aucun
+        // renouvellement auquel accrocher cette dette : la lui ouvrir, ce serait
+        // payer le fournisseur sans jamais pouvoir encaisser. Les moteurs
+        // gratuits (script, photo et vidéo réelles) restent ouverts à tous —
+        // c'est eux qui doivent donner envie de monter d'un palier.
+        const MOTEURS_IA = ["runware", "wan", "h3"];
+        if (MOTEURS_IA.includes(moteurChoisi)) {
+            const palier = await abonnementService.getPalier(req.session.workspaceId);
+            if (!paliers.aLesCreationsIA(palier)) {
+                return res.json({
+                    success: false,
+                    error: "Les créations par intelligence artificielle démarrent au palier Actif "
+                         + "(elles se facturent à la seconde, seulement quand tu les utilises). "
+                         + "Les scripts, photos et vidéos réelles restent inclus, sans limite.",
+                    palierRequis: "standard",
+                });
+            }
+        }
 
         if (!sujet || !sujet.trim()) {
             return res.json({ success: false, error: "Décris ton produit ou ton sujet." });

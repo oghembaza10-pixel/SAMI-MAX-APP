@@ -81,6 +81,21 @@ const verifier = (titre, obtenu, attendu) => {
     verifier("Souverain : API ouverte", paliers.aLesIntegrations("pro"), true);
     verifier("Société : API ouverte", paliers.aLesIntegrations("societe"), true);
 
+    // 3 bis. Les créations par IA se facturent à la seconde et s'ajoutent au
+    // renouvellement : un palier sans renouvellement ne doit pas pouvoir en
+    // lancer, sinon on paie le fournisseur sans jamais pouvoir encaisser.
+    verifier("Découverte : pas de création par IA",
+        paliers.aLesCreationsIA("free"), false);
+    verifier("Actif : créations par IA ouvertes",
+        paliers.aLesCreationsIA("standard"), true);
+    verifier("Souverain : créations par IA ouvertes",
+        paliers.aLesCreationsIA("pro"), true);
+    // Le palier gratuit garde en revanche les moteurs qui ne coûtent rien —
+    // c'est la carte Griot, ouverte dès Découverte dans le catalogue.
+    const griot = require(path.join(RACINE, "config/cartes-catalog"))
+        .CARTES.find(c => c.id === "griot");
+    verifier("Griot est ouvert dès le palier gratuit", griot?.palier, "free");
+
     // 4. Une cadence de publication ne peut pas dépasser le palier.
     verifier("Découverte : aucune publication automatique",
         paliers.cadencePublication("free", "quotidien"), null);
