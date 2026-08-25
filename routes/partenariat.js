@@ -7,6 +7,7 @@ const express = require("express");
 const router = express.Router();
 const db = require("../services/db");
 const gmail = require("../services/gmail");
+const courriel = require("../services/emailTemplate");
 const socketService = require("../services/socketService");
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "ghembazao@gmail.com";
@@ -55,12 +56,15 @@ router.post("/", async (req, res) => {
         gmail.send({
             to: ADMIN_EMAIL,
             subject: `🤝 Nouvelle candidature partenariat — ${CATEGORIES[categorie]}`,
-            html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
-                <h2 style="color:#C5A059;">${CATEGORIES[categorie]}</h2>
-                <p><b>Email :</b> ${escapeHtml(email)}</p>
-                <p><b>Téléphone :</b> ${escapeHtml(telephone || "—")}</p>
-                <p><b>Message :</b><br>${escapeHtml(description)}</p>
-            </div>`,
+            html: courriel.construire({
+                titre: CATEGORIES[categorie],
+                preheader: `Nouvelle candidature partenariat — ${email}`,
+                corps: courriel.p(`<strong style="color:#f3f1e9;">Email :</strong> ${escapeHtml(email)}`)
+                     + courriel.p(`<strong style="color:#f3f1e9;">Téléphone :</strong> ${escapeHtml(telephone || "—")}`)
+                     + courriel.p(`<strong style="color:#f3f1e9;">Message :</strong><br />${escapeHtml(description).replace(/\n/g, "<br />")}`),
+                cta: { url: `mailto:${email}`, libelle: "Répondre au candidat" },
+                lienDeRepli: false,
+            }),
         }).catch(() => {});
 
         res.json({ success: true });

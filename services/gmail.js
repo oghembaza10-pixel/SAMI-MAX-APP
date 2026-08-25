@@ -7,6 +7,12 @@ const RESEND_API_URL = "https://api.resend.com/emails";
 const FROM_ADDRESS =
     process.env.RESEND_FROM || "SAMII OS <noreply@samii.souverain-store.com>";
 
+// On envoie depuis un « noreply » (domaine vérifié chez Resend, obligatoire
+// pour la délivrabilité), mais quelqu'un qui répond doit tomber sur un humain,
+// pas dans le vide. Toutes les réponses arrivent donc à l'adresse de contact.
+// C'est aussi ce qui empêche un client de conclure qu'on ne lit pas ses mails.
+const REPLY_TO = process.env.RESEND_REPLY_TO || "info@souverain-store.com";
+
 async function send({ to, subject, message, html }) {
     try {
         if (!CONFIG.RESEND?.API_KEY) {
@@ -28,6 +34,7 @@ async function send({ to, subject, message, html }) {
             RESEND_API_URL,
             {
                 from: FROM_ADDRESS,
+                reply_to: REPLY_TO,
                 to: [to],
                 subject,
                 html: html || `<p>${message || ""}</p>`,

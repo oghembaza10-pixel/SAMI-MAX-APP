@@ -13,6 +13,7 @@ const crypto = require("crypto");
 const router = express.Router();
 const db = require("../services/db");
 const gmail = require("../services/gmail");
+const courriel = require("../services/emailTemplate");
 const CONFIG = require("../config");
 const workspaceService = require("../services/workspaceService");
 const journalService = require("../services/journalService");
@@ -358,18 +359,15 @@ router.post("/creer-client", requireAgence, async (req, res) => {
         // souci d'envoi ne doit pas faire échouer la création côté agence.
         gmail.send({
             to: emailClient,
-            subject: `Votre espace SAMII "${nom.trim()}" a été créé`,
-            html: `
-    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
-        <h2 style="color:#C5A059;">Votre espace SAMII est prêt 👑</h2>
-        <p><strong>${escapeHtml(nomAgence)}</strong> vient de créer l'espace <strong>${escapeHtml(nom.trim())}</strong> pour vous sur SAMII OS.</p>
-        <p>Pour y accéder, créez votre compte avec <strong>cette adresse email</strong> : votre espace vous sera automatiquement rattaché, et vous en serez le propriétaire.</p>
-        <a href="${CONFIG.APP_URL}/register" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;background:#C5A059;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;font-size:16px;">
-            👉 Accéder à mon espace
-        </a>
-        <p style="color:#888;font-size:.82rem;line-height:1.6;">Votre agence garde une vue sur cet espace pour vous accompagner. Vous en restez le propriétaire et pouvez nous contacter à tout moment.</p>
-        <p style="color:#888;font-size:.82rem;">Vous ne connaissez pas cette agence ? Répondez simplement à cet email, nous fermerons l'espace.</p>
-    </div>`,
+            subject: `Votre espace SAMII « ${nom.trim()} » est prêt`,
+            html: courriel.construire({
+                titre: "Votre espace est prêt",
+                preheader: `${nomAgence} vient de créer votre espace SAMII.`,
+                corps: courriel.p(`<strong style="color:#f3f1e9;">${courriel.echapper(nomAgence)}</strong> vient de créer l'espace <strong style="color:#f3f1e9;">${courriel.echapper(nom.trim())}</strong> pour vous.`)
+                     + courriel.p("Créez votre compte avec <strong style=\"color:#f3f1e9;\">cette adresse email</strong> : l'espace vous sera rattaché automatiquement, et vous en serez le propriétaire."),
+                cta: { url: `${CONFIG.APP_URL}/register`, libelle: "Accéder à mon espace" },
+                note: "Votre agence garde une vue sur cet espace pour vous accompagner — vous en restez le propriétaire.<br />Vous ne connaissez pas cette agence ? Répondez à cet email, nous fermerons l'espace.",
+            }),
         }).catch(err => console.warn("⚠️ Email création espace client (agence) :", err.message));
 
         res.json({ success: true, workspaceId: workspace.workspaceId });

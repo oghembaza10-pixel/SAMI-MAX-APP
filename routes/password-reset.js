@@ -6,6 +6,7 @@ const crypto  = require("crypto");
 const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const gmail   = require("../services/gmail");
+const courriel = require("../services/emailTemplate");
 const CONFIG  = require("../config");
 const db      = require("../services/db");
 
@@ -151,19 +152,14 @@ router.post("/demande", async (req, res) => {
 
         await gmail.send({
             to: email,
-            subject: "Réinitialise ton mot de passe SAMII OS",
-            html: `
-                <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
-                    <h2 style="color:#C5A059;">Réinitialisation du mot de passe</h2>
-                    <p>Clique sur le bouton ci-dessous pour choisir un nouveau mot de passe.</p>
-                    <a href="${lienReset}" target="_blank" rel="noopener" style="display:inline-block;padding:12px 24px;background:#C5A059;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;">
-                        Choisir un nouveau mot de passe
-                    </a>
-                    <p style="color:#888;font-size:.8rem;">Si le bouton ne fonctionne pas, copie ce lien :<br>
-                    <a href="${lienReset}" style="color:#5FD4FF;word-break:break-all;">${lienReset}</a></p>
-                    <p style="color:#888;font-size:.85rem;">Ce lien expire dans ${TOKEN_VALIDITE_HEURES}h. Si tu n'es pas à l'origine de cette demande, ignore cet email — ton mot de passe actuel reste inchangé.</p>
-                </div>
-            `,
+            subject: "Réinitialise ton mot de passe — SAMII OS",
+            html: courriel.construire({
+                titre: "Nouveau mot de passe",
+                preheader: "Lien valable une heure. Si ce n'est pas toi, ignore ce message.",
+                corps: courriel.p("Tu as demandé à changer ton mot de passe. Choisis-en un nouveau en un clic."),
+                cta: { url: lienReset, libelle: "Choisir un nouveau mot de passe" },
+                note: `Ce lien expire dans ${TOKEN_VALIDITE_HEURES}h. Si tu n'es pas à l'origine de cette demande, ignore cet email : ton mot de passe actuel reste inchangé.`,
+            }),
         });
 
         res.json({ success: true, message: messageGenerique });

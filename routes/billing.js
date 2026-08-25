@@ -59,6 +59,7 @@ const paliers = require("../config/paliers");
 const PRIX_AFFICHE = Object.fromEntries(paliers.PAYANTS.map(id => [id, paliers.prixUSD(id)]));
 
 const gmail = require("../services/gmail");
+const courriel = require("../services/emailTemplate");
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "ghembazao@gmail.com";
 
 // Nombre de cartes (config/cartes-catalog.js) débloquées d'office à chaque palier —
@@ -770,11 +771,14 @@ router.post("/contact-societe", requireAuth, async (req, res) => {
         gmail.send({
             to: ADMIN_EMAIL,
             subject: "🏛️ Demande de contrat Société — SAMII",
-            html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
-                <h2 style="color:#C5A059;">Demande palier Société</h2>
-                <p><b>Email :</b> ${email}</p>
-                <p><b>Message :</b><br>${(message || "—")}</p>
-            </div>`,
+            html: courriel.construire({
+                titre: "Demande palier Société",
+                preheader: `Un prospect demande un devis Société — ${email}`,
+                corps: courriel.p(`<strong style="color:#f3f1e9;">Email :</strong> ${courriel.echapper(email)}`)
+                     + courriel.p(`<strong style="color:#f3f1e9;">Message :</strong><br />${courriel.echapper(message || "—").replace(/\n/g, "<br />")}`),
+                cta: { url: `mailto:${email}`, libelle: "Répondre maintenant" },
+                lienDeRepli: false,
+            }),
         }).catch(() => {});
 
         res.json({ success: true });

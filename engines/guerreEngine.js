@@ -6,6 +6,7 @@
  */
 const db = require("../services/db");
 const gmail = require("../services/gmail");
+const courriel = require("../services/emailTemplate");
 const notificationEngine = require("../engines/notificationEngine");
 
 async function getJoursRestants() {
@@ -50,13 +51,11 @@ async function runDaily() {
                     await gmail.send({
                         to: user.email,
                         subject: sujet,
-                        html: `
-                            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#03060b;color:#f5fbff;padding:24px;border-radius:14px;">
-                                <h2 style="color:#d7b34c;">${sujet}</h2>
-                                <p style="color:#c5cdd5;line-height:1.6;">${corps.replace(/\n/g, "<br>")}</p>
-                                <p style="color:#7f96a8;font-size:12px;margin-top:20px;">— SAMII OS</p>
-                            </div>
-                        `,
+                        html: courriel.construire({
+                            titre: sujet,
+                            preheader: corps.split("\n")[0].slice(0, 110),
+                            corps: courriel.p(courriel.echapper(corps).replace(/\n/g, "<br />")),
+                        }),
                     });
                 }
             } catch (emailErr) {

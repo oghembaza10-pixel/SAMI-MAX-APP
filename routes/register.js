@@ -6,6 +6,7 @@ const crypto  = require("crypto");
 const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const gmail   = require("../services/gmail");
+const courriel = require("../services/emailTemplate");
 const CONFIG  = require("../config");
 const db      = require("../services/db");
 const gradeService = require("../services/gradeService");
@@ -426,20 +427,16 @@ router.post("/", async (req, res) => {
         // empêcher quelqu'un d'entrer dans l'app — l'accès est immédiat.
         gmail.send({
             to: email,
-            subject: "Confirme ton compte SAMII OS",
-            html: `
-    <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;">
-        <h2 style="color:#C5A059;">Bienvenue chez OG Technology, ${prenom} 👑</h2>
-        <p>Clique sur le bouton ci-dessous pour confirmer ton adresse email et activer ton compte.</p>
-        <a href="${lienConfirmation}" target="_blank" rel="noopener" style="display:inline-block;padding:14px 28px;background:#C5A059;color:#000;text-decoration:none;border-radius:8px;font-weight:bold;margin:16px 0;font-size:16px;">
-            👉 Confirmer mon email maintenant
-        </a>
-        <p style="color:#888;font-size:.8rem;">Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur :<br>
-        <a href="${lienConfirmation}" style="color:#5FD4FF;word-break:break-all;">${lienConfirmation}</a></p>
-        <p style="color:#888;font-size:.85rem;">Ce lien expire dans ${TOKEN_VALIDITE_HEURES} heures.</p>
-    </div>
-`,
-
+            subject: "Confirme ton adresse — SAMII OS",
+            html: courriel.construire({
+                titre: `Bienvenue, ${courriel.echapper(prenom)}`,
+                // Ce qu'on lit à côté de l'objet dans la boîte de réception.
+                preheader: "Un clic pour confirmer ton adresse et sécuriser ton compte.",
+                corps: courriel.p("Ton compte est déjà actif — tu peux entrer tout de suite.")
+                     + courriel.p("Confirme simplement ton adresse : c'est elle qui te permettra de récupérer ton accès si tu perds ton mot de passe."),
+                cta: { url: lienConfirmation, libelle: "Confirmer mon adresse" },
+                note: `Ce lien expire dans ${TOKEN_VALIDITE_HEURES} heures.`,
+            }),
         }).catch((err) => console.warn("⚠️ Envoi email confirmation inscription :", err.message));
 
         console.log(`✅ Nouveau compte PostgreSQL (${typeCompte}) : ${email}`);
