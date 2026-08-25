@@ -33,6 +33,8 @@
 
     /* La recherche d'abord : quelqu'un qui arrive ici a un problème en tête,
        pas l'envie de parcourir un catalogue. */
+    .vi-legende { color:var(--faible); font-size:.78rem; line-height:1.7; max-width:62ch; margin:14px auto 0; }
+    .vi-legende b { color:var(--gris); font-weight:600; }
     .vi-chercher { display:flex; gap:10px; max-width:660px; margin:28px auto 22px; flex-wrap:wrap; }
     .vi-chercher input, .vi-chercher select {
       flex:1 1 200px; padding:13px 15px; border-radius:4px; border:1px solid rgba(255,255,255,.1);
@@ -117,6 +119,14 @@
     <h1>L'Académie</h1>
     <p>Les solutions qui font tourner un commerce, et les gens qui les construisent.
        Dis ton métier, on te montre ce qui existe pour toi.</p>
+    <!-- Sans cette ligne, on confond deux choses : ce que SAMII fournit déjà,
+         et ce que des tiers ajoutent. Un visiteur qui ne sait pas qui a fait
+         quoi ne fait confiance à rien. -->
+    <p class="vi-legende">
+      <b>Outil SAMII</b> — construit et maintenu par nous, inclus dans ton abonnement.
+      &nbsp;·&nbsp;
+      <b>Application</b> — construite par un développeur de l'Académie, sur notre API.
+    </p>
   </div>
 
   <form class="vi-chercher" method="GET" action="/academy">
