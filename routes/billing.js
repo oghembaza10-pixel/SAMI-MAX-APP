@@ -269,6 +269,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.standard.li1">2 100 confirmations & suivi / mois (+0,50 $ au-delà)</li>
                 <li data-i18n="billing.standard.canaux">3 canaux au choix — WhatsApp, Telegram, Gmail, Instagram…</li>
                 <li data-i18n="billing.standard.publication">Publication automatique 3× par semaine</li>
+                <li data-i18n="billing.standard.google">Emails et agenda : SAMII lit, répond, planifie</li>
                 <li data-i18n="billing.standard.li3">Client fidèle (VIP) + liste noire automatiques</li>
                 <li data-i18n="billing.standard.li5">1 carte premium offerte chaque mois</li>
                 <li data-i18n="billing.standard.li6">50 messages SAMII toutes les 7h (+0,12 $/message au-delà)</li>
@@ -292,7 +293,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.pro.canaux">Canaux illimités — Facebook, Drive, YouTube, TikTok…</li>
                 <li data-i18n="billing.pro.api">API et webhooks : n8n, Make, Zapier, ton ERP</li>
                 <li data-i18n="billing.pro.apps">Applications tierces installables</li>
-                <li data-i18n="billing.pro.publication">Publication automatique tous les jours</li>
+                <li data-i18n="billing.pro.publication">Publication Facebook et Instagram jusqu'à 2× par jour</li>
                 <li data-i18n="billing.pro.li3">SAMII lance directement tes pubs prêtes, sans attendre ta validation</li>
                 <li data-i18n="billing.pro.li4">3 cartes premium offertes chaque mois</li>
                 <li data-i18n="billing.pro.li5">Support prioritaire</li>
@@ -376,10 +377,11 @@ const I18N = {
         'billing.free.whatsapp': "WhatsApp : 3 jours d'essai, une seule fois",
         'billing.standard.canaux': '3 canaux au choix — WhatsApp, Telegram, Gmail, Instagram…',
         'billing.standard.publication': 'Publication automatique 3× par semaine',
-        'billing.pro.canaux': 'Canaux illimités — Facebook, Drive, YouTube, TikTok…',
+        'billing.pro.canaux': 'Canaux illimités — Facebook, Instagram, Drive, Sheets…',
+        'billing.standard.google': 'Emails et agenda : SAMII lit, répond, planifie',
         'billing.pro.api': 'API et webhooks : n8n, Make, Zapier, ton ERP',
         'billing.pro.apps': 'Applications tierces installables',
-        'billing.pro.publication': 'Publication automatique tous les jours',
+        'billing.pro.publication': "Publication Facebook et Instagram jusqu'à 2× par jour",
         'billing.societe.illimite': 'Confirmations et messages sans limite',
         'billing.lancement': 'Prix de lancement',
         'billing.bientot.label': '🔜 Bientôt disponible',
@@ -438,10 +440,11 @@ const I18N = {
         'billing.free.whatsapp': 'WhatsApp: 3-day trial, once',
         'billing.standard.canaux': '3 channels of your choice — WhatsApp, Telegram, Gmail, Instagram…',
         'billing.standard.publication': 'Automatic publishing 3× a week',
-        'billing.pro.canaux': 'Unlimited channels — Facebook, Drive, YouTube, TikTok…',
+        'billing.pro.canaux': 'Unlimited channels — Facebook, Instagram, Drive, Sheets…',
+        'billing.standard.google': 'Email and calendar: SAMII reads, replies, schedules',
         'billing.pro.api': 'API and webhooks: n8n, Make, Zapier, your ERP',
         'billing.pro.apps': 'Third-party apps you can install',
-        'billing.pro.publication': 'Automatic publishing every day',
+        'billing.pro.publication': 'Facebook and Instagram publishing up to 2× a day',
         'billing.societe.illimite': 'Confirmations and messages with no limit',
         'billing.lancement': 'Launch price',
         'billing.bientot.label': '🔜 Coming soon',
@@ -500,10 +503,11 @@ const I18N = {
         'billing.free.whatsapp': 'واتساب: 3 أيام تجربة، مرة واحدة',
         'billing.standard.canaux': '3 قنوات من اختيارك — واتساب، تيليغرام، جيميل، إنستغرام…',
         'billing.standard.publication': 'نشر تلقائي 3 مرات أسبوعيًا',
-        'billing.pro.canaux': 'قنوات بلا حدود — فيسبوك، درايف، يوتيوب، تيك توك…',
+        'billing.pro.canaux': 'قنوات بلا حدود — فيسبوك، إنستغرام، درايف، شيتس…',
+        'billing.standard.google': 'البريد والأجندة: سامي يقرأ ويردّ ويُبرمج المواعيد',
         'billing.pro.api': 'واجهة برمجية وويب‑هوك: n8n، Make، Zapier، نظامك',
         'billing.pro.apps': 'تطبيقات خارجية قابلة للتثبيت',
-        'billing.pro.publication': 'نشر تلقائي كل يوم',
+        'billing.pro.publication': 'نشر على فيسبوك وإنستغرام حتى مرتين يوميًا',
         'billing.societe.illimite': 'تأكيدات ورسائل بلا حدود',
         'billing.lancement': 'سعر الإطلاق',
         'billing.bientot.label': '🔜 قريبًا',
@@ -562,10 +566,11 @@ const I18N = {
         'billing.free.whatsapp': 'WhatsApp：3 天试用，仅一次',
         'billing.standard.canaux': '任选 3 个渠道 — WhatsApp、Telegram、Gmail、Instagram…',
         'billing.standard.publication': '每周自动发布 3 次',
-        'billing.pro.canaux': '渠道不限 — Facebook、Drive、YouTube、TikTok…',
+        'billing.pro.canaux': '渠道不限 — Facebook、Instagram、Drive、Sheets…',
+        'billing.standard.google': '邮件与日程：SAMII 阅读、回复、安排',
         'billing.pro.api': 'API 与 webhook：n8n、Make、Zapier、您的 ERP',
         'billing.pro.apps': '可安装第三方应用',
-        'billing.pro.publication': '每天自动发布',
+        'billing.pro.publication': 'Facebook 与 Instagram 每天最多发布 2 次',
         'billing.societe.illimite': '确认与消息不设上限',
         'billing.lancement': '首发价格',
         'billing.bientot.label': '🔜 即将推出',

@@ -77,7 +77,7 @@ const PALIERS = {
         prix: 49,
         payant: true,
         canauxMax: null,          // tous les canaux
-        publication: "quotidien", // cadence maximale dans /autopost
+        publication: "2x_jour",   // cadence maximale dans /autopost
         // C'est ici que l'API publique et les webhooks s'ouvrent : brancher
         // n8n, Make ou un ERP, c'est ce que demande une structure qui a déjà
         // ses outils — pas un marchand qui démarre.
@@ -93,7 +93,7 @@ const PALIERS = {
         prix: null,
         payant: false,
         canauxMax: null,
-        publication: "quotidien",
+        publication: "2x_jour",
         integrations: true,
     },
 };
@@ -125,7 +125,7 @@ function canauxMax(palier) {
 
 // Cadences de publication, de la plus rare à la plus fréquente. Mêmes clés
 // que engines/autopostEngine.js (INTERVALLES_MS) — ne pas renommer.
-const CADENCES = ["hebdo", "3x_semaine", "quotidien"];
+const CADENCES = ["hebdo", "3x_semaine", "quotidien", "2x_jour"];
 
 // Ramène une cadence demandée à ce que le palier autorise. Renvoie null si le
 // palier n'ouvre aucune publication automatique. On ne masque pas les autres

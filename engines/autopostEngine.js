@@ -20,7 +20,13 @@ const connectorService = require("../services/connectorService");
 const workspaceService = require("../services/workspaceService");
 const CONFIG = require("../config");
 
+// Le moteur tourne en boucle et compare l'heure du dernier post à
+// l'intervalle : ajouter une cadence, c'est ajouter une ligne ici. Les clés
+// sont celles enregistrées dans workspaces.auto_post_config.frequence et
+// listées dans config/paliers.js (CADENCES) — ne pas les renommer sans
+// migrer les réglages déjà en base.
 const INTERVALLES_MS = {
+    "2x_jour": 12 * 60 * 60 * 1000,
     quotidien: 24 * 60 * 60 * 1000,
     "3x_semaine": Math.round((7 / 3) * 24 * 60 * 60 * 1000),
     hebdo: 7 * 24 * 60 * 60 * 1000,

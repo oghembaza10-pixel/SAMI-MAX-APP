@@ -15,6 +15,7 @@
 // Lancer :  npm test
 // ==========================================================================
 const assert = require("assert");
+const fs = require("fs");
 const path = require("path");
 
 const RACINE = path.join(__dirname, "..");
@@ -91,6 +92,18 @@ const verifier = (titre, obtenu, attendu) => {
         paliers.cadencePublication("pro", "quotidien"), "quotidien");
     verifier("cadence inconnue : ramenée au plafond du palier",
         paliers.cadencePublication("standard", "toutes_les_heures"), "3x_semaine");
+    verifier("Souverain : deux publications par jour",
+        paliers.cadencePublication("pro", "2x_jour"), "2x_jour");
+    verifier("Actif : deux fois par jour est ramené à 3x/semaine",
+        paliers.cadencePublication("standard", "2x_jour"), "3x_semaine");
+
+    // Invariant entre deux fichiers : une cadence vendue ici doit exister dans
+    // le moteur, sinon estDu() retomberait sur l'intervalle par défaut et le
+    // marchand publierait à une fréquence qu'il n'a pas choisie.
+    const moteur = fs.readFileSync(path.join(RACINE, "engines/autopostEngine.js"), "utf8");
+    const bloc = moteur.slice(moteur.indexOf("const INTERVALLES_MS"), moteur.indexOf("function extractJson"));
+    verifier("chaque cadence vendue existe dans le moteur de publication",
+        paliers.CADENCES.filter(c => !bloc.includes(c)), []);
 
     // 5. Le quota de canaux, tel qu'il est réellement appliqué à la connexion.
     CONNECTEURS = [];

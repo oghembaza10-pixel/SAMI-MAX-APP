@@ -70,6 +70,14 @@ const SCOPES = [
     "pages_read_engagement",
     "instagram_basic",
     "instagram_manage_messages",
+    // Sans cette permission, publier sur Instagram échoue à l'exécution :
+    // instagram_basic ne donne que la lecture du profil et des médias. Le
+    // code de publication (services/meta.publishInstagramPost, en deux temps
+    // conteneur puis media_publish) était correct, mais la permission n'était
+    // jamais demandée — la publication Instagram automatique ne pouvait donc
+    // pas fonctionner. Comme les autres permissions avancées, elle doit être
+    // approuvée par Meta pour valoir au-delà des comptes de test de l'app.
+    "instagram_content_publish",
 ].join(",");
 
 function requireAuth(req, res, next) {

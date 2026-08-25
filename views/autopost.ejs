@@ -47,6 +47,7 @@
 
         <label style="display:block;color:#999;font-size:0.75rem;margin:20px 0 6px;">Fréquence</label>
         <select name="frequence" style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+          <option value="2x_jour" <%= config.frequence === "2x_jour" ? "selected" : "" %>>Deux fois par jour</option>
           <option value="quotidien" <%= config.frequence === "quotidien" ? "selected" : "" %>>Tous les jours</option>
           <option value="3x_semaine" <%= config.frequence === "3x_semaine" ? "selected" : "" %>>3 fois par semaine</option>
           <option value="hebdo" <%= config.frequence === "hebdo" ? "selected" : "" %>>Une fois par semaine</option>
