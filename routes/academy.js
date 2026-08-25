@@ -325,7 +325,7 @@ router.get(["/bibliotheque", "/formations"], async (req, res) => {
     ).join("");
 
     const formatChipsHtml = FORMATS_RESSOURCES.map(f => `
-        <a href="/academie?format=${f.id}${categorie ? '&categorie=' + categorie : ''}" data-i18n="fmt_${f.id}" class="format-chip ${(!format && f.id === 'tous') || format === f.id ? "active" : ""}">
+        <a href="/academy/bibliotheque?format=${f.id}${categorie ? '&categorie=' + categorie : ''}" data-i18n="fmt_${f.id}" class="format-chip ${(!format && f.id === 'tous') || format === f.id ? "active" : ""}">
             ${f.label}
         </a>`).join("");
 
@@ -561,6 +561,7 @@ a { color: inherit; text-decoration: none; }
             <a href="/qg" class="side-link"><i data-lucide="layout-dashboard"></i> <span data-i18n="nav_qg">QG Central</span></a>
             <a href="/marketplace" class="side-link"><i data-lucide="shopping-bag"></i> <span data-i18n="nav_store">Marketplace</span></a>
             <a href="/academy/bibliotheque" class="side-link active"><i data-lucide="graduation-cap"></i> <span data-i18n="nav_academy">Académie & Feed</span></a>
+            <a href="/academy/construire" class="side-link"><i data-lucide="hammer"></i> <span data-i18n="nav_creer">Créer avec SAMII</span></a>
             <a href="/community" class="side-link"><i data-lucide="users"></i> <span data-i18n="nav_chat">Communauté</span></a>
             <a href="/client-qg" class="side-link"><i data-lucide="shield-check"></i> Client-QG</a>
         </nav>
@@ -573,7 +574,7 @@ a { color: inherit; text-decoration: none; }
 <main class="main">
     <header class="header">
         <div class="header-top">
-            <form class="search" action="/academie" method="GET">
+            <form class="search" action="/academy/bibliotheque" method="GET">
                 <select name="categorie">
                     ${categoryOptionsHtml}
                 </select>
@@ -591,6 +592,9 @@ a { color: inherit; text-decoration: none; }
                         <i data-lucide="zap" style="width:12px; height:12px;"></i>
                     </div>
                 </button>
+                <a class="action-btn" href="/academy/construire" style="text-decoration:none;">
+                    <i data-lucide="hammer"></i> <span data-i18n="btn_creer">Créer avec SAMII</span>
+                </a>
                 <button class="action-btn" type="button" onclick="openPartageModal()">
                     <i data-lucide="plus-circle"></i> <span data-i18n="btn_express">Exprimez-vous</span>
                 </button>
