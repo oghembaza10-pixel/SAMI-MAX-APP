@@ -1530,6 +1530,92 @@
             .dev-split { grid-template-columns: 1fr; gap: 26px; }
         }
 
+        /* ── Tarifs ───────────────────────────────────────────────────
+           Volontairement plus nue que les autres sections : pas de cadre,
+           pas de lueur, pas de liste de fonctionnalités. Un visiteur qui
+           cherche un prix veut le prix. Le détail est sur /billing. */
+        .tarifs-section {
+            max-width: 1180px;
+            margin: 96px auto 0;
+            padding: 0 46px;
+        }
+        .tarifs-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            margin-top: 54px;
+            text-align: left;
+        }
+        .tarif {
+            padding: 30px 26px 32px;
+            border-left: 1px solid rgba(255,255,255,.07);
+        }
+        .tarif:last-child { border-right: 1px solid rgba(255,255,255,.07); }
+        .tarif--phare { background: rgba(212,169,74,.04); border-left-color: var(--gold-border); }
+        .tarif h3 {
+            margin: 0;
+            font-size: .8rem;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .tarif__prix {
+            margin: 16px 0 14px;
+            font-family: var(--font-display, inherit);
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -.02em;
+        }
+        .tarif--phare .tarif__prix { color: var(--gold-bright); }
+        .tarif__prix span {
+            font-family: var(--font-mono, monospace);
+            font-size: .68rem;
+            font-weight: 400;
+            letter-spacing: .04em;
+            color: var(--text-dim);
+        }
+        .tarif p {
+            margin: 0;
+            font-size: .84rem;
+            line-height: 1.7;
+            color: var(--text-muted);
+        }
+        .tarif__note {
+            display: block;
+            margin-top: 14px;
+            font-family: var(--font-mono, monospace);
+            font-size: .64rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--gold);
+            opacity: .8;
+        }
+        .tarifs-pied {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 11px;
+        }
+        .tarifs-pied__note {
+            font-size: .74rem;
+            color: var(--text-dim);
+            max-width: 440px;
+            line-height: 1.55;
+        }
+
+        @media (max-width: 860px) {
+            .tarifs-section { padding: 0 22px; margin-top: 60px; }
+            .tarifs-grid { grid-template-columns: 1fr 1fr; margin-top: 34px; }
+            .tarif { border-left: none; border-top: 1px solid rgba(255,255,255,.07); padding: 24px 18px 26px; }
+            .tarif:last-child { border-right: none; }
+        }
+        @media (max-width: 520px) {
+            .tarifs-grid { grid-template-columns: 1fr; }
+        }
+
         .agency-card {
             position: relative;
             padding: 30px 28px 30px 30px;
@@ -2954,6 +3040,50 @@
         </div>
     </section>
 
+    <!-- ══ TARIFS ════════════════════════════════════════════════════════
+         Les montants viennent de config/paliers.js (variable `tarifs`, passée
+         par index.js) : la vitrine ne peut plus annoncer un prix différent de
+         celui que /billing encaisse. Le détail palier par palier reste sur
+         /billing — ici, seulement de quoi décider de créer un compte. -->
+    <section class="tarifs-section" id="tarifs">
+        <div class="agency-inner">
+            <span class="agency-eyebrow" data-i18n="tarifs.eyebrow">Tarifs</span>
+            <h2 class="agency-title">
+                <span data-i18n="tarifs.title1">Commencez gratuitement.</span>
+                <span class="agency-title__accent" data-i18n="tarifs.title2">Montez quand ça rapporte.</span>
+            </h2>
+
+            <div class="tarifs-grid">
+                <article class="tarif">
+                    <h3 data-i18n="tarifs.free.nom">Découverte</h3>
+                    <div class="tarif__prix" data-i18n="tarifs.free.prix">Gratuit</div>
+                    <p data-i18n="tarifs.free.desc">Quatre outils complets, sans carte bancaire.</p>
+                </article>
+                <article class="tarif tarif--phare">
+                    <h3 data-i18n="tarifs.standard.nom">Actif</h3>
+                    <div class="tarif__prix"><%= tarifs.standard.prix %> $<span data-i18n="tarifs.mois">/mois</span></div>
+                    <p data-i18n="tarifs.standard.desc">WhatsApp, Telegram et Shopify branchés. SAMII propose, vous validez.</p>
+                    <span class="tarif__note" data-i18n="tarifs.standard.note">Prix de lancement</span>
+                </article>
+                <article class="tarif">
+                    <h3 data-i18n="tarifs.pro.nom">Souverain</h3>
+                    <div class="tarif__prix"><%= tarifs.pro.prix %> $<span data-i18n="tarifs.mois">/mois</span></div>
+                    <p data-i18n="tarifs.pro.desc">SAMII agit seul, sans attendre votre validation.</p>
+                </article>
+                <article class="tarif">
+                    <h3 data-i18n="tarifs.societe.nom">Société</h3>
+                    <div class="tarif__prix" data-i18n="tarifs.societe.prix">Sur devis</div>
+                    <p data-i18n="tarifs.societe.desc">Agences et groupes : plusieurs espaces, un seul contrat.</p>
+                </article>
+            </div>
+
+            <div class="tarifs-pied">
+                <a href="#auth" class="btn-primary" data-i18n="tarifs.cta">Commencer gratuitement →</a>
+                <span class="tarifs-pied__note" data-i18n="tarifs.note">Affiché en dollars, payé dans votre monnaie — Edahabia, CIB, CCP ou carte.</span>
+            </div>
+        </div>
+    </section>
+
     <!-- ══ AGENCES ═══════════════════════════════════════════════════════
          Cible prioritaire : une agence amène plusieurs marchands d'un coup.
          Jusqu'ici la page ne parlait qu'au marchand — une agence arrivait,
@@ -3322,6 +3452,23 @@
                 'dev.code2': "Ce que vous recevez à chaque événement",
                 'dev.cta': "Lire la documentation →",
                 'dev.note': "Documentation publique, sans compte.",
+                'tarifs.eyebrow': "Tarifs",
+                'tarifs.title1': "Commencez gratuitement.",
+                'tarifs.title2': "Montez quand ça rapporte.",
+                'tarifs.mois': "/mois",
+                'tarifs.free.nom': "Découverte",
+                'tarifs.free.prix': "Gratuit",
+                'tarifs.free.desc': "Quatre outils complets, sans carte bancaire.",
+                'tarifs.standard.nom': "Actif",
+                'tarifs.standard.desc': "WhatsApp, Telegram et Shopify branchés. SAMII propose, vous validez.",
+                'tarifs.standard.note': "Prix de lancement",
+                'tarifs.pro.nom': "Souverain",
+                'tarifs.pro.desc': "SAMII agit seul, sans attendre votre validation.",
+                'tarifs.societe.nom': "Société",
+                'tarifs.societe.prix': "Sur devis",
+                'tarifs.societe.desc': "Agences et groupes : plusieurs espaces, un seul contrat.",
+                'tarifs.cta': "Commencer gratuitement →",
+                'tarifs.note': "Affiché en dollars, payé dans votre monnaie — Edahabia, CIB, CCP ou carte.",
                 'partenariat.cat.agence': 'Agence / Intégrateur',
                 'proof.connected': 'Connecté à Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': 'Bientôt — TikTok, LinkedIn',
@@ -3428,6 +3575,23 @@
                 'dev.code2': "What you receive on every event",
                 'dev.cta': "Read the documentation →",
                 'dev.note': "Public documentation, no account needed.",
+                'tarifs.eyebrow': "Pricing",
+                'tarifs.title1': "Start for free.",
+                'tarifs.title2': "Move up when it pays.",
+                'tarifs.mois': "/month",
+                'tarifs.free.nom': "Discovery",
+                'tarifs.free.prix': "Free",
+                'tarifs.free.desc': "Four complete tools, no credit card.",
+                'tarifs.standard.nom': "Active",
+                'tarifs.standard.desc': "WhatsApp, Telegram and Shopify connected. SAMII suggests, you approve.",
+                'tarifs.standard.note': "Launch price",
+                'tarifs.pro.nom': "Sovereign",
+                'tarifs.pro.desc': "SAMII acts on its own, without waiting for your approval.",
+                'tarifs.societe.nom': "Enterprise",
+                'tarifs.societe.prix': "Custom quote",
+                'tarifs.societe.desc': "Agencies and groups: several spaces, one contract.",
+                'tarifs.cta': "Start for free →",
+                'tarifs.note': "Shown in dollars, paid in your currency — Edahabia, CIB, CCP or card.",
                 'partenariat.cat.agence': 'Agency / Integrator',
                 'proof.connected': 'Connected to Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': 'Coming soon — TikTok, LinkedIn',
@@ -3534,6 +3698,23 @@
                 'dev.code2': "ما تستقبله عند كل حدث",
                 'dev.cta': "اقرأ التوثيق ←",
                 'dev.note': "توثيق عام، دون حساب.",
+                'tarifs.eyebrow': "الأسعار",
+                'tarifs.title1': "ابدأ مجانًا.",
+                'tarifs.title2': "ارتقِ عندما تربح.",
+                'tarifs.mois': "/شهريًا",
+                'tarifs.free.nom': "الاكتشاف",
+                'tarifs.free.prix': "مجاني",
+                'tarifs.free.desc': "أربع أدوات كاملة، دون بطاقة بنكية.",
+                'tarifs.standard.nom': "نشِط",
+                'tarifs.standard.desc': "واتساب وتيليغرام وشوبيفاي موصولة. سامي يقترح، وأنت تصادق.",
+                'tarifs.standard.note': "سعر الإطلاق",
+                'tarifs.pro.nom': "سيادي",
+                'tarifs.pro.desc': "سامي يتصرّف وحده، دون انتظار مصادقتك.",
+                'tarifs.societe.nom': "شركة",
+                'tarifs.societe.prix': "حسب الطلب",
+                'tarifs.societe.desc': "الوكالات والمجموعات: عدة مساحات، عقد واحد.",
+                'tarifs.cta': "ابدأ مجانًا ←",
+                'tarifs.note': "معروض بالدولار، مدفوع بعملتك — الذهبية، CIB، CCP أو بطاقة.",
                 'partenariat.cat.agence': 'وكالة / مُدمِج',
                 'proof.connected': 'متصل بـ Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': 'قريبًا — TikTok، LinkedIn',
@@ -3645,6 +3826,23 @@
                 'dev.code2': "每个事件你会收到什么",
                 'dev.cta': "阅读文档 →",
                 'dev.note': "公开文档，无需账号。",
+                'tarifs.eyebrow': "价格",
+                'tarifs.title1': "免费开始。",
+                'tarifs.title2': "有收益再升级。",
+                'tarifs.mois': "/月",
+                'tarifs.free.nom': "探索版",
+                'tarifs.free.prix': "免费",
+                'tarifs.free.desc': "四个完整工具，无需银行卡。",
+                'tarifs.standard.nom': "活跃版",
+                'tarifs.standard.desc': "已接入 WhatsApp、Telegram 与 Shopify。SAMII 提议，您确认。",
+                'tarifs.standard.note': "首发价格",
+                'tarifs.pro.nom': "主权版",
+                'tarifs.pro.desc': "SAMII 自主行动，无需等待您的确认。",
+                'tarifs.societe.nom': "企业版",
+                'tarifs.societe.prix': "定制报价",
+                'tarifs.societe.desc': "代理商与集团：多个空间，一份合同。",
+                'tarifs.cta': "免费开始 →",
+                'tarifs.note': "以美元展示，按您的货币支付 — Edahabia、CIB、CCP 或银行卡。",
                 'partenariat.cat.agence': '代理机构 / 集成商',
                 'proof.connected': '已连接 Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': '即将支持 — TikTok、LinkedIn',

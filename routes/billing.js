@@ -52,7 +52,11 @@ async function assurerCouponFilleul() {
     }
 }
 
-const PRIX_AFFICHE = { standard: 9.99, pro: 39.99 };
+// Prix de référence des paliers payants. Source unique : config/paliers.js —
+// la page, Chargily, le CCP et le rappel de renouvellement lisent le même
+// chiffre, pour qu'on ne puisse plus facturer un montant jamais affiché.
+const paliers = require("../config/paliers");
+const PRIX_AFFICHE = Object.fromEntries(paliers.PAYANTS.map(id => [id, paliers.prixUSD(id)]));
 
 const gmail = require("../services/gmail");
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "ghembazao@gmail.com";
@@ -87,6 +91,11 @@ router.get("/", requireAuth, async (req, res) => {
     </div>` : "";
     const dailyNote = (plan) => `<p class="bill-daily-note">≈ ${confirmationsQuota.QUOTA_PAR_PALIER[plan]}/jour</p>`;
     const griotNote = `<p class="bill-daily-note" data-i18n="billing.griot.note">🎨 Génération IA (Griot) : 0,80 $/seconde</p>`;
+    // Le premier palier payant est affiché comme un prix de lancement : c'est
+    // vrai (il montera avec le parc installé) et ça vaut mieux qu'une fausse
+    // promotion à compte à rebours. Piloté par config/paliers.js.
+    const lancementNote = (plan) => paliers.PALIERS[plan]?.prixDeLancement
+        ? `<p class="bill-lancement" data-i18n="billing.lancement">Prix de lancement</p>` : "";
 
     // Prix affiché toujours converti depuis le prix de référence en USD, dans
     // la devise du marchand (marché parallèle pour le DZD, marché réel pour
@@ -179,6 +188,7 @@ router.get("/", requireAuth, async (req, res) => {
         .bill-btn--free:hover { background: transparent; color: var(--lux-steel); }
         .bill-card--pro .bill-btn { background: var(--lux-gold); color: var(--lux-onyx); }
         .bill-card--pro .bill-btn:hover { background: var(--lux-gold-bright); border-color: var(--lux-gold-bright); }
+        .bill-lancement { margin: -14px 0 20px; font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: var(--lux-gold); opacity: .8; }
         .bill-daily-note { text-align: center; font-family: var(--font-mono); font-size: .64rem; color: var(--lux-cyan); opacity: .85; margin: 10px 0 0; }
         .callout-regularisation { max-width: 640px; margin: 0 auto 28px; padding: 14px 18px; border-radius: 2px; background: rgba(229,85,85,0.08); border: 1px solid rgba(229,85,85,0.3); color: #e88; font-size: .8rem; text-align: center; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
         .bill-btn--regulariser { width: auto; padding: 8px 14px; font-size: .7rem; background: #e55; border-color: #e55; color: #fff; }
@@ -251,6 +261,7 @@ router.get("/", requireAuth, async (req, res) => {
             <h2 data-i18n="billing.standard.title">🚀 Actif</h2>
             <p class="bill-card-tagline" data-i18n="billing.standard.tagline">Pour un commerce qui tourne déjà.</p>
             <div class="bill-price">${prixHtml("standard")}</div>
+            ${lancementNote("standard")}
             <div class="bill-card-rule"></div>
             <ul>
                 <li data-i18n="billing.standard.li1">2 100 confirmations & suivi / mois (+0,50 $ au-delà)</li>
@@ -353,6 +364,7 @@ const I18N = {
         'billing.pro.li5': 'Support prioritaire',
         'billing.pro.li6': '150 messages SAMII toutes les 7h (+0,12 $/message au-delà)',
         'billing.griot.note': '🎨 Génération IA (Griot) : 0,80 $/seconde',
+        'billing.lancement': 'Prix de lancement',
         'billing.bientot.label': '🔜 Bientôt disponible',
         'billing.bientot.meta': 'Pubs Meta + réponses automatiques Messenger/Instagram',
         'billing.step1': 'Découvre les paliers', 'billing.step1b': 'Découvre',
@@ -405,6 +417,7 @@ const I18N = {
         'billing.pro.li5': 'Priority support',
         'billing.pro.li6': '150 SAMII messages every 7h (+$0.12/message beyond)',
         'billing.griot.note': '🎨 AI generation (Griot): $0.80/second',
+        'billing.lancement': 'Launch price',
         'billing.bientot.label': '🔜 Coming soon',
         'billing.bientot.meta': 'Meta ads + automatic Messenger/Instagram replies',
         'billing.step1': 'Discover the tiers', 'billing.step1b': 'Discover',
@@ -457,6 +470,7 @@ const I18N = {
         'billing.pro.li5': 'دعم ذو أولوية',
         'billing.pro.li6': '150 رسالة SAMII كل 7 ساعات (+0.12$ لكل رسالة إضافية)',
         'billing.griot.note': '🎨 توليد بالذكاء الاصطناعي (Griot): 0.80$/ثانية',
+        'billing.lancement': 'سعر الإطلاق',
         'billing.bientot.label': '🔜 قريبًا',
         'billing.bientot.meta': 'إعلانات Meta + ردود تلقائية على Messenger/Instagram',
         'billing.step1': 'اكتشف الباقات', 'billing.step1b': 'اكتشف',
@@ -509,6 +523,7 @@ const I18N = {
         'billing.pro.li5': '优先支持',
         'billing.pro.li6': '每7小时150条 SAMII 消息（超出部分每条+0.12$）',
         'billing.griot.note': '🎨 AI生成（Griot）：0.80$/秒',
+        'billing.lancement': '首发价格',
         'billing.bientot.label': '🔜 即将推出',
         'billing.bientot.meta': 'Meta 广告 + Messenger/Instagram 自动回复',
         'billing.step1': '了解各档位', 'billing.step1b': '了解',
@@ -780,7 +795,7 @@ router.post("/checkout", requireAuth, async (req, res) => {
 router.post("/ccp-request", requireAuth, async (req, res) => {
     try {
         const { plan } = req.body;
-        if (!["standard", "pro"].includes(plan)) return res.json({ success: false, error: "Plan invalide." });
+        if (!paliers.estAchetable(plan)) return res.json({ success: false, error: "Plan invalide." });
         const workspaceId = req.session.workspaceId;
         const montantDzd = Math.round(devises.depuisUSD(PRIX_AFFICHE[plan], "DZD"));
 

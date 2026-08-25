@@ -18,7 +18,10 @@ const notificationEngine = require("./notificationEngine");
 const notify = require("../services/notify");
 const CONFIG = require("../config");
 
-const PRIX_AFFICHE = { standard: 9.99, pro: 39.99 };
+// Même source que routes/billing.js — le montant qu'on redemande au
+// renouvellement doit être exactement celui qu'on a affiché (config/paliers.js).
+const paliers = require("../config/paliers");
+const PRIX_AFFICHE = Object.fromEntries(paliers.PAYANTS.map(id => [id, paliers.prixUSD(id)]));
 const JOURS_AVANT_RAPPEL = 3;
 
 async function genererLienRenouvellement(workspaceId, plan) {

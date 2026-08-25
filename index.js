@@ -21,6 +21,7 @@ const rateLimit        = require("express-rate-limit");
 const CONFIG           = require("./config");
 const workspaceService = require("./services/workspaceService");
 const db                = require("./services/db");
+const paliers           = require("./config/paliers");
 
 const app    = express();
 const server = http.createServer(app);
@@ -263,6 +264,10 @@ app.get("/", (req, res) => {
         loggedIn: !!req.session?.loggedIn,
         nom: req.session?.nom || "",
         typeCompte: req.session?.typeCompte || "client",
+        // Les tarifs affichés sur la page d'accueil viennent du même fichier
+        // que ceux facturés (config/paliers.js) : impossible d'annoncer un
+        // prix en vitrine et d'en encaisser un autre sur /billing.
+        tarifs: paliers.PALIERS,
     });
 });
 
