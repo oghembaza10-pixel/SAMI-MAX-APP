@@ -17,6 +17,8 @@ const router = express.Router();
 const academie = require("../config/academie");
 const service = require("../services/academie");
 const journalService = require("../services/journalService");
+const vitrine = require("../services/vitrine");
+const metiers = require("../services/metiers");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -33,16 +35,36 @@ async function exigerMembre(req, res, next) {
     return res.redirect(`/academy/rejoindre?retour=${retour}`);
 }
 
-// ── Le hall ──────────────────────────────────────────────────────────────
-// Volontairement ouvert à tous, sans compte : c'est une page d'invitation.
-// Un développeur qui la découvre doit pouvoir tout lire — ce qu'on apporte,
-// ce qu'on prend, ce qu'il garde — avant qu'on lui demande quoi que ce soit.
+// ── La vitrine ───────────────────────────────────────────────────────────
+// La porte d'entrée du lieu, ouverte à tous sans compte. Ce n'est pas une page
+// de présentation : c'est la grille elle-même, filtrée par le métier de celui
+// qui regarde. L'argumentaire vit derrière « Créer avec SAMII », là où un
+// développeur est en train de décider — pas devant un marchand qui cherche
+// juste à régler un problème.
 router.get("/", async (req, res) => {
-    const membre = req.session?.loggedIn ? await service.estMembre(req.session.userId) : false;
-    res.render("academie-hall", {
-        taux: Math.round(academie.TAUX_COMMISSION * 100),
-        membre,
-    });
+    const metier = String(req.query.metier || "").trim();
+    const nature = String(req.query.nature || "").trim();
+    const recherche = String(req.query.recherche || "").trim().slice(0, 80);
+
+    try {
+        const [cartes, prestataires] = await Promise.all([
+            vitrine.grille({ metier, nature, recherche }),
+            vitrine.nombrePrestataires(),
+        ]);
+
+        res.render("academie-vitrine", {
+            cartes,
+            natures: vitrine.NATURES,
+            groupes: vitrine.metiersGroupes(),
+            metier, nature, recherche,
+            metierLabel: metier ? metiers.label(metier) : "",
+            prestataires,
+            taux: Math.round(academie.TAUX_COMMISSION * 100),
+        });
+    } catch (err) {
+        console.error("❌ GET /academy :", err.message);
+        res.status(500).send("Erreur de chargement.");
+    }
 });
 
 // ── L'atelier : où l'on construit ────────────────────────────────────────
