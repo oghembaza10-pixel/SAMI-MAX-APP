@@ -47,9 +47,10 @@ router.get("/", async (req, res) => {
     const recherche = String(req.query.recherche || "").trim().slice(0, 80);
 
     try {
-        const [cartes, prestataires] = await Promise.all([
+        const [cartes, prestataires, besoinsOuverts] = await Promise.all([
             vitrine.grille({ metier, nature, recherche }),
             vitrine.nombrePrestataires(),
+            vitrine.nombreBesoins(),
         ]);
 
         res.render("academie-vitrine", {
@@ -59,6 +60,7 @@ router.get("/", async (req, res) => {
             metier, nature, recherche,
             metierLabel: metier ? metiers.label(metier) : "",
             prestataires,
+            besoinsOuverts,
             taux: Math.round(academie.TAUX_COMMISSION * 100),
         });
     } catch (err) {
@@ -82,6 +84,14 @@ router.get("/construire", exigerMembre, (req, res) => {
 // pour partager exigerMembre : on ne fabrique pas de clé ni de terrain d'essai
 // sans avoir accepté le contrat.
 router.use("/espace", exigerMembre, require("./dev-espace"));
+
+// ── Les besoins des marchands ────────────────────────────────────────────
+// Monté ici, mais SANS `exigerMembre` en amont : les deux gestes n'ont pas le
+// même prix d'entrée. Publier un besoin ne demande qu'un compte — un marchand
+// à qui on fait signer un contrat de développeur pour décrire son problème ne
+// le décrit pas, et une place sans demandes reste vide. Répondre, en revanche,
+// passe par la porte : le routeur applique `exigerMembre` route par route.
+router.use("/", require("./besoins")({ requireAuth, exigerMembre }));
 
 // ── La place : où l'on se rencontre ──────────────────────────────────────
 // Pas encore ouverte. On l'annonce comme telle plutôt que de la cacher : un

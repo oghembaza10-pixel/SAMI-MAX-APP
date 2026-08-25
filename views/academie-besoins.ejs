@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Le travail qui attend — L'Académie</title>
+  <link rel="stylesheet" href="/css/qg-style.css">
+  <style>
+    :root {
+      --enc:#07070a; --pan:#101013; --pan2:#16161a; --or:#c9a961; --or-clair:#f0d99b;
+      --ivoire:#f3f1e9; --gris:#8b8d95; --faible:#6c6e77; --bord:rgba(201,169,97,.18);
+      --cyan:#5fd4ff; --vert:#3ddc84;
+    }
+    body { background:var(--enc); color:var(--ivoire); }
+    .bs { max-width:1120px; margin:0 auto; padding:32px 20px 80px; }
+    .bs-haut { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:28px; }
+    .bs-marque { font-family:Georgia,serif; font-size:10px; letter-spacing:.46em; text-indent:.46em; color:var(--or); text-transform:uppercase; }
+    .bs-menu { display:flex; gap:8px; flex-wrap:wrap; }
+    .bs-menu a { padding:8px 14px; border-radius:4px; border:1px solid rgba(255,255,255,.09); color:var(--gris); text-decoration:none; font-size:.78rem; }
+    .bs-menu a:hover { border-color:var(--bord); color:var(--ivoire); }
+    .bs-menu a.est-or { background:var(--or); border-color:var(--or); color:#07070a; font-weight:650; }
+
+    .bs-titre { text-align:center; margin-bottom:26px; }
+    .bs-titre h1 { font-family:"Didot","Bodoni MT",Georgia,serif; font-weight:400; font-size:clamp(1.8rem,4.4vw,2.4rem); margin:0 0 10px; }
+    .bs-titre p { color:var(--gris); font-size:.9rem; line-height:1.7; max-width:60ch; margin:0 auto; }
+
+    .bs-msg { padding:13px 16px; border-radius:6px; margin-bottom:22px; font-size:.85rem; line-height:1.6;
+              background:rgba(61,220,132,.08); border:1px solid rgba(61,220,132,.28); color:#9fe7bd; }
+    .bs-err { padding:13px 16px; border-radius:6px; margin-bottom:22px; font-size:.85rem; line-height:1.6;
+              background:rgba(229,85,85,.08); border:1px solid rgba(229,85,85,.3); color:#f0a8a8; }
+
+    .bs-chercher { display:flex; gap:10px; max-width:680px; margin:0 auto 26px; flex-wrap:wrap; }
+    .bs-chercher input, .bs-chercher select {
+      flex:1 1 200px; padding:12px 15px; border-radius:4px; border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.03); color:var(--ivoire); font-size:.85rem; font-family:inherit;
+    }
+    .bs-chercher input::placeholder { color:var(--faible); }
+    .bs-chercher button { padding:12px 24px; border:none; border-radius:4px; background:var(--or); color:#07070a;
+                          font-weight:700; font-size:.76rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+
+    .bs-bloc { margin-bottom:46px; }
+    .bs-bloc > h2 { font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gris); font-weight:600; margin:0 0 6px; }
+    .bs-bloc > .bs-sous { color:var(--faible); font-size:.8rem; line-height:1.65; margin:0 0 18px; max-width:66ch; }
+
+    .bs-grille { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:15px; }
+    .bs-carte { display:flex; flex-direction:column; padding:21px 20px; text-decoration:none; color:inherit;
+                border:1px solid rgba(255,255,255,.08); border-radius:8px;
+                background:linear-gradient(180deg,var(--pan2),var(--pan)); transition:border-color .25s ease, transform .25s ease; }
+    .bs-carte:hover { border-color:var(--bord); transform:translateY(-3px); }
+    .bs-carte__haut { display:flex; align-items:center; gap:9px; margin-bottom:11px; flex-wrap:wrap; }
+    .bs-etiq { font-family:var(--font-mono,monospace); font-size:.61rem; letter-spacing:.11em; text-transform:uppercase;
+               padding:3px 9px; border-radius:20px; border:1px solid rgba(255,255,255,.1); color:var(--faible); }
+    .bs-etiq--budget { color:var(--or); border-color:var(--bord); }
+    .bs-etiq--libre { color:var(--vert); border-color:rgba(61,220,132,.3); }
+    .bs-etiq--ouvert { color:var(--vert); border-color:rgba(61,220,132,.3); }
+    .bs-etiq--attribue { color:var(--cyan); border-color:rgba(95,212,255,.28); }
+    .bs-etiq--clos { color:var(--faible); }
+    .bs-carte h3 { margin:0 0 7px; font-size:.97rem; font-weight:650; line-height:1.4; }
+    .bs-carte p { margin:0 0 15px; font-size:.82rem; line-height:1.65; color:var(--gris); flex:1; }
+    .bs-carte__pied { display:flex; align-items:center; justify-content:space-between; gap:10px;
+                      padding-top:12px; border-top:1px solid rgba(255,255,255,.06); }
+    .bs-carte__meta { font-size:.73rem; color:var(--faible); }
+    .bs-carte__action { font-family:var(--font-mono,monospace); font-size:.68rem; letter-spacing:.09em;
+                        text-transform:uppercase; color:var(--or); }
+
+    .bs-vide { grid-column:1/-1; padding:38px 24px; border:1px dashed var(--bord); border-radius:8px;
+               background:rgba(201,169,97,.03); text-align:center; color:var(--gris); font-size:.86rem; line-height:1.7; }
+
+    .bs-form { border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:24px 22px;
+               background:linear-gradient(180deg,var(--pan2),var(--pan)); }
+    .bs-form label { display:block; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase;
+                     color:var(--faible); margin:0 0 6px; }
+    .bs-form input, .bs-form select, .bs-form textarea {
+      width:100%; padding:12px 14px; border-radius:4px; border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.03); color:var(--ivoire); font-size:.86rem; font-family:inherit; margin-bottom:16px;
+    }
+    .bs-form textarea { min-height:120px; resize:vertical; line-height:1.6; }
+    .bs-form input::placeholder, .bs-form textarea::placeholder { color:var(--faible); }
+    .bs-ligne { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; }
+    .bs-aide { font-size:.75rem; color:var(--faible); line-height:1.65; margin:-8px 0 18px; }
+
+    .btn { display:inline-block; padding:12px 24px; border:none; border-radius:4px; background:var(--or); color:#07070a;
+           font-size:.75rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
+           text-decoration:none; font-family:inherit; }
+    .btn:hover { background:var(--or-clair); }
+    .btn--fin { background:transparent; border:1px solid rgba(255,255,255,.14); color:var(--gris); }
+    .btn--fin:hover { background:rgba(255,255,255,.05); color:var(--ivoire); }
+  </style>
+</head>
+<body data-theme="og">
+<div class="bs">
+
+  <div class="bs-haut">
+    <div class="bs-marque">O G &nbsp; T E C H N O L O G Y</div>
+    <nav class="bs-menu">
+      <a href="/academy">La vitrine</a>
+      <a href="/academy/espace">Mon espace</a>
+      <a href="/academy/construire" class="est-or">Créer avec SAMII</a>
+    </nav>
+  </div>
+
+  <div class="bs-titre">
+    <h1>Le travail qui attend</h1>
+    <!-- La phrase qui décide si un développeur reste : elle dit qui demande,
+         combien, et ce que ça coûte d'entrer. Rien d'autre. -->
+    <p>Des marchands décrivent ici ce qu'il leur manque. Publier un besoin ne coûte rien
+       et n'engage à rien. Répondre non plus — SAMII prend <%= taux %> % le jour où tu es
+       payé, et rien avant.</p>
+  </div>
+
+  <% if (message) { %><div class="bs-msg"><%= message %></div><% } %>
+  <% if (erreur) { %><div class="bs-err"><%= erreur %></div><% } %>
+
+  <form class="bs-chercher" method="GET" action="/academy/besoins">
+    <input type="text" name="recherche" value="<%= recherche %>"
+           placeholder="Ce que tu sais faire : boutique, rendez-vous, livraison…">
+    <select name="metier">
+      <option value="">Tous les métiers</option>
+      <% groupes.forEach(function (g) { %>
+        <optgroup label="<%= g.groupe %>">
+          <% g.items.forEach(function (m) { %>
+            <option value="<%= m.id %>" <%= metier === m.id ? "selected" : "" %>><%= m.icone %> <%= m.label %></option>
+          <% }); %>
+        </optgroup>
+      <% }); %>
+    </select>
+    <button type="submit">Chercher</button>
+  </form>
+
+  <!-- ══ LES BESOINS OUVERTS ══════════════════════════════════════════════ -->
+  <div class="bs-bloc">
+    <h2><%= ouverts.length %> besoin<%= ouverts.length > 1 ? "s" : "" %> ouvert<%= ouverts.length > 1 ? "s" : "" %></h2>
+    <p class="bs-sous">
+      Le nombre de réponses est affiché à tout le monde : zéro réponse veut dire que la place
+      est libre. Les propositions chiffrées, elles, ne sont vues que par le marchand — ici on
+      se départage sur le travail, pas en cassant le prix du voisin.
+    </p>
+
+    <div class="bs-grille">
+      <% ouverts.forEach(function (b) {
+           const bas = b.budget_min ? Number(b.budget_min) : null;
+           const haut = b.budget_max ? Number(b.budget_max) : null;
+           const budget = (bas && haut) ? (bas + "–" + haut + " " + b.devise)
+                        : (haut || bas ? (haut || bas) + " " + b.devise : "");
+           const n = Number(b.reponses || 0);
+      %>
+        <a class="bs-carte" href="/academy/besoin/<%= b.reference %>">
+          <div class="bs-carte__haut">
+            <span class="bs-etiq bs-etiq--budget"><%= budget || "Budget à discuter" %></span>
+            <% if (!n) { %><span class="bs-etiq bs-etiq--libre">Personne n'a encore répondu</span><% } %>
+          </div>
+          <h3><%= b.titre %></h3>
+          <p><%= b.description.length > 190 ? b.description.slice(0, 190) + "…" : b.description %></p>
+          <div class="bs-carte__pied">
+            <span class="bs-carte__meta"><%= n %> réponse<%= n > 1 ? "s" : "" %></span>
+            <span class="bs-carte__action">Répondre →</span>
+          </div>
+        </a>
+      <% }); %>
+
+      <% if (!ouverts.length) { %>
+        <div class="bs-vide">
+          <% if (metier || recherche) { %>
+            Aucun besoin ne correspond à cette recherche.
+            <a href="/academy/besoins" style="color:var(--or)">Voir tout →</a>
+          <% } else { %>
+            Aucun besoin publié pour l'instant. Si tu es marchand, décris le tien ci-dessous —
+            c'est ce qui fait venir ceux qui savent le construire.
+          <% } %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- ══ PUBLIER ══════════════════════════════════════════════════════════
+       Le formulaire est sur la même page que la liste, volontairement : un
+       marchand qui lit les besoins des autres comprend en trois lignes ce
+       qu'on attend de lui, et écrit le sien mieux qu'avec n'importe quelle
+       consigne. -->
+  <div class="bs-bloc">
+    <h2>Décrire mon besoin</h2>
+    <p class="bs-sous">
+      Tu n'as pas besoin de savoir ce qu'il te faut techniquement — décris le problème.
+      C'est gratuit, tu ne t'engages à rien, et tu choisis qui te répond (ou personne).
+    </p>
+
+    <% if (!connecte) { %>
+      <div class="bs-vide">
+        Connecte-toi pour publier ton besoin.
+        <a href="/login" style="color:var(--or)">Se connecter →</a>
+      </div>
+    <% } else { %>
+      <form class="bs-form" method="POST" action="/academy/besoins">
+        <label for="titre">En une phrase, qu'est-ce qu'il te manque ?</label>
+        <input id="titre" name="titre" type="text" maxlength="120" required
+               placeholder="Ex. : mes clients me demandent où est leur colis toute la journée">
+
+        <label for="description">Raconte</label>
+        <textarea id="description" name="description" maxlength="2000" required
+                  placeholder="Ce que tu fais aujourd'hui, ce qui te fait perdre du temps, et à quoi ressemblerait la bonne solution. Plus c'est concret, mieux on te répond."></textarea>
+        <p class="bs-aide">C'est cette description qui décide qui te répond — quelques phrases valent mieux qu'une ligne.</p>
+
+        <div class="bs-ligne">
+          <div>
+            <label for="metier">Ton métier</label>
+            <select id="metier" name="metier">
+              <option value="">Non précisé</option>
+              <% groupes.forEach(function (g) { %>
+                <optgroup label="<%= g.groupe %>">
+                  <% g.items.forEach(function (m) { %>
+                    <option value="<%= m.id %>"><%= m.icone %> <%= m.label %></option>
+                  <% }); %>
+                </optgroup>
+              <% }); %>
+            </select>
+          </div>
+          <div>
+            <label for="budget_min">Budget minimum</label>
+            <input id="budget_min" name="budget_min" type="text" inputmode="decimal" placeholder="Facultatif">
+          </div>
+          <div>
+            <label for="budget_max">Budget maximum</label>
+            <input id="budget_max" name="budget_max" type="text" inputmode="decimal" placeholder="Facultatif">
+          </div>
+          <div>
+            <label for="devise">Devise</label>
+            <select id="devise" name="devise">
+              <option value="USD">USD — dollar</option>
+              <option value="EUR">EUR — euro</option>
+              <option value="DZD">DZD — dinar algérien</option>
+              <option value="MAD">MAD — dirham marocain</option>
+              <option value="XOF">XOF — franc CFA</option>
+              <option value="NGN">NGN — naira</option>
+            </select>
+          </div>
+        </div>
+        <p class="bs-aide">
+          Laisse le budget vide si tu ne sais pas : les développeurs te proposeront un prix.
+          Un ordre de grandeur, même large, fait juste gagner du temps à tout le monde.
+        </p>
+
+        <button class="btn" type="submit">Publier mon besoin</button>
+      </form>
+    <% } %>
+  </div>
+
+  <!-- ══ MES BESOINS ══════════════════════════════════════════════════════ -->
+  <% if (connecte && miens.length) { %>
+    <div class="bs-bloc">
+      <h2>Mes besoins</h2>
+      <p class="bs-sous">
+        Ferme un besoin dès qu'il est réglé : laisser un besoin ouvert fait travailler
+        des gens pour rien, et c'est ce qui vide une place comme celle-ci.
+      </p>
+      <div class="bs-grille">
+        <% miens.forEach(function (b) { const n = Number(b.reponses || 0); %>
+          <a class="bs-carte" href="/academy/besoin/<%= b.reference %>">
+            <div class="bs-carte__haut">
+              <span class="bs-etiq bs-etiq--<%= b.statut %>"><%= b.statut %></span>
+            </div>
+            <h3><%= b.titre %></h3>
+            <p><%= b.description.length > 150 ? b.description.slice(0, 150) + "…" : b.description %></p>
+            <div class="bs-carte__pied">
+              <span class="bs-carte__meta"><%= n %> réponse<%= n > 1 ? "s" : "" %> reçue<%= n > 1 ? "s" : "" %></span>
+              <span class="bs-carte__action">Voir →</span>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+    </div>
+  <% } %>
+
+</div>
+</body>
+</html>

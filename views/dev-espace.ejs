@@ -173,9 +173,67 @@
     <button class="btn btn--fin de-copier" type="button" onclick="copier('curl', this)">Copier la commande</button>
   </div>
 
-  <!-- ══ 3. MES APPLICATIONS ══════════════════════════════════════════════ -->
+  <!-- ══ 3. LE TRAVAIL QUI ATTEND ═════════════════════════════════════════
+       Ce qu'aucun grand portail ne met sur le tableau de bord du développeur :
+       des clients. Shopify, Meta et Amazon donnent la console et la
+       documentation, puis laissent chacun trouver seul à qui vendre. Ici, les
+       marchands sont déjà là et disent ce qu'il leur manque — la première
+       raison de se servir de la clé qu'on vient de fabriquer. -->
   <div class="de-bloc">
-    <h2>3 · Mes applications</h2>
+    <h2>3 · Le travail qui attend</h2>
+    <p class="de-sous">
+      Des marchands ont décrit ce qu'il leur manque. Répondre ne coûte rien et ne t'engage
+      à rien : tu proposes ton prix, le marchand choisit. SAMII prend <%= taux %> % le jour
+      où tu es payé, et rien avant.
+    </p>
+
+    <% if (travaux.length) { %>
+      <div class="de-grille">
+        <% travaux.forEach(function (b) {
+             const bas = b.budget_min ? Number(b.budget_min) : null;
+             const haut = b.budget_max ? Number(b.budget_max) : null;
+             const budget = (bas && haut) ? (bas + "–" + haut + " " + b.devise)
+                          : (haut || bas ? (haut || bas) + " " + b.devise : "Budget à discuter");
+             const n = Number(b.reponses || 0);
+        %>
+          <div class="de-carte">
+            <h3><%= b.titre %></h3>
+            <p><%= b.description.length > 130 ? b.description.slice(0, 130) + "…" : b.description %></p>
+            <p style="margin:0 0 14px;font-size:.74rem;color:var(--or);font-family:var(--font-mono,monospace);">
+              <%= budget %> · <%= n %> réponse<%= n > 1 ? "s" : "" %>
+            </p>
+            <a class="btn btn--fin" href="/academy/besoin/<%= b.reference %>">Répondre</a>
+          </div>
+        <% }); %>
+      </div>
+      <a class="btn btn--fin" href="/academy/besoins" style="margin-top:16px;">Voir tous les besoins →</a>
+    <% } else { %>
+      <p class="de-sous" style="margin:0;">
+        Aucun besoin ouvert en ce moment.
+        <a href="/academy/besoins" style="color:var(--or)">Surveiller la liste →</a>
+      </p>
+    <% } %>
+
+    <% if (mesPropositions.length) { %>
+      <table style="margin-top:24px;">
+        <thead><tr><th>Ma proposition</th><th>Prix</th><th>Délai</th><th>État du besoin</th></tr></thead>
+        <tbody>
+          <% mesPropositions.forEach(function (r) { %>
+            <tr>
+              <td><a href="/academy/besoin/<%= r.reference %>" style="color:var(--cyan);text-decoration:none;"><%= r.titre %></a></td>
+              <td class="mono"><%= r.prix ? Number(r.prix) + " " + r.devise : "—" %></td>
+              <td class="mono"><%= r.delai_jours ? r.delai_jours + " j" : "—" %></td>
+              <td><span class="etat etat--<%= r.besoin_statut %>"><%= r.besoin_statut %></span></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <!-- ══ 4. MES APPLICATIONS ══════════════════════════════════════════════ -->
+  <div class="de-bloc">
+    <h2>4 · Mes applications</h2>
     <p class="de-sous">
       En brouillon, ton application n'est installable que par toi — de quoi la finir tranquillement.
       Publiée, elle apparaît dans la vitrine et les marchands peuvent l'installer.
@@ -199,12 +257,12 @@
     <a class="btn" href="/apps" style="margin-top:16px;">Déclarer une application →</a>
   </div>
 
-  <!-- ══ 4. CE QUE MON TRAVAIL A FAIT ═════════════════════════════════════
+  <!-- ══ 5. CE QUE MON TRAVAIL A FAIT ═════════════════════════════════════
        L'angle mort des grands portails : ils montrent la configuration, pas
        le travail. Quand une application échoue chez un marchand, il faut
        aller chercher ailleurs. Ici, c'est sur la même page. -->
   <div class="de-bloc">
-    <h2>4 · Ce que mes clés ont fait</h2>
+    <h2>5 · Ce que mes clés ont fait</h2>
     <p class="de-sous">
       Les derniers appels passés avec tes clés — y compris ceux qui ont été refusés, et pourquoi.
       C'est là qu'on comprend une intégration qui ne marche pas.
@@ -227,9 +285,9 @@
     </table>
   </div>
 
-  <!-- ══ 5. LES REVENUS ═══════════════════════════════════════════════════ -->
+  <!-- ══ 6. LES REVENUS ═══════════════════════════════════════════════════ -->
   <div class="de-bloc">
-    <h2>5 · Ce que ça rapporte</h2>
+    <h2>6 · Ce que ça rapporte</h2>
     <p class="de-sous">
       Publier ne coûte rien. Installer gratuitement ne coûte rien. SAMII prend <%= taux %> % le jour
       où tu vends, et rien avant.

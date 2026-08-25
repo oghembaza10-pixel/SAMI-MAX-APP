@@ -111,6 +111,11 @@
     <nav class="vi-menu">
       <a href="/qg">QG</a>
       <a href="/academy/bibliotheque">Apprendre</a>
+      <!-- Deux publics, deux entrées. Le marchand reste sur la grille ; le
+           développeur, lui, ne cherche pas une solution à installer mais du
+           travail à prendre — sans ce lien, il ne trouve jamais la seule page
+           qui lui parle. -->
+      <a href="/academy/besoins">Le travail qui attend</a>
       <a href="/academy/construire" class="est-or">Créer avec SAMII</a>
     </nav>
   </div>
@@ -187,7 +192,19 @@
         <p>Développeur, agence, intégrateur : construis sur l'API de SAMII et pose ton
            travail dans cette vitrine. Les marchands y sont déjà. Entrer et publier ne
            coûtent rien — SAMII prend <%= taux %> % le jour où tu vends, et rien avant.</p>
+        <!-- Un chiffre vrai vaut mieux qu'une promesse : « des marchands t'attendent »
+             ne se vérifie pas, « 7 besoins ouverts » se clique. Et quand il n'y en a
+             aucun, on ne dit rien plutôt que d'annoncer un zéro. -->
+        <% if (besoinsOuverts) { %>
+          <p style="margin-top:-8px;">
+            <%= besoinsOuverts %> marchand<%= besoinsOuverts > 1 ? "s ont" : " a" %> déjà décrit
+            ce qu'il leur manque, avec un budget.
+          </p>
+        <% } %>
         <a href="/academy/construire">Créer avec SAMII →</a>
+        <% if (besoinsOuverts) { %>
+          <a href="/academy/besoins" style="background:transparent;border:1px solid var(--bord);color:var(--or);margin-left:8px;">Voir le travail qui attend →</a>
+        <% } %>
       </div>
     <% } %>
 

@@ -32,6 +32,7 @@ const bacASable = require("../services/bacASable");
 const apiPartenaire = require("../services/apiPartenaire");
 const apps = require("../services/apps");
 const academieService = require("../services/academie");
+const besoins = require("../services/besoins");
 const academie = require("../config/academie");
 const portees = require("../services/portees");
 const CONFIG = require("../config");
@@ -49,12 +50,18 @@ async function sansCasser(promesse, defaut) {
 router.get("/", async (req, res) => {
     const devId = req.session.userId;
     try {
-        const [bacs, mesApps, cles, acces, bilan] = await Promise.all([
+        const [bacs, mesApps, cles, acces, bilan, travaux, mesPropositions] = await Promise.all([
             sansCasser(bacASable.lister(devId), []),
             sansCasser(apps.listerDuDeveloppeur(devId), []),
             sansCasser(apiPartenaire.listerCles(req.session.workspaceId), []),
             sansCasser(apiPartenaire.listerAcces(req.session.workspaceId, 12), []),
             sansCasser(academieService.bilanVendeur(devId), { ventes: 0, brut: 0, net: 0, a_recevoir: 0 }),
+            // Le travail qui attend, sur le poste de travail lui-même. Un
+            // développeur qui vient chercher sa clé repart avec une raison de
+            // s'en servir — c'est exactement ce que les grands portails ne
+            // font pas : ils donnent la console, jamais le client.
+            sansCasser(besoins.lister({ limite: 6 }), []),
+            sansCasser(besoins.mesReponses(devId), []),
         ]);
 
         res.render("dev-espace", {
@@ -64,6 +71,8 @@ router.get("/", async (req, res) => {
             cles,
             acces,
             bilan,
+            travaux,
+            mesPropositions,
             domaines: portees.parDomaine(),
             baseUrl: CONFIG.APP_URL || `${req.protocol}://${req.get("host")}`,
             taux: Math.round(academie.TAUX_COMMISSION * 100),

@@ -24,6 +24,7 @@
 const db = require("./db");
 const { CARTES } = require("../config/cartes-catalog");
 const metiers = require("./metiers");
+const besoins = require("./besoins");
 
 // Les natures d'une carte de vitrine. L'ordre compte : à pertinence égale, une
 // solution qu'on peut installer tout de suite passe devant une prise de
@@ -32,6 +33,10 @@ const NATURES = {
     outil:       { id: "outil",       label: "Outil SAMII",   action: "Ouvrir",              rang: 0 },
     application: { id: "application", label: "Application",   action: "Installer",           rang: 1 },
     prestataire: { id: "prestataire", label: "Prestataire",   action: "Prendre contact",     rang: 2 },
+    // Les besoins ne s'adressent pas au marchand qui cherche une solution mais
+    // au développeur qui cherche du travail. Ils passent donc en dernier dans
+    // la vue « tout », et se consultent surtout par leur propre filtre.
+    besoin:      { id: "besoin",      label: "Besoin",        action: "Répondre",            rang: 3 },
 };
 
 // À quels métiers un outil SAMII parle vraiment. Tout ne sert pas à tout le
@@ -112,6 +117,29 @@ function carteDepuisApp(app) {
     };
 }
 
+function carteDepuisBesoin(b) {
+    const budget = b.budget_min && b.budget_max
+        ? `${Number(b.budget_min)}–${Number(b.budget_max)} ${b.devise}`
+        : (b.budget_max || b.budget_min ? `${Number(b.budget_max || b.budget_min)} ${b.devise}` : "Budget à discuter");
+    return {
+        nature: "besoin",
+        id: `besoin:${b.reference}`,
+        titre: b.titre,
+        description: b.description,
+        icone: "🎯",
+        // Le nombre de réponses est dit à tout le monde : zéro réponse est un
+        // argument (la place est libre), beaucoup de réponses prévient
+        // honnêtement qu'il faudra se démarquer.
+        auteur: `${budget} · ${b.reponses || 0} réponse${(b.reponses || 0) > 1 ? "s" : ""}`,
+        auteurType: "marchand",
+        lien: `/academy/besoin/${b.reference}`,
+        metiers: b.metier ? [b.metier] : null,
+        prix: null,
+        palier: null,
+        motsCles: "",
+    };
+}
+
 // Les applications tierces publiées. Une erreur de lecture ne doit pas vider
 // la vitrine : on renvoie une liste vide et les autres sources tiennent la
 // page. Une page à moitié pleine vaut mieux qu'une page en erreur.
@@ -159,11 +187,15 @@ function pertinence(carte, mots) {
 // Assemble la grille. `metier` est le filtre principal — celui du marchand ;
 // `nature` et `recherche` affinent.
 async function grille({ metier = "", nature = "", recherche = "" } = {}) {
-    const apps = await applicationsPubliees();
+    const [apps, demandes] = await Promise.all([
+        applicationsPubliees(),
+        besoins.lister({ limite: 60 }),
+    ]);
 
     let cartes = [
         ...CARTES.map(carteDepuisOutil),
         ...apps.map(carteDepuisApp),
+        ...demandes.map(carteDepuisBesoin),
     ];
 
     if (metier) {
@@ -216,4 +248,10 @@ async function nombrePrestataires() {
     return 0; // Les profils arrivent avec la prochaine pierre.
 }
 
-module.exports = { NATURES, grille, metiersGroupes, nombrePrestataires };
+// Combien de besoins attendent une réponse — pour parler aux développeurs
+// avec un chiffre vrai plutôt qu'avec une promesse.
+function nombreBesoins() {
+    return besoins.compterOuverts();
+}
+
+module.exports = { NATURES, grille, metiersGroupes, nombrePrestataires, nombreBesoins };

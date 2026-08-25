@@ -179,6 +179,50 @@ const BLOCS = [
         ],
     },
     {
+        // Les besoins publiés par les marchands, et les réponses des
+        // développeurs. C'est par eux que la place se remplit : une vitrine
+        // pleine de demandes attire plus un développeur qu'une vitrine pleine
+        // d'offres déjà faites — c'est du travail qui l'attend.
+        nom: "besoins des marchands",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS besoins (
+                id           BIGSERIAL PRIMARY KEY,
+                reference    TEXT UNIQUE NOT NULL,
+                auteur_id    TEXT NOT NULL,
+                workspace_id TEXT,
+                titre        TEXT NOT NULL,
+                description  TEXT NOT NULL DEFAULT '',
+                metier       TEXT,
+                budget_min   NUMERIC(12,2),
+                budget_max   NUMERIC(12,2),
+                devise       TEXT NOT NULL DEFAULT 'USD',
+                -- ouvert : visible et ouvert aux réponses
+                -- attribue : le marchand a choisi quelqu'un
+                -- clos : plus d'actualité
+                statut       TEXT NOT NULL DEFAULT 'ouvert',
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT now())`,
+            `CREATE INDEX IF NOT EXISTS idx_besoins_statut ON besoins (statut, created_at DESC)`,
+            `CREATE INDEX IF NOT EXISTS idx_besoins_metier ON besoins (metier) WHERE statut = 'ouvert'`,
+            `CREATE INDEX IF NOT EXISTS idx_besoins_auteur ON besoins (auteur_id)`,
+
+            `CREATE TABLE IF NOT EXISTS besoin_reponses (
+                id           BIGSERIAL PRIMARY KEY,
+                besoin_id    BIGINT NOT NULL,
+                auteur_id    TEXT NOT NULL,
+                message      TEXT NOT NULL,
+                prix         NUMERIC(12,2),
+                devise       TEXT NOT NULL DEFAULT 'USD',
+                delai_jours  INTEGER,
+                statut       TEXT NOT NULL DEFAULT 'proposee',
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+                -- Un développeur répond une fois par besoin : il modifie sa
+                -- proposition plutôt que d'en empiler cinq.
+                UNIQUE (besoin_id, auteur_id))`,
+            `CREATE INDEX IF NOT EXISTS idx_reponses_besoin ON besoin_reponses (besoin_id, created_at DESC)`,
+            `CREATE INDEX IF NOT EXISTS idx_reponses_auteur ON besoin_reponses (auteur_id)`,
+        ],
+    },
+    {
         nom: "portefeuille",
         sql: [
             `CREATE TABLE IF NOT EXISTS portefeuille_mouvements (
@@ -223,6 +267,7 @@ const A_VERROUILLER = [
     "api_cles", "webhooks_sortants", "api_journal",
     "academie_acceptations", "academie_transactions",
     "portefeuille_mouvements", "portefeuille_retraits",
+    "besoins", "besoin_reponses",
 ];
 
 async function preparer() {

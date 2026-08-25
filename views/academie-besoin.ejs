@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title><%= besoin.titre %> — L'Académie</title>
+  <link rel="stylesheet" href="/css/qg-style.css">
+  <style>
+    :root {
+      --enc:#07070a; --pan:#101013; --pan2:#16161a; --or:#c9a961; --or-clair:#f0d99b;
+      --ivoire:#f3f1e9; --gris:#8b8d95; --faible:#6c6e77; --bord:rgba(201,169,97,.18);
+      --cyan:#5fd4ff; --vert:#3ddc84;
+    }
+    body { background:var(--enc); color:var(--ivoire); }
+    .bn { max-width:860px; margin:0 auto; padding:32px 20px 80px; }
+    .bn-haut { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:28px; }
+    .bn-marque { font-family:Georgia,serif; font-size:10px; letter-spacing:.46em; text-indent:.46em; color:var(--or); text-transform:uppercase; }
+    .bn-menu { display:flex; gap:8px; flex-wrap:wrap; }
+    .bn-menu a { padding:8px 14px; border-radius:4px; border:1px solid rgba(255,255,255,.09); color:var(--gris); text-decoration:none; font-size:.78rem; }
+    .bn-menu a:hover { border-color:var(--bord); color:var(--ivoire); }
+
+    .bn-msg { padding:13px 16px; border-radius:6px; margin-bottom:22px; font-size:.85rem; line-height:1.6;
+              background:rgba(61,220,132,.08); border:1px solid rgba(61,220,132,.28); color:#9fe7bd; }
+    .bn-err { padding:13px 16px; border-radius:6px; margin-bottom:22px; font-size:.85rem; line-height:1.6;
+              background:rgba(229,85,85,.08); border:1px solid rgba(229,85,85,.3); color:#f0a8a8; }
+
+    .bn-etiqs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+    .bn-etiq { font-family:var(--font-mono,monospace); font-size:.62rem; letter-spacing:.11em; text-transform:uppercase;
+               padding:4px 10px; border-radius:20px; border:1px solid rgba(255,255,255,.1); color:var(--faible); }
+    .bn-etiq--budget { color:var(--or); border-color:var(--bord); }
+    .bn-etiq--ouvert { color:var(--vert); border-color:rgba(61,220,132,.3); }
+    .bn-etiq--attribue { color:var(--cyan); border-color:rgba(95,212,255,.28); }
+    .bn-etiq--clos { color:var(--faible); }
+
+    h1 { font-family:"Didot","Bodoni MT",Georgia,serif; font-weight:400; font-size:clamp(1.5rem,3.6vw,2rem);
+         margin:0 0 16px; line-height:1.3; }
+    .bn-texte { font-size:.92rem; line-height:1.8; color:#c8cbd2; white-space:pre-wrap;
+                padding:22px 22px; border:1px solid rgba(255,255,255,.08); border-radius:8px;
+                background:linear-gradient(180deg,var(--pan2),var(--pan)); margin-bottom:16px; }
+    .bn-ref { font-family:var(--font-mono,monospace); font-size:.72rem; color:var(--faible); margin-bottom:36px; }
+
+    .bn-bloc { margin-bottom:40px; }
+    .bn-bloc > h2 { font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gris); font-weight:600; margin:0 0 6px; }
+    .bn-bloc > .bn-sous { color:var(--faible); font-size:.8rem; line-height:1.65; margin:0 0 18px; max-width:64ch; }
+
+    .bn-rep { padding:19px 20px; border:1px solid rgba(255,255,255,.08); border-radius:8px;
+              background:rgba(255,255,255,.02); margin-bottom:12px; }
+    .bn-rep__haut { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+    .bn-rep__qui { font-size:.85rem; font-weight:650; }
+    .bn-rep__chiffres { font-family:var(--font-mono,monospace); font-size:.76rem; color:var(--or); }
+    .bn-rep__msg { font-size:.85rem; line-height:1.7; color:var(--gris); white-space:pre-wrap; margin:0; }
+    .bn-rep__quand { font-family:var(--font-mono,monospace); font-size:.68rem; color:var(--faible); margin-top:10px; }
+
+    .bn-form { border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:24px 22px;
+               background:linear-gradient(180deg,var(--pan2),var(--pan)); }
+    .bn-form label { display:block; font-size:.74rem; letter-spacing:.06em; text-transform:uppercase;
+                     color:var(--faible); margin:0 0 6px; }
+    .bn-form input, .bn-form textarea, .bn-form select {
+      width:100%; padding:12px 14px; border-radius:4px; border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.03); color:var(--ivoire); font-size:.86rem; font-family:inherit; margin-bottom:16px;
+    }
+    .bn-form textarea { min-height:130px; resize:vertical; line-height:1.6; }
+    .bn-form input::placeholder, .bn-form textarea::placeholder { color:var(--faible); }
+    .bn-ligne { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; }
+    .bn-aide { font-size:.75rem; color:var(--faible); line-height:1.65; margin:-8px 0 18px; }
+
+    .bn-vide { padding:34px 24px; border:1px dashed var(--bord); border-radius:8px;
+               background:rgba(201,169,97,.03); text-align:center; color:var(--gris); font-size:.86rem; line-height:1.7; }
+    .bn-vide a { color:var(--or); }
+
+    .btn { display:inline-block; padding:12px 24px; border:none; border-radius:4px; background:var(--or); color:#07070a;
+           font-size:.75rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer;
+           text-decoration:none; font-family:inherit; }
+    .btn:hover { background:var(--or-clair); }
+    .btn--fin { background:transparent; border:1px solid rgba(255,255,255,.14); color:var(--gris); }
+    .btn--fin:hover { background:rgba(255,255,255,.05); color:var(--ivoire); }
+    .bn-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  </style>
+</head>
+<body data-theme="og">
+<div class="bn">
+
+  <div class="bn-haut">
+    <div class="bn-marque">O G &nbsp; T E C H N O L O G Y</div>
+    <nav class="bn-menu">
+      <a href="/academy/besoins">← Tous les besoins</a>
+      <a href="/academy">La vitrine</a>
+      <a href="/academy/espace">Mon espace</a>
+    </nav>
+  </div>
+
+  <% if (message) { %><div class="bn-msg"><%= message %></div><% } %>
+  <% if (erreur) { %><div class="bn-err"><%= erreur %></div><% } %>
+
+  <%
+    const bas = besoin.budget_min ? Number(besoin.budget_min) : null;
+    const haut = besoin.budget_max ? Number(besoin.budget_max) : null;
+    const budget = (bas && haut) ? (bas + "–" + haut + " " + besoin.devise)
+                 : (haut || bas ? (haut || bas) + " " + besoin.devise : "Budget à discuter");
+    const ouvert = besoin.statut === "ouvert";
+  %>
+
+  <div class="bn-etiqs">
+    <span class="bn-etiq bn-etiq--<%= besoin.statut %>"><%= besoin.statut %></span>
+    <span class="bn-etiq bn-etiq--budget"><%= budget %></span>
+    <% if (metierLabel) { %><span class="bn-etiq"><%= metierLabel %></span><% } %>
+    <span class="bn-etiq"><%= nombreReponses %> réponse<%= nombreReponses > 1 ? "s" : "" %></span>
+  </div>
+
+  <h1><%= besoin.titre %></h1>
+  <div class="bn-texte"><%= besoin.description %></div>
+  <p class="bn-ref">
+    <%= besoin.reference %> · publié le <%= new Date(besoin.created_at).toLocaleDateString("fr-FR") %>
+  </p>
+
+  <% if (estAuteur) { %>
+    <!-- ══ CÔTÉ MARCHAND ══════════════════════════════════════════════════
+         Il voit tout : c'est son besoin, ce sont ses propositions. -->
+    <div class="bn-bloc">
+      <h2>Les propositions reçues</h2>
+      <p class="bn-sous">
+        Personne d'autre que toi ne voit ces prix. Prends le temps de comparer : le moins cher
+        n'est pas toujours celui qui a compris ton problème.
+      </p>
+
+      <% reponses.forEach(function (r) { %>
+        <div class="bn-rep">
+          <div class="bn-rep__haut">
+            <span class="bn-rep__qui"><%= r.auteur_nom %></span>
+            <span class="bn-rep__chiffres">
+              <%= r.prix ? Number(r.prix) + " " + r.devise : "Prix à discuter" %><%
+                 %><%= r.delai_jours ? " · " + r.delai_jours + " jour" + (r.delai_jours > 1 ? "s" : "") : "" %>
+            </span>
+          </div>
+          <p class="bn-rep__msg"><%= r.message %></p>
+          <div class="bn-rep__quand"><%= new Date(r.created_at).toLocaleString("fr-FR") %></div>
+        </div>
+      <% }); %>
+
+      <% if (!reponses.length) { %>
+        <div class="bn-vide">
+          Personne n'a encore répondu. C'est normal les premiers jours — les développeurs
+          regardent la liste avant de se lancer.
+        </div>
+      <% } %>
+    </div>
+
+    <% if (ouvert) { %>
+      <div class="bn-bloc">
+        <h2>Fermer ce besoin</h2>
+        <p class="bn-sous">
+          Dès que c'est réglé, ferme-le. Un besoin déjà traité qui reste ouvert fait travailler
+          des gens pour rien — et c'est ce qui vide une place comme celle-ci.
+        </p>
+        <div class="bn-actions">
+          <form method="POST" action="/academy/besoin/<%= besoin.reference %>/cloturer">
+            <input type="hidden" name="statut" value="attribue">
+            <button class="btn btn--fin" type="submit">J'ai choisi quelqu'un</button>
+          </form>
+          <form method="POST" action="/academy/besoin/<%= besoin.reference %>/cloturer"
+                onsubmit="return confirm('Fermer ce besoin ?');">
+            <input type="hidden" name="statut" value="clos">
+            <button class="btn btn--fin" type="submit">Ce n'est plus d'actualité</button>
+          </form>
+        </div>
+      </div>
+    <% } %>
+
+  <% } else { %>
+    <!-- ══ CÔTÉ DÉVELOPPEUR ═══════════════════════════════════════════════
+         Il voit sa propre proposition, jamais celles des autres. Voir les
+         prix des autres ne l'aide pas à mieux travailler : ça l'aide à
+         proposer un peu moins que le dernier, et la place devient une
+         enchère inversée où le travail sérieux ne vient plus. -->
+    <div class="bn-bloc">
+      <h2><%= aRepondu ? "Ma proposition" : "Répondre à ce besoin" %></h2>
+      <p class="bn-sous">
+        <% if (!ouvert) { %>
+          Ce besoin n'accepte plus de réponses.
+        <% } else if (aRepondu) { %>
+          Tu peux la modifier tant que le besoin est ouvert — elle remplacera la précédente.
+          Le marchand voit toujours la dernière version.
+        <% } else { %>
+          Dis comment tu t'y prendrais, en quelques phrases. Ton prix et ton délai ne sont vus
+          que par le marchand. Rien n'est dû tant qu'il n'a pas choisi — et SAMII ne prend ses
+          <%= taux %> % que le jour où tu es payé.
+        <% } %>
+      </p>
+
+      <% reponses.forEach(function (r) { %>
+        <div class="bn-rep">
+          <div class="bn-rep__haut">
+            <span class="bn-rep__qui">Ta proposition</span>
+            <span class="bn-rep__chiffres">
+              <%= r.prix ? Number(r.prix) + " " + r.devise : "Prix à discuter" %><%
+                 %><%= r.delai_jours ? " · " + r.delai_jours + " jour" + (r.delai_jours > 1 ? "s" : "") : "" %>
+            </span>
+          </div>
+          <p class="bn-rep__msg"><%= r.message %></p>
+          <div class="bn-rep__quand">Envoyée le <%= new Date(r.created_at).toLocaleString("fr-FR") %></div>
+        </div>
+      <% }); %>
+
+      <% if (ouvert) { %>
+        <% if (!connecte) { %>
+          <div class="bn-vide">
+            Connecte-toi pour répondre à ce besoin.
+            <a href="/login">Se connecter →</a>
+          </div>
+        <% } else { %>
+          <form class="bn-form" method="POST" action="/academy/besoin/<%= besoin.reference %>/repondre"
+                style="margin-top:<%= aRepondu ? "16px" : "0" %>;">
+            <label for="message">Comment tu t'y prendrais</label>
+            <textarea id="message" name="message" maxlength="2000" required
+                      placeholder="Ce que tu as compris du problème, comment tu le résous, ce que tu as déjà fait de semblable."><%= reponses[0] ? reponses[0].message : "" %></textarea>
+            <p class="bn-aide">Le marchand ne te connaît pas : c'est ce texte qui le décide, pas ton prix.</p>
+
+            <div class="bn-ligne">
+              <div>
+                <label for="prix">Ton prix</label>
+                <input id="prix" name="prix" type="text" inputmode="decimal" placeholder="Facultatif"
+                       value="<%= reponses[0] && reponses[0].prix ? Number(reponses[0].prix) : "" %>">
+              </div>
+              <div>
+                <label for="delai_jours">Délai (jours)</label>
+                <input id="delai_jours" name="delai_jours" type="text" inputmode="numeric" placeholder="Facultatif"
+                       value="<%= reponses[0] && reponses[0].delai_jours ? reponses[0].delai_jours : "" %>">
+              </div>
+              <div>
+                <label for="devise">Devise</label>
+                <select id="devise" name="devise">
+                  <% ["USD","EUR","DZD","MAD","XOF","NGN"].forEach(function (d) {
+                       const choisie = (reponses[0] && reponses[0].devise) || besoin.devise; %>
+                    <option value="<%= d %>" <%= choisie === d ? "selected" : "" %>><%= d %></option>
+                  <% }); %>
+                </select>
+              </div>
+            </div>
+
+            <button class="btn" type="submit"><%= aRepondu ? "Modifier ma proposition" : "Envoyer ma proposition" %></button>
+          </form>
+        <% } %>
+      <% } %>
+    </div>
+  <% } %>
+
+</div>
+</body>
+</html>
