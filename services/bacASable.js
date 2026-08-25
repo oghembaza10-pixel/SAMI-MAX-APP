@@ -90,18 +90,27 @@ function identifiant() {
 
 // ── Création ─────────────────────────────────────────────────────────────
 
+// LE PROPRIÉTAIRE D'UN ESPACE, C'EST SON EMAIL. Pas son identifiant. Toute la
+// base est bâtie comme ça — workspaces.owner et workspaces.owner_email portent
+// la même adresse (voir services/workspaceService.js), et c'est sur elle que
+// joignent notify.js, gradeService.js et l'abonnement. Un bac à sable créé
+// avec un UUID dans `owner` serait invisible à son propre auteur, et l'INSERT
+// échouerait de toute façon : owner_email est NOT NULL. C'est exactement ce
+// qui s'est passé en production.
+
 // Un développeur n'a qu'un bac à sable par décor : le retrouver plutôt que
 // d'en empiler dix au fil des essais.
-async function existant(developpeurId, decor) {
+async function existant(email, decor) {
     const rows = await db.query(
         `SELECT id, nom, metier FROM workspaces
-          WHERE owner = $1 AND est_bac_a_sable = TRUE AND bac_decor = $2 LIMIT 1`,
-        [String(developpeurId), decor],
+          WHERE (owner = $1 OR owner_email = $1) AND est_bac_a_sable = TRUE AND bac_decor = $2 LIMIT 1`,
+        [String(email), decor],
     );
     return rows[0] || null;
 }
 
-async function lister(developpeurId) {
+async function lister(email) {
+    if (!email) return [];
     try {
         return await db.query(
             // Pas de created_at ici : la colonne n'existe pas sur tous les
@@ -109,8 +118,8 @@ async function lister(developpeurId) {
             // ce qu'on affiche évite de dépendre d'un schéma qu'on ne
             // maîtrise pas entièrement.
             `SELECT id, nom, metier, bac_decor FROM workspaces
-              WHERE owner = $1 AND est_bac_a_sable = TRUE ORDER BY id`,
-            [String(developpeurId)],
+              WHERE (owner = $1 OR owner_email = $1) AND est_bac_a_sable = TRUE ORDER BY id`,
+            [String(email)],
         );
     } catch (err) {
         console.error("❌ bacASable.lister :", err.message);
@@ -118,20 +127,20 @@ async function lister(developpeurId) {
     }
 }
 
-async function creer(developpeurId, decorId = "boutique") {
+async function creer(email, decorId = "boutique") {
     const decor = DECORS[decorId];
     if (!decor) throw new Error("Décor inconnu.");
-    if (!developpeurId) throw new Error("Développeur inconnu.");
+    if (!email) throw new Error("Reconnecte-toi : ta session ne porte pas d'adresse email.");
 
-    const deja = await existant(developpeurId, decorId);
+    const deja = await existant(email, decorId);
     if (deja) return { workspaceId: deja.id, existant: true };
 
     const workspaceId = identifiant();
     await db.query(
-        `INSERT INTO workspaces (id, nom, owner, metier, pays, devise, palier_abonnement,
+        `INSERT INTO workspaces (id, nom, owner, owner_email, metier, pays, devise, palier_abonnement,
                                  est_bac_a_sable, bac_decor)
-         VALUES ($1, $2, $3, $4, 'DZ', 'DZD', 'pro', TRUE, $5)`,
-        [workspaceId, decor.nom, String(developpeurId), decor.metier, decorId],
+         VALUES ($1, $2, $3, $3, $4, 'DZ', 'DZD', 'pro', TRUE, $5)`,
+        [workspaceId, decor.nom, String(email), decor.metier, decorId],
     );
 
     await remplir(workspaceId, decorId);
@@ -181,16 +190,16 @@ async function remplir(workspaceId, decorId) {
 
 // Vider sans supprimer l'espace : le développeur garde sa clé et son URL de
 // webhook, il ne reconfigure rien.
-async function reinitialiser(developpeurId, workspaceId) {
-    const bac = await verifierProprietaire(developpeurId, workspaceId);
+async function reinitialiser(email, workspaceId) {
+    const bac = await verifierProprietaire(email, workspaceId);
     await db.query(`DELETE FROM commandes WHERE workspace_id = $1`, [workspaceId]).catch(() => {});
     await db.query(`DELETE FROM rendez_vous WHERE workspace_id = $1`, [workspaceId]).catch(() => {});
     await remplir(workspaceId, bac.bac_decor);
     return true;
 }
 
-async function supprimer(developpeurId, workspaceId) {
-    await verifierProprietaire(developpeurId, workspaceId);
+async function supprimer(email, workspaceId) {
+    await verifierProprietaire(email, workspaceId);
     await db.query(`DELETE FROM commandes WHERE workspace_id = $1`, [workspaceId]).catch(() => {});
     await db.query(`DELETE FROM rendez_vous WHERE workspace_id = $1`, [workspaceId]).catch(() => {});
     await db.query(`UPDATE api_cles SET actif = FALSE WHERE workspace_id = $1`, [workspaceId]).catch(() => {});
@@ -201,11 +210,12 @@ async function supprimer(developpeurId, workspaceId) {
 // Toute opération passe par ici. Sans cette vérification, un identifiant
 // d'espace deviné suffirait à vider les commandes d'un vrai marchand — la
 // double condition (propriétaire ET bac à sable) rend ça impossible.
-async function verifierProprietaire(developpeurId, workspaceId) {
+async function verifierProprietaire(email, workspaceId) {
+    if (!email) throw new Error("Bac à sable introuvable.");
     const rows = await db.query(
         `SELECT id, bac_decor FROM workspaces
-          WHERE id = $1 AND owner = $2 AND est_bac_a_sable = TRUE`,
-        [workspaceId, String(developpeurId)],
+          WHERE id = $1 AND (owner = $2 OR owner_email = $2) AND est_bac_a_sable = TRUE`,
+        [workspaceId, String(email)],
     );
     if (!rows[0]) throw new Error("Bac à sable introuvable.");
     return rows[0];
@@ -215,8 +225,8 @@ async function verifierProprietaire(developpeurId, workspaceId) {
 // Créée à la demande, avec toutes les portées : sur un décor sans conséquence,
 // borner les droits n'apprend rien au développeur et lui fait perdre du temps.
 // Ce sont les clés de production qui se limitent.
-async function creerCle(developpeurId, workspaceId) {
-    await verifierProprietaire(developpeurId, workspaceId);
+async function creerCle(email, workspaceId) {
+    await verifierProprietaire(email, workspaceId);
     const portees = require("./portees").IDS;
     return apiPartenaire.creerCle(workspaceId, "Clé du bac à sable", portees);
 }

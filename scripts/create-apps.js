@@ -19,7 +19,7 @@ const db = require("../services/db");
             CREATE TABLE IF NOT EXISTS apps (
                 id                BIGSERIAL PRIMARY KEY,
                 slug              TEXT NOT NULL UNIQUE,
-                developpeur_id    BIGINT NOT NULL,
+                developpeur_id    TEXT NOT NULL,   -- UUID : voir services/schema.js
                 nom               TEXT NOT NULL,
                 description       TEXT NOT NULL DEFAULT '',
                 url_site          TEXT,

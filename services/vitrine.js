@@ -149,7 +149,11 @@ async function applicationsPubliees() {
             `SELECT a.slug, a.nom, a.description,
                     COALESCE(NULLIF(TRIM(CONCAT(u.prenom, ' ', u.nom)), ''), 'Développeur') AS developpeur_nom
                FROM apps a
-               LEFT JOIN utilisateurs u ON u.id = a.developpeur_id
+               -- ::text des deux côtés : utilisateurs.id est un uuid,
+               -- apps.developpeur_id un texte. Sans la conversion, PostgreSQL
+               -- refuse la comparaison et c'est TOUTE la liste des
+               -- applications qui disparaît de la vitrine.
+               LEFT JOIN utilisateurs u ON u.id::text = a.developpeur_id::text
               WHERE a.statut = 'publiee'
               ORDER BY a.created_at DESC LIMIT 60`,
         );

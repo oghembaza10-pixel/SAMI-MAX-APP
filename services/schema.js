@@ -17,8 +17,25 @@
 // touchée, aucune colonne supprimée, aucun type modifié.
 //
 // CE QU'ON N'AUTOMATISE PAS. Rien qui puisse détruire : pas de DROP, pas de
-// ALTER de type, pas de renommage. Une migration destructrice reste un geste
-// humain, lancé en connaissance de cause. Ce fichier ne sait qu'ajouter.
+// renommage, pas de rétrécissement de type. Une migration destructrice reste un
+// geste humain, lancé en connaissance de cause.
+//
+// L'EXCEPTION, ET POURQUOI ELLE EN EST UNE. Un ÉLARGISSEMENT de type
+// (bigint → text) ne perd rien : toute valeur entière s'écrit en texte. On
+// s'autorise ces migrations-là, une par une, listées et conditionnées à l'état
+// réel de la base. La raison est arrivée en production : `apps.developpeur_id`
+// était déclaré BIGINT alors que les identifiants d'utilisateur sont des UUID.
+// Résultat, /apps répondait « invalid input syntax for type bigint » à tout le
+// monde — la table n'avait jamais pu servir. CREATE TABLE IF NOT EXISTS ne
+// corrige pas ça : la table existe déjà, donc l'instruction ne fait rien, et
+// l'erreur survit à tous les déploiements. Sans ALTER, la seule issue était
+// qu'un client clique et se cogne.
+//
+// ET ON VÉRIFIE CE QU'ON CROIT. Ce fichier a été écrit de mémoire, et la
+// mémoire s'est déjà trompée deux fois (une colonne inventée, un type faux).
+// `ATTENDUS` compare donc, à chaque démarrage, ce que le code suppose avec ce
+// que la base contient vraiment. Une divergence devient une ligne de journal au
+// démarrage au lieu d'une page morte découverte par un client.
 //
 // SI ÇA ÉCHOUE, L'APPLICATION DÉMARRE QUAND MÊME. Une base momentanément
 // injoignable ne doit pas empêcher le site de répondre : les pages qui ne
@@ -37,7 +54,12 @@ const BLOCS = [
             `CREATE TABLE IF NOT EXISTS apps (
                 id                BIGSERIAL PRIMARY KEY,
                 slug              TEXT NOT NULL UNIQUE,
-                developpeur_id    BIGINT NOT NULL,
+                -- TEXT et non BIGINT : un identifiant d'utilisateur est un
+                -- UUID dans cette base (6e1f196b-a0cd-…). Déclaré en BIGINT,
+                -- ce champ faisait échouer TOUTE requête sur /apps avec
+                -- « invalid input syntax for type bigint » — la table n'a
+                -- jamais pu servir depuis sa création.
+                developpeur_id    TEXT NOT NULL,
                 nom               TEXT NOT NULL,
                 description       TEXT NOT NULL DEFAULT '',
                 url_site          TEXT,
@@ -258,6 +280,37 @@ const BLOCS = [
     },
 ];
 
+// ── Les élargissements de type ───────────────────────────────────────────
+// Uniquement des passages vers un type plus large, et jamais l'inverse. Chacun
+// est conditionné au type réellement trouvé : une fois passé, il ne se rejoue
+// pas. `USING` est obligatoire pour que PostgreSQL accepte de convertir les
+// lignes déjà présentes.
+const ELARGISSEMENTS = [
+    {
+        table: "apps", colonne: "developpeur_id",
+        depuis: ["bigint", "integer"], vers: "TEXT",
+        pourquoi: "les identifiants d'utilisateur sont des UUID, pas des entiers",
+    },
+];
+
+// Ce que le code suppose de la base. Volontairement court : on n'y met que les
+// colonnes dont une erreur de type casse une page entière — pas un inventaire.
+const ATTENDUS = [
+    { table: "apps",             colonne: "developpeur_id", type: "text" },
+    { table: "besoins",          colonne: "auteur_id",      type: "text" },
+    { table: "besoin_reponses",  colonne: "auteur_id",      type: "text" },
+    { table: "workspaces",       colonne: "owner_email",    type: "text" },
+];
+
+async function typeDe(table, colonne) {
+    const rows = await db.query(
+        `SELECT data_type FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = $1 AND column_name = $2`,
+        [table, colonne],
+    );
+    return rows[0]?.data_type || null;
+}
+
 // Ces tables vivent dans le schéma public, exposé par PostgREST avec la clé
 // publiable. Sans RLS, n'importe qui lirait les soldes, les clés et le chiffre
 // d'affaires de chacun. On active le refus par défaut à chaque démarrage : une
@@ -286,6 +339,36 @@ async function preparer() {
         }
     }
 
+    // Les élargissements passent après les créations : une table qui vient
+    // d'être créée a déjà le bon type, la condition ci-dessous ne fait rien.
+    for (const m of ELARGISSEMENTS) {
+        try {
+            const actuel = await typeDe(m.table, m.colonne);
+            if (!actuel || !m.depuis.includes(actuel)) continue;
+            await db.query(
+                `ALTER TABLE public.${m.table}
+                 ALTER COLUMN ${m.colonne} TYPE ${m.vers} USING ${m.colonne}::${m.vers}`,
+            );
+            console.log(`🔧 ${m.table}.${m.colonne} : ${actuel} → ${m.vers.toLowerCase()} (${m.pourquoi}).`);
+        } catch (err) {
+            echecs++;
+            console.error(`❌ Élargissement (${m.table}.${m.colonne}) : ${err.message}`);
+        }
+    }
+
+    // La vérification ne corrige rien : elle dit tout haut ce qui ne colle pas,
+    // au démarrage, plutôt que de laisser un client le découvrir en cliquant.
+    for (const a of ATTENDUS) {
+        try {
+            const actuel = await typeDe(a.table, a.colonne);
+            if (actuel === null) {
+                console.warn(`⚠️ Schéma : ${a.table}.${a.colonne} est absente — le code compte dessus.`);
+            } else if (actuel !== a.type) {
+                console.warn(`⚠️ Schéma : ${a.table}.${a.colonne} est en « ${actuel} », le code attend « ${a.type} ».`);
+            }
+        } catch { /* base momentanément injoignable : déjà signalé plus haut */ }
+    }
+
     for (const table of A_VERROUILLER) {
         try {
             await db.query(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY`);
@@ -304,4 +387,4 @@ async function preparer() {
     return { creees, echecs };
 }
 
-module.exports = { preparer, BLOCS, A_VERROUILLER };
+module.exports = { preparer, BLOCS, A_VERROUILLER, ELARGISSEMENTS, ATTENDUS };

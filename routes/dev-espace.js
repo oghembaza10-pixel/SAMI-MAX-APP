@@ -49,9 +49,15 @@ async function sansCasser(promesse, defaut) {
 
 router.get("/", async (req, res) => {
     const devId = req.session.userId;
+    // Deux clés différentes, et ce n'est pas un oubli : un ESPACE appartient à
+    // une adresse email (workspaces.owner / owner_email, comme partout ailleurs
+    // dans cette base), alors qu'une APPLICATION et un contrat appartiennent à
+    // un identifiant d'utilisateur. Mélanger les deux, c'est créer un bac à
+    // sable que son propre auteur ne retrouve jamais.
+    const devEmail = req.session.email;
     try {
         const [bacs, mesApps, cles, acces, bilan, travaux, mesPropositions] = await Promise.all([
-            sansCasser(bacASable.lister(devId), []),
+            sansCasser(bacASable.lister(devEmail), []),
             sansCasser(apps.listerDuDeveloppeur(devId), []),
             sansCasser(apiPartenaire.listerCles(req.session.workspaceId), []),
             sansCasser(apiPartenaire.listerAcces(req.session.workspaceId, 12), []),
@@ -92,7 +98,7 @@ router.get("/", async (req, res) => {
 
 router.post("/bac", async (req, res) => {
     try {
-        const { workspaceId, existant } = await bacASable.creer(req.session.userId, req.body.decor);
+        const { workspaceId, existant } = await bacASable.creer(req.session.email, req.body.decor);
         return res.redirect(`/academy/espace?m=${encodeURIComponent(
             existant ? `Bac à sable déjà créé : ${workspaceId}` : `Bac à sable prêt : ${workspaceId}`)}`);
     } catch (err) {
@@ -102,7 +108,7 @@ router.post("/bac", async (req, res) => {
 
 router.post("/bac/:id/reinitialiser", async (req, res) => {
     try {
-        await bacASable.reinitialiser(req.session.userId, req.params.id);
+        await bacASable.reinitialiser(req.session.email, req.params.id);
         return res.redirect("/academy/espace?m=" + encodeURIComponent("Bac à sable remis à neuf."));
     } catch (err) {
         return res.redirect("/academy/espace?m=" + encodeURIComponent(err.message));
@@ -111,7 +117,7 @@ router.post("/bac/:id/reinitialiser", async (req, res) => {
 
 router.post("/bac/:id/supprimer", async (req, res) => {
     try {
-        await bacASable.supprimer(req.session.userId, req.params.id);
+        await bacASable.supprimer(req.session.email, req.params.id);
         return res.redirect("/academy/espace?m=" + encodeURIComponent("Bac à sable supprimé."));
     } catch (err) {
         return res.redirect("/academy/espace?m=" + encodeURIComponent(err.message));
@@ -122,7 +128,7 @@ router.post("/bac/:id/supprimer", async (req, res) => {
 // nulle part en clair : perdue, il faut en refaire une.
 router.post("/bac/:id/cle", async (req, res) => {
     try {
-        const cle = await bacASable.creerCle(req.session.userId, req.params.id);
+        const cle = await bacASable.creerCle(req.session.email, req.params.id);
         return res.redirect(`/academy/espace?cle=${encodeURIComponent(cle)}&m=${encodeURIComponent("Clé d'essai créée — copie-la, elle ne sera plus affichée.")}`);
     } catch (err) {
         return res.redirect("/academy/espace?m=" + encodeURIComponent(err.message));
