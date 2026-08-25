@@ -1625,15 +1625,6 @@
             align-items: center;
             gap: 11px;
         }
-        /* Ce qui n'existe pas encore est écrit, pas caché : un client qui
-           découvre un manque après avoir payé ne revient jamais. */
-        .tarifs-pied__bientot {
-            font-family: var(--font-mono, monospace);
-            font-size: .68rem;
-            letter-spacing: .04em;
-            color: var(--text-dim);
-            opacity: .75;
-        }
         /* Vraie pour les quatre paliers, donc écrite une seule fois sous la
            grille plutôt que répétée dans chaque colonne. */
         .tarifs-pied__assistance {
@@ -1719,96 +1710,7 @@
             background: var(--gold-soft) !important;
         }
 
-        /* SOON */
-
-        .soon-section {
-            max-width: 1180px;
-            margin: 35px auto 0;
-            padding: 0 16px;
-        }
-
-        .soon-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 11px;
-        }
-
-        @media (min-width: 640px) {
-            .soon-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        .s-card {
-            position: relative;
-            overflow: hidden;
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(255,255,255,.015),
-                    rgba(255,255,255,.005)
-                ),
-                rgba(255,255,255,.008);
-            border: 1px solid rgba(255,255,255,.055);
-            border-radius: 13px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            opacity: .62;
-            box-shadow:
-                0 10px 25px rgba(0,0,0,.13),
-                inset 0 1px 0 rgba(255,255,255,.02);
-            transition:
-                opacity .3s ease,
-                border-color .3s ease,
-                box-shadow .3s ease,
-                transform .3s ease;
-        }
-
-        .s-card:hover {
-            opacity: .9;
-            transform: translateY(-2px);
-        }
-
-        .s-card__icon {
-            position: relative;
-            z-index: 1;
-            width: 35px;
-            height: 35px;
-            border-radius: 9px;
-            background: rgba(255,255,255,.035);
-            color: var(--text-dim);
-            border: 1px solid rgba(255,255,255,.045);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: .96rem;
-            flex-shrink: 0;
-        }
-
-        .s-card__name {
-            position: relative;
-            z-index: 1;
-            font-size: .77rem;
-            font-weight: 700;
-            color: var(--text-muted);
-        }
-
-        .s-card__desc {
-            position: relative;
-            z-index: 1;
-            font-size: .63rem;
-            color: var(--text-dim);
-        }
-
-        .s-lock {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: .76rem;
-            color: var(--text-faint);
-        }
+        /* BANDEAU DE CROISSANCE */
 
         .soon-banner {
             position: relative;
@@ -3164,7 +3066,6 @@
                 <a href="#auth" class="btn-primary" data-i18n="tarifs.cta">Commencer gratuitement →</a>
                 <span class="tarifs-pied__assistance" data-i18n="tarifs.assistance">Assistance 24 h/24, 7 j/7 sur tous les paliers — questions, réglages, intégrations.</span>
                 <span class="tarifs-pied__note" data-i18n="tarifs.note">Affiché en dollars, payé dans votre monnaie — Edahabia, CIB, CCP ou carte.</span>
-                <span class="tarifs-pied__bientot" data-i18n="tarifs.bientot">🔜 En construction : logistique et livraison mondiale.</span>
             </div>
         </div>
     </section>
@@ -3260,35 +3161,6 @@
             <div class="dev-cta">
                 <a href="/api-docs" class="btn-primary" target="_blank" rel="noopener" data-i18n="dev.cta">Lire la documentation →</a>
                 <span class="dev-cta__note" data-i18n="dev.note">Documentation publique, sans compte.</span>
-            </div>
-        </div>
-    </section>
-
-    <section class="soon-section">
-        <div class="section-head">
-            <span class="section-head__icon">🔒</span>
-            <span class="section-head__title" data-i18n="soon.title">Bientôt disponible</span>
-        </div>
-        <div class="soon-grid">
-            <div class="s-card">
-                <div class="s-card__icon">🌍</div>
-                <div><div class="s-card__name" data-i18n="soon.reseau.name">Réseau Mondial</div><div class="s-card__desc" data-i18n="soon.reseau.desc">Connectez-vous</div></div>
-                <span class="s-lock">🔒</span>
-            </div>
-            <div class="s-card">
-                <div class="s-card__icon">🚚</div>
-                <div><div class="s-card__name" data-i18n="soon.logistique.name">Logistique</div><div class="s-card__desc" data-i18n="soon.logistique.desc">Livraison & suivi</div></div>
-                <span class="s-lock">🔒</span>
-            </div>
-            <div class="s-card">
-                <div class="s-card__icon">💳</div>
-                <div><div class="s-card__name" data-i18n="soon.finance.name">Finance</div><div class="s-card__desc" data-i18n="soon.finance.desc">Paiements & compta</div></div>
-                <span class="s-lock">🔒</span>
-            </div>
-            <div class="s-card">
-                <div class="s-card__icon">🔌</div>
-                <div><div class="s-card__name" data-i18n="soon.api.name">API & Intégrations</div><div class="s-card__desc" data-i18n="soon.api.desc">Connecte tout</div></div>
-                <span class="s-lock">🔒</span>
             </div>
         </div>
     </section>
@@ -3587,7 +3459,6 @@
                 'tarifs.cta': "Commencer gratuitement →",
                 'tarifs.assistance': "Assistance 24 h/24, 7 j/7 sur tous les paliers — questions, réglages, intégrations.",
                 'tarifs.note': "Affiché en dollars, payé dans votre monnaie — Edahabia, CIB, CCP ou carte.",
-                'tarifs.bientot': "🔜 En construction : logistique et livraison mondiale.",
                 'partenariat.cat.agence': 'Agence / Intégrateur',
                 'proof.connected': 'Connecté à Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': 'Bientôt — TikTok, LinkedIn',
@@ -3609,11 +3480,6 @@
                 'modules.emploi.name': 'Emploi', 'modules.emploi.desc': 'Missions & postes',
                 'modules.parrainage.name': 'Parrainage', 'modules.parrainage.desc': '20% + 5%, pendant 12 mois',
                 'modules.metaads': 'Pubs Facebook & Instagram',
-                'soon.title': 'Bientôt disponible',
-                'soon.reseau.name': 'Réseau Mondial', 'soon.reseau.desc': 'Connectez-vous',
-                'soon.logistique.name': 'Logistique', 'soon.logistique.desc': 'Livraison & suivi',
-                'soon.finance.name': 'Finance', 'soon.finance.desc': 'Paiements & compta',
-                'soon.api.name': 'API & Intégrations', 'soon.api.desc': 'Connecte tout',
                 'banner.soon1': "L'Empire ne cesse de grandir.", 'banner.soon2': 'De nouveaux pouvoirs arrivent chaque semaine — prépare-toi à passer au niveau supérieur.',
                 'pills.souverainete.title': 'Souveraineté totale', 'pills.souverainete.desc': "Tes données t'appartiennent",
                 'pills.intelligence.title': 'Intelligence suprême', 'pills.intelligence.desc': "Propulsée par l'IA SAMII",
@@ -3744,7 +3610,6 @@
                 'tarifs.cta': "Start for free →",
                 'tarifs.assistance': "Support 24/7 on every tier — questions, setup, integrations.",
                 'tarifs.note': "Shown in dollars, paid in your currency — Edahabia, CIB, CCP or card.",
-                'tarifs.bientot': "🔜 In the works: global logistics and delivery.",
                 'partenariat.cat.agence': 'Agency / Integrator',
                 'proof.connected': 'Connected to Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': 'Coming soon — TikTok, LinkedIn',
@@ -3766,11 +3631,6 @@
                 'modules.emploi.name': 'Jobs', 'modules.emploi.desc': 'Missions & positions',
                 'modules.parrainage.name': 'Referral program', 'modules.parrainage.desc': '20% + 5%, for 12 months',
                 'modules.metaads': 'Facebook & Instagram ads',
-                'soon.title': 'Coming soon',
-                'soon.reseau.name': 'Global Network', 'soon.reseau.desc': 'Connect',
-                'soon.logistique.name': 'Logistics', 'soon.logistique.desc': 'Delivery & tracking',
-                'soon.finance.name': 'Finance', 'soon.finance.desc': 'Payments & accounting',
-                'soon.api.name': 'API & Integrations', 'soon.api.desc': 'Connect everything',
                 'banner.soon1': 'The Empire keeps growing.', 'banner.soon2': 'New powers arrive every week — get ready to level up.',
                 'pills.souverainete.title': 'Total sovereignty', 'pills.souverainete.desc': 'Your data belongs to you',
                 'pills.intelligence.title': 'Supreme intelligence', 'pills.intelligence.desc': 'Powered by SAMII AI',
@@ -3901,7 +3761,6 @@
                 'tarifs.cta': "ابدأ مجانًا ←",
                 'tarifs.assistance': "دعم على مدار الساعة طوال أيام الأسبوع لجميع الباقات — أسئلة، إعدادات، تكاملات.",
                 'tarifs.note': "معروض بالدولار، مدفوع بعملتك — الذهبية، CIB، CCP أو بطاقة.",
-                'tarifs.bientot': "🔜 قيد الإنجاز: الخدمات اللوجستية والتوصيل العالمي.",
                 'partenariat.cat.agence': 'وكالة / مُدمِج',
                 'proof.connected': 'متصل بـ Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': 'قريبًا — TikTok، LinkedIn',
@@ -3923,11 +3782,6 @@
                 'modules.emploi.name': 'وظائف', 'modules.emploi.desc': 'مهام ومناصب',
                 'modules.parrainage.name': 'برنامج الإحالة', 'modules.parrainage.desc': '20% + 5%، لمدة 12 شهرًا',
                 'modules.metaads': 'إعلانات فيسبوك وإنستغرام',
-                'soon.title': 'قريبًا',
-                'soon.reseau.name': 'شبكة عالمية', 'soon.reseau.desc': 'تواصل',
-                'soon.logistique.name': 'الخدمات اللوجستية', 'soon.logistique.desc': 'توصيل وتتبع',
-                'soon.finance.name': 'المالية', 'soon.finance.desc': 'مدفوعات ومحاسبة',
-                'soon.api.name': 'API وتكاملات', 'soon.api.desc': 'اربط كل شيء',
                 'banner.soon1': 'الإمبراطورية لا تتوقف عن النمو.', 'banner.soon2': 'قدرات جديدة تصل كل أسبوع — استعد للانتقال إلى المستوى التالي.',
                 'pills.souverainete.title': 'سيادة تامة', 'pills.souverainete.desc': 'بياناتك ملك لك',
                 'pills.intelligence.title': 'ذكاء فائق', 'pills.intelligence.desc': 'مدعوم بذكاء SAMII الاصطناعي',
@@ -4063,7 +3917,6 @@
                 'tarifs.cta': "免费开始 →",
                 'tarifs.assistance': "全部套餐均享 7×24 小时支持 — 咨询、配置、集成。",
                 'tarifs.note': "以美元展示，按您的货币支付 — Edahabia、CIB、CCP 或银行卡。",
-                'tarifs.bientot': "🔜 建设中：全球物流与配送。",
                 'partenariat.cat.agence': '代理机构 / 集成商',
                 'proof.connected': '已连接 Instagram · Facebook · WhatsApp · Telegram · Shopify · WooCommerce · Google',
                 'proof.soon': '即将支持 — TikTok、LinkedIn',
@@ -4082,11 +3935,6 @@
                 'modules.emploi.name': '招聘', 'modules.emploi.desc': '任务与职位',
                 'modules.parrainage.name': '推荐计划', 'modules.parrainage.desc': '20% + 5%，持续12个月',
                 'modules.metaads': 'Facebook 与 Instagram 广告',
-                'soon.title': '即将推出',
-                'soon.reseau.name': '全球网络', 'soon.reseau.desc': '互联互通',
-                'soon.logistique.name': '物流', 'soon.logistique.desc': '配送与跟踪',
-                'soon.finance.name': '财务', 'soon.finance.desc': '支付与记账',
-                'soon.api.name': 'API 与集成', 'soon.api.desc': '连接一切',
                 'banner.soon1': '帝国持续扩张。', 'banner.soon2': '每周都有新功能上线——准备好升级吧。',
                 'pills.souverainete.title': '完全自主权', 'pills.souverainete.desc': '你的数据归你所有',
                 'pills.intelligence.title': '顶级智能', 'pills.intelligence.desc': '由 SAMII AI 强力驱动',

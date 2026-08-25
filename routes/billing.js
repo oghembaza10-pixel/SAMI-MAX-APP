@@ -192,9 +192,6 @@ router.get("/", requireAuth, async (req, res) => {
         .bill-daily-note { text-align: center; font-family: var(--font-mono); font-size: .64rem; color: var(--lux-cyan); opacity: .85; margin: 10px 0 0; }
         .callout-regularisation { max-width: 640px; margin: 0 auto 28px; padding: 14px 18px; border-radius: 2px; background: rgba(229,85,85,0.08); border: 1px solid rgba(229,85,85,0.3); color: #e88; font-size: .8rem; text-align: center; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
         .bill-btn--regulariser { width: auto; padding: 8px 14px; font-size: .7rem; background: #e55; border-color: #e55; color: #fff; }
-        .bill-bientot { max-width: 640px; margin: 56px auto 0; padding: 20px 24px; border-radius: 2px; border: 1px dashed var(--lux-border); text-align: center; }
-        .bill-bientot-label { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--lux-gold); margin-bottom: 10px; }
-        .bill-bientot-items { display: flex; flex-direction: column; gap: 4px; font-size: .76rem; color: var(--lux-smoke); }
         .bill-ccp { margin-top: auto; padding: 14px; border-radius: 2px; background: var(--lux-cyan-dim); border: 1px solid rgba(95,212,255,.25); margin-bottom: 10px; }
         .bill-ccp-label { color: var(--lux-cyan); font-size: .74rem; font-weight: 700; margin-bottom: 8px; }
         .bill-ccp-details { font-size: .72rem; color: var(--lux-smoke); line-height: 1.6; margin-bottom: 10px; }
@@ -344,12 +341,6 @@ router.get("/", requireAuth, async (req, res) => {
         <div class="bill-trust-item"><span class="dot"></span><span data-i18n="billing.trust4">Assistance 24 h/24, 7 j/7 sur tous les paliers</span></div>
     </div>
 
-    <div class="bill-bientot">
-        <div class="bill-bientot-label" data-i18n="billing.bientot.label">🔜 Bientôt disponible</div>
-        <div class="bill-bientot-items">
-            <span data-i18n="billing.bientot.meta">Pubs Meta + réponses automatiques Messenger/Instagram</span>
-        </div>
-    </div>
 
 </div>
 <script>
@@ -401,8 +392,8 @@ const I18N = {
         'billing.pro.publication': "Publication Facebook et Instagram jusqu'à 2× par jour",
         'billing.societe.illimite': 'Confirmations et messages sans limite',
         'billing.lancement': 'Prix de lancement',
-        'billing.bientot.label': '🔜 Bientôt disponible',
-        'billing.bientot.meta': 'Pubs Meta + réponses automatiques Messenger/Instagram',
+       
+       
         'billing.step1': 'Découvre les paliers', 'billing.step1b': 'Découvre',
         'billing.step2': 'Choisis ton palier', 'billing.step2b': 'Choisis',
         'billing.step3': "Règle et c'est parti", 'billing.step3b': 'Règle',
@@ -417,7 +408,7 @@ const I18N = {
         'billing.trust3': 'Changement de palier à tout moment',
         'billing.permonth': '/mois', 'billing.permonth_filleul': '/mois — filleul -5%',
         'billing.ccp.label': '🏦 Payer par CCP',
-        'billing.ccp.titulaire': 'Titulaire :', 'billing.ccp.numero': 'Numéro CCP :', 'billing.ccp.cle': 'Clé RIP :',
+        'billing.ccp.titulaire': 'Titulaire :', 'billing.ccp.numero': 'Numéro CCP :', 'billing.ccp.cle': 'Clé RIP :', 'billing.ccp.montant': 'Montant à virer :',
         'billing.ccp.btn': "J'ai payé, préviens l'équipe",
         'billing.stripe.btn': 'Payer par carte →',
         'billing.msg.redirecting': 'Redirection...',
@@ -473,8 +464,8 @@ const I18N = {
         'billing.pro.publication': 'Facebook and Instagram publishing up to 2× a day',
         'billing.societe.illimite': 'Confirmations and messages with no limit',
         'billing.lancement': 'Launch price',
-        'billing.bientot.label': '🔜 Coming soon',
-        'billing.bientot.meta': 'Meta ads + automatic Messenger/Instagram replies',
+       
+       
         'billing.step1': 'Discover the tiers', 'billing.step1b': 'Discover',
         'billing.step2': 'Choose your tier', 'billing.step2b': 'Choose',
         'billing.step3': "Pay and you're set", 'billing.step3b': 'Pay',
@@ -489,7 +480,7 @@ const I18N = {
         'billing.trust3': 'Change tier anytime',
         'billing.permonth': '/month', 'billing.permonth_filleul': '/month — referral -5%',
         'billing.ccp.label': '🏦 Pay by CCP',
-        'billing.ccp.titulaire': 'Account holder:', 'billing.ccp.numero': 'CCP number:', 'billing.ccp.cle': 'RIP key:',
+        'billing.ccp.titulaire': 'Account holder:', 'billing.ccp.numero': 'CCP number:', 'billing.ccp.cle': 'RIP key:', 'billing.ccp.montant': 'Amount to transfer:',
         'billing.ccp.btn': "I've paid, notify the team",
         'billing.stripe.btn': 'Pay by card →',
         'billing.msg.redirecting': 'Redirecting...',
@@ -545,8 +536,8 @@ const I18N = {
         'billing.pro.publication': 'نشر على فيسبوك وإنستغرام حتى مرتين يوميًا',
         'billing.societe.illimite': 'تأكيدات ورسائل بلا حدود',
         'billing.lancement': 'سعر الإطلاق',
-        'billing.bientot.label': '🔜 قريبًا',
-        'billing.bientot.meta': 'إعلانات Meta + ردود تلقائية على Messenger/Instagram',
+       
+       
         'billing.step1': 'اكتشف الباقات', 'billing.step1b': 'اكتشف',
         'billing.step2': 'اختر باقتك', 'billing.step2b': 'اختر',
         'billing.step3': 'ادفع وانطلق', 'billing.step3b': 'ادفع',
@@ -561,7 +552,7 @@ const I18N = {
         'billing.trust3': 'تغيير الباقة في أي وقت',
         'billing.permonth': '/شهر', 'billing.permonth_filleul': '/شهر — خصم الإحالة 5%-',
         'billing.ccp.label': '🏦 الدفع عبر CCP',
-        'billing.ccp.titulaire': 'صاحب الحساب:', 'billing.ccp.numero': 'رقم CCP:', 'billing.ccp.cle': 'مفتاح RIP:',
+        'billing.ccp.titulaire': 'صاحب الحساب:', 'billing.ccp.numero': 'رقم CCP:', 'billing.ccp.cle': 'مفتاح RIP:', 'billing.ccp.montant': 'المبلغ المطلوب تحويله:',
         'billing.ccp.btn': 'لقد دفعت، أبلغ الفريق',
         'billing.stripe.btn': 'الدفع بالبطاقة ←',
         'billing.msg.redirecting': 'جارٍ التحويل...',
@@ -617,8 +608,8 @@ const I18N = {
         'billing.pro.publication': 'Facebook 与 Instagram 每天最多发布 2 次',
         'billing.societe.illimite': '确认与消息不设上限',
         'billing.lancement': '首发价格',
-        'billing.bientot.label': '🔜 即将推出',
-        'billing.bientot.meta': 'Meta 广告 + Messenger/Instagram 自动回复',
+       
+       
         'billing.step1': '了解各档位', 'billing.step1b': '了解',
         'billing.step2': '选择你的档位', 'billing.step2b': '选择',
         'billing.step3': '支付，立即开始', 'billing.step3b': '支付',
@@ -633,7 +624,7 @@ const I18N = {
         'billing.trust3': '随时更改档位',
         'billing.permonth': '/月', 'billing.permonth_filleul': '/月 — 推荐折扣 -5%',
         'billing.ccp.label': '🏦 通过 CCP 支付',
-        'billing.ccp.titulaire': '账户持有人：', 'billing.ccp.numero': 'CCP 账号：', 'billing.ccp.cle': 'RIP 密钥：',
+        'billing.ccp.titulaire': '账户持有人：', 'billing.ccp.numero': 'CCP 账号：', 'billing.ccp.cle': 'RIP 密钥：', 'billing.ccp.montant': '需转账金额：',
         'billing.ccp.btn': '我已付款，通知团队',
         'billing.stripe.btn': '银行卡支付 →',
         'billing.msg.redirecting': '正在跳转...',
