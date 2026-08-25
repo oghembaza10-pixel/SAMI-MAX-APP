@@ -9,6 +9,7 @@ const workspaceService = require("../services/workspaceService");
 const db                = require("../services/db");
 const CONFIG            = require("../config");
 const abonnementService = require("../services/abonnementService");
+const fournisseursWa    = require("../services/whatsappFournisseurs");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -442,17 +443,36 @@ function depannageState(config) {
     };
 }
 
+// L'URL que l'entreprise (ou nous, par API chez 360dialog) déclare chez son
+// fournisseur pour recevoir les messages entrants.
+function urlWebhookWhatsapp() {
+    return `${CONFIG.APP_URL}/webhook/whatsapp`;
+}
+
+function etatWhatsapp(config = {}) {
+    const fournisseur = fournisseursWa.fournisseurDe(config);
+    return {
+        fournisseur,
+        complet: fournisseursWa.estComplete(config),
+        // Ce qu'on réaffiche dans le formulaire : jamais un secret, seulement
+        // les identifiants publics déjà connus de l'entreprise.
+        apiId: config.apiId || "",
+        phoneNumberId: config.phoneNumberId || "",
+        numero: config.numero || "",
+    };
+}
+
 router.get("/whatsapp", requireAuth, async (req, res) => {
     const workspaceId = req.session?.workspaceId || "";
     let actif = false;
-    let apiId = "";
+    let etat = etatWhatsapp({});
     let depannage = null;
     try {
         if (workspaceId) {
             const c = await connectorService.getOne(workspaceId, "whatsapp");
             if (c) {
-                apiId = c.config?.apiId || "";
-                actif = c.actif === true && !!apiId;
+                etat = etatWhatsapp(c.config);
+                actif = c.actif === true && etat.complet;
                 depannage = depannageState(c.config);
             }
         }
@@ -464,67 +484,100 @@ router.get("/whatsapp", requireAuth, async (req, res) => {
         workspaceId,
         tool: TOOLS.find(t => t.id === "whatsapp"),
         actif,
-        apiId,
+        etat,
+        apiId: etat.apiId,
         depannage,
         palierOk,
+        urlWebhook: urlWebhookWhatsapp(),
+        avis: null,
         error: null,
     });
 });
 
+// Une entreprise qui a déjà un compte WhatsApp Business approuvé ne changera
+// pas d'infrastructure pour nous : elle veut qu'on se pose au-dessus de la
+// sienne. Ce formulaire accepte donc les trois chemins — Green API pour qui
+// démarre, Meta Cloud en direct et 360dialog pour qui est déjà équipé.
 router.post("/whatsapp", requireAuth, async (req, res) => {
     const workspaceId = req.session?.workspaceId;
     if (!workspaceId) return res.redirect("/hub");
-    try {
-        const palierOk = await abonnementService.auMoins(workspaceId, PALIER_MINIMUM_WHATSAPP);
-        if (!palierOk) {
-            const c = await connectorService.getOne(workspaceId, "whatsapp");
-            return res.render("connect-whatsapp", {
-                workspaceId,
-                tool: TOOLS.find(t => t.id === "whatsapp"),
-                actif: false,
-                apiId: "",
-                depannage: depannageState(c?.config),
-                palierOk: false,
-                error: "WhatsApp est inclus à partir du palier Actif. Telegram reste disponible sans abonnement.",
-            });
-        }
-        const apiId = (req.body.api_id || "").trim();
-        const apiToken = (req.body.api_token || "").trim();
-        if (!apiId || !apiToken) {
-            const c = await connectorService.getOne(workspaceId, "whatsapp");
-            return res.render("connect-whatsapp", {
-                workspaceId,
-                tool: TOOLS.find(t => t.id === "whatsapp"),
-                actif: false,
-                apiId: "",
-                depannage: depannageState(c?.config),
-                palierOk: true,
-                error: "Renseigne ton ID API et ton Token API.",
-            });
-        }
-        await connectorService.save(workspaceId, "whatsapp", {
-            apiId, apiToken, connectedAt: new Date().toISOString(),
+
+    const echec = async (message, palierOk = true) => {
+        const c = await connectorService.getOne(workspaceId, "whatsapp");
+        return res.render("connect-whatsapp", {
+            workspaceId,
+            tool: TOOLS.find(t => t.id === "whatsapp"),
+            actif: false,
+            etat: etatWhatsapp(c?.config),
+            apiId: c?.config?.apiId || "",
+            depannage: depannageState(c?.config),
+            palierOk,
+            urlWebhook: urlWebhookWhatsapp(),
+            avis: null,
+            error: message,
         });
+    };
+
+    try {
+        if (!await abonnementService.auMoins(workspaceId, PALIER_MINIMUM_WHATSAPP)) {
+            return await echec(
+                "WhatsApp est inclus à partir du palier Actif. Telegram reste disponible sans abonnement.",
+                false,
+            );
+        }
+
+        const demande = String(req.body.fournisseur || "green").trim();
+        if (!fournisseursWa.FOURNISSEURS[demande]) return await echec("Fournisseur inconnu.");
+
+        let config = { fournisseur: demande, connectedAt: new Date().toISOString() };
+
+        if (demande === "green") {
+            const apiId = (req.body.api_id || "").trim();
+            const apiToken = (req.body.api_token || "").trim();
+            if (!apiId || !apiToken) return await echec("Renseigne ton ID API et ton Token API.");
+            config = { ...config, apiId, apiToken };
+        } else if (demande === "cloud") {
+            const phoneNumberId = (req.body.phone_number_id || "").trim();
+            const token = (req.body.token || "").trim();
+            if (!phoneNumberId || !token) return await echec("Renseigne l'identifiant de ton numéro et ton token permanent.");
+            config = { ...config, phoneNumberId, token, numero: (req.body.numero || "").replace(/[^\d]/g, "") };
+        } else {
+            const apiKey = (req.body.api_key || "").trim();
+            // Le numéro sert à retrouver l'entreprise au tout premier message :
+            // 360dialog ne donne pas l'identifiant Meta du numéro à la
+            // connexion (voir routes/webhook-whatsapp.js).
+            const numero = (req.body.numero || "").replace(/[^\d]/g, "");
+            if (!apiKey) return await echec("Renseigne ta clé API 360dialog.");
+            if (!numero) return await echec("Renseigne le numéro WhatsApp rattaché à cette clé (avec l'indicatif pays).");
+            config = { ...config, apiKey, numero };
+        }
+
+        await connectorService.save(workspaceId, "whatsapp", config);
+
+        // Chez 360dialog, on déclare l'URL de réception nous-mêmes : c'est
+        // l'étape où l'on perd le plus de monde quand elle est manuelle. Un
+        // échec n'annule pas la connexion — l'envoi marche déjà, et l'URL est
+        // affichée pour un réglage à la main.
+        const webhook = await fournisseursWa.declarerWebhook(config, urlWebhookWhatsapp());
+
         return res.render("connect-whatsapp", {
             workspaceId,
             tool: TOOLS.find(t => t.id === "whatsapp"),
             actif: true,
-            apiId,
+            etat: etatWhatsapp(config),
+            apiId: config.apiId || "",
             depannage: null,
             palierOk: true,
+            urlWebhook: webhook.url,
+            avis: webhook.automatique
+                ? "Réception des messages configurée automatiquement chez 360dialog."
+                : (demande === "green" ? null : "Dernière étape : déclare l'URL de réception ci-dessous chez ton fournisseur."),
             error: null,
         });
     } catch (err) {
         console.error("❌ POST /connect/whatsapp :", err);
-        res.render("connect-whatsapp", {
-            workspaceId,
-            tool: TOOLS.find(t => t.id === "whatsapp"),
-            actif: false,
-            apiId: "",
-            depannage: null,
-            palierOk: true,
-            error: "Erreur interne. Réessaie.",
-        });
+        if (err.code === "QUOTA_CANAUX") return await echec(err.message);
+        return await echec("Erreur interne. Réessaie.");
     }
 });
 

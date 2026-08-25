@@ -24,6 +24,9 @@
       <% if (error) { %>
         <p style="color:#e55;font-size:0.85rem;margin-bottom:14px;text-align:center;background:#e5555522;padding:10px;border-radius:8px;"><%= error %></p>
       <% } %>
+      <% if (typeof avis !== "undefined" && avis) { %>
+        <p style="color:#3ddc84;font-size:0.85rem;margin-bottom:14px;text-align:center;background:#3ddc8418;padding:10px;border-radius:8px;"><%= avis %></p>
+      <% } %>
 
       <!-- ── CASE 1 : DÉPANNAGE ─────────────────────────────────────── -->
       <div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;margin-bottom:18px;">
@@ -53,17 +56,21 @@
         <% } %>
       </div>
 
-      <!-- ── CASE 2 : CONNEXION PERSO ────────────────────────────────── -->
+      <!-- ── CASE 2 : LE NUMÉRO DE L'ENTREPRISE ──────────────────────────
+           Trois chemins, parce qu'une entreprise déjà équipée d'un compte
+           WhatsApp Business approuvé ne changera pas d'infrastructure pour
+           nous : elle veut qu'on se pose au-dessus de la sienne. Le choix
+           décide des champs affichés, rien d'autre. -->
       <div style="background:#111;border:1px solid #222;border-radius:16px;padding:28px;">
         <h3 style="color:#fff;margin:0 0 6px;font-size:1.05rem;">🔗 <span data-i18n="connect.whatsapp.perso.title">Connecter mon propre WhatsApp</span></h3>
-        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 16px;" data-i18n="connect.whatsapp.perso.desc">
-          Solution définitive et gratuite pour démarrer : connecte ton propre compte Green API en 5 étapes.
+        <p style="color:#999;font-size:0.85rem;line-height:1.6;margin:0 0 18px;" data-i18n="connect.whatsapp.perso.desc">
+          Tu as déjà un compte WhatsApp Business ? Branche-le tel quel. Tu démarres de zéro ? Prends Green API, c'est immédiat.
         </p>
 
-        <% if (typeof palierOk !== "undefined" && !palierOk) { %>
-          <!-- WhatsApp est le levier du palier Actif (routes/connector.js) :
-               ici on explique pourquoi, on rappelle ce qui reste gratuit, et
-               on donne le chemin — pas un simple "accès refusé". -->
+        <% const f = (typeof etat !== "undefined" && etat) ? etat.fournisseur : "green"; %>
+        <% const verrouille = (typeof palierOk !== "undefined" && !palierOk); %>
+
+        <% if (verrouille) { %>
           <div style="padding:16px;background:#f5a62311;border:1px solid #f5a62333;border-radius:12px;margin-bottom:16px;">
             <p style="color:#f5a623;font-weight:700;font-size:0.9rem;margin:0 0 8px;" data-i18n="connect.whatsapp.palier.title">🔒 Inclus à partir du palier Actif</p>
             <p style="color:#999;font-size:0.83rem;line-height:1.65;margin:0 0 14px;" data-i18n="connect.whatsapp.palier.desc">
@@ -73,30 +80,114 @@
           </div>
         <% } %>
 
-        <ol style="color:#999;font-size:0.82rem;line-height:1.9;margin:0 0 18px;padding-left:20px;">
-          <li data-i18n="connect.whatsapp.perso.step1">Va sur <b style="color:#25D366;">green-api.com</b> et crée un compte gratuit.</li>
-          <li data-i18n="connect.whatsapp.perso.step2">Clique sur <b>"Create an instance"</b> (choisis le plan "Developer" pour tester).</li>
-          <li data-i18n="connect.whatsapp.perso.step3">Scanne le QR code (ou utilise "Link with phone number") avec l'appli WhatsApp Business sur ton téléphone : Réglages → Appareils liés → Lier un appareil.</li>
-          <li data-i18n="connect.whatsapp.perso.step4">Une fois le statut passé sur <b>"Authorized"</b>, récupère ton <b>idInstance</b> et ton <b>apiTokenInstance</b> (icône œil pour le révéler).</li>
-          <li data-i18n="connect.whatsapp.perso.step5">Colle ces deux valeurs ci-dessous et valide.</li>
-        </ol>
+        <form method="POST" action="/connect/whatsapp" id="form-wa">
+          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.whatsapp.fournisseur.label">Comment ton numéro est-il connecté ?</label>
+          <select name="fournisseur" id="wa-fournisseur"
+                  style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+            <option value="green" <%= f === "green" ? "selected" : "" %>>Je démarre — créer un accès en 5 minutes</option>
+            <option value="360dialog" <%= f === "360dialog" ? "selected" : "" %>>J'ai déjà un compte WhatsApp Business chez un fournisseur officiel</option>
+            <option value="cloud" <%= f === "cloud" ? "selected" : "" %>>J'ai mon propre compte Meta (API Cloud en direct)</option>
+          </select>
 
-        <form method="POST" action="/connect/whatsapp">
-          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.whatsapp.apiId.label">ID API (idInstance)</label>
-          <input type="text" name="api_id" value="<%= apiId %>" placeholder="Ex: 710722710666"
-                 style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
+          <!-- Green API -->
+          <div class="wa-bloc" data-pour="green">
+            <ol style="color:#999;font-size:0.82rem;line-height:1.9;margin:0 0 18px;padding-left:20px;">
+              <li data-i18n="connect.whatsapp.perso.step1">Va sur <b style="color:#25D366;">green-api.com</b> et crée un compte gratuit.</li>
+              <li data-i18n="connect.whatsapp.perso.step2">Clique sur <b>"Create an instance"</b> (plan "Developer" pour tester).</li>
+              <li data-i18n="connect.whatsapp.perso.step3">Scanne le QR code avec WhatsApp Business : Réglages → Appareils liés.</li>
+              <li data-i18n="connect.whatsapp.perso.step4">Statut <b>"Authorized"</b> : récupère <b>idInstance</b> et <b>apiTokenInstance</b>.</li>
+              <li data-i18n="connect.whatsapp.perso.step5">Colle-les ci-dessous.</li>
+            </ol>
+            <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.whatsapp.apiId.label">ID API (idInstance)</label>
+            <input type="text" name="api_id" value="<%= apiId %>" placeholder="Ex: 710722710666"
+                   style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
+            <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.whatsapp.apiToken.label">Token API (apiTokenInstance)</label>
+            <input type="password" name="api_token" data-i18n-placeholder="connect.whatsapp.apiToken.ph" placeholder="Ton apiTokenInstance"
+                   style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+          </div>
 
-          <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;" data-i18n="connect.whatsapp.apiToken.label">Token API (apiTokenInstance)</label>
-          <input type="password" name="api_token" data-i18n-placeholder="connect.whatsapp.apiToken.ph" placeholder="Ton apiTokenInstance"
-                 style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+          <!-- Fournisseur officiel (360dialog) -->
+          <div class="wa-bloc" data-pour="360dialog" hidden>
+            <p style="color:#999;font-size:0.82rem;line-height:1.7;margin:0 0 16px;">
+              Ton numéro reste chez ton fournisseur, ton compte Meta reste le tien.
+              SAMII se pose au-dessus : nous déclarons la réception des messages pour toi, tu n'as rien à configurer ailleurs.
+            </p>
+            <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Clé API</label>
+            <input type="password" name="api_key" placeholder="Ta clé API"
+                   style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
+            <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Numéro WhatsApp rattaché (avec indicatif)</label>
+            <input type="text" name="numero" value="<%= (typeof etat !== "undefined" && etat) ? etat.numero : "" %>" placeholder="Ex: 2348080159197"
+                   style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+          </div>
 
-          <% const verrouille = (typeof palierOk !== "undefined" && !palierOk); %>
+          <!-- Meta Cloud API en direct -->
+          <div class="wa-bloc" data-pour="cloud" hidden>
+            <p style="color:#999;font-size:0.82rem;line-height:1.7;margin:0 0 16px;">
+              Depuis ton tableau de bord développeur Meta : l'identifiant de ton numéro et un token permanent d'utilisateur système.
+            </p>
+            <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Identifiant du numéro (phone number ID)</label>
+            <input type="text" name="phone_number_id" value="<%= (typeof etat !== "undefined" && etat) ? etat.phoneNumberId : "" %>" placeholder="Ex: 1304094159450033"
+                   style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:14px;">
+            <label style="display:block;color:#999;font-size:0.75rem;margin-bottom:6px;">Token permanent</label>
+            <input type="password" name="token" placeholder="Token d'utilisateur système"
+                   style="width:100%;padding:11px 13px;border-radius:9px;border:1px solid #222;background:#000;color:#fff;font-size:0.88rem;margin-bottom:18px;">
+          </div>
+
           <button type="submit" <%= verrouille ? "disabled" : "" %>
                   style="display:block;width:100%;padding:13px;background:<%= verrouille ? "#2a2a2a" : tool.color %>;border:none;border-radius:10px;color:<%= verrouille ? "#666" : "#fff" %>;font-weight:700;font-size:0.95rem;cursor:<%= verrouille ? "not-allowed" : "pointer" %>;">
-            <% if (verrouille) { %>🔒 <span data-i18n="connect.whatsapp.palier.locked">Palier Actif requis</span><% } else { %>🔗 <span data-i18n="connect.submit">Utiliser ma clé</span> <%= tool.label %><% } %>
+            <% if (verrouille) { %>🔒 <span data-i18n="connect.whatsapp.palier.locked">Palier Actif requis</span><% } else { %>🔗 <span data-i18n="connect.submit">Connecter mon numéro</span><% } %>
           </button>
         </form>
+
+        <!-- L'URL de réception, affichée pour les fournisseurs où elle se
+             règle à la main. Chez 360dialog nous la déclarons par API, mais on
+             la montre quand même : si l'appel a échoué, le marchand a de quoi
+             finir sans nous. -->
+        <div id="wa-webhook" style="margin-top:18px;padding:14px;background:#0b0b0b;border:1px solid #1d1d1d;border-radius:10px;" hidden>
+          <div style="color:#999;font-size:0.75rem;margin-bottom:6px;">URL de réception des messages</div>
+          <code id="wa-url" style="display:block;color:#25D366;font-size:0.8rem;word-break:break-all;"><%= typeof urlWebhook !== "undefined" ? urlWebhook : "" %></code>
+          <button type="button" id="wa-copier"
+                  style="margin-top:10px;padding:8px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:0.78rem;cursor:pointer;">Copier</button>
+        </div>
       </div>
+
+      <script>
+        // Le choix du fournisseur décide des champs visibles — et rien d'autre :
+        // le serveur revalide de toute façon (routes/connector.js).
+        (function () {
+          var select = document.getElementById('wa-fournisseur');
+          var blocs  = document.querySelectorAll('.wa-bloc');
+          var boite  = document.getElementById('wa-webhook');
+          function afficher() {
+            var choix = select.value;
+            blocs.forEach(function (b) {
+              var pour = b.getAttribute('data-pour') === choix;
+              b.hidden = !pour;
+              // Un champ caché ne doit pas être exigé ni envoyé à moitié.
+              b.querySelectorAll('input').forEach(function (i) { i.disabled = !pour; });
+            });
+            boite.hidden = (choix === 'green');
+          }
+          select.addEventListener('change', afficher);
+          afficher();
+
+          var bouton = document.getElementById('wa-copier');
+          bouton.addEventListener('click', function () {
+            var texte = document.getElementById('wa-url').textContent.trim();
+            // navigator.clipboard n'existe pas hors HTTPS ni sur d'anciens
+            // navigateurs : on retombe sur la sélection, jamais sur rien.
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(texte).then(function () { bouton.textContent = 'Copié ✓'; });
+            } else {
+              var plage = document.createRange();
+              plage.selectNodeContents(document.getElementById('wa-url'));
+              window.getSelection().removeAllRanges();
+              window.getSelection().addRange(plage);
+              bouton.textContent = 'Sélectionné — Ctrl+C';
+            }
+          });
+        })();
+      </script>
 
       <a href="/connect/tools"
          style="display:block;margin-top:16px;text-align:center;padding:13px;background:#1a1a1a;border-radius:10px;color:#fff;text-decoration:none;font-weight:600;font-size:0.9rem;">

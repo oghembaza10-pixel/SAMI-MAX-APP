@@ -153,7 +153,13 @@ async function quotaCanaux(workspaceId, type) {
 // ── Sauvegarder (create ou update, avec fusion config) ──
 async function save(workspaceId, type, config = {}) {
     try {
-        const quota = await quotaCanaux(workspaceId, type);
+        // L'essai WhatsApp de 3 jours sur le numéro partagé n'est pas un canal :
+        // c'est un aperçu, promis à tous les paliers sur la page de tarifs. Le
+        // compter dans le quota reviendrait à le refuser au palier gratuit dès
+        // qu'un Telegram est branché — exactement à qui il est destiné.
+        const quota = config.mode === "depannage"
+            ? { ok: true }
+            : await quotaCanaux(workspaceId, type);
         if (!quota.ok) {
             const err = new Error(
                 `Ton palier autorise ${quota.max} canal${quota.max > 1 ? "aux" : ""} `

@@ -9,6 +9,7 @@ const CONFIG            = require("../config");
 const orchestrator      = require("../brain/orchestrator");
 const connectorService  = require("./connectorService");
 const notify            = require("./notify");
+const fournisseurs      = require("./whatsappFournisseurs");
 
 const UN_JOUR_MS = 24 * 60 * 60 * 1000;
 
@@ -19,25 +20,32 @@ const UN_JOUR_MS = 24 * 60 * 60 * 1000;
 // fois côté réception (voir routes/webhook-whatsapp.js), donc il ne doit
 // jamais s'activer sans un choix explicite et limité dans le temps.
 async function resolveCredentials(workspaceId) {
-    if (!workspaceId) return { instanceId: null, apiToken: null };
+    if (!workspaceId) return null;
     try {
-        // Le formulaire générique /connect/whatsapp (routes/connector.js)
-        // enregistre { apiId, apiToken } — mêmes noms que tous les autres
-        // transporteurs de la boucle TRANSPORTEUR_TOOLS.
         const connecteur = await connectorService.getOne(workspaceId, "whatsapp");
-        if (!connecteur?.actif) return { instanceId: null, apiToken: null };
+        if (!connecteur?.actif) return null;
 
-        const { apiId, apiToken, mode, expiresAt } = connecteur.config || {};
-        if (apiId && apiToken) {
-            return { instanceId: apiId, apiToken };
-        }
-        if (mode === "depannage" && expiresAt && new Date(expiresAt).getTime() > Date.now()) {
-            return { instanceId: CONFIG.WHATSAPP.INSTANCE, apiToken: CONFIG.WHATSAPP.API_KEY, depannage: true };
+        const config = connecteur.config || {};
+
+        // Une config complète l'emporte toujours, quel que soit le fournisseur
+        // (Green API, Meta Cloud en direct, 360dialog) — c'est
+        // services/whatsappFournisseurs.js qui sait lequel c'est.
+        if (fournisseurs.estComplete(config)) return config;
+
+        // Dépannage : le canal partagé SAMII, choisi explicitement et limité à
+        // trois jours. Toujours du Green API.
+        if (config.mode === "depannage" && config.expiresAt && new Date(config.expiresAt).getTime() > Date.now()) {
+            return {
+                fournisseur: "green",
+                apiId: CONFIG.WHATSAPP.INSTANCE,
+                apiToken: CONFIG.WHATSAPP.API_KEY,
+                depannage: true,
+            };
         }
     } catch (err) {
         console.error("❌ WhatsApp resolveCredentials :", err.message);
     }
-    return { instanceId: null, apiToken: null };
+    return null;
 }
 
 // ── PRÉVENIR LE MARCHAND AVANT LA FIN DU DÉPANNAGE ─────────────────────────
@@ -80,54 +88,30 @@ async function verifierEtNotifierDepannage(workspaceId) {
 }
 
 // ── ENVOIE UN MESSAGE ────────────────────────────────
+// Le fournisseur du marchand décide du transport ; l'appelant n'a jamais à le
+// savoir. Le canal officiel OG Technology reste un cas à part : son numéro est
+// déclaré en variables d'environnement, pas dans un connecteur.
 async function send({ to, message, workspaceId }) {
-    // Canal officiel OG Technology : API Cloud WhatsApp directe (numéro
-    // enregistré chez Meta), sans passer par Green API. Tous les autres
-    // marchands continuent sur Green API ci-dessous, inchangé.
     if (workspaceId && workspaceId === CONFIG.META.OG_WORKSPACE_ID) {
-        return await sendViaCloudApi({ to, message });
-    }
-
-    try {
-        const { instanceId, apiToken } = await resolveCredentials(workspaceId);
-        if (!to || !instanceId || !apiToken) {
-            console.warn("⚠️ WhatsApp non configuré");
+        const { TOKEN, PHONE_NUMBER_ID } = CONFIG.META.WHATSAPP_CLOUD;
+        if (!TOKEN || !PHONE_NUMBER_ID) {
+            console.warn("⚠️ WhatsApp Cloud API non configuré (token ou numéro manquant)");
             return { success: false };
         }
-
-        await axios.post(
-            `https://api.green-api.com/waInstance${instanceId}/sendMessage/${apiToken}`,
-            { chatId: `${to}@c.us`, message }
+        return await fournisseurs.envoyer(
+            { fournisseur: "cloud", phoneNumberId: PHONE_NUMBER_ID, token: TOKEN },
+            { to, message },
         );
-
-        console.log(`✅ WhatsApp → ${to}`);
-        return { success: true };
-
-    } catch (err) {
-        console.error("❌ WhatsApp send :", err.message);
-        return { success: false, error: err.message };
     }
-}
 
-async function sendViaCloudApi({ to, message }) {
-    const { TOKEN, PHONE_NUMBER_ID } = CONFIG.META.WHATSAPP_CLOUD;
-    if (!to || !TOKEN || !PHONE_NUMBER_ID) {
-        console.warn("⚠️ WhatsApp Cloud API non configuré (token ou numéro manquant)");
+    const config = await resolveCredentials(workspaceId);
+    if (!config) {
+        console.warn(`⚠️ WhatsApp non configuré (workspace ${workspaceId || "?"})`);
         return { success: false };
     }
-    try {
-        await axios.post(
-            `https://graph.facebook.com/v23.0/${PHONE_NUMBER_ID}/messages`,
-            { messaging_product: "whatsapp", to, type: "text", text: { body: message } },
-            { headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" } }
-        );
-        console.log(`✅ WhatsApp (Cloud API) → ${to}`);
-        return { success: true };
-    } catch (err) {
-        console.error("❌ WhatsApp Cloud API send :", err.response?.data || err.message);
-        return { success: false, error: err.message };
-    }
+    return await fournisseurs.envoyer(config, { to, message });
 }
+
 
 // ── CONFIRMATION OUI/NON (demandée directement au client) ──────────────────
 async function demanderConfirmation(to, commande, workspaceId) {
@@ -155,4 +139,4 @@ async function message(msg) {
     });
 }
 
-module.exports = { send, message, demanderConfirmation, verifierEtNotifierDepannage };
+module.exports = { send, message, demanderConfirmation, verifierEtNotifierDepannage, resolveCredentials };

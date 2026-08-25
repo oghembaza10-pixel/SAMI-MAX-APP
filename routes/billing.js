@@ -267,6 +267,7 @@ router.get("/", requireAuth, async (req, res) => {
             <ul>
                 <li data-i18n="billing.standard.li1">2 100 confirmations & suivi / mois (+0,50 $ au-delà)</li>
                 <li data-i18n="billing.standard.canaux">3 canaux au choix — WhatsApp, Telegram, Gmail, Instagram…</li>
+                <li data-i18n="billing.standard.wa">WhatsApp Business : ton numéro, ou ton fournisseur actuel</li>
                 <li data-i18n="billing.standard.publication">Publication automatique 3× par semaine</li>
                 <li data-i18n="billing.standard.google">Emails et agenda : SAMII lit, répond, planifie</li>
                 <li data-i18n="billing.standard.rdv">Rendez-vous pris et confirmés sans toi</li>
@@ -376,6 +377,7 @@ const I18N = {
         'billing.free.canaux': '1 canal au choix — Telegram, par exemple',
         'billing.free.whatsapp': "WhatsApp : 3 jours d'essai, une seule fois",
         'billing.standard.canaux': '3 canaux au choix — WhatsApp, Telegram, Gmail, Instagram…',
+        'billing.standard.wa': 'WhatsApp Business : ton numéro, ou ton fournisseur actuel',
         'billing.standard.publication': 'Publication automatique 3× par semaine',
         'billing.pro.canaux': 'Canaux illimités — Facebook, Instagram, Drive, Sheets…',
 
@@ -448,6 +450,7 @@ const I18N = {
         'billing.free.canaux': '1 channel of your choice — Telegram, for instance',
         'billing.free.whatsapp': 'WhatsApp: 3-day trial, once',
         'billing.standard.canaux': '3 channels of your choice — WhatsApp, Telegram, Gmail, Instagram…',
+        'billing.standard.wa': 'WhatsApp Business: your number, or your current provider',
         'billing.standard.publication': 'Automatic publishing 3× a week',
         'billing.pro.canaux': 'Unlimited channels — Facebook, Instagram, Drive, Sheets…',
 
@@ -520,6 +523,7 @@ const I18N = {
         'billing.free.canaux': 'قناة واحدة من اختيارك — تيليغرام مثلًا',
         'billing.free.whatsapp': 'واتساب: 3 أيام تجربة، مرة واحدة',
         'billing.standard.canaux': '3 قنوات من اختيارك — واتساب، تيليغرام، جيميل، إنستغرام…',
+        'billing.standard.wa': 'واتساب بزنس: رقمك الخاص أو مزوّدك الحالي',
         'billing.standard.publication': 'نشر تلقائي 3 مرات أسبوعيًا',
         'billing.pro.canaux': 'قنوات بلا حدود — فيسبوك، إنستغرام، درايف، شيتس…',
 
@@ -592,6 +596,7 @@ const I18N = {
         'billing.free.canaux': '任选 1 个渠道 — 例如 Telegram',
         'billing.free.whatsapp': 'WhatsApp：3 天试用，仅一次',
         'billing.standard.canaux': '任选 3 个渠道 — WhatsApp、Telegram、Gmail、Instagram…',
+        'billing.standard.wa': 'WhatsApp Business：您自己的号码，或您现有的服务商',
         'billing.standard.publication': '每周自动发布 3 次',
         'billing.pro.canaux': '渠道不限 — Facebook、Instagram、Drive、Sheets…',
 

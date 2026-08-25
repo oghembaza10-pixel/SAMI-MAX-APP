@@ -166,6 +166,18 @@ const verifier = (titre, obtenu, attendu) => {
     verifier("Souverain : aucun plafond de canaux",
         (await connectorService.quotaCanaux("WS-SOUVERAIN", nouveau)).ok, true);
 
+    // L'essai WhatsApp de 3 jours est promis à tous les paliers sur la page
+    // de tarifs : le compter comme un canal le refuserait au gratuit dès
+    // qu'un Telegram est branché, c'est-à-dire à qui il est destiné.
+    CONNECTEURS = [{ workspace_id: "WS-FREE", type: "telegram", config: "{}", actif: true }];
+    const essai = await connectorService.save("WS-FREE", "whatsapp", { mode: "depannage" })
+        .then(() => "accepté").catch(e => e.code || "refusé");
+    verifier("l'essai WhatsApp 3 jours passe malgré le quota atteint", essai, "accepté");
+    // Mais une vraie connexion WhatsApp, elle, reste soumise au quota.
+    const vraie = await connectorService.save("WS-FREE", "whatsapp", { fournisseur: "green", apiId: "1", apiToken: "x" })
+        .then(() => "accepté").catch(e => e.code || "refusé");
+    verifier("une vraie connexion WhatsApp reste soumise au quota", vraie, "QUOTA_CANAUX");
+
     // Un espace client (routes/client-connect.js) n'est pas un espace
     // marchand : il n'a pas de palier et ne doit jamais être bloqué ici.
     verifier("espace hors workspaces : jamais bloqué",
