@@ -13,6 +13,15 @@ const gradeService = require("../services/gradeService");
 const referralService = require("../services/referralService");
 const workspaceService = require("../services/workspaceService");
 
+// Où renvoyer quelqu'un venu d'une communauté partenaire. Rien pour la
+// communauté maison : ses membres vont bien dans leur QG.
+function retourCommunaute(req) {
+    const slug = req.session?.communaute;
+    const communautes = require("../config/communautes");
+    if (!slug || slug === communautes.DEFAUT || !communautes.existe(slug)) return null;
+    return "/c/" + slug;
+}
+
 const TOKEN_VALIDITE_HEURES = 24;
 
 // ── GET /register ──────────────────────────────────────────────
@@ -386,7 +395,7 @@ router.post("/", async (req, res) => {
 
                 if (typeCompteExistant === "client") {
                     req.session.workspaceId = null;
-                    return res.json({ success: true, redirect: "/client-qg" });
+                    return res.json({ success: true, redirect: retourCommunaute(req) || "/client-qg" });
                 }
 
                 const workspaces = await db.query(`SELECT * FROM workspaces WHERE owner_email = $1`, [email]);
@@ -394,7 +403,7 @@ router.post("/", async (req, res) => {
                 req.session.workspaceId = workspace?.id || null;
                 if (workspace) req.session.metier = workspace.metier;
 
-                res.json({ success: true, redirect: workspace ? "/qg" : "/hub" });
+                res.json({ success: true, redirect: retourCommunaute(req) || (workspace ? "/qg" : "/hub") });
             });
             return;
         }
@@ -472,7 +481,7 @@ router.post("/", async (req, res) => {
                 typeCompte === "client"  ? "/client-qg" :
                 workspaceExistant        ? "/qg" : "/hub";
 
-            res.json({ success: true, message: "✅ Compte créé !", redirect: redirection });
+            res.json({ success: true, message: "✅ Compte créé !", redirect: retourCommunaute(req) || redirection });
         });
 
     } catch (err) {

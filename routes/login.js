@@ -6,6 +6,15 @@ const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const db      = require("../services/db");
 
+// Où renvoyer quelqu'un venu d'une communauté partenaire. Rien pour la
+// communauté maison : ses membres vont bien dans leur QG.
+function retourCommunaute(req) {
+    const slug = req.session?.communaute;
+    const communautes = require("../config/communautes");
+    if (!slug || slug === communautes.DEFAUT || !communautes.existe(slug)) return null;
+    return "/c/" + slug;
+}
+
 // ── GET /login ────────────────────────────────────────────────
 router.get("/", (req, res) => {
     if (req.session?.loggedIn) return res.redirect("/hub");
@@ -237,7 +246,7 @@ router.post("/", async (req, res) => {
                 req.session.typeCompte = "client";
                 req.session.workspaceId = null;
 
-                res.json({ success: true, redirect: "/client-qg" });
+                res.json({ success: true, redirect: retourCommunaute(req) || "/client-qg" });
             });
             return;
         }
@@ -267,7 +276,7 @@ router.post("/", async (req, res) => {
             // la vue d'ensemble de ses clients, pas une boutique isolée.
             res.json({
                 success : true,
-                redirect: typeCompte === "agence" ? "/agence" : (workspace ? "/qg" : "/hub"),
+                redirect: retourCommunaute(req) || (typeCompte === "agence" ? "/agence" : (workspace ? "/qg" : "/hub")),
             });
         });
 

@@ -124,6 +124,19 @@ app.use(require("./services/langue").routeur());
 // connecté — l'agence rentre à l'agence, le marchand à son QG.
 app.use(require("./services/navigation").middleware);
 
+// ── LA COMMUNAUTÉ D'ORIGINE ──────────────────────────────────────────
+// Un visiteur arrive de /c/coindudigital, clique « Créer mon compte » et
+// se retrouve sur nos pages. Sans cette mémoire, il finirait dans NOTRE
+// QG après inscription — une marque qu'il n'a jamais demandée, et plus
+// aucun chemin de retour vers chez elle. On retient d'où il vient.
+app.use((req, res, next) => {
+    const demandee = req.query?.c;
+    if (demandee && require("./config/communautes").existe(demandee) && req.session) {
+        req.session.communaute = String(demandee).toLowerCase().replace(/[^a-z0-9-]/g, "");
+    }
+    next();
+});
+
 // ── LOCALS (disponibles dans toutes les vues EJS) ─────
 app.use((req, res, next) => {
     res.locals.workspaceId = req.session?.workspaceId || null;

@@ -166,9 +166,9 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
         return `
         <article class="post-card" data-post-id="${p.id}">
             <div class="post-head">
-                <a class="post-avatar" href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${initiales(p.prenom,p.nom)}</a>
+                ${COM.ecosysteme ? `<a class="post-avatar" href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${initiales(p.prenom,p.nom)}</a>` : `<span class="post-avatar">${initiales(p.prenom,p.nom)}</span>`}
                 <div class="post-authorblock">
-                    <div class="post-author"><a href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${nomAuteur}</a> ${p.epingle?'<i data-lucide="pin" class="pin-ic"></i>':""}</div>
+                    <div class="post-author">${COM.ecosysteme ? `<a href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${nomAuteur}</a>` : nomAuteur} ${p.epingle?'<i data-lucide="pin" class="pin-ic"></i>':""}</div>
                     <div class="post-meta"><span class="grade-chip ${isMarchand?"grade-chip--gold":""}">${isMarchand?"🏪":"👤"} ${grade}</span><span class="dot-sep">·</span><span>${timeAgo(p.created_at)}</span></div>
                 </div>
                 <span class="cat-badge" style="--cat-color:${cat.couleur};"><i data-lucide="${cat.icon}"></i> ${cat.label}</span>
@@ -190,8 +190,8 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     }).join("") : `<div class="empty-feed"><i data-lucide="message-square-dashed"></i><h3>Aucune publication pour l'instant</h3><p>${escapeHtml(COM.vide)}</p></div>`;
 
     const classementHtml = classement.length ? classement.map((u,i) => `
-        <a class="rank-item" href="/vitrine/${encodeURIComponent(u.id)}"><span class="rank-num rank-${i+1}">${i+1}</span><div class="rank-avatar">${initiales(u.prenom,u.nom)}</div>
-        <div class="rank-info"><strong>${escapeHtml(`${u.prenom||"Membre"} ${u.nom||""}`)}</strong><span>${escapeHtml(u.grade_actuel||"Soldat")} · ${u.score_grade||0} pts</span></div></a>`).join("") : `<p class="rank-empty">Le classement se remplira bientôt.</p>`;
+        <${COM.ecosysteme ? `a class="rank-item" href="/vitrine/${encodeURIComponent(u.id)}"` : `div class="rank-item"`}><span class="rank-num rank-${i+1}">${i+1}</span><div class="rank-avatar">${initiales(u.prenom,u.nom)}</div>
+        <div class="rank-info"><strong>${escapeHtml(`${u.prenom||"Membre"} ${u.nom||""}`)}</strong><span>${escapeHtml(u.grade_actuel||"Soldat")} · ${u.score_grade||0} pts</span></div></${COM.ecosysteme ? "a" : "div"}>`).join("") : `<p class="rank-empty">Le classement se remplira bientôt.</p>`;
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -432,7 +432,7 @@ ${COM.ecosysteme ? `
 </aside>
 <div class="main">
 <header class="header"><h1>${escapeHtml(COM.nom)}</h1>
-<div class="header-actions"><button class="icon-btn" id="themeBtn" type="button"><i data-lucide="moon"></i></button><a class="icon-btn" href="/qg"><i data-lucide="layout-dashboard"></i></a></div>
+<div class="header-actions"><button class="icon-btn" id="themeBtn" type="button"><i data-lucide="moon"></i></button>${COM.ecosysteme ? `<a class="icon-btn" href="/qg"><i data-lucide="layout-dashboard"></i></a>` : ""}</div>
 </header>
 <div class="layout">
 <div class="col-side">
@@ -449,7 +449,7 @@ ${COM.ecosysteme ? `<div class="side-panel"><h3><i data-lucide="compass"></i> É
 <a href="/academy" class="eco-link-item"><i data-lucide="graduation-cap"></i> Academy · Apprendre & progresser</a>
 </div>` : `<div class="side-panel"><h3><i data-lucide="megaphone"></i> Vendre ici</h3>
 <div class="side-text" style="margin-bottom:12px;">Tu as un produit, une formation, un service ? Ouvre ton profil et publie-le. Publier est gratuit ; la mise en avant est payante.</div>
-<a href="${connecte ? "/settings" : "/register"}" class="eco-link-item"><i data-lucide="store"></i> Ouvrir ma boutique</a>
+<a href="/register?c=${COM.slug}" class="eco-link-item"><i data-lucide="store"></i> Ouvrir ma boutique</a>
 <a href="#" class="eco-link-item" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant · dès 1 000 FCFA</a>
 </div>
 ${COM.app ? `<div class="side-panel" id="panneauApp" style="display:none;">
@@ -459,17 +459,17 @@ ${COM.app ? `<div class="side-panel" id="panneauApp" style="display:none;">
 </div>` : ""}`}</div>
 
 <div class="col-feed">
-<div class="stories-bar">
+${COM.ecosysteme ? `<div class="stories-bar">
 <a class="story-circle story-circle--add" href="/stories/publier"><div class="story-ring story-ring--add"><i data-lucide="plus"></i></div><span>Ta story</span></a>
 ${storiesBarHtml}
-</div>
+</div>` : ""}
 ${!connecte ? `
 <div class="composer invite">
   <div class="invite-h">Bienvenue sur ${escapeHtml(COM.nom)}</div>
   <p class="invite-p">Tu peux tout lire ici, librement. Un compte ne sert qu'au moment où tu veux publier, commenter ou acheter — et il se crée en trente secondes.</p>
   <div class="invite-a">
-    <a class="invite-btn" href="/register">Créer mon compte</a>
-    <a class="invite-btn invite-btn--calme" href="/login">J'ai déjà un compte</a>
+    <a class="invite-btn" href="/register?c=${COM.slug}">Créer mon compte</a>
+    <a class="invite-btn invite-btn--calme" href="/login?c=${COM.slug}">J'ai déjà un compte</a>
   </div>
 </div>` : `
 <div class="composer">
