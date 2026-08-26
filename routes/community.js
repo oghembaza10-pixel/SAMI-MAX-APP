@@ -57,6 +57,43 @@ const MODULES_INFO = {
     academy:     { label:"Academy",     icon:"graduation-cap" },
 };
 
+// LE MANIFESTE D'UNE COMMUNAUTÉ PARTENAIRE.
+//
+// C'est ce qui transforme une page web en application sur l'écran d'accueil :
+// un nom, une icône, une couleur, et une adresse de départ. Pas de magasin,
+// pas de validation, pas de téléchargement lourd — au Cameroun c'est le bon
+// format, et ça marche sur des téléphones où personne n'installerait 40 Mo.
+//
+// `scope` est volontairement limité à sa communauté : une fois installée,
+// l'application ne peut pas dériver vers le reste du site. Si un lien sort
+// du périmètre, il s'ouvre dans le navigateur, pas dans SON application.
+router.get("/:slug/manifest.json", (req, res) => {
+    const COM = communautes.get(req.params.slug);
+    if (!COM.app) return res.status(404).json({ erreur: "Cette communauté n'a pas d'application." });
+
+    const base = `/c/${COM.slug}`;
+    const ic = (taille, but) => ({
+        src: `/icons/${COM.app.icone}-${taille}.png`,
+        sizes: `${taille.split("-")[0]}x${taille.split("-")[0]}`,
+        type: "image/png",
+        purpose: but,
+    });
+
+    res.type("application/manifest+json").json({
+        name: COM.app.nom,
+        short_name: COM.app.nomCourt,
+        description: COM.app.description,
+        start_url: base,
+        scope: base,
+        display: "standalone",
+        orientation: "portrait-primary",
+        background_color: COM.app.fond,
+        theme_color: COM.app.theme,
+        lang: "fr",
+        icons: [ic("192", "any"), ic("512", "any"), ic("512-maskable", "maskable")],
+    });
+});
+
 router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     const COM = communauteDe(req);
     if (req.params?.slug && req.session) req.session.communaute = COM.slug;
@@ -161,8 +198,9 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>${escapeHtml(COM.titre)}</title>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#070809">
+<link rel="manifest" href="${COM.app ? `/c/${COM.slug}/manifest.json` : "/manifest.json"}">
+<meta name="theme-color" content="${COM.app ? COM.app.theme : "#070809"}">
+<link rel="apple-touch-icon" href="${COM.app ? `/icons/${COM.app.icone}-192.png` : "/icons/icon-192.png"}">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -266,6 +304,11 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
   display:inline-flex;align-items:center;gap:7px;}
 .composer-boost:hover{background:var(--gold);color:#100c02;}
 .composer-boost svg{width:14px;height:14px;}
+
+.app-install{width:100%;padding:12px;border-radius:11px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#001018;
+  font-weight:800;font-size:12.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+.app-install svg{width:15px;height:15px;}
 
 .sheet-voile{position:fixed;inset:0;background:rgba(2,6,10,.66);z-index:90;display:none;}
 .sheet-voile.on{display:block;}
@@ -408,7 +451,12 @@ ${COM.ecosysteme ? `<div class="side-panel"><h3><i data-lucide="compass"></i> É
 <div class="side-text" style="margin-bottom:12px;">Tu as un produit, une formation, un service ? Ouvre ton profil et publie-le. Publier est gratuit ; la mise en avant est payante.</div>
 <a href="${connecte ? "/settings" : "/register"}" class="eco-link-item"><i data-lucide="store"></i> Ouvrir ma boutique</a>
 <a href="#" class="eco-link-item" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant · dès 1 000 FCFA</a>
-</div>`}</div>
+</div>
+${COM.app ? `<div class="side-panel" id="panneauApp" style="display:none;">
+  <h3><i data-lucide="smartphone"></i> L'application</h3>
+  <div class="side-text" style="margin-bottom:12px;">Installe ${escapeHtml(COM.app.nom)} sur ton téléphone. Rien à télécharger, l'icône se pose sur ton écran d'accueil.</div>
+  <button class="app-install" onclick="installerApp()"><i data-lucide="download"></i> Installer l'application</button>
+</div>` : ""}`}</div>
 
 <div class="col-feed">
 <div class="stories-bar">
@@ -516,6 +564,32 @@ document.querySelectorAll("[data-boost]").forEach(function(el){
   });
 });
 document.addEventListener("keydown", function(e){ if(e.key==="Escape") fermerBoost(); });
+
+// ── L'application ───────────────────────────────────────────────────────
+// Le navigateur décide seul si une page est installable — et il ne le dit
+// qu'en émettant l'événement « beforeinstallprompt ». On garde donc le
+// panneau CACHÉ tant qu'il n'est pas arrivé : un bouton « Installer » qui
+// ne fait rien parce que le navigateur refuse (iOS, page déjà installée,
+// connexion non sécurisée) est pire que pas de bouton du tout.
+let inviteApp = null;
+window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    inviteApp = e;
+    const panneau = document.getElementById("panneauApp");
+    if (panneau) panneau.style.display = "";
+});
+async function installerApp() {
+    if (!inviteApp) { showToast("Ouvre le menu de ton navigateur puis « Ajouter à l'écran d'accueil »."); return; }
+    inviteApp.prompt();
+    const choix = await inviteApp.userChoice;
+    inviteApp = null;
+    document.getElementById("panneauApp").style.display = "none";
+    if (choix.outcome === "accepted") showToast("C'est installé — regarde ton écran d'accueil.");
+}
+// Déjà installée : le panneau n'a plus rien à proposer.
+window.addEventListener("appinstalled", function () {
+    const p = document.getElementById("panneauApp"); if (p) p.style.display = "none";
+});
 
 // ── SAMII en bulle ──────────────────────────────────────────────────────
 // L'historique reste dans la page : il sert de contexte à la réponse

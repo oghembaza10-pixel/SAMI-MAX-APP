@@ -50,6 +50,10 @@ const COMMUNAUTES = {
         ecosysteme: true,
         couleurs: null,          // null = la feuille de style d'origine
         hote: null,
+        // L'application installable. SAMII garde son manifeste historique
+        // à la racine — des gens l'ont déjà sur leur écran d'accueil, et
+        // changer son identité déplacerait leur icône.
+        app: null,
     },
 
     // ── Le Coin Du Digital — Ines Audrey, Douala ─────────────────────────
@@ -85,6 +89,19 @@ const COMMUNAUTES = {
             "--border": "rgba(217,178,76,.2)",
         },
         hote: null,
+        // SON application, installée depuis un lien — pas depuis un magasin.
+        // Au Cameroun c'est le bon format : rien à télécharger de lourd, pas
+        // de compte Play Store, pas de validation à attendre. Elle envoie un
+        // lien, ses gens appuient sur « Installer », et son icône est sur
+        // leur écran d'accueil à côté de WhatsApp.
+        app: {
+            nom: "Le Coin Du Digital",
+            nomCourt: "Coin Digital",
+            description: "Ressources numériques, outils IA, astuces tech, formations et opportunités digitales.",
+            fond: "#081820",
+            theme: "#081820",
+            icone: "coindudigital",
+        },
     },
 };
 
