@@ -32,14 +32,18 @@ async function getAbonnement(userId) {
     }
 }
 
+// null et non "free" quand l'espace n'existe pas : ici l'appelant distingue
+// « pas d'espace du tout » de « espace au palier gratuit ». On garde donc la
+// vérification d'existence, et on demande le palier à abonnementService.
 async function getPalierWorkspace(workspaceId) {
     if (!workspaceId) return null;
     try {
-        const rows = await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [workspaceId]);
-        return rows[0]?.palier_abonnement || null;
+        const rows = await db.query(`SELECT id FROM workspaces WHERE id = $1`, [workspaceId]);
+        if (!rows.length) return null;
     } catch {
         return null;
     }
+    return require("./abonnementService").getPalier(workspaceId);
 }
 
 async function compterMessagesFenetre(userId) {

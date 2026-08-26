@@ -19,9 +19,12 @@ function requireAuth(req, res, next) {
 
 async function chargerContexte(req) {
     const workspaceId = req.session?.workspaceId;
-    const workspaceRows = workspaceId
-        ? await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [workspaceId])
-        : [];
+    // Le palier vient d'abonnementService, jamais d'une lecture directe :
+    // c'est ce que voit le marchand sur la grille des cartes, et ça doit être
+    // exactement ce que le produit applique derrière.
+    const palierWorkspace = workspaceId
+        ? await require("../services/abonnementService").getPalier(workspaceId)
+        : "free";
     const userRows = await db.query(`SELECT grade_actuel FROM utilisateurs WHERE id = $1`, [req.session.userId]);
     const achatsRows = workspaceId
         ? await db.query(`SELECT carte_id, expire_le FROM cartes_achats WHERE workspace_id = $1 AND statut = 'payée' AND expire_le > now()`, [workspaceId])
@@ -32,7 +35,7 @@ async function chargerContexte(req) {
 
     return {
         workspaceId,
-        palierWorkspace: workspaceRows[0]?.palier_abonnement || "free",
+        palierWorkspace,
         gradeClient: userRows[0]?.grade_actuel || "Soldat",
         cartesActivesIds: achatsRows.map(r => r.carte_id),
         expirations,

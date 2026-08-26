@@ -15,14 +15,11 @@ const devises = require("../services/devises");
 const QUOTA_PAR_PALIER = { free: 5, standard: 70, pro: 1000 };
 const PRIX_DEPASSEMENT_USD = 0.5;
 
+// Le palier passe par abonnementService, jamais par une lecture directe de
+// palier_abonnement : sinon les règles se dédoublent et divergent.
 async function getPalierWorkspace(workspaceId) {
     if (!workspaceId) return "free";
-    try {
-        const rows = await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [workspaceId]);
-        return rows[0]?.palier_abonnement || "free";
-    } catch {
-        return "free";
-    }
+    return require("./abonnementService").getPalier(workspaceId);
 }
 
 async function compterConfirmationsJour(workspaceId) {

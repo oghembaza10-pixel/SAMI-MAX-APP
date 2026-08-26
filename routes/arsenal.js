@@ -82,8 +82,9 @@ router.get("/", requireAuth, async (req, res) => {
             tierAtteint = idx >= 0 ? idx : 0;
         }
         if (req.session.workspaceId) {
-            const wsRows = await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [req.session.workspaceId]);
-            palierWorkspace = wsRows[0]?.palier_abonnement || "free";
+            // Par abonnementService, jamais en lisant palier_abonnement :
+            // un second juge finit toujours par juger autrement.
+            palierWorkspace = await require("../services/abonnementService").getPalier(req.session.workspaceId);
 
             const achatsRows = await db.query(
                 `SELECT carte_id FROM cartes_achats WHERE workspace_id = $1 AND statut = 'payée' AND expire_le > now()`,

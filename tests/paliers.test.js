@@ -29,13 +29,32 @@ const ESPACES = {
 };
 let CONNECTEURS = [];
 
+// À qui appartient chaque espace. Sert au seul cas qui compte ici : un compte
+// fondateur ne doit pas être arrêté par le quota de canaux — c'est ce qui a
+// empêché le fondateur de brancher son propre WhatsApp sur sa propre
+// plateforme, parce qu'un second endroit du code relisait palier_abonnement
+// au lieu de passer par abonnementService.
+const PROPRIETAIRES = {
+    "WS-FONDATEUR": "oghembaza10@gmail.com",
+};
+ESPACES["WS-FONDATEUR"] = "free";
+
 function installerBaseSimulee() {
     const faux = {
         query: async (sql, p = []) => {
             const s = sql.replace(/\s+/g, " ").trim();
-            if (s.startsWith("SELECT palier_abonnement FROM workspaces")) {
+            // Le quota vérifie d'abord que l'espace existe, puis demande son
+            // palier à abonnementService — qui lit aussi le propriétaire, car
+            // c'est lui qui connaît les comptes fondateurs.
+            if (s.startsWith("SELECT id FROM workspaces")) {
+                return ESPACES[p[0]] ? [{ id: p[0] }] : [];
+            }
+            if (s.startsWith("SELECT palier_abonnement, owner, owner_email FROM workspaces")
+                || s.startsWith("SELECT palier_abonnement FROM workspaces")) {
                 const palier = ESPACES[p[0]];
-                return palier ? [{ palier_abonnement: palier }] : [];
+                if (!palier) return [];
+                const email = PROPRIETAIRES[p[0]] || "marchand@exemple.com";
+                return [{ palier_abonnement: palier, owner: email, owner_email: email }];
             }
             if (s.startsWith("SELECT * FROM connecteurs WHERE workspace_id = $1 ORDER BY")) {
                 return CONNECTEURS.filter(c => c.workspace_id === p[0]);
@@ -177,6 +196,22 @@ const verifier = (titre, obtenu, attendu) => {
     const vraie = await connectorService.save("WS-FREE", "whatsapp", { fournisseur: "green", apiId: "1", apiToken: "x" })
         .then(() => "accepté").catch(e => e.code || "refusé");
     verifier("une vraie connexion WhatsApp reste soumise au quota", vraie, "QUOTA_CANAUX");
+
+    // ── Le compte fondateur ──────────────────────────────────────────────
+    // Le fondateur n'a pas pu brancher son propre WhatsApp sur sa propre
+    // plateforme : le quota lui répondait « Palier Actif requis ». La cause
+    // n'était pas le quota mais un SECOND endroit qui relisait
+    // palier_abonnement au lieu de passer par abonnementService — donc sans
+    // connaître les comptes fondateurs. Ce test verrouille le chemin unique.
+    CONNECTEURS = [
+        { workspace_id: "WS-FREE", type: "telegram", actif: true },
+        { workspace_id: "WS-FONDATEUR", type: "youtube", actif: true },
+        { workspace_id: "WS-FONDATEUR", type: "telegram", actif: true },
+    ];
+    verifier("un espace gratuit ordinaire est bien bloqué au 2e canal",
+        (await connectorService.quotaCanaux("WS-FREE", "whatsapp")).ok, false);
+    verifier("le fondateur n'est jamais bloqué par le quota de canaux",
+        (await connectorService.quotaCanaux("WS-FONDATEUR", "whatsapp")).ok, true);
 
     // Un espace client (routes/client-connect.js) n'est pas un espace
     // marchand : il n'a pas de palier et ne doit jamais être bloqué ici.

@@ -130,14 +130,19 @@ async function quotaCanaux(workspaceId, type) {
     // workspace) n'ont pas de palier et ne doivent jamais être bloqués ici.
     // Une panne de base ne bloque pas non plus : brancher un canal n'est pas
     // une frontière de sécurité, WhatsApp et l'API ont leurs propres contrôles.
-    let palier;
+    // L'existence de l'espace se vérifie ici, mais le PALIER se demande à
+    // abonnementService : c'est lui qui connaît toutes les règles, y compris
+    // les comptes fondateurs. Relire palier_abonnement en direct, c'était
+    // fabriquer un deuxième juge — et c'est ce deuxième juge qui a refusé au
+    // fondateur de brancher son propre WhatsApp.
+    // Require différé : évite toute dépendance circulaire au chargement.
     try {
-        const rows = await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [workspaceId]);
+        const rows = await db.query(`SELECT id FROM workspaces WHERE id = $1`, [workspaceId]);
         if (!rows.length) return { ok: true };
-        palier = rows[0].palier_abonnement || "free";
     } catch {
         return { ok: true };
     }
+    const palier = await require("./abonnementService").getPalier(workspaceId);
 
     const max = paliers.canauxMax(palier);
     if (max === null) return { ok: true };
