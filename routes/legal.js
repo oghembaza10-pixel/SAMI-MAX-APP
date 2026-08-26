@@ -22,10 +22,11 @@ const CONFIG = require("../config");
 
 const CONTACT = process.env.EMAIL_CONTACT || "info@souverain-store.com";
 const MAJ = "26 août 2026";
+const MAJ_EN = "26 August 2026";
 
-function page(titre, corps) {
+function page(titre, corps, lang = "fr") {
     return `<!DOCTYPE html>
-<html lang="fr">
+<html lang="${lang}">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${titre} — SAMII OS</title>
@@ -58,14 +59,17 @@ function page(titre, corps) {
 <div class="l">
   <div class="marque">O G &nbsp; T E C H N O L O G Y</div>
   <h1>${titre}</h1>
-  <p class="maj">Dernière mise à jour : ${MAJ}</p>
+  <p class="maj">${lang === "en" ? "Last updated: " + MAJ_EN : "Dernière mise à jour : " + MAJ}</p>
   ${corps}
   <div class="pied">
     OG Technology — SAMII OS · <a href="mailto:${CONTACT}">${CONTACT}</a><br>
-    <a href="/confidentialite">Confidentialité</a> ·
-    <a href="/conditions">Conditions</a> ·
-    <a href="/suppression-des-donnees">Suppression des données</a> ·
-    <a href="/">Accueil</a>
+    ${lang === "en"
+      ? `<a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> ·
+         <a href="/data-deletion.html">Data deletion</a> · <a href="/developers">Developers</a> ·
+         <a href="?lang=fr">Français</a>`
+      : `<a href="/confidentialite">Confidentialité</a> · <a href="/conditions">Conditions</a> ·
+         <a href="/suppression-des-donnees">Suppression des données</a> · <a href="/">Accueil</a> ·
+         <a href="?lang=en">English</a>`}
   </div>
 </div>
 </body>
@@ -268,16 +272,206 @@ un compte en cas de manquement grave, ou avec un préavis de 30 jours autrement.
 // l'alias reviendrait à parier que personne n'a copié ces adresses ailleurs —
 // et une URL de confidentialité morte fait échouer une validation entière,
 // des semaines après, sans qu'on comprenne pourquoi. Les deux formes vivent.
+// ══ VERSIONS ANGLAISES ══════════════════════════════════════════════════
+// Traduites et non générées : ce sont des textes juridiques. Une phrase
+// approximative sur la responsabilité ou la conservation des données ne se
+// rattrape pas — elle engage. Elles disent la même chose que les versions
+// françaises, ligne pour ligne.
+
+const CONFIDENTIALITE_EN = `
+<p>SAMII is an assistant that answers a merchant's customers, takes their orders and
+their bookings, and manages their online presence. To do that, it processes data —
+including conversations. This page says which data, why, and what we do not do with it.</p>
+
+<div class="encadre">
+  <p style="margin:0"><b>Two roles not to be confused.</b> The merchant using SAMII is the
+  <b>controller</b> of their customers' data. OG Technology is their <b>processor</b>: we process
+  that data on their behalf, on their instructions, and for no other purpose.</p>
+</div>
+
+<h2>1. What we collect</h2>
+<table>
+  <thead><tr><th>Data</th><th>Where it comes from</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Merchant account: name, email, phone, trade, country</td><td>Their sign-up</td><td>To create and run their workspace</td></tr>
+    <tr><td>Messages exchanged with their customers</td><td>WhatsApp, Telegram, Messenger, Instagram</td><td>To answer, take an order or book an appointment</td></tr>
+    <tr><td>End customer's name, phone and address</td><td>The conversation itself</td><td>To deliver the order, confirm the appointment</td></tr>
+    <tr><td>Orders, appointments, products</td><td>Typed in or from a conversation</td><td>The core of the service</td></tr>
+    <tr><td>Email, calendar, files</td><td>Google, only if the merchant connects their account</td><td>To sort their email, place their appointments</td></tr>
+    <tr><td>Pages and social accounts</td><td>Meta, if they connect them</td><td>To publish and answer comments</td></tr>
+    <tr><td>Technical log: API calls, errors, timestamps</td><td>Automatic</td><td>To diagnose failures and bill on usage</td></tr>
+  </tbody>
+</table>
+
+<h2>2. What we do not do</h2>
+<ul>
+  <li><b>We do not sell any data</b>, to anyone, under any circumstances.</li>
+  <li>We do not use a merchant's conversations to train an artificial intelligence model.</li>
+  <li>We do not share one merchant's data with another merchant.</li>
+  <li>No message is ever sent from a sandbox: a test workspace cannot write to a real phone number.</li>
+</ul>
+
+<h2>3. Who the data passes through</h2>
+<p>Running the service requires providers. Each one receives only what it needs:</p>
+<ul>
+  <li><b>Meta</b> (WhatsApp Business, Facebook, Instagram) — to carry messages and publish.</li>
+  <li><b>Telegram</b> — to carry messages.</li>
+  <li><b>Google</b> — only if the merchant connects Gmail, Calendar or Drive.</li>
+  <li><b>AI providers</b> — the text of a message may be sent to them to produce an answer.
+      It is not retained by them for training.</li>
+  <li><b>Hosting and database</b> — storage of the service.</li>
+  <li><b>Payment providers</b> — only for a subscription or a purchase. We never see a card
+      number: it does not pass through our servers.</li>
+</ul>
+
+<h2>4. How long we keep it</h2>
+<ul>
+  <li><b>Account and workspace</b>: as long as the account exists, then 30 days after closure.</li>
+  <li><b>Orders and appointments</b>: kept as long as the merchant needs them; they can delete them at any time.</li>
+  <li><b>Technical logs</b>: 90 days.</li>
+  <li><b>Access tokens</b> (Meta, Google): deleted as soon as the merchant disconnects that service.</li>
+</ul>
+
+<h2>5. Your rights</h2>
+<p>Access, rectification, erasure, portability, objection. One address for all of it:
+<a href="mailto:${CONTACT}">${CONTACT}</a>. We answer within 30 days.</p>
+<p>An end customer of a merchant who wants their data deleted can ask that merchant directly,
+or ask us: we pass it on and make sure it is done.
+See also <a href="/data-deletion.html">the dedicated page</a>.</p>
+
+<h2>6. Security</h2>
+<ul>
+  <li>All traffic is encrypted (HTTPS).</li>
+  <li>API keys are stored as a fingerprint: a lost key is re-created, never read back.</li>
+  <li>Sensitive tables are closed by default at the database level, not only in the code.</li>
+  <li>Each workspace is isolated: a key can only read the workspace it belongs to.</li>
+</ul>
+
+<h2>7. Minors</h2>
+<p>SAMII is a professional tool. It is not intended for people under 16 and we do not
+knowingly collect their data.</p>
+
+<h2>8. Changes</h2>
+<p>Any change is published on this page with its date. A significant change is announced to
+merchants by email before it takes effect.</p>
+
+<h2>9. Contact us</h2>
+<p>OG Technology — SAMII OS<br>
+<a href="mailto:${CONTACT}">${CONTACT}</a></p>
+`;
+
+const SUPPRESSION_EN = `
+<p>You can ask for your data to be deleted at any time, without giving a reason,
+and at no cost.</p>
+
+<h2>If you are a merchant</h2>
+<ul>
+  <li><b>Delete a specific item</b> — an order, an appointment, a product: from your HQ.
+      Deletion is immediate and permanent.</li>
+  <li><b>Disconnect a service</b> — WhatsApp, Meta, Google: from "My connections".
+      The access token is erased immediately.</li>
+  <li><b>Delete your whole account</b> — write to <a href="mailto:${CONTACT}">${CONTACT}</a>
+      from your account address, with "Account deletion" as the subject. Everything is erased
+      within 30 days, except what accounting law requires us to keep (invoices: 10 years).</li>
+</ul>
+
+<h2>If you are a customer of a business using SAMII</h2>
+<p>Your data (name, phone, address, messages) belongs to the merchant you wrote to.
+Two paths, both work:</p>
+<ul>
+  <li>Ask them directly — they can delete it themselves in seconds.</li>
+  <li>Or write to us at <a href="mailto:${CONTACT}">${CONTACT}</a> with the name of the business
+      and the phone number concerned. We pass it on and verify it was done.</li>
+</ul>
+
+<h2>If you came from Facebook or Instagram</h2>
+<p>A deletion request started from your Meta account settings reaches us automatically:
+we erase the data linked to that account, and Meta gives you a tracking number so you can
+check where the request stands.</p>
+
+<div class="encadre">
+  <p style="margin:0"><b>What survives a deletion, and why.</b> Invoices already issued are kept
+  for 10 years: accounting law requires it and we cannot depart from that. They contain no
+  conversation — only an amount, a date and a company name.</p>
+</div>
+`;
+
+const CONDITIONS_EN = `
+<p>By using SAMII you accept the following. If something here does not suit you, write to us
+before you commit — we would rather answer a question than live with a misunderstanding.</p>
+
+<h2>1. What SAMII does</h2>
+<p>SAMII answers your customers, takes your orders and your bookings, publishes for you and
+connects your tools. It acts <b>on your behalf and under your control</b>: you remain
+responsible for what is said and sold in your name.</p>
+
+<h2>2. Your account</h2>
+<ul>
+  <li>You are responsible for your credentials and your API keys.</li>
+  <li>A lost key is re-created, never read back. We keep only a fingerprint of it.</li>
+  <li>One account per company. A workspace may not be used to resell the service without going
+      through the agency offer.</li>
+</ul>
+
+<h2>3. What is not allowed</h2>
+<ul>
+  <li>Sending unsolicited bulk messages. WhatsApp and Meta forbid it, and it is your number
+      that would be suspended, not ours.</li>
+  <li>Selling illegal, counterfeit or dangerous goods.</li>
+  <li>Using SAMII to deceive, harass or impersonate anyone.</li>
+  <li>Attempting to read data from a workspace other than your own.</li>
+</ul>
+<p>A serious breach results in immediate closure of the account, with no refund of the
+current period.</p>
+
+<h2>4. Payment</h2>
+<ul>
+  <li>Plans are monthly, with no minimum term. You stop whenever you want.</li>
+  <li>Some AI creations are billed on usage and added to the next renewal. The counter is
+      visible before you start.</li>
+  <li>Prices may change; a change is announced 30 days in advance and never applies
+      retroactively.</li>
+</ul>
+
+<h2>5. About the Academy</h2>
+<p>A developer who publishes an application on the Academy remains its owner. OG Technology is
+a partner and takes a commission on transactions closed there — the rate is displayed before
+joining and does not change for a transaction already under way.</p>
+
+<h2>6. Availability</h2>
+<p>We run the service continuously, but we do not promise infallibility: a third-party platform
+(WhatsApp, Meta, Google) can go down without us being able to prevent it. We are not liable for
+indirect losses caused by an interruption. In case of a prolonged outage on our side, the
+affected period is credited.</p>
+
+<h2>7. Ending the relationship</h2>
+<p>You can close your account at any time. Your data is erased following
+<a href="/data-deletion.html">the deletion procedure</a>. We may close an account in case of a
+serious breach, or with 30 days' notice otherwise.</p>
+
+<h2>8. Contact</h2>
+<p>OG Technology — SAMII OS · <a href="mailto:${CONTACT}">${CONTACT}</a></p>
+`;
+
+// Le choix de langue vient du même endroit que pour les pages de l'Académie :
+// une seule règle de détection dans tout le produit.
+const langue = require("../services/langue");
+
+function servir(req, res, titreFr, titreEn, corpsFr, corpsEn) {
+    const en = langue.detecter(req) === "en";
+    return res.send(page(en ? titreEn : titreFr, en ? corpsEn : corpsFr, en ? "en" : "fr"));
+}
+
 router.get(["/confidentialite", "/privacy", "/privacy.html", "/politique-de-confidentialite"], (req, res) => {
-    res.send(page("Politique de confidentialité", CONFIDENTIALITE));
+    servir(req, res, "Politique de confidentialité", "Privacy Policy", CONFIDENTIALITE, CONFIDENTIALITE_EN);
 });
 
 router.get(["/conditions", "/terms", "/terms.html", "/conditions-de-service", "/cgu"], (req, res) => {
-    res.send(page("Conditions de service", CONDITIONS));
+    servir(req, res, "Conditions de service", "Terms of Service", CONDITIONS, CONDITIONS_EN);
 });
 
 router.get(["/suppression-des-donnees", "/data-deletion.html", "/suppression"], (req, res) => {
-    res.send(page("Suppression des données", SUPPRESSION));
+    servir(req, res, "Suppression des données", "Data Deletion", SUPPRESSION, SUPPRESSION_EN);
 });
 
 module.exports = router;
