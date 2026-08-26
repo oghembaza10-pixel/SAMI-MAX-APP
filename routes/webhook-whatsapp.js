@@ -238,6 +238,15 @@ router.post("/", async (req, res) => {
         const raw  = req.body;
         const body = Buffer.isBuffer(raw) ? JSON.parse(raw.toString("utf8") || "{}") : (raw || {});
 
+        // UNE TRACE À L'ENTRÉE, TOUJOURS. Sans elle, « rien dans les journaux »
+        // veut dire deux choses opposées : Meta ne nous a jamais appelés, ou
+        // tout s'est bien passé en silence. On a perdu une heure là-dessus le
+        // jour du branchement — ce n'est pas du bavardage, c'est la seule
+        // façon de couper le problème en deux depuis l'extérieur.
+        // Aucun contenu de message n'est journalisé : ce sont des
+        // conversations de clients.
+        console.log(`📩 Webhook WhatsApp reçu — ${Array.isArray(body.entry) ? "format Meta/360dialog" : (body.typeWebhook || "format inconnu")}`);
+
         // ── Famille Cloud : Meta en direct et 360dialog ────────────────────
         // Même enveloppe pour les deux, d'où un seul traitement. On la
         // reconnaît à sa structure (entry[].changes[]), jamais à une devinette
@@ -246,9 +255,14 @@ router.post("/", async (req, res) => {
             const lu = fournisseurs.lireWebhookCloud(body);
             // Accusés de réception (delivered, read) et types non gérés :
             // lireWebhookCloud renvoie null, il n'y a rien à faire.
-            if (!lu) return;
+            if (!lu) {
+                console.log("   ↳ accusé de réception ou type non géré — rien à faire.");
+                return;
+            }
+            console.log(`   ↳ message entrant, numéro ${lu.phoneNumberId || "?"}`);
 
             const workspaceId = await getWorkspaceParNumeroCloud(lu.phoneNumberId, lu.numeroAffiche);
+            if (workspaceId) console.log(`   ↳ marchand trouvé : ${workspaceId}`);
             if (!workspaceId) {
                 console.log(`⚠️ WhatsApp Cloud : marchand introuvable pour ${lu.numeroAffiche || lu.phoneNumberId}`);
                 return;
