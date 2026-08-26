@@ -63,6 +63,7 @@ function page(titre, corps) {
   <div class="pied">
     OG Technology — SAMII OS · <a href="mailto:${CONTACT}">${CONTACT}</a><br>
     <a href="/confidentialite">Confidentialité</a> ·
+    <a href="/conditions">Conditions</a> ·
     <a href="/suppression-des-donnees">Suppression des données</a> ·
     <a href="/">Accueil</a>
   </div>
@@ -196,14 +197,86 @@ numéro de suivi pour vérifier où en est la demande.</p>
 </div>
 `;
 
+// ── Les conditions de service ────────────────────────────────────────────
+// Meta les réclame au même titre que la confidentialité. Volontairement
+// courtes : un contrat que personne ne lit ne protège personne. Ce qui doit
+// être compris tient en dix lignes.
+const CONDITIONS = `
+<p>En utilisant SAMII, tu acceptes ce qui suit. Si un point ne te convient pas,
+écris-nous avant de t'engager — on préfère une question à un malentendu.</p>
+
+<h2>1. Ce que fait SAMII</h2>
+<p>SAMII répond à tes clients, prend tes commandes et tes rendez-vous, publie pour toi
+et relie tes outils. Il agit <b>pour ton compte et sous ton contrôle</b> : tu restes
+responsable de ce qui est dit et vendu en ton nom.</p>
+
+<h2>2. Ton compte</h2>
+<ul>
+  <li>Tu es responsable de tes identifiants et de tes clés d'API.</li>
+  <li>Une clé perdue se refait ; elle ne se relit pas. Nous n'en gardons qu'une empreinte.</li>
+  <li>Un compte par entreprise. Un espace ne peut pas servir à revendre le service sans
+      passer par l'offre agence.</li>
+</ul>
+
+<h2>3. Ce qui est interdit</h2>
+<ul>
+  <li>Envoyer des messages non sollicités en masse. WhatsApp et Meta l'interdisent, et
+      c'est ton numéro qui serait suspendu, pas le nôtre.</li>
+  <li>Vendre des produits illégaux, contrefaits ou dangereux.</li>
+  <li>Utiliser SAMII pour tromper, harceler ou usurper l'identité de quelqu'un.</li>
+  <li>Tenter de lire les données d'un autre espace que le tien.</li>
+</ul>
+<p>Un manquement grave entraîne la fermeture immédiate du compte, sans remboursement
+de la période en cours.</p>
+
+<h2>4. Paiement</h2>
+<ul>
+  <li>Les paliers sont mensuels, sans engagement de durée. Tu arrêtes quand tu veux.</li>
+  <li>Certaines créations par intelligence artificielle se facturent à l'usage et
+      s'ajoutent au renouvellement suivant. Le compteur est visible avant de lancer.</li>
+  <li>Les tarifs peuvent changer ; un changement est annoncé 30 jours à l'avance et ne
+      s'applique jamais rétroactivement.</li>
+</ul>
+
+<h2>5. Sur l'Académie</h2>
+<p>Un développeur qui publie une application sur l'Académie en reste propriétaire.
+OG Technology est partenaire et prélève une commission sur les transactions qui s'y
+font — le taux est affiché avant l'adhésion et ne change pas pour une transaction déjà
+engagée.</p>
+
+<h2>6. Disponibilité</h2>
+<p>Nous faisons tourner le service en continu, mais nous ne promettons pas
+l'infaillibilité : une plateforme tierce (WhatsApp, Meta, Google) peut tomber sans que
+nous puissions l'éviter. Nous ne sommes pas responsables des pertes indirectes causées
+par une interruption. En cas de panne prolongée de notre fait, la période concernée est
+créditée.</p>
+
+<h2>7. Fin de la relation</h2>
+<p>Tu peux fermer ton compte à tout moment. Tes données sont effacées selon
+<a href="/suppression-des-donnees">la procédure de suppression</a>. Nous pouvons fermer
+un compte en cas de manquement grave, ou avec un préavis de 30 jours autrement.</p>
+
+<h2>8. Contact</h2>
+<p>OG Technology — SAMII OS · <a href="mailto:${CONTACT}">${CONTACT}</a></p>
+`;
+
 // Trois adresses pour la même page : Meta, Google et les navigateurs des
 // utilisateurs ne cherchent pas le même mot. Un lien mort dans un formulaire
 // de validation coûte des semaines d'attente.
-router.get(["/confidentialite", "/privacy", "/politique-de-confidentialite"], (req, res) => {
+// Les variantes en .html sont là parce qu'elles ont DÉJÀ été saisies dans le
+// tableau de bord Meta. Corriger le formulaire chez Meta plutôt que d'ajouter
+// l'alias reviendrait à parier que personne n'a copié ces adresses ailleurs —
+// et une URL de confidentialité morte fait échouer une validation entière,
+// des semaines après, sans qu'on comprenne pourquoi. Les deux formes vivent.
+router.get(["/confidentialite", "/privacy", "/privacy.html", "/politique-de-confidentialite"], (req, res) => {
     res.send(page("Politique de confidentialité", CONFIDENTIALITE));
 });
 
-router.get(["/suppression-des-donnees", "/data-deletion", "/suppression"], (req, res) => {
+router.get(["/conditions", "/terms", "/terms.html", "/conditions-de-service", "/cgu"], (req, res) => {
+    res.send(page("Conditions de service", CONDITIONS));
+});
+
+router.get(["/suppression-des-donnees", "/data-deletion.html", "/suppression"], (req, res) => {
     res.send(page("Suppression des données", SUPPRESSION));
 });
 
