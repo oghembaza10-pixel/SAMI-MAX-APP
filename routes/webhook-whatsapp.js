@@ -210,7 +210,13 @@ async function traiterMessage({ workspaceId, sender, senderName, text }) {
 // numéro Cloud API ne peut tout simplement pas enregistrer SAMII.
 // 360dialog n'en a pas besoin, mais répondre ne coûte rien.
 router.get("/", (req, res) => {
-    const attendu = process.env.WHATSAPP_VERIFY_TOKEN || "";
+    // Repli sur META_VERIFY_TOKEN quand WHATSAPP_VERIFY_TOKEN n'existe pas.
+    // Meta n'a qu'un seul champ « token de vérification » par webhook et la
+    // plupart des installations n'en posent qu'un : exiger un second nom de
+    // variable ne protège de rien et fabrique une panne muette — Meta refuse
+    // de brancher, personne ne comprend pourquoi, et la seule trace est un 403
+    // dans nos journaux. On accepte donc les deux noms.
+    const attendu = process.env.WHATSAPP_VERIFY_TOKEN || process.env.META_VERIFY_TOKEN || "";
     const mode = req.query["hub.mode"];
     const jeton = req.query["hub.verify_token"];
     const defi = req.query["hub.challenge"];
@@ -219,7 +225,9 @@ router.get("/", (req, res) => {
         console.log("✅ Webhook WhatsApp vérifié par Meta");
         return res.status(200).send(String(defi || ""));
     }
-    console.warn("⚠️ Vérification webhook WhatsApp refusée (jeton invalide ou WHATSAPP_VERIFY_TOKEN absent)");
+    console.warn(attendu
+        ? "⚠️ Webhook WhatsApp : jeton de vérification refusé — la valeur saisie chez Meta ne correspond pas."
+        : "⚠️ Webhook WhatsApp : ni WHATSAPP_VERIFY_TOKEN ni META_VERIFY_TOKEN ne sont définis. Meta ne pourra pas brancher le webhook.");
     return res.sendStatus(403);
 });
 
