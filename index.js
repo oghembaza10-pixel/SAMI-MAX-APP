@@ -240,6 +240,11 @@ app.use("/verification", require("./routes/verification"));
 app.use("/academy",     require("./routes/academie-porte").router);
 app.use("/academy",     require("./routes/academy"));
 app.use("/community",   require("./routes/community"));
+// Le lien court des communautés partenaires : /c/coindudigital.
+// Une créatrice le colle dans une story ou en commentaire — il doit tenir
+// en un coup d'œil et survivre à un copier-coller sur téléphone. C'est le
+// même module que /community, seule la marque affichée change.
+app.use("/c",           require("./routes/community"));
 app.use("/discussions", require("./routes/discussions"));
 app.use("/stories",     require("./routes/stories"));
 app.use("/marketplace", require("./routes/marketplace"));

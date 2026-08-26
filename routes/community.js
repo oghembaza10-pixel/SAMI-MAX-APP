@@ -7,7 +7,29 @@ const db = require("../services/db");
 const gradeService = require("../services/gradeService");
 const { mobileNav } = require("../views/partials/mobileNav");
 
+const communautes = require("../config/communautes");
+
 function requireAuth(req, res, next) { if (!req.session?.loggedIn) return res.redirect("/login"); next(); }
+
+// LIRE EST PUBLIC, ÉCRIRE DEMANDE UN COMPTE.
+//
+// Avant, `GET /` exigeait une session. Une créatrice qui poste son lien
+// devant 8,5 millions de vues envoyait tout ce monde sur un écran de
+// connexion : personne ne crée un compte pour un endroit qu'il n'a pas
+// encore vu. On perdait les visiteurs à la porte, et ça ne se voyait dans
+// aucun journal — ils partaient, c'est tout.
+//
+// Maintenant on entre, on regarde, et le compte n'est demandé qu'au moment
+// de publier, d'aimer, de commenter ou d'acheter — c'est-à-dire quand il
+// sert à quelque chose pour le visiteur, pas seulement pour nous.
+function lectureOuverte(req, res, next) { next(); }
+
+// La communauté demandée : /c/<slug> la pose, la session s'en souvient le
+// temps de la visite pour que « publier » revienne au bon endroit.
+function communauteDe(req) {
+    const demandee = req.params?.slug || req.query?.c || req.session?.communaute;
+    return communautes.get(demandee);
+}
 function escapeHtml(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
 function timeAgo(date) {
     const s = Math.floor((Date.now()-new Date(date).getTime())/1000);
@@ -35,7 +57,10 @@ const MODULES_INFO = {
     academy:     { label:"Academy",     icon:"graduation-cap" },
 };
 
-router.get("/", requireAuth, async (req, res) => {
+router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
+    const COM = communauteDe(req);
+    if (req.params?.slug && req.session) req.session.communaute = COM.slug;
+    const connecte = !!req.session?.loggedIn;
     let publications = [], classement = [], stats = { membres:0, publications:0 }, tendances = [];
 
     try {
@@ -90,7 +115,7 @@ router.get("/", requireAuth, async (req, res) => {
         return `<div class="stat-row"><span><i data-lucide="${info.icon}" style="width:13px;height:13px;color:${info.couleur};"></i> ${info.label}</span><strong>${t.total}</strong></div>`; }).join("") : "";
 
     const feedHtml = publications.length ? publications.map(p => {
-        const nomAuteur = escapeHtml(`${p.prenom||"Membre"} ${p.nom||"SAMII"}`);
+        const nomAuteur = escapeHtml(`${p.prenom||"Membre"} ${p.nom||""}`.trim());
         const grade = escapeHtml(p.grade_actuel||"Soldat");
         const isMarchand = p.type_compte === "marchand";
         const cat = catInfo(p.categorie);
@@ -125,7 +150,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <button type="button" onclick="postComment(${p.id})"><i data-lucide="send"></i></button>
             </div>
         </article>`;
-    }).join("") : `<div class="empty-feed"><i data-lucide="message-square-dashed"></i><h3>Aucune publication pour l'instant</h3><p>Sois le premier à partager avec la communauté SAMII.</p></div>`;
+    }).join("") : `<div class="empty-feed"><i data-lucide="message-square-dashed"></i><h3>Aucune publication pour l'instant</h3><p>${escapeHtml(COM.vide)}</p></div>`;
 
     const classementHtml = classement.length ? classement.map((u,i) => `
         <a class="rank-item" href="/vitrine/${encodeURIComponent(u.id)}"><span class="rank-num rank-${i+1}">${i+1}</span><div class="rank-avatar">${initiales(u.prenom,u.nom)}</div>
@@ -135,7 +160,7 @@ router.get("/", requireAuth, async (req, res) => {
 <html lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Community — SAMII OS</title>
+<title>${escapeHtml(COM.titre)}</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#070809">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -221,6 +246,76 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .composer-hint{font-size:11px;color:var(--muted);}
 .composer-submit{padding:10px 20px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--blue),#00a9ff);color:#001018;font-weight:800;font-size:12px;}
 .composer-submit:disabled{opacity:.5;cursor:not-allowed;}
+
+/* Le bloc d'accueil du visiteur : il remplace le composeur, il ne s'ajoute
+   pas. Un champ de saisie désactivé au-dessus d'une invitation, c'est deux
+   fois le même message et une frustration en prime. */
+.composer.invite{text-align:center;padding:26px 20px;}
+.invite-h{font-size:17px;font-weight:800;margin-bottom:8px;color:var(--text);}
+.invite-p{font-size:13px;color:var(--muted);line-height:1.65;max-width:46ch;margin:0 auto 18px;}
+.invite-a{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.invite-btn{padding:11px 22px;border-radius:11px;text-decoration:none;font-size:13px;font-weight:700;
+  background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#001018;}
+.invite-btn--calme{background:transparent;border:1px solid var(--border);color:var(--text);}
+
+/* La mise en avant : c'est le revenu de la communauté, elle doit se voir
+   sans crier. Un contour doré, pas un bouton plein — publier reste l'action
+   principale, mettre en avant est le choix de celui qui veut plus. */
+.composer-boost{padding:10px 16px;border-radius:11px;background:transparent;
+  border:1px solid var(--gold);color:var(--gold);font-weight:700;font-size:12px;
+  display:inline-flex;align-items:center;gap:7px;}
+.composer-boost:hover{background:var(--gold);color:#100c02;}
+.composer-boost svg{width:14px;height:14px;}
+
+.sheet-voile{position:fixed;inset:0;background:rgba(2,6,10,.66);z-index:90;display:none;}
+.sheet-voile.on{display:block;}
+.sheet{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:91;width:min(430px,calc(100% - 32px));
+  background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:24px;display:none;
+  max-height:86vh;overflow-y:auto;}
+.sheet.on{display:block;}
+.sheet h3{font-size:17px;margin:0 0 6px;color:var(--text);}
+.sheet .sheet-p{font-size:12.5px;color:var(--muted);line-height:1.6;margin:0 0 18px;}
+.offre-boost{display:flex;align-items:center;gap:13px;padding:14px;border:1px solid var(--border);
+  border-radius:13px;margin-bottom:10px;cursor:pointer;background:rgba(0,0,0,.2);}
+.offre-boost:hover{border-color:var(--gold);}
+.offre-boost.choisi{border-color:var(--gold);background:rgba(217,178,76,.08);}
+.offre-boost b{display:block;font-size:13.5px;color:var(--text);}
+.offre-boost span{font-size:11.5px;color:var(--muted);}
+.offre-boost .px{margin-left:auto;font-weight:800;color:var(--gold);font-size:14px;white-space:nowrap;}
+.sheet-fermer{margin-top:14px;width:100%;padding:11px;border-radius:11px;background:transparent;
+  border:1px solid var(--border);color:var(--muted);font-size:12.5px;}
+
+/* SAMII : une bulle, pas une fenêtre. Elle reste au coin, on l'ouvre quand
+   on bloque. Sur téléphone elle remonte pour ne pas couvrir la barre du bas. */
+.bulle{position:fixed;right:20px;bottom:20px;z-index:80;width:54px;height:54px;border-radius:50%;
+  border:none;display:grid;place-items:center;cursor:pointer;
+  background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#001018;
+  box-shadow:0 8px 26px rgba(0,0,0,.42);}
+.bulle svg{width:23px;height:23px;}
+.bulle-halo{position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--blue);
+  animation:halo 2.6s ease-out infinite;pointer-events:none;}
+@keyframes halo{0%{transform:scale(1);opacity:.6;}100%{transform:scale(1.55);opacity:0;}}
+@media (prefers-reduced-motion:reduce){.bulle-halo{animation:none;}}
+
+.chat{position:fixed;right:20px;bottom:86px;z-index:81;width:min(360px,calc(100% - 40px));
+  height:min(480px,70vh);background:var(--panel);border:1px solid var(--border);border-radius:16px;
+  display:none;flex-direction:column;overflow:hidden;box-shadow:0 18px 46px rgba(0,0,0,.5);}
+.chat.on{display:flex;}
+.chat-tete{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.chat-tete b{font-size:13.5px;color:var(--text);}
+.chat-tete .pt{width:7px;height:7px;border-radius:50%;background:#00ff9d;}
+.chat-tete button{margin-left:auto;background:transparent;border:none;color:var(--muted);font-size:19px;line-height:1;cursor:pointer;}
+.chat-fil{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.msg{max-width:84%;padding:10px 13px;border-radius:13px;font-size:12.8px;line-height:1.55;}
+.msg--bot{background:rgba(255,255,255,.06);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;}
+.msg--moi{background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#001018;align-self:flex-end;border-bottom-right-radius:4px;font-weight:600;}
+.chat-bas{padding:11px;border-top:1px solid var(--border);display:flex;gap:8px;}
+.chat-bas input{flex:1;background:rgba(0,0,0,.28);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;color:var(--text);font-size:12.8px;outline:none;}
+.chat-bas input:focus{border-color:var(--blue);}
+.chat-bas button{padding:10px 15px;border-radius:10px;border:none;font-weight:700;font-size:12.5px;
+  background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#001018;cursor:pointer;}
+@media(max-width:768px){.bulle{bottom:78px;right:14px;}.chat{bottom:142px;right:14px;}}
 .post-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
 .post-card:hover{border-color:rgba(0,217,255,.3);}
 .post-head{display:flex;align-items:center;gap:11px;margin-bottom:12px;}
@@ -266,44 +361,69 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .mobile-nav a svg{width:18px;height:18px;} .mobile-nav a.active{color:var(--blue);background:rgba(0,217,255,.08);}
 }
 </style>
+<style>
+/* Les couleurs de la communauté, posées APRÈS la feuille d'origine.
+   À spécificité égale, c'est la dernière règle qui gagne : écrite avant,
+   elle était silencieusement écrasée et la page restait aux couleurs de la
+   maison. Vide pour la communauté maison, qui garde sa feuille. */
+:root{${communautes.styleDe(COM)}}
+</style>
 </head>
 <body>
 <aside class="sidebar">
-<div><div class="brand"><div class="brand-mark">OG</div><div class="brand-name">SAMII <span>TECHNOLOGY</span></div></div>
+<div><div class="brand"><div class="brand-mark">${escapeHtml(COM.sigle)}</div><div class="brand-name">${escapeHtml(COM.marque)} <span>${escapeHtml(COM.marqueSuite)}</span></div></div>
 <nav>
+${COM.ecosysteme ? `
 <a href="/qg" class="side-link"><i data-lucide="layout-dashboard"></i> QG Central</a>
 <a href="/marketplace" class="side-link"><i data-lucide="store"></i> Marketplace</a>
 <a href="/community" class="side-link active"><i data-lucide="users"></i> Communauté</a>
 <a href="/discussions" class="side-link"><i data-lucide="message-circle"></i> Discussions</a>
 <a href="/arsenal" class="side-link"><i data-lucide="shield-check"></i> Arsenal</a>
-<a href="/academy" class="side-link"><i data-lucide="graduation-cap"></i> Academy</a>
+<a href="/academy" class="side-link"><i data-lucide="graduation-cap"></i> Academy</a>` : `
+<a href="/c/${COM.slug}" class="side-link active"><i data-lucide="users"></i> Le fil</a>
+<a href="/c/${COM.slug}?f=produit" class="side-link"><i data-lucide="shopping-bag"></i> Les produits</a>
+<a href="/c/${COM.slug}?f=formation" class="side-link"><i data-lucide="graduation-cap"></i> Les formations</a>
+<a href="/c/${COM.slug}?f=service" class="side-link"><i data-lucide="concierge-bell"></i> Les services</a>`}
 </nav></div>
-<div class="side-bottom"><div class="side-ai"><span class="side-ai-dot"></span> SAMII ENGINE ACTIVE</div><div class="side-text">Communauté synchronisée avec l'écosystème SAMII.</div></div>
+<div class="side-bottom"><div class="side-ai"><span class="side-ai-dot"></span> ${escapeHtml(COM.moteur)}</div><div class="side-text">${escapeHtml(COM.moteurTexte)}</div></div>
 </aside>
 <div class="main">
-<header class="header"><h1>Communauté SAMII</h1>
+<header class="header"><h1>${escapeHtml(COM.nom)}</h1>
 <div class="header-actions"><button class="icon-btn" id="themeBtn" type="button"><i data-lucide="moon"></i></button><a class="icon-btn" href="/qg"><i data-lucide="layout-dashboard"></i></a></div>
 </header>
 <div class="layout">
 <div class="col-side">
 <div class="side-panel"><h3><i data-lucide="activity"></i> Tendances</h3>
-<div class="stat-row"><span>Membres SAMII</span><strong>${stats.membres}</strong></div>
+<div class="stat-row"><span>${escapeHtml(COM.libelleMembres)}</span><strong>${stats.membres}</strong></div>
 <div class="stat-row"><span>Publications</span><strong>${stats.publications}</strong></div>
 ${tendancesHtml}
 <div class="stat-row"><span>Statut système</span><strong style="color:#00ff9d;">● Actif</strong></div>
 </div>
-<div class="side-panel"><h3><i data-lucide="compass"></i> Écosystème</h3>
+${COM.ecosysteme ? `<div class="side-panel"><h3><i data-lucide="compass"></i> Écosystème</h3>
 <a href="/qg" class="eco-link-item"><i data-lucide="layout-dashboard"></i> QG · Piloter votre activité</a>
 <a href="/marketplace" class="eco-link-item"><i data-lucide="store"></i> Marketplace · Acheter & vendre</a>
 <a href="/arsenal" class="eco-link-item"><i data-lucide="shield-check"></i> Arsenal · Débloquer vos pouvoirs</a>
 <a href="/academy" class="eco-link-item"><i data-lucide="graduation-cap"></i> Academy · Apprendre & progresser</a>
-</div></div>
+</div>` : `<div class="side-panel"><h3><i data-lucide="megaphone"></i> Vendre ici</h3>
+<div class="side-text" style="margin-bottom:12px;">Tu as un produit, une formation, un service ? Ouvre ton profil et publie-le. Publier est gratuit ; la mise en avant est payante.</div>
+<a href="${connecte ? "/settings" : "/register"}" class="eco-link-item"><i data-lucide="store"></i> Ouvrir ma boutique</a>
+<a href="#" class="eco-link-item" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant · dès 1 000 FCFA</a>
+</div>`}</div>
 
 <div class="col-feed">
 <div class="stories-bar">
 <a class="story-circle story-circle--add" href="/stories/publier"><div class="story-ring story-ring--add"><i data-lucide="plus"></i></div><span>Ta story</span></a>
 ${storiesBarHtml}
 </div>
+${!connecte ? `
+<div class="composer invite">
+  <div class="invite-h">Bienvenue sur ${escapeHtml(COM.nom)}</div>
+  <p class="invite-p">Tu peux tout lire ici, librement. Un compte ne sert qu'au moment où tu veux publier, commenter ou acheter — et il se crée en trente secondes.</p>
+  <div class="invite-a">
+    <a class="invite-btn" href="/register">Créer mon compte</a>
+    <a class="invite-btn invite-btn--calme" href="/login">J'ai déjà un compte</a>
+  </div>
+</div>` : `
 <div class="composer">
 <div class="composer-top">
 <div class="composer-avatar">${initiales(req.session.nom?.split(" ")[1], req.session.nom?.split(" ")[0])}</div>
@@ -312,7 +432,7 @@ ${storiesBarHtml}
 <div class="cat-buttons">${catButtonsHtml}</div>
 
 <div class="diffusion-box" id="diffusionBox">
-<div class="diffusion-title"><i data-lucide="sparkles"></i> SAMII suggère de publier aussi sur :</div>
+<div class="diffusion-title"><i data-lucide="sparkles"></i> Publier aussi sur :</div>
 <div class="diffusion-options" id="diffusionOptions"></div>
 <div class="diffusion-hint">Décoche ce que tu ne veux pas partager ailleurs.</div>
 </div>
@@ -321,20 +441,133 @@ ${storiesBarHtml}
 <div class="upload-preview" id="uploadPreview"></div>
 <div class="upload-status" id="uploadStatus">⏳ Envoi en cours...</div>
 <div class="composer-bottom">
-<span class="composer-hint">+5 points à chaque publication</span>
-<button class="composer-submit" id="composerSubmit" type="button">Publier</button>
+<span class="composer-hint">Publier est gratuit${COM.ecosysteme ? " · +5 points" : ""}</span>
+<div style="display:flex;gap:8px;align-items:center;">
+  <button class="composer-boost" type="button" onclick="ouvrirBoost()"><i data-lucide="rocket"></i> Mettre en avant</button>
+  <button class="composer-submit" id="composerSubmit" type="button">Publier</button>
 </div>
 </div>
+</div>`}
 <div id="feedContainer">${feedHtml}</div>
 </div>
 
-<div class="col-side"><div class="side-panel"><h3><i data-lucide="trophy"></i> Classement SAMII</h3>${classementHtml}</div></div>
+<div class="col-side"><div class="side-panel"><h3><i data-lucide="trophy"></i> Classement</h3>${classementHtml}</div></div>
 </div>
 </div>
 <div class="toast" id="toast"></div>
-${mobileNav("/community")}
+
+<!-- La mise en avant : le revenu de la communauté. Publier reste gratuit ;
+     on paie pour être vu plus longtemps, par ceux qui ont quelque chose à
+     vendre. Les durées sont courtes exprès — on essaie à petit prix avant
+     de reconduire. -->
+<div class="sheet-voile" id="sheetVoile" onclick="fermerBoost()"></div>
+<div class="sheet" id="sheetBoost" role="dialog" aria-label="Mettre en avant">
+  <h3>Mettre ta publication en avant</h3>
+  <p class="sheet-p">Elle reste en haut du fil et apparaît aux visiteurs qui ne te suivent pas encore. Publier restera toujours gratuit — ceci est pour ceux qui vendent.</p>
+  <div class="offre-boost" data-boost="24h"><div><b>24 heures</b><span>Pour un lancement, une promo du jour</span></div><span class="px">1 000 FCFA</span></div>
+  <div class="offre-boost" data-boost="7j"><div><b>7 jours</b><span>Le plus pris — laisse le temps aux gens de voir</span></div><span class="px">5 000 FCFA</span></div>
+  <div class="offre-boost" data-boost="30j"><div><b>30 jours</b><span>Pour une formation, une offre permanente</span></div><span class="px">15 000 FCFA</span></div>
+  <button class="sheet-fermer" onclick="fermerBoost()">Fermer</button>
+</div>
+
+<!-- SAMII, en bulle. Volontairement branché sur /vitrine/chat : cet accès
+     est déjà public, déjà limité par IP, et ne touche à aucun compte. Un
+     visiteur peut poser sa question avant même de savoir s'il reste. -->
+<div class="chat" id="chat">
+  <div class="chat-tete"><span class="pt"></span><b>${escapeHtml(COM.assistant)}</b><button onclick="basculerChat()" aria-label="Fermer">×</button></div>
+  <div class="chat-fil" id="chatFil">
+    <div class="msg msg--bot">Bonjour 👋 Je suis ${escapeHtml(COM.assistant)}. Demande-moi ce que tu veux sur ${escapeHtml(COM.nom)} — comment vendre ici, comment publier, ce que ça coûte.</div>
+  </div>
+  <div class="chat-bas">
+    <input type="text" id="chatSaisie" placeholder="Écris ta question..." autocomplete="off">
+    <button type="button" onclick="envoyerChat()">Envoyer</button>
+  </div>
+</div>
+<button class="bulle" onclick="basculerChat()" aria-label="Parler à ${escapeHtml(COM.assistant)}">
+  <span class="bulle-halo"></span><i data-lucide="bot"></i>
+</button>
+
+${COM.ecosysteme ? mobileNav("/community") : ""}
 <script>
 if (typeof lucide!=="undefined") lucide.createIcons();
+
+// ── La mise en avant ────────────────────────────────────────────────────
+// Le paiement n'est pas encore branché. On le DIT, on ne le simule pas :
+// une boutique qui fait semblant d'encaisser perd la confiance qu'elle
+// vient de gagner. Le choix est enregistré, l'encaissement arrive après.
+let boostChoisi = null;
+function ouvrirBoost(){
+  document.getElementById("sheetVoile").classList.add("on");
+  document.getElementById("sheetBoost").classList.add("on");
+}
+function fermerBoost(){
+  document.getElementById("sheetVoile").classList.remove("on");
+  document.getElementById("sheetBoost").classList.remove("on");
+}
+document.querySelectorAll("[data-boost]").forEach(function(el){
+  el.addEventListener("click", function(){
+    document.querySelectorAll("[data-boost]").forEach(function(o){ o.classList.remove("choisi"); });
+    el.classList.add("choisi");
+    boostChoisi = el.dataset.boost;
+    setTimeout(function(){
+      fermerBoost();
+      showToast("Mise en avant " + boostChoisi + " retenue — le paiement mobile arrive très bientôt.");
+    }, 260);
+  });
+});
+document.addEventListener("keydown", function(e){ if(e.key==="Escape") fermerBoost(); });
+
+// ── SAMII en bulle ──────────────────────────────────────────────────────
+// L'historique reste dans la page : il sert de contexte à la réponse
+// suivante, et il repart à zéro au rechargement — on ne garde la
+// conversation d'un visiteur anonyme nulle part.
+let chatHistorique = [];
+let chatOccupe = false;
+
+function basculerChat(){
+  const c = document.getElementById("chat");
+  c.classList.toggle("on");
+  if (c.classList.contains("on")) document.getElementById("chatSaisie").focus();
+}
+function ajouterMsg(texte, deMoi){
+  const fil = document.getElementById("chatFil");
+  const d = document.createElement("div");
+  d.className = "msg " + (deMoi ? "msg--moi" : "msg--bot");
+  d.textContent = texte;
+  fil.appendChild(d);
+  fil.scrollTop = fil.scrollHeight;
+  return d;
+}
+async function envoyerChat(){
+  if (chatOccupe) return;
+  const champ = document.getElementById("chatSaisie");
+  const texte = champ.value.trim();
+  if (!texte) return;
+  champ.value = "";
+  ajouterMsg(texte, true);
+  chatOccupe = true;
+  const attente = ajouterMsg("…", false);
+  try {
+    const r = await fetch("/vitrine/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: texte, langue: "fr", historique: chatHistorique }),
+    });
+    const j = await r.json();
+    attente.textContent = j.reply || "Je n'ai pas pu répondre. Réessaie dans un instant.";
+    chatHistorique.push({ role: "user", message: texte });
+    chatHistorique.push({ role: "model", message: attente.textContent });
+    if (chatHistorique.length > 6) chatHistorique = chatHistorique.slice(-6);
+  } catch (e) {
+    // Le réseau tombe : on le dit dans la bulle plutôt que de laisser
+    // « … » à l'écran, ce qui ferait croire à une attente sans fin.
+    attente.textContent = "Connexion perdue. Réessaie dans un instant.";
+  }
+  chatOccupe = false;
+}
+document.getElementById("chatSaisie").addEventListener("keydown", function(e){
+  if (e.key === "Enter") { e.preventDefault(); envoyerChat(); }
+});
 const savedTheme=localStorage.getItem("samii_community_theme"); if(savedTheme==="light") document.body.classList.add("light");
 function upIcon(){const b=document.getElementById("themeBtn");if(!b)return;b.innerHTML=document.body.classList.contains("light")?'<i data-lucide="sun"></i>':'<i data-lucide="moon"></i>';if(typeof lucide!=="undefined")lucide.createIcons();}
 upIcon();
