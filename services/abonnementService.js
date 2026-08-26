@@ -8,6 +8,7 @@ const db = require("./db");
 const journalService = require("./journalService");
 const workspaceService = require("./workspaceService");
 const paliers = require("../config/paliers");
+const fondateurs = require("../config/fondateurs");
 
 const PLAN_GRANTS = {
     standard: { forteresse: 1, boost: 0 },
@@ -49,13 +50,35 @@ async function retrograderVersFree(workspaceId) {
 // Le palier réellement actif d'un espace. En cas de doute (espace inconnu,
 // base injoignable) on renvoie "free" : une erreur technique ne doit jamais
 // ouvrir une fonctionnalité payante, elle doit la fermer.
+// UN SEUL ENDROIT DÉCIDE DU PALIER, et c'est ici. Toutes les fonctionnalités
+// payantes passent par cette fonction (canaux, intégrations, créations IA,
+// cartes). C'est donc le seul endroit où placer l'exception fondateur — une
+// exception posée écran par écran serait oubliée quelque part, et le jour où
+// elle manque, c'est devant un client.
 async function getPalier(workspaceId) {
     if (!workspaceId) return "free";
     try {
-        const rows = await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [workspaceId]);
-        return rows[0]?.palier_abonnement || "free";
+        const rows = await db.query(
+            `SELECT palier_abonnement, owner, owner_email FROM workspaces WHERE id = $1`,
+            [workspaceId],
+        );
+        if (!rows[0]) return "free";
+        // owner et owner_email portent la même adresse dans cette base, mais
+        // pas sur tous les espaces selon leur ancienneté : on regarde les deux.
+        if (fondateurs.estFondateur(rows[0].owner_email) || fondateurs.estFondateur(rows[0].owner)) {
+            return fondateurs.PALIER_FONDATEUR;
+        }
+        return rows[0].palier_abonnement || "free";
     } catch {
-        return "free";
+        // Repli sur la requête d'origine : si owner_email manque sur un
+        // environnement, le palier doit quand même se lire. Perdre l'exception
+        // fondateur est gênant ; bloquer tous les marchands le serait bien plus.
+        try {
+            const rows = await db.query(`SELECT palier_abonnement FROM workspaces WHERE id = $1`, [workspaceId]);
+            return rows[0]?.palier_abonnement || "free";
+        } catch {
+            return "free";
+        }
     }
 }
 
