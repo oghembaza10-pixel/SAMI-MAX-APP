@@ -29,7 +29,11 @@
 // L'adresse du fondateur reste en dur comme filet de sécurité : si la variable
 // d'environnement disparaît lors d'une migration de serveur, il ne doit pas se
 // retrouver enfermé dehors le jour d'une démonstration client.
-const PAR_DEFAUT = ["oghembaza10@gmail.com", "ghembazao@gmail.com"];
+const PAR_DEFAUT = [
+    "oghembaza10@gmail.com",
+    "ghembazao@gmail.com",
+    "info@souverain-store.com",
+];
 
 function listeConfiguree() {
     return String(process.env.COMPTES_FONDATEUR || "")
