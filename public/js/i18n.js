@@ -84,7 +84,23 @@ const Language = (function () {
         });
     }
 
-    async function set(lang) {
+    // Le site a deux moteurs de traduction : celui-ci, qui réécrit la page
+    // dans le navigateur, et celui du serveur (services/langue.js) qui rend
+    // l'Académie et les pages légales déjà traduites. Chacun se souvenait du
+    // choix de son côté — l'un dans localStorage, l'autre en session. On
+    // passait le QG en arabe, on cliquait vers l'Académie, et tout revenait
+    // en français.
+    //
+    // Cette ligne fait des deux mémoires une seule : on dépose le choix au
+    // serveur. On n'attend pas la réponse et on ignore l'échec — la page
+    // courante est déjà traduite quand la requête part ; au pire, c'est la
+    // page suivante qui reviendrait au français. Une panne dégrade, elle ne
+    // casse rien.
+    function declarerAuServeur(lang) {
+        try { fetch("/langue/" + encodeURIComponent(lang), { credentials: "same-origin" }); } catch (e) {}
+    }
+
+    async function set(lang, silencieux) {
         if (!SUPPORTED.includes(lang)) lang = DEFAULT_LANG;
         dict = await loadDict(lang);
         currentLang = lang;
@@ -92,12 +108,16 @@ const Language = (function () {
         updateDirection(lang);
         updateActiveButtons(lang);
         translate();
+        // `silencieux` sert au démarrage : au premier affichage, on applique
+        // la langue déjà connue sans la redéclarer — le serveur la connaît
+        // déjà, et une requête à chaque chargement de page ne sert à rien.
+        if (!silencieux) declarerAuServeur(lang);
         listeners.forEach((cb) => cb(lang, dict));
     }
 
     async function init() {
         const lang = detectLang();
-        await set(lang);
+        await set(lang, true);   // silencieux : premier affichage, rien à déclarer
         document.querySelectorAll("[data-lang-btn]").forEach((btn) => {
             btn.addEventListener("click", () => set(btn.getAttribute("data-lang-btn")));
         });
@@ -111,13 +131,31 @@ const Language = (function () {
         return dict;
     }
 
+    // Pour les textes que produit le JavaScript et qu'aucun data-i18n ne peut
+    // atteindre : messages de formulaire, confirmations, libellés de bouton
+    // réécrits au clic. Ils restaient en français sur une page entièrement
+    // traduite. Le repli est le texte français d'origine — une clé absente du
+    // dictionnaire n'affiche jamais « agence.msg.reseau » à un utilisateur.
+    function t(key, repli) {
+        const value = getNested(dict, key);
+        return value !== null && value !== undefined ? value : (repli !== undefined ? repli : key);
+    }
+
     function getLang() {
         return currentLang;
     }
 
-    return { init, set, translate, onChange, getDict, getLang };
+    return { init, set, translate, onChange, getDict, getLang, t };
 })();
 
-document.addEventListener("DOMContentLoaded", () => {
+// Ce fichier est inclus de deux façons : par une balise <script> écrite dans
+// le gabarit, et — depuis la barre de langue partagée — injecté à l'exécution
+// sur les pages qui ne l'avaient pas. Dans le second cas, DOMContentLoaded a
+// déjà eu lieu quand le fichier arrive : n'écouter que cet événement laissait
+// ces pages entièrement en français, avec un sélecteur de langue inerte.
+// Vu en capture d'écran sur /agence/api, pas déduit du code.
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => { Language.init(); });
+} else {
     Language.init();
-});
+}

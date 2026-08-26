@@ -243,6 +243,14 @@
       "chasseurStock": {
         "label": "Chasseur de Stock",
         "value": "Trouver un fournisseur →"
+      },
+      "opportunites": {
+        "label": "Radar Opportunités",
+        "value": "Repérer des pistes produits →"
+      },
+      "radarProspects": {
+        "label": "Radar Prospects",
+        "value": "Trouver de vrais clients →"
       }
     },
     "titleParticulier": "Parle à SAMII.",
@@ -634,7 +642,8 @@
         "step3": "BotFather te donne un token (une longue chaîne avec \":\"). Copie-le.",
         "step4": "Colle ce token ci-dessous et valide.",
         "tokenLabel": "Token du bot (@BotFather)",
-        "submit": "Utiliser mon propre bot"
+        "submit": "Utiliser mon propre bot",
+        "activeBadge": "Ton propre bot est actif"
       }
     },
     "whatsapp": {
@@ -665,6 +674,15 @@
       "apiToken": {
         "label": "Token API (apiTokenInstance)",
         "ph": "Ton apiTokenInstance"
+      },
+      "palier": {
+        "title": "🔒 Inclus à partir du palier Actif",
+        "desc": "Telegram et ta boutique restent gratuits, sans limite de temps. WhatsApp demande un numéro dédié et un suivi de notre côté : il fait partie du palier Actif. Tu peux l'essayer 3 jours avec le numéro partagé ci-dessus.",
+        "cta": "Voir le palier Actif →",
+        "locked": "Palier Actif requis"
+      },
+      "fournisseur": {
+        "label": "Comment ton numéro est-il connecté ?"
       }
     }
   },
@@ -692,7 +710,11 @@
     "btn": {
       "client": "+ Client",
       "entrer": "Entrer",
-      "mode": "Mode clair / sombre"
+      "mode": "Mode clair / sombre",
+      "abandon": "Signaler ce client comme abandonné",
+      "samii": "Demander à SAMII",
+      "menu": "Menu",
+      "annuler": "Annuler"
     },
     "form": {
       "nom": "Nom de la boutique",
@@ -718,7 +740,25 @@
       "enAttente": "en attente",
       "rdvAVenir": "RDV à venir",
       "client": "client",
-      "metier": "métier"
+      "metier": "métier",
+      "aVenir": "à venir",
+      "auj": "auj."
+    },
+    "role": "Tour de contrôle — Agence",
+    "vide": "Votre flotte est vide. Ouvrez le premier espace client avec le bouton « + Client » — il apparaîtra ici, regroupé par métier.",
+    "ph": {
+      "nom": "Boutique de Karim",
+      "metierLibre": "Ex : Torréfacteur, Pressing, Menuisier...",
+      "email": "client@exemple.com"
+    },
+    "msg": {
+      "metierLibre": "Précise le métier de ton client.",
+      "metierChoix": "Choisis le métier de ton client.",
+      "ouverture": "Ouverture en cours...",
+      "ouvert": "Espace ouvert — le client vient d'être prévenu par email.",
+      "erreur": "Erreur.",
+      "reseau": "Erreur réseau.",
+      "abandon": "Signaler ce client comme abandonné ? OG Technology validera la fermeture de son espace."
     }
   },
   "agency": {
@@ -766,5 +806,97 @@
     "code2": "Ce que vous recevez à chaque événement",
     "cta": "Lire la documentation →",
     "note": "Documentation publique, sans compte."
+  },
+  "nav": {
+    "retour": {
+      "agence": "Tour de contrôle",
+      "qg": "Retour au QG",
+      "client": "Retour à mon espace",
+      "accueil": "Retour à l'accueil",
+      "simple": "Retour"
+    }
+  },
+  "api": {
+    "intro": {
+      "1": "Une seule clé pour tout ton portefeuille : tu branches ton n8n une fois, il pilote les",
+      "2": "de tes clients. Pas un flux à reconstruire par boutique."
+    },
+    "doc": "Documentation complète →",
+    "mot": {
+      "espace": "espace",
+      "espaces": "espaces",
+      "jamais": "jamais",
+      "manque": "manque"
+    },
+    "cles": {
+      "titre": "Clés d'agence",
+      "aide": "Une clé s'affiche une seule fois, à sa création : nous n'en gardons qu'une empreinte, jamais la clé elle-même. Elle donne accès aux espaces de ton portefeuille — et à eux seuls. Un client qui te quitte sort automatiquement du périmètre, sans rien à révoquer."
+    },
+    "portees": {
+      "aide": "Ce que cette clé aura le droit de faire, chez chacun de tes clients. Ne coche que le nécessaire : c'est aussi ce que tu pourras montrer à un client qui te demande ce que ton automatisation touche chez lui."
+    },
+    "th": {
+      "nom": "Nom",
+      "cle": "Clé",
+      "permissions": "Permissions",
+      "dernierUsage": "Dernier usage",
+      "etat": "État",
+      "evenements": "Événements",
+      "dernierCode": "Dernier code",
+      "idEspace": "Identifiant d'espace",
+      "parcours": "Parcours",
+      "quand": "Quand",
+      "appel": "Appel",
+      "reponse": "Réponse"
+    },
+    "vide": {
+      "cles": "Aucune clé pour l'instant.",
+      "webhooks": "Aucun webhook enregistré.",
+      "espaces": "Aucun client dans ton portefeuille pour l'instant.",
+      "journal": "Aucun appel pour l'instant."
+    },
+    "cle": {
+      "complete": "accès complet (clé historique)",
+      "nouvelle": "Voici ta clé — copie-la maintenant",
+      "avertissement": "Elle ne sera plus jamais affichée. Traite-la comme un mot de passe.",
+      "nomDefaut": "Clé agence"
+    },
+    "etat": {
+      "active": "active",
+      "revoquee": "révoquée",
+      "actif": "actif",
+      "desactive": "désactivé"
+    },
+    "btn": {
+      "revoquer": "Révoquer",
+      "supprimer": "Supprimer",
+      "creerCle": "Créer une clé",
+      "creerWebhook": "Enregistrer le webhook"
+    },
+    "ph": {
+      "nomCle": "Nom de la clé (ex : n8n production)"
+    },
+    "webhooks": {
+      "titre": "Webhooks — tout le portefeuille sur une URL",
+      "aide": "SAMII appelle ton URL dès qu'un événement se produit chez n'importe lequel de tes clients, quel que soit le canal d'origine : WhatsApp, Telegram, Shopify, le QG ou l'API. Le bloc « espace » du corps envoyé, et l'en-tête X-SAMII-Espace, te disent duquel il s'agit. Chaque appel est signé — X-SAMII-Signature: sha256=… , HMAC du corps brut avec le secret affiché à la création."
+    },
+    "espaces": {
+      "titre": "Identifiants de tes espaces",
+      "aide": "C'est la valeur à mettre dans l'en-tête X-SAMII-Espace pour cibler un client. GET /api/v1/espaces renvoie exactement cette liste, si tu préfères la lire depuis ton automatisation plutôt que la recopier."
+    },
+    "journal": {
+      "titre": "Ce que tes clés ont fait",
+      "aide": "Les quinze derniers appels de tes clés, tous clients confondus. C'est la contrepartie des permissions — et la réponse toute prête au client qui demande ce que ton automatisation touche chez lui. Un appel refusé apparaît en rouge, avec la permission manquante."
+    },
+    "demarrage": {
+      "titre": "Démarrage",
+      "aide": "Deux appels pour tout comprendre : la liste de tes clients, puis les commandes de l'un d'eux."
+    },
+    "n8n": "Dans n8n : nœud HTTP Request, authentification Header Auth (Authorization = Bearer sk_samii_…), et un second en-tête X-SAMII-Espace alimenté par la boucle sur tes clients. Aucun nœud communautaire, aucun SDK à installer.",
+    "msg": {
+      "revoquer": "Révoquer cette clé ? Tout système qui l'utilise perdra l'accès immédiatement.",
+      "supprWebhook": "Supprimer ce webhook ?",
+      "webhookOk": "Webhook enregistré.\n\nSecret de signature (à garder) :"
+    }
   }
 }

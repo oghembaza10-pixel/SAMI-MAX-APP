@@ -25,7 +25,7 @@
 // rien demander.
 // ==========================================================================
 
-const LANGUES = ["fr", "en"];
+const LANGUES = ["fr", "en", "ar"];
 const DEFAUT = "fr";
 
 // ── Le dictionnaire ──────────────────────────────────────────────────────
@@ -33,6 +33,17 @@ const DEFAUT = "fr";
 // réduits à un espace avant la recherche : une phrase coupée sur trois lignes
 // dans un gabarit reste la même phrase.
 const EN = {
+    // ── Le bouton de retour ──────────────────────────────────────────────
+    // Composé par services/navigation.js : « Retour à » + la base du compte.
+    // Les deux morceaux sont traduits séparément parce que la base change
+    // selon qui regarde, pas selon la page.
+    "Retour": "Back",
+    "Retour à": "Back to",
+    "le QG": "the HQ",
+    "la Tour de contrôle": "the control tower",
+    "mon espace": "my workspace",
+    "l'accueil": "the home page",
+
     // ── Navigation, commun ───────────────────────────────────────────────
     // Les titres d'onglet : ce que voit un partenaire dans sa barre de
     // navigateur avant même d'avoir lu la page.
@@ -395,7 +406,183 @@ const EN = {
         "The first to join will be the first to be seen.",
 };
 
-const DICTIONNAIRES = { fr: null, en: EN };
+// ── L'arabe ──────────────────────────────────────────────────────────────
+// L'arabe s'écrit de droite à gauche : ce n'est pas qu'une traduction, c'est
+// une mise en page miroir. `dir="rtl"` sur la racine suffit pour l'essentiel
+// — le navigateur retourne le texte, les listes, les tableaux et les marges.
+// Ce qu'il ne retourne PAS, ce sont les positions posées en dur (le sélecteur
+// de langue en bas à droite) : elles se corrigent au cas par cas.
+//
+// Arabe standard moderne, pas de dialecte : un marchand algérien, marocain ou
+// égyptien doit lire la même chose sans effort.
+const AR = {
+    // ── Navigation, commun ───────────────────────────────────────────────
+    "L'Académie — SAMII OS": "الأكاديمية — SAMII OS",
+    "Le travail qui attend — L'Académie": "العمل في انتظارك — الأكاديمية",
+    "Mon espace développeur — SAMII OS": "مساحة المطوّر — SAMII OS",
+    "Construire — Académie SAMII": "البناء — أكاديمية SAMII",
+    "Mon contrat — Académie SAMII": "عقدي — أكاديمية SAMII",
+    "Trouver quelqu'un — Académie SAMII": "البحث عن شخص — أكاديمية SAMII",
+    "Retour": "رجوع",
+    "Retour à": "العودة إلى",
+    "le QG": "مركز القيادة",
+    "la Tour de contrôle": "برج المراقبة",
+    "mon espace": "مساحتي",
+    "l'accueil": "الصفحة الرئيسية",
+    "Apprendre": "تعلّم",
+    "La vitrine": "المتجر",
+    "Mon espace": "مساحتي",
+    "Mon contrat": "عقدي",
+    "Documentation": "التوثيق",
+    "Comment ça marche": "كيف يعمل",
+    "Créer avec SAMII": "ابنِ مع SAMII",
+    "Créer avec SAMII →": "ابنِ مع SAMII →",
+    "Le travail qui attend": "العمل في انتظارك",
+    "← L'Académie": "← الأكاديمية",
+    "← Retour à l'Académie": "← العودة إلى الأكاديمية",
+    "← Tous les besoins": "← كل الطلبات",
+    "Se connecter →": "تسجيل الدخول →",
+    "Chercher": "بحث",
+    "Tout": "الكل",
+    "Voir tout →": "عرض الكل →",
+    "Voir →": "عرض →",
+    "Copier": "نسخ",
+    "Nom": "الاسم",
+    "État": "الحالة",
+    "Prix": "السعر",
+    "Délai": "المدة",
+    "Devise": "العملة",
+    "Version": "الإصدار",
+    "Rôle": "الدور",
+    "Date": "التاريخ",
+    "Quand": "متى",
+    "Appel": "الطلب",
+    "Réponse": "الرد",
+    "Permission": "الإذن",
+    "Créer": "إنشاء",
+    "Supprimer": "حذف",
+    "Répondre": "الرد",
+    "Répondre →": "الرد →",
+    "Client": "العميل",
+    "Métier": "المهنة",
+    "Pays": "البلد",
+    "Activité": "النشاط",
+    "Entrer": "دخول",
+    "Aujourd'hui": "اليوم",
+    "À traiter": "قيد المعالجة",
+    "Attention": "تنبيه",
+    "Déconnexion": "تسجيل الخروج",
+    "Paramètres": "الإعدادات",
+    "Marketplace": "السوق",
+    "Academy": "الأكاديمية",
+    "Community": "المجتمع",
+    "Parrainage": "الإحالة",
+    "Pilotage": "القيادة",
+    "Ma flotte": "أسطولي",
+    "Ressources OG": "موارد OG",
+    "Conditions du partenariat": "شروط الشراكة",
+
+    // ── La vitrine ───────────────────────────────────────────────────────
+    "L'Académie": "الأكاديمية",
+    "Les solutions qui font tourner un commerce, et les gens qui les construisent. Dis ton métier, on te montre ce qui existe pour toi.":
+        "الحلول التي تُدير التجارة، والأشخاص الذين يبنونها. قل لنا مهنتك ونعرض لك ما هو متاح.",
+    "Outil SAMII": "أداة SAMII",
+    "Application": "تطبيق",
+    "Tous les métiers": "كل المهن",
+    "Rien ne correspond à cette recherche.": "لا شيء يطابق هذا البحث.",
+    "Ce qui manque ici, c'est peut-être toi": "ما ينقص هنا قد يكون أنت",
+
+    // ── Les besoins ──────────────────────────────────────────────────────
+    "besoin": "طلب",
+    "ouvert": "مفتوح",
+    "réponse": "رد",
+    "Décrire mon besoin": "اشرح ما أحتاجه",
+    "Publier mon besoin": "نشر طلبي",
+    "Mes besoins": "طلباتي",
+    "Ton métier": "مهنتك",
+    "Non précisé": "غير محدد",
+    "Budget minimum": "الميزانية الدنيا",
+    "Budget maximum": "الميزانية القصوى",
+    "Ton prix": "سعرك",
+    "Délai (jours)": "المدة (أيام)",
+    "Raconte": "اشرح أكثر",
+    "Ta proposition": "عرضك",
+    "Les propositions reçues": "العروض المستلمة",
+    "Fermer ce besoin": "إغلاق هذا الطلب",
+    "J'ai choisi quelqu'un": "لقد اخترت شخصاً",
+    "Ce n'est plus d'actualité": "لم يعد الأمر قائماً",
+    "Connecte-toi pour publier ton besoin.": "سجّل الدخول لنشر طلبك.",
+    "Connecte-toi pour répondre à ce besoin.": "سجّل الدخول للرد على هذا الطلب.",
+    "Aucun besoin ne correspond à cette recherche.": "لا يوجد طلب يطابق هذا البحث.",
+    "Personne n'a encore répondu": "لم يردّ أحد بعد",
+
+    // ── L'espace développeur ─────────────────────────────────────────────
+    "Mon espace développeur": "مساحة المطوّر",
+    "Nouvelle clé": "مفتاح جديد",
+    "Remettre à neuf": "إعادة التهيئة",
+    "Créer ce terrain": "إنشاء هذه المساحة",
+    "Pas encore créé.": "لم يُنشأ بعد.",
+    "Copier la commande": "نسخ الأمر",
+    "Ma proposition": "عرضي",
+    "Installations": "التنصيبات",
+    "Permissions demandées": "الأذونات المطلوبة",
+    "Aucune application déclarée.": "لا يوجد تطبيق مُصرَّح به.",
+    "Aucun appel enregistré pour l'instant.": "لا توجد طلبات مسجّلة حتى الآن.",
+    "ventes": "مبيعات",
+    "montant brut": "المبلغ الإجمالي",
+    "ta part": "حصتك",
+    "à te reverser": "مستحق لك",
+    "Voir tous les besoins →": "عرض كل الطلبات →",
+    "Aucun besoin ouvert en ce moment.": "لا توجد طلبات مفتوحة حالياً.",
+    "Surveiller la liste →": "متابعة القائمة →",
+    "État du besoin": "حالة الطلب",
+
+    // ── L'Académie, l'adhésion ───────────────────────────────────────────
+    "Entrer dans l'Académie": "الانضمام إلى الأكاديمية",
+    "Je viens construire": "جئت لأبني",
+    "Je viens chercher": "جئت للبحث عن شخص",
+    "pour entrer": "للانضمام",
+    "pour publier": "للنشر",
+    "par transaction": "لكل معاملة",
+    "mon contrat": "عقدي",
+    "Ce que tu as accepté": "ما وافقت عليه",
+    "Aucune acceptation enregistrée.": "لا توجد موافقة مسجّلة.",
+
+    // ── La tour de contrôle ──────────────────────────────────────────────
+    "Tour de contrôle": "برج المراقبة",
+    "Tour de contrôle — Agence": "برج المراقبة — الوكالة",
+    "API &amp; Webhooks": "واجهة البرمجة والـWebhooks",
+    "Clés d'agence": "مفاتيح الوكالة",
+    "Créer une clé": "إنشاء مفتاح",
+    "Révoquer": "إبطال",
+    "Aucune clé pour l'instant.": "لا يوجد مفتاح حتى الآن.",
+    "Permissions": "الأذونات",
+    "Clé": "المفتاح",
+    "Dernier usage": "آخر استخدام",
+    "URL": "الرابط",
+    "Événements": "الأحداث",
+    "Dernier code": "آخر رمز",
+    "Aucun webhook enregistré.": "لا يوجد Webhook مسجّل.",
+    "Enregistrer le webhook": "حفظ الـWebhook",
+    "Identifiants de tes espaces": "معرّفات مساحاتك",
+    "Identifiant d'espace": "معرّف المساحة",
+    "Parcours": "المسار",
+    "Aucun client dans ton portefeuille pour l'instant.": "لا يوجد عميل في محفظتك حتى الآن.",
+    "Ce que tes clés ont fait": "ما فعلته مفاتيحك",
+    "Aucun appel pour l'instant.": "لا توجد طلبات حتى الآن.",
+    "Démarrage": "البداية",
+    "Nom de la boutique": "اسم المتجر",
+    "Email du client": "بريد العميل الإلكتروني",
+    "Ouvrir l'espace client": "فتح مساحة العميل",
+    "Toutes les familles": "كل الفئات",
+    "Escadrilles": "الأسراب",
+    "en attente": "قيد الانتظار",
+    "7 jours": "٧ أيام",
+    "Votre flotte est vide.": "أسطولك فارغ.",
+    "Vous pilotez, vos clients gardent la main.": "أنت تقود، وعملاؤك يحتفظون بالتحكم.",
+};
+
+const DICTIONNAIRES = { fr: null, en: EN, ar: AR };
 
 function normaliser(texte) {
     return String(texte).replace(/\s+/g, " ").trim();
@@ -431,11 +618,52 @@ function traducteur(langue) {
     return (fr) => dico[normaliser(fr)] ?? fr;
 }
 
+// L'arabe s'écrit de droite à gauche. C'est la seule langue de la liste dans
+// ce cas — d'où une fonction plutôt qu'un champ par langue.
+function sens(langue) {
+    return langue === "ar" ? "rtl" : "ltr";
+}
+
+// Le nom de chaque langue DANS sa propre langue : un arabophone cherche
+// « العربية », pas « Arabe ». C'est la règle de tous les sélecteurs sérieux.
+const NOMS = { fr: "Français", en: "English", ar: "العربية" };
+
 // Le lien qui bascule la langue en gardant la page où l'on est.
 function lienBascule(req, versLangue) {
     const url = new URL(req.originalUrl || "/", "http://x");
     url.searchParams.set("lang", versLangue);
     return url.pathname + url.search;
+}
+
+// ── LE PONT ENTRE LES DEUX MÉMOIRES DE LANGUE ────────────────────────────
+//
+// Le site a deux systèmes de traduction, pour de bonnes raisons historiques :
+// celui-ci, rendu par le serveur (l'Académie, les pages légales), et
+// /js/i18n.js, rendu par le navigateur (le QG, l'accueil, les connexions).
+// Chacun se souvenait du choix de langue de son côté — le serveur en session,
+// le navigateur dans localStorage.
+//
+// Le défaut que ça produisait est difficile à deviner en lisant le code et
+// évident en cliquant : on passe l'Académie en arabe, on clique vers le QG,
+// et tout revient en français. Deux mémoires, deux réponses, un utilisateur
+// qui croit que la traduction ne marche pas.
+//
+// Ce petit point d'entrée en fait une seule : la barre de langue, quand on y
+// clique, la déclare aussi au serveur. Il ne renvoie rien — c'est un dépôt,
+// pas une question. On l'appelle sans attendre la réponse : si elle
+// n'arrivait pas, la page serait déjà traduite côté navigateur, et seule la
+// page SUIVANTE reviendrait au français. Un échec dégrade, il ne casse pas.
+function routeur() {
+    const express = require("express");
+    const r = express.Router();
+    r.get("/langue/:code", (req, res) => {
+        const code = String(req.params.code || "").toLowerCase().slice(0, 2);
+        // Le zh existe côté navigateur et pas ici : on l'accepte sans le
+        // mémoriser plutôt que de renvoyer une erreur pour un clic légitime.
+        if (LANGUES.includes(code) && req.session) req.session.langue = code;
+        res.status(204).end();
+    });
+    return r;
 }
 
 // À poser une fois dans index.js : toutes les vues reçoivent L() et lang,
@@ -445,9 +673,13 @@ function middleware(req, res, next) {
     const langue = detecter(req);
     res.locals.lang = langue;
     res.locals.L = traducteur(langue);
-    res.locals.autreLangue = langue === "fr" ? "en" : "fr";
+    res.locals.dir = sens(langue);
+    res.locals.nomsLangues = NOMS;
+    res.locals.languesDispo = LANGUES;
+    // Gardé pour les gabarits déjà écrits : la « prochaine » langue du cycle.
+    res.locals.autreLangue = LANGUES[(LANGUES.indexOf(langue) + 1) % LANGUES.length];
     res.locals.lienLangue = (vers) => lienBascule(req, vers);
     next();
 }
 
-module.exports = { LANGUES, DEFAUT, EN, detecter, traducteur, middleware, normaliser };
+module.exports = { LANGUES, DEFAUT, EN, AR, NOMS, sens, detecter, traducteur, middleware, routeur, normaliser };

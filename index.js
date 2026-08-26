@@ -113,6 +113,16 @@ app.use(session({
 // Toutes les vues reçoivent L() — celles qui ne sont pas traduites
 // continuent de fonctionner sans changement.
 app.use(require("./services/langue").middleware);
+// GET /langue/:code — la barre de langue y dépose le choix du visiteur pour
+// que les pages rendues par le serveur (Académie, pages légales) reviennent
+// dans la même langue que celles traduites par le navigateur.
+app.use(require("./services/langue").routeur());
+
+// ── RETOUR (« ← Retour au QG », « ← Retour à la Tour de contrôle ») ──
+// Posé APRÈS la langue : le libellé du bouton passe par L(). Chaque vue
+// reçoit retourUrl / retourLibelle, qui pointent vers la base du compte
+// connecté — l'agence rentre à l'agence, le marchand à son QG.
+app.use(require("./services/navigation").middleware);
 
 // ── LOCALS (disponibles dans toutes les vues EJS) ─────
 app.use((req, res, next) => {

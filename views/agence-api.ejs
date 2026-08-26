@@ -120,44 +120,64 @@
         @media (max-width: 640px) {
             th:nth-child(3), td:nth-child(3) { display: none; }
         }
+
+        /* ── ARABE (RTL) ─────────────────────────────────────────────
+           La page se lit de droite à gauche : les tableaux alignent leurs
+           cellules à droite, et la flèche de retour se retourne — sinon elle
+           pointe vers l'avant du texte, c'est-à-dire vers l'inverse de ce
+           qu'elle promet. Les colonnes `mono` (clés, identifiants, URLs)
+           restent en LTR : un identifiant `WS-…` inversé est illisible. */
+        [dir="rtl"] th, [dir="rtl"] td { text-align: right; }
+        [dir="rtl"] .mono, [dir="rtl"] code, [dir="rtl"] pre { direction: ltr; text-align: left; unicode-bidi: embed; }
+        /* …sauf ce qui est traduit. Une cellule `mono` contient tantôt un
+           identifiant (`sk_samii_ab…`, `WS-…`), tantôt un mot du dictionnaire
+           quand la valeur est absente — « jamais », « manque ». Le premier doit
+           rester latin ; le second est de l'arabe, et l'arabe ne survit pas à
+           une police à chasse fixe : JetBrains Mono n'a pas de glyphes arabes,
+           chaque lettre tombait dans une police de secours différente et
+           perdait sa liaison — « أبداً » s'affichait « أ بد أ ». C'est la
+           police qu'il faut rendre, pas seulement le sens de lecture.
+           Vu en capture, deux fois. */
+        [dir="rtl"] .mono [data-i18n] {
+            direction: rtl; text-align: right; unicode-bidi: isolate;
+            font-family: var(--font-body, "Inter", system-ui, sans-serif);
+        }
+        [dir="rtl"] .ap-retour i { transform: scaleX(-1); }
     </style>
 </head>
 <body>
 <div class="ap">
     <div class="ap-haut">
-        <a href="/agence" class="ap-retour"><i data-lucide="arrow-left"></i> Tour de contrôle</a>
+        <a href="/agence" class="ap-retour"><i data-lucide="arrow-left"></i> <span data-i18n="nav.retour.agence">Tour de contrôle</span></a>
         <%# Deux icônes dans le DOM, permutées par CSS selon data-mode :
             rien à réinjecter en JavaScript. %>
-        <button type="button" class="ap-mode" id="ap-mode" title="Changer de mode">
+        <button type="button" class="ap-mode" id="ap-mode" title="Changer de mode" data-i18n-title="agence.btn.mode">
             <span class="ap-ico-sombre">☾</span><span class="ap-ico-clair">☀</span>
         </button>
     </div>
 
     <div class="ap-tete">
-        <h1>API &amp; Webhooks</h1>
+        <h1 data-i18n="agence.nav.api">API &amp; Webhooks</h1>
         <p>
-            Une seule clé pour <strong>tout ton portefeuille</strong> : tu branches ton n8n
-            une fois, il pilote les <%= espaces.length %> espace<%= espaces.length > 1 ? "s" : "" %>
-            de tes clients. Pas un flux à reconstruire par boutique.
-            <a href="/api-docs" target="_blank" rel="noopener">Documentation complète →</a>
+            <span data-i18n="api.intro.1">Une seule clé pour tout ton portefeuille : tu branches ton n8n une fois, il pilote les</span>
+            <%= espaces.length %> <span data-i18n="<%= espaces.length > 1 ? 'api.mot.espaces' : 'api.mot.espace' %>"><%= espaces.length > 1 ? "espaces" : "espace" %></span>
+            <span data-i18n="api.intro.2">de tes clients. Pas un flux à reconstruire par boutique.</span>
+            <a href="/api-docs" target="_blank" rel="noopener" data-i18n="api.doc">Documentation complète →</a>
         </p>
     </div>
 
     <!-- ── CLÉS ────────────────────────────────────────────────── -->
     <div class="ap-bloc">
-        <h2>Clés d'agence</h2>
+        <h2 data-i18n="api.cles.titre">Clés d'agence</h2>
         <p class="ap-aide">
-            Une clé s'affiche une seule fois, à sa création : nous n'en gardons qu'une
-            empreinte, jamais la clé elle-même. Elle donne accès aux espaces de ton
-            portefeuille — et à eux seuls. Un client qui te quitte sort automatiquement
-            du périmètre, sans rien à révoquer.
+            <span data-i18n="api.cles.aide">Une clé s'affiche une seule fois, à sa création : nous n'en gardons qu'une empreinte, jamais la clé elle-même. Elle donne accès aux espaces de ton portefeuille — et à eux seuls. Un client qui te quitte sort automatiquement du périmètre, sans rien à révoquer.</span>
         </p>
 
         <table>
-            <thead><tr><th>Nom</th><th>Clé</th><th>Permissions</th><th>Dernier usage</th><th>État</th><th></th></tr></thead>
+            <thead><tr><th data-i18n="api.th.nom">Nom</th><th data-i18n="api.th.cle">Clé</th><th data-i18n="api.th.permissions">Permissions</th><th data-i18n="api.th.dernierUsage">Dernier usage</th><th data-i18n="api.th.etat">État</th><th></th></tr></thead>
             <tbody>
             <% if (!cles.length) { %>
-                <tr><td colspan="6" class="ap-vide">Aucune clé pour l'instant.</td></tr>
+                <tr><td colspan="6" class="ap-vide" data-i18n="api.vide.cles">Aucune clé pour l'instant.</td></tr>
             <% } %>
             <% cles.forEach(c => { %>
                 <tr>
@@ -165,20 +185,18 @@
                     <td class="mono"><%= c.cle_prefixe %>…</td>
                     <%# Portées absentes = clé créée avant les permissions : accès complet. %>
                     <td class="mono" style="font-size:.66rem">
-                        <%= (c.portees && c.portees.length) ? c.portees.join(", ") : "accès complet (clé historique)" %>
+                        <% if (c.portees && c.portees.length) { %><%= c.portees.join(", ") %><% } else { %><span data-i18n="api.cle.complete">accès complet (clé historique)</span><% } %>
                     </td>
-                    <td class="mono"><%= c.derniere_utilisation ? new Date(c.derniere_utilisation).toLocaleString('fr-FR') : "jamais" %></td>
-                    <td><span class="ap-etat <%= c.actif ? 'ap-etat--on' : 'ap-etat--off' %>"><%= c.actif ? "active" : "révoquée" %></span></td>
-                    <td><% if (c.actif) { %><button class="ap-mini" data-revoquer="<%= c.id %>">Révoquer</button><% } %></td>
+                    <td class="mono"><% if (c.derniere_utilisation) { %><%= new Date(c.derniere_utilisation).toLocaleString('fr-FR') %><% } else { %><span data-i18n="api.mot.jamais">jamais</span><% } %></td>
+                    <td><span class="ap-etat <%= c.actif ? 'ap-etat--on' : 'ap-etat--off' %>" data-i18n="<%= c.actif ? 'api.etat.active' : 'api.etat.revoquee' %>"><%= c.actif ? "active" : "révoquée" %></span></td>
+                    <td><% if (c.actif) { %><button class="ap-mini" data-revoquer="<%= c.id %>" data-i18n="api.btn.revoquer">Révoquer</button><% } %></td>
                 </tr>
             <% }) %>
             </tbody>
         </table>
 
         <p class="ap-aide" style="margin:20px 0 0">
-            <strong>Ce que cette clé aura le droit de faire, chez chacun de tes clients.</strong>
-            Ne coche que le nécessaire : c'est aussi ce que tu pourras montrer à un client
-            qui te demande ce que ton automatisation touche chez lui.
+            <span data-i18n="api.portees.aide">Ce que cette clé aura le droit de faire, chez chacun de tes clients. Ne coche que le nécessaire : c'est aussi ce que tu pourras montrer à un client qui te demande ce que ton automatisation touche chez lui.</span>
         </p>
         <div class="ap-cases">
             <% domaines.forEach(d => { %>
@@ -193,42 +211,37 @@
         </div>
 
         <div class="ap-ligne">
-            <input type="text" id="ap-nom-cle" placeholder="Nom de la clé (ex : n8n production)">
-            <button id="ap-creer-cle">Créer une clé</button>
+            <input type="text" id="ap-nom-cle" placeholder="Nom de la clé (ex : n8n production)" data-i18n-placeholder="api.ph.nomCle">
+            <button id="ap-creer-cle" data-i18n="api.btn.creerCle">Créer une clé</button>
         </div>
 
         <div class="ap-nouvelle" id="ap-nouvelle">
-            <strong>Voici ta clé — copie-la maintenant</strong>
+            <strong data-i18n="api.cle.nouvelle">Voici ta clé — copie-la maintenant</strong>
             <div class="ap-val" id="ap-valeur-cle"></div>
-            <p>Elle ne sera plus jamais affichée. Traite-la comme un mot de passe.</p>
+            <p data-i18n="api.cle.avertissement">Elle ne sera plus jamais affichée. Traite-la comme un mot de passe.</p>
         </div>
     </div>
 
     <!-- ── WEBHOOKS ────────────────────────────────────────────── -->
     <div class="ap-bloc">
-        <h2>Webhooks — tout le portefeuille sur une URL</h2>
+        <h2 data-i18n="api.webhooks.titre">Webhooks — tout le portefeuille sur une URL</h2>
         <p class="ap-aide">
-            SAMII appelle ton URL dès qu'un événement se produit chez <em>n'importe lequel</em>
-            de tes clients, quel que soit le canal d'origine : WhatsApp, Telegram, Shopify,
-            le QG ou l'API. Le bloc <code>espace</code> du corps envoyé, et l'en-tête
-            <code>X-SAMII-Espace</code>, te disent duquel il s'agit. Chaque appel est signé :
-            <code>X-SAMII-Signature: sha256=…</code>, HMAC du corps brut avec le secret
-            affiché à la création.
+            <span data-i18n="api.webhooks.aide">SAMII appelle ton URL dès qu'un événement se produit chez n'importe lequel de tes clients, quel que soit le canal d'origine : WhatsApp, Telegram, Shopify, le QG ou l'API. Le bloc « espace » du corps envoyé, et l'en-tête X-SAMII-Espace, te disent duquel il s'agit. Chaque appel est signé — X-SAMII-Signature: sha256=… , HMAC du corps brut avec le secret affiché à la création.</span>
         </p>
 
         <table>
-            <thead><tr><th>URL</th><th>Événements</th><th>Dernier code</th><th>État</th><th></th></tr></thead>
+            <thead><tr><th>URL</th><th data-i18n="api.th.evenements">Événements</th><th data-i18n="api.th.dernierCode">Dernier code</th><th data-i18n="api.th.etat">État</th><th></th></tr></thead>
             <tbody>
             <% if (!webhooks.length) { %>
-                <tr><td colspan="5" class="ap-vide">Aucun webhook enregistré.</td></tr>
+                <tr><td colspan="5" class="ap-vide" data-i18n="api.vide.webhooks">Aucun webhook enregistré.</td></tr>
             <% } %>
             <% webhooks.forEach(w => { %>
                 <tr>
                     <td class="mono" style="word-break:break-all"><%= w.url %></td>
                     <td class="mono" style="font-size:.68rem"><%= (w.evenements || []).join(", ") %></td>
                     <td class="mono"><%= w.dernier_statut || "—" %></td>
-                    <td><span class="ap-etat <%= w.actif ? 'ap-etat--on' : 'ap-etat--off' %>"><%= w.actif ? "actif" : "désactivé" %></span></td>
-                    <td><button class="ap-mini" data-suppr-webhook="<%= w.id %>">Supprimer</button></td>
+                    <td><span class="ap-etat <%= w.actif ? 'ap-etat--on' : 'ap-etat--off' %>" data-i18n="<%= w.actif ? 'api.etat.actif' : 'api.etat.desactive' %>"><%= w.actif ? "actif" : "désactivé" %></span></td>
+                    <td><button class="ap-mini" data-suppr-webhook="<%= w.id %>" data-i18n="api.btn.supprimer">Supprimer</button></td>
                 </tr>
             <% }) %>
             </tbody>
@@ -242,22 +255,20 @@
                 <label><input type="checkbox" class="ap-ev" value="<%= e %>" checked> <%= e %></label>
             <% }) %>
         </div>
-        <div class="ap-ligne"><button id="ap-creer-webhook">Enregistrer le webhook</button></div>
+        <div class="ap-ligne"><button id="ap-creer-webhook" data-i18n="api.btn.creerWebhook">Enregistrer le webhook</button></div>
     </div>
 
     <!-- ── PORTEFEUILLE ────────────────────────────────────────── -->
     <div class="ap-bloc">
-        <h2>Identifiants de tes espaces</h2>
+        <h2 data-i18n="api.espaces.titre">Identifiants de tes espaces</h2>
         <p class="ap-aide">
-            C'est la valeur à mettre dans l'en-tête <code>X-SAMII-Espace</code> pour cibler
-            un client. <code>GET /api/v1/espaces</code> renvoie exactement cette liste, si tu
-            préfères la lire depuis ton automatisation plutôt que la recopier.
+            <span data-i18n="api.espaces.aide">C'est la valeur à mettre dans l'en-tête X-SAMII-Espace pour cibler un client. GET /api/v1/espaces renvoie exactement cette liste, si tu préfères la lire depuis ton automatisation plutôt que la recopier.</span>
         </p>
         <table>
-            <thead><tr><th>Client</th><th>Identifiant d'espace</th><th>Métier</th><th>Parcours</th></tr></thead>
+            <thead><tr><th data-i18n="agence.table.client">Client</th><th data-i18n="api.th.idEspace">Identifiant d'espace</th><th data-i18n="agence.form.metier">Métier</th><th data-i18n="api.th.parcours">Parcours</th></tr></thead>
             <tbody>
             <% if (!espaces.length) { %>
-                <tr><td colspan="4" class="ap-vide">Aucun client dans ton portefeuille pour l'instant.</td></tr>
+                <tr><td colspan="4" class="ap-vide" data-i18n="api.vide.espaces">Aucun client dans ton portefeuille pour l'instant.</td></tr>
             <% } %>
             <% espaces.forEach(e => { %>
                 <tr>
@@ -273,18 +284,15 @@
 
     <!-- ── JOURNAL D'ACCÈS ─────────────────────────────────────── -->
     <div class="ap-bloc">
-        <h2>Ce que tes clés ont fait</h2>
+        <h2 data-i18n="api.journal.titre">Ce que tes clés ont fait</h2>
         <p class="ap-aide">
-            Les quinze derniers appels de tes clés, tous clients confondus. C'est la
-            contrepartie des permissions — et la réponse toute prête au client qui
-            demande ce que ton automatisation touche chez lui. Un appel refusé
-            apparaît en rouge, avec la permission manquante.
+            <span data-i18n="api.journal.aide">Les quinze derniers appels de tes clés, tous clients confondus. C'est la contrepartie des permissions — et la réponse toute prête au client qui demande ce que ton automatisation touche chez lui. Un appel refusé apparaît en rouge, avec la permission manquante.</span>
         </p>
         <table>
-            <thead><tr><th>Quand</th><th>Client</th><th>Appel</th><th>Réponse</th></tr></thead>
+            <thead><tr><th data-i18n="api.th.quand">Quand</th><th data-i18n="agence.table.client">Client</th><th data-i18n="api.th.appel">Appel</th><th data-i18n="api.th.reponse">Réponse</th></tr></thead>
             <tbody>
             <% if (!acces || !acces.length) { %>
-                <tr><td colspan="4" class="ap-vide">Aucun appel pour l'instant.</td></tr>
+                <tr><td colspan="4" class="ap-vide" data-i18n="api.vide.journal">Aucun appel pour l'instant.</td></tr>
             <% } %>
             <% (acces || []).forEach(a => { %>
                 <tr>
@@ -294,7 +302,7 @@
                     <td class="mono">
                         <span class="ap-etat <%= a.refusee ? 'ap-etat--off' : 'ap-etat--on' %>"><%= a.statut %></span>
                         <% if (a.refusee && a.portee) { %>
-                            <span style="font-size:.64rem;color:var(--text-muted)"> manque <%= a.portee %></span>
+                            <span style="font-size:.64rem;color:var(--text-muted)"> <span data-i18n="api.mot.manque">manque</span> <%= a.portee %></span>
                         <% } %>
                     </td>
                 </tr>
@@ -305,8 +313,8 @@
 
     <!-- ── DÉMARRAGE ───────────────────────────────────────────── -->
     <div class="ap-bloc">
-        <h2>Démarrage</h2>
-        <p class="ap-aide">Deux appels pour tout comprendre : la liste de tes clients, puis les commandes de l'un d'eux.</p>
+        <h2 data-i18n="api.demarrage.titre">Démarrage</h2>
+        <p class="ap-aide" data-i18n="api.demarrage.aide">Deux appels pour tout comprendre : la liste de tes clients, puis les commandes de l'un d'eux.</p>
 <pre><code># 1. tes espaces
 curl <%= baseUrl %>/api/v1/espaces \
   -H "Authorization: Bearer sk_samii_…"
@@ -316,10 +324,7 @@ curl <%= baseUrl %>/api/v1/commandes \
   -H "Authorization: Bearer sk_samii_…" \
   -H "X-SAMII-Espace: WS-…"</code></pre>
         <p class="ap-aide" style="margin:16px 0 0">
-            Dans n8n : nœud <strong>HTTP Request</strong>, authentification <strong>Header Auth</strong>
-            (<code>Authorization</code> = <code>Bearer sk_samii_…</code>), et un second en-tête
-            <code>X-SAMII-Espace</code> alimenté par la boucle sur tes clients. Aucun nœud
-            communautaire, aucun SDK à installer.
+            <span data-i18n="api.n8n">Dans n8n : nœud HTTP Request, authentification Header Auth (Authorization = Bearer sk_samii_…), et un second en-tête X-SAMII-Espace alimenté par la boucle sur tes clients. Aucun nœud communautaire, aucun SDK à installer.</span>
         </p>
     </div>
 </div>
@@ -327,6 +332,12 @@ curl <%= baseUrl %>/api/v1/commandes \
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <script>
 if (window.lucide) lucide.createIcons();
+
+// Traduction des textes produits par ce script (alertes, confirmations) :
+// aucun data-i18n ne peut les atteindre. Repli sur le français si la clé
+// manque ou si le dictionnaire n'est pas encore chargé.
+const apT = (cle, repli) => (window.Language && Language.t ? Language.t(cle, repli) : repli);
+
 
 // ── Mode clair / sombre — même préférence que la tour de contrôle ──
 function apAppliquerMode(mode) {
@@ -351,7 +362,7 @@ async function apPoster(url, corps) {
 
 document.getElementById("ap-creer-cle").addEventListener("click", async (e) => {
     e.target.disabled = true;
-    const nom = document.getElementById("ap-nom-cle").value.trim() || "Clé agence";
+    const nom = document.getElementById("ap-nom-cle").value.trim() || apT("api.cle.nomDefaut", "Clé agence");
     const portees = [...document.querySelectorAll(".ap-portee:checked")].map(c => c.value);
     const rep = await apPoster("/agence/api/cles", { nom, portees });
     if (rep.success) {
@@ -359,16 +370,16 @@ document.getElementById("ap-creer-cle").addEventListener("click", async (e) => {
         document.getElementById("ap-nouvelle").style.display = "block";
         // On ne recharge pas la page : ça effacerait la clé, visible une seule fois.
     } else {
-        alert(rep.error || "Erreur.");
+        alert(rep.error || apT("agence.msg.erreur", "Erreur."));
         e.target.disabled = false;
     }
 });
 
 document.querySelectorAll("[data-revoquer]").forEach(b => {
     b.addEventListener("click", async () => {
-        if (!confirm("Révoquer cette clé ? Tout système qui l'utilise perdra l'accès immédiatement.")) return;
+        if (!confirm(apT("api.msg.revoquer", "Révoquer cette clé ? Tout système qui l'utilise perdra l'accès immédiatement."))) return;
         const rep = await apPoster(`/agence/api/cles/${b.dataset.revoquer}/revoquer`);
-        if (rep.success) location.reload(); else alert("Erreur.");
+        if (rep.success) location.reload(); else alert(apT("agence.msg.erreur", "Erreur."));
     });
 });
 
@@ -377,20 +388,22 @@ document.getElementById("ap-creer-webhook").addEventListener("click", async () =
     const evenements = [...document.querySelectorAll(".ap-ev:checked")].map(c => c.value);
     const rep = await apPoster("/agence/api/webhooks", { url, evenements });
     if (rep.success) {
-        alert("Webhook enregistré.\n\nSecret de signature (à garder) :\n" + rep.webhook.secret);
+        alert(apT("api.msg.webhookOk", "Webhook enregistré.\n\nSecret de signature (à garder) :") + "\n" + rep.webhook.secret);
         location.reload();
     } else {
-        alert(rep.error || "Erreur.");
+        alert(rep.error || apT("agence.msg.erreur", "Erreur."));
     }
 });
 
 document.querySelectorAll("[data-suppr-webhook]").forEach(b => {
     b.addEventListener("click", async () => {
-        if (!confirm("Supprimer ce webhook ?")) return;
+        if (!confirm(apT("api.msg.supprWebhook", "Supprimer ce webhook ?"))) return;
         const rep = await apPoster(`/agence/api/webhooks/${b.dataset.supprWebhook}/supprimer`);
-        if (rep.success) location.reload(); else alert("Erreur.");
+        if (rep.success) location.reload(); else alert(apT("agence.msg.erreur", "Erreur."));
     });
 });
 </script>
+
+<%- include("partials/barre-langue") %>
 </body>
 </html>

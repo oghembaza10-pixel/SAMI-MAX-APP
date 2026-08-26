@@ -430,6 +430,25 @@
             .tc-ligne > .tc-num, .tc-ligne > .tc-etat { grid-column: 2; }
             .tc-cli__actions { grid-column: 1 / -1; justify-content: flex-end; }
         }
+
+        /* ── ARABE (RTL) ──────────────────────────────────────────────
+           La tour de contrôle est une page à rail latéral : en arabe le rail
+           passe à droite, et le liseré doré qui marque le lien actif avec lui
+           — un `inset 2px 0 0` non retourné souligne le mauvais côté. Les
+           colonnes techniques (emails, identifiants d'espace, montants)
+           gardent le sens latin : un email inversé n'est pas un email.
+           `dir` est posé sur <html> par /js/i18n.js au choix de la langue. */
+        [dir="rtl"] .tc-rail { border-right: none; border-left: var(--border-soft); }
+        [dir="rtl"] .tc-rail__lien.actif { box-shadow: inset -2px 0 0 var(--gold-og); }
+        [dir="rtl"] .tc-orbe { right: auto; left: 22px; }
+        [dir="rtl"] .tc-retour { transform: none; }
+        /* Le compteur « en attente » est collé au coin droit de sa carte. En
+           arabe le titre du métier occupe ce coin : sans bascule, le badge se
+           pose par-dessus le nom de l'escadrille et les deux deviennent
+           illisibles. Vu en capture, pas déduit du code. */
+        [dir="rtl"] .tc-esc__flag { right: auto; left: 14px; }
+        [dir="rtl"] .tc-cli__mail,
+        [dir="rtl"] .tc-num { direction: ltr; unicode-bidi: embed; }
     </style>
 </head>
 <body data-theme="og">
@@ -439,7 +458,7 @@
     <aside class="tc-rail" id="tc-rail">
         <div class="tc-rail__marque">
             <a href="/agence" class="tc-rail__logo">OG · TECHNOLOGY</a>
-            <span class="tc-rail__role">Tour de contrôle — Agence</span>
+            <span class="tc-rail__role" data-i18n="agence.role">Tour de contrôle — Agence</span>
         </div>
 
         <div class="tc-rail__section" data-i18n="agence.nav.pilotage">Pilotage</div>
@@ -500,7 +519,7 @@
             </div>
 
             <div class="tc-actions">
-                <button type="button" class="tc-icone tc-burger" id="tc-burger" aria-label="Menu">
+                <button type="button" class="tc-icone tc-burger" id="tc-burger" aria-label="Menu" data-i18n-title="agence.btn.menu">
                     <i data-lucide="menu"></i>
                 </button>
                 <%# Les deux icônes sont présentes dès le rendu et basculées en
@@ -521,7 +540,7 @@
                 <form class="tc-form" id="form-client">
                     <div>
                         <label for="c-nom" data-i18n="agence.form.nom">Nom de la boutique</label>
-                        <input id="c-nom" name="nom" required placeholder="Boutique de Karim">
+                        <input id="c-nom" name="nom" required placeholder="Boutique de Karim" data-i18n-placeholder="agence.ph.nom">
                     </div>
                     <%# Sélection en DEUX TEMPS : on choisit d'abord la famille,
                         puis le métier à l'intérieur. Une liste déroulante de
@@ -564,14 +583,14 @@
                             bloquée par un métier auquel on n'a pas pensé. %>
                         <div class="tc-libre" id="tc-libre">
                             <label for="c-metier-libre" data-i18n="agence.form.metierLibre">Précise le métier de ton client</label>
-                            <input id="c-metier-libre" name="metierCustom" maxlength="40" placeholder="Ex : Torréfacteur, Pressing, Menuisier...">
+                            <input id="c-metier-libre" name="metierCustom" maxlength="40" placeholder="Ex : Torréfacteur, Pressing, Menuisier..." data-i18n-placeholder="agence.ph.metierLibre">
                         </div>
 
                         <p class="tc-choix" id="tc-choix"></p>
                     </div>
                     <div>
                         <label for="c-email" data-i18n="agence.form.email">Email du client</label>
-                        <input id="c-email" name="email" type="email" required placeholder="client@exemple.com">
+                        <input id="c-email" name="email" type="email" required placeholder="client@exemple.com" data-i18n-placeholder="agence.ph.email">
                     </div>
                     <div>
                         <label for="c-pays" data-i18n="agence.form.pays">Pays</label>
@@ -594,9 +613,8 @@
             </div>
 
             <% if (!clients.length) { %>
-                <div class="tc-vide">
-                    Votre flotte est vide.<br>
-                    Ouvrez le premier espace client avec le bouton <b>+ Client</b> — il apparaîtra ici, regroupé par métier.
+                <div class="tc-vide" data-i18n="agence.vide">
+                    Votre flotte est vide. Ouvrez le premier espace client avec le bouton « + Client » — il apparaîtra ici, regroupé par métier.
                 </div>
             <% } else { %>
 
@@ -648,7 +666,7 @@
                             </div>
                             <div class="tc-num">
                                 <%= g.estRdv ? c.rdvAVenir : c.jour %>
-                                <small><%= g.estRdv ? "à venir" : "auj." %></small>
+                                <small data-i18n="<%= g.estRdv ? 'agence.mot.aVenir' : 'agence.mot.auj' %>"><%= g.estRdv ? "à venir" : "auj." %></small>
                             </div>
                             <div class="tc-num">
                                 <%= c.semaine %>
@@ -658,7 +676,7 @@
                             <div class="tc-cli__actions">
                                 <a href="/agence/entrer/<%= encodeURIComponent(c.workspaceId) %>" class="tc-entrer" data-i18n="agence.btn.entrer">Entrer</a>
                                 <% if (c.agenceStatut === "actif") { %>
-                                <button type="button" class="tc-abandon" data-id="<%= c.workspaceId %>" title="Signaler ce client comme abandonné">✕</button>
+                                <button type="button" class="tc-abandon" data-id="<%= c.workspaceId %>" title="Signaler ce client comme abandonné" data-i18n-title="agence.btn.abandon">✕</button>
                                 <% } %>
                             </div>
                         </div>
@@ -675,7 +693,7 @@
 <%# SAMII reste accessible depuis la tour de contrôle : une agence a autant
     besoin d'un stratège que ses marchands — rédiger un message à un client,
     comprendre pourquoi une boutique décroche, préparer une relance. %>
-<a href="/samii" class="tc-orbe" aria-label="Ouvrir SAMII" title="Demander à SAMII">
+<a href="/samii" class="tc-orbe" aria-label="Ouvrir SAMII" title="Demander à SAMII" data-i18n-title="agence.btn.samii">
     <span class="tc-orbe__halo"></span>
     <i data-lucide="bot"></i>
 </a>
@@ -684,6 +702,11 @@
 <script src="/js/i18n.js"></script>
 <script>
 (function () {
+    // Traduction des textes produits par ce script. Language.t() retombe sur
+    // le texte français si la clé manque ou si le dictionnaire n'est pas
+    // encore arrivé — jamais de clé brute à l'écran.
+    const T = (cle, repli) => (window.Language && Language.t ? Language.t(cle, repli) : repli);
+
     // ── Mode clair / sombre : même mécanique et même clé de stockage que
     // le reste de l'app, pour que le choix suive l'utilisateur partout.
     // L'icône du bouton est posée AVANT le premier createIcons() : sinon on
@@ -773,7 +796,7 @@
     const btnOuvrir = document.getElementById("btn-ouvrir-form");
     btnOuvrir?.addEventListener("click", () => {
         const ouvert = panneau.classList.toggle("tc-ajout--ouvert");
-        btnOuvrir.textContent = ouvert ? "Annuler" : "+ Client";
+        btnOuvrir.textContent = ouvert ? T("agence.btn.annuler", "Annuler") : T("agence.btn.client", "+ Client");
         if (ouvert) document.getElementById("c-nom")?.focus();
     });
 
@@ -784,13 +807,13 @@
         const data = Object.fromEntries(new FormData(e.target));
 
         if (data.metier === "autre" && !String(data.metierCustom || "").trim()) {
-            msg.textContent = "Précise le métier de ton client.";
+            msg.textContent = T("agence.msg.metierLibre", "Précise le métier de ton client.");
             msg.className = "tc-msg tc-msg--ko";
             document.getElementById("c-metier-libre")?.focus();
             return;
         }
         if (!data.metier) {
-            msg.textContent = "Choisis le métier de ton client.";
+            msg.textContent = T("agence.msg.metierChoix", "Choisis le métier de ton client.");
             msg.className = "tc-msg tc-msg--ko";
             montrerFamilles();
             document.getElementById("tc-familles")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -798,7 +821,7 @@
         }
 
         btn.disabled = true;
-        msg.textContent = "Ouverture en cours...";
+        msg.textContent = T("agence.msg.ouverture", "Ouverture en cours...");
         msg.className = "tc-msg";
 
         try {
@@ -809,16 +832,16 @@
             });
             const json = await res.json();
             if (json.success) {
-                msg.textContent = "✅ Espace ouvert — le client vient d'être prévenu par email.";
+                msg.textContent = "✅ " + T("agence.msg.ouvert", "Espace ouvert — le client vient d'être prévenu par email.");
                 msg.className = "tc-msg tc-msg--ok";
                 setTimeout(() => location.reload(), 1200);
             } else {
-                msg.textContent = "❌ " + (json.error || "Erreur.");
+                msg.textContent = "❌ " + (json.error || T("agence.msg.erreur", "Erreur."));
                 msg.className = "tc-msg tc-msg--ko";
                 btn.disabled = false;
             }
         } catch (err) {
-            msg.textContent = "❌ Erreur réseau.";
+            msg.textContent = "❌ " + T("agence.msg.reseau", "Erreur réseau.");
             msg.className = "tc-msg tc-msg--ko";
             btn.disabled = false;
         }
@@ -827,14 +850,14 @@
     document.querySelectorAll(".tc-abandon").forEach(btn => {
         btn.addEventListener("click", async (e) => {
             e.stopPropagation();
-            if (!confirm("Signaler ce client comme abandonné ? OG Technology validera la fermeture de son espace.")) return;
+            if (!confirm(T("agence.msg.abandon", "Signaler ce client comme abandonné ? OG Technology validera la fermeture de son espace."))) return;
             try {
                 const res = await fetch("/agence/abandonner/" + btn.dataset.id, { method: "POST" });
                 const json = await res.json();
                 if (json.success) location.reload();
-                else alert("❌ " + (json.error || "Erreur."));
+                else alert("❌ " + (json.error || T("agence.msg.erreur", "Erreur.")));
             } catch (err) {
-                alert("❌ Erreur réseau.");
+                alert("❌ " + T("agence.msg.reseau", "Erreur réseau."));
             }
         });
     });

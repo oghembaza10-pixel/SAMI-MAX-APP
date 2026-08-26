@@ -319,12 +319,6 @@
      chaque page de l'Académie a sa propre barre, avec ses propres classes.
      Un élément autonome se pose partout à l'identique et ne casse la mise en
      page d'aucune d'entre elles. -->
-<a href="<%= lienLangue(autreLangue) %>" title="Français / English"
-   style="position:fixed;right:16px;bottom:16px;z-index:60;padding:9px 15px;border-radius:22px;
-          border:1px solid rgba(201,169,97,.35);background:rgba(7,7,10,.92);color:#c9a961;
-          text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.12em;
-          font-family:ui-monospace,monospace;backdrop-filter:blur(6px);">
-  <%= autreLangue.toUpperCase() %>
-</a>
+<%- include("partials/barre-langue", { modeLangue: "serveur" }) %>
 </body>
 </html>

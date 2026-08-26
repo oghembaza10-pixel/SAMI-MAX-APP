@@ -5,7 +5,18 @@
   "hero": {
     "eyebrow": "帝国 • 全球生态系统",
     "title": "打造你的帝国。",
-    "description": "一个平台。\n一个身份。\n一个总部。\n\n工作。\n成长。\n打造你的帝国。"
+    "description": "一个平台。\n一个身份。\n一个总部。\n\n工作。\n成长。\n打造你的帝国。",
+    "badge": "OG Technology",
+    "badgeSub": "SAMII 出品方",
+    "title1": "让你的生意自动运转的平台",
+    "title2": "你的商业",
+    "tag1": "自动化。",
+    "tag2": "卖出去。",
+    "tag3": "做起来。",
+    "desc": "一个平台，一个工作空间。你的销售、广告与客服，由同一个智能统一调度。",
+    "descTech": "接入 Gmail、Google 日历、云端硬盘、YouTube 与 Google Ads，SAMII 替你回邮件、安排会面、发布内容、管理广告投放——始终按你的指令行事。",
+    "cta1": "看 SAMII 实际运行",
+    "cta2": "创建我的账户"
   },
   "buttons": {
     "enter": "进入我的总部"
@@ -225,6 +236,14 @@
       "chasseurStock": {
         "label": "库存猎手",
         "value": "寻找供应商 →"
+      },
+      "opportunites": {
+        "label": "机会雷达",
+        "value": "发现产品线索 →"
+      },
+      "radarProspects": {
+        "label": "潜客雷达",
+        "value": "找到真实客户 →"
       }
     },
     "titleParticulier": "和 SAMII 交谈。",
@@ -616,7 +635,8 @@
         "step3": "BotFather 会给你一个 token（一长串包含 \":\" 的字符）。复制它。",
         "step4": "将该 token 粘贴到下方并确认。",
         "tokenLabel": "机器人 Token（@BotFather）",
-        "submit": "使用我自己的机器人"
+        "submit": "使用我自己的机器人",
+        "activeBadge": "你自己的机器人已启用"
       }
     },
     "whatsapp": {
@@ -647,6 +667,15 @@
       "apiToken": {
         "label": "API 令牌（apiTokenInstance）",
         "ph": "你的 apiTokenInstance"
+      },
+      "palier": {
+        "title": "🔒 自「活跃」档起包含",
+        "desc": "Telegram 和你的店铺始终免费，没有时间限制。WhatsApp 需要专用号码以及我们这边的跟进：它属于「活跃」档。你可以用上方的共享号码试用 3 天。",
+        "cta": "查看「活跃」档 →",
+        "locked": "需要「活跃」档"
+      },
+      "fournisseur": {
+        "label": "你的号码是如何连接的？"
       }
     }
   },
@@ -674,7 +703,11 @@
     "btn": {
       "client": "+ 客户",
       "entrer": "进入",
-      "mode": "浅色 / 深色模式"
+      "mode": "浅色 / 深色模式",
+      "abandon": "标记该客户为已停用",
+      "samii": "询问 SAMII",
+      "menu": "菜单",
+      "annuler": "取消"
     },
     "form": {
       "nom": "店铺名称",
@@ -700,7 +733,25 @@
       "enAttente": "待处理",
       "rdvAVenir": "即将到来的预约",
       "client": "客户",
-      "metier": "行业"
+      "metier": "行业",
+      "aVenir": "即将到来",
+      "auj": "今天"
+    },
+    "role": "指挥塔 — 代理机构",
+    "vide": "你的机队是空的。用「+ 客户」按钮开设第一个客户空间——它会出现在这里，按行业分组。",
+    "ph": {
+      "nom": "卡里姆的店铺",
+      "metierLibre": "例如：咖啡烘焙师、干洗店、木匠……",
+      "email": "client@example.com"
+    },
+    "msg": {
+      "metierLibre": "请说明你客户的行业。",
+      "metierChoix": "请选择你客户的行业。",
+      "ouverture": "正在开设……",
+      "ouvert": "空间已开设——客户刚刚已通过邮件收到通知。",
+      "erreur": "错误。",
+      "reseau": "网络错误。",
+      "abandon": "标记该客户为已停用？OG Technology 将确认关闭其空间。"
     }
   },
   "agency": {
@@ -748,5 +799,104 @@
     "code2": "每个事件你会收到什么",
     "cta": "阅读文档 →",
     "note": "公开文档，无需账号。"
+  },
+  "nav": {
+    "retour": {
+      "agence": "指挥塔",
+      "qg": "返回总部",
+      "client": "返回我的空间",
+      "accueil": "返回首页",
+      "simple": "返回"
+    }
+  },
+  "api": {
+    "intro": {
+      "1": "一把密钥管理你的全部客户：n8n 只需接一次，就能驱动你客户的",
+      "2": "。无需为每家店铺重建流程。"
+    },
+    "doc": "完整文档 →",
+    "mot": {
+      "espace": "个空间",
+      "espaces": "个空间",
+      "jamais": "从未",
+      "manque": "缺少"
+    },
+    "cles": {
+      "titre": "代理机构密钥",
+      "aide": "密钥只在创建时显示一次：我们只保存它的指纹，绝不保存密钥本身。它只授予你名下客户空间的访问权限。离开你的客户会自动移出范围，无需撤销任何东西。"
+    },
+    "portees": {
+      "aide": "这把密钥在你每一位客户处被允许做的事。只勾选必要项：这也是你可以向询问「你的自动化在我这边动了什么」的客户展示的内容。"
+    },
+    "th": {
+      "nom": "名称",
+      "cle": "密钥",
+      "permissions": "权限",
+      "dernierUsage": "最后使用",
+      "etat": "状态",
+      "evenements": "事件",
+      "dernierCode": "最后状态码",
+      "idEspace": "空间标识",
+      "parcours": "流程",
+      "quand": "时间",
+      "appel": "调用",
+      "reponse": "响应"
+    },
+    "vide": {
+      "cles": "暂无密钥。",
+      "webhooks": "暂无已注册的 webhook。",
+      "espaces": "你名下暂无客户。",
+      "journal": "暂无调用记录。"
+    },
+    "cle": {
+      "complete": "完全访问（历史密钥）",
+      "nouvelle": "这是你的密钥——请立即复制",
+      "avertissement": "它不会再次显示。请像对待密码一样保管它。",
+      "nomDefaut": "代理机构密钥"
+    },
+    "etat": {
+      "active": "启用",
+      "revoquee": "已撤销",
+      "actif": "启用",
+      "desactive": "已停用"
+    },
+    "btn": {
+      "revoquer": "撤销",
+      "supprimer": "删除",
+      "creerCle": "创建密钥",
+      "creerWebhook": "保存 webhook"
+    },
+    "ph": {
+      "nomCle": "密钥名称（例如 n8n production）"
+    },
+    "webhooks": {
+      "titre": "Webhooks — 全部客户汇于一个网址",
+      "aide": "只要你任一客户处发生事件，无论来源渠道是 WhatsApp、Telegram、Shopify、总部还是 API，SAMII 都会调用你的网址。发送内容中的「espace」区块以及 X-SAMII-Espace 请求头会告诉你是哪一位。每次调用都有签名——X-SAMII-Signature: sha256=… ，即用创建时显示的密钥对原始内容做的 HMAC。"
+    },
+    "espaces": {
+      "titre": "你的空间标识",
+      "aide": "这是放入 X-SAMII-Espace 请求头以指定某个客户的值。GET /api/v1/espaces 返回的正是这份列表，如果你更愿意从自动化流程中读取而不是手动抄写。"
+    },
+    "journal": {
+      "titre": "你的密钥做过什么",
+      "aide": "你的密钥最近十五次调用，涵盖所有客户。这是权限的对价——也是客户问「你的自动化在我这边动了什么」时的现成答案。被拒绝的调用显示为红色，并附上缺少的权限。"
+    },
+    "demarrage": {
+      "titre": "快速开始",
+      "aide": "两个调用就能理解全部：你的客户列表，然后是其中一位的订单。"
+    },
+    "n8n": "在 n8n 中：HTTP Request 节点，Header Auth 认证（Authorization = Bearer sk_samii_…），再加一个由客户循环填充的 X-SAMII-Espace 请求头。无需社区节点，无需安装 SDK。",
+    "msg": {
+      "revoquer": "撤销这把密钥？任何正在使用它的系统会立即失去访问权限。",
+      "supprWebhook": "删除这个 webhook？",
+      "webhookOk": "Webhook 已保存。\n\n签名密钥（请妥善保管）："
+    }
+  },
+  "proof": {
+    "connected": "已接入 Shopify · WooCommerce · Telegram · WhatsApp · Google",
+    "soon": "即将支持 — TikTok、Meta",
+    "step1": "你接上自己的工具——两分钟，无需技术。",
+    "step2": "Sami 代你回复、销售、发布，日夜不停。",
+    "step3": "最终决定权，始终、全部在你手上。"
   }
 }

@@ -243,6 +243,14 @@
       "chasseurStock": {
         "label": "Stock Hunter",
         "value": "Find a supplier →"
+      },
+      "opportunites": {
+        "label": "Opportunity radar",
+        "value": "Spot product leads →"
+      },
+      "radarProspects": {
+        "label": "Prospect radar",
+        "value": "Find real customers →"
       }
     },
     "titleParticulier": "Talk to SAMII.",
@@ -634,7 +642,8 @@
         "step3": "BotFather gives you a token (a long string with \":\"). Copy it.",
         "step4": "Paste that token below and confirm.",
         "tokenLabel": "Bot token (@BotFather)",
-        "submit": "Use my own bot"
+        "submit": "Use my own bot",
+        "activeBadge": "Your own bot is active"
       }
     },
     "whatsapp": {
@@ -665,6 +674,15 @@
       "apiToken": {
         "label": "API Token (apiTokenInstance)",
         "ph": "Your apiTokenInstance"
+      },
+      "palier": {
+        "title": "🔒 Included from the Active tier",
+        "desc": "Telegram and your store stay free, with no time limit. WhatsApp requires a dedicated number and monitoring on our side: it is part of the Active tier. You can try it for 3 days with the shared number above.",
+        "cta": "See the Active tier →",
+        "locked": "Active tier required"
+      },
+      "fournisseur": {
+        "label": "How is your number connected?"
       }
     }
   },
@@ -692,7 +710,11 @@
     "btn": {
       "client": "+ Client",
       "entrer": "Enter",
-      "mode": "Light / dark mode"
+      "mode": "Light / dark mode",
+      "abandon": "Report this client as inactive",
+      "samii": "Ask SAMII",
+      "menu": "Menu",
+      "annuler": "Cancel"
     },
     "form": {
       "nom": "Store name",
@@ -718,7 +740,25 @@
       "enAttente": "pending",
       "rdvAVenir": "upcoming appts",
       "client": "client",
-      "metier": "industry"
+      "metier": "industry",
+      "aVenir": "upcoming",
+      "auj": "today"
+    },
+    "role": "Control tower — Agency",
+    "vide": "Your fleet is empty. Open the first client workspace with the “+ Client” button — it will appear here, grouped by industry.",
+    "ph": {
+      "nom": "Karim's store",
+      "metierLibre": "e.g. Coffee roaster, Dry cleaner, Carpenter...",
+      "email": "client@example.com"
+    },
+    "msg": {
+      "metierLibre": "Please specify your client's business.",
+      "metierChoix": "Please choose your client's industry.",
+      "ouverture": "Opening...",
+      "ouvert": "Workspace opened — the client has just been notified by email.",
+      "erreur": "Error.",
+      "reseau": "Network error.",
+      "abandon": "Report this client as inactive? OG Technology will confirm the closure of their workspace."
     }
   },
   "agency": {
@@ -766,5 +806,97 @@
     "code2": "What you receive on every event",
     "cta": "Read the documentation →",
     "note": "Public documentation, no account needed."
+  },
+  "nav": {
+    "retour": {
+      "agence": "Control tower",
+      "qg": "Back to HQ",
+      "client": "Back to my workspace",
+      "accueil": "Back to home",
+      "simple": "Back"
+    }
+  },
+  "api": {
+    "intro": {
+      "1": "One key for your whole portfolio: connect n8n once, and it drives the",
+      "2": "of your clients. No workflow to rebuild per store."
+    },
+    "doc": "Full documentation →",
+    "mot": {
+      "espace": "workspace",
+      "espaces": "workspaces",
+      "jamais": "never",
+      "manque": "missing"
+    },
+    "cles": {
+      "titre": "Agency keys",
+      "aide": "A key is shown once, at creation: we keep only a fingerprint of it, never the key itself. It grants access to the workspaces in your portfolio — and to those only. A client who leaves you falls out of scope automatically, with nothing to revoke."
+    },
+    "portees": {
+      "aide": "What this key will be allowed to do inside each of your clients' workspaces. Tick only what you need: this is also what you can show a client who asks what your automation touches on their side."
+    },
+    "th": {
+      "nom": "Name",
+      "cle": "Key",
+      "permissions": "Permissions",
+      "dernierUsage": "Last used",
+      "etat": "Status",
+      "evenements": "Events",
+      "dernierCode": "Last code",
+      "idEspace": "Workspace ID",
+      "parcours": "Journey",
+      "quand": "When",
+      "appel": "Call",
+      "reponse": "Response"
+    },
+    "vide": {
+      "cles": "No key yet.",
+      "webhooks": "No webhook registered.",
+      "espaces": "No client in your portfolio yet.",
+      "journal": "No call yet."
+    },
+    "cle": {
+      "complete": "full access (legacy key)",
+      "nouvelle": "Here is your key — copy it now",
+      "avertissement": "It will never be shown again. Treat it like a password.",
+      "nomDefaut": "Agency key"
+    },
+    "etat": {
+      "active": "active",
+      "revoquee": "revoked",
+      "actif": "active",
+      "desactive": "disabled"
+    },
+    "btn": {
+      "revoquer": "Revoke",
+      "supprimer": "Delete",
+      "creerCle": "Create a key",
+      "creerWebhook": "Save the webhook"
+    },
+    "ph": {
+      "nomCle": "Key name (e.g. n8n production)"
+    },
+    "webhooks": {
+      "titre": "Webhooks — the whole portfolio on one URL",
+      "aide": "SAMII calls your URL as soon as an event happens at any of your clients, whatever the originating channel: WhatsApp, Telegram, Shopify, the HQ or the API. The “espace” block of the body sent, and the X-SAMII-Espace header, tell you which one it is. Every call is signed — X-SAMII-Signature: sha256=… , an HMAC of the raw body with the secret shown at creation."
+    },
+    "espaces": {
+      "titre": "Your workspace IDs",
+      "aide": "This is the value to put in the X-SAMII-Espace header to target a client. GET /api/v1/espaces returns exactly this list, if you would rather read it from your automation than copy it out."
+    },
+    "journal": {
+      "titre": "What your keys have done",
+      "aide": "The last fifteen calls made by your keys, across all clients. It is the counterpart of permissions — and a ready answer for the client who asks what your automation touches on their side. A refused call appears in red, with the missing permission."
+    },
+    "demarrage": {
+      "titre": "Getting started",
+      "aide": "Two calls to understand everything: the list of your clients, then the orders of one of them."
+    },
+    "n8n": "In n8n: HTTP Request node, Header Auth authentication (Authorization = Bearer sk_samii_…), and a second X-SAMII-Espace header fed by the loop over your clients. No community node, no SDK to install.",
+    "msg": {
+      "revoquer": "Revoke this key? Any system using it will lose access immediately.",
+      "supprWebhook": "Delete this webhook?",
+      "webhookOk": "Webhook saved.\n\nSigning secret (keep it safe):"
+    }
   }
 }

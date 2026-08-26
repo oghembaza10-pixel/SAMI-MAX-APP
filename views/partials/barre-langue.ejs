@@ -1,0 +1,168 @@
+<%#
+  ══════════════════════════════════════════════════════════════════════════
+  BARRE DE LANGUE ET DE RETOUR — un seul endroit, toutes les pages.
+
+  LE DÉFAUT CORRIGÉ. « Dans certains endroits, il n'y a ni le bouton pour
+  changer de langue, ni le bouton pour revenir là où on était. » C'était vrai :
+  seize gabarits portaient des textes déjà traduits (data-i18n) mais aucun
+  bouton pour choisir la langue — la traduction existait et restait
+  inatteignable. D'autres n'avaient aucun moyen de remonter.
+
+  POURQUOI UN PARTIEL ET PAS SEIZE COPIES. Un bouton recopié seize fois, c'est
+  seize endroits à corriger le jour où l'arabe passe en RTL ou où une langue
+  s'ajoute. Ici, la barre est écrite une fois ; chaque page l'inclut.
+
+  LE RETOUR EST CONTEXTUEL, PAS ÉCRIT EN DUR. `retourUrl` vient de
+  services/navigation.js : depuis le QG on rentre au QG, depuis l'agence à la
+  Tour de contrôle. `data-i18n` porte la clé pour que le libellé suive aussi
+  le sélecteur de langue, qui change la page sans la recharger.
+
+  RTL. En arabe la barre bascule à gauche et la flèche se retourne — une
+  flèche « ← » pointant vers la gauche dans un texte qui se lit de droite à
+  gauche désigne l'avant, pas l'arrière.
+
+  INCLUSION. S'inclut juste avant la fermeture du corps de page. Pour une page
+  qui est elle-même une base (la Tour de contrôle, le QG), on passe
+  `avecRetour: false` en second argument : un bouton « revenir » qui pointe
+  sur la page où l'on se trouve déjà est un bouton qui ment.
+  ══════════════════════════════════════════════════════════════════════════
+%>
+<% const _avecRetour = (typeof avecRetour === "undefined") ? true : avecRetour; %>
+<% const _retourUrl  = (typeof retourUrl  === "undefined") ? "/"      : retourUrl; %>
+<% const _retourCle  = (typeof retourCle  === "undefined") ? "nav.retour.simple" : retourCle; %>
+<% const _retourTxt  = (typeof retourLibelle === "undefined") ? "Retour" : retourLibelle; %>
+<%#
+  DEUX MODES, PARCE QUE LE SITE A DEUX MOTEURS DE TRADUCTION.
+
+  « client » (défaut) : la page porte des data-i18n que /js/i18n.js réécrit
+  sans recharger. Les puces sont des boutons.
+
+  « serveur » : la page est traduite à l'avance par services/langue.js — le
+  texte est déjà écrit dans la bonne langue quand il arrive. Un bouton qui
+  réécrit le DOM n'y peut rien : il faut redemander la page. Les puces sont
+  donc des liens, et la langue courante n'est pas cliquable — proposer d'aller
+  là où l'on est déjà est un faux bouton.
+%>
+<% const _mode = (typeof modeLangue === "undefined") ? "client" : modeLangue; %>
+<% const _dispo = _mode === "serveur"
+     ? (typeof languesDispo === "undefined" ? ["fr","en","ar"] : languesDispo)
+     : ["fr","en","ar","zh"]; %>
+<% const _titres = { fr: "Français", en: "English", ar: "العربية", zh: "中文" }; %>
+
+<div class="sam-barre" id="sam-barre">
+    <% if (_avecRetour) { %>
+    <a href="<%= _retourUrl %>" class="sam-barre__retour">
+        <span class="sam-barre__fleche" aria-hidden="true">←</span>
+        <span data-i18n="<%= _retourCle %>"><%= _retourTxt %></span>
+    </a>
+    <% } %>
+    <div class="sam-barre__langues">
+        <% _dispo.forEach(code => { %>
+            <% if (_mode === "serveur") { %>
+                <% const _actuelle = (typeof lang !== "undefined") && lang === code; %>
+                <a href="<%= typeof lienLangue === "function" ? lienLangue(code) : ("?lang=" + code) %>"
+                   class="<%= _actuelle ? 'active' : '' %>"
+                   title="<%= _titres[code] %>"><%= code.toUpperCase() %></a>
+            <% } else { %>
+                <span data-lang-btn="<%= code %>" role="button" tabindex="0"
+                      title="<%= _titres[code] %>"><%= code.toUpperCase() %></span>
+            <% } %>
+        <% }) %>
+    </div>
+</div>
+
+<style>
+/* Couleurs en repli explicite : la barre s'affiche sur des pages qui
+   n'importent pas toutes la feuille du QG, elle ne peut pas dépendre de
+   ses variables. */
+.sam-barre {
+    position: fixed; bottom: 16px; right: 16px; z-index: 60;
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 12px;
+    background: var(--bg-panel, rgba(12, 14, 20, .94));
+    border: 1px solid var(--gold-og, #c9a227);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, .38);
+    font-family: var(--font-body, "Inter", system-ui, sans-serif);
+}
+[dir="rtl"] .sam-barre { right: auto; left: 16px; }
+/* La flèche suit le sens de lecture : « revenir » c'est aller vers le début
+   de la ligne, à droite en arabe. */
+[dir="rtl"] .sam-barre__fleche { transform: scaleX(-1); display: inline-block; }
+
+.sam-barre__retour {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 8px; text-decoration: none;
+    font-size: .74rem; white-space: nowrap;
+    color: var(--text-main, #e8e8ea);
+    transition: background .2s ease, color .2s ease;
+}
+.sam-barre__retour:hover { background: rgba(255, 255, 255, .07); color: var(--gold-og, #c9a227); }
+
+.sam-barre__langues { display: flex; gap: 3px; }
+.sam-barre__langues span,
+.sam-barre__langues a {
+    text-decoration: none;
+    padding: 5px 7px; border-radius: 7px; cursor: pointer; user-select: none;
+    font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+    font-size: .62rem; letter-spacing: .06em;
+    color: var(--text-muted, #8b8f9a);
+    border: 1px solid transparent;
+    transition: color .2s ease, border-color .2s ease;
+}
+.sam-barre__langues span:hover,
+.sam-barre__langues a:hover { color: var(--text-main, #e8e8ea); }
+.sam-barre__langues span.active,
+.sam-barre__langues a.active {
+    color: var(--gold-og, #c9a227);
+    border-color: var(--gold-og, #c9a227);
+}
+
+/* Sur téléphone, la barre ne doit pas recouvrir un bouton d'action : elle
+   perd son libellé de retour et ne garde que la flèche. */
+@media (max-width: 560px) {
+    .sam-barre { bottom: 10px; right: 10px; gap: 4px; padding: 5px 6px; }
+    [dir="rtl"] .sam-barre { right: auto; left: 10px; }
+    .sam-barre__retour span:not(.sam-barre__fleche) { display: none; }
+}
+</style>
+
+<%# i18n.js s'auto-initialise sur DOMContentLoaded et lie tous les
+    [data-lang-btn] de la page. Plusieurs pages l'incluent déjà : on ne le
+    recharge pas deux fois, un second Language.init() rejouerait la traduction
+    pour rien et écraserait les écouteurs déjà posés. %>
+<script>
+(function () {
+    // ── 1. Charger le moteur de traduction, une seule fois ───────────────
+    var dejaLa = [].some.call(
+        document.querySelectorAll("script[src]"),
+        function (s) { return /\/js\/i18n\.js/.test(s.getAttribute("src") || ""); }
+    );
+    if (!dejaLa && !window.Language) {
+        var s = document.createElement("script");
+        s.src = "/js/i18n.js";
+        document.head.appendChild(s);
+    }
+
+    // ── 2. Le clavier ────────────────────────────────────────────────────
+    // i18n.js lie le clic des puces et déclare le choix au serveur pour
+    // toutes les pages du site. Il ne manque que le clavier : une puce qui ne
+    // répond qu'à la souris porte role="button" sans en être un.
+    document.querySelectorAll("[data-lang-btn]").forEach(function (btn) {
+        btn.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); btn.click(); }
+        });
+    });
+
+    // ── 3. Première visite : suivre la langue décidée par le serveur ─────
+    // Le serveur lit l'en-tête du navigateur — un partenaire mexicain arrive
+    // en anglais sans rien demander. On ne le fait QUE si l'utilisateur n'a
+    // jamais choisi lui-même : un choix explicite prime toujours sur une
+    // déduction.
+    try {
+        if (!localStorage.getItem("samii_lang") && !localStorage.getItem("og_lang")) {
+            var duServeur = "<%= typeof lang === 'undefined' ? 'fr' : lang %>";
+            if (duServeur && duServeur !== "fr") localStorage.setItem("samii_lang", duServeur);
+        }
+    } catch (e) { /* navigation privée : on reste sur le défaut */ }
+})();
+</script>
