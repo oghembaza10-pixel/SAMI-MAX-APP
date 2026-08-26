@@ -159,6 +159,7 @@ app.use("/webhook", require("./routes/webhook-compliance"));
 app.use("/webhook", require("./routes/webhook"));
 app.use("/webhook/whatsapp", require("./routes/webhook-whatsapp"));
 app.use("/", require("./routes/legal"));
+app.use("/", require("./routes/developers-en"));
 app.use("/webhook/meta", require("./routes/webhook-meta-deletion"));
 app.use("/webhook/chargily", require("./routes/webhook-chargily"));
 app.use("/telegram", require("./routes/telegram"));
