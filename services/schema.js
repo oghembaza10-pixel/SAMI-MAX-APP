@@ -245,6 +245,38 @@ const BLOCS = [
         ],
     },
     {
+        // Les tendances vidéo relevées chez les plateformes. Le cache est
+        // partagé par marché, pas par marchand : les tendances d'un marché ne
+        // sont pas une donnée personnelle, et l'API YouTube ne donne que
+        // 10 000 unités par jour — une recherche en coûte 100. Sans partage,
+        // soixante clics le même matin éteignent la fonctionnalité pour tout
+        // le monde jusqu'à minuit.
+        nom: "tendances vidéo",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS tendances_video_cache (
+                id          BIGSERIAL PRIMARY KEY,
+                cle         TEXT NOT NULL,
+                resultats   JSONB NOT NULL DEFAULT '[]',
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT now())`,
+            `CREATE INDEX IF NOT EXISTS idx_tendances_cle ON tendances_video_cache (cle, created_at DESC)`,
+
+            // Une source externe se branche ici, sans redéploiement et sans
+            // qu'un scraper n'entre dans le dépôt : une URL, un en-tête, et la
+            // correspondance entre leurs champs et les nôtres.
+            `CREATE TABLE IF NOT EXISTS tendances_video_sources (
+                id           BIGSERIAL PRIMARY KEY,
+                nom          TEXT NOT NULL,
+                workspace_id TEXT,
+                url          TEXT NOT NULL,
+                entete       JSONB NOT NULL DEFAULT '{}',
+                chemin       TEXT NOT NULL DEFAULT '',
+                champs       JSONB NOT NULL DEFAULT '{}',
+                actif        BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT now())`,
+            `CREATE INDEX IF NOT EXISTS idx_tendances_src ON tendances_video_sources (actif, workspace_id)`,
+        ],
+    },
+    {
         nom: "portefeuille",
         sql: [
             `CREATE TABLE IF NOT EXISTS portefeuille_mouvements (
@@ -321,6 +353,10 @@ const A_VERROUILLER = [
     "academie_acceptations", "academie_transactions",
     "portefeuille_mouvements", "portefeuille_retraits",
     "besoins", "besoin_reponses",
+    // tendances_video_sources porte des clés d'API tierces : elle ne doit
+    // jamais être lisible avec la clé publiable. Le cache l'accompagne, il
+    // n'y a aucune raison d'exposer nos relevés.
+    "tendances_video_cache", "tendances_video_sources",
 ];
 
 async function preparer() {

@@ -55,6 +55,14 @@ router.get("/", requireAuth, async (req, res) => {
         await abonnementService.getPalier(req.session.workspaceId),
     );
 
+    // Une idée peut arriver déjà écrite, depuis « Ce qui marche en vidéo »
+    // (/samii/tendances). C'est toute la différence entre une page blanche et
+    // un point de départ : la question « de quoi veux-tu parler ? » est
+    // justement celle à laquelle un marchand ne sait pas répondre.
+    // Échappé avant d'entrer dans le HTML — ce texte vient de l'URL.
+    const idee = String(req.query.idee || "").slice(0, 300)
+        .replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
     res.send(`<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -278,7 +286,8 @@ router.get("/", requireAuth, async (req, res) => {
             <p class="hint" id="hint-moteur"></p>
 
             <label>De quoi parle le contenu ?</label>
-            <textarea name="sujet" placeholder="Ex : ma nouvelle collection de vestes d'hiver..." required></textarea>
+            <textarea name="sujet" placeholder="Ex : ma nouvelle collection de vestes d'hiver..." required>${idee}</textarea>
+            ${idee ? `<p class="hint">Repris d'une vidéo qui marche en ce moment — réécris-le avec tes mots et ton produit.</p>` : ""}
 
             <label>Ton souhaité (optionnel)</label>
             <input name="ton" placeholder="Ex : dynamique et jeune, élégant et sobre...">

@@ -193,6 +193,7 @@ app.use("/guerre", require("./routes/guerre"));
 app.use("/samii/opportunites", require("./routes/opportunites"));
 app.use("/samii/griot", require("./routes/griot"));
 app.use("/samii/top-produits", require("./routes/topproduits"));
+app.use("/samii/tendances", require("./routes/tendances"));
 app.use("/samii/diplomate", require("./routes/diplomate"));
 app.use("/samii/oeil-concurrentiel", require("./routes/oeilconcurrentiel"));
 app.use("/samii/chasseur-stock", require("./routes/chasseurstock"));

@@ -51,6 +51,7 @@ const CARTES = [
     { id: "diplomate",       nom: "Diplomate",              icone: "🕊️", description: "SAMII rédige 3 propositions de réponse pour chaque message client.",         route: "/samii/diplomate",  palier: "standard", gradeMin: "Caporal",  prix: 2.99, dureeJours: 7 },
     { id: "memoireclient",   nom: "Mémoire Client",         icone: "🧠", description: "Historique relationnel enrichi — SAMII se souvient de chaque client.",       route: "/samii/memoire-client", palier: "standard", gradeMin: "Caporal", prix: 2.99, dureeJours: 7 },
     { id: "topproduits",     nom: "Top Produits",           icone: "📈", description: "Top 5 produits du moment + Top 5 à venir, par marché.",                       route: "/samii/top-produits", palier: "standard", gradeMin: "Caporal",  prix: 2.99, dureeJours: 7 },
+    { id: "tendancesvideo",  nom: "Ce qui marche en vidéo", icone: "🎥", description: "Vues, likes et engagement réels — puis le Griot en fait ta vidéo.",           route: "/samii/tendances",    palier: "standard", gradeMin: "Caporal",  prix: 2.99, dureeJours: 7 },
 
     // ── Débloquées au palier Souverain — achat à l'unité : 3 jours ──
     { id: "oeilconcurrentiel", nom: "Œil Concurrentiel",   icone: "👁️", description: "Prix marché en temps réel + veille fournisseurs.",                            route: "/samii/oeil-concurrentiel", palier: "pro", gradeMin: "Lieutenant", prix: 3.49, dureeJours: 3 },
