@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Mon espace développeur — SAMII OS</title>
+  <title><%= L('Mon espace développeur — SAMII OS') %></title>
   <link rel="stylesheet" href="/css/qg-style.css">
   <style>
     :root {
@@ -74,27 +74,26 @@
   <div class="de-haut">
     <div class="de-marque">O G &nbsp; T E C H N O L O G Y</div>
     <nav class="de-menu">
-      <a href="/academy">La vitrine</a>
-      <a href="/academy/construire">Comment ça marche</a>
-      <a href="/api-docs" target="_blank" rel="noopener">Documentation</a>
-      <a href="/academy/mon-contrat">Mon contrat</a>
+      <a href="/academy"><%= L('La vitrine') %></a>
+      <a href="/academy/construire"><%= L('Comment ça marche') %></a>
+      <a href="/api-docs" target="_blank" rel="noopener"><%= L('Documentation') %></a>
+      <a href="/academy/mon-contrat"><%= L('Mon contrat') %></a>
     </nav>
   </div>
 
-  <h1>Mon espace développeur</h1>
+  <h1><%= L('Mon espace développeur') %></h1>
   <p class="de-lead">
-    Un terrain d'essai déjà rempli, ta clé, tes applications et ce qu'elles rapportent.
-    Rien à installer, rien à configurer ailleurs.
+    <%= L('Un terrain d\'essai déjà rempli, ta clé, tes applications et ce qu\'elles rapportent. Rien à installer, rien à configurer ailleurs.') %>
   </p>
 
   <% if (message) { %><div class="de-msg"><%= message %></div><% } %>
   <% if (cleCreee) { %>
     <div class="de-cle">
-      <div class="de-cle__t">Ta clé d'essai — copie-la maintenant</div>
+      <div class="de-cle__t"><%= L('Ta clé d\'essai — copie-la maintenant') %></div>
       <code id="cle-neuve"><%= cleCreee %></code>
-      <button class="btn de-copier" type="button" onclick="copier('cle-neuve', this)">Copier</button>
+      <button class="btn de-copier" type="button" onclick="copier('cle-neuve', this)"><%= L('Copier') %></button>
       <p style="margin:10px 0 0;font-size:.76rem;color:var(--gris);">
-        Nous n'en gardons qu'une empreinte : elle ne sera plus jamais affichée.
+        <%= L('Nous n\'en gardons qu\'une empreinte : elle ne sera plus jamais affichée.') %>
       </p>
     </div>
   <% } %>
@@ -103,11 +102,9 @@
        Premier bloc de la page, volontairement. C'est le seul qui permette
        d'écrire du code dans les cinq minutes. -->
   <div class="de-bloc">
-    <h2>1 · Mon terrain d'essai</h2>
+    <h2><%= L('1 · Mon terrain d\'essai') %></h2>
     <p class="de-sous">
-      Un espace complet avec de vrais clients, de vraies commandes à tous les stades et des
-      rendez-vous passés et à venir. Aucun message n'en sort jamais : personne ne sera
-      dérangé, quoi que tu déclenches.
+      <%= L('Un espace complet avec de vrais clients, de vraies commandes à tous les stades et des rendez-vous passés et à venir. Aucun message n\'en sort jamais : personne ne sera dérangé, quoi que tu déclenches.') %>
     </p>
 
     <% if (!bacs.length) { %>
@@ -116,12 +113,12 @@
           <div class="de-carte">
             <h3><%= d.nom %></h3>
             <p>
-              <% if (d.produits && d.produits.length) { %>14 commandes, <% } %>8 rendez-vous,
-              <%= d.clients.length %> clients — prêts à l'appel.
+              <% if (d.produits && d.produits.length) { %><%= L('14 commandes,') %> <% } %><%= L('8 rendez-vous,') %>
+              <%= d.clients.length %> <%= L('clients — prêts à l\'appel.') %>
             </p>
             <form method="POST" action="/academy/espace/bac">
               <input type="hidden" name="decor" value="<%= id %>">
-              <button class="btn" type="submit">Créer ce terrain</button>
+              <button class="btn" type="submit"><%= L('Créer ce terrain') %></button>
             </form>
           </div>
         <% }); %>
@@ -133,11 +130,11 @@
             <h3><%= b.nom %></h3>
             <p class="de-id" id="ws-<%= b.id %>"><%= b.id %></p>
             <div class="de-actions" style="margin-top:14px;">
-              <form method="POST" action="/academy/espace/bac/<%= b.id %>/cle"><button class="btn" type="submit">Nouvelle clé</button></form>
-              <form method="POST" action="/academy/espace/bac/<%= b.id %>/reinitialiser"><button class="btn btn--fin" type="submit">Remettre à neuf</button></form>
+              <form method="POST" action="/academy/espace/bac/<%= b.id %>/cle"><button class="btn" type="submit"><%= L('Nouvelle clé') %></button></form>
+              <form method="POST" action="/academy/espace/bac/<%= b.id %>/reinitialiser"><button class="btn btn--fin" type="submit"><%= L('Remettre à neuf') %></button></form>
               <form method="POST" action="/academy/espace/bac/<%= b.id %>/supprimer"
                     onsubmit="return confirm('Supprimer ce terrain et tout ce qu\'il contient ?');">
-                <button class="btn btn--rouge" type="submit">Supprimer</button>
+                <button class="btn btn--rouge" type="submit"><%= L('Supprimer') %></button>
               </form>
             </div>
           </div>
@@ -145,10 +142,10 @@
         <% Object.entries(decors).filter(([id]) => !bacs.some(b => b.bac_decor === id)).forEach(function ([id, d]) { %>
           <div class="de-carte" style="border-style:dashed;">
             <h3 style="color:var(--gris);"><%= d.nom %></h3>
-            <p>Pas encore créé.</p>
+            <p><%= L('Pas encore créé.') %></p>
             <form method="POST" action="/academy/espace/bac">
               <input type="hidden" name="decor" value="<%= id %>">
-              <button class="btn btn--fin" type="submit">Créer</button>
+              <button class="btn btn--fin" type="submit"><%= L('Créer') %></button>
             </form>
           </div>
         <% }); %>
@@ -160,17 +157,16 @@
        La commande est écrite avec SON espace, pas avec un exemple générique
        à adapter. C'est la différence entre lire une doc et voir une réponse. -->
   <div class="de-bloc">
-    <h2>2 · Mon premier appel</h2>
+    <h2><%= L('2 · Mon premier appel') %></h2>
     <p class="de-sous">
-      Colle ça dans un terminal après avoir remplacé la clé. Tu dois voir tes commandes d'essai
-      revenir en JSON — c'est le signe que tout est en place.
+      <%= L('Colle ça dans un terminal après avoir remplacé la clé. Tu dois voir tes commandes d\'essai revenir en JSON — c\'est le signe que tout est en place.') %>
     </p>
     <div class="de-code">
       <pre id="curl">curl <%= baseUrl %>/api/v1/commandes \
   -H <span class="c-txt">"Authorization: Bearer <%= cleCreee || "sk_samii_…" %>"</span><% if (bacs.length) { %> \
   -H <span class="c-txt">"X-SAMII-Espace: <%= bacs[0].id %>"</span><% } %></pre>
     </div>
-    <button class="btn btn--fin de-copier" type="button" onclick="copier('curl', this)">Copier la commande</button>
+    <button class="btn btn--fin de-copier" type="button" onclick="copier('curl', this)"><%= L('Copier la commande') %></button>
   </div>
 
   <!-- ══ 3. LE TRAVAIL QUI ATTEND ═════════════════════════════════════════
@@ -180,11 +176,9 @@
        marchands sont déjà là et disent ce qu'il leur manque — la première
        raison de se servir de la clé qu'on vient de fabriquer. -->
   <div class="de-bloc">
-    <h2>3 · Le travail qui attend</h2>
+    <h2><%= L('3 · Le travail qui attend') %></h2>
     <p class="de-sous">
-      Des marchands ont décrit ce qu'il leur manque. Répondre ne coûte rien et ne t'engage
-      à rien : tu proposes ton prix, le marchand choisit. SAMII prend <%= taux %> % le jour
-      où tu es payé, et rien avant.
+      <%= L('Des marchands ont décrit ce qu\'il leur manque. Répondre ne coûte rien et ne t\'engage à rien : tu proposes ton prix, le marchand choisit. SAMII prend') %> <%= taux %> <%= L('% le jour où tu es payé, et rien avant.') %>
     </p>
 
     <% if (travaux.length) { %>
@@ -200,23 +194,23 @@
             <h3><%= b.titre %></h3>
             <p><%= b.description.length > 130 ? b.description.slice(0, 130) + "…" : b.description %></p>
             <p style="margin:0 0 14px;font-size:.74rem;color:var(--or);font-family:var(--font-mono,monospace);">
-              <%= budget %> · <%= n %> réponse<%= n > 1 ? "s" : "" %>
+              <%= budget %> · <%= n %> <%= L('réponse') %><%= n > 1 ? "s" : "" %>
             </p>
-            <a class="btn btn--fin" href="/academy/besoin/<%= b.reference %>">Répondre</a>
+            <a class="btn btn--fin" href="/academy/besoin/<%= b.reference %>"><%= L('Répondre') %></a>
           </div>
         <% }); %>
       </div>
-      <a class="btn btn--fin" href="/academy/besoins" style="margin-top:16px;">Voir tous les besoins →</a>
+      <a class="btn btn--fin" href="/academy/besoins" style="margin-top:16px;"><%= L('Voir tous les besoins →') %></a>
     <% } else { %>
       <p class="de-sous" style="margin:0;">
-        Aucun besoin ouvert en ce moment.
-        <a href="/academy/besoins" style="color:var(--or)">Surveiller la liste →</a>
+        <%= L('Aucun besoin ouvert en ce moment.') %>
+        <a href="/academy/besoins" style="color:var(--or)"><%= L('Surveiller la liste →') %></a>
       </p>
     <% } %>
 
     <% if (mesPropositions.length) { %>
       <table style="margin-top:24px;">
-        <thead><tr><th>Ma proposition</th><th>Prix</th><th>Délai</th><th>État du besoin</th></tr></thead>
+        <thead><tr><th><%= L('Ma proposition') %></th><th><%= L('Prix') %></th><th><%= L('Délai') %></th><th><%= L('État du besoin') %></th></tr></thead>
         <tbody>
           <% mesPropositions.forEach(function (r) { %>
             <tr>
@@ -233,16 +227,15 @@
 
   <!-- ══ 4. MES APPLICATIONS ══════════════════════════════════════════════ -->
   <div class="de-bloc">
-    <h2>4 · Mes applications</h2>
+    <h2><%= L('4 · Mes applications') %></h2>
     <p class="de-sous">
-      En brouillon, ton application n'est installable que par toi — de quoi la finir tranquillement.
-      Publiée, elle apparaît dans la vitrine et les marchands peuvent l'installer.
+      <%= L('En brouillon, ton application n\'est installable que par toi — de quoi la finir tranquillement. Publiée, elle apparaît dans la vitrine et les marchands peuvent l\'installer.') %>
     </p>
     <table>
-      <thead><tr><th>Nom</th><th>État</th><th>Installations</th><th>Permissions demandées</th></tr></thead>
+      <thead><tr><th><%= L('Nom') %></th><th><%= L('État') %></th><th><%= L('Installations') %></th><th><%= L('Permissions demandées') %></th></tr></thead>
       <tbody>
         <% if (!mesApps.length) { %>
-          <tr><td colspan="4" class="vide">Aucune application déclarée.</td></tr>
+          <tr><td colspan="4" class="vide"><%= L('Aucune application déclarée.') %></td></tr>
         <% } %>
         <% mesApps.forEach(function (a) { %>
           <tr>
@@ -254,7 +247,7 @@
         <% }); %>
       </tbody>
     </table>
-    <a class="btn" href="/apps" style="margin-top:16px;">Déclarer une application →</a>
+    <a class="btn" href="/apps" style="margin-top:16px;"><%= L('Déclarer une application →') %></a>
   </div>
 
   <!-- ══ 5. CE QUE MON TRAVAIL A FAIT ═════════════════════════════════════
@@ -262,16 +255,15 @@
        le travail. Quand une application échoue chez un marchand, il faut
        aller chercher ailleurs. Ici, c'est sur la même page. -->
   <div class="de-bloc">
-    <h2>5 · Ce que mes clés ont fait</h2>
+    <h2><%= L('5 · Ce que mes clés ont fait') %></h2>
     <p class="de-sous">
-      Les derniers appels passés avec tes clés — y compris ceux qui ont été refusés, et pourquoi.
-      C'est là qu'on comprend une intégration qui ne marche pas.
+      <%= L('Les derniers appels passés avec tes clés — y compris ceux qui ont été refusés, et pourquoi. C\'est là qu\'on comprend une intégration qui ne marche pas.') %>
     </p>
     <table>
-      <thead><tr><th>Quand</th><th>Appel</th><th>Réponse</th><th>Permission</th></tr></thead>
+      <thead><tr><th><%= L('Quand') %></th><th><%= L('Appel') %></th><th><%= L('Réponse') %></th><th><%= L('Permission') %></th></tr></thead>
       <tbody>
         <% if (!acces.length) { %>
-          <tr><td colspan="4" class="vide">Aucun appel enregistré pour l'instant.</td></tr>
+          <tr><td colspan="4" class="vide"><%= L('Aucun appel enregistré pour l\'instant.') %></td></tr>
         <% } %>
         <% acces.forEach(function (a) { %>
           <tr>
@@ -287,16 +279,15 @@
 
   <!-- ══ 6. LES REVENUS ═══════════════════════════════════════════════════ -->
   <div class="de-bloc">
-    <h2>6 · Ce que ça rapporte</h2>
+    <h2><%= L('6 · Ce que ça rapporte') %></h2>
     <p class="de-sous">
-      Publier ne coûte rien. Installer gratuitement ne coûte rien. SAMII prend <%= taux %> % le jour
-      où tu vends, et rien avant.
+      <%= L('Publier ne coûte rien. Installer gratuitement ne coûte rien. SAMII prend') %> <%= taux %> <%= L('% le jour où tu vends, et rien avant.') %>
     </p>
     <div class="de-tuiles">
-      <div class="de-tuile"><b><%= bilan.ventes %></b><span>ventes</span></div>
-      <div class="de-tuile"><b><%= Number(bilan.brut).toFixed(2) %> $</b><span>montant brut</span></div>
-      <div class="de-tuile"><b><%= Number(bilan.net).toFixed(2) %> $</b><span>ta part</span></div>
-      <div class="de-tuile"><b><%= Number(bilan.a_recevoir).toFixed(2) %> $</b><span>à te reverser</span></div>
+      <div class="de-tuile"><b><%= bilan.ventes %></b><span><%= L('ventes') %></span></div>
+      <div class="de-tuile"><b><%= Number(bilan.brut).toFixed(2) %> $</b><span><%= L('montant brut') %></span></div>
+      <div class="de-tuile"><b><%= Number(bilan.net).toFixed(2) %> $</b><span><%= L('ta part') %></span></div>
+      <div class="de-tuile"><b><%= Number(bilan.a_recevoir).toFixed(2) %> $</b><span><%= L('à te reverser') %></span></div>
     </div>
   </div>
 
@@ -323,5 +314,17 @@
     }
   }
 </script>
+
+<!-- Le sélecteur de langue. Flottant plutôt que dans la barre de navigation :
+     chaque page de l'Académie a sa propre barre, avec ses propres classes.
+     Un élément autonome se pose partout à l'identique et ne casse la mise en
+     page d'aucune d'entre elles. -->
+<a href="<%= lienLangue(autreLangue) %>" title="Français / English"
+   style="position:fixed;right:16px;bottom:16px;z-index:60;padding:9px 15px;border-radius:22px;
+          border:1px solid rgba(201,169,97,.35);background:rgba(7,7,10,.92);color:#c9a961;
+          text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+          font-family:ui-monospace,monospace;backdrop-filter:blur(6px);">
+  <%= autreLangue.toUpperCase() %>
+</a>
 </body>
 </html>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>L'Académie — SAMII OS</title>
+  <title><%= L('L\'Académie — SAMII OS') %></title>
   <link rel="stylesheet" href="/css/qg-style.css">
   <style>
     :root {
@@ -110,35 +110,34 @@
     <div class="vi-marque">O G &nbsp; T E C H N O L O G Y</div>
     <nav class="vi-menu">
       <a href="/qg">QG</a>
-      <a href="/academy/bibliotheque">Apprendre</a>
+      <a href="/academy/bibliotheque"><%= L('Apprendre') %></a>
       <!-- Deux publics, deux entrées. Le marchand reste sur la grille ; le
            développeur, lui, ne cherche pas une solution à installer mais du
            travail à prendre — sans ce lien, il ne trouve jamais la seule page
            qui lui parle. -->
-      <a href="/academy/besoins">Le travail qui attend</a>
-      <a href="/academy/construire" class="est-or">Créer avec SAMII</a>
+      <a href="/academy/besoins"><%= L('Le travail qui attend') %></a>
+      <a href="/academy/construire" class="est-or"><%= L('Créer avec SAMII') %></a>
     </nav>
   </div>
 
   <div class="vi-titre">
-    <h1>L'Académie</h1>
-    <p>Les solutions qui font tourner un commerce, et les gens qui les construisent.
-       Dis ton métier, on te montre ce qui existe pour toi.</p>
+    <h1><%= L('L\'Académie') %></h1>
+    <p><%= L('Les solutions qui font tourner un commerce, et les gens qui les construisent. Dis ton métier, on te montre ce qui existe pour toi.') %></p>
     <!-- Sans cette ligne, on confond deux choses : ce que SAMII fournit déjà,
          et ce que des tiers ajoutent. Un visiteur qui ne sait pas qui a fait
          quoi ne fait confiance à rien. -->
     <p class="vi-legende">
-      <b>Outil SAMII</b> — construit et maintenu par nous, inclus dans ton abonnement.
+      <b><%= L('Outil SAMII') %></b> — construit et maintenu par nous, inclus dans ton abonnement.
       &nbsp;·&nbsp;
-      <b>Application</b> — construite par un développeur de l'Académie, sur notre API.
+      <b><%= L('Application') %></b> <%= L('— construite par un développeur de l\'Académie, sur notre API.') %>
     </p>
   </div>
 
   <form class="vi-chercher" method="GET" action="/academy">
     <input type="text" name="recherche" value="<%= recherche %>"
-           placeholder="Ce qu'il te faut : relancer mes clients, prendre les RDV…">
+           placeholder="<%= L('Ce qu\'il te faut : relancer mes clients, prendre les RDV…') %>">
     <select name="metier">
-      <option value="">Tous les métiers</option>
+      <option value=""><%= L('Tous les métiers') %></option>
       <% groupes.forEach(function (g) { %>
         <optgroup label="<%= g.groupe %>">
           <% g.items.forEach(function (m) { %>
@@ -147,19 +146,19 @@
         </optgroup>
       <% }); %>
     </select>
-    <button type="submit">Chercher</button>
+    <button type="submit"><%= L('Chercher') %></button>
   </form>
 
   <div class="vi-natures">
     <% const base = "/academy?" + (metier ? "metier=" + metier + "&" : "") + (recherche ? "recherche=" + encodeURIComponent(recherche) + "&" : ""); %>
-    <a href="<%= base %>" class="<%= !nature ? "actif" : "" %>">Tout</a>
+    <a href="<%= base %>" class="<%= !nature ? "actif" : "" %>"><%= L('Tout') %></a>
     <% Object.values(natures).forEach(function (n) { %>
       <a href="<%= base %>nature=<%= n.id %>" class="<%= nature === n.id ? "actif" : "" %>"><%= n.label %></a>
     <% }); %>
   </div>
 
   <p class="vi-compte">
-    <%= cartes.length %> solution<%= cartes.length > 1 ? "s" : "" %><% if (metierLabel) { %> pour <%= metierLabel %><% } %>
+    <%= cartes.length %> <%= L('solution') %><%= cartes.length > 1 ? "s" : "" %><% if (metierLabel) { %> <%= L('pour') %> <%= metierLabel %><% } %>
   </p>
 
   <div class="vi-grille">
@@ -181,29 +180,26 @@
 
     <% if (!cartes.length) { %>
       <div class="vi-vide">
-        Rien ne correspond à cette recherche.
-        <a href="/academy">Voir tout →</a>
+        <%= L('Rien ne correspond à cette recherche.') %>
+        <a href="/academy"><%= L('Voir tout →') %></a>
       </div>
     <% } %>
 
     <% if (!prestataires) { %>
       <div class="vi-appel">
-        <h3>Ce qui manque ici, c'est peut-être toi</h3>
-        <p>Développeur, agence, intégrateur : construis sur l'API de SAMII et pose ton
-           travail dans cette vitrine. Les marchands y sont déjà. Entrer et publier ne
-           coûtent rien — SAMII prend <%= taux %> % le jour où tu vends, et rien avant.</p>
+        <h3><%= L('Ce qui manque ici, c\'est peut-être toi') %></h3>
+        <p><%= L('Développeur, agence, intégrateur : construis sur l\'API de SAMII et pose ton travail dans cette vitrine. Les marchands y sont déjà. Entrer et publier ne coûtent rien — SAMII prend') %> <%= taux %> <%= L('% le jour où tu vends, et rien avant.') %></p>
         <!-- Un chiffre vrai vaut mieux qu'une promesse : « des marchands t'attendent »
              ne se vérifie pas, « 7 besoins ouverts » se clique. Et quand il n'y en a
              aucun, on ne dit rien plutôt que d'annoncer un zéro. -->
         <% if (besoinsOuverts) { %>
           <p style="margin-top:-8px;">
-            <%= besoinsOuverts %> marchand<%= besoinsOuverts > 1 ? "s ont" : " a" %> déjà décrit
-            ce qu'il leur manque, avec un budget.
+            <%= besoinsOuverts %> <%= L('marchand') %><%= besoinsOuverts > 1 ? "s ont" : " a" %> <%= L('déjà décrit ce qu\'il leur manque, avec un budget.') %>
           </p>
         <% } %>
-        <a href="/academy/construire">Créer avec SAMII →</a>
+        <a href="/academy/construire"><%= L('Créer avec SAMII →') %></a>
         <% if (besoinsOuverts) { %>
-          <a href="/academy/besoins" style="background:transparent;border:1px solid var(--bord);color:var(--or);margin-left:8px;">Voir le travail qui attend →</a>
+          <a href="/academy/besoins" style="background:transparent;border:1px solid var(--bord);color:var(--or);margin-left:8px;"><%= L('Voir le travail qui attend →') %></a>
         <% } %>
       </div>
     <% } %>
@@ -211,5 +207,17 @@
   </div>
 
 </div>
+
+<!-- Le sélecteur de langue. Flottant plutôt que dans la barre de navigation :
+     chaque page de l'Académie a sa propre barre, avec ses propres classes.
+     Un élément autonome se pose partout à l'identique et ne casse la mise en
+     page d'aucune d'entre elles. -->
+<a href="<%= lienLangue(autreLangue) %>" title="Français / English"
+   style="position:fixed;right:16px;bottom:16px;z-index:60;padding:9px 15px;border-radius:22px;
+          border:1px solid rgba(201,169,97,.35);background:rgba(7,7,10,.92);color:#c9a961;
+          text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+          font-family:ui-monospace,monospace;backdrop-filter:blur(6px);">
+  <%= autreLangue.toUpperCase() %>
+</a>
 </body>
 </html>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Construire — Académie SAMII</title>
+  <title><%= L('Construire — Académie SAMII') %></title>
   <link rel="stylesheet" href="/css/qg-style.css">
   <style>
     :root { --enc:#07070a; --or:#c9a961; --or-clair:#f0d99b; --ivoire:#f3f1e9; --gris:#8b8d95; --bord:rgba(201,169,97,.18); }
@@ -68,54 +68,48 @@
 <body data-theme="og">
 <div class="cs">
 
-  <a href="/academy" class="cs-retour">← L'Académie</a>
+  <a href="/academy" class="cs-retour"><%= L('← L\'Académie') %></a>
 
-  <h1>Construire sur SAMII</h1>
+  <h1><%= L('Construire sur SAMII') %></h1>
   <p class="cs-lead">
-    Tu es dans l'atelier. Ton application demande des permissions, un marchand les accorde,
-    et elle travaille dans son espace — jamais au-delà de ce qu'il a donné.
+    <%= L('Tu es dans l\'atelier. Ton application demande des permissions, un marchand les accorde, et elle travaille dans son espace — jamais au-delà de ce qu\'il a donné.') %>
   </p>
 
   <!-- La confusion la plus coûteuse à lever, et elle vient toujours en
        premier : non, on ne construit pas « à partir d'une carte ». -->
   <div class="cs-regle" style="border-color:rgba(95,212,255,.25);background:rgba(95,212,255,.05);margin-bottom:38px;">
-    <h3>Sur quoi tu construis, exactement</h3>
+    <h3><%= L('Sur quoi tu construis, exactement') %></h3>
     <p>
-      Les cartes que tu vois dans la vitrine — Arsenal, Automatisations, Griot, Miroir —
-      sont les outils que <b>SAMII fournit déjà aux marchands</b>. Ce ne sont pas des
-      briques de développement, et tu ne construis pas « dedans ».
+      <%= L('Les cartes que tu vois dans la vitrine — Arsenal, Automatisations, Griot, Miroir — sont les outils que') %> <b><%= L('SAMII fournit déjà aux marchands') %></b><%= L('. Ce ne sont pas des briques de développement, et tu ne construis pas « dedans ».') %>
     </p>
     <p style="margin-top:10px;">
-      Toi, tu construis sur <b>l'API</b> : commandes, rendez-vous, clients, espaces,
-      webhooks. Ton application vit chez toi, sur ton serveur, dans le langage que tu veux —
-      elle parle à SAMII par HTTP. Une fois publiée, elle apparaît dans la même vitrine que
-      ces cartes, sous l'étiquette <b>Application</b>, et le marchand l'installe comme le reste.
+      <%= L('Toi, tu construis sur') %> <b><%= L('l\'API') %></b> <%= L(': commandes, rendez-vous, clients, espaces, webhooks. Ton application vit chez toi, sur ton serveur, dans le langage que tu veux — elle parle à SAMII par HTTP. Une fois publiée, elle apparaît dans la même vitrine que ces cartes, sous l\'étiquette') %> <b><%= L('Application') %></b><%= L(', et le marchand l\'installe comme le reste.') %>
     </p>
   </div>
 
   <div style="margin-bottom:34px;">
-    <a href="/academy/espace" style="display:inline-block;padding:14px 30px;background:var(--or);color:#07070a;border-radius:4px;text-decoration:none;font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;">Ouvrir mon espace développeur →</a>
-    <span style="display:block;margin-top:10px;font-size:.79rem;color:var(--gris);">Terrain d'essai, clés, applications et revenus — tout au même endroit.</span>
+    <a href="/academy/espace" style="display:inline-block;padding:14px 30px;background:var(--or);color:#07070a;border-radius:4px;text-decoration:none;font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;"><%= L('Ouvrir mon espace développeur →') %></a>
+    <span style="display:block;margin-top:10px;font-size:.79rem;color:var(--gris);"><%= L('Terrain d\'essai, clés, applications et revenus — tout au même endroit.') %></span>
   </div>
 
-  <h2>Par où commencer</h2>
+  <h2><%= L('Par où commencer') %></h2>
   <div class="cs-etapes">
 
     <div class="cs-etape">
       <div class="cs-num">1</div>
       <div>
-        <h3>Lis ce que l'API sait faire</h3>
-        <p>REST, JSON, jeton Bearer. Commandes, rendez-vous, clients, espaces. Aucun SDK à installer : un appel HTTP suffit.</p>
-        <a href="/api-docs" target="_blank" rel="noopener">Ouvrir la documentation →</a>
+        <h3><%= L('Lis ce que l\'API sait faire') %></h3>
+        <p><%= L('REST, JSON, jeton Bearer. Commandes, rendez-vous, clients, espaces. Aucun SDK à installer : un appel HTTP suffit.') %></p>
+        <a href="/api-docs" target="_blank" rel="noopener"><%= L('Ouvrir la documentation →') %></a>
       </div>
     </div>
 
     <div class="cs-etape">
       <div class="cs-num">2</div>
       <div>
-        <h3>Prends une clé sur ton propre espace</h3>
-        <p>Avant de déclarer une application, teste avec ta clé et tes propres données : c'est le chemin le plus court entre une idée et un premier appel qui répond.</p>
-        <a href="/developpeurs">Mes clés et webhooks →</a>
+        <h3><%= L('Prends une clé sur ton propre espace') %></h3>
+        <p><%= L('Avant de déclarer une application, teste avec ta clé et tes propres données : c\'est le chemin le plus court entre une idée et un premier appel qui répond.') %></p>
+        <a href="/developpeurs"><%= L('Mes clés et webhooks →') %></a>
         <div class="cs-code"><pre>curl https://samii.souverain-store.com/api/v1/commandes \
   -H <span class="c-txt">"Authorization: Bearer sk_samii_…"</span></pre></div>
       </div>
@@ -124,44 +118,44 @@
     <div class="cs-etape">
       <div class="cs-num">3</div>
       <div>
-        <h3>Déclare ton application</h3>
-        <p>Nom, description, URL de webhook, et surtout : les permissions dont elle a réellement besoin. C'est ce que le marchand verra avant d'approuver — demander trop est le meilleur moyen d'être refusé.</p>
-        <a href="/apps">Déclarer une application →</a>
+        <h3><%= L('Déclare ton application') %></h3>
+        <p><%= L('Nom, description, URL de webhook, et surtout : les permissions dont elle a réellement besoin. C\'est ce que le marchand verra avant d\'approuver — demander trop est le meilleur moyen d\'être refusé.') %></p>
+        <a href="/apps"><%= L('Déclarer une application →') %></a>
       </div>
     </div>
 
     <div class="cs-etape">
       <div class="cs-num">4</div>
       <div>
-        <h3>Publie-la au catalogue</h3>
-        <p>En brouillon, elle n'est installable que par toi — de quoi la finir tranquillement. Publiée, elle apparaît chez les marchands de SAMII.</p>
-        <a href="/apps">Voir le catalogue →</a>
+        <h3><%= L('Publie-la au catalogue') %></h3>
+        <p><%= L('En brouillon, elle n\'est installable que par toi — de quoi la finir tranquillement. Publiée, elle apparaît chez les marchands de SAMII.') %></p>
+        <a href="/apps"><%= L('Voir le catalogue →') %></a>
       </div>
     </div>
 
   </div>
 
-  <h2>Les trois règles qui ne bougeront pas</h2>
+  <h2><%= L('Les trois règles qui ne bougeront pas') %></h2>
 
   <div class="cs-regle">
-    <h3>Ton application ne choisit pas ses droits</h3>
-    <p>Elle demande. C'est l'approbation du marchand qui crée la clé, et cette clé ne peut jamais porter plus que ce qui a été demandé <em>et</em> accordé.</p>
+    <h3><%= L('Ton application ne choisit pas ses droits') %></h3>
+    <p><%= L('Elle demande. C\'est l\'approbation du marchand qui crée la clé, et cette clé ne peut jamais porter plus que ce qui a été demandé') %> <em>et</em> <%= L('accordé.') %></p>
   </div>
 
   <div class="cs-regle">
-    <h3>Le marchand reprend quand il veut</h3>
-    <p>Un bouton, et l'accès meurt dans la seconde. Il n'a pas à comprendre ce qu'est une clé pour reprendre ce qu'il a donné. Chaque appel que tu fais est inscrit à son journal.</p>
+    <h3><%= L('Le marchand reprend quand il veut') %></h3>
+    <p><%= L('Un bouton, et l\'accès meurt dans la seconde. Il n\'a pas à comprendre ce qu\'est une clé pour reprendre ce qu\'il a donné. Chaque appel que tu fais est inscrit à son journal.') %></p>
   </div>
 
   <div class="cs-regle">
-    <h3>Une installation vaut pour un seul espace</h3>
-    <p>Installer ton application chez un client n'ouvre rien chez les autres — même pour une agence qui gère les deux.</p>
+    <h3><%= L('Une installation vaut pour un seul espace') %></h3>
+    <p><%= L('Installer ton application chez un client n\'ouvre rien chez les autres — même pour une agence qui gère les deux.') %></p>
   </div>
 
   <div class="cs-regle" style="border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.02);">
-    <h3>Et l'argent</h3>
-    <p>Publier ne coûte rien. Installer gratuitement ne coûte rien. SAMII prend <%= taux %> % le jour où ton application est vendue — et rien avant.
-    <a href="/academy/mon-contrat">Relire le contrat →</a></p>
+    <h3><%= L('Et l\'argent') %></h3>
+    <p><%= L('Publier ne coûte rien. Installer gratuitement ne coûte rien. SAMII prend') %> <%= taux %> <%= L('% le jour où ton application est vendue — et rien avant.') %>
+    <a href="/academy/mon-contrat"><%= L('Relire le contrat →') %></a></p>
   </div>
 
 
@@ -170,23 +164,23 @@
        clients et pour du temps gagné. C'est ce qu'on met en avant, pas la
        liste de nos technologies. -->
   <div class="cs-sec">
-    <h2>Pourquoi construire ici</h2>
+    <h2><%= L('Pourquoi construire ici') %></h2>
     <div class="cs-points">
       <div class="cs-point">
-        <h3>Les clients sont déjà là</h3>
-        <p>Tu ne pars pas d'une page blanche. Ton application est proposée aux marchands qui utilisent SAMII tous les jours, dans leur écran de travail.</p>
+        <h3><%= L('Les clients sont déjà là') %></h3>
+        <p><%= L('Tu ne pars pas d\'une page blanche. Ton application est proposée aux marchands qui utilisent SAMII tous les jours, dans leur écran de travail.') %></p>
       </div>
       <div class="cs-point">
-        <h3>L'infrastructure est faite</h3>
-        <p>Commandes, rendez-vous, clients, WhatsApp, Telegram, Instagram, Gmail, agenda : c'est branché. Tu écris ce que toi seul sais faire.</p>
+        <h3><%= L('L\'infrastructure est faite') %></h3>
+        <p><%= L('Commandes, rendez-vous, clients, WhatsApp, Telegram, Instagram, Gmail, agenda : c\'est branché. Tu écris ce que toi seul sais faire.') %></p>
       </div>
       <div class="cs-point">
-        <h3>Les permissions te protègent</h3>
-        <p>Ton application demande, le marchand accorde. Tu ne détiens jamais plus que ce qu'on t'a donné — et lui peut le reprendre d'un geste.</p>
+        <h3><%= L('Les permissions te protègent') %></h3>
+        <p><%= L('Ton application demande, le marchand accorde. Tu ne détiens jamais plus que ce qu\'on t\'a donné — et lui peut le reprendre d\'un geste.') %></p>
       </div>
       <div class="cs-point">
-        <h3>Tu gardes tout</h3>
-        <p>Ton code, ta marque, tes clients. SAMII est ton partenaire de vente, pas le propriétaire de ton travail.</p>
+        <h3><%= L('Tu gardes tout') %></h3>
+        <p><%= L('Ton code, ta marque, tes clients. SAMII est ton partenaire de vente, pas le propriétaire de ton travail.') %></p>
       </div>
     </div>
   </div>
@@ -196,31 +190,31 @@
        produit, ou est-ce que je revends le vôtre ? Les deux réponses sont
        bonnes, et elles ne se ressemblent pas. -->
   <div class="cs-sec">
-    <h2>Agences &amp; intégrateurs — deux façons de travailler avec nous</h2>
+    <h2><%= L('Agences &amp; intégrateurs — deux façons de travailler avec nous') %></h2>
     <div class="cs-offres">
       <div class="cs-offre">
-        <div class="cs-offre__num">OFFRE 01</div>
-        <h3>Vous construisez, on porte la machine</h3>
-        <p>Vous gardez votre produit et votre marque. SAMII devient le moteur en dessous : une clé pour tout votre portefeuille, un espace isolé par client.</p>
+        <div class="cs-offre__num"><%= L('OFFRE 01') %></div>
+        <h3><%= L('Vous construisez, on porte la machine') %></h3>
+        <p><%= L('Vous gardez votre produit et votre marque. SAMII devient le moteur en dessous : une clé pour tout votre portefeuille, un espace isolé par client.') %></p>
         <ul>
-          <li>Une seule clé d'agence, l'espace client visé tient dans un en-tête</li>
-          <li>Webhooks signés : une commande WhatsApp déclenche le même événement qu'un appel API</li>
-          <li>Vos clients restent vos clients — chacun garde son accès</li>
-          <li>Facturé à l'usage, pas au client</li>
+          <li><%= L('Une seule clé d\'agence, l\'espace client visé tient dans un en-tête') %></li>
+          <li><%= L('Webhooks signés : une commande WhatsApp déclenche le même événement qu\'un appel API') %></li>
+          <li><%= L('Vos clients restent vos clients — chacun garde son accès') %></li>
+          <li><%= L('Facturé à l\'usage, pas au client') %></li>
         </ul>
-        <a href="/api-docs" target="_blank" rel="noopener">Lire la documentation →</a>
+        <a href="/api-docs" target="_blank" rel="noopener"><%= L('Lire la documentation →') %></a>
       </div>
       <div class="cs-offre">
-        <div class="cs-offre__num">OFFRE 02</div>
-        <h3>Vous louez le QG, sous votre marque</h3>
-        <p>Rien à construire. Vous ouvrez l'espace d'un client en quelques minutes, vous les voyez tous d'un seul écran, et un besoin manquant, notre équipe le développe.</p>
+        <div class="cs-offre__num"><%= L('OFFRE 02') %></div>
+        <h3><%= L('Vous louez le QG, sous votre marque') %></h3>
+        <p><%= L('Rien à construire. Vous ouvrez l\'espace d\'un client en quelques minutes, vous les voyez tous d\'un seul écran, et un besoin manquant, notre équipe le développe.') %></p>
         <ul>
-          <li>Multi-espaces, un seul contrat</li>
-          <li>Confirmations et messages sans limite</li>
-          <li>Un module vous manque ? On le construit</li>
-          <li>Accompagnement dédié — sur devis</li>
+          <li><%= L('Multi-espaces, un seul contrat') %></li>
+          <li><%= L('Confirmations et messages sans limite') %></li>
+          <li><%= L('Un module vous manque ? On le construit') %></li>
+          <li><%= L('Accompagnement dédié — sur devis') %></li>
         </ul>
-        <a href="/billing">Voir le palier Société →</a>
+        <a href="/billing"><%= L('Voir le palier Société →') %></a>
       </div>
     </div>
   </div>
@@ -229,35 +223,47 @@
        C'est la première question d'une agence sérieuse, parce qu'un compte
        WhatsApp Business approuvé se gagne difficilement et ne se jette pas. -->
   <div class="cs-sec">
-    <h2>WhatsApp — deux offres, au choix</h2>
+    <h2><%= L('WhatsApp — deux offres, au choix') %></h2>
     <div class="cs-offres">
       <div class="cs-offre">
-        <div class="cs-offre__num">A · VOUS AVEZ DÉJÀ WHATSAPP</div>
-        <h3>On se pose au-dessus du vôtre</h3>
-        <p>Compte WhatsApp Business déjà approuvé, numéro déjà en service chez votre fournisseur officiel ? Ne changez rien. SAMII s'y branche.</p>
+        <div class="cs-offre__num"><%= L('A · VOUS AVEZ DÉJÀ WHATSAPP') %></div>
+        <h3><%= L('On se pose au-dessus du vôtre') %></h3>
+        <p><%= L('Compte WhatsApp Business déjà approuvé, numéro déjà en service chez votre fournisseur officiel ? Ne changez rien. SAMII s\'y branche.') %></p>
         <ul>
-          <li>Votre numéro, votre compte Meta, votre fournisseur : inchangés</li>
-          <li>Fournisseur officiel ou API Cloud en direct</li>
-          <li>La réception des messages est déclarée pour vous, sans console tierce</li>
-          <li>Inclus dans votre abonnement, sans supplément</li>
+          <li><%= L('Votre numéro, votre compte Meta, votre fournisseur : inchangés') %></li>
+          <li><%= L('Fournisseur officiel ou API Cloud en direct') %></li>
+          <li><%= L('La réception des messages est déclarée pour vous, sans console tierce') %></li>
+          <li><%= L('Inclus dans votre abonnement, sans supplément') %></li>
         </ul>
-        <a href="/connect/whatsapp">Brancher mon numéro →</a>
+        <a href="/connect/whatsapp"><%= L('Brancher mon numéro →') %></a>
       </div>
       <div class="cs-offre">
-        <div class="cs-offre__num">B · VOUS N'AVEZ PAS WHATSAPP</div>
-        <h3>On vous le fournit</h3>
-        <p>Pas de compte approuvé, pas de vérification à attendre, pas de dossier à monter. Vous passez par le nôtre et vous démarrez aujourd'hui.</p>
+        <div class="cs-offre__num"><%= L('B · VOUS N\'AVEZ PAS WHATSAPP') %></div>
+        <h3><%= L('On vous le fournit') %></h3>
+        <p><%= L('Pas de compte approuvé, pas de vérification à attendre, pas de dossier à monter. Vous passez par le nôtre et vous démarrez aujourd\'hui.') %></p>
         <ul>
-          <li>WhatsApp Business API par notre compte vérifié</li>
-          <li>Aucune démarche de vérification de votre côté</li>
-          <li>Essai immédiat de 3 jours sur le numéro partagé</li>
-          <li>Sur devis, au palier Société</li>
+          <li><%= L('WhatsApp Business API par notre compte vérifié') %></li>
+          <li><%= L('Aucune démarche de vérification de votre côté') %></li>
+          <li><%= L('Essai immédiat de 3 jours sur le numéro partagé') %></li>
+          <li><%= L('Sur devis, au palier Société') %></li>
         </ul>
-        <a href="/billing">Nous contacter →</a>
+        <a href="/billing"><%= L('Nous contacter →') %></a>
       </div>
     </div>
   </div>
 
 </div>
+
+<!-- Le sélecteur de langue. Flottant plutôt que dans la barre de navigation :
+     chaque page de l'Académie a sa propre barre, avec ses propres classes.
+     Un élément autonome se pose partout à l'identique et ne casse la mise en
+     page d'aucune d'entre elles. -->
+<a href="<%= lienLangue(autreLangue) %>" title="Français / English"
+   style="position:fixed;right:16px;bottom:16px;z-index:60;padding:9px 15px;border-radius:22px;
+          border:1px solid rgba(201,169,97,.35);background:rgba(7,7,10,.92);color:#c9a961;
+          text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+          font-family:ui-monospace,monospace;backdrop-filter:blur(6px);">
+  <%= autreLangue.toUpperCase() %>
+</a>
 </body>
 </html>

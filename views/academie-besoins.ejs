@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Le travail qui attend — L'Académie</title>
+  <title><%= L('Le travail qui attend — L\'Académie') %></title>
   <link rel="stylesheet" href="/css/qg-style.css">
   <style>
     :root {
@@ -94,19 +94,17 @@
   <div class="bs-haut">
     <div class="bs-marque">O G &nbsp; T E C H N O L O G Y</div>
     <nav class="bs-menu">
-      <a href="/academy">La vitrine</a>
-      <a href="/academy/espace">Mon espace</a>
-      <a href="/academy/construire" class="est-or">Créer avec SAMII</a>
+      <a href="/academy"><%= L('La vitrine') %></a>
+      <a href="/academy/espace"><%= L('Mon espace') %></a>
+      <a href="/academy/construire" class="est-or"><%= L('Créer avec SAMII') %></a>
     </nav>
   </div>
 
   <div class="bs-titre">
-    <h1>Le travail qui attend</h1>
+    <h1><%= L('Le travail qui attend') %></h1>
     <!-- La phrase qui décide si un développeur reste : elle dit qui demande,
          combien, et ce que ça coûte d'entrer. Rien d'autre. -->
-    <p>Des marchands décrivent ici ce qu'il leur manque. Publier un besoin ne coûte rien
-       et n'engage à rien. Répondre non plus — SAMII prend <%= taux %> % le jour où tu es
-       payé, et rien avant.</p>
+    <p><%= L('Des marchands décrivent ici ce qu\'il leur manque. Publier un besoin ne coûte rien et n\'engage à rien. Répondre non plus — SAMII prend') %> <%= taux %> <%= L('% le jour où tu es payé, et rien avant.') %></p>
   </div>
 
   <% if (message) { %><div class="bs-msg"><%= message %></div><% } %>
@@ -114,9 +112,9 @@
 
   <form class="bs-chercher" method="GET" action="/academy/besoins">
     <input type="text" name="recherche" value="<%= recherche %>"
-           placeholder="Ce que tu sais faire : boutique, rendez-vous, livraison…">
+           placeholder="<%= L('Ce que tu sais faire : boutique, rendez-vous, livraison…') %>">
     <select name="metier">
-      <option value="">Tous les métiers</option>
+      <option value=""><%= L('Tous les métiers') %></option>
       <% groupes.forEach(function (g) { %>
         <optgroup label="<%= g.groupe %>">
           <% g.items.forEach(function (m) { %>
@@ -125,16 +123,14 @@
         </optgroup>
       <% }); %>
     </select>
-    <button type="submit">Chercher</button>
+    <button type="submit"><%= L('Chercher') %></button>
   </form>
 
   <!-- ══ LES BESOINS OUVERTS ══════════════════════════════════════════════ -->
   <div class="bs-bloc">
-    <h2><%= ouverts.length %> besoin<%= ouverts.length > 1 ? "s" : "" %> ouvert<%= ouverts.length > 1 ? "s" : "" %></h2>
+    <h2><%= ouverts.length %> <%= L('besoin') %><%= ouverts.length > 1 ? "s" : "" %> <%= L('ouvert') %><%= ouverts.length > 1 ? "s" : "" %></h2>
     <p class="bs-sous">
-      Le nombre de réponses est affiché à tout le monde : zéro réponse veut dire que la place
-      est libre. Les propositions chiffrées, elles, ne sont vues que par le marchand — ici on
-      se départage sur le travail, pas en cassant le prix du voisin.
+      <%= L('Le nombre de réponses est affiché à tout le monde : zéro réponse veut dire que la place est libre. Les propositions chiffrées, elles, ne sont vues que par le marchand — ici on se départage sur le travail, pas en cassant le prix du voisin.') %>
     </p>
 
     <div class="bs-grille">
@@ -148,13 +144,13 @@
         <a class="bs-carte" href="/academy/besoin/<%= b.reference %>">
           <div class="bs-carte__haut">
             <span class="bs-etiq bs-etiq--budget"><%= budget || "Budget à discuter" %></span>
-            <% if (!n) { %><span class="bs-etiq bs-etiq--libre">Personne n'a encore répondu</span><% } %>
+            <% if (!n) { %><span class="bs-etiq bs-etiq--libre"><%= L('Personne n\'a encore répondu') %></span><% } %>
           </div>
           <h3><%= b.titre %></h3>
           <p><%= b.description.length > 190 ? b.description.slice(0, 190) + "…" : b.description %></p>
           <div class="bs-carte__pied">
-            <span class="bs-carte__meta"><%= n %> réponse<%= n > 1 ? "s" : "" %></span>
-            <span class="bs-carte__action">Répondre →</span>
+            <span class="bs-carte__meta"><%= n %> <%= L('réponse') %><%= n > 1 ? "s" : "" %></span>
+            <span class="bs-carte__action"><%= L('Répondre →') %></span>
           </div>
         </a>
       <% }); %>
@@ -162,11 +158,10 @@
       <% if (!ouverts.length) { %>
         <div class="bs-vide">
           <% if (metier || recherche) { %>
-            Aucun besoin ne correspond à cette recherche.
-            <a href="/academy/besoins" style="color:var(--or)">Voir tout →</a>
+            <%= L('Aucun besoin ne correspond à cette recherche.') %>
+            <a href="/academy/besoins" style="color:var(--or)"><%= L('Voir tout →') %></a>
           <% } else { %>
-            Aucun besoin publié pour l'instant. Si tu es marchand, décris le tien ci-dessous —
-            c'est ce qui fait venir ceux qui savent le construire.
+            <%= L('Aucun besoin publié pour l\'instant. Si tu es marchand, décris le tien ci-dessous — c\'est ce qui fait venir ceux qui savent le construire.') %>
           <% } %>
         </div>
       <% } %>
@@ -179,33 +174,32 @@
        qu'on attend de lui, et écrit le sien mieux qu'avec n'importe quelle
        consigne. -->
   <div class="bs-bloc">
-    <h2>Décrire mon besoin</h2>
+    <h2><%= L('Décrire mon besoin') %></h2>
     <p class="bs-sous">
-      Tu n'as pas besoin de savoir ce qu'il te faut techniquement — décris le problème.
-      C'est gratuit, tu ne t'engages à rien, et tu choisis qui te répond (ou personne).
+      <%= L('Tu n\'as pas besoin de savoir ce qu\'il te faut techniquement — décris le problème. C\'est gratuit, tu ne t\'engages à rien, et tu choisis qui te répond (ou personne).') %>
     </p>
 
     <% if (!connecte) { %>
       <div class="bs-vide">
-        Connecte-toi pour publier ton besoin.
-        <a href="/login" style="color:var(--or)">Se connecter →</a>
+        <%= L('Connecte-toi pour publier ton besoin.') %>
+        <a href="/login" style="color:var(--or)"><%= L('Se connecter →') %></a>
       </div>
     <% } else { %>
       <form class="bs-form" method="POST" action="/academy/besoins">
-        <label for="titre">En une phrase, qu'est-ce qu'il te manque ?</label>
+        <label for="titre"><%= L('En une phrase, qu\'est-ce qu\'il te manque ?') %></label>
         <input id="titre" name="titre" type="text" maxlength="120" required
-               placeholder="Ex. : mes clients me demandent où est leur colis toute la journée">
+               placeholder="<%= L('Ex. : mes clients me demandent où est leur colis toute la journée') %>">
 
-        <label for="description">Raconte</label>
+        <label for="description"><%= L('Raconte') %></label>
         <textarea id="description" name="description" maxlength="2000" required
-                  placeholder="Ce que tu fais aujourd'hui, ce qui te fait perdre du temps, et à quoi ressemblerait la bonne solution. Plus c'est concret, mieux on te répond."></textarea>
-        <p class="bs-aide">C'est cette description qui décide qui te répond — quelques phrases valent mieux qu'une ligne.</p>
+                  placeholder="<%= L('Ce que tu fais aujourd\'hui, ce qui te fait perdre du temps, et à quoi ressemblerait la bonne solution. Plus c\'est concret, mieux on te répond.') %>"></textarea>
+        <p class="bs-aide"><%= L('C\'est cette description qui décide qui te répond — quelques phrases valent mieux qu\'une ligne.') %></p>
 
         <div class="bs-ligne">
           <div>
-            <label for="metier">Ton métier</label>
+            <label for="metier"><%= L('Ton métier') %></label>
             <select id="metier" name="metier">
-              <option value="">Non précisé</option>
+              <option value=""><%= L('Non précisé') %></option>
               <% groupes.forEach(function (g) { %>
                 <optgroup label="<%= g.groupe %>">
                   <% g.items.forEach(function (m) { %>
@@ -216,31 +210,30 @@
             </select>
           </div>
           <div>
-            <label for="budget_min">Budget minimum</label>
-            <input id="budget_min" name="budget_min" type="text" inputmode="decimal" placeholder="Facultatif">
+            <label for="budget_min"><%= L('Budget minimum') %></label>
+            <input id="budget_min" name="budget_min" type="text" inputmode="decimal" placeholder="<%= L('Facultatif') %>">
           </div>
           <div>
-            <label for="budget_max">Budget maximum</label>
-            <input id="budget_max" name="budget_max" type="text" inputmode="decimal" placeholder="Facultatif">
+            <label for="budget_max"><%= L('Budget maximum') %></label>
+            <input id="budget_max" name="budget_max" type="text" inputmode="decimal" placeholder="<%= L('Facultatif') %>">
           </div>
           <div>
-            <label for="devise">Devise</label>
+            <label for="devise"><%= L('Devise') %></label>
             <select id="devise" name="devise">
-              <option value="USD">USD — dollar</option>
-              <option value="EUR">EUR — euro</option>
-              <option value="DZD">DZD — dinar algérien</option>
-              <option value="MAD">MAD — dirham marocain</option>
-              <option value="XOF">XOF — franc CFA</option>
-              <option value="NGN">NGN — naira</option>
+              <option value="USD"><%= L('USD — dollar') %></option>
+              <option value="EUR"><%= L('EUR — euro') %></option>
+              <option value="DZD"><%= L('DZD — dinar algérien') %></option>
+              <option value="MAD"><%= L('MAD — dirham marocain') %></option>
+              <option value="XOF"><%= L('XOF — franc CFA') %></option>
+              <option value="NGN"><%= L('NGN — naira') %></option>
             </select>
           </div>
         </div>
         <p class="bs-aide">
-          Laisse le budget vide si tu ne sais pas : les développeurs te proposeront un prix.
-          Un ordre de grandeur, même large, fait juste gagner du temps à tout le monde.
+          <%= L('Laisse le budget vide si tu ne sais pas : les développeurs te proposeront un prix. Un ordre de grandeur, même large, fait juste gagner du temps à tout le monde.') %>
         </p>
 
-        <button class="btn" type="submit">Publier mon besoin</button>
+        <button class="btn" type="submit"><%= L('Publier mon besoin') %></button>
       </form>
     <% } %>
   </div>
@@ -248,10 +241,9 @@
   <!-- ══ MES BESOINS ══════════════════════════════════════════════════════ -->
   <% if (connecte && miens.length) { %>
     <div class="bs-bloc">
-      <h2>Mes besoins</h2>
+      <h2><%= L('Mes besoins') %></h2>
       <p class="bs-sous">
-        Ferme un besoin dès qu'il est réglé : laisser un besoin ouvert fait travailler
-        des gens pour rien, et c'est ce qui vide une place comme celle-ci.
+        <%= L('Ferme un besoin dès qu\'il est réglé : laisser un besoin ouvert fait travailler des gens pour rien, et c\'est ce qui vide une place comme celle-ci.') %>
       </p>
       <div class="bs-grille">
         <% miens.forEach(function (b) { const n = Number(b.reponses || 0); %>
@@ -262,8 +254,8 @@
             <h3><%= b.titre %></h3>
             <p><%= b.description.length > 150 ? b.description.slice(0, 150) + "…" : b.description %></p>
             <div class="bs-carte__pied">
-              <span class="bs-carte__meta"><%= n %> réponse<%= n > 1 ? "s" : "" %> reçue<%= n > 1 ? "s" : "" %></span>
-              <span class="bs-carte__action">Voir →</span>
+              <span class="bs-carte__meta"><%= n %> <%= L('réponse') %><%= n > 1 ? "s" : "" %> <%= L('reçue') %><%= n > 1 ? "s" : "" %></span>
+              <span class="bs-carte__action"><%= L('Voir →') %></span>
             </div>
           </a>
         <% }); %>
@@ -272,5 +264,17 @@
   <% } %>
 
 </div>
+
+<!-- Le sélecteur de langue. Flottant plutôt que dans la barre de navigation :
+     chaque page de l'Académie a sa propre barre, avec ses propres classes.
+     Un élément autonome se pose partout à l'identique et ne casse la mise en
+     page d'aucune d'entre elles. -->
+<a href="<%= lienLangue(autreLangue) %>" title="Français / English"
+   style="position:fixed;right:16px;bottom:16px;z-index:60;padding:9px 15px;border-radius:22px;
+          border:1px solid rgba(201,169,97,.35);background:rgba(7,7,10,.92);color:#c9a961;
+          text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+          font-family:ui-monospace,monospace;backdrop-filter:blur(6px);">
+  <%= autreLangue.toUpperCase() %>
+</a>
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -84,9 +84,9 @@
   <div class="bn-haut">
     <div class="bn-marque">O G &nbsp; T E C H N O L O G Y</div>
     <nav class="bn-menu">
-      <a href="/academy/besoins">← Tous les besoins</a>
-      <a href="/academy">La vitrine</a>
-      <a href="/academy/espace">Mon espace</a>
+      <a href="/academy/besoins"><%= L('← Tous les besoins') %></a>
+      <a href="/academy"><%= L('La vitrine') %></a>
+      <a href="/academy/espace"><%= L('Mon espace') %></a>
     </nav>
   </div>
 
@@ -105,23 +105,22 @@
     <span class="bn-etiq bn-etiq--<%= besoin.statut %>"><%= besoin.statut %></span>
     <span class="bn-etiq bn-etiq--budget"><%= budget %></span>
     <% if (metierLabel) { %><span class="bn-etiq"><%= metierLabel %></span><% } %>
-    <span class="bn-etiq"><%= nombreReponses %> réponse<%= nombreReponses > 1 ? "s" : "" %></span>
+    <span class="bn-etiq"><%= nombreReponses %> <%= L('réponse') %><%= nombreReponses > 1 ? "s" : "" %></span>
   </div>
 
   <h1><%= besoin.titre %></h1>
   <div class="bn-texte"><%= besoin.description %></div>
   <p class="bn-ref">
-    <%= besoin.reference %> · publié le <%= new Date(besoin.created_at).toLocaleDateString("fr-FR") %>
+    <%= besoin.reference %> <%= L('· publié le') %> <%= new Date(besoin.created_at).toLocaleDateString("fr-FR") %>
   </p>
 
   <% if (estAuteur) { %>
     <!-- ══ CÔTÉ MARCHAND ══════════════════════════════════════════════════
          Il voit tout : c'est son besoin, ce sont ses propositions. -->
     <div class="bn-bloc">
-      <h2>Les propositions reçues</h2>
+      <h2><%= L('Les propositions reçues') %></h2>
       <p class="bn-sous">
-        Personne d'autre que toi ne voit ces prix. Prends le temps de comparer : le moins cher
-        n'est pas toujours celui qui a compris ton problème.
+        <%= L('Personne d\'autre que toi ne voit ces prix. Prends le temps de comparer : le moins cher n\'est pas toujours celui qui a compris ton problème.') %>
       </p>
 
       <% reponses.forEach(function (r) { %>
@@ -140,28 +139,26 @@
 
       <% if (!reponses.length) { %>
         <div class="bn-vide">
-          Personne n'a encore répondu. C'est normal les premiers jours — les développeurs
-          regardent la liste avant de se lancer.
+          <%= L('Personne n\'a encore répondu. C\'est normal les premiers jours — les développeurs regardent la liste avant de se lancer.') %>
         </div>
       <% } %>
     </div>
 
     <% if (ouvert) { %>
       <div class="bn-bloc">
-        <h2>Fermer ce besoin</h2>
+        <h2><%= L('Fermer ce besoin') %></h2>
         <p class="bn-sous">
-          Dès que c'est réglé, ferme-le. Un besoin déjà traité qui reste ouvert fait travailler
-          des gens pour rien — et c'est ce qui vide une place comme celle-ci.
+          <%= L('Dès que c\'est réglé, ferme-le. Un besoin déjà traité qui reste ouvert fait travailler des gens pour rien — et c\'est ce qui vide une place comme celle-ci.') %>
         </p>
         <div class="bn-actions">
           <form method="POST" action="/academy/besoin/<%= besoin.reference %>/cloturer">
             <input type="hidden" name="statut" value="attribue">
-            <button class="btn btn--fin" type="submit">J'ai choisi quelqu'un</button>
+            <button class="btn btn--fin" type="submit"><%= L('J\'ai choisi quelqu\'un') %></button>
           </form>
           <form method="POST" action="/academy/besoin/<%= besoin.reference %>/cloturer"
                 onsubmit="return confirm('Fermer ce besoin ?');">
             <input type="hidden" name="statut" value="clos">
-            <button class="btn btn--fin" type="submit">Ce n'est plus d'actualité</button>
+            <button class="btn btn--fin" type="submit"><%= L('Ce n\'est plus d\'actualité') %></button>
           </form>
         </div>
       </div>
@@ -177,58 +174,56 @@
       <h2><%= aRepondu ? "Ma proposition" : "Répondre à ce besoin" %></h2>
       <p class="bn-sous">
         <% if (!ouvert) { %>
-          Ce besoin n'accepte plus de réponses.
+          <%= L('Ce besoin n\'accepte plus de réponses.') %>
         <% } else if (aRepondu) { %>
-          Tu peux la modifier tant que le besoin est ouvert — elle remplacera la précédente.
-          Le marchand voit toujours la dernière version.
+          <%= L('Tu peux la modifier tant que le besoin est ouvert — elle remplacera la précédente. Le marchand voit toujours la dernière version.') %>
         <% } else { %>
-          Dis comment tu t'y prendrais, en quelques phrases. Ton prix et ton délai ne sont vus
-          que par le marchand. Rien n'est dû tant qu'il n'a pas choisi — et SAMII ne prend ses
-          <%= taux %> % que le jour où tu es payé.
+          <%= L('Dis comment tu t\'y prendrais, en quelques phrases. Ton prix et ton délai ne sont vus que par le marchand. Rien n\'est dû tant qu\'il n\'a pas choisi — et SAMII ne prend ses') %>
+          <%= taux %> <%= L('% que le jour où tu es payé.') %>
         <% } %>
       </p>
 
       <% reponses.forEach(function (r) { %>
         <div class="bn-rep">
           <div class="bn-rep__haut">
-            <span class="bn-rep__qui">Ta proposition</span>
+            <span class="bn-rep__qui"><%= L('Ta proposition') %></span>
             <span class="bn-rep__chiffres">
               <%= r.prix ? Number(r.prix) + " " + r.devise : "Prix à discuter" %><%
                  %><%= r.delai_jours ? " · " + r.delai_jours + " jour" + (r.delai_jours > 1 ? "s" : "") : "" %>
             </span>
           </div>
           <p class="bn-rep__msg"><%= r.message %></p>
-          <div class="bn-rep__quand">Envoyée le <%= new Date(r.created_at).toLocaleString("fr-FR") %></div>
+          <div class="bn-rep__quand"><%= L('Envoyée le') %> <%= new Date(r.created_at).toLocaleString("fr-FR") %></div>
         </div>
       <% }); %>
 
       <% if (ouvert) { %>
         <% if (!connecte) { %>
           <div class="bn-vide">
-            Connecte-toi pour répondre à ce besoin.
-            <a href="/login">Se connecter →</a>
+            <%= L('Connecte-toi pour répondre à ce besoin.') %>
+            <a href="/login"><%= L('Se connecter →') %></a>
           </div>
         <% } else { %>
           <form class="bn-form" method="POST" action="/academy/besoin/<%= besoin.reference %>/repondre"
                 style="margin-top:<%= aRepondu ? "16px" : "0" %>;">
-            <label for="message">Comment tu t'y prendrais</label>
+            <label for="message"><%= L('Comment tu t\'y prendrais') %></label>
             <textarea id="message" name="message" maxlength="2000" required
-                      placeholder="Ce que tu as compris du problème, comment tu le résous, ce que tu as déjà fait de semblable."><%= reponses[0] ? reponses[0].message : "" %></textarea>
-            <p class="bn-aide">Le marchand ne te connaît pas : c'est ce texte qui le décide, pas ton prix.</p>
+                      placeholder="<%= L('Ce que tu as compris du problème, comment tu le résous, ce que tu as déjà fait de semblable.') %>"><%= reponses[0] ? reponses[0].message : "" %></textarea>
+            <p class="bn-aide"><%= L('Le marchand ne te connaît pas : c\'est ce texte qui le décide, pas ton prix.') %></p>
 
             <div class="bn-ligne">
               <div>
-                <label for="prix">Ton prix</label>
-                <input id="prix" name="prix" type="text" inputmode="decimal" placeholder="Facultatif"
+                <label for="prix"><%= L('Ton prix') %></label>
+                <input id="prix" name="prix" type="text" inputmode="decimal" placeholder="<%= L('Facultatif') %>"
                        value="<%= reponses[0] && reponses[0].prix ? Number(reponses[0].prix) : "" %>">
               </div>
               <div>
-                <label for="delai_jours">Délai (jours)</label>
-                <input id="delai_jours" name="delai_jours" type="text" inputmode="numeric" placeholder="Facultatif"
+                <label for="delai_jours"><%= L('Délai (jours)') %></label>
+                <input id="delai_jours" name="delai_jours" type="text" inputmode="numeric" placeholder="<%= L('Facultatif') %>"
                        value="<%= reponses[0] && reponses[0].delai_jours ? reponses[0].delai_jours : "" %>">
               </div>
               <div>
-                <label for="devise">Devise</label>
+                <label for="devise"><%= L('Devise') %></label>
                 <select id="devise" name="devise">
                   <% ["USD","EUR","DZD","MAD","XOF","NGN"].forEach(function (d) {
                        const choisie = (reponses[0] && reponses[0].devise) || besoin.devise; %>
@@ -246,5 +241,17 @@
   <% } %>
 
 </div>
+
+<!-- Le sélecteur de langue. Flottant plutôt que dans la barre de navigation :
+     chaque page de l'Académie a sa propre barre, avec ses propres classes.
+     Un élément autonome se pose partout à l'identique et ne casse la mise en
+     page d'aucune d'entre elles. -->
+<a href="<%= lienLangue(autreLangue) %>" title="Français / English"
+   style="position:fixed;right:16px;bottom:16px;z-index:60;padding:9px 15px;border-radius:22px;
+          border:1px solid rgba(201,169,97,.35);background:rgba(7,7,10,.92);color:#c9a961;
+          text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+          font-family:ui-monospace,monospace;backdrop-filter:blur(6px);">
+  <%= autreLangue.toUpperCase() %>
+</a>
 </body>
 </html>

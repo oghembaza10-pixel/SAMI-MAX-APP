@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Trouver quelqu'un — Académie SAMII</title>
+  <title><%= L('Trouver quelqu\'un — Académie SAMII') %></title>
   <link rel="stylesheet" href="/css/qg-style.css">
   <style>
     :root { --enc:#07070a; --or:#c9a961; --or-clair:#f0d99b; --ivoire:#f3f1e9; --gris:#8b8d95; --bord:rgba(201,169,97,.18); }
@@ -36,37 +36,47 @@
 <body data-theme="og">
 <div class="tr">
 
-  <a href="/academy" class="tr-retour">← L'Académie</a>
+  <a href="/academy" class="tr-retour"><%= L('← L\'Académie') %></a>
 
   <div style="clear:both"></div>
-  <span class="tr-badge">En construction</span>
-  <h1>Trouver quelqu'un</h1>
+  <span class="tr-badge"><%= L('En construction') %></span>
+  <h1><%= L('Trouver quelqu\'un') %></h1>
   <p class="tr-lead">
-    La place où les marchands décrivent ce qu'il leur faut et où les développeurs
-    et agences de l'Académie répondent. Elle n'est pas encore ouverte — on préfère
-    le dire que de vous laisser la découvrir vide.
+    <%= L('La place où les marchands décrivent ce qu\'il leur faut et où les développeurs et agences de l\'Académie répondent. Elle n\'est pas encore ouverte — on préfère le dire que de vous laisser la découvrir vide.') %>
   </p>
 
   <!-- Annoncer ce qui vient, précisément. Une page « bientôt » qui ne dit pas
        quoi ne donne à personne l'envie de revenir. -->
   <div class="tr-liste">
-    <div class="tr-item"><span>01</span><p><b>Des profils avec un passé.</b> Compétences, langues, pays, réalisations — et les missions déjà livrées ici, que personne ne peut inventer.</p></div>
-    <div class="tr-item"><span>02</span><p><b>Un besoin décrit en clair.</b> Vous écrivez ce qu'il vous faut ; ceux qui savent le faire répondent avec un prix et un délai.</p></div>
-    <div class="tr-item"><span>03</span><p><b>L'accord fournit l'accès.</b> Quand vous validez, la clé est créée et les permissions posées — le développeur peut travailler tout de suite, sans que vous ayez à lui envoyer quoi que ce soit.</p></div>
-    <div class="tr-item"><span>04</span><p><b>L'argent est retenu jusqu'à la livraison.</b> Vous payez à l'accord, le développeur est réglé quand vous validez. SAMII prend <%= taux %> %, et rien tant que rien n'est vendu.</p></div>
+    <div class="tr-item"><span>01</span><p><b><%= L('Des profils avec un passé.') %></b> <%= L('Compétences, langues, pays, réalisations — et les missions déjà livrées ici, que personne ne peut inventer.') %></p></div>
+    <div class="tr-item"><span>02</span><p><b><%= L('Un besoin décrit en clair.') %></b> <%= L('Vous écrivez ce qu\'il vous faut ; ceux qui savent le faire répondent avec un prix et un délai.') %></p></div>
+    <div class="tr-item"><span>03</span><p><b><%= L('L\'accord fournit l\'accès.') %></b> <%= L('Quand vous validez, la clé est créée et les permissions posées — le développeur peut travailler tout de suite, sans que vous ayez à lui envoyer quoi que ce soit.') %></p></div>
+    <div class="tr-item"><span>04</span><p><b><%= L('L\'argent est retenu jusqu\'à la livraison.') %></b> <%= L('Vous payez à l\'accord, le développeur est réglé quand vous validez. SAMII prend') %> <%= taux %> <%= L('%, et rien tant que rien n\'est vendu.') %></p></div>
   </div>
 
   <% if (membre) { %>
-    <a class="tr-btn" href="/academy/construire">En attendant, construire →</a>
-    <span class="tr-note">Tu es déjà dans l'Académie. Ton profil sera prêt le jour de l'ouverture.</span>
+    <a class="tr-btn" href="/academy/construire"><%= L('En attendant, construire →') %></a>
+    <span class="tr-note"><%= L('Tu es déjà dans l\'Académie. Ton profil sera prêt le jour de l\'ouverture.') %></span>
   <% } else { %>
-    <a class="tr-btn" href="/academy/rejoindre">Prendre ma place →</a>
+    <a class="tr-btn" href="/academy/rejoindre"><%= L('Prendre ma place →') %></a>
     <span class="tr-note">
-      Entrer est gratuit — une page à lire, une case à cocher.<br>
-      Les premiers inscrits seront les premiers visibles.
+      <%= L('Entrer est gratuit — une page à lire, une case à cocher.') %><br>
+      <%= L('Les premiers inscrits seront les premiers visibles.') %>
     </span>
   <% } %>
 
 </div>
+
+<!-- Le sélecteur de langue. Flottant plutôt que dans la barre de navigation :
+     chaque page de l'Académie a sa propre barre, avec ses propres classes.
+     Un élément autonome se pose partout à l'identique et ne casse la mise en
+     page d'aucune d'entre elles. -->
+<a href="<%= lienLangue(autreLangue) %>" title="Français / English"
+   style="position:fixed;right:16px;bottom:16px;z-index:60;padding:9px 15px;border-radius:22px;
+          border:1px solid rgba(201,169,97,.35);background:rgba(7,7,10,.92);color:#c9a961;
+          text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+          font-family:ui-monospace,monospace;backdrop-filter:blur(6px);">
+  <%= autreLangue.toUpperCase() %>
+</a>
 </body>
 </html>

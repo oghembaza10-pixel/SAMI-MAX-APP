@@ -107,6 +107,13 @@ app.use(session({
     },
 }));
 
+// ── LANGUE (fr/en sur les pages de l'Académie) ────────
+// Posé APRÈS la session : le choix de langue s'y mémorise, pour qu'un
+// partenaire qui met ?lang=en une fois ne le remette pas à chaque clic.
+// Toutes les vues reçoivent L() — celles qui ne sont pas traduites
+// continuent de fonctionner sans changement.
+app.use(require("./services/langue").middleware);
+
 // ── LOCALS (disponibles dans toutes les vues EJS) ─────
 app.use((req, res, next) => {
     res.locals.workspaceId = req.session?.workspaceId || null;

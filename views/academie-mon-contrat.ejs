@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Mon contrat — Académie SAMII</title>
+  <title><%= L('Mon contrat — Académie SAMII') %></title>
   <link rel="stylesheet" href="/css/qg-style.css">
   <style>
     :root { --enc:#07070a; --or:#c9a961; --or-clair:#f0d99b; --ivoire:#f3f1e9; --gris:#8b8d95; --bord:rgba(201,169,97,.18); }
@@ -31,26 +31,26 @@
 <body data-theme="og">
 <div class="ac-shell">
 
-  <a href="/academy" class="ac-retour">← Retour à l'Académie</a>
+  <a href="/academy" class="ac-retour"><%= L('← Retour à l\'Académie') %></a>
 
-  <h1>Mon contrat</h1>
-  <p class="ac-sous">Ce qui te lie à l'Académie, et ce que ça t'a rapporté.</p>
+  <h1><%= L('Mon contrat') %></h1>
+  <p class="ac-sous"><%= L('Ce qui te lie à l\'Académie, et ce que ça t\'a rapporté.') %></p>
 
   <!-- On montre le brut ET ce que la commission a prélevé. Cacher la seconde
        ligne serait le meilleur moyen de rendre les 10 % suspects. -->
   <div class="ac-bilan">
-    <div class="ac-tuile"><b><%= bilan.ventes %></b><span>ventes conclues</span></div>
-    <div class="ac-tuile"><b><%= Number(bilan.brut).toFixed(2) %> $</b><span>montant brut</span></div>
-    <div class="ac-tuile"><b><%= Number(bilan.net).toFixed(2) %> $</b><span>ta part (<%= 100 - taux %> %)</span></div>
-    <div class="ac-tuile"><b><%= Number(bilan.a_recevoir).toFixed(2) %> $</b><span>à te reverser</span></div>
+    <div class="ac-tuile"><b><%= bilan.ventes %></b><span><%= L('ventes conclues') %></span></div>
+    <div class="ac-tuile"><b><%= Number(bilan.brut).toFixed(2) %> $</b><span><%= L('montant brut') %></span></div>
+    <div class="ac-tuile"><b><%= Number(bilan.net).toFixed(2) %> $</b><span><%= L('ta part (') %><%= 100 - taux %> %)</span></div>
+    <div class="ac-tuile"><b><%= Number(bilan.a_recevoir).toFixed(2) %> $</b><span><%= L('à te reverser') %></span></div>
   </div>
 
-  <h2>Ce que tu as accepté</h2>
+  <h2><%= L('Ce que tu as accepté') %></h2>
   <table>
-    <thead><tr><th>Version</th><th>Rôle</th><th>Date</th><th>Empreinte du texte</th></tr></thead>
+    <thead><tr><th><%= L('Version') %></th><th><%= L('Rôle') %></th><th><%= L('Date') %></th><th><%= L('Empreinte du texte') %></th></tr></thead>
     <tbody>
       <% if (!historique.length) { %>
-        <tr><td colspan="4" style="color:var(--gris)">Aucune acceptation enregistrée.</td></tr>
+        <tr><td colspan="4" style="color:var(--gris)"><%= L('Aucune acceptation enregistrée.') %></td></tr>
       <% } %>
       <% historique.forEach(function (h) { %>
         <tr>
@@ -63,11 +63,23 @@
     </tbody>
   </table>
 
-  <h2>Le texte en vigueur — version <%= contrat.version %></h2>
+  <h2><%= L('Le texte en vigueur — version') %> <%= contrat.version %></h2>
   <% contrat.articles.forEach(function (a) { %>
     <div class="ac-article"><h3><%= a.titre %></h3><p><%= a.texte %></p></div>
   <% }); %>
 
 </div>
+
+<!-- Le sélecteur de langue. Flottant plutôt que dans la barre de navigation :
+     chaque page de l'Académie a sa propre barre, avec ses propres classes.
+     Un élément autonome se pose partout à l'identique et ne casse la mise en
+     page d'aucune d'entre elles. -->
+<a href="<%= lienLangue(autreLangue) %>" title="Français / English"
+   style="position:fixed;right:16px;bottom:16px;z-index:60;padding:9px 15px;border-radius:22px;
+          border:1px solid rgba(201,169,97,.35);background:rgba(7,7,10,.92);color:#c9a961;
+          text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+          font-family:ui-monospace,monospace;backdrop-filter:blur(6px);">
+  <%= autreLangue.toUpperCase() %>
+</a>
 </body>
 </html>

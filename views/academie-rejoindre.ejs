@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -78,15 +78,15 @@
   <p class="ac-resume"><%= contrat.resume %></p>
 
   <div class="ac-taux">
-    <div><b>0 $</b><span>pour entrer</span></div>
-    <div><b>0 $</b><span>pour publier</span></div>
-    <div><b><%= taux %> %</b><span>par transaction</span></div>
+    <div><b>0 $</b><span><%= L('pour entrer') %></span></div>
+    <div><b>0 $</b><span><%= L('pour publier') %></span></div>
+    <div><b><%= taux %> %</b><span><%= L('par transaction') %></span></div>
   </div>
 
   <% if (dejaMembre) { %>
     <div class="ac-case" style="border-color:rgba(61,220,132,.3);background:rgba(61,220,132,.06);">
-      <span>✅ Tu as déjà accepté la version <%= contrat.version %> de ce contrat.
-      <a href="/academy" style="color:var(--or-clair);">Retourner à l'Académie →</a></span>
+      <span><%= L('✅ Tu as déjà accepté la version') %> <%= contrat.version %> <%= L('de ce contrat.') %>
+      <a href="/academy" style="color:var(--or-clair);"><%= L('Retourner à l\'Académie →') %></a></span>
     </div>
   <% } %>
 
@@ -106,13 +106,13 @@
     <div class="ac-role">
       <label>
         <input type="radio" name="role" value="developpeur" required>
-        <b>Je viens construire</b>
-        <small>Développeur, agence, intégrateur. Tu crées des applications sur SAMII et tu les vends ici.</small>
+        <b><%= L('Je viens construire') %></b>
+        <small><%= L('Développeur, agence, intégrateur. Tu crées des applications sur SAMII et tu les vends ici.') %></small>
       </label>
       <label>
         <input type="radio" name="role" value="client">
-        <b>Je viens chercher</b>
-        <small>Marchand ou entreprise. Tu cherches quelqu'un pour construire ce dont tu as besoin.</small>
+        <b><%= L('Je viens chercher') %></b>
+        <small><%= L('Marchand ou entreprise. Tu cherches quelqu\'un pour construire ce dont tu as besoin.') %></small>
       </label>
     </div>
 
@@ -120,21 +120,32 @@
          et ne vaudrait rien le jour où il faudrait s'en servir. -->
     <label class="ac-case">
       <input type="checkbox" name="accepte" value="oui" required>
-      <span>J'ai lu et j'accepte le contrat de l'Académie SAMII (version <%= contrat.version %>).
+      <span><%= L('J\'ai lu et j\'accepte le contrat de l\'Académie SAMII (version') %> <%= contrat.version %>).
       Je comprends que SAMII est mon partenaire de commercialisation et prélève
-      <b><%= taux %> %</b> sur chaque transaction conclue ici, et que je reste propriétaire
-      de mon code, de ma marque et de mes clients.</span>
+      <b><%= taux %> %</b> <%= L('sur chaque transaction conclue ici, et que je reste propriétaire de mon code, de ma marque et de mes clients.') %></span>
     </label>
 
-    <button type="submit" class="ac-btn">Entrer dans l'Académie</button>
+    <button type="submit" class="ac-btn"><%= L('Entrer dans l\'Académie') %></button>
   </form>
   <% } %>
 
   <p class="ac-pied">
     Ce contrat est daté et conservé avec l'empreinte du texte exact que tu acceptes.<br>
-    Tu peux le relire à tout moment depuis <a href="/academy/mon-contrat">mon contrat</a>.
+    Tu peux le relire à tout moment depuis <a href="/academy/mon-contrat"><%= L('mon contrat') %></a>.
   </p>
 
 </div>
+
+<!-- Le sélecteur de langue. Flottant plutôt que dans la barre de navigation :
+     chaque page de l'Académie a sa propre barre, avec ses propres classes.
+     Un élément autonome se pose partout à l'identique et ne casse la mise en
+     page d'aucune d'entre elles. -->
+<a href="<%= lienLangue(autreLangue) %>" title="Français / English"
+   style="position:fixed;right:16px;bottom:16px;z-index:60;padding:9px 15px;border-radius:22px;
+          border:1px solid rgba(201,169,97,.35);background:rgba(7,7,10,.92);color:#c9a961;
+          text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+          font-family:ui-monospace,monospace;backdrop-filter:blur(6px);">
+  <%= autreLangue.toUpperCase() %>
+</a>
 </body>
 </html>
