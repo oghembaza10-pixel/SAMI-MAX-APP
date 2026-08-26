@@ -179,6 +179,11 @@ app.use("/", require("./routes/legal"));
 app.use("/", require("./routes/developers-en"));
 app.use("/webhook/meta", require("./routes/webhook-meta-deletion"));
 app.use("/webhook/chargily", require("./routes/webhook-chargily"));
+// Paiement mobile africain (SebPay — 17 pays, Orange Money et MTN).
+// En mode OBSERVATION : la route note tout ce qu'on lui envoie et ne valide
+// aucun paiement. Elle sert à découvrir le format réel du prestataire avant
+// d'écrire le traitement — voir l'en-tête de routes/webhook-paiement.js.
+app.use("/webhook/paiement-afrique", require("./routes/webhook-paiement"));
 app.use("/telegram", require("./routes/telegram"));
 
 // ══════════════════════════════════════════════════════
