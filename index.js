@@ -278,6 +278,9 @@ app.use("/api", apiLimiter, require("./routes/api"));
 // Chat public de la page d'accueil — porte non authentifiée, sa propre
 // limite (bien plus stricte) est définie dans le routeur lui-même.
 app.use("/vitrine", require("./routes/vitrine"));
+// Les moyens de paiement : la liste que voit un acheteur selon son pays, et
+// l'état réel côté serveur (ce qui est branché, ce qui manque).
+app.use("/paiement", require("./routes/paiement"));
 app.get("/api-docs", (req, res) => res.sendFile(path.join(__dirname, "public", "api-docs.html")));
 
 app.get("/inscription", requireAuth, (req, res) => {

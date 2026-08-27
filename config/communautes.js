@@ -76,6 +76,16 @@ const COMMUNAUTES = {
         // efface toute trace de notre marque. Une seule ligne à changer.
         assistant: "L'assistant",
         ecosysteme: false,
+        // ── Le partage ───────────────────────────────────────────────────
+        // Sur une vente faite chez elle, la plateforme prend `taux`, et cette
+        // commission se partage : `partPartenaire` pour elle, le reste pour
+        // la maison. 40 % pour elle, 60 % pour nous — c'est ce qui a été dit.
+        //
+        // ⚠️ `taux` EST UN PLACEHOLDER. Le pourcentage prélevé sur une vente
+        // n'a jamais été tranché avec elle. 10 % est une valeur d'attente
+        // pour que le calcul existe, PAS un accord. À confirmer avec elle
+        // avant la première vraie vente — après, y toucher se négocie.
+        commission: { taux: 0.10, partPartenaire: 0.40 },
         // Bleu pétrole et or : les couleurs de son logo, plus l'or pour ce
         // qui se paie. Reprises telles quelles depuis sa vitrine.
         couleurs: {

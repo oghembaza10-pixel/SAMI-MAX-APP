@@ -45,6 +45,47 @@ const MIGRATIONS = [
         sql: `CREATE INDEX IF NOT EXISTS idx_publications_communaute
               ON publications (communaute, created_at DESC)`,
     },
+    {
+        nom: "paiements",
+        // Le grand livre. Les montants sont en NUMERIC et jamais en flottant :
+        // sur de l'argent, 0.1 + 0.2 qui ne fait pas 0.3 finit par se voir.
+        // `reference` est UNIQUE : c'est elle qui rend une confirmation
+        // rejouable sans danger quand un prestataire réémet sa notification.
+        sql: `CREATE TABLE IF NOT EXISTS paiements (
+                id                   SERIAL PRIMARY KEY,
+                reference            TEXT UNIQUE NOT NULL,
+                reference_fournisseur TEXT,
+                fournisseur          TEXT NOT NULL,
+                statut               TEXT NOT NULL DEFAULT 'en_attente',
+                montant              NUMERIC(14,2) NOT NULL,
+                devise               TEXT NOT NULL,
+                acheteur_id          TEXT,
+                vendeur_id           TEXT,
+                communaute           TEXT DEFAULT 'samii',
+                objet_type           TEXT,
+                objet_id             TEXT,
+                part_vendeur         NUMERIC(14,2),
+                part_partenaire      NUMERIC(14,2),
+                part_maison          NUMERIC(14,2),
+                commission           NUMERIC(14,2),
+                taux_commission      NUMERIC(6,4),
+                note                 TEXT,
+                paye_le              TIMESTAMP,
+                created_at           TIMESTAMP DEFAULT NOW()
+              )`,
+    },
+    {
+        nom: "paiements (index)",
+        sql: `CREATE INDEX IF NOT EXISTS idx_paiements_statut
+              ON paiements (statut, created_at DESC)`,
+    },
+    {
+        nom: "paiements (index communauté)",
+        // « Combien a-t-elle gagné ce mois-ci ? » est la question qu'on
+        // posera le plus souvent à cette table.
+        sql: `CREATE INDEX IF NOT EXISTS idx_paiements_communaute
+              ON paiements (communaute, statut, paye_le DESC)`,
+    },
 ];
 
 async function appliquer() {
