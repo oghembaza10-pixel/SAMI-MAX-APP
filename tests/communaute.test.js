@@ -44,9 +44,14 @@ const PUBLICATIONS = [{
     contenu: "Ma formation est en ligne.", created_at: new Date(), epingle: false,
     nb_likes: 3, nb_commentaires: 1, jaime: false, apercu_commentaires: [],
 }];
+// Ce que la page a VRAIMENT demandé à la base : on garde les requêtes pour
+// pouvoir vérifier qu'elles filtrent bien par communauté.
+const REQUETES = [];
+
 Module.prototype.require = function (nom) {
     if (nom === "../services/db") return {
-        query: async (q) => {
+        query: async (q, p) => {
+            REQUETES.push({ sql: q, params: p || [] });
             if (/FROM publications p/.test(q)) return PUBLICATIONS;
             if (/score_grade/.test(q)) return [{ id: "u2", prenom: "M", nom: "K", grade_actuel: "C", score_grade: 10, type_compte: "marchand" }];
             if (/DISTINCT ON \(s\.auteur_id\)/.test(q)) return [{ auteur_id: "u9", prenom: "Ines", nom: "A", created_at: new Date(), vue: false }];
@@ -135,6 +140,22 @@ function liensSortants(html, slug) {
         verifier(/id="composerText"/.test(membre),
             `/c/${slug} : un membre connecté devrait voir le champ de publication`);
 
+        // ── 2 bis. Son fil est le SIEN ──────────────────────────────────
+        // « Dans l'application il y'a rien. » Le fil n'était filtré par
+        // aucune communauté : ce qu'un membre publiait chez elle atterrissait
+        // dans notre communauté, et le nôtre s'affichait chez elle. Elle
+        // avait notre marque en moins et notre contenu quand même.
+        REQUETES.length = 0;
+        await rendre(slug, true);
+        const filDuFil = REQUETES.find((r) => /FROM publications p/.test(r.sql));
+        verifier(!!filDuFil, `/c/${slug} : le fil n'est plus lu du tout`);
+        if (filDuFil) {
+            verifier(/communaute/.test(filDuFil.sql),
+                `/c/${slug} : le fil ne filtre par aucune communauté — ce qui est publié chez elle s'affiche chez nous, et inversement`);
+            verifier(filDuFil.params.includes(slug),
+                `/c/${slug} : le fil est filtré, mais pas sur SON identifiant (${JSON.stringify(filDuFil.params)})`);
+        }
+
         // ── 3. Son application lui appartient ────────────────────────────
         const com = communautes.get(slug);
         if (com.app) {
@@ -144,6 +165,25 @@ function liensSortants(html, slug) {
                 `/c/${slug} : la page pointe encore vers le manifeste d'OG Technology`);
         }
     }
+
+    // ── 3 bis. L'adresse fait foi, jamais la session ─────────────────────
+    // Quelqu'un qui visite /c/coindudigital garde le slug en session — c'est
+    // ce qui lui fait retrouver sa communauté après inscription. Mais si la
+    // page se fiait à cette mémoire, revenir sur /community afficherait SA
+    // communauté à la place de la nôtre : l'adresse dirait une chose, la
+    // page en montrerait une autre.
+    const collant = await new Promise((resolve) => {
+        const req = {
+            params: {}, query: {},
+            session: { loggedIn: true, userId: "u1", nom: "O G", communaute: "coindudigital" },
+        };
+        const res = { send: resolve, redirect: () => resolve("REDIRIGÉ") };
+        let i = 0;
+        const next = () => { const h = poignees[i++]; if (h) h(req, res, next); };
+        next();
+    });
+    verifier(!/Le Coin Du Digital/.test(collant),
+        "/community affiche la communauté gardée en session au lieu de la maison — l'adresse et la page ne disent pas la même chose");
 
     // ── 4. La communauté maison n'a pas été abîmée ───────────────────────
     const maison = await rendre(null, true);

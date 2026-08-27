@@ -26,9 +26,22 @@ function lectureOuverte(req, res, next) { next(); }
 
 // La communauté demandée : /c/<slug> la pose, la session s'en souvient le
 // temps de la visite pour que « publier » revienne au bon endroit.
+// Pour les ACTIONS (publier, commenter) : il n'y a ni slug ni query dans le
+// corps d'un POST, la session est la seule mémoire de l'endroit où l'on est.
 function communauteDe(req) {
     const demandee = req.params?.slug || req.query?.c || req.session?.communaute;
     return communautes.get(demandee);
+}
+
+// Pour la PAGE : l'adresse fait foi, jamais la session.
+//
+// Avec la session en dernier recours, quelqu'un qui visitait /c/coindudigital
+// puis revenait sur /community voyait SA communauté à la place de la nôtre —
+// l'adresse disait une chose, la page en montrait une autre. Ça ne se voyait
+// pas tant que le fil était commun aux deux ; maintenant que chacune a le
+// sien, ça se verrait tout de suite.
+function communauteDeLaPage(req) {
+    return communautes.get(req.params?.slug || req.query?.c);
 }
 function escapeHtml(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
 function timeAgo(date) {
@@ -50,6 +63,73 @@ const CATEGORIES = {
     publication: { label:"Publication", icon:"message-square", couleur:"#7f96a8", modules:["community"] },
 };
 function catInfo(c){ return CATEGORIES[c] || CATEGORIES.publication; }
+
+// ==========================================================================
+// LE PREMIER JOUR D'UNE COMMUNAUTÉ
+//
+// « Dans l'application il y'a rien. » Elle avait raison, et ce n'était pas
+// une panne : le fil était vide, et une communauté vide affichait un cadre
+// en pointillés avec écrit « Aucune publication pour l'instant ».
+//
+// Toute communauté commence vide — un groupe Facebook aussi. La différence,
+// c'est qu'un groupe Facebook vide ne donne pas l'impression d'être cassé.
+// Un écran qui annonce son propre vide ne fait rien : il ne dit pas où on
+// est, ni ce qu'on y trouvera, ni quoi faire dans les dix secondes qui
+// suivent. C'est le seul écran que verront les tout premiers visiteurs,
+// ceux qui arrivent par le lien posté en story — autant qu'il travaille.
+//
+// DEUX PUBLICS, DEUX BESOINS.
+//   - Le visiteur arrive d'Instagram ou de WhatsApp et ne sait pas encore
+//     où il a atterri. Il lui faut : c'est quoi ici, et qu'est-ce que j'y
+//     gagne.
+//   - Le membre — elle, en premier — a besoin d'un premier geste évident.
+//     La page ouverte devant un champ vide, on ne poste pas ; avec trois
+//     amorces à toucher, si.
+//
+// On n'invente rien sur elle : le texte de positionnement vient de sa propre
+// fiche professionnelle, repris dans config/communautes.js.
+// ==========================================================================
+const AMORCES = [
+    { icone: "sparkles",       texte: "L'outil que j'utilise tous les jours et que personne ne connaît :" },
+    { icone: "graduation-cap", texte: "Ce que j'aurais aimé savoir quand j'ai commencé :" },
+    { icone: "shopping-bag",   texte: "Ce que je propose en ce moment :" },
+];
+
+function filVide(COM, connecte) {
+    // Le visiteur a déjà lu « Bienvenue sur … » juste au-dessus, dans le bloc
+    // d'invitation. Répéter un accueil et un bouton ferait deux cartes qui
+    // disent la même chose : celle-ci enchaîne au lieu de recommencer.
+    if (!connecte) {
+        return `
+<div class="depart">
+  <div class="depart-h">
+    <span class="depart-pastille">${escapeHtml(COM.sigle)}</span>
+    <h3>Ce que tu trouveras ici</h3>
+    <p>${escapeHtml(COM.moteurTexte)}</p>
+  </div>
+  <ul class="depart-l">
+    <li><i data-lucide="message-square"></i><div><b>On partage ce qu'on trouve</b><span>Un outil, une astuce, une opportunité — publier ne coûte rien.</span></div></li>
+    <li><i data-lucide="shopping-bag"></i><div><b>On vend ce qu'on fait</b><span>Formations, ressources, services : ton offre se met en ligne ici.</span></div></li>
+    <li><i data-lucide="users"></i><div><b>Tu es parmi les premiers</b><span>Les premières publications donnent le ton. Autant que ce soit la tienne.</span></div></li>
+  </ul>
+</div>`;
+    }
+
+    return `
+<div class="depart">
+  <div class="depart-h">
+    <h3>Ouvre le bal</h3>
+    <p>${escapeHtml(COM.vide)}</p>
+  </div>
+  <div class="depart-amorces">
+    ${AMORCES.map((a) => `
+    <button type="button" class="amorce" data-amorce="${escapeHtml(a.texte)}">
+      <i data-lucide="${a.icone}"></i><span>${escapeHtml(a.texte)}</span>
+    </button>`).join("")}
+  </div>
+  <span class="depart-note">Touche une amorce : elle se met dans le champ du haut, tu finis la phrase.</span>
+</div>`;
+}
 
 const MODULES_INFO = {
     community:   { label:"Communauté",  icon:"users" },
@@ -95,7 +175,7 @@ router.get("/:slug/manifest.json", (req, res) => {
 });
 
 router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
-    const COM = communauteDe(req);
+    const COM = communauteDeLaPage(req);
     if (req.params?.slug && req.session) req.session.communaute = COM.slug;
     const connecte = !!req.session?.loggedIn;
     let publications = [], classement = [], stats = { membres:0, publications:0 }, tendances = [];
@@ -107,8 +187,14 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
                 (SELECT COUNT(*) FROM publications_commentaires pc WHERE pc.publication_id=p.id) AS nb_commentaires,
                 EXISTS(SELECT 1 FROM publications_likes pl2 WHERE pl2.publication_id=p.id AND pl2.user_id=$1) AS jaime
             FROM publications p LEFT JOIN utilisateurs u ON u.id=p.auteur_id
+            -- Chacune chez soi. Sans ce filtre, le fil est global : ce qu'un
+            -- membre publie chez une partenaire s'affiche dans notre
+            -- communauté, et inversement. Le COALESCE range les publications
+            -- d'avant la colonne dans la maison, ce qui est exact — tout ce
+            -- qui a été publié jusqu'ici l'a été chez nous.
+            WHERE COALESCE(p.communaute, $3) = $2
             ORDER BY p.epingle DESC, p.created_at DESC LIMIT 40
-        `, [req.session.userId || ""]);
+        `, [req.session.userId || "", COM.slug, communautes.DEFAUT]);
         publications = rows;
         for (const pub of publications) {
             const comms = await db.query(`SELECT pc.*, u.prenom, u.nom FROM publications_commentaires pc LEFT JOIN utilisateurs u ON u.id=pc.auteur_id WHERE pc.publication_id=$1 ORDER BY pc.created_at ASC LIMIT 2`, [pub.id]);
@@ -133,8 +219,17 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
 
     try {
         const cRows = await db.query(`SELECT COUNT(*) AS total FROM utilisateurs`); stats.membres = parseInt(cRows[0]?.total||0,10);
-        const pRows = await db.query(`SELECT COUNT(*) AS total FROM publications`); stats.publications = parseInt(pRows[0]?.total||0,10);
-        tendances = await db.query(`SELECT categorie, COUNT(*) AS total FROM publications GROUP BY categorie ORDER BY total DESC LIMIT 3`);
+        // Comptés chez elle, pas chez nous : afficher notre total sur sa page
+        // serait un chiffre flatteur et faux.
+        const pRows = await db.query(
+            `SELECT COUNT(*) AS total FROM publications WHERE COALESCE(communaute,$2) = $1`,
+            [COM.slug, communautes.DEFAUT]);
+        stats.publications = parseInt(pRows[0]?.total||0,10);
+        tendances = await db.query(
+            `SELECT categorie, COUNT(*) AS total FROM publications
+             WHERE COALESCE(communaute,$2) = $1
+             GROUP BY categorie ORDER BY total DESC LIMIT 3`,
+            [COM.slug, communautes.DEFAUT]);
     } catch (err) { console.warn("⚠️ stats :", err.message); }
 
     const catButtonsHtml = Object.entries(CATEGORIES).map(([key,c]) => `
@@ -187,7 +282,7 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
                 <button type="button" onclick="postComment(${p.id})"><i data-lucide="send"></i></button>
             </div>
         </article>`;
-    }).join("") : `<div class="empty-feed"><i data-lucide="message-square-dashed"></i><h3>Aucune publication pour l'instant</h3><p>${escapeHtml(COM.vide)}</p></div>`;
+    }).join("") : filVide(COM, connecte);
 
     const classementHtml = classement.length ? classement.map((u,i) => `
         <${COM.ecosysteme ? `a class="rank-item" href="/vitrine/${encodeURIComponent(u.id)}"` : `div class="rank-item"`}><span class="rank-num rank-${i+1}">${i+1}</span><div class="rank-avatar">${initiales(u.prenom,u.nom)}</div>
@@ -325,6 +420,13 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .offre-boost b{display:block;font-size:13.5px;color:var(--text);}
 .offre-boost span{font-size:11.5px;color:var(--muted);}
 .offre-boost .px{margin-left:auto;font-weight:800;color:var(--gold);font-size:14px;white-space:nowrap;}
+.boost-suite{margin-top:16px;padding:14px;border:1px solid var(--border);border-radius:13px;background:rgba(0,0,0,.2);}
+.boost-suite[hidden]{display:none;}
+.boost-suite b{display:block;color:var(--gold);font-size:13.5px;margin-bottom:7px;}
+.boost-suite p{margin:0 0 8px;font-size:12.5px;color:var(--muted);line-height:1.6;}
+.boost-suite p:last-child{margin-bottom:0;}
+.boost-ok{color:var(--text)!important;}
+.boost-rate{color:#ff8fa3!important;}
 .sheet-fermer{margin-top:14px;width:100%;padding:11px;border-radius:11px;background:transparent;
   border:1px solid var(--border);color:var(--muted);font-size:12.5px;}
 
@@ -394,6 +496,24 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .comment-box button svg{width:15px;height:15px;}
 .empty-feed{text-align:center;padding:80px 20px;border:1px dashed var(--border);border-radius:20px;color:var(--muted);}
 .empty-feed svg{width:44px;height:44px;color:var(--blue);margin-bottom:14px;}
+/* Le premier écran d'une communauté encore vide. Volontairement plein :
+   c'est le seul que verront ses tout premiers visiteurs. */
+.depart{border:1px solid var(--border);border-radius:20px;padding:26px 22px;background:var(--panel);}
+.depart-h{text-align:center;margin-bottom:22px;}
+.depart-pastille{display:inline-grid;place-items:center;width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--blue-2));color:var(--bg);font-weight:800;font-size:15px;margin-bottom:12px;}
+.depart-h h3{margin:0 0 6px;font-size:19px;}
+.depart-h p{margin:0;color:var(--muted);font-size:13px;line-height:1.6;}
+.depart-l{list-style:none;margin:0 0 22px;padding:0;display:grid;gap:12px;}
+.depart-l li{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border:1px solid var(--border);border-radius:14px;background:rgba(0,0,0,.16);}
+.depart-l svg{width:19px;height:19px;color:var(--blue);flex:none;margin-top:2px;}
+.depart-l b{display:block;font-size:13.5px;margin-bottom:2px;}
+.depart-l span{color:var(--muted);font-size:12.5px;line-height:1.55;}
+.depart-btn{display:block;text-align:center;padding:14px;border-radius:13px;background:linear-gradient(135deg,var(--blue),var(--gold));color:var(--bg);font-weight:800;font-size:14px;text-decoration:none;}
+.depart-note{display:block;text-align:center;color:var(--muted);font-size:11.5px;margin-top:12px;line-height:1.5;}
+.depart-amorces{display:grid;gap:10px;}
+.amorce{display:flex;gap:11px;align-items:center;width:100%;text-align:left;padding:14px;border:1px solid var(--border);border-radius:14px;background:rgba(0,0,0,.16);color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;transition:.15s;}
+.amorce:hover{border-color:var(--blue);transform:translateY(-1px);}
+.amorce svg{width:18px;height:18px;color:var(--gold);flex:none;}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:#0c1a28;border:1px solid var(--blue);color:var(--text);padding:12px 22px;border-radius:12px;font-size:12px;z-index:900;opacity:0;transition:.3s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .mobile-nav{display:none;}
@@ -515,6 +635,18 @@ ${!connecte ? `
   <div class="offre-boost" data-boost="24h"><div><b>24 heures</b><span>Pour un lancement, une promo du jour</span></div><span class="px">1 000 FCFA</span></div>
   <div class="offre-boost" data-boost="7j"><div><b>7 jours</b><span>Le plus pris — laisse le temps aux gens de voir</span></div><span class="px">5 000 FCFA</span></div>
   <div class="offre-boost" data-boost="30j"><div><b>30 jours</b><span>Pour une formation, une offre permanente</span></div><span class="px">15 000 FCFA</span></div>
+  <!-- Ce qui se passe après le choix, DANS la fiche et sans la fermer.
+       Avant, la fiche se refermait toute seule et un message passait une
+       seconde en bas de l'écran : de son côté, on clique et rien ne se
+       passe. Le paiement n'est pas branché — autant le dire à l'endroit
+       où la question est posée, et le dire assez longtemps pour être lu. -->
+  <div class="boost-suite" id="boostSuite" hidden>
+    <b id="boostChoixNom"></b>
+    <p>Le paiement mobile — Orange Money, MTN — n'est pas encore branché. C'est la dernière pièce qui manque, et elle ne dépend plus du code.</p>
+    <!-- Sans genre : cette phrase s'affiche à tout le monde, pas seulement
+         à la créatrice qui a ouvert la communauté. -->
+    <p class="boost-ok" id="boostNote">Ton choix est noté. On te prévient dès que la mise en avant s'ouvre.</p>
+  </div>
   <button class="sheet-fermer" onclick="fermerBoost()">Fermer</button>
 </div>
 
@@ -557,10 +689,29 @@ document.querySelectorAll("[data-boost]").forEach(function(el){
     document.querySelectorAll("[data-boost]").forEach(function(o){ o.classList.remove("choisi"); });
     el.classList.add("choisi");
     boostChoisi = el.dataset.boost;
-    setTimeout(function(){
-      fermerBoost();
-      showToast("Mise en avant " + boostChoisi + " retenue — le paiement mobile arrive très bientôt.");
-    }, 260);
+
+    const suite = document.getElementById("boostSuite");
+    const note  = document.getElementById("boostNote");
+    document.getElementById("boostChoixNom").textContent =
+        "Mise en avant " + el.querySelector("b").textContent + " — " + el.querySelector(".px").textContent;
+    suite.hidden = false;
+
+    // On enregistre vraiment l'intention. Sans ça, le jour où le paiement
+    // s'ouvre, on ne sait pas à qui écrire — et ceux qui ont essayé les
+    // premiers sont précisément ceux qu'il faut rappeler.
+    fetch("/community/boost/interet", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ duree: boostChoisi }),
+    })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (!d || !d.success) throw new Error("non enregistré");
+      })
+      .catch(function(){
+        // On ne prétend pas avoir noté quelque chose qu'on n'a pas noté.
+        note.textContent = "Ton choix n'a pas pu être enregistré — écris-nous et on te met sur la liste.";
+        note.classList.add("boost-rate");
+      });
   });
 });
 document.addEventListener("keydown", function(e){ if(e.key==="Escape") fermerBoost(); });
@@ -705,6 +856,20 @@ document.getElementById("fileInput").addEventListener("change",async function(){
 });
 function removeUpload(){uploadedImageUrl="";uploadedVideoUrl="";document.getElementById("uploadPreview").style.display="none";document.getElementById("uploadPreview").innerHTML="";document.getElementById("fileInput").value="";}
 
+// Les amorces du premier écran. Toucher une phrase la met dans le champ du
+// haut, curseur à la fin, prêt à finir la phrase : devant un champ vide on
+// ne poste pas, devant une phrase commencée si.
+document.querySelectorAll(".amorce").forEach(function(b){
+    b.addEventListener("click",function(){
+        const champ=document.getElementById("composerText");
+        if(!champ) return;
+        champ.value=this.dataset.amorce+" ";
+        champ.focus();
+        champ.setSelectionRange(champ.value.length,champ.value.length);
+        champ.scrollIntoView({behavior:"smooth",block:"center"});
+    });
+});
+
 document.getElementById("composerSubmit").addEventListener("click",async function(){
     const contenu=document.getElementById("composerText").value.trim();
     if(!contenu && !uploadedImageUrl && !uploadedVideoUrl){ showToast("Écris quelque chose ou ajoute un fichier."); return; }
@@ -776,9 +941,14 @@ router.post("/publier", requireAuth, async (req, res) => {
         const cat = CATEGORIES[categorie] ? categorie : "publication";
         const nomAuteur = (req.session.nom || "Membre SAMII").trim();
 
+        // Où l'on publie. Le lecteur du fil filtre là-dessus : si on ne
+        // l'écrit pas ici, ce qu'un membre poste chez une partenaire
+        // atterrit dans notre communauté et disparaît de la sienne.
+        const COM = communauteDe(req);
+
         const insertRes = await db.query(
-            `INSERT INTO publications (auteur_id, contenu, image_url, video_url, categorie, type) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-            [req.session.userId, contenu||"", image_url||null, video_url||null, cat, video_url?"video":image_url?"image":"texte"]
+            `INSERT INTO publications (auteur_id, contenu, image_url, video_url, categorie, type, communaute) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+            [req.session.userId, contenu||"", image_url||null, video_url||null, cat, video_url?"video":image_url?"image":"texte", COM.slug]
         );
         const publicationId = insertRes[0]?.id;
         const pub = { contenu, image_url, video_url, categorie: cat };
@@ -812,6 +982,39 @@ router.post("/publier", requireAuth, async (req, res) => {
 
         res.json({ success:true });
     } catch (err) { console.error("❌ publier :", err.message); res.json({ success:false, error:"Erreur serveur." }); }
+});
+
+// ── QUI VOULAIT PAYER, ET N'A PAS PU ────────────────────────────────────
+// Le paiement mobile n'est pas branché. Ceux qui choisissent quand même une
+// mise en avant sont la meilleure liste qui existe : ils ont vu le prix et
+// ils ont dit oui. Le jour où Orange Money et MTN s'ouvrent, ce sont eux
+// qu'on rappelle en premier — encore faut-il les avoir notés.
+const DUREES_BOOST = { "24h": 1000, "7j": 5000, "30j": 15000 };
+
+router.post("/boost/interet", requireAuth, async (req, res) => {
+    try {
+        const duree = String(req.body?.duree || "");
+        // Le prix vient d'ici, jamais du navigateur : sinon n'importe qui
+        // pourrait déclarer avoir voulu payer 1 FCFA.
+        if (!Object.prototype.hasOwnProperty.call(DUREES_BOOST, duree)) {
+            return res.json({ success: false, error: "Durée inconnue." });
+        }
+        await db.query(
+            `INSERT INTO journal (action, details) VALUES ($1, $2)`,
+            ["boost.interet", JSON.stringify({
+                userId: req.session.userId,
+                nom: req.session.nom || null,
+                communaute: communauteDe(req).slug,
+                duree,
+                montant: DUREES_BOOST[duree],
+                le: new Date().toISOString(),
+            })],
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ boost.interet :", err.message);
+        res.json({ success: false, error: "Non enregistré." });
+    }
 });
 
 router.post("/like/:id", requireAuth, async (req, res) => {

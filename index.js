@@ -442,4 +442,10 @@ app.get("/test-telegram", async (req, res) => {
 server.listen(CONFIG.PORT, () => {
     console.log("🚀 SAMII OS démarre...");
     console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
+    // Les colonnes ajoutées depuis le dernier déploiement. Lancé APRÈS
+    // l'écoute, jamais avant : le site répond même si la base traîne, et une
+    // migration qui échoue ne peut pas empêcher le serveur de se lever.
+    require("./services/migrations").appliquer().catch((err) => {
+        console.warn("⚠️ migrations :", err.message);
+    });
 });
