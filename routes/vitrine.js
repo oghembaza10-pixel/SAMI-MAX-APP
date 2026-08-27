@@ -16,6 +16,7 @@ const router = express.Router();
 const db = require("../services/db");
 const geminiService = require("../services/geminiService");
 const SAMII_VITRINE_PROMPT = require("../brain/prompts/vitrine");
+const { renderVitrine } = require("./vitrine-page");
 
 // 15 messages / 30 min par IP. Un visiteur sincère qui pose des questions
 // n'en envoie jamais autant ; au-delà c'est du test de charge ou de l'abus,
@@ -113,4 +114,24 @@ router.post("/chat", vitrineLimiter, async (req, res) => {
     }
 });
 
+// ── LA BOUTIQUE D'UN MARCHAND ───────────────────────────────────────────
+// Publique et volontairement sans compte requis : ce lien se colle dans une
+// story, un statut WhatsApp, une bio Instagram. Un mur de connexion à cet
+// endroit-là, c'est le client perdu avant d'avoir vu le premier produit.
+//
+// Déclarée APRÈS /chat : sinon `/:userId` capterait « chat » comme un
+// identifiant de marchand.
+router.get("/:userId", async (req, res) => {
+    try {
+        await renderVitrine(req.params.userId, req, res);
+    } catch (err) {
+        console.error("❌ GET /vitrine/:userId —", err.message);
+        res.status(500).send("La boutique n'a pas pu s'afficher. Réessaie dans un instant.");
+    }
+});
+
 module.exports = router;
+// `index.js` en a besoin pour servir la vitrine à la racine d'un
+// sous-domaine (maboutique.souverain-store.com) : c'est la même page, seule
+// l'adresse qui y mène change.
+module.exports.renderVitrine = renderVitrine;

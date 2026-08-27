@@ -167,6 +167,24 @@ button[type="submit"] { width:100%; padding:14px; margin-top:20px; border:none; 
     <div class="vm-card" id="boutique" style="margin-top:20px;">
         <h1 style="font-size:17px;margin:0 0 4px;" data-i18n="settings.boutique.title">🏪 Ma boutique</h1>
         <p style="color:var(--muted);font-size:12px;margin:0 0 18px;" data-i18n="settings.boutique.sub">Donne un nom à ta boutique et connecte tes pixels publicitaires pour pouvoir lancer des campagnes.</p>
+
+        <!-- Les deux portes, côte à côte. « Ma vitrine » manquait : le
+             marchand réglait sa boutique sans jamais pouvoir la REGARDER,
+             et donc sans savoir à quoi elle ressemblait vue du client.
+             Le lien s'ouvre dans un onglet à part pour ne pas lui faire
+             perdre le formulaire qu'il est en train de remplir. -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:20px;">
+            <a href="/vitrine/${escapeHtml(user.id)}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);text-decoration:none;">
+                <span style="display:flex;align-items:center;gap:10px;color:var(--text-main);font-size:.88rem;"><i data-lucide="store"></i> <span data-i18n="settings.boutique.voir">Ma vitrine</span></span>
+                <i data-lucide="external-link" style="color:var(--muted);"></i>
+            </a>
+            <a href="/connect/tools" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);text-decoration:none;">
+                <span style="display:flex;align-items:center;gap:10px;color:var(--text-main);font-size:.88rem;"><i data-lucide="plug-zap"></i> <span data-i18n="settings.boutique.outils">Connecter mes outils</span></span>
+                <i data-lucide="chevron-right" style="color:var(--muted);"></i>
+            </a>
+        </div>
+        <p style="color:var(--muted);font-size:11px;margin:-12px 0 18px;" data-i18n="settings.boutique.voirNote">C'est la page que voient tes clients quand tu leur envoies ton lien. Ouvre-la pour vérifier avant de la partager.</p>
+
         <form id="form-boutique">
             <label data-i18n="settings.boutique.label.sousdomaine">Adresse de ta boutique</label>
             <div style="display:flex;align-items:center;gap:6px;">
@@ -350,6 +368,9 @@ const I18N = {
         "settings.compte.premium": "Gérer mon abonnement SAMII Premium",
         "settings.boutique.title": "🏪 Ma boutique",
         "settings.boutique.sub": "Donne un nom à ta boutique et connecte tes pixels publicitaires pour pouvoir lancer des campagnes.",
+        "settings.boutique.voir": "Ma vitrine",
+        "settings.boutique.outils": "Connecter mes outils",
+        "settings.boutique.voirNote": "C'est la page que voient tes clients quand tu leur envoies ton lien. Ouvre-la pour vérifier avant de la partager.",
         "settings.boutique.label.sousdomaine": "Adresse de ta boutique",
         "settings.boutique.ph.sousdomaine": "maboutique",
         "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram) — facultatif",
@@ -408,6 +429,9 @@ const I18N = {
         "settings.compte.premium": "Manage my SAMII Premium subscription",
         "settings.boutique.title": "🏪 My store",
         "settings.boutique.sub": "Name your store and connect your ad pixels so you can run campaigns.",
+        "settings.boutique.voir": "My storefront",
+        "settings.boutique.outils": "Connect my tools",
+        "settings.boutique.voirNote": "This is the page your customers see when you send them your link. Open it and check before you share it.",
         "settings.boutique.label.sousdomaine": "Your store address",
         "settings.boutique.ph.sousdomaine": "mystore",
         "settings.boutique.label.pixelmeta": "Meta Pixel ID (Facebook/Instagram) — optional",
@@ -466,6 +490,9 @@ const I18N = {
         "settings.compte.premium": "إدارة اشتراكي SAMII Premium",
         "settings.boutique.title": "🏪 متجري",
         "settings.boutique.sub": "اختر اسماً لمتجرك واربط بكسلات الإعلانات لتتمكن من إطلاق حملات.",
+        "settings.boutique.voir": "واجهة متجري",
+        "settings.boutique.outils": "ربط أدواتي",
+        "settings.boutique.voirNote": "هذه هي الصفحة التي يراها زبائنك عندما ترسل لهم رابطك. افتحها وتحقق منها قبل مشاركتها.",
         "settings.boutique.label.sousdomaine": "عنوان متجرك",
         "settings.boutique.ph.sousdomaine": "متجري",
         "settings.boutique.label.pixelmeta": "معرّف Meta Pixel (فيسبوك/إنستغرام) — اختياري",
@@ -524,6 +551,9 @@ const I18N = {
         "settings.compte.premium": "管理我的 SAMII Premium 订阅",
         "settings.boutique.title": "🏪 我的店铺",
         "settings.boutique.sub": "为你的店铺命名并连接广告像素，以便投放广告。",
+        "settings.boutique.voir": "我的店铺页面",
+        "settings.boutique.outils": "连接我的工具",
+        "settings.boutique.voirNote": "这是你把链接发出去后客户看到的页面。分享前先打开看一眼。",
         "settings.boutique.label.sousdomaine": "店铺地址",
         "settings.boutique.ph.sousdomaine": "我的店铺",
         "settings.boutique.label.pixelmeta": "Meta 像素 ID（Facebook/Instagram）——可选",
