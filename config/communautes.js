@@ -122,6 +122,23 @@ const COMMUNAUTES = {
 
 const DEFAUT = "samii";
 
+// ── LES ORTHOGRAPHES QUI ARRIVENT VRAIMENT ──────────────────────────────
+//
+// Son lien vit dans une story, un statut WhatsApp, un commentaire. Les gens
+// le retapent de mémoire, et ils le retapent comme ils écrivent son nom :
+// « Le Coin Du Digital » devient naturellement `coin-du-digital`. Ce n'est
+// pas une erreur de leur part, c'est la graphie la plus évidente.
+//
+// Chaque variante renvoie vers l'adresse canonique par une redirection, pour
+// qu'il n'existe qu'UNE seule adresse partagée et référencée.
+const ALIAS = {
+    "coin-du-digital": "coindudigital",
+    "lecoindudigital": "coindudigital",
+    "le-coin-du-digital": "coindudigital",
+    "coindigital": "coindudigital",
+    "coin-digital": "coindudigital",
+};
+
 // Un slug d'URL n'est jamais digne de confiance : il arrive du dehors et
 // sert à choisir un objet. On ne renvoie que ce qui est déclaré ici.
 function get(slug) {
@@ -145,4 +162,16 @@ function liste() {
     return Object.values(COMMUNAUTES);
 }
 
-module.exports = { COMMUNAUTES, DEFAUT, get, existe, styleDe, liste };
+function nettoyer(slug) {
+    return String(slug || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
+}
+
+// L'adresse canonique d'une variante connue, ou null si ce slug est déjà le
+// bon — ou totalement inconnu.
+function alias(slug) {
+    const propre = nettoyer(slug);
+    const cible = ALIAS[propre];
+    return cible && cible !== propre ? cible : null;
+}
+
+module.exports = { COMMUNAUTES, DEFAUT, ALIAS, get, existe, styleDe, liste, alias, nettoyer };

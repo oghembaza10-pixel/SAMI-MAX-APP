@@ -166,6 +166,46 @@ function liensSortants(html, slug) {
         }
     }
 
+    // ── 3 ter. Un lien de travers ne devient pas notre communauté ────────
+    //
+    // `communautes.get()` retombe sur la maison pour tout slug inconnu. Dans
+    // une adresse, ça donnait ceci : /c/coin-du-digital — l'orthographe la
+    // plus naturelle de son nom — répondait 200 en servant NOTRE communauté,
+    // sans un mot. Une créatrice colle son lien en story avec une lettre de
+    // travers et envoie tout son public chez nous, sous une adresse qui a
+    // l'air d'être la sienne.
+    //
+    // Vu de l'extérieur, ça ne ressemble pas à une panne : ça ressemble à
+    // « le site est redevenu comme avant ». C'est pour ça que ça peut durer.
+    async function statut(slug) {
+        return new Promise((resolve) => {
+            const req = { params: { slug }, query: {}, session: {} };
+            let code = 200;
+            const res = {
+                status(c) { code = c; return this; },
+                send: (html) => resolve({ code, html }),
+                redirect: (c, url) => resolve({ code: typeof c === "number" ? c : 302, url: url || c }),
+            };
+            let i = 0;
+            const next = () => { const h = poignees[i++]; if (h) h(req, res, next); };
+            next();
+        });
+    }
+
+    for (const faute of ["coin-du-digital", "nimportequoi", "samii-bis", "qg"]) {
+        const r = await statut(faute);
+        const sert = r.html || "";
+        verifier(!(r.code === 200 && /Communauté SAMII/.test(sert)),
+            `/c/${faute} : une adresse inconnue sert NOTRE communauté en 200 — son public atterrit chez nous sans que rien ne le signale`);
+    }
+
+    // Les orthographes déclarées ramènent à l'adresse unique.
+    for (const [variante, canonique] of Object.entries(communautes.ALIAS)) {
+        const r = await statut(variante);
+        verifier(r.code === 301 && r.url === `/c/${canonique}`,
+            `/c/${variante} devrait rediriger vers /c/${canonique} (reçu ${r.code} ${r.url || ""})`);
+    }
+
     // ── 3 bis. L'adresse fait foi, jamais la session ─────────────────────
     // Quelqu'un qui visite /c/coindudigital garde le slug en session — c'est
     // ce qui lui fait retrouver sa communauté après inscription. Mais si la

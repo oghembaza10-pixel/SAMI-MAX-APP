@@ -89,6 +89,38 @@ function catInfo(c){ return CATEGORIES[c] || CATEGORIES.publication; }
 // On n'invente rien sur elle : le texte de positionnement vient de sa propre
 // fiche professionnelle, repris dans config/communautes.js.
 // ==========================================================================
+// La page servie quand l'adresse ne correspond à aucune communauté. Elle
+// doit faire une chose : dire clairement que ce lien-là ne mène nulle part,
+// au lieu de laisser croire que la communauté a changé de marque. Et donner
+// une sortie — quelqu'un est arrivé ici en cliquant, pas en se trompant.
+function communauteIntrouvable(demande) {
+    const propose = communautes.liste()
+        .filter((c) => c.slug !== communautes.DEFAUT)
+        .map((c) => `<a href="/c/${c.slug}">${escapeHtml(c.nom)}</a>`)
+        .join("");
+    return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cette communauté n'existe pas</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;
+     background:#03060b;color:#f2f7fc;text-align:center;
+     font:15px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+h1{font-size:1.35rem;margin:0 0 10px}
+p{color:#8397ab;max-width:46ch;margin:0 auto 10px}
+code{background:rgba(255,255,255,.07);padding:2px 8px;border-radius:6px;color:#e3b341}
+.l{margin-top:22px;display:grid;gap:9px;justify-items:center}
+a{color:#00d9ff;text-decoration:none;padding:9px 18px;border:1px solid rgba(0,217,255,.25);
+  border-radius:10px;display:inline-block}
+a:hover{border-color:#00d9ff}
+</style></head><body><div>
+<h1>Ce lien ne mène à aucune communauté</h1>
+<p>L'adresse <code>/c/${escapeHtml(demande)}</code> ne correspond à rien. Il y a
+sans doute une lettre de travers dans le lien — vérifie auprès de la personne
+qui te l'a envoyé.</p>
+<div class="l">${propose}</div>
+</div></body></html>`;
+}
+
 const AMORCES = [
     { icone: "sparkles",       texte: "L'outil que j'utilise tous les jours et que personne ne connaît :" },
     { icone: "graduation-cap", texte: "Ce que j'aurais aimé savoir quand j'ai commencé :" },
@@ -175,6 +207,30 @@ router.get("/:slug/manifest.json", (req, res) => {
 });
 
 router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
+    // ── UN SLUG INCONNU NE DEVIENT PAS LA MAISON ────────────────────────
+    //
+    // `communautes.get()` retombe sur la maison pour tout slug qu'il ne
+    // connaît pas. C'est le bon comportement quand le slug vient d'une
+    // session ou d'un ?c= : mieux vaut afficher quelque chose que rien.
+    //
+    // Dans une ADRESSE, c'est un piège. /c/coin-du-digital — l'orthographe
+    // la plus naturelle de son nom — répondait 200 en servant NOTRE
+    // communauté, sans un mot. Une créatrice colle son lien en story avec
+    // une lettre de travers et envoie tout son public chez nous, sous une
+    // adresse qui a l'air d'être la sienne. Rien ne signale la panne : ni
+    // erreur, ni indice. Ça ressemble juste à « le site est redevenu comme
+    // avant ».
+    const demande = req.params?.slug;
+    if (demande) {
+        const canonique = communautes.alias(demande);
+        if (canonique) {
+            // Une variante connue : on ramène vers l'adresse unique, pour
+            // qu'il n'y ait jamais deux URL pour la même communauté.
+            return res.redirect(301, `/c/${canonique}`);
+        }
+        if (!communautes.existe(demande)) return res.status(404).send(communauteIntrouvable(demande));
+    }
+
     const COM = communauteDeLaPage(req);
     if (req.params?.slug && req.session) req.session.communaute = COM.slug;
     const connecte = !!req.session?.loggedIn;
