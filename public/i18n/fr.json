@@ -121,7 +121,14 @@
       "backToQG": "Mon QG",
       "logout": "Déconnexion",
       "api": "API & Webhooks",
-      "apps": "Applications"
+      "apps": "Applications",
+      "more": "Plus",
+      "collapse": "Réduire la sidebar",
+      "samiiActive": "Assistant actif",
+      "vitrine": "Ma Vitrine",
+      "parrainage": "Parrainage",
+      "agence": "QG Agence",
+      "billing": "Abonnement"
     },
     "hero": {
       "eyebrow": "Centre de commandement",

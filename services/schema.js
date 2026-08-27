@@ -310,6 +310,62 @@ const BLOCS = [
             `CREATE INDEX IF NOT EXISTS idx_pf_retraits_compte ON portefeuille_retraits (compte)`,
         ],
     },
+    {
+        // ── Les communautés partenaires ──────────────────────────────────
+        // Une créatrice amène son public sous sa marque. Sans ces deux
+        // colonnes, « chez elle » n'existe qu'en apparence : le fil des
+        // publications était commun aux deux communautés, et le QG de ses
+        // membres était le nôtre dès que leur session se vidait.
+        nom: "communautés partenaires",
+        sql: [
+            // À quelle communauté appartient une publication. Le défaut
+            // « samii » range l'existant chez nous, ce qui est exact : tout
+            // ce qui a été publié jusqu'ici l'a été dans la maison.
+            `ALTER TABLE publications ADD COLUMN IF NOT EXISTS communaute TEXT DEFAULT 'samii'`,
+            `CREATE INDEX IF NOT EXISTS idx_publications_communaute ON publications (communaute, created_at DESC)`,
+            // D'où vient un compte. La session le savait déjà, mais une
+            // session se vide : quelqu'un inscrit chez une partenaire qui
+            // ferme son téléphone et revient trois jours plus tard
+            // retrouvait NOTRE QG, notre marque et nos quatorze modules.
+            `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS communaute TEXT DEFAULT 'samii'`,
+        ],
+    },
+    {
+        // ── Le grand livre des paiements ─────────────────────────────────
+        // Les montants sont en NUMERIC et jamais en flottant : sur de
+        // l'argent, 0.1 + 0.2 qui ne fait pas 0.3 finit par se voir.
+        // `reference` est UNIQUE — c'est elle qui rend une confirmation
+        // rejouable sans danger quand un prestataire réémet sa notification,
+        // ce qu'ils font tous, parfois des dizaines de fois.
+        nom: "paiements",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS paiements (
+                id                    BIGSERIAL PRIMARY KEY,
+                reference             TEXT UNIQUE NOT NULL,
+                reference_fournisseur TEXT,
+                fournisseur           TEXT NOT NULL,
+                statut                TEXT NOT NULL DEFAULT 'en_attente',
+                montant               NUMERIC(14,2) NOT NULL,
+                devise                TEXT NOT NULL,
+                acheteur_id           TEXT,
+                vendeur_id            TEXT,
+                communaute            TEXT DEFAULT 'samii',
+                objet_type            TEXT,
+                objet_id              TEXT,
+                part_vendeur          NUMERIC(14,2),
+                part_partenaire       NUMERIC(14,2),
+                part_maison           NUMERIC(14,2),
+                commission            NUMERIC(14,2),
+                taux_commission       NUMERIC(6,4),
+                note                  TEXT,
+                paye_le               TIMESTAMPTZ,
+                created_at            TIMESTAMPTZ NOT NULL DEFAULT now())`,
+            `CREATE INDEX IF NOT EXISTS idx_paiements_statut ON paiements (statut, created_at DESC)`,
+            // « Combien a-t-elle gagné ce mois-ci ? » est la question qu'on
+            // posera le plus souvent à cette table.
+            `CREATE INDEX IF NOT EXISTS idx_paiements_communaute ON paiements (communaute, statut, paye_le DESC)`,
+        ],
+    },
 ];
 
 // ── Les élargissements de type ───────────────────────────────────────────

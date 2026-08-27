@@ -86,6 +86,11 @@ const COMMUNAUTES = {
         // pour que le calcul existe, PAS un accord. À confirmer avec elle
         // avant la première vraie vente — après, y toucher se négocie.
         commission: { taux: 0.10, partPartenaire: 0.40 },
+        // Ce à quoi ses membres ont droit dans leur QG. Liste blanche : tout
+        // ce qui n'est pas nommé ici n'existe pas pour eux. Un module ajouté
+        // demain au QG de la maison n'apparaîtra pas chez elle tant que
+        // personne ne l'aura décidé — l'oubli va dans le sens sûr.
+        qg: { modules: require("./modules-qg").MINIMAL },
         // Bleu pétrole et or : les couleurs de son logo, plus l'or pour ce
         // qui se paie. Reprises telles quelles depuis sa vitrine.
         couleurs: {

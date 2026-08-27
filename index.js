@@ -45,6 +45,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
+// Un gabarit EJS n'a pas de `require` : ce dont les vues ont besoin doit
+// leur être posé ici. La colonne de gauche du QG se construit à partir de
+// cette liste, filtrée par la communauté du membre.
+app.locals.modulesQg = require("./config/modules-qg");
 app.set("views", path.join(__dirname, "views"));
 
 // ── RATE LIMITING ──────────────────────────────────────
@@ -348,12 +352,24 @@ app.get("/qg", requireAuth, async (req, res) => {
             return clearWorkspaceSession(req, () => res.redirect("/hub"));
         }
 
+        const communautes = require("./config/communautes");
         let themeVisuel = "og";
+        // La communauté du COMPTE, pas celle de la session : c'est elle qui
+        // décide des modules et de la marque affichée dans la colonne de
+        // gauche. Une session se vide, un compte non.
+        let COM = communautes.get(communautes.DEFAUT);
         try {
-            const rows = await db.query(`SELECT theme_visuel FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+            const rows = await db.query(
+                `SELECT theme_visuel, communaute FROM utilisateurs WHERE id = $1`,
+                [req.session.userId],
+            );
             themeVisuel = rows[0]?.theme_visuel || "og";
+            COM = communautes.get(rows[0]?.communaute);
         } catch (err) {
-            console.error("❌ GET /qg (theme_visuel) :", err.message);
+            // La colonne `communaute` peut ne pas encore exister au premier
+            // démarrage qui suit un déploiement : on retombe sur la maison
+            // plutôt que de refuser d'afficher le QG.
+            console.error("❌ GET /qg (profil) :", err.message);
         }
 
         res.render("qg-template", {
@@ -372,6 +388,7 @@ app.get("/qg", requireAuth, async (req, res) => {
             attente     : false,
             vueAgence   : estAgenceProprietaire,
             typeCompte  : req.session.typeCompte || "marchand",
+            communaute  : COM,
         });
     } catch (err) {
         console.error("❌ GET /qg :", err);
@@ -445,10 +462,4 @@ app.get("/test-telegram", async (req, res) => {
 server.listen(CONFIG.PORT, () => {
     console.log("🚀 SAMII OS démarre...");
     console.log(`🚀 SAMII OS lancé sur ${CONFIG.PORT}`);
-    // Les colonnes ajoutées depuis le dernier déploiement. Lancé APRÈS
-    // l'écoute, jamais avant : le site répond même si la base traîne, et une
-    // migration qui échoue ne peut pas empêcher le serveur de se lever.
-    require("./services/migrations").appliquer().catch((err) => {
-        console.warn("⚠️ migrations :", err.message);
-    });
 });

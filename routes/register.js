@@ -22,13 +22,40 @@ function retourCommunaute(req) {
     return "/c/" + slug;
 }
 
+// D'où vient ce compte. `?c=` d'abord — c'est l'intention du lien sur lequel
+// la personne vient de cliquer — puis la session, qui garde la trace de la
+// communauté traversée.
+function communauteDOrigine(req) {
+    const communautes = require("../config/communautes");
+    const demandee = req.query?.c || req.body?.c || req.session?.communaute;
+    return communautes.existe(demandee)
+        ? String(demandee).toLowerCase().replace(/[^a-z0-9-]/g, "")
+        : communautes.DEFAUT;
+}
+
 const TOKEN_VALIDITE_HEURES = 24;
 
 // ── GET /register ──────────────────────────────────────────────
 router.get("/", (req, res) => {
     if (req.session?.loggedIn) {
-        const metier = req.query.metier || "";
-        return res.redirect(`/workspace/create${metier ? `?metier=${metier}` : ""}`);
+        // LE BUG QU'IL A VU. « Ouvrir ma boutique » depuis la communauté
+        // d'une partenaire pointe sur /register?c=<slug>. Déjà connecté, on
+        // filait droit sur /workspace/create — qui finit dans /qg — et le
+        // ?c= était perdu en route. Résultat : depuis sa page, on atterrit
+        // dans NOTRE QG, avec notre marque et nos quatorze modules.
+        //
+        // Le marqueur est recopié pour que la suite du parcours sache d'où
+        // vient cette personne. Écrit aussi en session, parce que
+        // /workspace/create redirige encore une fois derrière.
+        const origine = communauteDOrigine(req);
+        const communautes = require("../config/communautes");
+        if (req.session && origine !== communautes.DEFAUT) req.session.communaute = origine;
+
+        const params = new URLSearchParams();
+        if (req.query.metier) params.set("metier", req.query.metier);
+        if (origine !== communautes.DEFAUT) params.set("c", origine);
+        const suite = params.toString();
+        return res.redirect(`/workspace/create${suite ? `?${suite}` : ""}`);
     }
 
     const metier = req.query.metier || "";
@@ -414,14 +441,18 @@ router.post("/", async (req, res) => {
 
         const nouveauRows = await db.query(
             `INSERT INTO utilisateurs
-                (nom, prenom, email, telephone, metier, type_compte, password_hash, role, statut_acces, last_login, actif, email_verifie, token_verification, token_expire_le, theme_visuel)
+                (nom, prenom, email, telephone, metier, type_compte, password_hash, role, statut_acces, last_login, actif, email_verifie, token_verification, token_expire_le, theme_visuel, communaute)
              VALUES
-                ($1, $2, $3, $4, $5, $6, $7, 'owner', 'actif', CURRENT_DATE, true, false, $8, $9, $10)
+                ($1, $2, $3, $4, $5, $6, $7, 'owner', 'actif', CURRENT_DATE, true, false, $8, $9, $10, $11)
              RETURNING id`,
             [
                 nom, prenom, email, telephone,
                 typeCompte === "marchand" ? (metier || "ecommerce") : "",
                 typeCompte, passwordHash, token, expireLe, themeChoisi,
+                // D'où vient ce compte. Écrit une fois, à la création : une
+                // session se vide, un compte non. Sans ça, quelqu'un inscrit
+                // chez une partenaire retrouve NOTRE QG au retour suivant.
+                communauteDOrigine(req),
             ]
         );
 

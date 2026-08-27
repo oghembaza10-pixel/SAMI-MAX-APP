@@ -1,0 +1,102 @@
+<%#
+  ==========================================================================
+  SAMII OS — LA COLONNE DE GAUCHE DU QG
+
+  Elle était écrite en dur, trois fois, dans trois vues qui avaient déjà
+  divergé : 21 liens dans qg-template, 15 dans connect/outils, 9 dans samii.
+  Ajouter une entrée voulait dire y penser trois fois, et personne n'y
+  pensait trois fois.
+
+  Ici elle est construite à partir de config/modules-qg.js, filtrée par ce
+  à quoi la communauté du membre a droit. La maison a tout ; une partenaire
+  a ce qu'on lui a donné.
+
+  CE QU'IL FAUT PASSER :
+    COM        l'objet communauté (config/communautes.js)
+    actif      l'identifiant du module en cours ("affaires", "connect"…)
+  Facultatif :
+    userId, typeCompte  (viennent de res.locals la plupart du temps)
+  ==========================================================================
+%>
+<%
+// `modulesQg` vient de app.locals (index.js) : un gabarit EJS n'a pas de
+// `require`, et le découvrir en production aurait donné un QG en erreur.
+//
+// Le repli sur la maison n'est pas un détail : le jour où une autre route
+// rendra cette vue sans passer COM, on veut un QG complet plutôt qu'une
+// page blanche. Se tromper en montrant trop à un membre de chez nous est
+// bénin ; refuser d'afficher son QG ne l'est pas.
+const COM = (typeof communaute !== "undefined" && communaute)
+    ? communaute
+    : { slug: "samii", marque: "OG", marqueSuite: "TECHNOLOGY",
+        assistant: "SAMII", ecosysteme: true, qg: null };
+const _ctx = {
+    userId: typeof userId !== "undefined" ? userId : "",
+    typeCompte: typeof typeCompte !== "undefined" ? typeCompte : "",
+};
+const _actif = typeof actif === "undefined" ? "" : actif;
+const _liste = modulesQg.autorises(COM).filter((m) => !m.siAgence || _ctx.typeCompte === "agence");
+const _rang = (r) => _liste.filter((m) => m.rang === r);
+
+// Le nom en haut de la colonne. Chez une partenaire, écrire
+// « OG · TECHNOLOGY » revient à signer notre marque sur un espace qu'on lui
+// a présenté comme le sien.
+const _marque = COM.ecosysteme ? "OG · TECHNOLOGY" : `${COM.marque} ${COM.marqueSuite}`.trim();
+const _accueil = COM.ecosysteme ? "/hub" : `/c/${COM.slug}`;
+
+function _entree(m) {
+    const href = modulesQg.lien(m, COM, _ctx);
+    const classes = [
+        "qg-nav__item",
+        m.rang === "core" ? "qg-nav__item--core" : (m.rang === "more" ? "qg-nav__item--more" : ""),
+        m.id === "assistant" ? "qg-nav__item--samii" : "",
+        m.id === _actif ? "active" : "",
+    ].filter(Boolean).join(" ");
+    const cible = m.nouvelOnglet ? ' target="_blank" rel="noopener"' : "";
+    // Chez une partenaire, l'assistant porte SON nom — le moteur est le
+    // même, c'est l'étiquette qui change.
+    const libelle = m.id === "assistant" ? COM.assistant : m.libelle;
+    return `<a href="${href}" class="${classes}"${cible}>
+        <i data-lucide="${m.icone}"></i><span data-i18n="${m.cle}">${libelle}</span>
+        ${m.pastille ? '<span class="qg-status-dot qg-status-dot--on" id="samii-status-dot" title="Assistant actif" data-i18n-title="qg.nav.samiiActive"></span>' : ""}
+        ${m.badge ? `<span id="${m.badge}" style="color:#3ddc84;"></span>` : ""}
+    </a>`;
+}
+%>
+<aside class="qg-sidebar" id="og-sidebar">
+    <div class="qg-sidebar__top">
+        <a href="<%= _accueil %>" class="qg-logo">
+            <span class="qg-logo__text"><%= _marque %></span>
+        </a>
+        <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar" data-i18n-aria="qg.nav.collapse">
+            <i data-lucide="chevrons-left"></i>
+        </button>
+    </div>
+    <nav class="qg-nav">
+        <% _rang("core").forEach((m) => { %><%- _entree(m) %><% }); %>
+        <% if (_rang("more").length) { %>
+        <button type="button" id="qg-more-toggle" class="qg-nav__item qg-nav__item--core qg-nav__item--more-toggle">
+            <i data-lucide="more-horizontal"></i><span data-i18n="qg.nav.more">Plus</span>
+        </button>
+        <% } %>
+        <% _rang("more").forEach((m) => { %>
+            <% if (m.separateurAvant) { %><div class="qg-nav__divider qg-nav__item--more"></div><% } %>
+            <%- _entree(m) %>
+        <% }); %>
+    </nav>
+    <div class="qg-sidebar__bottom qg-nav__item--more">
+        <% _rang("bas").forEach((m) => { %><%- _entree(m) %><% }); %>
+        <%# La sortie et le choix de langue ne sont pas des modules : ils
+            existent partout, y compris dans le QG le plus réduit. Les
+            retirer enfermerait quelqu'un dans une langue qu'il ne lit pas. %>
+        <a href="/logout" class="qg-nav__item" style="color:#e55;">
+            <i data-lucide="log-out"></i><span data-i18n="qg.nav.logout">Déconnexion</span>
+        </a>
+        <div class="og-lang-switch">
+            <span data-lang-btn="fr">FR</span>
+            <span data-lang-btn="en">EN</span>
+            <span data-lang-btn="ar">AR</span>
+            <span data-lang-btn="zh">ZH</span>
+        </div>
+    </div>
+</aside>

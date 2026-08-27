@@ -196,6 +196,25 @@ for (const hostile of ["https://exemple.test/qg", "//exemple.test", "\\\\exemple
 verifier(navigation.interne("/qg") === true, 'navigation.interne("/qg") devrait être accepté');
 verifier(navigation.interne("/academy/besoins") === true, 'navigation.interne("/academy/besoins") devrait être accepté');
 
+// ── Les modules du QG ────────────────────────────────────────────────────
+// La colonne de gauche du QG est construite à partir de données, et son
+// gabarit écrit `data-i18n="${m.cle}"` — une chaîne calculée, donc invisible
+// à l'analyse du balisage faite plus haut. Quatorze clés étaient sorties de
+// la surveillance sans que rien ne le signale.
+//
+// On surveille donc la SOURCE au lieu du balisage : chaque module déclare
+// une clé, cette clé doit exister dans les quatre langues. C'est plus solide
+// que ce qui existait avant — un module ajouté demain sans traduction est
+// attrapé le jour même.
+const modulesQg = require(path.join(RACINE, "config", "modules-qg"));
+for (const m of modulesQg.MODULES) {
+    const absentes = LANGUES.filter((l) => lireCle(dicos[l], m.cle) === null);
+    verifier(
+        absentes.length === 0,
+        `config/modules-qg.js : le module « ${m.libelle} » promet la clé "${m.cle}", absente de ${absentes.join(", ")}`
+    );
+}
+
 // ── Verdict ──────────────────────────────────────────────────────────────
 if (echecs.length) {
     console.error(`❌ langues : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
