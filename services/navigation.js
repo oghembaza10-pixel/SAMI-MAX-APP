@@ -62,6 +62,14 @@ function retour(req) {
 
 // À poser après le middleware de langue : le libellé se traduit.
 function middleware(req, res, next) {
+    // L'espace d'administration communautaire est volontairement branché ici,
+    // avant les routeurs globaux : il ne réutilise PAS /admin, qui appartient
+    // au fondateur. Le routeur effectue lui-même le contrôle session +
+    // `community_admin` + communauté avant de rendre les chiffres.
+    if (req.path === "/admin/communaute") {
+        return require("../routes/community-admin")(req, res, next);
+    }
+
     const cible = retour(req);
     const L = res.locals.L || ((s) => s);
     res.locals.retourUrl = cible.url;
