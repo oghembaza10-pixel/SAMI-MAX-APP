@@ -414,7 +414,19 @@ app.get("/qg", requireAuth, async (req, res) => {
                 [req.session.userId],
             );
             themeVisuel = rows[0]?.theme_visuel || "og";
-            COM = communautes.get(rows[0]?.communaute);
+            // LE DOMAINE DÉCIDE, PAS LE COMPTE.
+            //
+            // « Pour créer une boutique je tombe dans les QG de OG. » Vrai :
+            // le QG lisait la communauté du COMPTE. Un compte de la maison
+            // qui ouvre son QG depuis le domaine d'une partenaire y voyait
+            // donc NOTRE catalogue complet — Marketplace, Arsenal, Coffre OG,
+            // « OG · TECHNOLOGY » en haut à gauche — sur SON domaine à elle.
+            //
+            // Un service partenaire ne sert qu'une communauté : il porte donc
+            // sa marque pour tout le monde. Qui veut son QG à nous va sur
+            // notre domaine. Sans COMMUNAUTE_PAR_DEFAUT (la maison), on
+            // revient au compte, et rien ne change.
+            COM = communautes.pourLeQG(COMMUNAUTE_HOTE, rows[0]?.communaute);
         } catch (err) {
             // La colonne `communaute` peut ne pas encore exister au premier
             // démarrage qui suit un déploiement : on retombe sur la maison

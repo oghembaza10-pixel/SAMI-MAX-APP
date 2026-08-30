@@ -124,6 +124,37 @@ function marque(html) {
             `/c/${slug} : le lien « communauté » de son QG mène dans la nôtre`);
     }
 
+    // ── 4 bis. Sur son domaine, tout porte SA marque ────────────────────
+    //
+    // « Pour créer une boutique je tombe dans les QG de OG. » Le QG lisait la
+    // communauté du COMPTE. Un compte de la maison — le nôtre, en train de
+    // tester — qui ouvre son QG depuis le domaine d'une partenaire y voyait
+    // donc notre catalogue complet : Marketplace, Arsenal, Coffre OG, et
+    // « OG · TECHNOLOGY » écrit en haut, sur SON domaine à elle.
+    //
+    // La règle : un service partenaire ne sert qu'une communauté, donc il
+    // porte sa marque pour TOUT LE MONDE. Qui veut notre QG vient sur notre
+    // domaine. C'est ce que ce test fige : quelle que soit l'appartenance du
+    // compte, la page rendue sur son service est la sienne.
+    // On teste la DÉCISION elle-même — pas le gabarit, qui reçoit déjà une
+    // communauté toute choisie et ne dirait donc rien de ce bug.
+    const M = communautes.DEFAUT;
+    const cas = [
+        // [service, compte, attendu, ce que ça veut dire]
+        [null, M, M, "la maison, sans service partenaire déclaré : rien ne change"],
+        [null, "coindudigital", "coindudigital", "sur notre domaine, un membre partenaire garde sa communauté"],
+        ["coindudigital", M, "coindudigital", "LE BUG : notre compte sur SON domaine doit voir SON QG"],
+        ["coindudigital", null, "coindudigital", "un compte sans communauté sur son domaine voit le sien"],
+        ["coindudigital", "coindudigital", "coindudigital", "son membre sur son domaine"],
+        [M, "coindudigital", "coindudigital", "« samii » déclaré ne force rien : ce n'est pas une marque partenaire"],
+        ["nimportequoi", M, M, "un service mal configuré retombe sur le compte, il ne casse pas"],
+    ];
+    for (const [service, compte, attendu, pourquoi] of cas) {
+        const obtenu = communautes.pourLeQG(service, compte).slug;
+        verifier(obtenu === attendu,
+            `QG servi par « ${service} » à un compte « ${compte} » → ${obtenu}, attendu ${attendu} (${pourquoi})`);
+    }
+
     // ── 5. Liste blanche, et non liste noire ─────────────────────────────
     // On ajoute un module comme on le ferait demain, sans rien dire à
     // personne. Il doit apparaître chez nous et rester invisible chez elle.

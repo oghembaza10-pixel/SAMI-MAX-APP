@@ -184,6 +184,28 @@ function liste() {
     return Object.values(COMMUNAUTES);
 }
 
+// ── QUELLE MARQUE PORTE CE QG ? ─────────────────────────────────────────
+//
+// « Pour créer une boutique je tombe dans les QG de OG. » Le QG lisait la
+// communauté du COMPTE. Un compte de la maison qui ouvre son QG depuis le
+// domaine d'une partenaire y voyait donc notre catalogue complet, et
+// « OG · TECHNOLOGY » écrit en haut — sur SON domaine à elle.
+//
+// LA RÈGLE : LE DOMAINE DÉCIDE, PAS LE COMPTE. Un service partenaire ne sert
+// qu'une communauté ; il porte donc sa marque pour tout le monde. Qui veut
+// notre QG vient sur notre domaine.
+//
+// Cette décision vit ici, et pas au milieu d'une route, pour une raison
+// précise : c'est elle qui a été fausse, et une décision qu'on ne peut pas
+// tester séparément est une décision qui redeviendra fausse.
+function pourLeQG(communauteHote, communauteDuCompte) {
+    if (communauteHote && existe(communauteHote)) {
+        const h = get(communauteHote);
+        if (h.slug !== DEFAUT) return h;
+    }
+    return get(communauteDuCompte);
+}
+
 function nettoyer(slug) {
     return String(slug || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
 }
@@ -196,4 +218,4 @@ function alias(slug) {
     return cible && cible !== propre ? cible : null;
 }
 
-module.exports = { COMMUNAUTES, DEFAUT, ALIAS, get, existe, styleDe, liste, alias, nettoyer };
+module.exports = { COMMUNAUTES, DEFAUT, ALIAS, get, existe, styleDe, liste, alias, nettoyer, pourLeQG };
