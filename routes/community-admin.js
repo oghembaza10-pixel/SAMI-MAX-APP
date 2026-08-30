@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../services/db");
+const communautes = require("../config/communautes");
 
 const router = express.Router();
 
@@ -33,6 +34,9 @@ router.get("/admin/communaute", async (req, res) => {
         if (!user) return res.status(403).send("Accès réservé aux administrateurs de communauté.");
 
         const community = user.communaute;
+        // Sa marque, pas la nôtre : cette page est SON espace, et
+        // « SAMII · Community Admin » écrit en haut la lui reprend.
+        const COM = communautes.get(community);
         const [members, posts, payments, recentPosts, recentMembers] = await Promise.all([
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE communaute = $1 AND actif = TRUE`, [community]),
             // Les compteurs se lisent dans les tables de likes et de
@@ -51,7 +55,24 @@ router.get("/admin/communaute", async (req, res) => {
                         WHERE px.communaute = $1)::int AS comments,
                        0::int AS shares
                   FROM publications WHERE communaute = $1`, [community]),
-            db.query(`SELECT COUNT(*)::int AS n, COALESCE(SUM(montant),0)::numeric AS total, COALESCE(MAX(devise),'USD') AS devise FROM paiements WHERE communaute = $1 AND LOWER(COALESCE(statut,'')) IN ('paye','paid','success','succeeded','complete','completed')`, [community]),
+            // CE QUI LUI REVIENT, pas seulement ce qui a été encaissé.
+            //
+            // L'argent des ventes arrive sur NOTRE compte Stripe — c'est le
+            // montage convenu. Sa part lui est ensuite reversée. Tant qu'elle
+            // ne voit que le chiffre d'affaires brut, elle n'a aucun moyen de
+            // savoir ce qu'on lui doit : soit elle croit que tout est à elle,
+            // soit elle doit nous croire sur parole. Les deux finissent mal.
+            //
+            // `part_partenaire` est calculée et ÉCRITE au moment de chaque
+            // vente, jamais recalculée après coup. C'est ce chiffre-là qui
+            // fait foi, et c'est celui qu'elle doit voir en premier.
+            db.query(`SELECT COUNT(*)::int AS n,
+                             COALESCE(SUM(montant),0)::numeric AS total,
+                             COALESCE(SUM(part_partenaire),0)::numeric AS du_partenaire,
+                             COALESCE(MAX(devise),'USD') AS devise
+                        FROM paiements
+                       WHERE communaute = $1
+                         AND LOWER(COALESCE(statut,'')) IN ('paye','paid','success','succeeded','complete','completed')`, [community]),
             db.query(`
                 SELECT p.id, p.contenu, p.created_at,
                        (SELECT COUNT(*) FROM publications_likes pl WHERE pl.publication_id = p.id)::int AS like_count,
@@ -72,7 +93,7 @@ router.get("/admin/communaute", async (req, res) => {
 
         res.type("html").send(`<!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Administration — ${esc(community)}</title>
+<title>${esc(COM.nom)} — administration</title>
 <style>
 :root{color-scheme:dark;--bg:#07090d;--panel:#0e1219;--line:#202734;--gold:#d9b45b;--text:#f5f7fb;--muted:#8d97a8;--green:#4ade80;--blue:#48bfff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#151b27 0,#07090d 48%);font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--text)}
@@ -81,15 +102,15 @@ a{color:inherit;text-decoration:none}.wrap{max-width:1280px;margin:auto;padding:
 .two{display:grid;grid-template-columns:1.25fr .75fr;gap:14px;margin-top:14px}.section-title{font-size:17px;font-weight:800;margin-bottom:15px}.row{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-top:1px solid var(--line)}.row:first-of-type{border-top:0}.small{font-size:12px;color:var(--muted)}.metricline{display:flex;gap:24px;margin-top:12px;color:var(--muted);font-size:13px}.metricline b{color:var(--text)}.empty{color:var(--muted);padding:15px 0}.barrow{margin:15px 0}.barhead{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7px}.track{height:9px;border-radius:99px;background:#1a202b;overflow:hidden}.fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--gold))}
 @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}@media(max-width:560px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.actions{width:100%}}
 </style></head><body><main class="wrap">
-<header class="top"><div><div class="eyebrow">SAMII · Community Admin</div><div class="title">${esc(community)}</div><div class="sub">Bonjour ${esc(user.prenom || user.email)} — votre espace d'administration.</div></div><div class="actions"><a class="action" href="/c/${encodeURIComponent(community)}">Voir la communauté</a><span class="badge">ADMIN COMMUNAUTÉ</span></div></header>
+<header class="top"><div><div class="eyebrow">Espace d'administration</div><div class="title">${esc(COM.nom)}</div><div class="sub">Bonjour ${esc(user.prenom || user.email)} — votre espace d'administration.</div></div><div class="actions"><a class="action" href="/c/${encodeURIComponent(community)}">Voir ma communauté</a><span class="badge">ADMIN COMMUNAUTÉ</span></div></header>
 <section class="grid">
 <div class="card"><div class="label">Membres actifs</div><div class="num">${m.n}</div></div>
 <div class="card"><div class="label">Publications</div><div class="num">${p.n}</div><div class="metricline"><span>♥ <b>${p.likes}</b></span><span>💬 <b>${p.comments}</b></span><span>↗ <b>${p.shares}</b></span></div></div>
 <div class="card"><div class="label">Paiements réussis</div><div class="num green">${pay.n}</div></div>
-<div class="card"><div class="label">Ventes / transactions</div><div class="num accent">${pay.n}</div><div class="small">Transactions payées</div></div>
+<div class="card"><div class="label">Ce qui te revient</div><div class="num accent">${Number(pay.du_partenaire || 0).toLocaleString("fr-FR",{maximumFractionDigits:2})} ${esc(pay.devise || "")}</div><div class="small">Sur les ventes déjà encaissées</div></div>
 </section>
 <section class="grid" style="margin-top:14px">
-<div class="card"><div class="label">Chiffre d'affaires</div><div class="num accent">${Number(pay.total || 0).toLocaleString("fr-FR",{maximumFractionDigits:2})} ${esc(pay.devise || "USD")}</div></div>
+<div class="card"><div class="label">Volume encaissé</div><div class="num">${Number(pay.total || 0).toLocaleString("fr-FR",{maximumFractionDigits:2})} ${esc(pay.devise || "")}</div><div class="small">Total des ventes, avant partage</div></div>
 <div class="card"><div class="label">Engagement total</div><div class="num">${engagement}</div></div>
 <div class="card"><div class="label">Taux d'activité</div><div class="num">${m.n ? Math.round((Number(p.n||0)/Number(m.n))*100) : 0}<span style="font-size:18px">%</span></div><div class="small">Publications / membres</div></div>
 </section>
