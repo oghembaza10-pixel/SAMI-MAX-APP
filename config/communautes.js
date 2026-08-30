@@ -91,6 +91,19 @@ const COMMUNAUTES = {
         // demain au QG de la maison n'apparaîtra pas chez elle tant que
         // personne ne l'aura décidé — l'oubli va dans le sens sûr.
         qg: { modules: require("./modules-qg").MINIMAL },
+        // ── QUI ADMINISTRE CETTE COMMUNAUTÉ ──────────────────────────────
+        // Son espace d'administration — membres, publications, ventes, et
+        // ce qui lui revient — s'ouvre à cette adresse-là.
+        //
+        // Déclaré ici plutôt que par une requête SQL à lancer à la main :
+        // un accès qui dépend d'un geste sur la base est un accès que
+        // personne ne sait plus expliquer six mois après, et qu'on ne peut
+        // pas relire. Ici, il se voit.
+        //
+        // ⚠️ À REMPLACER PAR SON ADRESSE RÉELLE avant de lui donner le lien.
+        // Tant que c'est celle-ci, c'est le fondateur qui voit son tableau
+        // de bord, pas elle.
+        admin: "audreyined133@gmail.com",
         // Blanc, blanc cassé, noir — c'est ce qu'elle a demandé.
         //
         // Le fond de page est légèrement cassé (#F7F6F3) et les panneaux sont

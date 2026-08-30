@@ -326,6 +326,15 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     //
     // Trois états, trois propositions. `workspaceId` est posé en session à
     // la connexion pour un marchand : c'est la marque qu'une boutique existe.
+    // Le lien vers SON espace d'administration, visible d'elle seule.
+    // On compare l'adresse de la session à celle déclarée dans la config :
+    // le contrôle réel est refait par la route elle-même, ceci ne fait
+    // qu'éviter d'afficher une porte à ceux qui ne peuvent pas l'ouvrir.
+    const estAdmineDeChezElle = Boolean(
+        connecte && COM.admin && req.session?.email &&
+        String(req.session.email).toLowerCase() === String(COM.admin).toLowerCase()
+    );
+
     const aBoutique = Boolean(connecte && req.session?.workspaceId);
     const boutique = aBoutique
         ? { url: "/qg", icone: "layout-dashboard", libelle: "Ma boutique" }
@@ -531,6 +540,23 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .offre-boost b{display:block;font-size:13.5px;color:var(--text);}
 .offre-boost span{font-size:11.5px;color:var(--muted);}
 .offre-boost .px{margin-left:auto;font-weight:800;color:var(--gold);font-size:14px;white-space:nowrap;}
+.vendre-types{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+.vtype{padding:8px 13px;border-radius:999px;border:1px solid var(--border);background:transparent;
+       color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;}
+.vtype.actif{border-color:var(--blue);color:var(--blue);background:var(--creux);}
+.vlab{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+      margin:12px 0 5px;font-weight:600;}
+.vin{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--border);
+     background:var(--creux);color:var(--text);font:inherit;font-size:13.5px;outline:none;resize:vertical;}
+.vin:focus{border-color:var(--blue);}
+.vprix{display:flex;align-items:center;gap:9px;}
+.vprix span{color:var(--gold);font-weight:700;font-size:13px;white-space:nowrap;}
+.vmsg{min-height:18px;margin-top:10px;font-size:12.5px;color:#ff8fa3;}
+.vmsg.ok{color:var(--gold);}
+.vsubmit{width:100%;margin-top:12px;padding:13px;border:0;border-radius:11px;cursor:pointer;
+         background:linear-gradient(135deg,var(--blue),var(--gold));color:var(--sur-accent);
+         font:inherit;font-weight:800;font-size:14px;}
+.vsubmit:disabled{opacity:.6;cursor:default;}
 .boost-suite{margin-top:16px;padding:14px;border:1px solid var(--border);border-radius:13px;background:var(--creux);}
 .boost-suite[hidden]{display:none;}
 .boost-suite b{display:block;color:var(--gold);font-size:13.5px;margin-bottom:7px;}
@@ -681,6 +707,8 @@ ${COM.ecosysteme ? `<div class="side-panel"><h3><i data-lucide="compass"></i> É
 </div>` : `<div class="side-panel"><h3><i data-lucide="megaphone"></i> Vendre ici</h3>
 <div class="side-text" style="margin-bottom:12px;">${aBoutique ? "Retrouve ta boutique, tes commandes et tes produits." : "Tu as un produit, une formation, un service ? Ouvre ton profil et publie-le. Publier est gratuit ; la mise en avant est payante."}</div>
 <a href="${boutique.url}" class="eco-link-item"><i data-lucide="${boutique.icone}"></i> ${boutique.libelle}</a>
+${estAdmineDeChezElle ? `<a href="/admin/communaute" class="eco-link-item" style="color:var(--gold);"><i data-lucide="gauge"></i> Mon espace d'administration</a>` : ""}
+<a href="#" class="eco-link-item" onclick="ouvrirVendre();return false;"><i data-lucide="tag"></i> Mettre en vente · formation, ebook…</a>
 <a href="#" class="eco-link-item" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant · dès 1 000 FCFA</a>
 </div>
 ${COM.app ? `<div class="side-panel" id="panneauApp">
@@ -744,6 +772,28 @@ ${!connecte ? `
      vendre. Les durées sont courtes exprès — on essaie à petit prix avant
      de reconduire. -->
 <div class="sheet-voile" id="sheetVoile" onclick="fermerBoost()"></div>
+<div class="sheet" id="sheetVendre" role="dialog" aria-label="Mettre en vente">
+  <h3>Mettre en vente</h3>
+  <p class="sheet-p">Ça apparaît dans ta vitrine ET dans le fil de la communauté. Publier est gratuit.</p>
+  <div class="vendre-types">
+    <button type="button" class="vtype actif" data-type="formation">Formation</button>
+    <button type="button" class="vtype" data-type="ebook">Ebook</button>
+    <button type="button" class="vtype" data-type="produit">Produit</button>
+    <button type="button" class="vtype" data-type="service">Service</button>
+  </div>
+  <label class="vlab" for="vTitre">Titre</label>
+  <input class="vin" id="vTitre" maxlength="180" placeholder="Ex : Lancer sa boutique en 7 jours">
+  <label class="vlab" for="vPrix">Prix</label>
+  <div class="vprix"><input class="vin" id="vPrix" inputmode="decimal" placeholder="5000"><span>${escapeHtml(COM.devise || "XAF")}</span></div>
+  <label class="vlab" for="vDesc">Description</label>
+  <textarea class="vin" id="vDesc" rows="3" maxlength="4000" placeholder="Ce que la personne reçoit, en deux phrases."></textarea>
+  <label class="vlab" for="vPhoto">Lien de l'image <span style="text-transform:none;letter-spacing:0">— facultatif</span></label>
+  <input class="vin" id="vPhoto" maxlength="800" placeholder="https://…">
+  <div class="vmsg" id="vMsg"></div>
+  <button class="vsubmit" id="vSubmit" type="button">Mettre en vente</button>
+  <button class="sheet-fermer" onclick="fermerVendre()">Fermer</button>
+</div>
+
 <div class="sheet" id="sheetBoost" role="dialog" aria-label="Mettre en avant">
   <h3>Mettre ta publication en avant</h3>
   <p class="sheet-p">Elle reste en haut du fil et apparaît aux visiteurs qui ne te suivent pas encore. Publier restera toujours gratuit — ceci est pour ceux qui vendent.</p>
@@ -799,6 +849,57 @@ function fermerBoost(){
   document.getElementById("sheetVoile").classList.remove("on");
   document.getElementById("sheetBoost").classList.remove("on");
 }
+// ── Mettre en vente ─────────────────────────────────────────────────────
+let typeVente = "formation";
+function ouvrirVendre(){
+  document.getElementById("sheetVoile").classList.add("on");
+  document.getElementById("sheetVendre").classList.add("on");
+  const t = document.getElementById("vTitre"); if (t) t.focus();
+}
+function fermerVendre(){
+  document.getElementById("sheetVoile").classList.remove("on");
+  document.getElementById("sheetVendre").classList.remove("on");
+}
+document.querySelectorAll(".vtype").forEach(function(b){
+  b.addEventListener("click", function(){
+    document.querySelectorAll(".vtype").forEach(function(o){ o.classList.remove("actif"); });
+    b.classList.add("actif");
+    typeVente = b.dataset.type;
+  });
+});
+const vBouton = document.getElementById("vSubmit");
+if (vBouton) vBouton.addEventListener("click", async function(){
+  const msg = document.getElementById("vMsg");
+  const titre = document.getElementById("vTitre").value.trim();
+  const prix  = document.getElementById("vPrix").value.trim();
+  // On refuse ici avant d'appeler : une erreur immédiate vaut mieux qu'un
+  // aller-retour pour apprendre qu'il manque le titre.
+  if (!titre) { msg.className = "vmsg"; msg.textContent = "Donne un titre."; return; }
+  if (!prix)  { msg.className = "vmsg"; msg.textContent = "Indique un prix — c'est ce qui rend l'offre achetable."; return; }
+  vBouton.disabled = true; msg.className = "vmsg"; msg.textContent = "Un instant…";
+  try {
+    const r = await fetch("/community/vendre", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: typeVente, titre, prix,
+        description: document.getElementById("vDesc").value.trim(),
+        photo_url: document.getElementById("vPhoto").value.trim(),
+      }),
+    });
+    const d = await r.json();
+    if (d.success) {
+      msg.className = "vmsg ok";
+      msg.textContent = "En ligne — dans ta vitrine et dans le fil.";
+      setTimeout(function(){ window.location.reload(); }, 900);
+      return;
+    }
+    msg.textContent = d.error || "Impossible pour l'instant.";
+  } catch (e) {
+    msg.textContent = "Connexion perdue. Réessaie.";
+  }
+  vBouton.disabled = false;
+});
+
 document.querySelectorAll("[data-boost]").forEach(function(el){
   el.addEventListener("click", function(){
     document.querySelectorAll("[data-boost]").forEach(function(o){ o.classList.remove("choisi"); });
@@ -829,7 +930,7 @@ document.querySelectorAll("[data-boost]").forEach(function(el){
       });
   });
 });
-document.addEventListener("keydown", function(e){ if(e.key==="Escape") fermerBoost(); });
+document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ fermerBoost(); fermerVendre(); } });
 
 // ── L'application ───────────────────────────────────────────────────────
 // Le navigateur décide seul si une page est installable — et il ne le dit
@@ -1127,6 +1228,93 @@ router.post("/publier", requireAuth, async (req, res) => {
 
         res.json({ success:true });
     } catch (err) { console.error("❌ publier :", err.message); res.json({ success:false, error:"Erreur serveur." }); }
+});
+
+// ── METTRE QUELQUE CHOSE EN VENTE ───────────────────────────────────────
+//
+// « Quand il ajoute ça, ça se trouve dans la communauté. »
+//
+// Publier depuis le composeur existait déjà, et créait bien une annonce —
+// mais avec `prix = NULL`. Une annonce sans prix ne se vend pas : elle
+// s'affiche, on la regarde, et il n'y a rien à faire ensuite. C'est le seul
+// champ qui sépare « je montre » de « je vends », et il manquait.
+//
+// UNE ACTION, DEUX ÉCRITURES, ET C'EST VOULU :
+//   - une ANNONCE, qui alimente sa vitrine et pourra être achetée ;
+//   - une PUBLICATION dans SON fil, pour que sa communauté la voie passer.
+// Vendre sans que personne ne le sache ne sert à rien ; poster sans pouvoir
+// encaisser non plus.
+//
+// Si la publication échoue, l'annonce reste : mieux vaut un produit en
+// vente que personne n'a vu qu'une annonce perdue.
+const TYPES_VENTE = {
+    formation: { label: "Formation",  categorie: "formation" },
+    ebook:     { label: "Ebook",      categorie: "produit"   },
+    produit:   { label: "Produit",    categorie: "produit"   },
+    service:   { label: "Service",    categorie: "service"   },
+};
+
+router.post("/vendre", requireAuth, async (req, res) => {
+    try {
+        const COM = communauteDe(req);
+        const titre = String(req.body?.titre || "").trim().slice(0, 180);
+        const description = String(req.body?.description || "").trim().slice(0, 4000);
+        const photo = String(req.body?.photo_url || "").trim().slice(0, 800);
+        const type = TYPES_VENTE[req.body?.type] ? req.body.type : "produit";
+
+        if (!titre) return res.json({ success: false, error: "Donne un titre à ce que tu vends." });
+
+        // Le prix arrive d'un champ de saisie : espaces, virgule décimale,
+        // « 5.000 » à la française. On normalise avant de refuser.
+        const prixBrut = String(req.body?.prix || "").replace(/\s/g, "").replace(",", ".");
+        const prix = Number(prixBrut);
+        if (!Number.isFinite(prix) || prix <= 0) {
+            return res.json({ success: false, error: "Indique un prix — c'est ce qui rend l'offre achetable." });
+        }
+
+        const nomAuteur = (req.session.nom || "Membre").trim();
+        let pays = null;
+        try {
+            const u = await db.query(`SELECT pays FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+            pays = u[0]?.pays || null;
+        } catch { /* le pays reste facultatif */ }
+
+        // La devise suit la communauté : elle vend en FCFA, pas en dinars.
+        const devise = COM.devise || "XAF";
+
+        const rows = await db.query(
+            `INSERT INTO annonces
+               (titre, categorie, prix, devise, pays, description, photo_url,
+                vendeur_id, vendeur_nom, type_vendeur, section_vitrine, actif)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'particulier',$10,true)
+             RETURNING id`,
+            [titre, TYPES_VENTE[type].categorie, String(prix), devise, pays,
+             description, photo || null, req.session.userId, nomAuteur,
+             TYPES_VENTE[type].label],
+        );
+        const annonceId = rows[0]?.id || null;
+
+        // Et dans son fil, pour que ça existe aux yeux de sa communauté.
+        try {
+            await db.query(
+                `INSERT INTO publications (auteur_id, contenu, image_url, categorie, type, communaute)
+                 VALUES ($1,$2,$3,$4,$5,$6)`,
+                [req.session.userId,
+                 `${TYPES_VENTE[type].label} · ${titre}\n${prix} ${devise}${description ? "\n\n" + description : ""}`,
+                 photo || null, TYPES_VENTE[type].categorie,
+                 photo ? "image" : "texte", COM.slug],
+            );
+        } catch (err) {
+            console.warn("⚠️ vente publiée mais pas annoncée dans le fil :", err.message);
+        }
+
+        try { await gradeService.ajouterPoints(req.session.userId, 5, "Mise en vente"); } catch { /* les points ne bloquent pas une vente */ }
+
+        res.json({ success: true, annonceId, redirect: `/c/${COM.slug}` });
+    } catch (err) {
+        console.error("❌ POST /community/vendre :", err.message);
+        res.json({ success: false, error: "Impossible de mettre en vente pour l'instant." });
+    }
 });
 
 // ── QUI VOULAIT PAYER, ET N'A PAS PU ────────────────────────────────────

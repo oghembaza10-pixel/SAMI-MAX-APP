@@ -24,8 +24,25 @@ async function getCommunityAdmin(req) {
         [req.session.userId]
     );
     const user = rows[0];
-    if (!user || user.role !== "community_admin" || !user.communaute) return null;
-    return user;
+    if (!user) return null;
+
+    // Deux chemins vers cet espace, et c'est volontaire.
+    //
+    // Le rôle `community_admin` en base, pour un accès accordé au cas par
+    // cas. Et l'adresse déclarée dans config/communautes.js, pour que la
+    // créatrice d'une communauté y entre sans qu'on ait à lancer une requête
+    // SQL — un accès qui dépend d'un geste manuel sur la base est un accès
+    // que personne ne sait plus expliquer six mois plus tard.
+    const parRole = user.role === "community_admin" && user.communaute;
+    if (parRole) return user;
+
+    const email = String(user.email || "").toLowerCase();
+    for (const com of communautes.liste()) {
+        if (com.admin && String(com.admin).toLowerCase() === email) {
+            return { ...user, communaute: com.slug };
+        }
+    }
+    return null;
 }
 
 router.get("/admin/communaute", async (req, res) => {
