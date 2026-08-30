@@ -160,6 +160,49 @@ function appeler(chemin, corps = {}, session = {}, params = {}) {
     verifier(!/auteur_id\s*=\s*\$?\{?\s*req\.query/.test(source),
         "le filtre « mon espace » accepte un identifiant fourni dans l'URL — on lirait l'espace de quelqu'un d'autre");
 
+    // ── 5. S'ABONNER À QUELQU'UN ────────────────────────────────────────
+    PUBLICATION = { id: 11, auteur_id: "u-une-vendeuse", communaute: SLUG, contenu: "Ma formation" };
+    REQUETES.length = 0;
+    const abo = await appeler("/abonner/:id", {}, {}, { id: "11" });
+    verifier(abo.success === true, `s'abonner ne marche pas (${JSON.stringify(abo)})`);
+    const ecrit = REQUETES.find((q) => /INSERT INTO/i.test(q.sql));
+    verifier(!!ecrit && ecrit.params.includes("u-une-vendeuse") && ecrit.params.includes(MOI),
+        "l'abonnement n'enregistre pas le bon couple (qui suit qui)");
+    verifier(!!ecrit && ecrit.params.includes(SLUG),
+        "l'abonnement ne porte pas la communauté — un abonnement pris chez elle vaudrait chez nous");
+
+    // On ne s'abonne pas à soi-même : ça n'a aucun sens et ça gonflerait son
+    // propre compteur.
+    PUBLICATION = { id: 12, auteur_id: MOI, communaute: SLUG, contenu: "Ma publication" };
+    REQUETES.length = 0;
+    const soi = await appeler("/abonner/:id", {}, {}, { id: "12" });
+    verifier(soi.success === false, "on peut s'abonner à soi-même");
+    verifier(!REQUETES.find((q) => /INSERT INTO/i.test(q.sql)),
+        "un abonnement à soi-même est quand même écrit en base");
+
+    // ── 6. LA COLLISION DE NOMS, ATTRAPÉE DE JUSTESSE ───────────────────
+    //
+    // La table de cette fonctionnalité s'appelait « abonnements ». Or ce nom
+    // était DÉJÀ PRIS, en production, par la facturation : montant, devise,
+    // date_fin, identifiant Chargily. Rien à voir avec suivre quelqu'un.
+    //
+    // CREATE TABLE IF NOT EXISTS ne se plaint pas dans ce cas : il ne fait
+    // rien, silencieusement. Les requêtes seraient donc parties contre la
+    // table des paiements — et comme le fil lit cette table à chaque
+    // affichage, c'est la page entière de sa communauté qui tombait.
+    //
+    // Trouvé en appliquant le schéma sur la vraie base avant de livrer, pas
+    // en relisant le code.
+    const src = require("fs").readFileSync(path.join(RACINE, "routes", "community.js"), "utf8");
+    const schema = require("fs").readFileSync(path.join(RACINE, "services", "schema.js"), "utf8");
+    for (const [fichier, contenu] of [["routes/community.js", src], ["services/schema.js", schema]]) {
+        // « abonnements » suivi d'un espace, d'une parenthèse ou d'un point :
+        // la table nue. « abonnements_membres » ne correspond pas.
+        const nues = [...contenu.matchAll(/\b(?:FROM|INTO|JOIN|UPDATE|TABLE(?: IF NOT EXISTS)?)\s+abonnements(?![_a-z])/gi)];
+        verifier(nues.length === 0,
+            `${fichier} : ${nues.length} requête(s) visent la table « abonnements » — c'est celle de la FACTURATION. La table des abonnements entre membres s'appelle abonnements_membres.`);
+    }
+
     if (echecs.length) {
         console.error(`❌ publications : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
         for (const e of echecs) console.error("   • " + e);

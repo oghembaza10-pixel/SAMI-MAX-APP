@@ -277,6 +277,58 @@ function marque(html) {
             `/c/${slug} : depuis la page de son assistant, aucun lien ne ramène chez elle`);
     }
 
+    // ── LA BARRE PARTAGÉE DE « CONNECTER MES OUTILS » ────────────────────
+    //
+    // « Qu'est-ce que ça fout chez elle, ça ? On voulait lui laisser Connect
+    // Tools, mais pas ce qu'il y a avec. Là je vois Arsenal, je vois
+    // Marketplace. »
+    //
+    // Cette barre (views/partials/sidebar.ejs) est incluse par DIX vues,
+    // dont /connect/tools — le seul module métier qu'on lui a laissé. Elle
+    // listait Accueil, Marketplace, Academy, Arsenal en dur. La porte
+    // empêchait d'y entrer, mais les liens restaient affichés : on clique,
+    // on rebondit, on croit que c'est cassé.
+    const VUE_BARRE = path.join(RACINE, "views", "partials", "sidebar.ejs");
+    function rendreBarre(slug, viaLeService) {
+        // Les deux façons dont une vue peut recevoir la communauté : passée
+        // par la route, ou seulement posée sur res.locals. Les dix vues qui
+        // incluent cette barre ne la passent pas — c'est le second cas qui
+        // compte le plus.
+        const donnees = viaLeService
+            ? { COM: communautes.get(slug) }
+            : { communaute: communautes.get(slug) };
+        return new Promise((resolve, reject) => {
+            ejs.renderFile(VUE_BARRE, { ...donnees, modulesQg, userId: "u1", typeCompte: "marchand" },
+                { views: [path.join(RACINE, "views")] },
+                (err, html) => (err ? reject(err) : resolve(html)));
+        });
+    }
+    const liensBarre = (html) => [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+
+    for (const viaLeService of [true, false]) {
+        const commentPasse = viaLeService ? "posée par le service" : "passée par la route";
+        const barreMaison = await rendreBarre(communautes.DEFAUT, viaLeService);
+        for (const attendu of ["/hub", "/marketplace", "/academy", "/community", "/discussions", "/arsenal"]) {
+            verifier(liensBarre(barreMaison).includes(attendu),
+                `la barre partagée de la maison a perdu « ${attendu} » (${commentPasse})`);
+        }
+
+        for (const slug of Object.keys(communautes.COMMUNAUTES)) {
+            if (slug === communautes.DEFAUT) continue;
+            const liens = liensBarre(await rendreBarre(slug, viaLeService));
+            for (const interdit of ["/hub", "/marketplace", "/academy", "/community", "/arsenal"]) {
+                verifier(!liens.includes(interdit),
+                    `/c/${slug} : « ${interdit} » est dans la barre de « Connecter mes outils » (${commentPasse}) — le module qu'on lui a laissé lui sert le sommaire de tout le reste`);
+            }
+            verifier(liens.includes(`/c/${slug}`),
+                `/c/${slug} : la barre de « Connecter mes outils » ne ramène pas chez elle (${commentPasse})`);
+            verifier(liens.includes("/logout"),
+                `/c/${slug} : impossible de se déconnecter depuis « Connecter mes outils » (${commentPasse})`);
+        }
+    }
+    verifier(!/og\.png/.test(await rendreBarre("coindudigital", true)),
+        "notre logo est affiché en haut de la barre sur son service");
+
     // ── L'OUBLI DOIT TOMBER DU CÔTÉ SÛR ──────────────────────────────────
     // Les tests ci-dessus prouvent que la colonne est juste quand la route
     // lui passe la communauté. Ils ne prouvent RIEN sur la route qui

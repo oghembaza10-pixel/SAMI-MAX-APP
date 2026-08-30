@@ -27,11 +27,33 @@ function parseMissions(raw) {
     }
 }
 
+// À QUI EST CETTE BOUTIQUE ?
+//
+// Écrit ici, une seule fois, parce que la question se posait à deux
+// endroits qui ne répondaient pas pareil : /qg comparait « owner » au
+// caractère près, /workspace/create cherchait sur « owner ou
+// owner_email ». Quand les deux ne tombaient pas d'accord, la personne
+// faisait des allers-retours entre les deux pages sans jamais arriver.
+function appartientA(workspace, email, session = {}) {
+    if (!workspace) return false;
+    const meme = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+    if (meme(workspace.owner, email) || meme(workspace.ownerEmail, email)) return true;
+    // Une agence gère les boutiques qu'elle a ouvertes pour ses clients.
+    return Boolean(session.typeCompte === "agence" && workspace.agenceId
+        && workspace.agenceId === session.userId);
+}
+
 function mapRow(r) {
     return {
         workspaceId: r.id || "",
         recordId: r.id || "",
         owner: r.owner || r.owner_email || "",
+        // Les DEUX colonnes, pas seulement la première trouvée.
+        // getByOwner() cherche sur « owner OU owner_email » ; si elles
+        // diffèrent (une majuscule, un ancien import), la recherche
+        // trouvait la boutique et le contrôle de propriété la refusait
+        // ensuite — deux pages se renvoyaient la balle indéfiniment.
+        ownerEmail: r.owner_email || "",
         nom: r.nom || "",
         metier: r.metier || "",
         logo: r.logo || "",
@@ -217,6 +239,7 @@ module.exports = {
     getByMetier,
     exists,
     belongsToOwner,
+    appartientA,
     create,
     update,
     getByAgence,

@@ -1,35 +1,74 @@
+<%#
+  ==========================================================================
+  SAMII OS — LA BARRE PARTAGÉE (celle de « Connecter mes outils »)
+
+  « Qu'est-ce que ça fout chez elle, ça ? On voulait lui laisser Connect
+  Tools, mais pas ce qu'il y a avec. Là je vois Arsenal, je vois Marketplace. »
+
+  Exact. Cette barre listait Accueil, Marketplace, Academy, Community,
+  Discussions et Arsenal — écrits en dur, avec notre logo au-dessus. Elle
+  s'affiche sur /connect/tools, qui est PRÉCISÉMENT le module qu'on a
+  décidé de lui laisser. Lui donner Connect Tools revenait donc à lui
+  donner le sommaire de tout le reste.
+
+  La porte empêchait d'y ENTRER, mais les liens restaient affichés : on
+  clique, on rebondit sur son fil, et on croit que c'est cassé. Cacher une
+  page sans retirer son lien, c'est pire que de ne rien cacher.
+
+  Elle lit maintenant le même registre que la colonne du QG. Une communauté
+  voit ce qu'on lui a donné, et rien d'autre — et le jour où on ajoute un
+  module chez nous, il ne débarque pas chez elle.
+%>
+<%
+// Même repli qu'en tête de qg-nav, et pour la même raison : une route qui
+// oublie de passer `communaute` doit retomber sur la communauté DU SERVICE
+// (posée par index.js sur res.locals), pas sur la maison. Sinon l'oubli se
+// paie en « OG · TECHNOLOGY » affiché sur son domaine.
+const _service = (typeof locals !== "undefined" && locals && locals.COM) || null;
+const _COM = (typeof communaute !== "undefined" && communaute)
+    ? communaute
+    : (_service && _service.slug ? _service
+    : { slug: "samii", marque: "OG", marqueSuite: "TECHNOLOGY",
+        assistant: "SAMII", ecosysteme: true, qg: null });
+
+const _ctx = {
+    userId: typeof userId !== "undefined" ? userId : "",
+    typeCompte: typeof typeCompte !== "undefined" ? typeCompte : "",
+};
+// Les entrées de cette barre sont un sous-ensemble du registre : c'est une
+// barre étroite, pas le QG complet. On garde l'ordre d'origine.
+const _BARRE = ["hub", "marketplace", "academy", "communaute", "discussions", "arsenal"];
+const _permis = modulesQg.autorises(_COM);
+const _entrees = _BARRE
+    .map((id) => _permis.find((m) => m.id === id))
+    .filter(Boolean);
+const _actif = typeof actif === "undefined" ? "" : actif;
+%>
 <aside class="og-sidebar">
-    <a href="/hub" class="og-logo">
-        <img src="/og.png" alt="OG">
+    <%# Le logo ramène chez elle, et n'affiche pas le nôtre. %>
+    <a href="<%= _COM.ecosysteme ? "/hub" : ("/c/" + _COM.slug) %>" class="og-logo">
+        <% if (_COM.ecosysteme) { %>
+            <img src="/og.png" alt="OG">
+        <% } else { %>
+            <%# Son sigle à la place de notre logo. Style posé ici : cette
+                barre est incluse par dix vues aux feuilles de style
+                différentes, et une classe ajoutée dans l'une d'elles ne
+                serait présente que dans celle-là. %>
+            <span style="display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#111114;color:#fff;font-weight:800;font-size:13px;letter-spacing:.02em;"><%= _COM.sigle || "" %></span>
+        <% } %>
     </a>
 
     <div class="og-sidebar-divider"></div>
 
     <nav class="og-nav">
-        <a href="/hub" class="og-item active" title="Accueil" data-i18n-title="sidebar.hub">
-            <i data-lucide="layout-grid"></i>
-            <span class="og-item__label" data-i18n="sidebar.hub">Accueil</span>
+        <% _entrees.forEach((m) => { const href = modulesQg.lien(m, _COM, _ctx);
+             const libelle = m.id === "assistant" ? _COM.assistant : m.libelle; %>
+        <a href="<%= href %>" class="og-item<%= m.id === _actif ? " active" : "" %>"
+           title="<%= libelle %>" data-i18n-title="<%= m.cle %>">
+            <i data-lucide="<%= m.icone %>"></i>
+            <span class="og-item__label" data-i18n="<%= m.cle %>"><%= libelle %></span>
         </a>
-        <a href="/marketplace" class="og-item" title="Marketplace" data-i18n-title="sidebar.marketplace">
-            <i data-lucide="store"></i>
-            <span class="og-item__label" data-i18n="sidebar.marketplace">Marketplace</span>
-        </a>
-        <a href="/academy" class="og-item" title="Academy" data-i18n-title="sidebar.academy">
-            <i data-lucide="graduation-cap"></i>
-            <span class="og-item__label" data-i18n="sidebar.academy">Academy</span>
-        </a>
-        <a href="/community" class="og-item" title="Community" data-i18n-title="sidebar.community">
-            <i data-lucide="users"></i>
-            <span class="og-item__label" data-i18n="sidebar.community">Community</span>
-        </a>
-        <a href="/discussions" class="og-item" title="Discussions" data-i18n-title="sidebar.discussions">
-            <i data-lucide="message-circle"></i>
-            <span class="og-item__label" data-i18n="sidebar.discussions">Discussions</span>
-        </a>
-        <a href="/arsenal" class="og-item" title="Arsenal" data-i18n-title="sidebar.arsenal">
-            <i data-lucide="sword"></i>
-            <span class="og-item__label" data-i18n="sidebar.arsenal">Arsenal</span>
-        </a>
+        <% }); %>
     </nav>
 
     <div class="og-sidebar-extra">
@@ -38,6 +77,11 @@
         </a>
         <a href="/settings" class="og-item" title="Paramètres" data-i18n-title="sidebar.settings">
             <i data-lucide="settings"></i>
+        </a>
+        <%# Sortir de son compte : il n'y avait aucun moyen de le faire
+            depuis cette barre non plus. %>
+        <a href="/logout" class="og-item" title="Se déconnecter" data-i18n-title="qg.nav.logout">
+            <i data-lucide="log-out"></i>
         </a>
     </div>
 

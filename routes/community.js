@@ -265,6 +265,9 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     // semaine dernière ne les retrouve plus : elles sont sous cinquante
     // autres. Ici, il ne voit que les siennes.
     const filtreMien = filtre === "mes-publications";
+    // Le fil de ceux qu'on suit : la raison d'être de l'abonnement.
+    // S'abonner sans pouvoir lire ses abonnements ne sert à rien.
+    const filtreAbonnements = filtre === "abonnements";
     const filtreCategorie = CATEGORIES[filtre] ? filtre : null;
 
     try {
@@ -273,7 +276,8 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
                 (SELECT COUNT(*) FROM publications_likes pl WHERE pl.publication_id=p.id) AS nb_likes,
                 (SELECT COUNT(*) FROM publications_commentaires pc WHERE pc.publication_id=p.id) AS nb_commentaires,
                 EXISTS(SELECT 1 FROM publications_likes pl2 WHERE pl2.publication_id=p.id AND pl2.user_id=$1) AS jaime,
-                EXISTS(SELECT 1 FROM publications_enregistrees pe WHERE pe.publication_id=p.id AND pe.user_id=$1) AS enregistre
+                EXISTS(SELECT 1 FROM publications_enregistrees pe WHERE pe.publication_id=p.id AND pe.user_id=$1) AS enregistre,
+                EXISTS(SELECT 1 FROM abonnements_membres ab WHERE ab.auteur_id=p.auteur_id AND ab.abonne_id=$1 AND ab.communaute=$2) AS abonne
             FROM publications p LEFT JOIN utilisateurs u ON u.id=p.auteur_id
             -- Chacune chez soi. Sans ce filtre, le fil est global : ce qu'un
             -- membre publie chez une partenaire s'affiche dans notre
@@ -294,9 +298,14 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
               -- par la page : sans ça, « ?f=mes-publications&qui=<id> »
               -- afficherait l'espace de quelqu'un d'autre.
               AND ($6::boolean IS NULL OR p.auteur_id = $1)
+              AND ($7::boolean IS NULL OR EXISTS(
+                    SELECT 1 FROM abonnements_membres ab2
+                     WHERE ab2.auteur_id = p.auteur_id AND ab2.abonne_id = $1
+                       AND ab2.communaute = $2))
             ORDER BY p.epingle DESC, p.created_at DESC LIMIT 40
         `, [req.session.userId || "", COM.slug, communautes.DEFAUT,
-            filtreCategorie, filtreEnregistres ? true : null, filtreMien ? true : null]);
+            filtreCategorie, filtreEnregistres ? true : null, filtreMien ? true : null,
+            filtreAbonnements ? true : null]);
         publications = rows;
         for (const pub of publications) {
             const comms = await db.query(`SELECT pc.*, u.prenom, u.nom FROM publications_commentaires pc LEFT JOIN utilisateurs u ON u.id=pc.auteur_id WHERE pc.publication_id=$1 ORDER BY pc.created_at ASC LIMIT 2`, [pub.id]);
@@ -419,7 +428,12 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     // espace » sur un compte qui n'a rien publié ressemble à une communauté
     // vide, et « Les produits » sans produit ressemble à une panne.
     const LIBELLES = { produit: "Les produits", formation: "Les formations", service: "Les services" };
-    const enTeteFiltre = filtreMien
+    const enTeteFiltre = filtreAbonnements
+        ? `<div class="bandeau-espace">
+             <div><b>Mes abonnements</b><br><span>${publications.length ? "Ce que publient les personnes que tu suis." : "Tu ne suis encore personne. Le bouton « S'abonner » est à côté de chaque nom."}</span></div>
+             <a href="/c/${COM.slug}">Voir tout le fil →</a>
+           </div>`
+        : filtreMien
         ? `<div class="bandeau-espace">
              <div><b>Mon espace</b><br><span>${publications.length ? `${publications.length} publication${publications.length > 1 ? "s" : ""} à toi` : "Tu n'as encore rien publié ici."}</span></div>
              <a href="/c/${COM.slug}">Voir tout le fil →</a>
@@ -436,6 +450,12 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
                    </div>`
                 : ""));
 
+    // Le bouton ne s'affiche ni sur ses propres publications — on ne
+    // s'abonne pas à soi-même — ni pour un visiteur non connecté, qui n'a
+    // nulle part où ranger l'abonnement.
+    const peutSabonner = (p) => Boolean(
+        connecte && p.auteur_id && String(p.auteur_id) !== String(req.session?.userId));
+
     const feedHtml = publications.length ? publications.map(p => {
         const nomAuteur = escapeHtml(`${p.prenom||"Membre"} ${p.nom||""}`.trim());
         const grade = escapeHtml(p.grade_actuel||"Soldat");
@@ -449,13 +469,14 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
         else if (p.image_url) mediaHtml = `<div class="post-media"><img src="${escapeHtml(p.image_url)}" alt="" loading="lazy"></div>`;
 
         return `
-        <article class="post-card" data-post-id="${p.id}">
+        <article class="post-card" data-post-id="${p.id}" data-auteur-id="${escapeHtml(p.auteur_id || "")}">
             <div class="post-head">
                 ${COM.ecosysteme ? `<a class="post-avatar" href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${initiales(p.prenom,p.nom)}</a>` : `<span class="post-avatar">${initiales(p.prenom,p.nom)}</span>`}
                 <div class="post-authorblock">
                     <div class="post-author">${COM.ecosysteme ? `<a href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${nomAuteur}</a>` : nomAuteur} ${p.epingle?'<i data-lucide="pin" class="pin-ic"></i>':""}</div>
                     <div class="post-meta"><span class="grade-chip ${isMarchand?"grade-chip--gold":""}">${isMarchand?"🏪":"👤"} ${grade}</span><span class="dot-sep">·</span><span>${timeAgo(p.created_at)}</span></div>
                 </div>
+                ${peutSabonner(p) ? `<button class="btn-abonner${p.abonne ? " on" : ""}" type="button" onclick="toggleAbonner(${p.id}, this)">${p.abonne ? "Abonné" : "S'abonner"}</button>` : ""}
                 <span class="cat-badge" style="--cat-color:${cat.couleur};"><i data-lucide="${cat.icon}"></i> ${cat.label}</span>
             </div>
             ${p.contenu?`<p class="post-text">${escapeHtml(p.contenu)}</p>`:""}
@@ -717,6 +738,14 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .post-action-btn--danger,.post-action-btn--mien{flex:0 0 auto;padding:9px 11px;color:var(--muted);}
 .post-action-btn--danger:hover{background:rgba(255,84,112,.1);color:var(--danger);}
 .post-action-btn--mien:hover{background:var(--creux);color:var(--blue);}
+/* « S'abonner » vit dans l'en-tête, à côté du nom — c'est de la personne
+   qu'on parle, pas de la publication. Discret quand c'est déjà fait :
+   « Abonné » est un état, pas une invitation à recliquer. */
+.btn-abonner{padding:6px 12px;border-radius:999px;border:1px solid var(--blue);
+  background:var(--blue);color:var(--sur-accent);font-size:11.5px;font-weight:700;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.btn-abonner.on{background:transparent;color:var(--muted);border-color:var(--border);}
+.btn-abonner:hover{opacity:.85;}
 /* La zone d'édition en place : on corrige là où on lit, sans quitter le
    fil ni perdre les commentaires déjà reçus. */
 .post-edit{display:flex;flex-direction:column;gap:9px;margin:8px 0 4px;}
@@ -841,6 +870,7 @@ ${COM.ecosysteme ? `
 <a href="/academy" class="side-link"><i data-lucide="graduation-cap"></i> Academy</a>` : `
 <a href="/c/${COM.slug}" class="side-link${!filtre ? " active" : ""}"><i data-lucide="users"></i> Le fil</a>
 ${connecte ? `<a href="/c/${COM.slug}?f=mes-publications" class="side-link${filtreMien ? " active" : ""}"><i data-lucide="user"></i> Mon espace</a>` : ""}
+${connecte ? `<a href="/c/${COM.slug}?f=abonnements" class="side-link${filtreAbonnements ? " active" : ""}"><i data-lucide="heart-handshake"></i> Mes abonnements</a>` : ""}
 <div class="side-titre">Parcourir</div>
 <a href="/c/${COM.slug}?f=produit" class="side-link${filtre === "produit" ? " active" : ""}"><i data-lucide="shopping-bag"></i> Les produits</a>
 <a href="/c/${COM.slug}?f=formation" class="side-link${filtre === "formation" ? " active" : ""}"><i data-lucide="graduation-cap"></i> Les formations</a>
@@ -1354,6 +1384,25 @@ document.getElementById("composerSubmit").addEventListener("click",async functio
 async function toggleLike(id,btn){
     try{const res=await fetch(BASE_COM + "/like/"+id,{method:"POST"});const j=await res.json();if(j.success)btn.classList.toggle("liked",j.liked);}catch(e){showToast("Erreur réseau.");}
 }
+async function toggleAbonner(id,btn){
+    try{
+        const res=await fetch(BASE_COM + "/abonner/"+id,{method:"POST"});
+        const j=await res.json();
+        if(!j.success){ showToast(j.error||"Erreur."); return; }
+        // Toutes les publications de la même personne changent d'un coup :
+        // laisser « S'abonner » sur ses autres publications donnerait
+        // l'impression que le clic n'a pas marché.
+        const carte=btn.closest(".post-card");
+        const auteur=carte && carte.dataset.auteurId;
+        const cibles=auteur
+            ? document.querySelectorAll('.post-card[data-auteur-id="'+auteur+'"] .btn-abonner')
+            : [btn];
+        cibles.forEach(b=>{ b.classList.toggle("on",j.abonne); b.textContent=j.abonne?"Abonné":"S'abonner"; });
+        showToast(j.abonne?"Tu suis cette personne":"Tu ne la suis plus");
+        if(!j.abonne && PAGE_FILTRE==="abonnements" && carte) carte.remove();
+    }catch(e){showToast("Erreur réseau.");}
+}
+
 async function toggleEnregistrer(id,btn){
     try{
         const res=await fetch(BASE_COM + "/enregistrer/"+id,{method:"POST"});
@@ -1741,6 +1790,53 @@ router.post("/enregistrer/:id", requireAuth, async (req, res) => {
         res.json({ success:true, enregistre:true });
     } catch (err) {
         console.error("❌ enregistrer :", err.message);
+        res.json({ success:false, error:"Erreur serveur." });
+    }
+});
+
+// ── S'ABONNER / SE DÉSABONNER ───────────────────────────────────────────
+//
+// « S'abonner à quelqu'un qui publie bien, qui vend des bonnes choses. »
+//
+// C'est ce qui transforme un fil en communauté : sans lien entre les gens,
+// chaque publication repart de zéro et il faut tout relire pour retrouver
+// quelqu'un. Une vendeuse sérieuse se construit un public qui la suit d'une
+// vente à l'autre.
+//
+// On s'abonne à une PERSONNE, pas à une publication — mais on part d'une
+// publication, parce que c'est là qu'on la découvre. L'identifiant de
+// l'auteur est donc lu dans la publication, jamais pris dans la requête :
+// sinon on pourrait faire s'abonner quelqu'un à n'importe qui.
+router.post("/abonner/:id", requireAuth, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const COM = communauteDeLAction(req, res);
+        const pub = await chargerPublication(req.params.id, req, res);
+        if (!pub || !userId) return res.json({ success:false, error:"Publication introuvable." });
+
+        const auteur = String(pub.auteur_id || "");
+        if (!auteur) return res.json({ success:false, error:"Publication sans auteur." });
+        // La base l'interdit aussi (CHECK) ; on répond ici proprement plutôt
+        // que de laisser remonter une erreur SQL à quelqu'un qui a juste
+        // cliqué sur son propre bouton.
+        if (auteur === String(userId)) {
+            return res.json({ success:false, error:"Tu ne peux pas t'abonner à toi-même." });
+        }
+
+        const dejaLa = await db.query(
+            `SELECT id FROM abonnements_membres WHERE abonne_id=$1 AND auteur_id=$2 AND communaute=$3`,
+            [userId, auteur, COM.slug]);
+        if (dejaLa.length) {
+            await db.query(`DELETE FROM abonnements_membres WHERE id=$1`, [dejaLa[0].id]);
+            return res.json({ success:true, abonne:false });
+        }
+        await db.query(
+            `INSERT INTO abonnements_membres (abonne_id, auteur_id, communaute) VALUES ($1,$2,$3)
+             ON CONFLICT (abonne_id, auteur_id, communaute) DO NOTHING`,
+            [userId, auteur, COM.slug]);
+        res.json({ success:true, abonne:true });
+    } catch (err) {
+        console.error("❌ abonner :", err.message);
         res.json({ success:false, error:"Erreur serveur." });
     }
 });

@@ -246,6 +246,14 @@ function requireAuth(req, res, next) {
     next();
 }
 
+// Le nom d'une communauté vient de notre configuration, pas d'un
+// visiteur — mais on l'échappe quand même : le jour où il viendra d'une
+// base ou d'un formulaire, personne ne repassera ajouter cette ligne.
+function escapeHtmlSimple(v) {
+    return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
 function clearWorkspaceSession(req, callback) {
     delete req.session.workspaceId;
     delete req.session.lastWorkspace;
@@ -451,19 +459,50 @@ app.get("/qg", requireAuth, async (req, res) => {
     try {
         if (req.session?.typeCompte === "client") return res.redirect(require("./config/communautes").accueilClient(res.locals.COM));
 
-        const workspaceId = req.session?.workspaceId;
-        if (!workspaceId) return res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM));
-
-        const workspace = await workspaceService.getById(workspaceId);
-        if (!workspace) {
-            return clearWorkspaceSession(req, () => res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM)));
+        // ── « JE CLIQUE SUR MA BOUTIQUE ET ÇA NE MÈNE NULLE PART » ───────
+        //
+        // Trois sorties de cette route renvoyaient vers accueilMarchand(),
+        // c'est-à-dire /workspace/create chez une partenaire. Or
+        // /workspace/create, s'il trouve une boutique existante, renvoie
+        // vers /qg. Deux pages qui se renvoient la balle : la page charge,
+        // charge, et on ne bouge pas d'un pixel. Aucune erreur nulle part,
+        // parce que du point de vue du serveur tout va bien.
+        //
+        // C'est moi qui l'ai créée en remplaçant /hub — qui, lui, était une
+        // page terminale : il AFFICHAIT la liste des boutiques.
+        //
+        // LA CORRECTION : cette route ne demande plus à quelqu'un d'autre
+        // de retrouver la boutique, elle la retrouve. On ne sort d'ici que
+        // s'il n'y en a vraiment aucune — et cette sortie-là ne revient
+        // jamais, puisque /workspace/create n'a alors rien à trouver.
+        const communautesM = require("./config/communautes");
+        let workspace = null;
+        if (req.session?.workspaceId) {
+            workspace = await workspaceService.getById(req.session.workspaceId);
         }
+
+        // La règle de propriété vit dans workspaceService, à un seul
+        // endroit : elle se posait ici ET dans /workspace/create, et les
+        // deux ne répondaient pas pareil. C'est ce désaccord qui faisait
+        // la boucle.
+        const luiAppartient = (w) => workspaceService.appartientA(w, req.session.email, req.session);
+
+        if (!luiAppartient(workspace)) {
+            // La boutique de la session est absente ou n'est pas la sienne :
+            // on cherche les siennes plutôt que de le renvoyer ailleurs.
+            const siennes = await workspaceService.getByOwner(req.session.email);
+            workspace = siennes.find(luiAppartient) || null;
+            if (!workspace) {
+                return clearWorkspaceSession(req, () =>
+                    res.redirect(communautesM.accueilMarchand(res.locals.COM)));
+            }
+            req.session.workspaceId = workspace.workspaceId;
+            await new Promise((resoudre) => req.session.save(resoudre));
+        }
+
         const estAgenceProprietaire = req.session.typeCompte === "agence"
             && workspace.agenceId
             && workspace.agenceId === req.session.userId;
-        if (workspace.owner !== req.session.email && !estAgenceProprietaire) {
-            return clearWorkspaceSession(req, () => res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM)));
-        }
 
         const communautes = require("./config/communautes");
         let themeVisuel = "og";
@@ -516,8 +555,34 @@ app.get("/qg", requireAuth, async (req, res) => {
             communaute  : COM,
         });
     } catch (err) {
+        // UNE ERREUR S'AFFICHE, ELLE NE SE REDIRIGE PAS.
+        //
+        // Ce catch renvoyait vers la création de boutique. Or si le QG
+        // échoue au rendu, il échouera encore au tour suivant : la création
+        // retrouve la boutique, renvoie au QG, qui replante, qui renvoie à
+        // la création… La page charge indéfiniment et rien ne bouge, alors
+        // que la vraie panne est ici, écrite dans les journaux que personne
+        // ne regarde à ce moment-là.
+        //
+        // Une impasse honnête vaut mieux qu'un manège : on voit qu'il y a
+        // un problème, et on peut aller ailleurs.
         console.error("❌ GET /qg :", err);
-        return clearWorkspaceSession(req, () => res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM)));
+        const communautesE = require("./config/communautes");
+        const COMe = res.locals.COM || communautesE.get(communautesE.DEFAUT);
+        const fond = COMe.couleurs?.["--bg"] || "#03060b";
+        const encre = COMe.couleurs?.["--text"] || "#f5fbff";
+        return res.status(500).send(`<!DOCTYPE html><html lang="fr"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtmlSimple(COMe.nom)}</title></head>
+<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:${fond};color:${encre};font-family:system-ui,-apple-system,sans-serif;padding:28px;text-align:center;">
+  <div style="max-width:420px;">
+    <h1 style="font-size:19px;margin:0 0 12px;">Ta boutique n'a pas pu s'ouvrir</h1>
+    <p style="font-size:14px;line-height:1.6;opacity:.8;margin:0 0 22px;">
+      Le problème est de notre côté, pas du tien. Réessaie dans un instant — et préviens-nous si ça continue.</p>
+    <a href="/qg" style="display:inline-block;padding:12px 22px;border-radius:11px;background:${COMe.couleurs?.["--blue"] || "#00d9ff"};color:${COMe.couleurs?.["--sur-accent"] || "#001018"};text-decoration:none;font-weight:700;font-size:13.5px;">Réessayer</a>
+    <div style="margin-top:14px;"><a href="${communautesE.accueil(COMe)}" style="color:inherit;opacity:.6;font-size:12.5px;">Retour à la communauté</a></div>
+  </div>
+</body></html>`);
     }
 });
 

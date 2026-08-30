@@ -369,6 +369,43 @@ const BLOCS = [
         ],
     },
     {
+        // ── LES ABONNEMENTS ENTRE MEMBRES ────────────────────────────────
+        //
+        // « S'abonner à quelqu'un qui publie bien, qui vend des bonnes
+        // choses. »
+        //
+        // C'est ce qui transforme un fil en communauté : sans lien entre
+        // les gens, chaque publication repart de zéro et il faut tout
+        // relire pour retrouver quelqu'un. Avec l'abonnement, une vendeuse
+        // sérieuse se construit un public qui la suit d'une vente à
+        // l'autre — c'est exactement ce qu'on lui vend.
+        //
+        // La contrainte UNIQUE empêche de s'abonner deux fois (double tape
+        // sur un téléphone, rejeu réseau). La contrainte CHECK empêche de
+        // s'abonner à soi-même : ça n'a aucun sens, ça gonfle son propre
+        // compteur, et une règle écrite dans la base ne s'oublie pas dans
+        // une route ajoutée plus tard.
+        //
+        // `communaute` est portée par la ligne : les mêmes deux personnes
+        // peuvent se croiser dans deux communautés, et un abonnement pris
+        // chez elle ne regarde pas chez nous.
+        nom: "abonnements_membres",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS abonnements_membres (
+                id          BIGSERIAL PRIMARY KEY,
+                abonne_id   TEXT NOT NULL,
+                auteur_id   TEXT NOT NULL,
+                communaute  TEXT NOT NULL DEFAULT 'samii',
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+                UNIQUE (abonne_id, auteur_id, communaute),
+                CONSTRAINT abonnements_membres_pas_soi_meme CHECK (abonne_id <> auteur_id))`,
+            // « À qui suis-je abonné ? » — pour filtrer le fil.
+            `CREATE INDEX IF NOT EXISTS idx_abonnements_membres_abonne ON abonnements_membres (abonne_id, communaute)`,
+            // « Combien de personnes me suivent ? » — sur sa vitrine.
+            `CREATE INDEX IF NOT EXISTS idx_abonnements_membres_auteur ON abonnements_membres (auteur_id, communaute)`,
+        ],
+    },
+    {
         // ── Le grand livre des paiements ─────────────────────────────────
         // Les montants sont en NUMERIC et jamais en flottant : sur de
         // l'argent, 0.1 + 0.2 qui ne fait pas 0.3 finit par se voir.

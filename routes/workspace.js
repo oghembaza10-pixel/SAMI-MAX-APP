@@ -29,10 +29,20 @@ const PAYS_DEVISE = {
 };
 
 router.get("/create", requireAuth, async (req, res) => {
+    // On ne renvoie vers /qg que si la boutique trouvée est BIEN à cette
+    // personne, avec la même règle que /qg lui-même. Avant, cette page
+    // cherchait sur « owner OU owner_email » pendant que /qg comparait
+    // « owner » au caractère près : quand les deux ne tombaient pas
+    // d'accord, les deux pages se renvoyaient la balle indéfiniment. La
+    // page chargeait, chargeait, et rien ne bougeait.
+    //
+    // Si rien ne lui appartient, on reste ici et on affiche le formulaire :
+    // une page terminale, jamais une redirection de plus.
     const existing = await workspaceService.getByOwner(req.session.email);
-    if (existing.length > 0) {
-        req.session.workspaceId = existing[0].workspaceId;
-        req.session.metier      = existing[0].metier;
+    const sienne = existing.find((w) => workspaceService.appartientA(w, req.session.email, req.session));
+    if (sienne) {
+        req.session.workspaceId = sienne.workspaceId;
+        req.session.metier      = sienne.metier;
         return req.session.save(() => res.redirect("/qg"));
     }
 
