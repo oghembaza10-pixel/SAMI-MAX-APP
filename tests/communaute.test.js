@@ -98,6 +98,19 @@ function liensSortants(html, slug) {
         if (u.startsWith(`/c/${slug}`)) return false;
         // Les portes d'entrée d'un compte, à condition de porter le retour.
         if (/^\/(register|login)\?c=/.test(u)) return false;
+        // ── LA RÈGLE A ÉVOLUÉ, ET C'EST ASSUMÉ ──────────────────────────
+        // À l'origine, sa communauté vivait DANS notre site : tout ce qui
+        // sortait de /c/<slug> l'emmenait chez nous, donc tout devait rester
+        // dedans. Elle a maintenant son propre service, et ces pages-là
+        // portent SA marque quand elles y sont servies — son espace
+        // marchand, son espace client, ses réglages. Les lui interdire
+        // reviendrait à lui interdire sa propre boutique.
+        //
+        // Ce qui reste interdit, c'est NOTRE catalogue : marketplace,
+        // academy, arsenal, coffre, hub, developpeurs, apps, et notre
+        // communauté. Ces pages n'ont pas été converties et affichent
+        // toujours « OG · TECHNOLOGY ».
+        if (/^\/(qg|client-qg|settings)(\/|$|#|\?)/.test(u)) return false;
         return true;
     });
 }
@@ -252,6 +265,35 @@ function liensSortants(html, slug) {
             verifier(r.html.includes(JSON.stringify(slug)),
                 `/c/${slug}/${quoi} : le marqueur de communauté ne part pas avec le formulaire — le compte serait rattaché à la maison`);
         }
+
+        // ── 2 quinquies. Retrouver sa boutique ──────────────────────────
+        //
+        // « Je vois "ouvrir une boutique" et j'ai déjà ouvert une boutique,
+        // mais il n'y a aucune chose pour revenir dans mon espace boutique. »
+        //
+        // Le panneau proposait toujours d'en OUVRIR une. Deux dégâts : on ne
+        // retrouve pas la sienne, et on doute qu'elle existe — puisqu'on nous
+        // propose encore de la créer.
+        const avecBoutique = await new Promise((resolve) => {
+            const req = {
+                params: { slug }, query: {},
+                session: { loggedIn: true, userId: "u1", nom: "O G", workspaceId: "w1" },
+            };
+            const res = { send: resolve, redirect: () => resolve("REDIRIGÉ"), status() { return this; } };
+            let i = 0;
+            const next = () => { const h = poignees[i++]; if (h) h(req, res, next); };
+            next();
+        });
+        verifier(/Ma boutique/.test(avecBoutique),
+            `/c/${slug} : un membre qui A une boutique ne voit aucun moyen d'y revenir`);
+        verifier(!/Ouvrir ma boutique/.test(avecBoutique),
+            `/c/${slug} : on propose d'ouvrir une boutique à quelqu'un qui en a déjà une`);
+        verifier(/class="btn-boutique"/.test(avecBoutique),
+            `/c/${slug} : le retour vers sa boutique n'est pas en haut de page — sur téléphone le panneau latéral passe sous le fil, donc invisible`);
+
+        // Et l'inverse : sans boutique, on doit pouvoir en ouvrir une.
+        verifier(/Ouvrir ma boutique/.test(membre),
+            `/c/${slug} : un membre SANS boutique ne peut plus en ouvrir une`);
 
         // ── 3. Son application lui appartient ────────────────────────────
         const com = communautes.get(slug);

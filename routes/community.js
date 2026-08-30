@@ -313,6 +313,30 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
             [COM.slug, communautes.DEFAUT]);
     } catch (err) { console.warn("⚠️ stats :", err.message); }
 
+    // ── LE CHEMIN DU RETOUR VERS SA BOUTIQUE ─────────────────────────────
+    //
+    // « Je vois "ouvrir une boutique" et j'ai déjà ouvert une boutique, mais
+    // il n'y a aucune chose pour revenir dans mon espace boutique. »
+    //
+    // Le panneau proposait toujours d'en OUVRIR une, même à quelqu'un qui en
+    // a déjà une. Deux dégâts : on ne retrouve pas la sienne, et on doute —
+    // « est-ce que ma boutique existe vraiment, puisqu'on me propose encore
+    // de la créer ? » Un lien qui ignore ce que la personne a déjà fait la
+    // renvoie à la case départ à chaque visite.
+    //
+    // Trois états, trois propositions. `workspaceId` est posé en session à
+    // la connexion pour un marchand : c'est la marque qu'une boutique existe.
+    const aBoutique = Boolean(connecte && req.session?.workspaceId);
+    const boutique = aBoutique
+        ? { url: "/qg", icone: "layout-dashboard", libelle: "Ma boutique" }
+        : (connecte
+            // /qg mène à son espace marchand, qui porte SA marque sur son
+            // service. Quelqu'un qui n'a pas encore de boutique y est guidé
+            // pour en créer une.
+            ? { url: "/qg", icone: "store", libelle: "Ouvrir ma boutique" }
+            : { url: COM.ecosysteme ? `/register?c=${COM.slug}` : `/c/${COM.slug}/inscription`,
+                icone: "store", libelle: "Ouvrir ma boutique" });
+
     const catButtonsHtml = Object.entries(CATEGORIES).map(([key,c]) => `
         <button type="button" class="cat-btn" data-cat="${key}" style="--cat-color:${c.couleur};"><i data-lucide="${c.icon}"></i> ${c.label}</button>`).join("");
 
@@ -421,6 +445,9 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .story-circle span{font-size:10.5px;color:var(--muted);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .stat-row span{display:flex;align-items:center;gap:6px;}
 .stat-row:last-child{border:none;} .stat-row strong{color:var(--blue);font-family:"JetBrains Mono";}
+.btn-boutique{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:10px;background:var(--blue);color:var(--sur-accent);font-size:12.5px;font-weight:700;white-space:nowrap;}
+.btn-boutique svg{width:15px;height:15px;}
+@media(max-width:520px){.btn-boutique span{display:none;}.btn-boutique{padding:8px 10px;}}
 .eco-link-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px;}
 .eco-link-item:hover{background:rgba(0,217,255,.06);color:var(--blue);}
 .eco-link-item svg{width:15px;height:15px;}
@@ -636,7 +663,7 @@ ${COM.ecosysteme ? `
 </aside>
 <div class="main">
 <header class="header"><h1>${escapeHtml(COM.nom)}</h1>
-<div class="header-actions"><button class="icon-btn" id="themeBtn" type="button"><i data-lucide="moon"></i></button>${COM.ecosysteme ? `<a class="icon-btn" href="/qg"><i data-lucide="layout-dashboard"></i></a>` : ""}</div>
+<div class="header-actions">${aBoutique ? `<a class="btn-boutique" href="/qg"><i data-lucide="layout-dashboard"></i><span>Ma boutique</span></a>` : ""}<button class="icon-btn" id="themeBtn" type="button"><i data-lucide="moon"></i></button>${COM.ecosysteme ? `<a class="icon-btn" href="/qg"><i data-lucide="layout-dashboard"></i></a>` : ""}</div>
 </header>
 <div class="layout">
 <div class="col-side">
@@ -652,8 +679,8 @@ ${COM.ecosysteme ? `<div class="side-panel"><h3><i data-lucide="compass"></i> É
 <a href="/arsenal" class="eco-link-item"><i data-lucide="shield-check"></i> Arsenal · Débloquer vos pouvoirs</a>
 <a href="/academy" class="eco-link-item"><i data-lucide="graduation-cap"></i> Academy · Apprendre & progresser</a>
 </div>` : `<div class="side-panel"><h3><i data-lucide="megaphone"></i> Vendre ici</h3>
-<div class="side-text" style="margin-bottom:12px;">Tu as un produit, une formation, un service ? Ouvre ton profil et publie-le. Publier est gratuit ; la mise en avant est payante.</div>
-<a href="${COM.ecosysteme ? `/register?c=${COM.slug}` : `/c/${COM.slug}/inscription`}" class="eco-link-item"><i data-lucide="store"></i> Ouvrir ma boutique</a>
+<div class="side-text" style="margin-bottom:12px;">${aBoutique ? "Retrouve ta boutique, tes commandes et tes produits." : "Tu as un produit, une formation, un service ? Ouvre ton profil et publie-le. Publier est gratuit ; la mise en avant est payante."}</div>
+<a href="${boutique.url}" class="eco-link-item"><i data-lucide="${boutique.icone}"></i> ${boutique.libelle}</a>
 <a href="#" class="eco-link-item" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant · dès 1 000 FCFA</a>
 </div>
 ${COM.app ? `<div class="side-panel" id="panneauApp">
