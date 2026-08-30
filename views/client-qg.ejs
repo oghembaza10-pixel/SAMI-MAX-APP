@@ -52,6 +52,14 @@
 </a>
         </nav>
         <div class="qg-sidebar__bottom">
+<% if (!COM.ecosysteme) { %>
+            <a href="/connect/tools" class="qg-nav__item">
+                <i data-lucide="plug-zap"></i><span>Connecter mes outils</span>
+            </a>
+            <a href="/vitrine/<%= userId %>" class="qg-nav__item">
+                <i data-lucide="store"></i><span>Ma vitrine</span>
+            </a>
+<% } %>
             <a href="/settings" class="qg-nav__item">
                 <i data-lucide="settings"></i><span data-i18n="nav.settings">Paramètres</span>
             </a>
@@ -114,6 +122,18 @@
             <span data-i18n="section.today">Aujourd'hui</span>
         </div>
         <section class="qg-dashboard">
+<% if (!COM.ecosysteme) { %>
+            <a href="/connect/tools" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="plug-zap"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🔌 Mes outils</span>
+                <span class="qg-card__label">WhatsApp, Telegram… →</span>
+            </a>
+            <a href="/vitrine/<%= userId %>" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
+                <div class="qg-card__icon"><i data-lucide="store"></i></div>
+                <span class="qg-card__value" style="font-size:1rem;">🏪 Ma vitrine</span>
+                <span class="qg-card__label">Photo, formations, ebooks →</span>
+            </a>
+<% } %>
             <a href="/client-qg/transport" class="qg-card qg-card--tilt" style="text-decoration:none;cursor:pointer;">
                 <div class="qg-card__icon"><i data-lucide="bus"></i></div>
                 <span class="qg-card__value" style="font-size:1rem;" data-i18n="card.transport.title">🚌 Transport</span>

@@ -16,6 +16,20 @@ function requireAuth(req, res, next) {
     next();
 }
 
+// ── OÙ RENVOYER QUELQU'UN QUI N'A PAS ENCORE DE BOUTIQUE ────────────────
+//
+// Toutes ces routes renvoyaient sur /hub. Sur le service d'une partenaire,
+// /hub est NOTRE page — non convertie, « OG · TECHNOLOGY » en haut. Un de
+// ses membres qui touche « Connecter mes outils » avant d'avoir ouvert sa
+// boutique se retrouvait donc chez nous, sans chemin de retour.
+//
+// `res.locals.COM` porte la marque du service (posée dans index.js) : chez
+// une partenaire, on ramène chez elle plutôt que de la faire sortir.
+function sansBoutique(res) {
+    const COM = res.locals?.COM;
+    return COM && !COM.ecosysteme ? `/c/${COM.slug}` : "/hub";
+}
+
 const TOOLS = [
     { id: "shopify",      label: "Shopify",              icon: "shopping-bag",   color: "#95BF47", available: true  },
     { id: "woocommerce",  label: "WooCommerce",          icon: "shopping-cart",  color: "#96588A", available: true  },
@@ -52,9 +66,9 @@ const TOOLS = [
 router.get("/tools", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
-        if (!workspaceId) return res.redirect("/hub");
+        if (!workspaceId) return res.redirect(sansBoutique(res));
         const workspace = await workspaceService.getById(workspaceId);
-        if (!workspace) return res.redirect("/hub");
+        if (!workspace) return res.redirect(sansBoutique(res));
         const connecteurs = await connectorService.getByWorkspace(workspaceId);
         // La vraie connexion Shopify (routes/auth-shopify.js, installation de
         // l'app via OAuth) écrit directement sur workspaces.shopify_shop_url —
@@ -75,7 +89,7 @@ router.get("/tools", requireAuth, async (req, res) => {
         });
     } catch (err) {
         console.error("❌ GET /connect/tools :", err);
-        res.redirect("/hub");
+        res.redirect(sansBoutique(res));
     }
 });
 
@@ -185,7 +199,7 @@ router.get("/telegram", requireAuth, async (req, res) => {
 router.post("/telegram", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
-        if (!workspaceId) return res.redirect("/hub");
+        if (!workspaceId) return res.redirect(sansBoutique(res));
         const chatId = req.body.telegram_chat_id;
         const actif = req.body.telegram_actif === "true";
         const botState = await getTelegramBotState(workspaceId);
@@ -233,7 +247,7 @@ router.post("/telegram", requireAuth, async (req, res) => {
 // clients lui parlent désormais sous SA PROPRE identité de bot.
 router.post("/telegram/bot", requireAuth, async (req, res) => {
     const workspaceId = req.session?.workspaceId;
-    if (!workspaceId) return res.redirect("/hub");
+    if (!workspaceId) return res.redirect(sansBoutique(res));
     const botToken = (req.body.bot_token || "").trim();
     const chatState = { telegramChatId: "", telegramActif: false };
     try {
@@ -305,7 +319,7 @@ router.get("/discord", requireAuth, async (req, res) => {
 router.post("/discord", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
-        if (!workspaceId) return res.redirect("/hub");
+        if (!workspaceId) return res.redirect(sansBoutique(res));
         const botToken = (req.body.bot_token || "").trim();
         const serverName = (req.body.server_name || "").trim();
         if (!botToken) {
@@ -375,7 +389,7 @@ TRANSPORTEUR_TOOLS.forEach(toolId => {
     router.post(`/${toolId}`, requireAuth, async (req, res) => {
         try {
             const workspaceId = req.session?.workspaceId;
-            if (!workspaceId) return res.redirect("/hub");
+            if (!workspaceId) return res.redirect(sansBoutique(res));
             const apiId = (req.body.api_id || "").trim();
             const apiToken = (req.body.api_token || "").trim();
             if (!apiId || !apiToken) {
@@ -500,7 +514,7 @@ router.get("/whatsapp", requireAuth, async (req, res) => {
 // démarre, Meta Cloud en direct et 360dialog pour qui est déjà équipé.
 router.post("/whatsapp", requireAuth, async (req, res) => {
     const workspaceId = req.session?.workspaceId;
-    if (!workspaceId) return res.redirect("/hub");
+    if (!workspaceId) return res.redirect(sansBoutique(res));
 
     const echec = async (message, palierOk = true) => {
         const c = await connectorService.getOne(workspaceId, "whatsapp");
@@ -583,7 +597,7 @@ router.post("/whatsapp", requireAuth, async (req, res) => {
 
 router.post("/whatsapp/depannage", requireAuth, async (req, res) => {
     const workspaceId = req.session?.workspaceId;
-    if (!workspaceId) return res.redirect("/hub");
+    if (!workspaceId) return res.redirect(sansBoutique(res));
     try {
         const existing = await connectorService.getOne(workspaceId, "whatsapp");
         if (existing?.config?.depannageUsedAt) {
@@ -644,7 +658,7 @@ IMPRESSION_TOOLS.forEach(toolId => {
     router.post(`/${toolId}`, requireAuth, async (req, res) => {
         try {
             const workspaceId = req.session?.workspaceId;
-            if (!workspaceId) return res.redirect("/hub");
+            if (!workspaceId) return res.redirect(sansBoutique(res));
             const identifiant = (req.body.identifiant || "").trim();
             if (!identifiant) {
                 return res.render("connect-impression", {
@@ -685,7 +699,7 @@ IMPRESSION_TOOLS.forEach(toolId => {
 
 // ── CONTINUER APRÈS CONNEXION ──────────────────────────
 router.get("/tools/continue", requireAuth, (req, res) => {
-    if (!req.session?.workspaceId) return res.redirect("/hub");
+    if (!req.session?.workspaceId) return res.redirect(sansBoutique(res));
     const destinations = { hub: "/hub", qg: "/qg", samii: "/samii" };
     const destination = destinations[req.query.from] || "/qg";
     res.redirect(destination);
@@ -715,7 +729,7 @@ router.get("/ccp", requireAuth, async (req, res) => {
 router.post("/ccp", requireAuth, async (req, res) => {
     try {
         const workspaceId = req.session?.workspaceId;
-        if (!workspaceId) return res.redirect("/hub");
+        if (!workspaceId) return res.redirect(sansBoutique(res));
         const titulaire = (req.body.titulaire || "").trim();
         const numero = (req.body.numero || "").trim();
         const cle = (req.body.cle || "").trim();
