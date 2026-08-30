@@ -173,6 +173,40 @@ function liensSortants(html, slug) {
             }
         }
 
+        // ── 2 quater. LA GARDE GÉNÉRALE ─────────────────────────────────
+        //
+        // « Même base de données, mais les deux séparés. » Un seul Postgres,
+        // deux communautés qui ne doivent jamais se voir. La séparation ne
+        // tient alors qu'à une chose : un WHERE sur `communaute`, à écrire
+        // dans CHAQUE requête qui touche une table partagée.
+        //
+        // Ça ne tient pas. J'ai corrigé quatre fuites de cette exact famille
+        // en une semaine — le fil, le classement, le compteur de membres, les
+        // stories. Trois d'entre elles avaient été écrites par quelqu'un qui
+        // savait pourtant qu'il fallait filtrer.
+        //
+        // Les vérifications au-dessus nommaient chacune UNE requête. Celle-ci
+        // les prend TOUTES, y compris celles qui n'existent pas encore : on
+        // rend la page, on regarde tout ce qui est parti à la base, et toute
+        // requête qui lit une table partagée sans filtrer échoue. Une requête
+        // ajoutée demain sans WHERE est attrapée le jour même, sans que
+        // personne ait à penser à mettre à jour ce test.
+        const TABLES_PARTAGEES = /\bFROM\s+(publications|utilisateurs|stories|paiements|annonces)\b/i;
+        REQUETES.length = 0;
+        await rendre(slug, true);
+        for (const r of REQUETES) {
+            const m = r.sql.match(TABLES_PARTAGEES);
+            if (!m) continue;
+            // Une lecture par identifiant précis est déjà close : on ne lit
+            // qu'une ligne qu'on a le droit de lire. Ce qui fuit, ce sont les
+            // listes et les comptages.
+            const parId = /\bWHERE\s+[\w.]*id\s*=\s*\$\d/i.test(r.sql)
+                       || /publication_id\s*=\s*\$\d/i.test(r.sql);
+            if (parId) continue;
+            verifier(/communaute/.test(r.sql),
+                `/c/${slug} : une requête lit « ${m[1]} » sans filtrer par communauté — ce sont NOS données qui remonteraient chez elle : ${r.sql.replace(/\s+/g, " ").trim().slice(0, 120)}`);
+        }
+
         // ── 3. Son application lui appartient ────────────────────────────
         const com = communautes.get(slug);
         if (com.app) {

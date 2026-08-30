@@ -277,9 +277,19 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
             SELECT DISTINCT ON (s.auteur_id) s.auteur_id, u.prenom, u.nom, s.created_at,
                 EXISTS(SELECT 1 FROM stories_vues sv WHERE sv.story_id=s.id AND sv.user_id=$1) AS vue
             FROM stories s LEFT JOIN utilisateurs u ON u.id=s.auteur_id
+            -- La communauté de l'AUTEUR fait foi. Filtrer ici plutôt que
+            -- d'ajouter une colonne à la table « stories » : ça vaut aussi
+            -- pour les stories déjà publiées, sans migration ni rattrapage.
+            --
+            -- La barre des stories est masquée chez une partenaire
+            -- aujourd'hui, donc rien ne se voyait — mais la requête, elle,
+            -- partait quand même. Le jour où on lui ouvre les stories, ce
+            -- sont NOS membres qui seraient apparus en haut de sa page. Une
+            -- fuite qui attend d'être affichée reste une fuite.
             WHERE s.actif = true AND s.expires_at > now()
+              AND COALESCE(u.communaute, $3) = $2
             ORDER BY s.auteur_id, s.created_at DESC
-        `, [req.session.userId || ""]);
+        `, [req.session.userId || "", COM.slug, communautes.DEFAUT]);
     } catch (err) { console.warn("⚠️ stories :", err.message); }
 
     try {
