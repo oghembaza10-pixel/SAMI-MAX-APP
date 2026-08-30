@@ -156,9 +156,12 @@ async function creer({
     if (!f) throw new Error("Moyen de paiement inconnu.");
     if (!f.pret) throw new Error(`${f.nom} n'est pas encore disponible.`);
     if (!fournisseurs.configure(f)) throw new Error(`${f.nom} n'est pas configuré sur ce serveur.`);
-    if (!f.devises.includes(String(devise).toUpperCase())) {
-        // Le piège XOF/XAF : deux monnaies au même nom courant. Mieux vaut
-        // refuser ici que verser dans la mauvaise zone.
+    // Dans quelle monnaie ce prestataire encaissera réellement. Elle vend en
+    // FCFA, Stripe encaisse en euros : la conversion se fait ici, à la parité
+    // fixe du franc CFA. `null` veut dire qu'aucun chemin honnête n'existe —
+    // on refuse plutôt que de deviner un taux.
+    const change = fournisseurs.convertir(f, devise);
+    if (!change) {
         throw new Error(`${f.nom} n'accepte pas les paiements en ${devise}.`);
     }
     const total = sous(montant);
@@ -181,12 +184,30 @@ async function creer({
          parts.vendeur, parts.partenaire, parts.maison, parts.commission, parts.taux],
     );
 
-    const paiement = { reference: ref, montant: total, devise: String(devise).toUpperCase() };
+    // Ce qu'on demande au prestataire d'encaisser. Le grand livre, lui, garde
+    // le prix RÉEL dans SA monnaie : c'est en FCFA qu'elle a fixé son prix,
+    // c'est en FCFA qu'on doit pouvoir lui dire ce qu'elle a gagné. L'euro
+    // n'est qu'un véhicule d'encaissement, pas la vérité de la vente.
+    const paiement = {
+        reference: ref,
+        montant: sous(total * change.facteur),
+        devise: change.devise,
+        // Le prix d'origine, pour l'afficher au client sur la page du
+        // prestataire : « 5 000 FCFA » lui parle, « 7,62 € » beaucoup moins.
+        montantOrigine: total,
+        deviseOrigine: String(devise).toUpperCase(),
+        converti: change.facteur !== 1,
+    };
 
     try {
         const r = await ADAPTATEURS[f.id]({
             paiement, retourOk, retourEchec, rappel,
-            description: description || "Achat",
+            // Le prix d'origine suit jusqu'à la page de paiement : quelqu'un
+            // qui a vu « 5 000 FCFA » doit retrouver ce chiffre, sinon il
+            // croit s'être trompé de produit et il ferme l'onglet.
+            description: paiement.converti
+                ? `${description || "Achat"} — ${paiement.montantOrigine} ${paiement.deviseOrigine}`
+                : (description || "Achat"),
         });
         if (r.referenceFournisseur) {
             await db.query(

@@ -126,6 +126,50 @@ verifier(sebpay.pays.includes("CM"),
 verifier(!fournisseurs.get("chargily").devises.includes("XOF"),
     "Chargily ne fait que du dinar algérien, il ne doit pas déclarer de franc CFA");
 
+// ── 5 bis. Elle vend en FCFA, Stripe encaisse en euros ───────────────────
+//
+// Sans conversion, un achat à 5 000 FCFA par carte était simplement refusé :
+// le registre déclarait EUR et USD, la vérification échouait avant même
+// d'appeler Stripe. Des clés live n'y changeaient rien.
+//
+// Le franc CFA est arrimé à l'euro à parité FIXE — 1 EUR = 655,957 — ce qui
+// permet une conversion exacte, sans taux à tenir à jour. Ce test vérifie
+// surtout le SENS : un facteur inversé ferait payer 655 957 FCFA au lieu de
+// 15, et personne ne s'en apercevrait avant le premier client.
+const stripe = fournisseurs.get("stripe");
+for (const [devise, montant, attenduEUR] of [["XAF", 5000, 7.62], ["XOF", 15000, 22.87], ["XAF", 655957, 1000]]) {
+    const c = fournisseurs.convertir(stripe, devise);
+    verifier(!!c, `Stripe ne sait pas convertir le ${devise} — un achat en FCFA par carte serait refusé`);
+    if (c) {
+        verifier(c.devise === "EUR", `${devise} devrait être encaissé en EUR, pas en ${c.devise}`);
+        const obtenu = paiements.sous(montant * c.facteur);
+        verifier(Math.abs(obtenu - attenduEUR) < 0.02,
+            `${montant} ${devise} donne ${obtenu} EUR au lieu de ~${attenduEUR} — le facteur est faux, peut-être inversé`);
+        verifier(obtenu < montant,
+            `${montant} ${devise} donne ${obtenu} EUR : le facteur est INVERSÉ, le client paierait des centaines de fois trop`);
+    }
+}
+
+// Ce qui n'a pas de parité fixe ne se convertit pas par ce chemin. Le dinar
+// algérien flotte — et il a déjà son prestataire. Deviner un taux ici, c'est
+// facturer 15 % de trop à quelqu'un sans que personne le sache.
+verifier(fournisseurs.convertir(stripe, "DZD") === null,
+    "Stripe accepte de convertir le dinar algérien, qui n'a aucune parité fixe — un taux deviné finit sur la facture d'un client");
+verifier(fournisseurs.convertir(fournisseurs.get("chargily"), "XAF") === null,
+    "Chargily accepte du FCFA — il n'encaisse que du dinar algérien");
+
+// Le Mobile Money encaisse le FCFA tel quel : aucune conversion ne doit
+// s'intercaler là où la monnaie est déjà la bonne.
+const direct = fournisseurs.convertir(fournisseurs.get("sebpay"), "XAF");
+verifier(direct && direct.facteur === 1 && direct.devise === "XAF",
+    "le Mobile Money convertit le FCFA alors qu'il l'encaisse directement");
+
+// XOF et XAF ont la même parité mais restent deux monnaies distinctes.
+verifier(fournisseurs.PARITE_FIXE_EUR.XOF === fournisseurs.PARITE_FIXE_EUR.XAF,
+    "XOF et XAF doivent avoir la même parité face à l'euro (655,957)");
+verifier(fournisseurs.PARITE_FIXE_EUR.XAF === 655.957,
+    `la parité du franc CFA vaut ${fournisseurs.PARITE_FIXE_EUR.XAF} au lieu de 655,957`);
+
 // ── 6. Le registre ne peut pas mentir sur le code ────────────────────────
 // `pret` est une donnée, l'adaptateur est du code : rien n'empêche les deux
 // de se contredire. Passer `pret: true` sans écrire l'adaptateur est une

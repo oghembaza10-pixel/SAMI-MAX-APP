@@ -93,6 +93,36 @@ const FOURNISSEURS = {
     },
 };
 
+// ── CONVERTIR SANS SE TROMPER ───────────────────────────────────────────
+//
+// Elle vend en FCFA. Stripe n'encaisse pas le FCFA. Sans conversion, un
+// achat à 5 000 FCFA par carte est simplement refusé — et c'est ce qui se
+// passait : le registre déclarait EUR et USD, la vérification échouait avant
+// même d'appeler Stripe.
+//
+// LE FRANC CFA EST ARRIMÉ À L'EURO, ET C'EST UNE CHANCE RARE. 1 EUR =
+// 655,957 XOF = 655,957 XAF. Ce n'est pas un cours de marché qui bouge :
+// c'est une parité fixe, inchangée depuis la création de l'euro. On peut
+// donc convertir exactement, sans taux à mettre à jour, sans dépendre d'un
+// service extérieur qui peut tomber, et sans le risque d'un taux périmé qui
+// ferait payer 15 % de trop à quelqu'un.
+//
+// On ne convertit JAMAIS vers une monnaie non arrimée par ce chemin : le
+// dinar algérien, lui, flotte — et il a déjà son propre prestataire.
+const PARITE_FIXE_EUR = { XOF: 655.957, XAF: 655.957 };
+
+// La monnaie dans laquelle ce prestataire encaissera réellement, et le
+// facteur à appliquer. `null` si c'est impossible : mieux vaut refuser que
+// deviner un taux.
+function convertir(f, devise) {
+    const d = String(devise || "").toUpperCase();
+    if (f.devises.includes(d)) return { devise: d, facteur: 1 };
+    if (PARITE_FIXE_EUR[d] && f.devises.includes("EUR")) {
+        return { devise: "EUR", facteur: 1 / PARITE_FIXE_EUR[d] };
+    }
+    return null;
+}
+
 // Un prestataire est configuré si TOUTES ses clés sont présentes. Une seule
 // qui manque et l'appel échouerait au moment du paiement — autant ne pas
 // proposer le moyen du tout.
@@ -131,4 +161,4 @@ function get(id) {
     return FOURNISSEURS[String(id || "").toLowerCase()] || null;
 }
 
-module.exports = { FOURNISSEURS, pour, etat, get, configure, couvre };
+module.exports = { FOURNISSEURS, PARITE_FIXE_EUR, pour, etat, get, configure, couvre, convertir };
