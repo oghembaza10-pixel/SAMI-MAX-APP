@@ -140,6 +140,50 @@ const AMORCES = [
     { icone: "shopping-bag",   texte: "Ce que je propose en ce moment :" },
 ];
 
+// ── UN FIL FILTRÉ ET VIDE ───────────────────────────────────────────────
+//
+// « Quand je clique sur Mon espace, ça me renvoie dans le fil d'actualité. »
+//
+// Ce n'était pas le filtre : il marchait. C'était la page vide. Sans
+// publication à afficher, on retombait sur filVide() — le grand panneau
+// « Bienvenue / Ce que tu trouveras ici / Ouvre le bal ». Autrement dit :
+// on demandait ses publications, on obtenait l'accueil de la communauté.
+// Vu de l'écran, c'est exactement le fil.
+//
+// Une vue filtrée qui ne trouve rien doit parler de CE QU'ON CHERCHAIT, et
+// proposer la sortie. Sinon on croit que le clic n'a pas marché.
+function filtreVide(COM, quoi) {
+    const CAS = {
+        "mes-publications": {
+            titre: "Tu n'as encore rien publié",
+            texte: "Cet espace rassemble tes publications à toi. Dès que tu postes quelque chose dans la communauté, tu le retrouves ici — sans avoir à faire défiler tout le fil.",
+            action: "Écrire ma première publication",
+        },
+        abonnements: {
+            titre: "Tu ne suis encore personne",
+            texte: "Quand quelqu'un publie bien ou vend de bonnes choses, le bouton « S'abonner » est à côté de son nom. Ce fil ne montrera plus que ces personnes-là.",
+            action: "Parcourir le fil pour trouver qui suivre",
+        },
+        enregistres: {
+            titre: "Tu n'as encore rien enregistré",
+            texte: "Le marque-page sous chaque publication la range ici. Pratique pour une formation qu'on veut relire, ou un outil à essayer plus tard.",
+            action: "Parcourir le fil",
+        },
+        produit: { titre: "Aucun produit pour l'instant", texte: "Personne n'a encore mis de produit en vente dans cette communauté. Tu peux être le premier.", action: "Voir tout le fil" },
+        formation: { titre: "Aucune formation pour l'instant", texte: "Personne n'a encore proposé de formation ici. Si tu en as une, c'est le moment.", action: "Voir tout le fil" },
+        service: { titre: "Aucun service pour l'instant", texte: "Personne ne propose encore de service dans cette communauté.", action: "Voir tout le fil" },
+    };
+    const c = CAS[quoi] || { titre: "Rien à afficher", texte: "Cette sélection est vide pour l'instant.", action: "Voir tout le fil" };
+    return `
+<div class="depart">
+  <div class="depart-h">
+    <h3>${escapeHtml(c.titre)}</h3>
+    <p>${escapeHtml(c.texte)}</p>
+  </div>
+  <a class="depart-sortie" href="/c/${COM.slug}">${escapeHtml(c.action)} →</a>
+</div>`;
+}
+
 function filVide(COM, connecte) {
     // Le visiteur a déjà lu « Bienvenue sur … » juste au-dessus, dans le bloc
     // d'invitation. Répéter un accueil et un bouton ferait deux cartes qui
@@ -496,7 +540,10 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
                 <button type="button" onclick="postComment(${p.id})"><i data-lucide="send"></i></button>
             </div>
         </article>`;
-    }).join("") : filVide(COM, connecte);
+    }).join("")
+        // Une sélection vide n'est pas une communauté vide : on ne relance
+        // pas l'accueil, on explique ce qui manque et on rouvre le fil.
+        : (filtre ? filtreVide(COM, filtre) : filVide(COM, connecte));
 
     const classementHtml = classement.length ? classement.map((u,i) => `
         <${COM.ecosysteme ? `a class="rank-item" href="/vitrine/${encodeURIComponent(u.id)}"` : `div class="rank-item"`}><span class="rank-num rank-${i+1}">${i+1}</span><div class="rank-avatar">${initiales(u.prenom,u.nom)}</div>
@@ -810,6 +857,8 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
                 align-items:center;gap:12px;flex-wrap:wrap;}
 .bandeau-espace b{font-size:14px;} .bandeau-espace span{font-size:12px;color:var(--muted);}
 .bandeau-espace a{font-size:12px;font-weight:700;color:var(--blue);}
+.depart-sortie{display:inline-block;margin-top:14px;padding:11px 18px;border-radius:11px;
+  background:var(--blue);color:var(--sur-accent);font-size:12.5px;font-weight:700;}
 .burger{display:none;}
 .voile-menu{display:none;}
 @media (max-width:900px){

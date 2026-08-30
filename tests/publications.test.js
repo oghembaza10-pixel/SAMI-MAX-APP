@@ -203,6 +203,51 @@ function appeler(chemin, corps = {}, session = {}, params = {}) {
             `${fichier} : ${nues.length} requête(s) visent la table « abonnements » — c'est celle de la FACTURATION. La table des abonnements entre membres s'appelle abonnements_membres.`);
     }
 
+    // ── 7. UNE SÉLECTION VIDE N'EST PAS UNE COMMUNAUTÉ VIDE ─────────────
+    //
+    // « Quand je clique sur Mon espace, ça me renvoie dans le fil
+    // d'actualité. » Le filtre marchait ; c'était la page vide. Sans
+    // publication à afficher, on retombait sur l'accueil de la communauté —
+    // « Bienvenue / Ce que tu trouveras ici / Ouvre le bal ». On demandait
+    // ses publications, on obtenait la page d'accueil : vu de l'écran,
+    // c'est le fil.
+    //
+    // On rend la page pour de vrai, sans aucune publication, et on lit ce
+    // qui s'affiche. Une vue filtrée doit parler de ce qu'on cherchait.
+    const ejs = require(path.join(RACINE, "node_modules", "ejs")); // eslint-disable-line
+    const routeurPage = routeur.stack.find(
+        (c) => c.route && Array.isArray(c.route.path) && c.route.path.includes("/c/:slug"));
+    function ouvrirPage(f) {
+        PUBLICATION = null;
+        return new Promise((resolve) => {
+            const req = { params: { slug: SLUG }, query: f ? { f } : {},
+                session: { loggedIn: true, userId: MOI, email: "moi@example.cm" } };
+            const res = { locals: { COM }, status() { return this; },
+                send: resolve, json: resolve, redirect: () => resolve(""), render: () => resolve("") };
+            let i = 0;
+            const suite = () => { const h = routeurPage.route.stack[i++]?.handle; if (h) h(req, res, suite); else resolve(""); };
+            suite();
+        });
+    }
+    const ACCUEIL = /Ce que tu trouveras ici|Ouvre le bal/;
+    for (const [f, attendu] of [
+        ["mes-publications", /rien publié/i],
+        ["abonnements", /ne suis encore personne/i],
+        ["enregistres", /rien enregistré/i],
+        ["produit", /Aucun produit/i],
+    ]) {
+        const html = String(await ouvrirPage(f) || "");
+        verifier(attendu.test(html),
+            `« ?f=${f} » sans résultat n'explique pas ce qui manque`);
+        verifier(!ACCUEIL.test(html),
+            `« ?f=${f} » sans résultat affiche l'accueil de la communauté — c'est ce qui donne l'impression d'être renvoyé dans le fil`);
+        verifier(html.includes(`/c/${SLUG}`),
+            `« ?f=${f} » sans résultat n'offre aucun chemin de retour vers le fil`);
+    }
+    // Le fil complet, lui, garde son accueil : c'est là qu'il a un sens.
+    verifier(ACCUEIL.test(String(await ouvrirPage("") || "")),
+        "le fil complet vide n'accueille plus personne");
+
     if (echecs.length) {
         console.error(`❌ publications : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
         for (const e of echecs) console.error("   • " + e);
