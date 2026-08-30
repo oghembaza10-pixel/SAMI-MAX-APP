@@ -199,6 +199,47 @@ app.use((req, res, next) => {
         : require("./config/communautes").get(require("./config/communautes").DEFAUT);
     next();
 });
+
+// ── LA PORTE : CE QUI N'EST PAS À ELLE NE S'OUVRE PAS ───────────────────
+//
+// « Cache le hub pour les gens qui s'inscrivent. Enlève tout ce qui relève
+// de chez nous, sauf ce qu'on a décidé de laisser. »
+//
+// Jusqu'ici, on avait retiré nos modules de SA COLONNE DE GAUCHE. Ça les
+// rendait invisibles, pas absents : /hub, /marketplace, /arsenal, /coffre,
+// /academy, /parrainage répondaient toujours à qui tapait l'adresse. Et une
+// adresse se tape sans mauvaise intention — un lien collé dans un groupe
+// WhatsApp, un historique de navigateur, une recherche Google.
+//
+// Cacher un bouton n'a jamais fermé une porte.
+//
+// CE MIDDLEWARE EST LA PORTE. Il est posé ici, avant TOUTE route, pour une
+// raison : plus bas, chaque montage aurait dû penser à se protéger, et
+// celui qu'on ajoute demain n'y penserait pas. Ici, l'oubli est fermé par
+// défaut — un module qu'on n'a pas explicitement donné n'existe pas chez
+// elle.
+//
+// Sur notre service, `cheminsAutorises` rend null et rien ne change : ce
+// code ne peut pas casser la maison.
+app.use((req, res, next) => {
+    const modulesQg = require("./config/modules-qg");
+    const permis = modulesQg.cheminsAutorises(res.locals.COM);
+    if (modulesQg.chemineAutorise(req.path, permis)) return next();
+
+    // On ne dit pas « interdit » : pour elle et ses membres, ces pages
+    // n'existent tout simplement pas. Un refus expliqué révélerait qu'il y
+    // a autre chose derrière, et donnerait envie d'y aller.
+    //
+    // Une navigation se termine chez elle plutôt que sur une impasse —
+    // c'est précisément ce qui manquait. Le reste (formulaire, appel
+    // JavaScript) reçoit un vrai 404 : rediriger une requête de données
+    // renverrait une page HTML là où du JSON est attendu, et l'erreur
+    // serait incompréhensible.
+    if (req.method === "GET" && (req.headers.accept || "").includes("text/html")) {
+        return res.redirect(require("./config/communautes").accueil(res.locals.COM));
+    }
+    return res.status(404).json({ error: "Not found" });
+});
 // ── AUTH MIDDLEWARE ────────────────────────────────────
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -411,17 +452,17 @@ app.get("/qg", requireAuth, async (req, res) => {
         if (req.session?.typeCompte === "client") return res.redirect("/client-qg");
 
         const workspaceId = req.session?.workspaceId;
-        if (!workspaceId) return res.redirect("/hub");
+        if (!workspaceId) return res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM));
 
         const workspace = await workspaceService.getById(workspaceId);
         if (!workspace) {
-            return clearWorkspaceSession(req, () => res.redirect("/hub"));
+            return clearWorkspaceSession(req, () => res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM)));
         }
         const estAgenceProprietaire = req.session.typeCompte === "agence"
             && workspace.agenceId
             && workspace.agenceId === req.session.userId;
         if (workspace.owner !== req.session.email && !estAgenceProprietaire) {
-            return clearWorkspaceSession(req, () => res.redirect("/hub"));
+            return clearWorkspaceSession(req, () => res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM)));
         }
 
         const communautes = require("./config/communautes");
@@ -476,13 +517,13 @@ app.get("/qg", requireAuth, async (req, res) => {
         });
     } catch (err) {
         console.error("❌ GET /qg :", err);
-        return clearWorkspaceSession(req, () => res.redirect("/hub"));
+        return clearWorkspaceSession(req, () => res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM)));
     }
 });
 
 app.get("/qg/:metier", requireAuth, (req, res) => {
     if (req.session?.workspaceId) return res.redirect("/qg");
-    res.redirect("/hub");
+    res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM));
 });
 
 app.get("/qg/:metier/connecter", requireAuth, (req, res) => {

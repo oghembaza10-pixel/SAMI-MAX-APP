@@ -237,6 +237,21 @@ function accueil(communaute) {
     return com.ecosysteme ? "/community" : `/c/${com.slug}`;
 }
 
+// ── OÙ VA UN MARCHAND QUI N'A PAS ENCORE DE BOUTIQUE ? ──────────────────
+//
+// Chez nous : le Hub, qui liste ses boutiques et propose d'en créer une.
+// Chez elle : le Hub n'existe pas — c'est notre page, avec notre marque et
+// nos métiers — et « Mes affaires » deviendrait une impasse : on clique, on
+// rebondit sur le fil, sans jamais comprendre pourquoi.
+//
+// On l'envoie donc directement là où il voulait aller : créer sa boutique.
+// Il perd le choix entre plusieurs boutiques ; il gagne de pouvoir en
+// ouvrir une. C'est le bon échange tant qu'elle n'a pas son propre Hub.
+function accueilMarchand(communaute) {
+    const com = communaute?.slug ? communaute : get(communaute);
+    return com.ecosysteme ? "/hub" : "/workspace/create";
+}
+
 function nettoyer(slug) {
     return String(slug || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
 }
@@ -249,4 +264,4 @@ function alias(slug) {
     return cible && cible !== propre ? cible : null;
 }
 
-module.exports = { COMMUNAUTES, DEFAUT, ALIAS, get, existe, styleDe, liste, alias, nettoyer, pourLeQG, accueil };
+module.exports = { COMMUNAUTES, DEFAUT, ALIAS, get, existe, styleDe, liste, alias, nettoyer, pourLeQG, accueil, accueilMarchand };

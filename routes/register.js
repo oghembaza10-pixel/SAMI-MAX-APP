@@ -12,12 +12,16 @@ const db      = require("../services/db");
 const gradeService = require("../services/gradeService");
 const referralService = require("../services/referralService");
 const workspaceService = require("../services/workspaceService");
+// Au niveau du module, une seule fois. Il était requis trois fois, chacune
+// dans une fonction différente : ça marche, mais rien ne distingue alors
+// « déclaré à côté de l'usage » de « pas déclaré du tout » — et c'est
+// exactement le mélange qui a fait planter GET /login.
+const communautes = require("../config/communautes");
 
 // Où renvoyer quelqu'un venu d'une communauté partenaire. Rien pour la
 // communauté maison : ses membres vont bien dans leur QG.
 function retourCommunaute(req) {
     const slug = req.session?.communaute;
-    const communautes = require("../config/communautes");
     if (!slug || slug === communautes.DEFAUT || !communautes.existe(slug)) return null;
     return "/c/" + slug;
 }
@@ -26,7 +30,6 @@ function retourCommunaute(req) {
 // la personne vient de cliquer — puis la session, qui garde la trace de la
 // communauté traversée.
 function communauteDOrigine(req) {
-    const communautes = require("../config/communautes");
     const demandee = req.query?.c || req.body?.c || req.session?.communaute;
     return communautes.existe(demandee)
         ? String(demandee).toLowerCase().replace(/[^a-z0-9-]/g, "")
@@ -48,7 +51,6 @@ router.get("/", (req, res) => {
         // vient cette personne. Écrit aussi en session, parce que
         // /workspace/create redirige encore une fois derrière.
         const origine = communauteDOrigine(req);
-        const communautes = require("../config/communautes");
         if (req.session && origine !== communautes.DEFAUT) req.session.communaute = origine;
 
         const params = new URLSearchParams();

@@ -8,6 +8,11 @@ const journalService = require("../services/journalService");
 const workspaceService = require("../services/workspaceService");
 const notificationEngine = require("../engines/notificationEngine");
 const socketService = require("../services/socketService");
+// « Enlève tout ce qui relève de chez nous. » Le Hub est notre page :
+// il liste NOS métiers sous NOTRE marque, et il est fermé sur le service
+// d'une partenaire. Y renvoyer quelqu'un de chez elle le faisait rebondir
+// sur son fil sans explication, alors qu'il voulait ouvrir sa boutique.
+const communautes = require("../config/communautes");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -16,10 +21,10 @@ function requireAuth(req, res, next) {
 
 router.get("/", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
-    if (!workspaceId) return res.redirect("/hub");
+    if (!workspaceId) return res.redirect(communautes.accueilMarchand(res.locals.COM));
 
     const workspace = await workspaceService.getById(workspaceId);
-    if (!workspace) return res.redirect("/hub");
+    if (!workspace) return res.redirect(communautes.accueilMarchand(res.locals.COM));
 
     const commandes = await db.query(
         `SELECT id, nom_client FROM commandes

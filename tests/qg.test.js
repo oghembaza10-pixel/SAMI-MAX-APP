@@ -306,6 +306,228 @@ function marque(html) {
             `/c/${slug} : sans \`communaute\`, la colonne ne ramène plus chez elle`);
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // LA PORTE : « enlève tout ce qui relève de chez nous »
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // Jusqu'ici on avait retiré nos modules de sa COLONNE. Ils restaient
+    // servis à qui tapait l'adresse : /hub, /marketplace, /arsenal
+    // répondaient toujours. Cacher un bouton ne ferme pas une porte.
+    //
+    // Ce bloc décide, adresse par adresse, ce qui s'ouvre chez elle.
+    const fs = require("fs");
+    const PARTENAIRE = communautes.get("coindudigital");
+    const regles = modulesQg.cheminsAutorises(PARTENAIRE);
+
+    verifier(modulesQg.cheminsAutorises(communautes.get(communautes.DEFAUT)) === null,
+        "la maison s'est mise à filtrer ses propres adresses — ce garde ne doit rien changer chez nous");
+
+    // ── Ce qui doit rester fermé ─────────────────────────────────────────
+    for (const notre of ["/hub", "/marketplace", "/marketplace/produit/42", "/academy",
+                         "/arsenal", "/coffre", "/parrainage", "/billing", "/cartes",
+                         "/agence", "/apps", "/developpeurs", "/api/v1", "/api/v1/produits",
+                         "/api-docs", "/community", "/stories", "/drivers", "/livreur",
+                         "/guerre", "/missions", "/tools", "/dashboard", "/partenariat",
+                         "/admin", "/admin/utilisateurs", "/youtube", "/autopost", "/ads"]) {
+        verifier(!modulesQg.chemineAutorise(notre, regles),
+            `« ${notre} » s'ouvre encore sur son service — c'est chez nous, ses membres n'ont rien à y faire`);
+    }
+
+    // ── Ce qui doit rester ouvert ────────────────────────────────────────
+    // L'autre moitié du travail, et la plus facile à oublier : une porte
+    // trop fermée casse son application sans que rien ne le dise.
+    for (const sien of ["/qg", "/workspace/create", "/connect/tools", "/connect/whatsapp",
+                        "/discussions", "/discussions/12", "/samii", "/samii/griot",
+                        "/automatisations", "/vitrine/u1", "/settings", "/profile",
+                        "/c/coindudigital", "/c/coindudigital/inscription",
+                        "/admin/communaute", "/paiement/checkout", "/client-qg",
+                        "/api/qg-data", "/health", "/webhook/stripe-paiement",
+                        "/login", "/register", "/logout", "/",
+                        // Montées à la racine : elles ne ressemblent à aucun
+                        // module, et la première version de cette porte les
+                        // fermait toutes sans que rien ne le dise.
+                        "/auth/google", "/auth/google/callback", "/auth/meta",
+                        "/auth/shopify/callback", "/connect/woocommerce",
+                        "/langue/fr", "/langue/en",
+                        // La loi ne se met pas en liste blanche. Meta et
+                        // Google vérifient aussi que ces adresses répondent.
+                        "/privacy", "/privacy.html", "/terms", "/terms.html",
+                        "/confidentialite", "/politique-de-confidentialite",
+                        "/conditions-de-service", "/cgu",
+                        "/suppression-des-donnees", "/data-deletion.html"]) {
+        verifier(modulesQg.chemineAutorise(sien, regles),
+            `« ${sien} » est fermé sur son service — c'est à elle, ou son application ne marche plus sans`);
+    }
+
+    // ── Les segments, pas les préfixes ───────────────────────────────────
+    // « /c » ouvert ne doit pas ouvrir « /coffre », et « /apps » fermé ne
+    // doit pas fermer autre chose que /apps.
+    verifier(!modulesQg.chemineAutorise("/coffre", regles),
+        "« /c » est ouvert et laisse passer « /coffre » — la comparaison ne porte pas sur des segments entiers");
+    verifier(!modulesQg.chemineAutorise("/apps-de-chez-nous", regles),
+        "un chemin qui commence comme un module autorisé passe la porte");
+
+    // Les deux règles sont testées à VIDE, sur des listes fabriquées ici.
+    // Sur les vraies listes, elles se couvrent l'une l'autre : casser une
+    // seule des deux ne se voit pas, parce que la seconde rattrape. C'est
+    // rassurant en production et inutile dans un test — une protection dont
+    // on ne peut pas prouver qu'elle marche est une protection qu'on
+    // supprimera un jour « puisque tout passe quand même ».
+    const SEGMENTS = { ouverts: ["/c"], fermes: [] };
+    verifier(modulesQg.chemineAutorise("/c/coindudigital", SEGMENTS),
+        "un sous-chemin d'une adresse ouverte est refusé");
+    verifier(!modulesQg.chemineAutorise("/coffre", SEGMENTS),
+        "« /c » ouvert laisse passer « /coffre » : la comparaison n'est pas faite sur des segments entiers");
+
+    const PRECISION = { ouverts: ["/api"], fermes: ["/api/v1"] };
+    verifier(modulesQg.chemineAutorise("/api/qg-data", PRECISION),
+        "une adresse couverte seulement par la règle ouverte est refusée");
+    verifier(!modulesQg.chemineAutorise("/api/v1/produits", PRECISION),
+        "une règle courte et ouverte annule une règle longue et fermée — l'ordre des listes déciderait à notre place");
+
+    // ── PERSONNE NE MONTE UNE ROUTE SANS DÉCIDER À QUI ELLE EST ──────────
+    //
+    // Le vrai risque n'est pas la liste d'aujourd'hui : c'est la route
+    // montée dans six mois, qui tombera du bon ou du mauvais côté par
+    // hasard. On relit donc index.js et on exige que CHAQUE adresse montée
+    // ait été classée ici. Une nouvelle route fait échouer ce test tant que
+    // quelqu'un n'a pas tranché — c'est le but, pas un effet de bord.
+    const CLASSEES = {
+        // à elle
+        "/": true, "/c": true, "/health": true, "/webhook": true,
+        "/webhook/chargily": true, "/webhook/meta": true, "/webhook/whatsapp": true,
+        "/webhook/paiement-afrique": true, "/webhook/stripe-paiement": true,
+        "/billing/webhook": true, "/login": true, "/register": true,
+        "/password-reset": true, "/logout": true, "/api": true, "/paiement": true,
+        "/client-qg": true, "/verification": true, "/telegram": true,
+        "/qg": true, "/qg/:metier": true, "/qg/:metier/connecter": true,
+        "/workspace": true, "/livraisons": true, "/connect": true,
+        "/discussions": true, "/samii": true, "/automatisations": true,
+        "/vitrine": true, "/settings": true, "/profile": true,
+        "/samii/chasseur-stock": true, "/samii/diplomate": true, "/samii/griot": true,
+        "/samii/memoire-client": true, "/samii/messager-eclair": true,
+        "/samii/miroir": true, "/samii/oeil-concurrentiel": true,
+        "/samii/opportunites": true, "/samii/oracle-financier": true,
+        "/samii/radar-prospects": true, "/samii/tendances": true,
+        "/samii/top-produits": true,
+        // Montées à la racine, sans préfixe. « Se connecter avec Google » et
+        // « Connecter mes outils » passent par là — et « Connecter mes
+        // outils » est justement ce qu'on lui a laissé.
+        "/admin/communaute": true,
+        "/auth/google": true, "/auth/google/callback": true,
+        "/auth/meta": true, "/auth/meta/callback": true,
+        "/auth/shopify": true, "/auth/shopify/callback": true,
+        "/auth/shopify/token": true,
+        "/auth/woocommerce/callback": true, "/auth/woocommerce/return": true,
+        "/connect/woocommerce": true, "/webhook/woocommerce": true,
+        // à nous
+        "/hub": false, "/marketplace": false, "/academy": false, "/arsenal": false,
+        "/coffre": false, "/parrainage": false, "/billing": false, "/cartes": false,
+        "/agence": false, "/apps": false, "/developpeurs": false, "/api/v1": false,
+        "/api-docs": false, "/community": false, "/stories": false, "/drivers": false,
+        "/livreur": false, "/guerre": false, "/missions": false, "/tools": false,
+        "/dashboard": false, "/partenariat": false, "/admin": false, "/ads": false,
+        "/youtube": false, "/autopost": false, "/inscription": false,
+        "/test-telegram": false,
+    };
+    const source = fs.readFileSync(path.join(RACINE, "index.js"), "utf8");
+    const montees = new Set([...source.matchAll(
+        /app\.(?:use|get|post|all)\(\s*["'](\/[^"']*)["']/g)].map((m) => m[1]));
+
+    // Les routeurs montés SANS préfixe — app.use(require("./routes/x")) —
+    // définissent leurs adresses chez eux. Ils ne ressemblent à aucun
+    // module, et c'est précisément ce qui les rend dangereux : la première
+    // version de cette porte fermait /auth/google et le sélecteur de
+    // langue, sans que rien ici ne le dise. On va donc les lire aussi.
+    for (const [, fichier] of source.matchAll(
+        /app\.use\(\s*(?:["']\/["']\s*,\s*)?require\(\s*["']\.\/routes\/([a-z0-9-]+)["']\s*\)/gi)) {
+        let routeur;
+        try {
+            routeur = fs.readFileSync(path.join(RACINE, "routes", `${fichier}.js`), "utf8");
+        } catch { continue; }
+        for (const [, chemin] of routeur.matchAll(
+            /router\.(?:get|post|put|delete|all)\(\s*["'](\/[^"']*)["']/g)) {
+            montees.add(chemin);
+        }
+    }
+    for (const route of [...montees].sort()) {
+        if (!(route in CLASSEES)) {
+            verifier(false,
+                `« ${route} » est montée dans index.js mais personne n'a dit si elle est à elle ou à nous — ajoute-la à CLASSEES dans ce test`);
+            continue;
+        }
+        verifier(modulesQg.chemineAutorise(route, regles) === CLASSEES[route],
+            `« ${route} » est ${CLASSEES[route] ? "fermée alors qu'elle devrait être à elle" : "ouverte alors qu'elle est à nous"}`);
+    }
+
+    // ── AUCUNE ROUTE OUVERTE NE DOIT MENER À UNE PORTE FERMÉE ────────────
+    //
+    // La porte, seule, ne suffit pas : elle produit des culs-de-sac. Un
+    // membre de chez elle ouvrait « Mes affaires », n'avait pas encore de
+    // boutique, et la route le renvoyait vers /hub — qui est maintenant
+    // fermé. Il rebondissait donc sur son fil, sans jamais comprendre
+    // pourquoi le bouton ne marche pas. La page qu'il voulait — créer sa
+    // boutique — était juste derrière.
+    //
+    // On lit donc les redirections écrites en dur dans les routes qui lui
+    // sont ouvertes, et on exige qu'elles mènent quelque part où elle a le
+    // droit d'aller.
+    const montageParFichier = [...source.matchAll(
+        /app\.use\(\s*["'](\/[^"']*)["']\s*,(?:[^)]*?)require\(\s*["']\.\/routes\/([a-z0-9-]+)["']/gi)]
+        .map(([, prefixe, fichier]) => ({ prefixe, fichier }));
+    verifier(montageParFichier.length > 20,
+        "la lecture des montages d'index.js ne trouve presque rien — ce contrôle ne vérifie plus grand-chose");
+
+    for (const { prefixe, fichier } of montageParFichier) {
+        if (!modulesQg.chemineAutorise(prefixe, regles)) continue;  // fermée : peu importe
+        let corps;
+        try {
+            corps = fs.readFileSync(path.join(RACINE, "routes", `${fichier}.js`), "utf8");
+        } catch { continue; }
+        for (const [, cible] of corps.matchAll(/res\.redirect\(\s*["'](\/[^"'?]*)["']/g)) {
+            verifier(modulesQg.chemineAutorise(cible, regles),
+                `routes/${fichier}.js (monté sur ${prefixe}, ouvert chez elle) renvoie vers « ${cible} », qui est fermé — ses membres rebondissent sans explication`);
+        }
+    }
+
+    // La décision elle-même : chez nous le Hub, chez elle la création de
+    // boutique. Testée à part, parce que c'est elle qui a été fausse.
+    verifier(communautes.accueilMarchand(communautes.get(communautes.DEFAUT)) === "/hub",
+        "un marchand de chez nous ne passe plus par le Hub");
+    verifier(communautes.accueilMarchand(PARTENAIRE) === "/workspace/create",
+        "un marchand de chez elle sans boutique n'est plus envoyé vers la création de boutique");
+    verifier(modulesQg.chemineAutorise(communautes.accueilMarchand(PARTENAIRE), regles),
+        "l'adresse de repli d'un marchand de chez elle est elle-même fermée — c'est une boucle");
+    verifier(modulesQg.chemineAutorise(communautes.accueil(PARTENAIRE), regles),
+        "la porte renvoie vers une adresse qu'elle refuse elle-même — boucle de redirection infinie");
+
+    // ── `communautes` EST-IL VRAIMENT DÉCLARÉ LÀ OÙ ON S'EN SERT ? ───────
+    //
+    // Quinze fichiers ont dû apprendre à demander la communauté avant de
+    // rediriger. Dans l'un d'eux, la déclaration existait déjà — mais À
+    // L'INTÉRIEUR d'une fonction. Vue de loin, elle avait l'air d'être là ;
+    // au point d'usage, elle n'existait pas. GET /login plantait pour toute
+    // personne déjà connectée, et rien ne s'en apercevait au démarrage :
+    // c'est un chemin qu'on ne prend qu'une fois connecté.
+    //
+    // Ce contrôle ne coûte rien et ferme la porte à toute une famille : une
+    // variable de module utilisée sans être déclarée au niveau du module.
+    const fichiersRoutes = fs.readdirSync(path.join(RACINE, "routes"))
+        .filter((f) => f.endsWith(".js"));
+    for (const f of fichiersRoutes) {
+        const corps = fs.readFileSync(path.join(RACINE, "routes", f), "utf8");
+        const lignes = corps.split("\n");
+        // « config/communautes.js » cité dans un commentaire ou une page
+        // d'aide n'est pas un usage — d'où le refus de « .js ».
+        const usages = lignes.filter((l) =>
+            /\bcommunautes\.(?!js\b)[a-zA-Z]/.test(l) && !/require\(/.test(l));
+        if (!usages.length) continue;
+        const auNiveauDuModule = lignes.some((l) =>
+            /^(?:const|let|var)\s+communautes\s*=\s*require\(/.test(l));
+        verifier(auNiveauDuModule,
+            `routes/${f} : « communautes.… » est utilisé ${usages.length} fois, mais n'est déclaré nulle part au niveau du module — ReferenceError au moment où la ligne s'exécute, pas au démarrage`);
+    }
+
     if (echecs.length) {
         console.error(`❌ QG : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
         for (const e of echecs) console.error("   • " + e);

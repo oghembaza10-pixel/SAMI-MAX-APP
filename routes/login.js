@@ -5,19 +5,19 @@ const express = require("express");
 const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const db      = require("../services/db");
+const communautes = require("../config/communautes");
 
 // Où renvoyer quelqu'un venu d'une communauté partenaire. Rien pour la
 // communauté maison : ses membres vont bien dans leur QG.
 function retourCommunaute(req) {
     const slug = req.session?.communaute;
-    const communautes = require("../config/communautes");
     if (!slug || slug === communautes.DEFAUT || !communautes.existe(slug)) return null;
     return "/c/" + slug;
 }
 
 // ── GET /login ────────────────────────────────────────────────
 router.get("/", (req, res) => {
-    if (req.session?.loggedIn) return res.redirect("/hub");
+    if (req.session?.loggedIn) return res.redirect(communautes.accueilMarchand(res.locals.COM));
 
     const { error, verified } = req.query;
 

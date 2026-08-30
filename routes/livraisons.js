@@ -13,6 +13,11 @@ const db = require("../services/db");
 const socketService = require("../services/socketService");
 const workspaceService = require("../services/workspaceService");
 const tarifLivraison = require("../services/tarifLivraison");
+// « Enlève tout ce qui relève de chez nous. » Le Hub est notre page :
+// il liste NOS métiers sous NOTRE marque, et il est fermé sur le service
+// d'une partenaire. Y renvoyer quelqu'un de chez elle le faisait rebondir
+// sur son fil sans explication, alors qu'il voulait ouvrir sa boutique.
+const communautes = require("../config/communautes");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -41,7 +46,7 @@ const STATUT_LABEL = {
 
 router.get("/", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
-    if (!workspaceId) return res.redirect("/hub");
+    if (!workspaceId) return res.redirect(communautes.accueilMarchand(res.locals.COM));
     const workspace = await workspaceService.getById(workspaceId);
     const wsRows = await db.query(`SELECT latitude, longitude FROM workspaces WHERE id = $1`, [workspaceId]);
     const wsLat = wsRows[0]?.latitude || null;

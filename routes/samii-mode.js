@@ -9,6 +9,11 @@
 const express = require("express");
 const router   = express.Router();
 const workspaceService = require("../services/workspaceService");
+// « Enlève tout ce qui relève de chez nous. » Le Hub est notre page :
+// il liste NOS métiers sous NOTRE marque, et il est fermé sur le service
+// d'une partenaire. Y renvoyer quelqu'un de chez elle le faisait rebondir
+// sur son fil sans explication, alors qu'il voulait ouvrir sa boutique.
+const communautes = require("../config/communautes");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -25,7 +30,7 @@ const MODES = [
 
 router.get("/mode", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
-    if (!workspaceId) return res.redirect("/hub");
+    if (!workspaceId) return res.redirect(communautes.accueilMarchand(res.locals.COM));
 
     const workspace   = await workspaceService.getById(workspaceId);
     const currentMode = workspace?.samii?.mode || "copilote";
@@ -155,7 +160,7 @@ const RDV_CONFIG_DEFAUT = { jours_fermes: [5], heure_debut: "09:00", heure_fin: 
 // aussi recevoir des demandes de rendez-vous via le chat SAMII.
 router.get("/rdv-config", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;
-    if (!workspaceId) return res.redirect("/hub");
+    if (!workspaceId) return res.redirect(communautes.accueilMarchand(res.locals.COM));
 
     const workspace = await workspaceService.getById(workspaceId);
     const config = { ...RDV_CONFIG_DEFAUT, ...(workspace?.rdv_config || {}) };

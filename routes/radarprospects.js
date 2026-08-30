@@ -11,6 +11,11 @@ const router  = express.Router();
 const gemini  = require("../services/geminiService");
 const googleSearch = require("../services/googleSearch");
 const workspaceService = require("../services/workspaceService");
+// « Enlève tout ce qui relève de chez nous. » Le Hub est notre page :
+// il liste NOS métiers sous NOTRE marque, et il est fermé sur le service
+// d'une partenaire. Y renvoyer quelqu'un de chez elle le faisait rebondir
+// sur son fil sans explication, alors qu'il voulait ouvrir sa boutique.
+const communautes = require("../config/communautes");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -19,9 +24,9 @@ function requireAuth(req, res, next) {
 
 async function getWorkspaceOrRedirect(req, res) {
     const workspaceId = req.session.workspaceId;
-    if (!workspaceId) { res.redirect("/hub"); return null; }
+    if (!workspaceId) { res.redirect(communautes.accueilMarchand(res.locals.COM)); return null; }
     const workspace = await workspaceService.getById(workspaceId);
-    if (!workspace) { res.redirect("/hub"); return null; }
+    if (!workspace) { res.redirect(communautes.accueilMarchand(res.locals.COM)); return null; }
     return workspace;
 }
 
