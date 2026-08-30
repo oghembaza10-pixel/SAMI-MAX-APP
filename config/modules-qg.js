@@ -37,6 +37,7 @@ const MODULES = [
     // ── Le repli : « Plus » ──────────────────────────────────────────────
     { id: "affaires",    libelle: "Mes affaires",        cle: "qg.nav.myBusiness",   icone: "briefcase",       href: "/qg",             rang: "more", separateurAvant: true },
     { id: "connect",     libelle: "Connecter mes outils", cle: "qg.nav.connectTools", icone: "plug-zap",       href: "/connect/tools",  rang: "more" },
+    { id: "discussions", libelle: "Discussions",        cle: "qg.nav.discussions",  icone: "messages-square", href: "/discussions",    rang: "more" },
     { id: "api",         libelle: "API & Webhooks",      cle: "qg.nav.api",          icone: "terminal",        href: "/developpeurs",   rang: "more" },
     { id: "apps",        libelle: "Applications",        cle: "qg.nav.apps",         icone: "blocks",          href: "/apps",           rang: "more" },
     { id: "arsenal",     libelle: "Arsenal",             cle: "qg.nav.arsenal",      icone: "sword",           href: "/arsenal",        rang: "more" },
@@ -65,7 +66,7 @@ const MODULES = [
 // Il porte SON nom, pas le nôtre — le libellé vient de `COM.assistant`, et
 // le moteur derrière est le même. C'est ce qu'on lui apporte, et c'est la
 // raison pour laquelle elle vient chez nous plutôt que sur un site vitrine.
-const MINIMAL = ["communaute", "affaires", "connect", "assistant", "vitrine", "reglages"];
+const MINIMAL = ["communaute", "discussions", "affaires", "connect", "assistant", "vitrine", "reglages"];
 
 // La liste blanche d'une communauté. `null` (la maison) = tout.
 function autorises(COM) {

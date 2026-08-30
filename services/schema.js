@@ -328,6 +328,12 @@ const BLOCS = [
             // ferme son téléphone et revient trois jours plus tard
             // retrouvait NOTRE QG, notre marque et nos quatorze modules.
             `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS communaute TEXT DEFAULT 'samii'`,
+            // Les discussions. Sans cette colonne, « les groupes à rejoindre »
+            // listait TOUS les groupes de la base : ses membres voyaient les
+            // nôtres, pouvaient les rejoindre et lire nos conversations. Ce
+            // n'est pas une fuite de marque, c'est une fuite de messages.
+            `ALTER TABLE discussions ADD COLUMN IF NOT EXISTS communaute TEXT DEFAULT 'samii'`,
+            `CREATE INDEX IF NOT EXISTS idx_discussions_communaute ON discussions (communaute, type)`,
         ],
     },
     {

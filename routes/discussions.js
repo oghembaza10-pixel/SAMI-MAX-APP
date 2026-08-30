@@ -5,6 +5,21 @@
 // ==========================================================================
 const express = require("express");
 const router = express.Router();
+const communautes = require("../config/communautes");
+
+// ── CHACUNE SES CONVERSATIONS ───────────────────────────────────────────
+//
+// Rien ne cloisonnait les discussions. « Les groupes à rejoindre » listait
+// TOUS les groupes de la base : les membres d'une partenaire voyaient les
+// nôtres, pouvaient les rejoindre, et lire ce qui s'y dit. Ce n'est pas une
+// fuite de marque comme les autres — c'est une fuite de conversations
+// privées entre deux entreprises qui n'ont rien à partager.
+//
+// La communauté vient du SERVICE (res.locals.COM, posé dans index.js) :
+// sur son domaine, ses groupes ; sur le nôtre, les nôtres.
+function communauteDe(res) {
+    return res.locals?.COM?.slug || communautes.DEFAUT;
+}
 const db = require("../services/db");
 const socketService = require("../services/socketService");
 const planner = require("../brain/planner");
@@ -33,11 +48,28 @@ function timeAgo(date) {
     const d=Math.floor(h/24); return `il y a ${d} j`;
 }
 
-async function getOrCreateGeneral() {
-    const rows = await db.query(`SELECT * FROM discussions WHERE type = 'general' LIMIT 1`);
+// Le chat général — UN PAR COMMUNAUTÉ, et c'est tout l'enjeu.
+//
+// Il n'y en avait qu'un pour toute la base. Sur le service d'une
+// partenaire, ses membres seraient donc entrés dans NOTRE salle générale et
+// y auraient écrit, au milieu de nos conversations, sans que ni eux ni nous
+// ne comprenions pourquoi. Le nom de la salle portait même notre marque.
+//
+// La salle se crée toute seule à la première visite, sous le nom de la
+// communauté : personne n'a à la préparer à l'avance.
+async function getOrCreateGeneral(res) {
+    const slug = communauteDe(res);
+    const rows = await db.query(
+        `SELECT * FROM discussions
+          WHERE type = 'general' AND COALESCE(communaute, $2) = $1 LIMIT 1`,
+        [slug, communautes.DEFAUT]);
     if (rows[0]) return rows[0];
+
+    const COM = res.locals?.COM || communautes.get(slug);
     const created = await db.query(
-        `INSERT INTO discussions (type, nom, created_by) VALUES ('general','Chat général SAMII',NULL) RETURNING *`
+        `INSERT INTO discussions (type, nom, created_by, communaute)
+         VALUES ('general',$1,NULL,$2) RETURNING *`,
+        [`Chat général · ${COM.nom}`, slug]
     );
     return created[0];
 }
@@ -58,7 +90,7 @@ router.get("/", requireAuth, async (req, res) => {
     let general, mesGroupes = [], groupesARejoindre = [];
 
     try {
-        general = await getOrCreateGeneral();
+        general = await getOrCreateGeneral(res);
 
         mesGroupes = await db.query(
             `SELECT d.*, (SELECT contenu FROM discussion_messages WHERE discussion_id = d.id ORDER BY created_at DESC LIMIT 1) AS dernier_message,
@@ -66,18 +98,21 @@ router.get("/", requireAuth, async (req, res) => {
              FROM discussions d
              JOIN discussion_membres dm ON dm.discussion_id = d.id
              WHERE dm.user_id = $1 AND d.type = 'groupe'
+               AND COALESCE(d.communaute, $3) = $2
              ORDER BY d.updated_at DESC NULLS LAST, d.created_at DESC`,
-            [userId]
+            [userId, communauteDe(res), communautes.DEFAUT]
         );
 
         groupesARejoindre = await db.query(
             `SELECT d.*, (SELECT COUNT(*) FROM discussion_membres WHERE discussion_id = d.id) AS nb_membres
              FROM discussions d
-             WHERE d.type = 'groupe' AND d.id NOT IN (
+             WHERE d.type = 'groupe'
+               AND COALESCE(d.communaute, $3) = $2
+               AND d.id NOT IN (
                  SELECT discussion_id FROM discussion_membres WHERE user_id = $1
              )
              ORDER BY d.created_at DESC LIMIT 20`,
-            [userId]
+            [userId, communauteDe(res), communautes.DEFAUT]
         );
     } catch (err) {
         console.error("❌ GET /discussions :", err.message);
@@ -198,8 +233,8 @@ router.post("/groupe", requireAuth, async (req, res) => {
         if (!nom) return res.json({ success:false, error:"Nom du groupe requis." });
 
         const rows = await db.query(
-            `INSERT INTO discussions (type, nom, created_by) VALUES ('groupe',$1,$2) RETURNING id`,
-            [nom, req.session.userId]
+            `INSERT INTO discussions (type, nom, created_by, communaute) VALUES ('groupe',$1,$2,$3) RETURNING id`,
+            [nom, req.session.userId, communauteDe(res)]
         );
         const discussionId = rows[0].id;
 
@@ -221,7 +256,10 @@ router.post("/groupe", requireAuth, async (req, res) => {
 router.post("/:id/rejoindre", requireAuth, async (req, res) => {
     try {
         const discussionId = parseInt(req.params.id, 10);
-        const existe = await db.query(`SELECT id FROM discussions WHERE id = $1 AND type = 'groupe'`, [discussionId]);
+        const existe = await db.query(
+            `SELECT id FROM discussions
+              WHERE id = $1 AND type = 'groupe' AND COALESCE(communaute, $3) = $2`,
+            [discussionId, communauteDe(res), communautes.DEFAUT]);
         if (!existe.length) return res.json({ success:false, error:"Groupe introuvable." });
 
         const dejaMembre = await estMembre(discussionId, req.session.userId);
