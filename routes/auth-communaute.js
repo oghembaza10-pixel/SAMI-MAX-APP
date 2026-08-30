@@ -28,6 +28,7 @@
 const express = require("express");
 const router = express.Router();
 const communautes = require("../config/communautes");
+const { suiteSure } = require("../services/retour");
 
 function escapeHtml(v) {
     return String(v ?? "").replace(/[&<>"']/g, (c) => ({
@@ -216,12 +217,19 @@ router.get("/:slug/connexion", (req, res) => {
     const COM = partenaire(req, res);
     if (!COM) return res.status(404).send("Introuvable.");
 
+    // La destination voulue, si on a été envoyée ici depuis une page fermée
+    // (son espace d'administration, typiquement). Validée AVANT d'être
+    // écrite dans le formulaire : une adresse venue de l'URL qu'on recopie
+    // sans la lire, c'est une redirection ouverte offerte à qui la demande.
+    const suite = suiteSure(req.query?.suite);
+
     const corps = `
     <form id="f" autocomplete="on">
       <label for="email">Email</label>
       <input id="email" name="email" type="email" required autocomplete="email">
       <label for="password">Mot de passe</label>
       <input id="password" name="password" type="password" required autocomplete="current-password">
+      ${suite ? `<input type="hidden" name="suite" value="${escapeHtml(suite)}">` : ""}
       <button type="submit">Se connecter</button>
     </form>
     ${scriptEnvoi("/login", COM.slug)}`;

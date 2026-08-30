@@ -79,13 +79,45 @@ function ouvrir(session, slugService = SLUG) {
     // sens : il n'y a rien à refuser, il n'y a qu'une session qui manque.
     COMPTE = null;
     const anonyme = await ouvrir({});
-    verifier(anonyme.redirection === `/c/${SLUG}/connexion`,
+    verifier(String(anonyme.redirection || "").startsWith(`/c/${SLUG}/connexion`),
         `déconnectée, elle est ${anonyme.statusCode === 403 ? "éconduite au lieu d'être envoyée se connecter" : `envoyée sur « ${anonyme.redirection} »`}`);
+
+    // ── ET ELLE ATTERRIT DANS SON ADMIN, PAS SUR SON FIL ────────────────
+    // « Je peux pas qu'elle atterrisse dans son fil d'actualité. »
+    // Sans cette destination emportée, la connexion la déposait sur le fil
+    // de sa communauté et elle devait retrouver l'admin toute seule.
+    verifier(/[?&]suite=%2Fadmin%2Fcommunaute/.test(anonyme.redirection || ""),
+        `la connexion ne sait pas où la ramener ensuite — elle atterrira sur son fil (« ${anonyme.redirection} »)`);
 
     // Chez nous, la même situation mène à notre page de connexion.
     const anonymeMaison = await ouvrir({}, communautes.DEFAUT);
-    verifier(anonymeMaison.redirection === "/login",
+    verifier(String(anonymeMaison.redirection || "").startsWith("/login"),
         `chez nous, une personne déconnectée est envoyée sur « ${anonymeMaison.redirection} »`);
+    verifier(/[?&]suite=/.test(anonymeMaison.redirection || ""),
+        "chez nous non plus la connexion ne ramène à la page demandée");
+
+    // ── LA DESTINATION VIENT DU DEHORS ──────────────────────────────────
+    // Elle voyage dans l'URL puis dans un formulaire : n'importe qui peut y
+    // écrire ce qu'il veut et envoyer le lien. La victime voit NOTRE
+    // domaine, se connecte pour de vrai, et se fait déposer ailleurs — sur
+    // une page qui lui demandera « de confirmer son mot de passe ».
+    const { suiteSure } = require(path.join(RACINE, "services", "retour"));
+    for (const piege of [
+        "https://faux-site.example/vol",
+        "//faux-site.example",             // protocole relatif : le navigateur lit https://
+        "/\\faux-site.example",            // certains navigateurs le lisent comme //
+        "javascript:alert(1)",
+        "/ok\nLocation: https://ailleurs", // injection d'en-tête
+        "",
+        null,
+    ]) {
+        verifier(suiteSure(piege) === null,
+            `« ${String(piege).slice(0, 40)} » est accepté comme destination de retour — c'est une redirection ouverte`);
+    }
+    for (const bonne of ["/admin/communaute", "/c/coindudigital", "/qg"]) {
+        verifier(suiteSure(bonne) === bonne,
+            `« ${bonne} » est refusé alors que c'est une adresse interne parfaitement légitime`);
+    }
 
     // ── 2. CONNECTÉE, MAIS PAS AVEC LA BONNE ADRESSE ────────────────────
     COMPTE = { id: "u9", prenom: "Yao", email: "quelquun@example.cm", role: "membre", communaute: SLUG, actif: true };
@@ -147,6 +179,61 @@ function ouvrir(session, slugService = SLUG) {
     verifier(html.includes(`/c/${SLUG}`), "aucun lien ne ramène à sa communauté depuis son espace d'administration");
     verifier(!/href="\/community"|href="\/hub"|href="\/marketplace"/.test(html),
         "son espace d'administration renvoie vers des pages qui sont à nous");
+
+    // ── LE DERNIER MAILLON : LA CONNEXION LA RAMÈNE-T-ELLE ? ────────────
+    //
+    // Tout le reste ne sert à rien si /login ignore la destination : elle se
+    // connecte, et on la dépose sur son fil. C'est précisément ce qu'il ne
+    // voulait pas.
+    const Module2 = require("module");
+    const vrai2 = Module2.prototype.require;
+    Module2.prototype.require = function (nom) {
+        if (nom === "../services/db") return {
+            query: async (q) => {
+                if (/FROM utilisateurs WHERE email/i.test(q)) return [{
+                    id: "u1", email: COM.admin, prenom: "Ines", nom: "Audrey",
+                    role: "community_admin", communaute: SLUG, type_compte: "marchand",
+                    password_hash: "$2b$10$peu-importe", statut_acces: "actif", actif: true,
+                }];
+                return [];
+            },
+        };
+        // Le mot de passe n'est pas le sujet ici : on vérifie où l'on
+        // atterrit une fois qu'il est bon.
+        if (nom === "bcrypt") return { compare: async () => true, hash: async () => "x" };
+        return vrai2.apply(this, arguments);
+    };
+    delete require.cache[require.resolve(path.join(RACINE, "routes", "login.js"))];
+    const login = require(path.join(RACINE, "routes", "login.js"));
+    Module2.prototype.require = vrai2;
+
+    function seConnecter(corps) {
+        const couche = login.stack.find((c) => c.route && c.route.path === "/" && c.route.methods.post);
+        return new Promise((resolve) => {
+            const req = {
+                body: corps, query: {},
+                session: { communaute: SLUG, regenerate: (cb) => cb(null), save: (cb) => cb && cb(null) },
+            };
+            const res = { json: resolve, status() { return this; }, redirect: (u) => resolve({ redirect: u }) };
+            couche.route.stack[0].handle(req, res, () => resolve(null));
+        });
+    }
+
+    const avecRetour = await seConnecter({ email: COM.admin, password: "x", suite: "/admin/communaute" });
+    verifier(avecRetour && avecRetour.success === true,
+        `la connexion échoue avec un mot de passe pourtant valide (${JSON.stringify(avecRetour)})`);
+    verifier(avecRetour && avecRetour.redirect === "/admin/communaute",
+        `après connexion elle atterrit sur « ${avecRetour && avecRetour.redirect} » au lieu de son espace d'administration`);
+
+    // Sans destination, rien ne change : on retombe sur sa communauté.
+    const sansRetour = await seConnecter({ email: COM.admin, password: "x" });
+    verifier(sansRetour && sansRetour.redirect === `/c/${SLUG}`,
+        `sans destination demandée, la connexion ne ramène plus chez elle (« ${sansRetour && sansRetour.redirect} »)`);
+
+    // Et une destination piégée est ignorée, pas suivie.
+    const piege = await seConnecter({ email: COM.admin, password: "x", suite: "https://faux-site.example" });
+    verifier(piege && piege.redirect === `/c/${SLUG}`,
+        `la connexion suit une adresse extérieure fournie dans le formulaire (« ${piege && piege.redirect} ») — c'est une redirection ouverte`);
 
     if (echecs.length) {
         console.error(`❌ admin communauté : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);

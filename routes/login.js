@@ -5,6 +5,7 @@ const express = require("express");
 const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const db      = require("../services/db");
+const { suiteSure } = require("../services/retour");
 const communautes = require("../config/communautes");
 
 // Où renvoyer quelqu'un venu d'une communauté partenaire. Rien pour la
@@ -20,6 +21,10 @@ router.get("/", (req, res) => {
     if (req.session?.loggedIn) return res.redirect(communautes.accueilMarchand(res.locals.COM));
 
     const { error, verified } = req.query;
+    // La destination voulue, quand on a été envoyé ici depuis une page qui
+    // demande une session (l'espace d'administration d'une communauté).
+    // Validée avant d'être recopiée : elle vient de l'URL.
+    const suite = suiteSure(req.query?.suite);
 
     // Clés i18n (le texte FR ci-dessous est affiché avant que le script
     // n'applique la langue sauvegardée par l'utilisateur, cf. data-i18n).
@@ -83,6 +88,7 @@ router.get("/", (req, res) => {
     <form id="form-login">
         <input name="email"    type="email"    placeholder="Adresse e-mail" data-i18n-ph="login.ph.email" required>
         <input name="password" type="password" placeholder="Mot de passe"   data-i18n-ph="login.ph.password" required>
+        ${suite ? `<input type="hidden" name="suite" value="${suite.replace(/"/g, "&quot;")}">` : ""}
         <a href="/password-reset" class="forgot" data-i18n="login.forgot">Mot de passe oublié ?</a>
         <button type="submit" data-i18n="login.submit">Se connecter</button>
     </form>
@@ -204,6 +210,13 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
 // ── POST /login ───────────────────────────────────────────────
 router.post("/", async (req, res) => {
     const { email, password } = req.body;
+    // Là où la personne allait AVANT qu'on lui demande de se connecter.
+    // Elle prime sur la destination habituelle : quelqu'un qui clique sur
+    // le lien de son espace d'administration veut atterrir dans son espace
+    // d'administration, pas sur le fil de sa communauté.
+    //
+    // Validée par suiteSure() : elle vient d'un formulaire, donc du dehors.
+    const suite = suiteSure(req.body?.suite);
 
     if (!email || !password) {
         return res.json({ success: false, error: "Email et mot de passe requis." });
@@ -246,7 +259,7 @@ router.post("/", async (req, res) => {
                 req.session.typeCompte = "client";
                 req.session.workspaceId = null;
 
-                res.json({ success: true, redirect: retourCommunaute(req) || "/client-qg" });
+                res.json({ success: true, redirect: suite || retourCommunaute(req) || "/client-qg" });
             });
             return;
         }
@@ -276,7 +289,7 @@ router.post("/", async (req, res) => {
             // la vue d'ensemble de ses clients, pas une boutique isolée.
             res.json({
                 success : true,
-                redirect: retourCommunaute(req) || (typeCompte === "agence" ? "/agence" : (workspace ? "/qg" : "/hub")),
+                redirect: suite || retourCommunaute(req) || (typeCompte === "agence" ? "/agence" : (workspace ? "/qg" : "/hub")),
             });
         });
 

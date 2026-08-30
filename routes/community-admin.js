@@ -96,9 +96,14 @@ router.get("/admin/communaute", async (req, res) => {
         // Pas connectée : ce n'est pas un refus, c'est une session qui manque.
         // On l'envoie sur SA page de connexion, pas sur la nôtre.
         if (motif === "deconnecte") {
+            // On emporte la destination : sans elle, elle se connecte et on
+            // la dépose sur le fil de sa communauté, pas là où elle allait.
+            // Elle doit alors retrouver l'admin toute seule — et c'est
+            // exactement le détour qui fait dire « ça marche pas ».
+            const suite = encodeURIComponent("/admin/communaute");
             return res.redirect(COMhote.ecosysteme
-                ? "/login"
-                : `/c/${COMhote.slug}/connexion`);
+                ? `/login?suite=${suite}`
+                : `/c/${COMhote.slug}/connexion?suite=${suite}`);
         }
         if (motif === "compte_desactive") {
             return pageRefus(res, COMhote, "Ce compte est désactivé",
