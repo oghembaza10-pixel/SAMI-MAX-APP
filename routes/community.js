@@ -259,7 +259,16 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     } catch (err) { console.warn("⚠️ publications :", err.message); }
 
     try {
-        classement = await db.query(`SELECT id, prenom, nom, grade_actuel, score_grade, type_compte FROM utilisateurs ORDER BY score_grade DESC NULLS LAST LIMIT 5`);
+        // SES membres, pas les nôtres. Sur sa page s'affichaient les cinq
+        // premiers de TOUTE la plateforme — des gens qu'elle n'a jamais vus,
+        // sous sa marque, présentés comme sa communauté. C'est la même fuite
+        // que le fil des publications, au même endroit du code.
+        classement = await db.query(
+            `SELECT id, prenom, nom, grade_actuel, score_grade, type_compte
+               FROM utilisateurs
+              WHERE COALESCE(communaute, $2) = $1
+              ORDER BY score_grade DESC NULLS LAST LIMIT 5`,
+            [COM.slug, communautes.DEFAUT]);
     } catch (err) { console.warn("⚠️ classement :", err.message); }
 
     let stories = [];
@@ -274,7 +283,13 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     } catch (err) { console.warn("⚠️ stories :", err.message); }
 
     try {
-        const cRows = await db.query(`SELECT COUNT(*) AS total FROM utilisateurs`); stats.membres = parseInt(cRows[0]?.total||0,10);
+        // Ses membres à elle. « 17 membres » sur sa page alors qu'elle n'en
+        // a aucun, c'est un chiffre flatteur et faux — et le jour où elle
+        // regarde qui sont ces dix-sept, elle ne reconnaît personne.
+        const cRows = await db.query(
+            `SELECT COUNT(*) AS total FROM utilisateurs WHERE COALESCE(communaute, $2) = $1`,
+            [COM.slug, communautes.DEFAUT]);
+        stats.membres = parseInt(cRows[0]?.total||0,10);
         // Comptés chez elle, pas chez nous : afficher notre total sur sa page
         // serait un chiffre flatteur et faux.
         const pRows = await db.query(
@@ -456,6 +471,9 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .composer-boost:hover{background:var(--gold);color:#100c02;}
 .composer-boost svg{width:14px;height:14px;}
 
+.app-manuel{margin-top:11px;padding:12px 13px;border:1px solid var(--border);border-radius:11px;background:rgba(0,0,0,.2);font-size:12.5px;line-height:1.65;color:var(--muted);}
+.app-manuel[hidden]{display:none;}
+.app-manuel b{color:var(--text);}
 .app-install{width:100%;padding:12px;border-radius:11px;border:none;cursor:pointer;
   background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#001018;
   font-weight:800;font-size:12.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
@@ -628,10 +646,14 @@ ${COM.ecosysteme ? `<div class="side-panel"><h3><i data-lucide="compass"></i> É
 <a href="/register?c=${COM.slug}" class="eco-link-item"><i data-lucide="store"></i> Ouvrir ma boutique</a>
 <a href="#" class="eco-link-item" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant · dès 1 000 FCFA</a>
 </div>
-${COM.app ? `<div class="side-panel" id="panneauApp" style="display:none;">
+${COM.app ? `<div class="side-panel" id="panneauApp">
   <h3><i data-lucide="smartphone"></i> L'application</h3>
-  <div class="side-text" style="margin-bottom:12px;">Installe ${escapeHtml(COM.app.nom)} sur ton téléphone. Rien à télécharger, l'icône se pose sur ton écran d'accueil.</div>
+  <div class="side-text" style="margin-bottom:12px;">Installe ${escapeHtml(COM.app.nom)} sur ton téléphone. Rien à télécharger, l'icône se pose sur ton écran d'accueil, à côté de WhatsApp.</div>
   <button class="app-install" onclick="installerApp()"><i data-lucide="download"></i> Installer l'application</button>
+  <!-- Le mode d'emploi manuel, révélé seulement si le navigateur refuse de
+       proposer l'installation lui-même. Il est écrit ici plutôt que dans un
+       message fugace : sur iPhone, c'est le SEUL chemin possible. -->
+  <div class="app-manuel" id="appManuel" hidden></div>
 </div>` : ""}`}</div>
 
 <div class="col-feed">
@@ -782,21 +804,51 @@ let inviteApp = null;
 window.addEventListener("beforeinstallprompt", function (e) {
     e.preventDefault();
     inviteApp = e;
-    const panneau = document.getElementById("panneauApp");
-    if (panneau) panneau.style.display = "";
 });
+
+// Le mode d'emploi manuel, par navigateur. Sur iPhone, « beforeinstallprompt »
+// n'existe pas et n'existera pas : Safari n'installe QUE par le menu Partager.
+// Un message fugace en bas de l'écran n'y suffit pas — on écrit les gestes,
+// et ils restent affichés le temps qu'il faut pour les faire.
+function modeEmploiInstallation() {
+    const ua = navigator.userAgent;
+    const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (iOS) {
+        return "Sur iPhone : appuie sur <b>Partager</b> (le carré avec la flèche, en bas), " +
+               "puis fais défiler et choisis <b>« Sur l'écran d'accueil »</b>.";
+    }
+    if (/Android/.test(ua)) {
+        return "Sur Android : ouvre le menu de ton navigateur (les <b>⋮</b> en haut à droite), " +
+               "puis choisis <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>.";
+    }
+    return "Ouvre le menu de ton navigateur, puis choisis <b>« Installer »</b> " +
+           "ou <b>« Ajouter à l'écran d'accueil »</b>.";
+}
+
 async function installerApp() {
-    if (!inviteApp) { showToast("Ouvre le menu de ton navigateur puis « Ajouter à l'écran d'accueil »."); return; }
+    // Le navigateur ne veut pas proposer l'installation : on ne fait pas
+    // semblant, on montre les gestes à faire à la main.
+    if (!inviteApp) {
+        const zone = document.getElementById("appManuel");
+        if (zone) { zone.innerHTML = modeEmploiInstallation(); zone.hidden = false; }
+        return;
+    }
     inviteApp.prompt();
     const choix = await inviteApp.userChoice;
     inviteApp = null;
-    document.getElementById("panneauApp").style.display = "none";
     if (choix.outcome === "accepted") showToast("C'est installé — regarde ton écran d'accueil.");
 }
+
 // Déjà installée : le panneau n'a plus rien à proposer.
 window.addEventListener("appinstalled", function () {
     const p = document.getElementById("panneauApp"); if (p) p.style.display = "none";
 });
+// Ouverte DEPUIS l'application installée : inutile de proposer de l'installer.
+if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone) {
+    document.addEventListener("DOMContentLoaded", function () {
+        const p = document.getElementById("panneauApp"); if (p) p.style.display = "none";
+    });
+}
 
 // ── SAMII en bulle ──────────────────────────────────────────────────────
 // L'historique reste dans la page : il sert de contexte à la réponse

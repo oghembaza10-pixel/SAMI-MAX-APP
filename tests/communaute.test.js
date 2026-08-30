@@ -156,6 +156,23 @@ function liensSortants(html, slug) {
                 `/c/${slug} : le fil est filtré, mais pas sur SON identifiant (${JSON.stringify(filDuFil.params)})`);
         }
 
+        // ── 2 ter. Son classement et ses membres sont les SIENS ─────────
+        // Sur sa page s'affichaient les cinq premiers de TOUTE la plateforme,
+        // et « 17 membres » qui étaient les nôtres. Des gens qu'elle n'a
+        // jamais vus, sous sa marque, présentés comme sa communauté. C'est la
+        // même fuite que le fil, au même endroit du code — elle est revenue
+        // une fois, elle peut revenir deux.
+        for (const [nom, motif] of [["classement", /score_grade/], ["compteur de membres", /COUNT\(\*\)[\s\S]*FROM utilisateurs/]]) {
+            const r = REQUETES.find((q) => motif.test(q.sql) && /FROM utilisateurs/.test(q.sql));
+            verifier(!!r, `/c/${slug} : le ${nom} n'est plus lu`);
+            if (r) {
+                verifier(/communaute/.test(r.sql),
+                    `/c/${slug} : le ${nom} ne filtre par aucune communauté — ce sont NOS membres qui s'affichent sous sa marque`);
+                verifier(r.params.includes(slug),
+                    `/c/${slug} : le ${nom} est filtré, mais pas sur SON identifiant (${JSON.stringify(r.params)})`);
+            }
+        }
+
         // ── 3. Son application lui appartient ────────────────────────────
         const com = communautes.get(slug);
         if (com.app) {

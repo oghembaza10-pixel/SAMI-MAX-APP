@@ -57,7 +57,15 @@ const MODULES = [
 //
 // « Abonnement » n'y est pas : c'est notre facturation, sous notre marque,
 // et ça n'a rien à faire dans un QG qui doit avoir l'air d'être le sien.
-const MINIMAL = ["communaute", "affaires", "connect", "vitrine", "reglages"];
+// « On lui inclut SAMII pour qu'elle puisse avoir l'automatisation. »
+// L'assistant est là : c'est le moteur qui répond aux clients, prend les
+// commandes sur WhatsApp et Telegram, relance les paniers. Sans lui, elle a
+// une vitrine ; avec lui, elle a une équipe.
+//
+// Il porte SON nom, pas le nôtre — le libellé vient de `COM.assistant`, et
+// le moteur derrière est le même. C'est ce qu'on lui apporte, et c'est la
+// raison pour laquelle elle vient chez nous plutôt que sur un site vitrine.
+const MINIMAL = ["communaute", "affaires", "connect", "assistant", "vitrine", "reglages"];
 
 // La liste blanche d'une communauté. `null` (la maison) = tout.
 function autorises(COM) {

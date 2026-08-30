@@ -285,6 +285,12 @@ app.use("/vitrine", require("./routes/vitrine"));
 // Les moyens de paiement : la liste que voit un acheteur selon son pays, et
 // l'état réel côté serveur (ce qui est branché, ce qui manque).
 app.use("/paiement", require("./routes/paiement"));
+// L'espace d'administration d'une communauté partenaire. Monté ici, comme
+// tout le reste : il était branché par un `if` planqué dans le middleware de
+// navigation, dont le rôle est de calculer un libellé de bouton « Retour ».
+// Une route qui vit dans un fichier dont ce n'est pas le sujet est une route
+// que personne ne retrouve. Le routeur fait lui-même son contrôle d'accès.
+app.use("/", require("./routes/community-admin"));
 app.get("/api-docs", (req, res) => res.sendFile(path.join(__dirname, "public", "api-docs.html")));
 
 app.get("/inscription", requireAuth, (req, res) => {

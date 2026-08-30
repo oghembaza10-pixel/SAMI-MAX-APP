@@ -35,9 +35,31 @@ router.get("/admin/communaute", async (req, res) => {
         const community = user.communaute;
         const [members, posts, payments, recentPosts, recentMembers] = await Promise.all([
             db.query(`SELECT COUNT(*)::int AS n FROM utilisateurs WHERE communaute = $1 AND actif = TRUE`, [community]),
-            db.query(`SELECT COUNT(*)::int AS n, COALESCE(SUM(like_count),0)::int AS likes, COALESCE(SUM(commentaire_count),0)::int AS comments, COALESCE(SUM(partage_count),0)::int AS shares FROM publications WHERE communaute = $1`, [community]),
+            // Les compteurs se lisent dans les tables de likes et de
+            // commentaires. Les colonnes like_count / commentaire_count /
+            // partage_count n'ont jamais existé dans ce schéma : la requête
+            // d'origine échouait, et la page rendait 500 pour tout le monde.
+            // Il n'y a pas de table de partages — on ne compte donc pas des
+            // partages imaginaires.
+            db.query(`
+                SELECT COUNT(*)::int AS n,
+                       (SELECT COUNT(*) FROM publications_likes pl
+                         JOIN publications px ON px.id = pl.publication_id
+                        WHERE px.communaute = $1)::int AS likes,
+                       (SELECT COUNT(*) FROM publications_commentaires pc
+                         JOIN publications px ON px.id = pc.publication_id
+                        WHERE px.communaute = $1)::int AS comments,
+                       0::int AS shares
+                  FROM publications WHERE communaute = $1`, [community]),
             db.query(`SELECT COUNT(*)::int AS n, COALESCE(SUM(montant),0)::numeric AS total, COALESCE(MAX(devise),'USD') AS devise FROM paiements WHERE communaute = $1 AND LOWER(COALESCE(statut,'')) IN ('paye','paid','success','succeeded','complete','completed')`, [community]),
-            db.query(`SELECT id, contenu, created_at, like_count, commentaire_count, partage_count FROM publications WHERE communaute = $1 ORDER BY created_at DESC LIMIT 5`, [community]),
+            db.query(`
+                SELECT p.id, p.contenu, p.created_at,
+                       (SELECT COUNT(*) FROM publications_likes pl WHERE pl.publication_id = p.id)::int AS like_count,
+                       (SELECT COUNT(*) FROM publications_commentaires pc WHERE pc.publication_id = p.id)::int AS commentaire_count,
+                       0::int AS partage_count
+                  FROM publications p
+                 WHERE p.communaute = $1
+                 ORDER BY p.created_at DESC LIMIT 5`, [community]),
             db.query(`SELECT prenom, nom, email, created_at FROM utilisateurs WHERE communaute = $1 ORDER BY created_at DESC LIMIT 5`, [community]),
         ]);
 
