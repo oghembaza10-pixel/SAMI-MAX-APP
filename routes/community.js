@@ -653,7 +653,7 @@ ${COM.ecosysteme ? `<div class="side-panel"><h3><i data-lucide="compass"></i> É
 <a href="/academy" class="eco-link-item"><i data-lucide="graduation-cap"></i> Academy · Apprendre & progresser</a>
 </div>` : `<div class="side-panel"><h3><i data-lucide="megaphone"></i> Vendre ici</h3>
 <div class="side-text" style="margin-bottom:12px;">Tu as un produit, une formation, un service ? Ouvre ton profil et publie-le. Publier est gratuit ; la mise en avant est payante.</div>
-<a href="/register?c=${COM.slug}" class="eco-link-item"><i data-lucide="store"></i> Ouvrir ma boutique</a>
+<a href="${COM.ecosysteme ? `/register?c=${COM.slug}` : `/c/${COM.slug}/inscription`}" class="eco-link-item"><i data-lucide="store"></i> Ouvrir ma boutique</a>
 <a href="#" class="eco-link-item" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant · dès 1 000 FCFA</a>
 </div>
 ${COM.app ? `<div class="side-panel" id="panneauApp">
@@ -676,8 +676,8 @@ ${!connecte ? `
   <div class="invite-h">Bienvenue sur ${escapeHtml(COM.nom)}</div>
   <p class="invite-p">Tu peux tout lire ici, librement. Un compte ne sert qu'au moment où tu veux publier, commenter ou acheter — et il se crée en trente secondes.</p>
   <div class="invite-a">
-    <a class="invite-btn" href="/register?c=${COM.slug}">Créer mon compte</a>
-    <a class="invite-btn invite-btn--calme" href="/login?c=${COM.slug}">J'ai déjà un compte</a>
+    <a class="invite-btn" href="${COM.ecosysteme ? `/register?c=${COM.slug}` : `/c/${COM.slug}/inscription`}">Créer mon compte</a>
+    <a class="invite-btn invite-btn--calme" href="${COM.ecosysteme ? `/login?c=${COM.slug}` : `/c/${COM.slug}/connexion`}">J'ai déjà un compte</a>
   </div>
 </div>` : `
 <div class="composer">

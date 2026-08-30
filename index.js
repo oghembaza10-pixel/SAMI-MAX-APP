@@ -266,6 +266,11 @@ app.use("/community",   require("./routes/community"));
 // Une créatrice le colle dans une story ou en commentaire — il doit tenir
 // en un coup d'œil et survivre à un copier-coller sur téléphone. C'est le
 // même module que /community, seule la marque affichée change.
+// S'inscrire et se connecter SOUS SA MARQUE. Monté avant le routeur de
+// communauté : sans ça, un visiteur qui crée son compte depuis chez elle
+// traverse une page SAMII au milieu du parcours — juste au moment où il
+// donne son email, c'est-à-dire au moment où on abandonne.
+app.use("/c",           require("./routes/auth-communaute"));
 app.use("/c",           require("./routes/community"));
 app.use("/discussions", require("./routes/discussions"));
 app.use("/stories",     require("./routes/stories"));

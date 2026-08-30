@@ -207,6 +207,52 @@ function liensSortants(html, slug) {
                 `/c/${slug} : une requête lit « ${m[1]} » sans filtrer par communauté — ce sont NOS données qui remonteraient chez elle : ${r.sql.replace(/\s+/g, " ").trim().slice(0, 120)}`);
         }
 
+    // ── 3 quinquies. On s'inscrit chez elle, pas chez nous ──────────────
+        //
+        // Le dernier endroit où notre marque apparaissait encore dans son
+        // parcours : la page d'inscription. Un visiteur lisait sa communauté,
+        // cliquait « Créer mon compte », et tombait sur une page noire et cyan
+        // intitulée SAMII. Au milieu du parcours, la marque changeait — juste au
+        // moment où on donne son email, c'est-à-dire au moment où on abandonne.
+        //
+        // Ce qui est vérifié : sa marque et pas la nôtre, aucun lien qui sorte,
+        // et surtout que les formulaires envoient aux MÊMES adresses que les
+        // nôtres. Une page d'inscription qui referait l'authentification de son
+        // côté finirait par diverger — et un jour, une faille d'un seul côté.
+        const auth = require(path.join(RACINE, "routes", "auth-communaute.js"));
+        function rendreAuth(slug, quoi) {
+            const couche = auth.stack.find((c) => c.route && c.route.path.includes(quoi));
+            return new Promise((resolve) => {
+                const req = { params: { slug }, session: {} };
+                let code = 200;
+                const res = { status(c) { code = c; return this; }, send: (h) => resolve({ code, html: h }) };
+                couche.route.stack[0].handle(req, res, () => {});
+            });
+        }
+
+        for (const [quoi, cible] of [["inscription", "/register"], ["connexion", "/login"]]) {
+            const r = await rendreAuth(slug, quoi);
+            verifier(r.code === 200, `/c/${slug}/${quoi} répond ${r.code}`);
+
+            const lisible = r.html
+                .replace(/<!--[\s\S]*?-->/g, "")
+                .replace(/<style[\s\S]*?<\/style>/g, "")
+                .replace(/<script[\s\S]*?<\/script>/g, "");
+            verifier(!/SAMII/.test(lisible),
+                `/c/${slug}/${quoi} : « SAMII » est visible au moment où le visiteur donne son email`);
+            verifier(r.html.includes(communautes.get(slug).marque),
+                `/c/${slug}/${quoi} : sa marque n'apparaît pas sur SA page d'inscription`);
+
+            const fuites = liensSortants(r.html, slug);
+            verifier(fuites.length === 0,
+                `/c/${slug}/${quoi} : ${fuites.length} lien(s) sortent — ${fuites.join(", ")}`);
+
+            verifier(r.html.includes(`fetch(${JSON.stringify(cible)}`),
+                `/c/${slug}/${quoi} : le formulaire n'envoie pas à ${cible} — l'authentification est en train d'être dupliquée`);
+            verifier(r.html.includes(JSON.stringify(slug)),
+                `/c/${slug}/${quoi} : le marqueur de communauté ne part pas avec le formulaire — le compte serait rattaché à la maison`);
+        }
+
         // ── 3. Son application lui appartient ────────────────────────────
         const com = communautes.get(slug);
         if (com.app) {
@@ -300,6 +346,15 @@ function liensSortants(html, slug) {
         verifier(manquants.length === 0,
             `/c/${com.slug} : sa palette ne définit pas ${manquants.join(", ")} — ces valeurs retomberont sur celles du thème sombre, au milieu de ses couleurs à elle`);
     }
+
+    // La maison garde ses propres pages : /c/samii/inscription n'a aucune
+    // raison d'exister à côté de /register.
+    const maisonAuth = await rendreAuth(communautes.DEFAUT, "inscription");
+    verifier(maisonAuth.code === 404,
+        `/c/${communautes.DEFAUT}/inscription répond ${maisonAuth.code} au lieu de 404 — deux pages d'inscription pour la maison`);
+    const inconnuAuth = await rendreAuth("nimportequoi", "inscription");
+    verifier(inconnuAuth.code === 404,
+        `/c/nimportequoi/inscription répond ${inconnuAuth.code} au lieu de 404`);
 
     // ── 4. La communauté maison n'a pas été abîmée ───────────────────────
     const maison = await rendre(null, true);
