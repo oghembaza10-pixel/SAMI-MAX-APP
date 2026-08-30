@@ -337,6 +337,38 @@ const BLOCS = [
         ],
     },
     {
+        // ── LES PUBLICATIONS MISES DE CÔTÉ ───────────────────────────────
+        //
+        // « Un bouton pour enregistrer. » Quelqu'un voit passer une astuce, un
+        // outil, une formation — et n'a pas le temps maintenant. Sans un
+        // endroit où le ranger, ça défile et c'est perdu ; c'est exactement ce
+        // qui fait revenir les gens dans un fil.
+        //
+        // La contrainte UNIQUE porte le vrai travail : elle rend « enregistrer
+        // deux fois » impossible AU NIVEAU DE LA BASE. Deux clics rapides, une
+        // double-tape sur mobile, un rejeu réseau — sans elle, on collectionne
+        // des doublons que personne ne sait plus supprimer.
+        //
+        // ON CONFIE L'EFFACEMENT À POSTGRESQL. Sans ON DELETE CASCADE, la
+        // suppression d'une publication laisserait derrière elle des
+        // enregistrements pointant vers du vide, et la liste des choses
+        // enregistrées se remplirait de lignes fantômes. Le faire à la main
+        // dans la route marche jusqu'au jour où une autre route supprime une
+        // publication sans y penser.
+        nom: "publications_enregistrees",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS publications_enregistrees (
+                id             BIGSERIAL PRIMARY KEY,
+                publication_id BIGINT NOT NULL REFERENCES publications(id) ON DELETE CASCADE,
+                user_id        TEXT NOT NULL,
+                created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+                UNIQUE (publication_id, user_id))`,
+            // « Qu'est-ce que j'ai mis de côté ? », par ordre d'ajout : c'est
+            // la seule question qu'on posera à cette table.
+            `CREATE INDEX IF NOT EXISTS idx_enregistrees_user ON publications_enregistrees (user_id, created_at DESC)`,
+        ],
+    },
+    {
         // ── Le grand livre des paiements ─────────────────────────────────
         // Les montants sont en NUMERIC et jamais en flottant : sur de
         // l'argent, 0.1 + 0.2 qui ne fait pas 0.3 finit par se voir.

@@ -43,6 +43,19 @@ function communauteDe(req) {
 function communauteDeLaPage(req) {
     return communautes.get(req.params?.slug || req.query?.c);
 }
+
+// Pour une ACTION (aimer, commenter, enregistrer, supprimer) : le service
+// d'abord, la session ensuite.
+//
+// Un POST n'a ni slug ni query — communauteDeLaPage() rendrait donc la
+// maison pour toute action faite chez elle. Sur un service partenaire, la
+// réponse ne dépend de personne : il ne sert qu'une communauté. Sur le
+// nôtre, où l'on peut visiter /c/<slug>, c'est la session qui se souvient.
+function communauteDeLAction(req, res) {
+    const service = res?.locals?.COM;
+    if (service && !service.ecosysteme) return service;
+    return communauteDe(req);
+}
 function escapeHtml(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
 function timeAgo(date) {
     const s = Math.floor((Date.now()-new Date(date).getTime())/1000);
@@ -236,12 +249,22 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     const connecte = !!req.session?.loggedIn;
     let publications = [], classement = [], stats = { membres:0, publications:0 }, tendances = [];
 
+    // ── LE FILTRE DU FIL ─────────────────────────────────────────────────
+    // « Les produits », « Les formations », « Les services » pointaient déjà
+    // sur ?f=… dans la colonne de gauche — mais rien ne lisait ce paramètre :
+    // les trois liens rechargeaient le fil complet. Ils marchent maintenant,
+    // et le même mécanisme sert à afficher ce qu'on a mis de côté.
+    const filtre = String(req.query?.f || "").toLowerCase().replace(/[^a-z]/g, "");
+    const filtreEnregistres = filtre === "enregistres";
+    const filtreCategorie = CATEGORIES[filtre] ? filtre : null;
+
     try {
         const rows = await db.query(`
             SELECT p.*, u.prenom, u.nom, u.grade_actuel, u.type_compte,
                 (SELECT COUNT(*) FROM publications_likes pl WHERE pl.publication_id=p.id) AS nb_likes,
                 (SELECT COUNT(*) FROM publications_commentaires pc WHERE pc.publication_id=p.id) AS nb_commentaires,
-                EXISTS(SELECT 1 FROM publications_likes pl2 WHERE pl2.publication_id=p.id AND pl2.user_id=$1) AS jaime
+                EXISTS(SELECT 1 FROM publications_likes pl2 WHERE pl2.publication_id=p.id AND pl2.user_id=$1) AS jaime,
+                EXISTS(SELECT 1 FROM publications_enregistrees pe WHERE pe.publication_id=p.id AND pe.user_id=$1) AS enregistre
             FROM publications p LEFT JOIN utilisateurs u ON u.id=p.auteur_id
             -- Chacune chez soi. Sans ce filtre, le fil est global : ce qu'un
             -- membre publie chez une partenaire s'affiche dans notre
@@ -249,8 +272,18 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
             -- d'avant la colonne dans la maison, ce qui est exact — tout ce
             -- qui a été publié jusqu'ici l'a été chez nous.
             WHERE COALESCE(p.communaute, $3) = $2
+              -- $4 et $5 valent NULL quand aucun filtre n'est demandé : la
+              -- condition est alors toujours vraie et le fil reste entier.
+              -- Une requête unique plutôt que trois assemblées à la main,
+              -- pour qu'il n'y ait qu'un seul endroit où le filtre de
+              -- communauté peut être oublié.
+              AND ($4::text IS NULL OR p.categorie = $4)
+              AND ($5::boolean IS NULL OR EXISTS(
+                    SELECT 1 FROM publications_enregistrees pe2
+                     WHERE pe2.publication_id = p.id AND pe2.user_id = $1))
             ORDER BY p.epingle DESC, p.created_at DESC LIMIT 40
-        `, [req.session.userId || "", COM.slug, communautes.DEFAUT]);
+        `, [req.session.userId || "", COM.slug, communautes.DEFAUT,
+            filtreCategorie, filtreEnregistres ? true : null]);
         publications = rows;
         for (const pub of publications) {
             const comms = await db.query(`SELECT pc.*, u.prenom, u.nom FROM publications_commentaires pc LEFT JOIN utilisateurs u ON u.id=pc.auteur_id WHERE pc.publication_id=$1 ORDER BY pc.created_at ASC LIMIT 2`, [pub.id]);
@@ -360,6 +393,15 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     const tendancesHtml = tendances.length ? tendances.map(t => { const info=catInfo(t.categorie);
         return `<div class="stat-row"><span><i data-lucide="${info.icon}" style="width:13px;height:13px;color:${info.couleur};"></i> ${info.label}</span><strong>${t.total}</strong></div>`; }).join("") : "";
 
+    // Qui voit la corbeille sur une publication : celle qui l'a écrite, et
+    // l'administratrice de CETTE communauté. Ce n'est qu'un affichage — la
+    // route refait le contrôle, parce que cacher un bouton n'a jamais
+    // empêché personne d'envoyer la requête.
+    const peutSupprimer = (p) => Boolean(
+        connecte && (
+            (p.auteur_id && String(p.auteur_id) === String(req.session?.userId)) ||
+            estAdmineDeChezElle));
+
     const feedHtml = publications.length ? publications.map(p => {
         const nomAuteur = escapeHtml(`${p.prenom||"Membre"} ${p.nom||""}`.trim());
         const grade = escapeHtml(p.grade_actuel||"Soldat");
@@ -388,7 +430,9 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
             <div class="post-actions">
                 <button class="post-action-btn ${p.jaime?"liked":""}" type="button" onclick="toggleLike(${p.id}, this)"><i data-lucide="heart"></i> J'aime</button>
                 <button class="post-action-btn" type="button" onclick="toggleCommentBox(${p.id})"><i data-lucide="message-circle"></i> Commenter</button>
+                <button class="post-action-btn ${p.enregistre?"saved":""}" type="button" onclick="toggleEnregistrer(${p.id}, this)"><i data-lucide="bookmark"></i> <span>${p.enregistre?"Enregistré":"Enregistrer"}</span></button>
                 <button class="post-action-btn" type="button" onclick="sharePost(${p.id})"><i data-lucide="share-2"></i> Partager</button>
+                ${peutSupprimer(p) ? `<button class="post-action-btn post-action-btn--danger" type="button" onclick="supprimerPost(${p.id})" title="Supprimer"><i data-lucide="trash-2"></i></button>` : ""}
             </div>
             <div class="comments-preview">${commentairesHtml}</div>
             <div class="comment-box" id="comment-box-${p.id}" style="display:none;">
@@ -622,6 +666,15 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .post-action-btn svg{width:15px;height:15px;}
 .post-action-btn:hover{background:rgba(0,217,255,.06);color:var(--blue);}
 .post-action-btn.liked{color:var(--danger);} .post-action-btn.liked svg{fill:var(--danger);}
+/* Enregistré : le marque-page se remplit. Sur cinq boutons dans une rangée
+   étroite, c'est la forme pleine qui se lit d'un coup d'œil, pas la
+   couleur — et sur un téléphone à Douala, la rangée est très étroite. */
+.post-action-btn.saved{color:var(--gold);} .post-action-btn.saved svg{fill:var(--gold);}
+/* La corbeille ne prend pas sa part de largeur : c'est une action rare, elle
+   ne doit pas peser autant que « J'aime ». */
+.post-action-btn--danger{flex:0 0 auto;padding:9px 11px;color:var(--muted);}
+.post-action-btn--danger:hover{background:rgba(255,84,112,.1);color:var(--danger);}
+@media(max-width:420px){.post-action-btn span{display:none;}}
 .comments-preview{display:flex;flex-direction:column;gap:8px;}
 .comment-item{display:flex;gap:8px;align-items:flex-start;}
 .comment-avatar{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:8px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;}
@@ -681,9 +734,10 @@ ${COM.ecosysteme ? `
 <a href="/arsenal" class="side-link"><i data-lucide="shield-check"></i> Arsenal</a>
 <a href="/academy" class="side-link"><i data-lucide="graduation-cap"></i> Academy</a>` : `
 <a href="/c/${COM.slug}" class="side-link active"><i data-lucide="users"></i> Le fil</a>
-<a href="/c/${COM.slug}?f=produit" class="side-link"><i data-lucide="shopping-bag"></i> Les produits</a>
-<a href="/c/${COM.slug}?f=formation" class="side-link"><i data-lucide="graduation-cap"></i> Les formations</a>
-<a href="/c/${COM.slug}?f=service" class="side-link"><i data-lucide="concierge-bell"></i> Les services</a>`}
+<a href="/c/${COM.slug}?f=produit" class="side-link${filtre === "produit" ? " active" : ""}"><i data-lucide="shopping-bag"></i> Les produits</a>
+<a href="/c/${COM.slug}?f=formation" class="side-link${filtre === "formation" ? " active" : ""}"><i data-lucide="graduation-cap"></i> Les formations</a>
+<a href="/c/${COM.slug}?f=service" class="side-link${filtre === "service" ? " active" : ""}"><i data-lucide="concierge-bell"></i> Les services</a>
+${connecte ? `<a href="/c/${COM.slug}?f=enregistres" class="side-link${filtreEnregistres ? " active" : ""}"><i data-lucide="bookmark"></i> Mes enregistrements</a>` : ""}`}
 </nav></div>
 <div class="side-bottom"><div class="side-ai"><span class="side-ai-dot"></span> ${escapeHtml(COM.moteur)}</div><div class="side-text">${escapeHtml(COM.moteurTexte)}</div></div>
 </aside>
@@ -842,6 +896,28 @@ ${COM.ecosysteme ? mobileNav("/community") : ""}
 <script>
 if (typeof lucide!=="undefined") lucide.createIcons();
 
+// ── OÙ LA PAGE ENVOIE SES ACTIONS ───────────────────────────────────────
+//
+// Publier, aimer, commenter, vendre : les six appels de cette page visaient
+// « /community/… » écrit en dur. Ça marchait tant que cette adresse
+// répondait pour tout le monde.
+//
+// La porte l'a fermée sur le service d'une partenaire — et ces six appels
+// avec elle, SANS un mot : ils reçoivent un 404 JSON, la page affiche
+// « Erreur », et rien dans les journaux ne dit que la publication n'est
+// jamais partie. C'est ma régression, et le contrôle des culs-de-sac ne
+// pouvait pas la voir : il lit les redirections du serveur, pas les appels
+// du navigateur.
+//
+// Le routeur est monté aux DEUX adresses, /community et /c. Sous /c, la
+// communauté ne vient pas de l'URL — un POST n'a pas de slug — mais du
+// service ou de la session. Il n'y a donc rien à ajouter au chemin.
+const BASE_COM = ${JSON.stringify(COM.ecosysteme ? "/community" : "/c")};
+// Le lien qu'on copie en partageant, lui, doit être l'adresse PUBLIQUE de
+// la page — celle qu'on peut coller dans une story et qui ouvre le fil.
+const PAGE_COM = ${JSON.stringify(communautes.accueil(COM))};
+const PAGE_FILTRE = ${JSON.stringify(filtre)};
+
 // ── La mise en avant ────────────────────────────────────────────────────
 // Le paiement n'est pas encore branché. On le DIT, on ne le simule pas :
 // une boutique qui fait semblant d'encaisser perd la confiance qu'elle
@@ -884,7 +960,7 @@ if (vBouton) vBouton.addEventListener("click", async function(){
   if (!prix)  { msg.className = "vmsg"; msg.textContent = "Indique un prix — c'est ce qui rend l'offre achetable."; return; }
   vBouton.disabled = true; msg.className = "vmsg"; msg.textContent = "Un instant…";
   try {
-    const r = await fetch("/community/vendre", {
+    const r = await fetch(BASE_COM + "/vendre", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: typeVente, titre, prix,
@@ -921,7 +997,7 @@ document.querySelectorAll("[data-boost]").forEach(function(el){
     // On enregistre vraiment l'intention. Sans ça, le jour où le paiement
     // s'ouvre, on ne sait pas à qui écrire — et ceux qui ont essayé les
     // premiers sont précisément ceux qu'il faut rappeler.
-    fetch("/community/boost/interet", {
+    fetch(BASE_COM + "/boost/interet", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ duree: boostChoisi }),
     })
@@ -1129,7 +1205,7 @@ document.getElementById("composerSubmit").addEventListener("click",async functio
     const diffusion=Array.from(diffusionCheckboxes).map(cb=>cb.value);
     this.disabled=true;
     try{
-        const res=await fetch("/community/publier",{method:"POST",headers:{"Content-Type":"application/json"},
+        const res=await fetch(BASE_COM + "/publier",{method:"POST",headers:{"Content-Type":"application/json"},
             body:JSON.stringify({contenu,categorie:selectedCategory,image_url:uploadedImageUrl,video_url:uploadedVideoUrl,diffusion})});
         const json=await res.json();
         if(json.success){ window.location.reload(); } else { showToast(json.error||"Erreur."); this.disabled=false; }
@@ -1137,15 +1213,45 @@ document.getElementById("composerSubmit").addEventListener("click",async functio
 });
 
 async function toggleLike(id,btn){
-    try{const res=await fetch("/community/like/"+id,{method:"POST"});const j=await res.json();if(j.success)btn.classList.toggle("liked",j.liked);}catch(e){showToast("Erreur réseau.");}
+    try{const res=await fetch(BASE_COM + "/like/"+id,{method:"POST"});const j=await res.json();if(j.success)btn.classList.toggle("liked",j.liked);}catch(e){showToast("Erreur réseau.");}
 }
+async function toggleEnregistrer(id,btn){
+    try{
+        const res=await fetch(BASE_COM + "/enregistrer/"+id,{method:"POST"});
+        const j=await res.json();
+        if(!j.success){ showToast(j.error||"Erreur."); return; }
+        btn.classList.toggle("saved",j.enregistre);
+        const t=btn.querySelector("span"); if(t) t.textContent=j.enregistre?"Enregistré":"Enregistrer";
+        showToast(j.enregistre?"🔖 Mis de côté":"Retiré de tes enregistrements");
+        // Dans la liste des enregistrements, retirer veut dire faire
+        // disparaître la carte : la laisser afficherait une publication qui
+        // n'a plus rien à faire dans cette liste.
+        if(!j.enregistre && PAGE_FILTRE==="enregistres"){
+            const carte=btn.closest(".post-card"); if(carte) carte.remove();
+        }
+    }catch(e){showToast("Erreur réseau.");}
+}
+
+async function supprimerPost(id){
+    // Une suppression ne se rattrape pas. On demande, une fois, clairement.
+    if(!confirm("Supprimer cette publication ? C'est définitif.")) return;
+    try{
+        const res=await fetch(BASE_COM + "/supprimer/"+id,{method:"POST"});
+        const j=await res.json();
+        if(!j.success){ showToast(j.error||"Erreur."); return; }
+        const carte=document.querySelector('.post-card[data-post-id="'+id+'"]');
+        if(carte) carte.remove(); else window.location.reload();
+        showToast("Publication supprimée.");
+    }catch(e){showToast("Erreur réseau.");}
+}
+
 function toggleCommentBox(id){const box=document.getElementById("comment-box-"+id);box.style.display=box.style.display==="none"?"flex":"none";if(box.style.display==="flex")document.getElementById("comment-input-"+id).focus();}
 async function postComment(id){
     const input=document.getElementById("comment-input-"+id); const contenu=input.value.trim(); if(!contenu) return;
-    try{const res=await fetch("/community/commenter/"+id,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contenu})});
+    try{const res=await fetch(BASE_COM + "/commenter/"+id,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contenu})});
     const j=await res.json(); if(j.success) window.location.reload(); else showToast(j.error||"Erreur.");}catch(e){showToast("Erreur réseau.");}
 }
-function sharePost(id){const url=window.location.origin+"/community#post-"+id;if(navigator.share)navigator.share({url}).catch(()=>{});else{navigator.clipboard.writeText(url);showToast("🔗 Lien copié !");}}
+function sharePost(id){const url=window.location.origin+PAGE_COM+"#post-"+id;if(navigator.share)navigator.share({url}).catch(()=>{});else{navigator.clipboard.writeText(url);showToast("🔗 Lien copié !");}}
 </script>
 <script src="/js/pwa-register.js"></script>
 </body></html>`);
@@ -1356,10 +1462,110 @@ router.post("/boost/interet", requireAuth, async (req, res) => {
     }
 });
 
+// ── UNE PUBLICATION, VUE DEPUIS CE SERVICE ──────────────────────────────
+//
+// Toutes les actions sur une publication se faisaient sur son seul numéro.
+// C'est la même porte laissée ouverte que dans les discussions : un membre
+// de chez elle pouvait aimer, commenter — et maintenant enregistrer ou
+// supprimer — une publication de NOTRE communauté en tapant un identifiant
+// qu'il n'a même pas besoin de deviner, puisque ce sont des entiers qui se
+// suivent.
+//
+// Rendre `null` plutôt que lever : l'appelant répond « introuvable », ce qui
+// est la vérité depuis cette communauté-là.
+async function chargerPublication(id, req, res) {
+    const publicationId = parseInt(id, 10);
+    if (!publicationId) return null;
+    const rows = await db.query(
+        `SELECT * FROM publications
+          WHERE id = $1 AND COALESCE(communaute, $3) = $2 LIMIT 1`,
+        [publicationId, communauteDeLAction(req, res).slug, communautes.DEFAUT]
+    );
+    return rows[0] || null;
+}
+
+// ── ENREGISTRER / RETIRER ───────────────────────────────────────────────
+//
+// « Un bouton pour enregistrer. » Quelqu'un voit passer une astuce ou une
+// formation et n'a pas le temps maintenant. Sans un endroit où la ranger,
+// elle défile et elle est perdue.
+//
+// Un seul bouton qui bascule, comme « J'aime » : deux boutons séparés
+// « enregistrer » et « retirer » obligeraient à savoir lequel montrer, donc
+// à ne jamais se tromper d'état, et on finit toujours par se tromper.
+router.post("/enregistrer/:id", requireAuth, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const pub = await chargerPublication(req.params.id, req, res);
+        if (!pub || !userId) return res.json({ success:false, error:"Publication introuvable." });
+
+        const dejaLa = await db.query(
+            `SELECT id FROM publications_enregistrees WHERE publication_id=$1 AND user_id=$2`,
+            [pub.id, userId]);
+        if (dejaLa.length) {
+            await db.query(`DELETE FROM publications_enregistrees WHERE id=$1`, [dejaLa[0].id]);
+            return res.json({ success:true, enregistre:false });
+        }
+        // ON CONFLICT plutôt qu'un INSERT nu : deux tapes rapides sur un
+        // téléphone lancent deux requêtes, et la seconde arrive avant que la
+        // première ait fini. Sans ça, la contrainte UNIQUE renvoie une erreur
+        // à quelqu'un qui n'a rien fait de mal.
+        await db.query(
+            `INSERT INTO publications_enregistrees (publication_id, user_id) VALUES ($1,$2)
+             ON CONFLICT (publication_id, user_id) DO NOTHING`,
+            [pub.id, userId]);
+        res.json({ success:true, enregistre:true });
+    } catch (err) {
+        console.error("❌ enregistrer :", err.message);
+        res.json({ success:false, error:"Erreur serveur." });
+    }
+});
+
+// ── SUPPRIMER ───────────────────────────────────────────────────────────
+//
+// Deux personnes peuvent supprimer une publication : celle qui l'a écrite,
+// et l'administratrice de la communauté où elle est parue. Personne d'autre,
+// et surtout pas « n'importe quel administrateur » : l'administratrice d'une
+// communauté n'a rien à faire dans les publications d'une autre.
+//
+// La vérification est refaite ICI et pas seulement à l'affichage du bouton.
+// Cacher un bouton n'a jamais empêché personne d'envoyer la requête — c'est
+// la leçon qu'on vient d'apprendre sur le Hub.
+router.post("/supprimer/:id", requireAuth, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const COM = communauteDeLAction(req, res);
+        const pub = await chargerPublication(req.params.id, req, res);
+        if (!pub) return res.json({ success:false, error:"Publication introuvable." });
+
+        const estAuteur = pub.auteur_id && String(pub.auteur_id) === String(userId);
+        const estAdmine = Boolean(COM.admin && req.session?.email &&
+            String(req.session.email).trim().toLowerCase() === String(COM.admin).trim().toLowerCase());
+        if (!estAuteur && !estAdmine) {
+            return res.status(403).json({ success:false, error:"Cette publication n'est pas la tienne." });
+        }
+
+        // Les likes, commentaires et enregistrements partent avec elle. La
+        // base le fait pour les enregistrements (ON DELETE CASCADE) ; les
+        // deux autres tables sont plus anciennes et n'ont pas cette clause,
+        // donc on les nettoie à la main plutôt que de laisser des lignes
+        // orphelines fausser les compteurs.
+        await db.query(`DELETE FROM publications_likes WHERE publication_id=$1`, [pub.id]);
+        await db.query(`DELETE FROM publications_commentaires WHERE publication_id=$1`, [pub.id]);
+        await db.query(`DELETE FROM publications WHERE id=$1`, [pub.id]);
+        res.json({ success:true });
+    } catch (err) {
+        console.error("❌ supprimer :", err.message);
+        res.json({ success:false, error:"Erreur serveur." });
+    }
+});
+
 router.post("/like/:id", requireAuth, async (req, res) => {
     try {
-        const publicationId = parseInt(req.params.id,10); const userId = req.session.userId;
-        if (!publicationId || !userId) return res.json({ success:false, error:"Requête invalide." });
+        const userId = req.session.userId;
+        const pub = await chargerPublication(req.params.id, req, res);
+        if (!pub || !userId) return res.json({ success:false, error:"Publication introuvable." });
+        const publicationId = pub.id;
         const existing = await db.query(`SELECT id FROM publications_likes WHERE publication_id=$1 AND user_id=$2`, [publicationId, userId]);
         if (existing.length>0) { await db.query(`DELETE FROM publications_likes WHERE id=$1`, [existing[0].id]); return res.json({ success:true, liked:false }); }
         await db.query(`INSERT INTO publications_likes (publication_id, user_id) VALUES ($1,$2)`, [publicationId, userId]);
@@ -1369,9 +1575,11 @@ router.post("/like/:id", requireAuth, async (req, res) => {
 
 router.post("/commenter/:id", requireAuth, async (req, res) => {
     try {
-        const publicationId = parseInt(req.params.id,10); const { contenu } = req.body;
-        if (!publicationId || !contenu || !contenu.trim()) return res.json({ success:false, error:"Commentaire vide." });
-        await db.query(`INSERT INTO publications_commentaires (publication_id, auteur_id, contenu) VALUES ($1,$2,$3)`, [publicationId, req.session.userId, contenu.trim()]);
+        const { contenu } = req.body;
+        if (!contenu || !contenu.trim()) return res.json({ success:false, error:"Commentaire vide." });
+        const pub = await chargerPublication(req.params.id, req, res);
+        if (!pub) return res.json({ success:false, error:"Publication introuvable." });
+        await db.query(`INSERT INTO publications_commentaires (publication_id, auteur_id, contenu) VALUES ($1,$2,$3)`, [pub.id, req.session.userId, contenu.trim()]);
         res.json({ success:true });
     } catch (err) { console.error("❌ commenter :", err.message); res.json({ success:false, error:"Erreur serveur." }); }
 });

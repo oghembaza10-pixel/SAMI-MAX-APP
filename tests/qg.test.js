@@ -501,6 +501,29 @@ function marque(html) {
         }
     }
 
+    // ── ET LES APPELS DU NAVIGATEUR ? ────────────────────────────────────
+    //
+    // Le contrôle ci-dessus lit les redirections du SERVEUR. Il ne voit pas
+    // les fetch() écrits dans le JavaScript de la page — et c'est là que la
+    // porte a fait le plus de dégâts : les six appels de la communauté
+    // (publier, vendre, aimer, commenter…) visaient « /community/… » en dur.
+    // La porte a fermé cette adresse, donc les six appels, SANS un mot :
+    // 404 JSON, « Erreur » à l'écran, et rien dans les journaux qui dise que
+    // la publication n'est jamais partie.
+    //
+    // Une adresse en dur dans un fetch est un lien comme un autre. Elle doit
+    // passer la même porte.
+    for (const fichier of ["community.js", "vitrine-page.js", "discussions.js"]) {
+        let corps;
+        try {
+            corps = fs.readFileSync(path.join(RACINE, "routes", fichier), "utf8");
+        } catch { continue; }
+        for (const [, cible] of corps.matchAll(/fetch\(\s*["'](\/[^"'?`]*)["']/g)) {
+            verifier(modulesQg.chemineAutorise(cible, regles),
+                `routes/${fichier} : le navigateur appelle « ${cible} », que la porte ferme sur son service — l'action échoue en silence`);
+        }
+    }
+
     // La décision elle-même : chez nous le Hub, chez elle la création de
     // boutique. Testée à part, parce que c'est elle qui a été fausse.
     verifier(communautes.accueilMarchand(communautes.get(communautes.DEFAUT)) === "/hub",
