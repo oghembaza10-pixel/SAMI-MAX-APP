@@ -22,14 +22,30 @@
 // `modulesQg` vient de app.locals (index.js) : un gabarit EJS n'a pas de
 // `require`, et le découvrir en production aurait donné un QG en erreur.
 //
-// Le repli sur la maison n'est pas un détail : le jour où une autre route
-// rendra cette vue sans passer COM, on veut un QG complet plutôt qu'une
-// page blanche. Se tromper en montrant trop à un membre de chez nous est
-// bénin ; refuser d'afficher son QG ne l'est pas.
+// LE REPLI, EN TROIS TEMPS — et l'ordre est tout l'enjeu.
+//
+// 1. Ce que la route a passé explicitement.
+// 2. SINON `COM`, posé par index.js sur res.locals à chaque requête : c'est
+//    la communauté du SERVICE. Une route qui oublie de passer `communaute`
+//    rend alors quand même la bonne colonne.
+// 3. SINON seulement, la maison.
+//
+// L'étape 2 n'était pas là, et c'est elle qui compte. Sans elle, un oubli
+// dans UNE route suffisait à afficher « OG · TECHNOLOGY », Marketplace et
+// Arsenal sur le domaine d'une partenaire — sans erreur, sans log, juste
+// une page fausse. L'oubli doit tomber du côté sûr, pas du côté visible.
+//
+// La maison reste le dernier recours plutôt qu'une page blanche : refuser
+// d'afficher un QG est pire que d'en montrer un trop complet à quelqu'un
+// de chez nous.
+// `locals.COM` et non `COM` : on est en train de DÉCLARER `COM`, et se
+// citer dans sa propre initialisation lève une ReferenceError.
+const _duService = (typeof locals !== "undefined" && locals && locals.COM) || null;
 const COM = (typeof communaute !== "undefined" && communaute)
     ? communaute
+    : (_duService && _duService.slug ? _duService
     : { slug: "samii", marque: "OG", marqueSuite: "TECHNOLOGY",
-        assistant: "SAMII", ecosysteme: true, qg: null };
+        assistant: "SAMII", ecosysteme: true, qg: null });
 const _ctx = {
     userId: typeof userId !== "undefined" ? userId : "",
     typeCompte: typeof typeCompte !== "undefined" ? typeCompte : "",

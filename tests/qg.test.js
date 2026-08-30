@@ -233,6 +233,79 @@ function marque(html) {
         modulesQg.MODULES.pop();
     }
 
+    // ── La page de l'assistant ───────────────────────────────────────────
+    // Elle avait sa propre colonne écrite en dur : « OG · TECHNOLOGY » en
+    // haut, Marketplace, Academy, Arsenal, Coffre OG, et un « Community »
+    // qui ramenait chez nous. C'est la page la plus sûrement visitée par
+    // les membres d'une partenaire — l'assistant est ce qu'on lui donne —
+    // et donc l'endroit où se tromper coûtait le plus cher.
+    //
+    // On la rend pour de vrai : une vue qui plante ne se voit qu'en
+    // production, et une colonne partagée mal branchée retombe
+    // silencieusement sur la nav de la maison.
+    const VUE_SAMII = path.join(RACINE, "views", "samii.ejs");
+    function rendreSamii(slug) {
+        return new Promise((resolve, reject) => {
+            ejs.renderFile(VUE_SAMII, {
+                workspaceId: "w1", shop: "", estParticulier: false,
+                communaute: communautes.get(slug), typeCompte: "marchand",
+                userId: "u1", loggedIn: true, modulesQg,
+            }, { views: [path.join(RACINE, "views")] },
+            (err, html) => (err ? reject(err) : resolve(html)));
+        });
+    }
+
+    const samiiMaison = await rendreSamii(communautes.DEFAUT);
+    for (const attendu of ["/hub", "/marketplace", "/community", "/academy", "/arsenal", "/coffre", "/samii", "/settings"]) {
+        verifier(liensNav(samiiMaison).includes(attendu),
+            `la page de l'assistant a perdu « ${attendu} » chez nous`);
+    }
+    verifier(marque(samiiMaison) === "OG · TECHNOLOGY",
+        `la page de l'assistant de la maison affiche « ${marque(samiiMaison)} »`);
+
+    for (const slug of Object.keys(communautes.COMMUNAUTES)) {
+        if (slug === communautes.DEFAUT) continue;
+        const html = await rendreSamii(slug);
+        const liens = liensNav(html);
+        verifier(!/OG · TECHNOLOGY/.test(html),
+            `/c/${slug} : « OG · TECHNOLOGY » est écrit sur la page de SON assistant`);
+        for (const interdit of ["/marketplace", "/academy", "/arsenal", "/coffre", "/community", "/hub"]) {
+            verifier(!liens.includes(interdit),
+                `/c/${slug} : « ${interdit} » est dans la colonne de la page de son assistant`);
+        }
+        verifier(liens.includes(`/c/${slug}`),
+            `/c/${slug} : depuis la page de son assistant, aucun lien ne ramène chez elle`);
+    }
+
+    // ── L'OUBLI DOIT TOMBER DU CÔTÉ SÛR ──────────────────────────────────
+    // Les tests ci-dessus prouvent que la colonne est juste quand la route
+    // lui passe la communauté. Ils ne prouvent RIEN sur la route qui
+    // oublie de la passer — et c'est toujours celle-là qui casse.
+    //
+    // On rend donc la vue SANS `communaute`, en ne laissant que `COM` (posé
+    // par index.js sur res.locals à chaque requête, dans toutes les vues).
+    // Le service doit suffire.
+    function rendreSansCommunaute(slug) {
+        return new Promise((resolve, reject) => {
+            ejs.renderFile(VUE_SAMII, {
+                workspaceId: "w1", shop: "", estParticulier: false,
+                COM: communautes.get(slug),   // res.locals, pas la route
+                typeCompte: "marchand", userId: "u1", loggedIn: true, modulesQg,
+            }, { views: [path.join(RACINE, "views")] },
+            (err, html) => (err ? reject(err) : resolve(html)));
+        });
+    }
+    for (const slug of Object.keys(communautes.COMMUNAUTES)) {
+        if (slug === communautes.DEFAUT) continue;
+        const liens = liensNav(await rendreSansCommunaute(slug));
+        for (const interdit of ["/marketplace", "/arsenal", "/community", "/hub"]) {
+            verifier(!liens.includes(interdit),
+                `/c/${slug} : une route qui oublie de passer la communauté rend « ${interdit} » sur SON domaine — l'oubli doit tomber du côté sûr`);
+        }
+        verifier(liens.includes(`/c/${slug}`),
+            `/c/${slug} : sans \`communaute\`, la colonne ne ramène plus chez elle`);
+    }
+
     if (echecs.length) {
         console.error(`❌ QG : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
         for (const e of echecs) console.error("   • " + e);

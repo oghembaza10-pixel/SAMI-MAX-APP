@@ -219,6 +219,24 @@ function pourLeQG(communauteHote, communauteDuCompte) {
     return get(communauteDuCompte);
 }
 
+// ── « ← COMMUNAUTÉ » : ÇA RAMÈNE CHEZ QUI ? ─────────────────────────────
+//
+// « J'étais dans la discussion générale et au moment de revenir en arrière,
+// je suis retombé dans la communauté de SAMII. »
+//
+// Le lien de retour était écrit en dur : `/community`, notre communauté à
+// nous. Un membre de chez elle discutait dans SON salon, cliquait sur
+// « retour », et se retrouvait chez nous — c'est-à-dire dehors, sur une
+// marque qu'il n'a jamais demandé à voir.
+//
+// C'EST UNE DÉCISION, PAS UNE CHAÎNE DE CARACTÈRES. Elle vit donc ici,
+// à un seul endroit, et pas recopiée dans chaque page qui a un bouton
+// retour. Le prochain qui ajoute une page n'aura pas à deviner.
+function accueil(communaute) {
+    const com = communaute?.slug ? communaute : get(communaute);
+    return com.ecosysteme ? "/community" : `/c/${com.slug}`;
+}
+
 function nettoyer(slug) {
     return String(slug || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
 }
@@ -231,4 +249,4 @@ function alias(slug) {
     return cible && cible !== propre ? cible : null;
 }
 
-module.exports = { COMMUNAUTES, DEFAUT, ALIAS, get, existe, styleDe, liste, alias, nettoyer, pourLeQG };
+module.exports = { COMMUNAUTES, DEFAUT, ALIAS, get, existe, styleDe, liste, alias, nettoyer, pourLeQG, accueil };

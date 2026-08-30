@@ -74,6 +74,34 @@ async function getOrCreateGeneral(res) {
     return created[0];
 }
 
+// ── OUVRIR UNE DISCUSSION PAR SON NUMÉRO ────────────────────────────────
+//
+// Trouvé en corrigeant le lien de retour, et bien plus grave que lui.
+//
+// Ouvrir et écrire dans une discussion se faisaient sur le seul
+// identifiant : `SELECT * FROM discussions WHERE id = $1`. Les groupes
+// étaient protégés par l'appartenance — mais les salles GÉNÉRALES, non :
+// elles n'ont pas de membres, tout le monde y entre par définition. Donc un
+// membre de chez elle qui tapait /discussions/1 dans sa barre d'adresse
+// lisait NOTRE salle générale, et pouvait y écrire.
+//
+// Pas besoin de deviner longtemps : ce sont des entiers qui se suivent.
+//
+// La liste était filtrée, ce qui rendait la fuite invisible — le lien
+// n'apparaissait nulle part. Une porte fermée dans le couloir n'a jamais
+// fermé la fenêtre.
+//
+// COALESCE : les discussions créées avant la colonne `communaute` sont à
+// nous, comme partout ailleurs dans ce fichier.
+async function chargerDiscussion(discussionId, res) {
+    const rows = await db.query(
+        `SELECT * FROM discussions
+          WHERE id = $1 AND COALESCE(communaute, $3) = $2 LIMIT 1`,
+        [discussionId, communauteDe(res), communautes.DEFAUT]
+    );
+    return rows[0];
+}
+
 async function estMembre(discussionId, userId) {
     const rows = await db.query(
         `SELECT 1 FROM discussion_membres WHERE discussion_id = $1 AND user_id = $2`,
@@ -148,7 +176,11 @@ router.get("/", requireAuth, async (req, res) => {
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
-:root { --bg:#03060b; --panel:rgba(9,18,29,.88); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --border:rgba(0,217,255,.16); }
+/* La palette maison d'abord, celle du service ensuite : à spécificité
+   égale, la dernière règle gagne. Une communauté qui ne déclare rien garde
+   exactement l'apparence d'origine. */
+:root { --bg:#03060b; --panel:rgba(9,18,29,.88); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --border:rgba(0,217,255,.16); --gold:#d7b34c; --sur-accent:#001018; --creux:rgba(0,0,0,.3); }
+:root { ${communautes.styleDe(COM)} }
 * { box-sizing:border-box; }
 body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,sans-serif; padding-bottom:40px; }
 .disc-shell { max-width:640px; margin:0 auto; padding:20px 16px 60px; }
@@ -158,24 +190,24 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
 .disc-section-title { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:22px 0 10px; }
 .disc-item { display:flex; align-items:center; gap:12px; padding:12px; border-radius:14px; background:var(--panel); border:1px solid var(--border); text-decoration:none; color:var(--text); margin-bottom:8px; }
 .disc-item:hover { border-color:var(--blue); }
-.disc-avatar { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-weight:900; font-size:13px; color:white; background:linear-gradient(135deg,var(--blue),var(--blue-2)); flex-shrink:0; }
+.disc-avatar { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-weight:900; font-size:13px; color:var(--sur-accent); background:linear-gradient(135deg,var(--blue),var(--blue-2)); flex-shrink:0; }
 .disc-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .disc-info strong { font-size:13.5px; }
 .disc-info span { font-size:11.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.disc-join-btn { padding:8px 14px; border-radius:10px; border:1px solid var(--border); background:rgba(0,217,255,.1); color:var(--blue); font-weight:700; font-size:11.5px; cursor:pointer; }
+.disc-join-btn { padding:8px 14px; border-radius:10px; border:1px solid var(--border); background:var(--creux); color:var(--blue); font-weight:700; font-size:11.5px; cursor:pointer; }
 .disc-empty { color:var(--muted); font-size:12.5px; padding:14px 0; }
-.disc-general { border-color:rgba(215,179,76,.4); background:rgba(215,179,76,.06); }
-.disc-general .disc-avatar { background:linear-gradient(135deg,#d7b34c,#a9822f); }
+.disc-general { border-color:var(--gold); background:var(--creux); }
+.disc-general .disc-avatar { background:var(--gold); }
 .new-group-form { display:flex; gap:8px; margin-top:10px; }
-.new-group-form input { flex:1; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,.3); color:var(--text); font-size:13px; }
-.new-group-form button { padding:11px 16px; border:none; border-radius:10px; background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:#001018; font-weight:800; font-size:12.5px; cursor:pointer; }
+.new-group-form input { flex:1; padding:11px 13px; border-radius:10px; border:1px solid var(--border); background:var(--creux); color:var(--text); font-size:13px; }
+.new-group-form button { padding:11px 16px; border:none; border-radius:10px; background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:var(--sur-accent); font-weight:800; font-size:12.5px; cursor:pointer; }
 </style>
 </head>
 <body>
 <div class="disc-shell">
     <div class="disc-header">
         <h1>💬 Discussions</h1>
-        <a href="/community">← Communauté</a>
+        <a href="${communautes.accueil(COM)}">← ${escapeHtml(COM.nom)}</a>
     </div>
 
     <a class="disc-item disc-general" href="/discussions/${general.id}">
@@ -288,13 +320,21 @@ router.get("/:id", requireAuth, async (req, res) => {
     let discussion, messages = [];
 
     try {
-        const rows = await db.query(`SELECT * FROM discussions WHERE id = $1`, [discussionId]);
-        discussion = rows[0];
+        discussion = await chargerDiscussion(discussionId, res);
+        // 404, pas 403 : une discussion d'une autre communauté n'existe pas
+        // pour ce visiteur. Un 403 confirmerait qu'il a visé juste.
         if (!discussion) return res.status(404).send("Discussion introuvable.");
 
         if (discussion.type === "groupe" && !(await estMembre(discussionId, userId))) {
-            return res.status(403).send(`<div style="background:#03060b;color:#f5fbff;font-family:sans-serif;padding:60px;text-align:center;">
-                <h2>🔒 Ce groupe est privé</h2><p><a href="/discussions/${discussionId}/rejoindre" style="color:#00d9ff;">Rejoins-le d'abord</a> ou <a href="/discussions" style="color:#00d9ff;">retourne aux discussions</a>.</p></div>`);
+            // Le lien « Rejoins-le d'abord » pointait vers /rejoindre, qui
+            // n'existe qu'en POST : il rendait un 404 à quelqu'un qu'on
+            // venait déjà d'éconduire. Le bouton qui marche est dans la
+            // liste — on l'y renvoie.
+            const fond = COM.couleurs?.["--bg"] || "#03060b";
+            const encre = COM.couleurs?.["--text"] || "#f5fbff";
+            return res.status(403).send(`<div style="min-height:100vh;background:${fond};color:${encre};font-family:Inter,sans-serif;padding:60px 24px;text-align:center;">
+                <h2>🔒 Ce groupe est privé</h2>
+                <p>Tu n'en fais pas encore partie. <a href="/discussions" style="color:inherit;font-weight:700;">Retourne aux discussions</a> pour le rejoindre.</p></div>`);
         }
 
         messages = await db.query(
@@ -332,7 +372,8 @@ router.get("/:id", requireAuth, async (req, res) => {
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="/socket.io/socket.io.js"></script>
 <style>
-:root { --bg:#03060b; --panel:rgba(9,18,29,.88); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --border:rgba(0,217,255,.16); }
+:root { --bg:#03060b; --panel:rgba(9,18,29,.88); --text:#f5fbff; --muted:#7f96a8; --blue:#00d9ff; --blue-2:#0077ff; --border:rgba(0,217,255,.16); --gold:#d7b34c; --sur-accent:#001018; --creux:rgba(0,0,0,.3); }
+:root { ${communautes.styleDe(COM)} }
 * { box-sizing:border-box; }
 html,body { height:100%; margin:0; }
 body { display:flex; flex-direction:column; background:var(--bg); color:var(--text); font-family:Inter,sans-serif; }
@@ -342,19 +383,25 @@ body { display:flex; flex-direction:column; background:var(--bg); color:var(--te
 .chat-body { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
 .msg-row { display:flex; gap:8px; align-items:flex-end; max-width:80%; }
 .msg-row--moi { align-self:flex-end; flex-direction:row-reverse; max-width:80%; }
-.msg-avatar { width:28px; height:28px; border-radius:8px; display:grid; place-items:center; font-size:10px; font-weight:900; color:white; background:linear-gradient(135deg,var(--blue),var(--blue-2)); flex-shrink:0; }
+.msg-avatar { width:28px; height:28px; border-radius:8px; display:grid; place-items:center; font-size:10px; font-weight:900; color:var(--sur-accent); background:linear-gradient(135deg,var(--blue),var(--blue-2)); flex-shrink:0; }
 .msg-bubble { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:9px 13px; }
-.msg-row--moi .msg-bubble { background:linear-gradient(135deg,rgba(0,217,255,.22),rgba(0,119,255,.14)); border-color:rgba(0,217,255,.35); }
+/* Ma bulle : l'accent plein, et le texte écrit POUR cet accent. En dur,
+   elle restait cyan translucide — invisible sur une page blanche. */
+.msg-row--moi .msg-bubble { background:linear-gradient(135deg,var(--blue),var(--blue-2)); border-color:var(--blue); color:var(--sur-accent); }
+.msg-row--moi .msg-bubble time { color:var(--sur-accent); opacity:.7; }
 .msg-author { display:block; font-size:10.5px; color:var(--blue); font-weight:700; margin-bottom:3px; }
-.msg-row--ia .msg-avatar { background:linear-gradient(135deg,#9d5cff,#d7b34c); }
-.msg-row--ia .msg-bubble { border-color:rgba(157,92,255,.4); background:rgba(157,92,255,.08); }
-.msg-ia-badge { display:inline-block; font-size:8.5px; font-weight:900; letter-spacing:.04em; color:#9d5cff; background:rgba(157,92,255,.15); border:1px solid rgba(157,92,255,.35); border-radius:5px; padding:1px 5px; margin-left:4px; vertical-align:middle; }
+/* L'assistant se repère à l'or de la communauté, pas à un violet fixe :
+   c'est le seul marqueur qui dit « ce n'est pas un humain », il doit rester
+   lisible sur fond noir comme sur fond blanc. */
+.msg-row--ia .msg-avatar { background:var(--gold); }
+.msg-row--ia .msg-bubble { border-color:var(--gold); background:var(--creux); }
+.msg-ia-badge { display:inline-block; font-size:8.5px; font-weight:900; letter-spacing:.04em; color:var(--gold); background:var(--creux); border:1px solid var(--gold); border-radius:5px; padding:1px 5px; margin-left:4px; vertical-align:middle; }
 .msg-bubble p { margin:0; font-size:13px; line-height:1.5; word-break:break-word; }
 .msg-bubble img { max-width:100%; border-radius:10px; margin-top:6px; }
 .msg-bubble time { display:block; font-size:9.5px; color:var(--muted); margin-top:4px; text-align:right; }
 .chat-input-row { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--border); background:var(--panel); }
-.chat-input-row input { flex:1; padding:12px 14px; border-radius:20px; border:1px solid var(--border); background:rgba(0,0,0,.3); color:var(--text); font-size:13.5px; outline:none; }
-.chat-input-row button { width:42px; height:42px; border-radius:50%; border:none; background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:#001018; display:grid; place-items:center; cursor:pointer; flex-shrink:0; }
+.chat-input-row input { flex:1; padding:12px 14px; border-radius:20px; border:1px solid var(--border); background:var(--creux); color:var(--text); font-size:13.5px; outline:none; }
+.chat-input-row button { width:42px; height:42px; border-radius:50%; border:none; background:linear-gradient(135deg,var(--blue),var(--blue-2)); color:var(--sur-accent); display:grid; place-items:center; cursor:pointer; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -413,13 +460,18 @@ document.getElementById("formMessage").addEventListener("submit", async (e) => {
 });
 
 router.post("/:id/message", requireAuth, async (req, res) => {
+    // Déclaré ici, et pas seulement dans les pages : la dernière fois, ce
+    // handler passait `COM` à repondreCommeSamii() sans l'avoir jamais
+    // défini. La réponse HTTP étant déjà partie, le ReferenceError tombait
+    // dans le catch, qui tentait un second res.json() — l'assistant ne
+    // répondait donc JAMAIS, et rien ne le disait dans les logs métier.
+    const COM = res.locals?.COM || communautes.get(communautes.DEFAUT);
     try {
         const discussionId = parseInt(req.params.id, 10);
         const contenu = (req.body.contenu || "").trim().slice(0, 2000);
         if (!contenu) return res.json({ success:false, error:"Message vide." });
 
-        const discRows = await db.query(`SELECT * FROM discussions WHERE id = $1`, [discussionId]);
-        const discussion = discRows[0];
+        const discussion = await chargerDiscussion(discussionId, res);
         if (!discussion) return res.json({ success:false, error:"Discussion introuvable." });
 
         if (discussion.type === "groupe" && !(await estMembre(discussionId, req.session.userId))) {

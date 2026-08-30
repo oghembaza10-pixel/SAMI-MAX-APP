@@ -18,56 +18,20 @@
 </head>
 <body data-theme="og">
 <div class="qg-shell">
-    <aside class="qg-sidebar" id="og-sidebar">
-        <div class="qg-sidebar__top">
-            <a href="/hub" class="qg-logo">
-                <span class="qg-logo__text">OG · TECHNOLOGY</span>
-            </a>
-            <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar">
-                <i data-lucide="chevrons-left"></i>
-            </button>
-        </div>
-        <nav class="qg-nav">
-            <a href="/hub" class="qg-nav__item">
-                <i data-lucide="layout-grid"></i><span data-i18n="qg.nav.hub">Hub</span>
-            </a>
-            <a href="/hub" class="qg-nav__item" id="qg-back-link">
-                <i data-lucide="layout-dashboard"></i><span data-i18n="qg.nav.backToQG">Mon QG</span>
-            </a>
-            <a href="/marketplace" class="qg-nav__item">
-                <i data-lucide="store"></i><span data-i18n="qg.nav.marketplace">Marketplace</span>
-          </a>
-            <a href="/community" class="qg-nav__item">
-                <i data-lucide="users"></i><span data-i18n="qg.nav.community">Community</span>
-            </a>
-            <a href="/academy" class="qg-nav__item">
-                <i data-lucide="graduation-cap"></i><span data-i18n="qg.nav.academy">Academy</span>
-            </a>
-            <div class="qg-nav__divider"></div>
-            <a href="/arsenal" class="qg-nav__item">
-                <i data-lucide="sword"></i><span data-i18n="qg.nav.arsenal">Arsenal</span>
-            </a>
-            <a href="/coffre" class="qg-nav__item">
-                <i data-lucide="vault"></i><span data-i18n="qg.nav.vault">Coffre OG</span>
-            </a>
-            <div class="qg-nav__divider"></div>
-            <a href="/samii" class="qg-nav__item qg-nav__item--samii active">
-                <i data-lucide="bot"></i><span data-i18n="qg.nav.samii">SAMII</span>
-                <span class="qg-status-dot qg-status-dot--on" id="samii-status-dot" title="SAMII actif"></span>
-            </a>
-        </nav>
-        <div class="qg-sidebar__bottom">
-            <a href="/settings" class="qg-nav__item">
-                <i data-lucide="settings"></i><span data-i18n="qg.nav.settings">Paramètres</span>
-            </a>
-            <div class="og-lang-switch">
-                <span data-lang-btn="fr">FR</span>
-                <span data-lang-btn="en">EN</span>
-                <span data-lang-btn="ar">AR</span>
-                <span data-lang-btn="zh">ZH</span>
-            </div>
-        </div>
-    </aside>
+    <%#
+      Cette colonne était écrite en dur : « OG · TECHNOLOGY » en haut, puis
+      Marketplace, Academy, Arsenal et Coffre OG — dont rien n'appartient à
+      une partenaire, et dont rien ne lui a été promis. Son « Community »
+      ramenait chez NOUS.
+
+      C'est la page de l'assistant, et l'assistant est justement ce qu'on
+      donne à une partenaire : c'était donc la page la plus sûrement vue par
+      ses membres, et la plus sûrement fausse.
+
+      La colonne partagée décide à partir de config/modules-qg.js.
+    %>
+    <%- include("partials/qg-nav", { actif: "assistant" }) %>
+    <div class="qg-nav-overlay" id="qg-nav-overlay"></div>
     <main class="qg-main samii-page">
         <header class="qg-topbar">
             <div class="qg-topbar__breadcrumb">

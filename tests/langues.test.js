@@ -128,6 +128,27 @@ const SANS_SELECTEUR_ADMIS = new Set([
     "partials/barre-langue.ejs",
 ]);
 
+// Cette vérification lisait chaque fichier isolément. Le jour où une page a
+// confié sa colonne de gauche à un partiel partagé, le sélecteur a disparu
+// de SA source — alors qu'il est toujours rendu, depuis le partiel. Le test
+// signalait donc une page cassée qui ne l'est pas, et aurait fini par être
+// contourné plutôt que corrigé.
+//
+// On suit maintenant les include(), comme le fait EJS. Une page qui n'a
+// vraiment aucun sélecteur, ni chez elle ni chez ses partiels, échoue
+// toujours — c'était bien ça qu'on voulait attraper.
+function avecSesInclusions(fichier, vus = new Set()) {
+    if (vus.has(fichier)) return "";
+    vus.add(fichier);
+    let source;
+    try {
+        source = fs.readFileSync(path.join(VUES, fichier), "utf8");
+    } catch { return ""; }
+    const inclus = [...source.matchAll(/include\(\s*["']([^"']+)["']/g)].map((m) => m[1]);
+    return source + inclus.map((nom) =>
+        avecSesInclusions(nom.endsWith(".ejs") ? nom : `${nom}.ejs`, vus)).join("");
+}
+
 for (const f of [...gabarits, ...partiels]) {
     if (SANS_SELECTEUR_ADMIS.has(f)) continue;
     const source = fs.readFileSync(path.join(VUES, f), "utf8");
@@ -136,7 +157,7 @@ for (const f of [...gabarits, ...partiels]) {
     if (!source.includes("</body>")) continue;
 
     verifier(
-        A_UN_SELECTEUR(source),
+        A_UN_SELECTEUR(avecSesInclusions(f)),
         `${f} : aucun moyen de changer de langue — inclure partials/barre-langue avant </body>`
     );
 }

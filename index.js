@@ -494,19 +494,31 @@ app.get("/samii", requireAuth, async (req, res) => {
     // Les cartes de la grille (Miroir, Oracle Financier, Griot...) sont des
     // outils métier marchand — la plupart supposent un workspace et n'ont
     // aucun sens pour un particulier. Un particulier n'a que le chat.
+    const communautes = require("./config/communautes");
     let estParticulier = false;
+    // La même règle qu'au QG : le domaine décide. Sans cette ligne, la
+    // colonne partagée retombe sur la maison — et sur le service d'une
+    // partenaire, ça rend précisément le QG qu'on essaie de ne plus rendre.
+    let COM = communautes.get(communautes.DEFAUT);
     try {
         const db = require("./services/db");
-        const rows = await db.query(`SELECT type_compte FROM utilisateurs WHERE id = $1`, [req.session.userId]);
+        const rows = await db.query(`SELECT type_compte, communaute FROM utilisateurs WHERE id = $1`, [req.session.userId]);
         estParticulier = rows[0]?.type_compte === "client";
+        COM = communautes.pourLeQG(COMMUNAUTE_HOTE, rows[0]?.communaute);
     } catch (err) {
-        console.error("❌ GET /samii (type_compte) :", err.message);
+        // La colonne `communaute` peut manquer juste après un déploiement.
+        // On garde au moins la marque du service plutôt que de rendre la
+        // nôtre chez elle.
+        console.error("❌ GET /samii (profil) :", err.message);
+        COM = communautes.pourLeQG(COMMUNAUTE_HOTE, communautes.DEFAUT);
     }
 
     res.render("samii", {
         workspaceId : req.session.workspaceId || "",
         shop        : req.session.shop        || "",
         estParticulier,
+        communaute  : COM,
+        typeCompte  : req.session.typeCompte || "marchand",
     });
 });
 

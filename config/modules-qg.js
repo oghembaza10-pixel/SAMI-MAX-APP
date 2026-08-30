@@ -27,11 +27,16 @@
 // à /community mais à /c/<son-slug>, et son QG doit ramener chez ELLE.
 // ==========================================================================
 
+// `communautes` se requiert DANS la fonction, pas en haut du fichier : ces
+// deux modules se demandent l'un l'autre (communautes.js lit MINIMAL ici),
+// et un require en tête rendrait un objet encore vide, figé pour toute la
+// vie du processus. Ici, l'appel a lieu au moment du rendu — le cache est
+// chaud, et `accueil` existe.
 const MODULES = [
     // ── Le haut : ce qu'on voit sans déplier ─────────────────────────────
     { id: "hub",         libelle: "Hub",                 cle: "qg.nav.hub",          icone: "layout-grid",     href: "/hub",            rang: "core" },
     { id: "marketplace", libelle: "Marketplace",         cle: "qg.nav.marketplace",  icone: "store",           href: "/marketplace",    rang: "core" },
-    { id: "communaute",  libelle: "Community",           cle: "qg.nav.community",    icone: "users",           href: (COM) => COM.ecosysteme ? "/community" : `/c/${COM.slug}`, rang: "core" },
+    { id: "communaute",  libelle: "Community",           cle: "qg.nav.community",    icone: "users",           href: (COM) => require("./communautes").accueil(COM), rang: "core" },
     { id: "academy",     libelle: "Academy",             cle: "qg.nav.academy",      icone: "graduation-cap",  href: "/academy",        rang: "core" },
 
     // ── Le repli : « Plus » ──────────────────────────────────────────────
