@@ -69,6 +69,14 @@ const COMMUNAUTES = {
         marque: "LE COIN",
         marqueSuite: "DU DIGITAL",
         vide: "Ici on partage ce qu'on trouve : un outil, une astuce, une opportunité. Poste le tien.",
+        // Ce que voit quelqu'un qui arrive par un lien partagé et ne sait
+        // pas où il est tombé. Repris de sa fiche professionnelle, pas
+        // inventé à sa place — et à faire relire par elle : c'est sa
+        // communauté qu'on présente, avec ses mots.
+        apropos: "Le Coin Du Digital, c'est l'endroit où on partage ce qui fait vraiment "
+               + "gagner du temps et de l'argent en ligne : outils IA, astuces tech, "
+               + "formations et opportunités digitales. Tu peux lire, poser tes questions, "
+               + "vendre tes propres formations ou produits, et être payé directement ici.",
         moteur: "COMMUNAUTÉ EN LIGNE",
         moteurTexte: "Ressources numériques · Outils IA · Astuces Tech · Formations · Opportunités.",
         libelleMembres: "Membres",

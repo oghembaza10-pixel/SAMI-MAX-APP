@@ -111,6 +111,14 @@ function liensSortants(html, slug) {
         // communauté. Ces pages n'ont pas été converties et affichent
         // toujours « OG · TECHNOLOGY ».
         if (/^\/(qg|client-qg|settings|discussions)(\/|$|#|\?)/.test(u)) return false;
+        // Sortir de son compte n'est pas sortir de sa communauté. Il n'y
+        // avait AUCUN moyen de se déconnecter sur cette page — ni ici, ni
+        // dans l'en-tête. Sur un téléphone qu'on prête, ce qui est courant,
+        // c'est le compte de quelqu'un d'autre qu'on garde ouvert.
+        //
+        // /logout ne rend pas de page : il vide la session et renvoie à
+        // l'accueil. Aucune marque à fuiter.
+        if (u === "/logout") return false;
         return true;
     });
 }

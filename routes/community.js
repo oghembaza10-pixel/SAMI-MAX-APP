@@ -254,8 +254,17 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     // sur ?f=… dans la colonne de gauche — mais rien ne lisait ce paramètre :
     // les trois liens rechargeaient le fil complet. Ils marchent maintenant,
     // et le même mécanisme sert à afficher ce qu'on a mis de côté.
-    const filtre = String(req.query?.f || "").toLowerCase().replace(/[^a-z]/g, "");
+    const filtre = String(req.query?.f || "").toLowerCase().replace(/[^a-z-]/g, "");
     const filtreEnregistres = filtre === "enregistres";
+    // « Chaque utilisateur doit avoir son espace : quand il fait ses
+    // publications, il les voit aussi dans son espace, à part de toutes
+    // celles des autres. »
+    //
+    // Le fil montre tout le monde, ce qui est très bien pour découvrir et
+    // très mauvais pour se relire. Quelqu'un qui a publié trois choses la
+    // semaine dernière ne les retrouve plus : elles sont sous cinquante
+    // autres. Ici, il ne voit que les siennes.
+    const filtreMien = filtre === "mes-publications";
     const filtreCategorie = CATEGORIES[filtre] ? filtre : null;
 
     try {
@@ -281,9 +290,13 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
               AND ($5::boolean IS NULL OR EXISTS(
                     SELECT 1 FROM publications_enregistrees pe2
                      WHERE pe2.publication_id = p.id AND pe2.user_id = $1))
+              -- Son espace à lui. Comparé à $1, jamais à une valeur passée
+              -- par la page : sans ça, « ?f=mes-publications&qui=<id> »
+              -- afficherait l'espace de quelqu'un d'autre.
+              AND ($6::boolean IS NULL OR p.auteur_id = $1)
             ORDER BY p.epingle DESC, p.created_at DESC LIMIT 40
         `, [req.session.userId || "", COM.slug, communautes.DEFAUT,
-            filtreCategorie, filtreEnregistres ? true : null]);
+            filtreCategorie, filtreEnregistres ? true : null, filtreMien ? true : null]);
         publications = rows;
         for (const pub of publications) {
             const comms = await db.query(`SELECT pc.*, u.prenom, u.nom FROM publications_commentaires pc LEFT JOIN utilisateurs u ON u.id=pc.auteur_id WHERE pc.publication_id=$1 ORDER BY pc.created_at ASC LIMIT 2`, [pub.id]);
@@ -402,6 +415,27 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
             (p.auteur_id && String(p.auteur_id) === String(req.session?.userId)) ||
             estAdmineDeChezElle));
 
+    // Ce qu'on annonce en haut du fil quand il est filtré. Sans ça, « Mon
+    // espace » sur un compte qui n'a rien publié ressemble à une communauté
+    // vide, et « Les produits » sans produit ressemble à une panne.
+    const LIBELLES = { produit: "Les produits", formation: "Les formations", service: "Les services" };
+    const enTeteFiltre = filtreMien
+        ? `<div class="bandeau-espace">
+             <div><b>Mon espace</b><br><span>${publications.length ? `${publications.length} publication${publications.length > 1 ? "s" : ""} à toi` : "Tu n'as encore rien publié ici."}</span></div>
+             <a href="/c/${COM.slug}">Voir tout le fil →</a>
+           </div>`
+        : (filtreEnregistres
+            ? `<div class="bandeau-espace">
+                 <div><b>Mes enregistrements</b><br><span>${publications.length ? "Ce que tu as mis de côté." : "Tu n'as encore rien enregistré. Le marque-page sous chaque publication le range ici."}</span></div>
+                 <a href="/c/${COM.slug}">Voir tout le fil →</a>
+               </div>`
+            : (filtreCategorie
+                ? `<div class="bandeau-espace">
+                     <div><b>${LIBELLES[filtreCategorie] || filtreCategorie}</b><br><span>${publications.length ? `${publications.length} publication${publications.length > 1 ? "s" : ""}` : "Rien dans cette catégorie pour l'instant."}</span></div>
+                     <a href="/c/${COM.slug}">Voir tout le fil →</a>
+                   </div>`
+                : ""));
+
     const feedHtml = publications.length ? publications.map(p => {
         const nomAuteur = escapeHtml(`${p.prenom||"Membre"} ${p.nom||""}`.trim());
         const grade = escapeHtml(p.grade_actuel||"Soldat");
@@ -432,7 +466,8 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
                 <button class="post-action-btn" type="button" onclick="toggleCommentBox(${p.id})"><i data-lucide="message-circle"></i> Commenter</button>
                 <button class="post-action-btn ${p.enregistre?"saved":""}" type="button" onclick="toggleEnregistrer(${p.id}, this)"><i data-lucide="bookmark"></i> <span>${p.enregistre?"Enregistré":"Enregistrer"}</span></button>
                 <button class="post-action-btn" type="button" onclick="sharePost(${p.id})"><i data-lucide="share-2"></i> Partager</button>
-                ${peutSupprimer(p) ? `<button class="post-action-btn post-action-btn--danger" type="button" onclick="supprimerPost(${p.id})" title="Supprimer"><i data-lucide="trash-2"></i></button>` : ""}
+                ${peutSupprimer(p) ? `<button class="post-action-btn post-action-btn--mien" type="button" onclick="modifierPost(${p.id})" title="Modifier"><i data-lucide="pencil"></i></button>
+                <button class="post-action-btn post-action-btn--danger" type="button" onclick="supprimerPost(${p.id})" title="Supprimer"><i data-lucide="trash-2"></i></button>` : ""}
             </div>
             <div class="comments-preview">${commentairesHtml}</div>
             <div class="comment-box" id="comment-box-${p.id}" style="display:none;">
@@ -463,16 +498,23 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
 body.light{--bg:#eef5fa;--panel:rgba(255,255,255,.88);--text:#08121c;--muted:#607384;--border:rgba(0,119,255,.16);}
 *{box-sizing:border-box;} body{margin:0;min-height:100vh;background:radial-gradient(circle at 10% 10%,var(--halo-1),transparent 30%),radial-gradient(circle at 90% 90%,var(--halo-2),transparent 32%),var(--bg);color:var(--text);font-family:Inter,sans-serif;overflow-x:hidden;}
 button,input,textarea{font:inherit;cursor:pointer;} a{color:inherit;text-decoration:none;}
-.sidebar{position:fixed;left:0;top:0;width:245px;height:100vh;padding:22px 16px;background:linear-gradient(180deg,rgba(4,10,17,.97),rgba(3,7,12,.94));border-right:1px solid var(--border);z-index:300;display:flex;flex-direction:column;}
+.sidebar{position:fixed;left:0;top:0;width:245px;height:100vh;padding:22px 16px;background:var(--panel);border-right:1px solid var(--border);z-index:300;display:flex;flex-direction:column;}
 body.light .sidebar{background:rgba(247,251,254,.95);}
 .brand{display:flex;align-items:center;gap:10px;padding:8px 10px 25px;font-weight:800;}
 .brand-mark{width:37px;height:37px;display:grid;place-items:center;border-radius:11px;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));font-weight:900;}
 .brand-name span{color:var(--blue);}
 .side-link{display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:12px;color:var(--muted);font-size:13px;font-weight:600;border:1px solid transparent;margin-bottom:6px;}
 .side-link svg{width:18px;height:18px;}
-.side-link:hover,.side-link.active{color:var(--text);background:linear-gradient(90deg,rgba(0,217,255,.12),rgba(0,119,255,.04));border-color:rgba(0,217,255,.22);}
+.side-link:hover,.side-link.active{color:var(--text);background:var(--creux);border-color:var(--border);}
+.side-link.active{font-weight:700;}
 .side-link.active svg{color:var(--blue);}
-.side-bottom{margin-top:auto;padding:14px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(135deg,rgba(0,217,255,.08),rgba(0,119,255,.03));}
+.side-bottom{margin-top:auto;flex-shrink:0;padding:14px;border:1px solid var(--border);border-radius:16px;background:var(--creux);}
+/* Le haut de la colonne cède la place quand l'écran est court : sans
+   ces deux lignes, le bas — donc « Se déconnecter » — sort de l'écran,
+   ce qui nous ramène exactement au problème qu'on vient de corriger.
+   min-height:0 est indispensable : un enfant flex refuse de rétrécir
+   sous sa taille de contenu sans lui, et le défilement ne s'active pas. */
+.sidebar > div:first-child{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
 .side-ai{display:flex;align-items:center;gap:8px;font-size:11px;font-family:"JetBrains Mono";color:var(--blue);margin-bottom:6px;}
 .side-ai-dot{width:7px;height:7px;background:#00ff9d;border-radius:50%;}
 .side-text{color:var(--muted);font-size:11px;line-height:1.5;}
@@ -672,8 +714,18 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .post-action-btn.saved{color:var(--gold);} .post-action-btn.saved svg{fill:var(--gold);}
 /* La corbeille ne prend pas sa part de largeur : c'est une action rare, elle
    ne doit pas peser autant que « J'aime ». */
-.post-action-btn--danger{flex:0 0 auto;padding:9px 11px;color:var(--muted);}
+.post-action-btn--danger,.post-action-btn--mien{flex:0 0 auto;padding:9px 11px;color:var(--muted);}
 .post-action-btn--danger:hover{background:rgba(255,84,112,.1);color:var(--danger);}
+.post-action-btn--mien:hover{background:var(--creux);color:var(--blue);}
+/* La zone d'édition en place : on corrige là où on lit, sans quitter le
+   fil ni perdre les commentaires déjà reçus. */
+.post-edit{display:flex;flex-direction:column;gap:9px;margin:8px 0 4px;}
+.post-edit textarea{width:100%;min-height:88px;padding:11px 13px;border-radius:12px;
+  border:1px solid var(--border);background:var(--creux);color:var(--text);
+  font:inherit;font-size:13.5px;line-height:1.55;resize:vertical;}
+.post-edit-actions{display:flex;gap:8px;justify-content:flex-end;}
+.post-edit-actions button{padding:9px 16px;border-radius:10px;font-size:12.5px;font-weight:700;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
+.post-edit-actions .enr{background:var(--blue);border-color:var(--blue);color:var(--sur-accent);}
 @media(max-width:420px){.post-action-btn span{display:none;}}
 .comments-preview{display:flex;flex-direction:column;gap:8px;}
 .comment-item{display:flex;gap:8px;align-items:flex-start;}
@@ -707,8 +759,61 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:#0c1a28;border:1px solid var(--blue);color:var(--text);padding:12px 22px;border-radius:12px;font-size:12px;z-index:900;opacity:0;transition:.3s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .mobile-nav{display:none;}
+/* Les intertitres de la colonne : « Parcourir », « La communauté ». Avec
+   huit entrées d'affilée, on ne voit plus qu'une liste ; avec deux
+   respirations, on voit trois groupes. */
+.side-titre{font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+            color:var(--muted);opacity:.65;margin:16px 0 6px;padding-left:11px;}
+.side-quitter{display:flex;align-items:center;gap:9px;margin-top:14px;padding:10px 11px;
+              border-radius:10px;border:1px solid var(--border);color:var(--muted);
+              font-size:12px;font-weight:600;}
+.side-quitter svg{width:15px;height:15px;}
+.side-quitter:hover{color:var(--danger);border-color:var(--danger);}
+.apropos-chiffres{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.apropos-chiffres div{background:var(--creux);border:1px solid var(--border);border-radius:12px;padding:13px;text-align:center;}
+.apropos-chiffres b{display:block;font-size:21px;font-weight:800;}
+.apropos-chiffres span{font-size:11px;color:var(--muted);}
+/* Le bandeau de « Mon espace » : on doit savoir tout de suite qu'on ne
+   regarde plus le fil de tout le monde, sinon on croit que la communauté
+   s'est vidée. */
+.bandeau-espace{background:var(--creux);border:1px solid var(--border);border-radius:14px;
+                padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;
+                align-items:center;gap:12px;flex-wrap:wrap;}
+.bandeau-espace b{font-size:14px;} .bandeau-espace span{font-size:12px;color:var(--muted);}
+.bandeau-espace a{font-size:12px;font-weight:700;color:var(--blue);}
+.burger{display:none;}
+.voile-menu{display:none;}
 @media (max-width:900px){
-.sidebar{display:none;} .main{margin-left:0;width:100%;} .header{padding:12px 14px;} .header h1{font-size:16px;} .layout{padding:16px 12px 90px;}
+/* LA COLONNE N'EST PLUS SUPPRIMÉE, ELLE EST RANGÉE.
+   Elle était masquée purement et simplement : tout ce qu'elle contient — les sections,
+   et surtout « Se déconnecter » — n'existait donc pas sur un téléphone.
+   C'est là que ça compte le plus : un téléphone se prête, et on garde le
+   compte de quelqu'un d'autre ouvert sans le vouloir. */
+.sidebar{display:flex;transform:translateX(-102%);transition:transform .26s cubic-bezier(.16,1,.3,1);width:min(280px,84vw);
+  /* OPAQUE, et à SA couleur. Le fond d'origine est un dégradé sombre
+     translucide : posé au-dessus d'une page blanche, on lisait le fil au
+     travers du menu, et le menu restait sombre sur une marque claire. */
+  background:var(--panel);}
+.sidebar.on{transform:translateX(0);box-shadow:8px 0 40px rgba(0,0,0,.28);}
+/* Sur un petit écran, huit entrées plus le bas de colonne dépassent. Sans
+   ce défilement, « Se déconnecter » est hors de l'écran et donc absent —
+   ce qui nous ramène au problème qu'on vient de corriger.
+   Le défilement est posé sur la COLONNE ENTIÈRE et pas seulement sur la
+   liste : la première version ne débordait que de quelques pixels, et le
+   bouton restait coupé sur les écrans les plus courts. */
+.sidebar{overflow-y:auto;}
+.sidebar nav{overflow:visible;}
+/* Sur un téléphone, le bas de colonne ne se colle plus en bas : il suit
+   directement le menu. Collé en bas d'une colonne plus haute que l'écran,
+   « Se déconnecter » tombait sous la ligne de flottaison — présent dans le
+   code, invisible pour la personne. Juste après « À propos », il se voit. */
+.side-bottom{margin-top:14px;padding:11px;}
+.side-bottom .side-text{display:none;}
+.sidebar > div:first-child{flex:0 0 auto;}
+.voile-menu{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:299;opacity:0;pointer-events:none;transition:opacity .26s;}
+.voile-menu.on{opacity:1;pointer-events:auto;}
+.burger{display:grid;place-items:center;}
+.main{margin-left:0;width:100%;} .header{padding:12px 14px;} .header h1{font-size:16px;} .layout{padding:16px 12px 90px;}
 .mobile-nav{position:fixed;left:8px;right:8px;bottom:8px;height:62px;z-index:400;display:grid;grid-template-columns:repeat(5,1fr);padding:5px;border:1px solid rgba(0,217,255,.22);border-radius:17px;background:rgba(4,10,17,.92);backdrop-filter:blur(25px);}
 .mobile-nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:8px;font-weight:700;border-radius:12px;}
 .mobile-nav a svg{width:18px;height:18px;} .mobile-nav a.active{color:var(--blue);background:rgba(0,217,255,.08);}
@@ -723,7 +828,8 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 </style>
 </head>
 <body>
-<aside class="sidebar">
+<div class="voile-menu" id="voileMenu"></div>
+<aside class="sidebar" id="sidebar">
 <div><div class="brand"><div class="brand-mark">${escapeHtml(COM.sigle)}</div><div class="brand-name">${escapeHtml(COM.marque)} <span>${escapeHtml(COM.marqueSuite)}</span></div></div>
 <nav>
 ${COM.ecosysteme ? `
@@ -733,16 +839,33 @@ ${COM.ecosysteme ? `
 <a href="/discussions" class="side-link"><i data-lucide="message-circle"></i> Discussions</a>
 <a href="/arsenal" class="side-link"><i data-lucide="shield-check"></i> Arsenal</a>
 <a href="/academy" class="side-link"><i data-lucide="graduation-cap"></i> Academy</a>` : `
-<a href="/c/${COM.slug}" class="side-link active"><i data-lucide="users"></i> Le fil</a>
+<a href="/c/${COM.slug}" class="side-link${!filtre ? " active" : ""}"><i data-lucide="users"></i> Le fil</a>
+${connecte ? `<a href="/c/${COM.slug}?f=mes-publications" class="side-link${filtreMien ? " active" : ""}"><i data-lucide="user"></i> Mon espace</a>` : ""}
+<div class="side-titre">Parcourir</div>
 <a href="/c/${COM.slug}?f=produit" class="side-link${filtre === "produit" ? " active" : ""}"><i data-lucide="shopping-bag"></i> Les produits</a>
 <a href="/c/${COM.slug}?f=formation" class="side-link${filtre === "formation" ? " active" : ""}"><i data-lucide="graduation-cap"></i> Les formations</a>
 <a href="/c/${COM.slug}?f=service" class="side-link${filtre === "service" ? " active" : ""}"><i data-lucide="concierge-bell"></i> Les services</a>
-${connecte ? `<a href="/c/${COM.slug}?f=enregistres" class="side-link${filtreEnregistres ? " active" : ""}"><i data-lucide="bookmark"></i> Mes enregistrements</a>` : ""}`}
+${connecte ? `<a href="/c/${COM.slug}?f=enregistres" class="side-link${filtreEnregistres ? " active" : ""}"><i data-lucide="bookmark"></i> Mes enregistrements</a>` : ""}
+<div class="side-titre">La communauté</div>
+${connecte ? `<a href="#" class="side-link" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant</a>` : ""}
+<a href="#" class="side-link" onclick="ouvrirApropos();return false;"><i data-lucide="info"></i> À propos</a>`}
 </nav></div>
-<div class="side-bottom"><div class="side-ai"><span class="side-ai-dot"></span> ${escapeHtml(COM.moteur)}</div><div class="side-text">${escapeHtml(COM.moteurTexte)}</div></div>
+<div class="side-bottom">
+  <div class="side-ai"><span class="side-ai-dot"></span> ${escapeHtml(COM.moteur)}</div>
+  <div class="side-text">${escapeHtml(COM.moteurTexte)}</div>
+  ${connecte
+    // « Donner la possibilité aux utilisateurs de se déconnecter. » Il n'y
+    // avait AUCUN moyen de sortir : ni ici, ni dans l'en-tête, nulle part
+    // sur la page. Sur un téléphone partagé — ce qui est courant — c'est le
+    // compte de quelqu'un d'autre qu'on garde ouvert sans le vouloir.
+    ? `<a href="/logout" class="side-quitter"><i data-lucide="log-out"></i> Se déconnecter</a>`
+    : `<a href="${COM.ecosysteme ? "/login" : `/c/${COM.slug}/connexion`}" class="side-quitter"><i data-lucide="log-in"></i> Se connecter</a>`}
+</div>
 </aside>
 <div class="main">
-<header class="header"><h1>${escapeHtml(COM.nom)}</h1>
+<header class="header">
+<button class="icon-btn burger" id="burger" type="button" aria-label="Ouvrir le menu"><i data-lucide="menu"></i></button>
+<h1>${escapeHtml(COM.nom)}</h1>
 <div class="header-actions">${aBoutique ? `<a class="btn-boutique" href="/qg"><i data-lucide="layout-dashboard"></i><span>Ma boutique</span></a>` : ""}<button class="icon-btn" id="themeBtn" type="button"><i data-lucide="moon"></i></button>${COM.ecosysteme ? `<a class="icon-btn" href="/qg"><i data-lucide="layout-dashboard"></i></a>` : ""}</div>
 </header>
 <div class="layout">
@@ -819,6 +942,7 @@ ${!connecte ? `
 </div>
 </div>
 </div>`}
+${enTeteFiltre}
 <div id="feedContainer">${feedHtml}</div>
 </div>
 
@@ -831,7 +955,7 @@ ${!connecte ? `
      on paie pour être vu plus longtemps, par ceux qui ont quelque chose à
      vendre. Les durées sont courtes exprès — on essaie à petit prix avant
      de reconduire. -->
-<div class="sheet-voile" id="sheetVoile" onclick="fermerBoost()"></div>
+<div class="sheet-voile" id="sheetVoile" onclick="fermerFiches()"></div>
 <div class="sheet" id="sheetVendre" role="dialog" aria-label="Mettre en vente">
   <h3>Mettre en vente</h3>
   <p class="sheet-p">Ça apparaît dans ta vitrine ET dans le fil de la communauté. Publier est gratuit.</p>
@@ -873,6 +997,21 @@ ${!connecte ? `
     <p class="boost-ok" id="boostNote">Ton choix est noté. On te prévient dès que la mise en avant s'ouvre.</p>
   </div>
   <button class="sheet-fermer" onclick="fermerBoost()">Fermer</button>
+</div>
+
+<!-- À PROPOS. Une communauté sans page « à propos », c'est un fil sans
+     porte d'entrée : quelqu'un qui arrive par un lien partagé ne sait pas
+     où il est tombé ni ce qu'on y fait. Le texte vient de la configuration
+     de la communauté — c'est SA description, pas la nôtre. -->
+<div class="sheet" id="sheetApropos" role="dialog" aria-label="À propos">
+  <h3>${escapeHtml(COM.nom)}</h3>
+  <p class="sheet-p">${escapeHtml(COM.apropos || COM.moteurTexte)}</p>
+  <div class="apropos-chiffres">
+    <div><b>${stats.membres}</b><span>membre${stats.membres > 1 ? "s" : ""}</span></div>
+    <div><b>${stats.publications}</b><span>publication${stats.publications > 1 ? "s" : ""}</span></div>
+  </div>
+  <p class="sheet-p" style="margin-top:14px;">${escapeHtml(COM.vide)}</p>
+  <button class="sheet-fermer" onclick="fermerApropos()">Fermer</button>
 </div>
 
 <!-- SAMII, en bulle. Volontairement branché sur /vitrine/chat : cet accès
@@ -1232,6 +1371,91 @@ async function toggleEnregistrer(id,btn){
     }catch(e){showToast("Erreur réseau.");}
 }
 
+// ── LE MENU SUR TÉLÉPHONE ───────────────────────────────────────────────
+// La colonne était simplement supprimée sur mobile. Elle se range et se
+// rouvre — c'est le seul endroit d'où on peut se déconnecter.
+(function(){
+  const cote = document.getElementById("sidebar");
+  const voile = document.getElementById("voileMenu");
+  const bouton = document.getElementById("burger");
+  if(!cote || !voile || !bouton) return;
+  const ouvrir = (o) => { cote.classList.toggle("on",o); voile.classList.toggle("on",o); };
+  bouton.addEventListener("click", () => ouvrir(!cote.classList.contains("on")));
+  voile.addEventListener("click", () => ouvrir(false));
+  // Un lien cliqué referme le tiroir : sinon il reste ouvert par-dessus la
+  // page qu'on vient de demander.
+  cote.querySelectorAll("a").forEach(a => a.addEventListener("click", () => ouvrir(false)));
+  document.addEventListener("keydown", e => { if(e.key === "Escape") ouvrir(false); });
+})();
+
+// Le voile ne refermait que la fiche « Mettre en avant ». Avec une seconde
+// fiche, cliquer à côté laissait celle-ci ouverte sous un voile qui ne
+// répondait plus : la page paraissait figée.
+function fermerFiches(){
+  document.getElementById("sheetVoile").classList.remove("on");
+  document.querySelectorAll(".sheet.on").forEach(f => f.classList.remove("on"));
+}
+
+function ouvrirApropos(){
+  document.getElementById("sheetVoile").classList.add("on");
+  document.getElementById("sheetApropos").classList.add("on");
+}
+function fermerApropos(){
+  document.getElementById("sheetVoile").classList.remove("on");
+  document.getElementById("sheetApropos").classList.remove("on");
+}
+
+// ── MODIFIER SANS QUITTER LE FIL ────────────────────────────────────────
+// Corriger un prix ou une faute imposait de supprimer et republier — en
+// perdant les j'aime, les commentaires et la place dans le fil. Personne ne
+// fait ça : on laisse l'erreur en ligne.
+function modifierPost(id){
+  const carte = document.querySelector('.post-card[data-post-id="'+id+'"]');
+  if(!carte || carte.querySelector(".post-edit")) return;
+  const texte = carte.querySelector(".post-text");
+  const actuel = texte ? texte.textContent : "";
+
+  const zone = document.createElement("div");
+  zone.className = "post-edit";
+  const champ = document.createElement("textarea");
+  champ.value = actuel;
+  champ.maxLength = 5000;
+  const actions = document.createElement("div");
+  actions.className = "post-edit-actions";
+  const annuler = document.createElement("button");
+  annuler.type = "button"; annuler.textContent = "Annuler";
+  const enregistrer = document.createElement("button");
+  enregistrer.type = "button"; enregistrer.className = "enr"; enregistrer.textContent = "Enregistrer";
+  actions.append(annuler, enregistrer);
+  zone.append(champ, actions);
+
+  if(texte) texte.style.display = "none";
+  carte.insertBefore(zone, texte ? texte.nextSibling : carte.firstChild);
+  champ.focus();
+
+  const refermer = () => { zone.remove(); if(texte) texte.style.display = ""; };
+  annuler.addEventListener("click", refermer);
+
+  enregistrer.addEventListener("click", async () => {
+    const contenu = champ.value.trim();
+    if(!contenu){ showToast("Le texte ne peut pas être vide."); return; }
+    enregistrer.disabled = true;
+    try{
+      const res = await fetch(BASE_COM + "/modifier/" + id, {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ contenu })
+      });
+      const j = await res.json();
+      if(!j.success){ showToast(j.error || "Erreur."); enregistrer.disabled = false; return; }
+      // textContent, jamais innerHTML : ce texte vient d'être tapé par
+      // quelqu'un, et le poser en HTML ferait exécuter ce qu'il contient.
+      if(texte) texte.textContent = j.contenu;
+      refermer();
+      showToast("Publication modifiée.");
+    }catch(e){ showToast("Erreur réseau."); enregistrer.disabled = false; }
+  });
+}
+
 async function supprimerPost(id){
     // Une suppression ne se rattrape pas. On demande, une fois, clairement.
     if(!confirm("Supprimer cette publication ? C'est définitif.")) return;
@@ -1517,6 +1741,46 @@ router.post("/enregistrer/:id", requireAuth, async (req, res) => {
         res.json({ success:true, enregistre:true });
     } catch (err) {
         console.error("❌ enregistrer :", err.message);
+        res.json({ success:false, error:"Erreur serveur." });
+    }
+});
+
+// ── MODIFIER ────────────────────────────────────────────────────────────
+//
+// « Donner la possibilité de modifier et/ou supprimer son produit. »
+// Supprimer existait, modifier non — donc corriger un prix ou une faute
+// voulait dire supprimer et republier, en perdant les j'aime, les
+// commentaires et la place dans le fil. Personne ne fait ça : on laisse
+// l'erreur en ligne.
+//
+// Le contenu seulement, pas la catégorie : une publication rangée dans
+// « produit » puis basculée en « formation » disparaît des listes où des
+// gens l'avaient trouvée, et réapparaît ailleurs sans prévenir. Si le
+// besoin se présente, ça se décide, ça ne se glisse pas ici.
+router.post("/modifier/:id", requireAuth, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const COM = communauteDeLAction(req, res);
+        const contenu = String(req.body?.contenu || "").trim().slice(0, 5000);
+        if (!contenu) return res.json({ success:false, error:"Le texte ne peut pas être vide." });
+
+        const pub = await chargerPublication(req.params.id, req, res);
+        if (!pub) return res.json({ success:false, error:"Publication introuvable." });
+
+        // Mêmes droits que la suppression, et refaits ici : le bouton n'est
+        // affiché qu'à qui de droit, mais un bouton caché n'empêche pas
+        // d'envoyer la requête.
+        const estAuteur = pub.auteur_id && String(pub.auteur_id) === String(userId);
+        const estAdmine = Boolean(COM.admin && req.session?.email &&
+            String(req.session.email).trim().toLowerCase() === String(COM.admin).trim().toLowerCase());
+        if (!estAuteur && !estAdmine) {
+            return res.status(403).json({ success:false, error:"Cette publication n'est pas la tienne." });
+        }
+
+        await db.query(`UPDATE publications SET contenu = $1 WHERE id = $2`, [contenu, pub.id]);
+        res.json({ success:true, contenu });
+    } catch (err) {
+        console.error("❌ modifier :", err.message);
         res.json({ success:false, error:"Erreur serveur." });
     }
 });
