@@ -711,6 +711,12 @@ ${estAdmineDeChezElle ? `<a href="/admin/communaute" class="eco-link-item" style
 <a href="#" class="eco-link-item" onclick="ouvrirVendre();return false;"><i data-lucide="tag"></i> Mettre en vente · formation, ebook…</a>
 <a href="#" class="eco-link-item" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant · dès 1 000 FCFA</a>
 </div>
+${connecte ? `<div class="side-panel">
+  <h3><i data-lucide="messages-square"></i> Le salon</h3>
+  <div class="side-text" style="margin-bottom:12px;">Le fil, c'est pour ce qu'on publie. Le salon, c'est pour se parler — en direct, tous ensemble ou en petits groupes.</div>
+  <a href="/discussions" class="eco-link-item"><i data-lucide="message-circle"></i> Entrer dans le salon général</a>
+  <a href="/discussions" class="eco-link-item"><i data-lucide="users-round"></i> Mes groupes de discussion</a>
+</div>` : ""}
 ${COM.app ? `<div class="side-panel" id="panneauApp">
   <h3><i data-lucide="smartphone"></i> L'application</h3>
   <div class="side-text" style="margin-bottom:12px;">Installe ${escapeHtml(COM.app.nom)} sur ton téléphone. Rien à télécharger, l'icône se pose sur ton écran d'accueil, à côté de WhatsApp.</div>

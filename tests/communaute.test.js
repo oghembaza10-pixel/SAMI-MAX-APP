@@ -110,7 +110,7 @@ function liensSortants(html, slug) {
         // academy, arsenal, coffre, hub, developpeurs, apps, et notre
         // communauté. Ces pages n'ont pas été converties et affichent
         // toujours « OG · TECHNOLOGY ».
-        if (/^\/(qg|client-qg|settings)(\/|$|#|\?)/.test(u)) return false;
+        if (/^\/(qg|client-qg|settings|discussions)(\/|$|#|\?)/.test(u)) return false;
         return true;
     });
 }

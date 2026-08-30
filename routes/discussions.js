@@ -87,6 +87,8 @@ async function estMembre(discussionId, userId) {
 // ==========================================================================
 router.get("/", requireAuth, async (req, res) => {
     const userId = req.session.userId;
+    // La marque du service : sur son domaine, ce salon est le sien.
+    const COM = res.locals?.COM || communautes.get(communautes.DEFAUT);
     let general, mesGroupes = [], groupesARejoindre = [];
 
     try {
@@ -142,7 +144,7 @@ router.get("/", requireAuth, async (req, res) => {
 <html lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Discussions — SAMII</title>
+<title>Discussions — ${escapeHtml(COM.nom)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
@@ -180,7 +182,7 @@ body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font
         <div class="disc-avatar">👑</div>
         <div class="disc-info">
             <strong>${escapeHtml(general.nom)}</strong>
-            <span>Le fil ouvert à tous les membres SAMII</span>
+            <span>Le fil ouvert à tous les membres de ${escapeHtml(COM.nom)}</span>
         </div>
     </a>
 
@@ -282,6 +284,7 @@ router.post("/:id/rejoindre", requireAuth, async (req, res) => {
 router.get("/:id", requireAuth, async (req, res) => {
     const discussionId = parseInt(req.params.id, 10);
     const userId = req.session.userId;
+    const COM = res.locals?.COM || communautes.get(communautes.DEFAUT);
     let discussion, messages = [];
 
     try {
@@ -308,7 +311,7 @@ router.get("/:id", requireAuth, async (req, res) => {
     const messagesHtml = messages.map(m => {
         const estIa = m.expediteur_id === SAMII_USER_ID;
         const moi = !estIa && m.expediteur_id === userId;
-        const nom = estIa ? "SAMII 🤖" : (`${m.prenom || ""} ${m.nom || ""}`.trim() || "Membre");
+        const nom = estIa ? `${COM.assistant} 🤖` : (`${m.prenom || ""} ${m.nom || ""}`.trim() || "Membre");
         return `
         <div class="msg-row ${moi ? "msg-row--moi" : ""} ${estIa ? "msg-row--ia" : ""}">
             ${!moi ? `<div class="msg-avatar">${estIa ? "🤖" : initiales(nom)}</div>` : ""}
@@ -325,7 +328,7 @@ router.get("/:id", requireAuth, async (req, res) => {
 <html lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(discussion.nom)} — SAMII</title>
+<title>${escapeHtml(discussion.nom)} — ${escapeHtml(COM.nom)}</title>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="/socket.io/socket.io.js"></script>
 <style>
@@ -431,7 +434,7 @@ router.post("/:id/message", requireAuth, async (req, res) => {
 
         await db.query(`UPDATE discussions SET updated_at = now() WHERE id = $1`, [discussionId]);
 
-        const nomAuteur = (req.session.nom || "Membre SAMII").trim();
+        const nomAuteur = (req.session.nom || "Membre").trim();
         socketService.emitToShop(`discussion-${discussionId}`, "nouveau-message-discussion", {
             discussion_id: discussionId,
             expediteur_id: message.expediteur_id,
@@ -448,7 +451,7 @@ router.post("/:id/message", requireAuth, async (req, res) => {
         // pertinent (mention directe ou vraie question), jamais sur les
         // groupes privés non sollicités.
         if (discussion.type === "general" && samiiDoitRepondre(contenu)) {
-            repondreCommeSamii(discussionId, contenu, nomAuteur).catch(err => {
+            repondreCommeSamii(discussionId, contenu, nomAuteur, COM).catch(err => {
                 console.error("❌ Réponse SAMII (discussion) :", err.message);
             });
         }
@@ -460,7 +463,13 @@ router.post("/:id/message", requireAuth, async (req, res) => {
 
 // ── SAMII répond dans le tchat général, comme un membre de plus, mais
 // clairement identifié comme IA (jamais un humain) ──────────────────────
-async function repondreCommeSamii(discussionId, contenu, nomAuteur) {
+async function repondreCommeSamii(discussionId, contenu, nomAuteur, COM) {
+    // Passée en paramètre plutôt que lue globalement : cette fonction est
+    // appelée en tâche de fond, après la réponse HTTP, et n'a donc plus
+    // accès à `res`. Sans elle, la ligne qui nomme l'assistant plantait
+    // au moment exact où il répond — c'est-à-dire jamais en relecture,
+    // et toujours en production.
+    COM = COM || require("../config/communautes").get(require("../config/communautes").DEFAUT);
     const historiqueRows = await db.query(
         `SELECT dm.contenu, dm.expediteur_id, u.prenom FROM discussion_messages dm
          LEFT JOIN utilisateurs u ON u.id = dm.expediteur_id
@@ -477,9 +486,13 @@ async function repondreCommeSamii(discussionId, contenu, nomAuteur) {
         audience: "community",
         memberName: nomAuteur,
         instructions: [
-            "Tu es SAMII, et tu participes ici comme IA CLAIREMENT identifiée — jamais tu ne prétends être un humain.",
+            // Il se présente sous le nom de la communauté où il parle. Le
+            // moteur est le même ; c'est l'étiquette qui change. Ce qui ne
+            // change JAMAIS : il dit qu'il est une IA. Un assistant renommé
+            // reste un assistant, il ne devient pas quelqu'un.
+            `Tu es ${COM.assistant}, et tu participes ici comme IA CLAIREMENT identifiée — jamais tu ne prétends être un humain.`,
             "Réponds naturellement, utilement et brièvement (2-5 phrases), comme une vraie participation à la discussion — jamais un menu ou un formulaire.",
-            "Ce tchat général réunit de vrais marchands/clients de la plateforme SAMII — tu peux partager de vraies astuces e-commerce/dropshipping, de l'actu IA pertinente, ou répondre à une question posée, pour que les gens apprennent et participent.",
+            `Ce salon réunit de vrais membres de ${COM.nom} — ${COM.moteurTexte} Tu peux partager de vraies astuces, de l'actu pertinente pour eux, ou répondre à une question posée, pour que les gens apprennent et participent.`,
             "Ne fabrique jamais de faits, de chiffres ou d'actualités que tu ne connais pas vraiment.",
             "Réponds dans la langue/dialecte du message auquel tu réagis.",
         ].join("\n"),
@@ -496,7 +509,7 @@ async function repondreCommeSamii(discussionId, contenu, nomAuteur) {
         discussion_id: discussionId,
         expediteur_id: SAMII_USER_ID,
         contenu: message.contenu,
-        nom_auteur: "SAMII 🤖",
+        nom_auteur: `${COM.assistant} 🤖`,
         nom_initiales: "IA",
         est_ia: true,
         created_at: message.created_at,
