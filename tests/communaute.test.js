@@ -242,6 +242,31 @@ function liensSortants(html, slug) {
     verifier(!/Le Coin Du Digital/.test(collant),
         "/community affiche la communauté gardée en session au lieu de la maison — l'adresse et la page ne disent pas la même chose");
 
+    // ── 3 quater. Une palette est complète, ou elle ne l'est pas ─────────
+    //
+    // La feuille de style a été écrite pour un fond sombre. Quatre valeurs y
+    // étaient codées en dur : le texte des boutons pleins, le voile de
+    // l'en-tête, les surfaces en creux, les halos du fond. Sur la palette
+    // blanche demandée par Audrey, ça donnait un en-tête noir sur une page
+    // blanche, un champ de saisie gris foncé, un voile cyan sur toute la
+    // page — et surtout un bouton « Créer mon compte » écrit en noir SUR du
+    // noir : le bouton existait, on ne pouvait pas le lire.
+    //
+    // Les quatre sont devenues des variables. Ce test vérifie qu'une
+    // communauté qui redéfinit sa palette les redéfinit TOUTES : en oublier
+    // une, c'est hériter d'une valeur pensée pour le thème inverse.
+    const JETONS_REQUIS = [
+        "--bg", "--panel", "--text", "--muted", "--blue", "--blue-2",
+        "--gold", "--border", "--sur-accent", "--voile", "--creux",
+        "--halo-1", "--halo-2",
+    ];
+    for (const com of communautes.liste()) {
+        if (!com.couleurs) continue;   // la maison garde la feuille d'origine
+        const manquants = JETONS_REQUIS.filter((j) => !(j in com.couleurs));
+        verifier(manquants.length === 0,
+            `/c/${com.slug} : sa palette ne définit pas ${manquants.join(", ")} — ces valeurs retomberont sur celles du thème sombre, au milieu de ses couleurs à elle`);
+    }
+
     // ── 4. La communauté maison n'a pas été abîmée ───────────────────────
     const maison = await rendre(null, true);
     verifier(maison !== "REDIRIGÉ", "la communauté maison ne s'affiche plus");

@@ -91,17 +91,39 @@ const COMMUNAUTES = {
         // demain au QG de la maison n'apparaîtra pas chez elle tant que
         // personne ne l'aura décidé — l'oubli va dans le sens sûr.
         qg: { modules: require("./modules-qg").MINIMAL },
-        // Bleu pétrole et or : les couleurs de son logo, plus l'or pour ce
-        // qui se paie. Reprises telles quelles depuis sa vitrine.
+        // Blanc, blanc cassé, noir — c'est ce qu'elle a demandé.
+        //
+        // Le fond de page est légèrement cassé (#F7F6F3) et les panneaux sont
+        // en blanc pur : sur un écran, deux blancs identiques effacent les
+        // contours et la page devient une seule masse plate. C'est la nuance
+        // entre les deux qui dessine les cartes.
+        //
+        // Le noir sert d'accent — boutons, éléments actifs. L'or est conservé
+        // pour une seule chose : les prix. Un ton chaud au milieu du noir et
+        // blanc fait ressortir ce qui se paie, et il est assombri (#8A6A18)
+        // parce que son or d'origine, posé sur du blanc, ne se lisait plus.
         couleurs: {
-            "--bg": "#081820",
-            "--panel": "rgba(14,37,48,.92)",
-            "--text": "#F1ECE0",
-            "--muted": "#9FB4BD",
-            "--blue": "#D9B24C",
-            "--blue-2": "#12708C",
-            "--gold": "#D9B24C",
-            "--border": "rgba(217,178,76,.2)",
+            "--bg": "#F7F6F3",
+            "--panel": "#FFFFFF",
+            "--text": "#0C0C0D",
+            "--muted": "#6A6A72",
+            "--blue": "#111114",
+            "--blue-2": "#3A3A42",
+            "--gold": "#8A6A18",
+            "--border": "rgba(0,0,0,.13)",
+            // Le texte posé sur un bouton plein. Sans ce jeton, les boutons
+            // affichaient du presque-noir sur du noir : le bouton « Créer mon
+            // compte » existait, mais on ne pouvait pas le lire.
+            "--sur-accent": "#FFFFFF",
+            // L'en-tête collant et les surfaces en creux. En dur, ils
+            // restaient sombres au milieu d'une page blanche.
+            "--voile": "rgba(255,255,255,.86)",
+            "--creux": "rgba(0,0,0,.035)",
+            // Les deux halos du fond de page. Chez nous ce sont des taches
+            // cyan et bleues ; sur du blanc elles teintaient toute la page.
+            // Un gris à peine perceptible garde du relief sans couleur.
+            "--halo-1": "rgba(0,0,0,.028)",
+            "--halo-2": "rgba(0,0,0,.022)",
         },
         hote: null,
         // SON application, installée depuis un lien — pas depuis un magasin.
