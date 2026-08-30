@@ -252,6 +252,22 @@ function accueilMarchand(communaute) {
     return com.ecosysteme ? "/hub" : "/workspace/create";
 }
 
+// ── ET UN ACHETEUR, OÙ VA-T-IL ? ────────────────────────────────────────
+//
+// Chez nous : /client-qg, l'espace acheteur, avec le suivi de commandes et
+// « Devenir livreur ». Chez elle : cet espace est fermé — il parle de notre
+// réseau, pas du sien. Ses acheteurs vivent dans son fil, là où ils ont
+// trouvé le produit.
+//
+// Cette fonction existe parce que fermer une page ne suffit jamais : il
+// faut aussi savoir où vont les gens qu'on y envoyait. Sans elle, un
+// acheteur de chez elle cliquait sur « Mes affaires » et rebondissait sans
+// explication.
+function accueilClient(communaute) {
+    const com = communaute?.slug ? communaute : get(communaute);
+    return com.ecosysteme ? "/client-qg" : accueil(com);
+}
+
 function nettoyer(slug) {
     return String(slug || "").toLowerCase().replace(/[^a-z0-9-]/g, "");
 }
@@ -264,4 +280,4 @@ function alias(slug) {
     return cible && cible !== propre ? cible : null;
 }
 
-module.exports = { COMMUNAUTES, DEFAUT, ALIAS, get, existe, styleDe, liste, alias, nettoyer, pourLeQG, accueil, accueilMarchand };
+module.exports = { COMMUNAUTES, DEFAUT, ALIAS, get, existe, styleDe, liste, alias, nettoyer, pourLeQG, accueil, accueilMarchand, accueilClient };

@@ -10,6 +10,7 @@ const express = require("express");
 const router = express.Router();
 
 const workspaceService = require("../services/workspaceService");
+const communautes = require("../config/communautes");
 
 // ──────────────────────────────────────────────────────
 // Constantes Hub
@@ -65,7 +66,7 @@ router.get("/", requireAuth, async (req, res) => {
     try {
         // ✅ Un compte Client n'a rien à faire sur le Hub marchand — redirection directe
         if (req.session?.typeCompte === "client") {
-            return res.redirect("/client-qg");
+            return res.redirect(communautes.accueilClient(res.locals.COM));
         }
 
         const email = req.session?.email || "";

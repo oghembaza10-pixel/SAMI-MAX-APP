@@ -61,7 +61,11 @@ const MODULES = [
     // « Mes affaires » c'est le QG marchand : il ne s'ouvre pas sans un
     // espace de travail, donc /workspace vient avec, sinon le module est
     // donné mais inutilisable.
-    { id: "affaires",    libelle: "Mes affaires",        cle: "qg.nav.myBusiness",   icone: "briefcase",       href: "/qg",             rang: "more", separateurAvant: true, chemins: ["/qg", "/workspace", "/livraisons"] },
+    // « /livraisons à enlever » : c'est notre réseau de livreurs, pas le
+    // sien. Douala n'est pas Alger, et lui laisser un suivi de livraison
+    // branché sur des transporteurs qu'elle n'a pas serait une promesse
+    // vide. Seuls /qg et /workspace restent.
+    { id: "affaires",    libelle: "Mes affaires",        cle: "qg.nav.myBusiness",   icone: "briefcase",       href: "/qg",             rang: "more", separateurAvant: true, chemins: ["/qg", "/workspace"] },
     { id: "connect",     libelle: "Connecter mes outils", cle: "qg.nav.connectTools", icone: "plug-zap",       href: "/connect/tools",  rang: "more", chemins: ["/connect"] },
     { id: "discussions", libelle: "Discussions",        cle: "qg.nav.discussions",  icone: "messages-square", href: "/discussions",    rang: "more", chemins: ["/discussions"] },
     { id: "api",         libelle: "API & Webhooks",      cle: "qg.nav.api",          icone: "terminal",        href: "/developpeurs",   rang: "more", chemins: ["/developpeurs", "/api/v1", "/api-docs"] },
@@ -95,13 +99,25 @@ const SOCLE = [
     // Stripe qui appelle. Un webhook qu'on ferme ne se plaint pas, il tombe
     // en 404 en silence, et on découvre le trou sur un relevé bancaire.
     "/billing/webhook",
-    "/telegram",        // le bot de ses marchands parle par là
+    // « /telegram à enlever » — et je l'ai gardé, volontairement.
+    //
+    // Ce n'est pas une page : le fichier ne déclare que deux POST, et aucun
+    // GET. Personne ne peut donc « tomber » dessus, et il n'y a rien de
+    // chez nous à y voir. C'est l'adresse que TELEGRAM appelle, déclarée
+    // par Connect Tools au moment où un marchand branche son bot
+    // (connector.js : setWebhook → /telegram/<workspaceId>).
+    //
+    // La fermer ne cacherait rien à personne, et couperait tous les bots
+    // connectés par le module qu'on lui a justement laissé. Comme les
+    // webhooks de paiement : ça ne se plaint pas, ça arrête juste de
+    // marcher. À rouvrir la discussion si on veut lui retirer Telegram —
+    // mais alors c'est Connect Tools qu'il faut changer, pas cette ligne.
+    "/telegram",
     "/socket.io",       // le temps réel (messages, commandes)
     "/api",             // ses propres pages l'appellent (données du QG, traductions)
     "/login", "/register", "/password-reset", "/logout",
     "/c",               // son inscription et sa connexion à sa marque vivent sous /c
     "/paiement",        // encaisser : c'est la raison d'être de tout le reste
-    "/client-qg",       // l'espace de SES acheteurs, déjà à sa marque
     "/admin/communaute",// SON tableau de bord à elle
     "/verification",    // vérification d'e-mail
     // OAuth. Ces routes sont montées à la RACINE, sans préfixe : elles ne

@@ -328,7 +328,11 @@ function marque(html) {
                          "/agence", "/apps", "/developpeurs", "/api/v1", "/api/v1/produits",
                          "/api-docs", "/community", "/stories", "/drivers", "/livreur",
                          "/guerre", "/missions", "/tools", "/dashboard", "/partenariat",
-                         "/admin", "/admin/utilisateurs", "/youtube", "/autopost", "/ads"]) {
+                         "/admin", "/admin/utilisateurs", "/youtube", "/autopost", "/ads",
+                         // Retirés sur sa demande : l'espace acheteur parle
+                         // de NOTRE réseau, et le suivi de livraison est
+                         // branché sur des transporteurs qu'elle n'a pas.
+                         "/client-qg", "/livraisons"]) {
         verifier(!modulesQg.chemineAutorise(notre, regles),
             `« ${notre} » s'ouvre encore sur son service — c'est chez nous, ses membres n'ont rien à y faire`);
     }
@@ -340,7 +344,7 @@ function marque(html) {
                         "/discussions", "/discussions/12", "/samii", "/samii/griot",
                         "/automatisations", "/vitrine/u1", "/settings", "/profile",
                         "/c/coindudigital", "/c/coindudigital/inscription",
-                        "/admin/communaute", "/paiement/checkout", "/client-qg",
+                        "/admin/communaute", "/paiement/checkout",
                         "/api/qg-data", "/health", "/webhook/stripe-paiement",
                         "/login", "/register", "/logout", "/",
                         // Montées à la racine : elles ne ressemblent à aucun
@@ -399,9 +403,9 @@ function marque(html) {
         "/webhook/paiement-afrique": true, "/webhook/stripe-paiement": true,
         "/billing/webhook": true, "/login": true, "/register": true,
         "/password-reset": true, "/logout": true, "/api": true, "/paiement": true,
-        "/client-qg": true, "/verification": true, "/telegram": true,
+        "/verification": true, "/telegram": true,
         "/qg": true, "/qg/:metier": true, "/qg/:metier/connecter": true,
-        "/workspace": true, "/livraisons": true, "/connect": true,
+        "/workspace": true, "/connect": true,
         "/discussions": true, "/samii": true, "/automatisations": true,
         "/vitrine": true, "/settings": true, "/profile": true,
         "/samii/chasseur-stock": true, "/samii/diplomate": true, "/samii/griot": true,
@@ -427,6 +431,7 @@ function marque(html) {
         "/api-docs": false, "/community": false, "/stories": false, "/drivers": false,
         "/livreur": false, "/guerre": false, "/missions": false, "/tools": false,
         "/dashboard": false, "/partenariat": false, "/admin": false, "/ads": false,
+        "/client-qg": false, "/livraisons": false,
         "/youtube": false, "/autopost": false, "/inscription": false,
         "/test-telegram": false,
     };
@@ -478,15 +483,21 @@ function marque(html) {
     verifier(montageParFichier.length > 20,
         "la lecture des montages d'index.js ne trouve presque rien — ce contrôle ne vérifie plus grand-chose");
 
-    for (const { prefixe, fichier } of montageParFichier) {
+    // index.js d'abord : ses propres routes (/qg, /samii) sont ouvertes chez
+    // elle, et c'est là que vivait la redirection des comptes acheteurs vers
+    // /client-qg. Sans cette ligne, fermer /client-qg créait un cul-de-sac
+    // que ce contrôle n'aurait pas vu — il ne lisait que routes/.
+    for (const { prefixe, fichier } of [{ prefixe: "/qg", fichier: null }, ...montageParFichier]) {
         if (!modulesQg.chemineAutorise(prefixe, regles)) continue;  // fermée : peu importe
         let corps;
         try {
-            corps = fs.readFileSync(path.join(RACINE, "routes", `${fichier}.js`), "utf8");
+            corps = fichier
+                ? fs.readFileSync(path.join(RACINE, "routes", `${fichier}.js`), "utf8")
+                : source;
         } catch { continue; }
         for (const [, cible] of corps.matchAll(/res\.redirect\(\s*["'](\/[^"'?]*)["']/g)) {
             verifier(modulesQg.chemineAutorise(cible, regles),
-                `routes/${fichier}.js (monté sur ${prefixe}, ouvert chez elle) renvoie vers « ${cible} », qui est fermé — ses membres rebondissent sans explication`);
+                `${fichier ? `routes/${fichier}.js` : "index.js"} (${prefixe}, ouvert chez elle) renvoie vers « ${cible} », qui est fermé — ses membres rebondissent sans explication`);
         }
     }
 

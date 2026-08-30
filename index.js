@@ -449,7 +449,7 @@ app.get("/", (req, res) => {
 // ── QG — route universelle SOLDAT V1 ────────────────────
 app.get("/qg", requireAuth, async (req, res) => {
     try {
-        if (req.session?.typeCompte === "client") return res.redirect("/client-qg");
+        if (req.session?.typeCompte === "client") return res.redirect(require("./config/communautes").accueilClient(res.locals.COM));
 
         const workspaceId = req.session?.workspaceId;
         if (!workspaceId) return res.redirect(require("./config/communautes").accueilMarchand(res.locals.COM));
