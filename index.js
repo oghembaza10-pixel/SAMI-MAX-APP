@@ -201,6 +201,11 @@ app.use("/webhook/chargily", require("./routes/webhook-chargily"));
 // aucun paiement. Elle sert à découvrir le format réel du prestataire avant
 // d'écrire le traitement — voir l'en-tête de routes/webhook-paiement.js.
 app.use("/webhook/paiement-afrique", require("./routes/webhook-paiement"));
+// Stripe confirme un paiement du grand livre. Sans cette route, une
+// vente était encaissée chez Stripe et restait « en attente » chez nous
+// pour toujours : rien livré, aucune commission enregistrée, et la
+// partenaire ne voyait aucune vente.
+app.use("/webhook/stripe-paiement", require("./routes/webhook-stripe-paiement"));
 app.use("/telegram", require("./routes/telegram"));
 
 // ══════════════════════════════════════════════════════
