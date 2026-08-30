@@ -21,9 +21,9 @@
 <div class="qg-shell">
     <aside class="qg-sidebar" id="og-sidebar">
         <div class="qg-sidebar__top">
-            <a href="/client-qg" class="qg-logo">
+            <a href="<%= COM.ecosysteme ? "/client-qg" : ("/c/" + COM.slug) %>" class="qg-logo">
                 <img src="/og.png" alt="OG">
-                <span class="qg-logo__text">OG · TECHNOLOGY</span>
+                <span class="qg-logo__text"><%= COM.ecosysteme ? "OG · TECHNOLOGY" : (COM.marque + " " + COM.marqueSuite) %></span>
             </a>
             <button class="qg-collapse-btn" id="og-sidebar-collapse" aria-label="Réduire la sidebar" data-i18n-aria="nav.collapse">
                 <i data-lucide="chevrons-left"></i>
@@ -33,21 +33,21 @@
             <a href="/client-qg" class="qg-nav__item active">
                 <i data-lucide="home"></i><span data-i18n="nav.monespace">Mon Espace</span>
             </a>
-            <a href="/marketplace" class="qg-nav__item">
+            <% if (COM.ecosysteme) { %><a href="/marketplace" class="qg-nav__item">
                 <i data-lucide="store"></i><span data-i18n="nav.marketplace">Marketplace</span>
-            </a>
-            <a href="/community" class="qg-nav__item">
+            </a><% } %>
+            <a href="<%= COM.ecosysteme ? "/community" : ("/c/" + COM.slug) %>" class="qg-nav__item">
                 <i data-lucide="users"></i><span data-i18n="nav.community">Community</span>
             </a>
-            <a href="/academy" class="qg-nav__item">
+            <% if (COM.ecosysteme) { %><a href="/academy" class="qg-nav__item">
                 <i data-lucide="graduation-cap"></i><span data-i18n="nav.academy">Academy</span>
-            </a>
-            <a href="/livreur" class="qg-nav__item">
+            </a><% } %>
+            <% if (COM.ecosysteme) { %><a href="/livreur" class="qg-nav__item">
                 <i data-lucide="bike"></i><span data-i18n="nav.livreur">Devenir livreur</span>
-            </a>
+            </a><% } %>
             <a href="/client-qg/samii" class="qg-nav__item qg-nav__item--samii">
-    <img src="/samii-os-icon.png" alt="SAMII" style="width:20px;height:20px;border-radius:6px;object-fit:cover;">
-    <span>SAMII</span>
+    <img src="/samii-os-icon.png" alt="<%= COM.assistant %>" style="width:20px;height:20px;border-radius:6px;object-fit:cover;">
+    <span><%= COM.assistant %></span>
     <span class="qg-status-dot qg-status-dot--on"></span>
 </a>
         </nav>
@@ -78,7 +78,7 @@
             <div class="qg-hero__content">
                 <span class="qg-eyebrow" data-i18n="hero.eyebrow">BIENVENUE</span>
                 <h1><span data-i18n="hero.greeting">Bonjour</span> <%= nom || 'Général' %> 👋</h1>
-                <p data-i18n="hero.subtitle">SAMII t'aide au quotidien — transport, services, plans, et bien plus.</p>
+                <p<%= COM.ecosysteme ? ' data-i18n="hero.subtitle"' : "" %>><%= COM.ecosysteme ? "SAMII t'aide au quotidien — transport, services, plans, et bien plus." : COM.moteurTexte %></p>
             </div>
         </section>
 
@@ -154,7 +154,7 @@
 
         <div class="qg-section-title">
             <i data-lucide="message-circle"></i>
-            <span>SAMII</span>
+            <span><%= COM.assistant %></span>
         </div>
         <section class="qg-dashboard">
             <article class="qg-card" style="grid-column:1/-1;">
@@ -179,10 +179,10 @@
     </main>
 </div>
 
-<a href="/client-qg/samii" class="samii-orb" aria-label="Ouvrir SAMII" data-i18n-aria="samii.openAria">
+<a href="/client-qg/samii" class="samii-orb" aria-label="<%= "Ouvrir " + COM.assistant %>"<%- COM.ecosysteme ? ' data-i18n-aria="samii.openAria"' : "" %>>
     <span class="samii-orb__aura"></span>
     <span class="samii-orb__aura samii-orb__aura--2"></span>
-    <img src="/samii-os-icon.png" alt="SAMII" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+    <img src="/samii-os-icon.png" alt="<%= COM.assistant %>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
 </a>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="/socket.io/socket.io.js"></script>

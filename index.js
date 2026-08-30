@@ -141,12 +141,62 @@ app.use((req, res, next) => {
     next();
 });
 
+// ── LA RACINE D'UN SERVICE PARTENAIRE ────────────────────────────────────
+//
+// « coindudigital.souverain-store.com amène sur SAMII OG. »
+//
+// C'était exact, et ce n'était pas le DNS. Sa communauté vit à
+// /c/coindudigital ; la racine, elle, cherchait un marchand ayant ce
+// sous-domaine, n'en trouvait aucun, et retombait sur NOTRE page d'accueil.
+// Son domaine à elle ouvrait donc sur notre site — le pire endroit possible
+// pour perdre quelqu'un, puisque c'est le premier écran.
+//
+// Un service Render = une communauté. Il le déclare dans son environnement,
+// et sa racine mène chez elle. La maison n'a pas la variable, donc rien ne
+// change pour elle.
+//
+// On redirige plutôt que d'afficher sur place : tous les liens de la page
+// sont construits en /c/<slug>/…, et une page servie à la racine avec des
+// liens qui pointent ailleurs finit par se contredire.
+const COMMUNAUTE_HOTE = (() => {
+    const communautes = require("./config/communautes");
+    const demandee = process.env.COMMUNAUTE_PAR_DEFAUT;
+    if (!demandee || !communautes.existe(demandee)) return null;
+    const slug = communautes.nettoyer(demandee);
+    return slug === communautes.DEFAUT ? null : slug;
+})();
+if (COMMUNAUTE_HOTE) {
+    console.log(`🏠 Ce service ouvre sur la communauté « ${COMMUNAUTE_HOTE} ».`);
+}
+
 // ── LOCALS (disponibles dans toutes les vues EJS) ─────
 app.use((req, res, next) => {
     res.locals.workspaceId = req.session?.workspaceId || null;
     res.locals.shop        = req.session?.shop || null;
     res.locals.loggedIn    = !!req.session?.loggedIn;
     res.locals.userId      = req.session?.userId || null;
+
+    // ── LA MARQUE DU SERVICE, POUR TOUTES LES VUES ───────────────────
+    //
+    // « C'est un mélange de ouf. » Exact : la communauté, la vitrine, le QG
+    // marchand et les pages d'inscription portaient sa marque, pendant que
+    // l'espace client, le hub et la page d'accueil affichaient encore
+    // « OG · TECHNOLOGY » — sur son domaine.
+    //
+    // La cause n'était pas une vue oubliée, c'était l'absence d'endroit où
+    // poser la réponse. Chaque gabarit écrivait la marque en dur, donc
+    // chacun devait être corrigé séparément, donc il en restait toujours un.
+    //
+    // Ici, la marque est décidée UNE fois, par le service, et disponible
+    // partout. Une vue qui ne l'utilise pas encore reste à convertir — mais
+    // elle n'a plus à aller chercher l'information.
+    //
+    // Aucune requête en base : la communauté d'un service est fixe, elle est
+    // dans son environnement. Le faire par compte coûterait une lecture à
+    // chaque page, pour une réponse qui ne change jamais.
+    res.locals.COM = COMMUNAUTE_HOTE
+        ? require("./config/communautes").get(COMMUNAUTE_HOTE)
+        : require("./config/communautes").get(require("./config/communautes").DEFAUT);
     next();
 });
 // ── AUTH MIDDLEWARE ────────────────────────────────────
@@ -314,34 +364,6 @@ app.get("/inscription", requireAuth, (req, res) => {
 // tout le reste (marketplace, paiement...) reste servi normalement, seul
 // le "/" change selon le sous-domaine appelé.
 const RESERVED_HOST_PREFIXES = ["www", "samii", "api"];
-
-// ── LA RACINE D'UN SERVICE PARTENAIRE ────────────────────────────────────
-//
-// « coindudigital.souverain-store.com amène sur SAMII OG. »
-//
-// C'était exact, et ce n'était pas le DNS. Sa communauté vit à
-// /c/coindudigital ; la racine, elle, cherchait un marchand ayant ce
-// sous-domaine, n'en trouvait aucun, et retombait sur NOTRE page d'accueil.
-// Son domaine à elle ouvrait donc sur notre site — le pire endroit possible
-// pour perdre quelqu'un, puisque c'est le premier écran.
-//
-// Un service Render = une communauté. Il le déclare dans son environnement,
-// et sa racine mène chez elle. La maison n'a pas la variable, donc rien ne
-// change pour elle.
-//
-// On redirige plutôt que d'afficher sur place : tous les liens de la page
-// sont construits en /c/<slug>/…, et une page servie à la racine avec des
-// liens qui pointent ailleurs finit par se contredire.
-const COMMUNAUTE_HOTE = (() => {
-    const communautes = require("./config/communautes");
-    const demandee = process.env.COMMUNAUTE_PAR_DEFAUT;
-    if (!demandee || !communautes.existe(demandee)) return null;
-    const slug = communautes.nettoyer(demandee);
-    return slug === communautes.DEFAUT ? null : slug;
-})();
-if (COMMUNAUTE_HOTE) {
-    console.log(`🏠 Ce service ouvre sur la communauté « ${COMMUNAUTE_HOTE} ».`);
-}
 
 app.get("/", (req, res, next) => {
     if (!COMMUNAUTE_HOTE) return next();

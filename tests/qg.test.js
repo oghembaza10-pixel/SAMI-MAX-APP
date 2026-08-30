@@ -155,6 +155,60 @@ function marque(html) {
             `QG servi par « ${service} » à un compte « ${compte} » → ${obtenu}, attendu ${attendu} (${pourquoi})`);
     }
 
+    // ── 4 ter. L'ESPACE CLIENT aussi ────────────────────────────────────
+    //
+    // « C'est un mélange de ouf. » Exact. La communauté, la vitrine, le QG
+    // marchand et les pages d'inscription portaient sa marque — et l'espace
+    // client, lui, affichait encore « OG · TECHNOLOGY », Marketplace,
+    // Academy, « Devenir livreur » et « SAMII t'aide au quotidien ».
+    //
+    // Ce n'était pas une vue oubliée par distraction : chaque gabarit
+    // écrivait la marque en dur, donc chacun devait être corrigé
+    // séparément, donc il en restait toujours un. Ce test couvre celui-là ;
+    // le hub, /samii et la page d'accueil restent à convertir.
+    const VUE_CLIENT = path.join(RACINE, "views", "client-qg.ejs");
+    function rendreClient(slug) {
+        return new Promise((resolve, reject) => {
+            ejs.renderFile(VUE_CLIENT, {
+                nom: "Test", codeParrainage: "X", telephone: "", commandes: [],
+                COM: communautes.get(slug), loggedIn: true, userId: "u1",
+                workspaceId: null, shop: null,
+            }, { views: [path.join(RACINE, "views")] },
+            (err, html) => (err ? reject(err) : resolve(html)));
+        });
+    }
+
+    const clientMaison = await rendreClient(communautes.DEFAUT);
+    for (const attendu of ["/marketplace", "/academy", "/livreur", "/community"]) {
+        verifier(liensNav(clientMaison).includes(attendu),
+            `l'espace client de la maison a perdu « ${attendu} »`);
+    }
+    verifier(marque(clientMaison) === "OG · TECHNOLOGY",
+        `l'espace client de la maison affiche « ${marque(clientMaison)} »`);
+
+    for (const slug of Object.keys(communautes.COMMUNAUTES)) {
+        if (slug === communautes.DEFAUT) continue;
+        const html = await rendreClient(slug);
+        const liens = liensNav(html);
+
+        verifier(!/OG · TECHNOLOGY/.test(marque(html)),
+            `/c/${slug} : « OG · TECHNOLOGY » est écrit en haut de l'espace client`);
+        for (const interdit of ["/marketplace", "/academy", "/livreur", "/community"]) {
+            verifier(!liens.includes(interdit),
+                `/c/${slug} : « ${interdit} » est dans l'espace client de ses membres`);
+        }
+        verifier(liens.includes(`/c/${slug}`),
+            `/c/${slug} : l'espace client ne ramène pas vers sa communauté`);
+
+        // Ce que LIT le visiteur — commentaires et scripts exclus.
+        const lisible = html
+            .replace(/<!--[\s\S]*?-->/g, "")
+            .replace(/<script[\s\S]*?<\/script>/g, "")
+            .replace(/<style[\s\S]*?<\/style>/g, "");
+        verifier(!/SAMII/.test(lisible),
+            `/c/${slug} : « SAMII » est visible dans l'espace client de ses membres`);
+    }
+
     // ── 5. Liste blanche, et non liste noire ─────────────────────────────
     // On ajoute un module comme on le ferait demain, sans rien dire à
     // personne. Il doit apparaître chez nous et rester invisible chez elle.
