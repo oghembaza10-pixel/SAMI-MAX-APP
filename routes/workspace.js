@@ -289,6 +289,11 @@ router.post("/create", requireAuth, async (req, res) => {
         req.session.workspaceId   = workspace.workspaceId;
         req.session.metier        = workspace.metier;
         req.session.lastWorkspace = workspace.workspaceId;
+        // Elle vient d'ouvrir une boutique : elle est marchande. Sans cette
+        // ligne, le compte reste « client » et /qg la renverra au fil
+        // d'actualité — elle aurait créé une boutique où elle ne peut pas
+        // entrer.
+        await workspaceService.promouvoirEnMarchand(req.session);
         // ── Email de bienvenue (ne bloque jamais la création si ça échoue) ──
 try {
     const notificationEngine = require("../engines/notificationEngine");
@@ -384,6 +389,9 @@ router.post("/onboarding-chat", requireAuth, async (req, res) => {
         req.session.workspaceId   = workspace.workspaceId;
         req.session.metier        = workspace.metier;
         req.session.lastWorkspace = workspace.workspaceId;
+        // Même règle que par le formulaire : c'est la création qui fait la
+        // marchande, pas la case cochée à l'inscription.
+        await workspaceService.promouvoirEnMarchand(req.session);
 
         try {
             const notificationEngine = require("../engines/notificationEngine");

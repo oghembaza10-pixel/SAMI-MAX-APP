@@ -38,6 +38,10 @@
 const db = require("../services/db");
 const vitrineThemes = require("../config/vitrine-themes");
 const pixelsService = require("../services/pixelsService");
+// Au niveau du module, une seule fois. Requis à l'intérieur d'une fonction,
+// rien ne distingue « déclaré à côté de son usage » de « pas déclaré du
+// tout » — et c'est ce mélange qui avait fait planter GET /login.
+const communautes = require("../config/communautes");
 
 function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, (c) => ({
@@ -103,6 +107,19 @@ const ETOILES = (note) => {
 // LA PAGE
 // ==========================================================================
 async function renderVitrine(userId, req, res) {
+    // ── 0. Chez qui sommes-nous ? ────────────────────────────────────────
+    //
+    // Cette page est devenue le point d'arrivée des liens de profil dans le
+    // fil et dans la marketplace : on y clique depuis n'importe quelle
+    // communauté. Elle lisait `publications` et `annonces` par identifiant
+    // d'auteur SEULEMENT — donc quelqu'un qui a un pied chez nous et un
+    // pied chez une partenaire voyait ses deux vies mélangées sur la même
+    // page, sous la marque du domaine visité.
+    //
+    // Le COALESCE range ce qui est antérieur à la colonne dans la maison :
+    // tout ce qui a été publié jusque-là l'a été chez nous, c'est exact.
+    const COM = res.locals?.COM || communautes.get(communautes.DEFAUT);
+
     // ── 1. Le marchand ───────────────────────────────────────────────────
     // La seule requête dont l'échec justifie de ne rien afficher : sans
     // marchand, il n'y a pas de boutique à montrer.
@@ -133,9 +150,10 @@ async function renderVitrine(userId, req, res) {
                     section_vitrine, en_vedette, ville, vues, created_at
              FROM annonces
              WHERE vendeur_id = $1 AND actif = true
+               AND COALESCE(communaute, $3) = $2
              ORDER BY en_vedette DESC NULLS LAST, created_at DESC
              LIMIT 120`,
-            [userId],
+            [userId, COM.slug, communautes.DEFAUT],
         );
     } catch (err) {
         console.warn("⚠️ vitrine : produits —", err.message);
@@ -150,8 +168,9 @@ async function renderVitrine(userId, req, res) {
                     (SELECT COUNT(*) FROM publications_commentaires pc WHERE pc.publication_id = p.id) AS nb_commentaires
              FROM publications p
              WHERE p.auteur_id = $1
+               AND COALESCE(p.communaute, $3) = $2
              ORDER BY p.created_at DESC LIMIT 20`,
-            [userId],
+            [userId, COM.slug, communautes.DEFAUT],
         );
     } catch (err) {
         console.warn("⚠️ vitrine : publications —", err.message);
@@ -215,7 +234,7 @@ async function renderVitrine(userId, req, res) {
     res.send(gabarit({
         user, nomComplet, theme, grande, produits, vedettes, sections, autres,
         publications, avis, note, vuesTotales, pixelsHtml, lienPublic,
-        estProprietaire,
+        estProprietaire, COM,
     }));
 }
 
@@ -292,6 +311,7 @@ function gabarit(d) {
     const {
         user, nomComplet, theme, grande, produits, vedettes, sections, autres,
         publications, avis, note, vuesTotales, pixelsHtml, lienPublic, estProprietaire,
+        COM,
     } = d;
 
     const bio = (user.bio_vitrine || "").trim();
@@ -307,15 +327,39 @@ function gabarit(d) {
     // Même principe partout : le repli est DESSOUS, la photo se pose dessus
     // et se retire si son adresse est morte. Un dégradé aux couleurs du thème
     // vaut mieux qu'un rectangle gris avec une icône d'image cassée.
+    // ── SA PHOTO, POSÉE DEPUIS SA PAGE ───────────────────────────────────
+    //
+    // « Dans la vitrine, ils doivent pouvoir ajouter leur profil et leurs
+    // photos. » C'était déjà possible — mais dans Paramètres, une autre
+    // page, derrière un menu, au milieu de la langue et du thème du QG.
+    // Personne ne va chercher sa photo là où il règle sa langue. Résultat :
+    // des pages sans visage, et un fil rempli d'initiales.
+    //
+    // On met le bouton SUR la chose : on clique sur son portrait, on choisit
+    // une photo, elle est là. Visible du seul propriétaire — pour tous les
+    // autres, la page ne change pas d'un pixel.
+    const boutonPhoto = (cible, libelle) => !estProprietaire ? "" : `
+        <button type="button" class="retouche retouche--${cible}"
+                onclick="document.getElementById('fichier-${cible}').click()"
+                title="${libelle}">📷 <span>${libelle}</span></button>`;
+
+    // Pour le propriétaire, l'image reste TOUJOURS dans la page, simplement
+    // masquée quand il n'y en a pas : c'est elle que le téléversement vient
+    // remplir. Pour un visiteur, on garde le comportement d'origine — une
+    // adresse morte retire l'image et découvre le repli.
+    const image = (id, classe, src, alt) => {
+        const commun = `${classe ? `class="${classe}" ` : ""}id="${id}" alt="${escapeHtml(alt || "")}"`;
+        if (src) return `<img ${commun} src="${escapeHtml(src)}" onerror="${estProprietaire ? "this.style.display='none'" : "this.remove()"}">`;
+        return estProprietaire ? `<img ${commun} style="display:none">` : "";
+    };
+
     const couverture = `<div class="couv__degrade"></div>${
-        user.banniere_url
-            ? `<img class="couv__img" src="${escapeHtml(user.banniere_url)}" alt="" onerror="this.remove()">`
-            : ""}`;
+        image("apercu-banniere", "couv__img", user.banniere_url, "")
+    }${boutonPhoto("banniere", "Changer la couverture")}`;
 
     const portrait = `<span>${escapeHtml(initiales(user.prenom, user.nom))}</span>${
-        user.photo_profil_url
-            ? `<img src="${escapeHtml(user.photo_profil_url)}" alt="${escapeHtml(nomComplet)}" onerror="this.remove()">`
-            : ""}`;
+        image("apercu-photo", "", user.photo_profil_url, nomComplet)
+    }${boutonPhoto("photo", "Changer ma photo")}`;
 
     const sectionsHtml = [...sections.entries()]
         .map(([nom, liste]) => bloc(nom, grille(liste, grande), liste.length))
@@ -429,6 +473,28 @@ img{max-width:100%;display:block}
             font-size:clamp(28px,6vw,42px);font-weight:800;color:var(--blue);
             box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .ident__ava img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* ── Retoucher ses images depuis sa propre page ───────────────────────
+   Ces boutons n'existent que pour le propriétaire : ils ne sont pas
+   simplement cachés, ils ne sont pas envoyés. Sur la couverture, le
+   bouton se pose en haut à droite ; sur le portrait, il occupe le bas du
+   cercle et n'apparaît qu'au survol — sur un téléphone, où il n'y a pas
+   de survol, il reste visible en permanence (voir la requête média). */
+.retouche{position:absolute;z-index:3;border:1px solid var(--border);cursor:pointer;
+  background:rgba(0,0,0,.62);color:#fff;font:600 12px/1 inherit;
+  border-radius:999px;padding:8px 12px;display:flex;align-items:center;gap:6px;
+  backdrop-filter:blur(6px)}
+.retouche:hover{background:rgba(0,0,0,.85)}
+.retouche--banniere{top:14px;right:14px}
+.retouche--photo{inset:auto 0 0 0;border-radius:0;justify-content:center;
+  padding:7px 4px;font-size:10.5px;opacity:0;transition:opacity .15s}
+.retouche--photo span{display:none}
+.ident__ava:hover .retouche--photo{opacity:1}
+@media(hover:none){.retouche--photo{opacity:1}}
+.retouche-etat{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:60;
+  background:var(--panel);border:1px solid var(--border);color:var(--text);
+  border-radius:12px;padding:10px 16px;font-size:13px;display:none;
+  box-shadow:0 12px 40px rgba(0,0,0,.4)}
 .ident__txt{flex:1;min-width:220px;padding-bottom:6px}
 .ident__nom{font-size:clamp(22px,4.4vw,32px);font-weight:800;line-height:1.15;margin:0;
             display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -653,7 +719,24 @@ img{max-width:100%;display:block}
 
     <div class="panneau" id="p-apropos" hidden>
         <div class="apropos">
-            ${bio ? `<p>${escapeHtml(bio)}</p>` : `<p style="color:var(--muted)">Cette boutique n'a pas encore écrit sa présentation.</p>`}
+            ${bio
+                ? `<p id="bio-texte">${escapeHtml(bio)}</p>`
+                : `<p id="bio-texte" style="color:var(--muted)">${estProprietaire
+                    ? "Tu n'as pas encore écrit ta présentation. C'est le premier texte que lisent ceux qui découvrent ta page."
+                    : "Cette boutique n'a pas encore écrit sa présentation."}</p>`}
+            ${estProprietaire ? `
+            <!-- La présentation s'écrit ICI, pas dans les Paramètres : sa page
+                 est l'endroit où l'on voit ce qu'on est en train de changer. -->
+            <button type="button" class="btn" id="btn-bio" style="margin-bottom:14px">✏️ Modifier ma présentation</button>
+            <div id="bio-edition" hidden>
+                <textarea id="bio-champ" rows="5" maxlength="800"
+                    placeholder="Dis en quelques lignes qui tu es et ce que tu proposes."
+                    style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--panel);color:var(--text);font:inherit;font-size:14px;resize:vertical">${escapeHtml(bio)}</textarea>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                    <button type="button" class="btn btn--fort" id="bio-enregistrer">Enregistrer</button>
+                    <button type="button" class="btn" id="bio-annuler">Annuler</button>
+                </div>
+            </div>` : ""}
             <div class="fiche">
                 ${metier ? `<div><b>Activité</b><span>${escapeHtml(metier)}</span></div>` : ""}
                 ${user.pays ? `<div><b>Pays</b><span>${escapeHtml(user.pays)}</span></div>` : ""}
@@ -664,8 +747,15 @@ img{max-width:100%;display:block}
         </div>
     </div>
 
-    <p class="pied">Boutique propulsée par <a href="/">SAMII</a></p>
+    <p class="pied">Boutique propulsée par <a href="${escapeHtml(communautes.accueil(COM))}">${escapeHtml(COM.marque || "SAMII")}</a></p>
 </div>
+
+${estProprietaire ? `
+<!-- Les champs de fichier ne sont envoyés qu'au propriétaire : le visiteur
+     n'a même pas le formulaire dans sa page, pas seulement le bouton caché. -->
+<input type="file" id="fichier-photo" accept="image/*" style="display:none">
+<input type="file" id="fichier-banniere" accept="image/*" style="display:none">
+<div class="retouche-etat" id="retouche-etat"></div>` : ""}
 
 <button class="bulle" id="bulle" aria-label="Poser une question">💬</button>
 <section class="chat" id="chat" aria-live="polite">
@@ -685,6 +775,109 @@ img{max-width:100%;display:block}
     // JSON.stringify, jamais par concaténation dans du texte JS.
     var NOM = ${JSON.stringify(nomComplet)};
     var LIEN = ${JSON.stringify(lienPublic)};
+
+    // ── SA PHOTO ET SA COUVERTURE, DEPUIS SA PAGE ────────────────────
+    //
+    // Même chemin que Paramètres : le fichier va directement du téléphone
+    // à Cloudinary, sans passer par notre serveur — c'est ce qui rend
+    // l'envoi supportable sur une connexion mobile à Douala. Seule
+    // l'adresse résultante nous est renvoyée, et on l'enregistre.
+    //
+    // On n'enregistre QUE ces deux champs : l'enregistrement complet des
+    // Paramètres réécrit aussi la bio, le pays, la langue et le thème.
+    // Envoyer un formulaire partiel par là aurait effacé le reste.
+    var ESTMOI = ${estProprietaire ? "true" : "false"};
+    if (ESTMOI) (function () {
+        var etat = document.getElementById("retouche-etat");
+        function dire(texte, duree) {
+            etat.textContent = texte;
+            etat.style.display = "block";
+            if (duree) setTimeout(function () { etat.style.display = "none"; }, duree);
+        }
+
+        function envoyer(fichier, champ, apercuId) {
+            if (!fichier) return;
+            dire("Envoi de l'image…");
+            var donnees = new FormData();
+            donnees.append("file", fichier);
+            donnees.append("upload_preset", "MARKETPLACE OG");
+            fetch("https://api.cloudinary.com/v1_1/ojwx5hft/image/upload", {
+                method: "POST", body: donnees,
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                if (!j.secure_url) throw new Error("envoi refusé");
+                var corps = {};
+                corps[champ] = j.secure_url;
+                return fetch("/vitrine/apparence", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(corps),
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (rep) {
+                    if (!rep.success) throw new Error(rep.error || "enregistrement refusé");
+                    // On ne recharge pas la page : l'image change sous les
+                    // yeux, c'est ce qui dit que c'est enregistré.
+                    var img = document.getElementById(apercuId);
+                    if (img) { img.src = j.secure_url; img.style.display = ""; }
+                    dire("C'est enregistré. Ta photo apparaît maintenant dans la communauté et sur la marketplace.", 4000);
+                });
+            })
+            .catch(function (err) {
+                dire("L'image n'a pas pu être envoyée (" + err.message + "). Réessaie.", 5000);
+            });
+        }
+
+        var champPhoto = document.getElementById("fichier-photo");
+        if (champPhoto) champPhoto.addEventListener("change", function () {
+            envoyer(this.files[0], "photo_profil_url", "apercu-photo");
+        });
+        var champBanniere = document.getElementById("fichier-banniere");
+        if (champBanniere) champBanniere.addEventListener("change", function () {
+            envoyer(this.files[0], "banniere_url", "apercu-banniere");
+        });
+
+        // ── Sa présentation ──────────────────────────────────────────
+        var btnBio = document.getElementById("btn-bio");
+        var zoneBio = document.getElementById("bio-edition");
+        var champBio = document.getElementById("bio-champ");
+        var texteBio = document.getElementById("bio-texte");
+        if (btnBio && zoneBio && champBio && texteBio) {
+            btnBio.addEventListener("click", function () {
+                zoneBio.hidden = false;
+                btnBio.hidden = true;
+                champBio.focus();
+            });
+            document.getElementById("bio-annuler").addEventListener("click", function () {
+                zoneBio.hidden = true;
+                btnBio.hidden = false;
+            });
+            document.getElementById("bio-enregistrer").addEventListener("click", function () {
+                var valeur = champBio.value.trim();
+                dire("Enregistrement…");
+                fetch("/vitrine/apparence", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ bio_vitrine: valeur }),
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (rep) {
+                    if (!rep.success) throw new Error(rep.error || "refusé");
+                    // textContent, jamais innerHTML : ce texte est tapé par
+                    // la personne et réaffiché tel quel.
+                    texteBio.textContent = valeur || "Tu n'as pas encore écrit ta présentation.";
+                    texteBio.style.color = valeur ? "" : "var(--muted)";
+                    zoneBio.hidden = true;
+                    btnBio.hidden = false;
+                    dire("C'est enregistré.", 2500);
+                })
+                .catch(function (err) {
+                    dire("Impossible d'enregistrer (" + err.message + ").", 4000);
+                });
+            });
+        }
+    })();
 
     // ── Les onglets ──────────────────────────────────────────────────
     var onglets = document.querySelectorAll(".onglet");

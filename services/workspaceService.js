@@ -43,6 +43,44 @@ function appartientA(workspace, email, session = {}) {
         && workspace.agenceId === session.userId);
 }
 
+// OUVRIR UNE BOUTIQUE, C'EST DEVENIR MARCHAND
+//
+// « Quand quelqu'un veut créer la boutique, il met "créer ma boutique",
+// il n'a pas accès. Même moi ça me faisait ça hier. »
+//
+// À l'inscription, la case cochée d'avance est « Découvrir » — donc
+// `type_compte = 'client'` pour la quasi-totalité des comptes. Et /qg
+// renvoyait tout compte « client » vers le fil d'actualité, sans un mot.
+// La personne cliquait, la page chargeait, et elle se retrouvait d'où
+// elle venait : rien n'était cassé côté serveur, donc rien ne le disait.
+//
+// Le type de compte n'est pas une autorisation qu'on accorde, c'est la
+// trace de ce que la personne fait. Le jour où elle ouvre une boutique,
+// elle est marchande. On l'écrit ici, au seul endroit où ce fait devient
+// vrai, plutôt que de le contrôler à chaque porte.
+//
+// La condition SQL `AND type_compte = 'client'` n'est pas décorative :
+// elle interdit qu'une agence soit rétrogradée par ce chemin, même si un
+// appel arrivait ici par erreur.
+async function promouvoirEnMarchand(session) {
+    if (!session || session.typeCompte !== "client") return false;
+    session.typeCompte = "marchand";
+    if (!session.userId) return true;
+    try {
+        await db.query(
+            `UPDATE utilisateurs SET type_compte = 'marchand' WHERE id = $1 AND type_compte = 'client'`,
+            [session.userId],
+        );
+    } catch (err) {
+        // La session est déjà à jour : la personne entre dans sa boutique
+        // maintenant. Un échec d'écriture ne doit pas lui refermer la porte
+        // au nez — il se rattrape à la connexion suivante, /qg refaisant la
+        // même promotion dès qu'il trouve une boutique à son nom.
+        console.warn("⚠️ promouvoirEnMarchand :", err.message);
+    }
+    return true;
+}
+
 function mapRow(r) {
     return {
         workspaceId: r.id || "",
@@ -240,6 +278,7 @@ module.exports = {
     exists,
     belongsToOwner,
     appartientA,
+    promouvoirEnMarchand,
     create,
     update,
     getByAgence,

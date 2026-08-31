@@ -114,6 +114,62 @@ router.post("/chat", vitrineLimiter, async (req, res) => {
     }
 });
 
+// ── SA PHOTO ET SA COUVERTURE ───────────────────────────────────────────
+//
+// Déclarée AVANT `/:userId`, comme /chat : sinon « apparence » serait pris
+// pour l'identifiant d'un marchand et cette route ne serait jamais atteinte.
+//
+// Elle ne touche que deux colonnes. POST /settings, lui, réécrit d'un bloc
+// la photo, la bannière, la bio, le pays, la langue et le thème : appelé
+// avec seulement la photo, il aurait vidé les quatre autres. C'est la raison
+// d'être de cette route plutôt qu'un appel à celle qui existait.
+//
+// L'identifiant vient de la SESSION, jamais du corps de la requête : on ne
+// peut pas changer la photo de quelqu'un d'autre en modifiant l'envoi.
+router.post("/apparence", async (req, res) => {
+    if (!req.session?.loggedIn || !req.session?.userId) {
+        return res.status(401).json({ success: false, error: "Connecte-toi d'abord." });
+    }
+    // Une adresse d'image, et rien d'autre : ni javascript:, ni data:. Ces
+    // valeurs finissent dans un attribut src affiché à des inconnus, sur le
+    // fil comme sur la marketplace.
+    const propre = (valeur) => {
+        const v = String(valeur ?? "").trim();
+        if (!v) return "";
+        if (!/^https:\/\//i.test(v)) return null;
+        return v.slice(0, 500);
+    };
+
+    const champs = { photo_profil_url: null, banniere_url: null, bio_vitrine: null };
+    for (const cle of Object.keys(champs)) {
+        if (!(cle in req.body)) continue;
+        // La présentation est du texte libre, pas une adresse : elle ne passe
+        // pas par le même contrôle. Elle est bornée, et échappée à
+        // l'affichage comme tout le reste de la page.
+        if (cle === "bio_vitrine") {
+            champs[cle] = String(req.body[cle] ?? "").trim().slice(0, 800);
+            continue;
+        }
+        const v = propre(req.body[cle]);
+        if (v === null) return res.json({ success: false, error: "Adresse d'image invalide." });
+        champs[cle] = v;
+    }
+    const aEcrire = Object.entries(champs).filter(([, v]) => v !== null);
+    if (!aEcrire.length) return res.json({ success: false, error: "Rien à enregistrer." });
+
+    try {
+        const sets = aEcrire.map(([cle], i) => `${cle} = $${i + 1}`).join(", ");
+        await db.query(
+            `UPDATE utilisateurs SET ${sets} WHERE id = $${aEcrire.length + 1}`,
+            [...aEcrire.map(([, v]) => v), req.session.userId],
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ POST /vitrine/apparence —", err.message);
+        res.json({ success: false, error: "Enregistrement impossible. Réessaie." });
+    }
+});
+
 // ── LA BOUTIQUE D'UN MARCHAND ───────────────────────────────────────────
 // Publique et volontairement sans compte requis : ce lien se colle dans une
 // story, un statut WhatsApp, une bio Instagram. Un mur de connexion à cet

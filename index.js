@@ -457,7 +457,30 @@ app.get("/", (req, res) => {
 // ── QG — route universelle SOLDAT V1 ────────────────────
 app.get("/qg", requireAuth, async (req, res) => {
     try {
-        if (req.session?.typeCompte === "client") return res.redirect(require("./config/communautes").accueilClient(res.locals.COM));
+        // ── LE COMPTE « CLIENT » QUI A DÉJÀ UNE BOUTIQUE ────────────────
+        //
+        // Cette ligne renvoyait tout compte « client » au fil d'actualité,
+        // sans regarder s'il possédait une boutique. Or « client » est la
+        // case cochée d'avance à l'inscription : des gens ont ouvert une
+        // boutique et se sont retrouvés dehors, renvoyés à l'accueil à
+        // chaque clic sur « Ma boutique ». Silencieusement — du point de
+        // vue du serveur, une redirection réussie n'est pas une erreur.
+        //
+        // On regarde donc les faits avant de fermer : une boutique à son
+        // nom, et la porte s'ouvre (le compte est corrigé au passage). Rien
+        // à son nom, et on garde l'ancien comportement — /qg est l'espace
+        // marchand, quelqu'un qui n'a pas de boutique n'a rien à y faire.
+        if (req.session?.typeCompte === "client") {
+            const siennes = await workspaceService.getByOwner(req.session.email);
+            const sienne = siennes.find((w) =>
+                workspaceService.appartientA(w, req.session.email, req.session));
+            if (!sienne) {
+                return res.redirect(require("./config/communautes").accueilClient(res.locals.COM));
+            }
+            await workspaceService.promouvoirEnMarchand(req.session);
+            req.session.workspaceId = sienne.workspaceId;
+            await new Promise((resoudre) => req.session.save(resoudre));
+        }
 
         // ── « JE CLIQUE SUR MA BOUTIQUE ET ÇA NE MÈNE NULLE PART » ───────
         //

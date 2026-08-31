@@ -505,6 +505,51 @@ router.get("/", async (req, res) => {
     }
 
     // ----------------------------------------------------------------------
+    // LE VISAGE DU VENDEUR
+    //
+    // « Il faut qu'on voie la photo de profil de la personne » — dans la
+    // communauté comme sur la marketplace. La pastille du vendeur affichait
+    // les deux lettres « OG » écrites en dur : notre marque, sur la page
+    // d'une partenaire, à la place du visage de son membre.
+    //
+    // Requête à part plutôt qu'une jointure : la requête principale fait un
+    // SELECT * dont dépend tout le reste de la page. Si celle-ci échoue, on
+    // retombe sur les initiales et rien d'autre ne bouge.
+    // ----------------------------------------------------------------------
+
+    let vendeursParId = {};
+
+    try {
+
+        const ids = [...new Set(
+            annoncesDB
+                .map(a => a.vendeur_id)
+                .filter(id => id !== null && id !== undefined && String(id).trim() !== "")
+        )];
+
+        if (ids.length) {
+
+            const vRows = await db.query(
+                `SELECT id, prenom, nom, photo_profil_url
+                   FROM utilisateurs
+                  WHERE id = ANY($1)`,
+                [ids]
+            );
+
+            vRows.forEach(row => {
+                vendeursParId[row.id] = row;
+            });
+        }
+
+    } catch (err) {
+
+        console.warn(
+            "⚠️ vendeurs :",
+            err.message
+        );
+    }
+
+    // ----------------------------------------------------------------------
     // SELECTS
     // ----------------------------------------------------------------------
 
@@ -642,6 +687,23 @@ router.get("/", async (req, res) => {
                     (!isAI && a.vendeur_id && a.vendeur_id !== "marchand_verified_1")
                         ? `/vitrine/${vendeurId}`
                         : null;
+
+                // Son visage plutôt que nos deux lettres. Le repli n'est pas
+                // « OG » — sur le service d'une partenaire, notre sigle n'a
+                // rien à faire là — mais les initiales de la personne, et à
+                // défaut de nom, l'icône de boutique.
+                const fiche = vendeursParId[a.vendeur_id] || null;
+                const initialesVendeur = isAI
+                    ? "IA"
+                    : (
+                        ((fiche?.prenom || "").trim()[0] || "") +
+                        ((fiche?.nom || "").trim()[0] || "")
+                    ).toUpperCase() || "🏪";
+                const photoVendeur = String(fiche?.photo_profil_url || "").trim();
+                const avatarVendeur = `${initialesVendeur}${
+                    photoVendeur && !isAI
+                        ? `<img src="${escapeHtml(photoVendeur)}" alt="" loading="lazy" onerror="this.remove()">`
+                        : ""}`;
 
                 const isReal =
                     typeof id === "number" ||
@@ -796,9 +858,9 @@ router.get("/", async (req, res) => {
 
                             <div class="seller-row">
 
-                                <div class="seller-avatar">
-                                    ${isAI ? "AI" : "OG"}
-                                </div>
+                                ${vendeurLink
+                                    ? `<a class="seller-avatar" href="${vendeurLink}">${avatarVendeur}</a>`
+                                    : `<div class="seller-avatar">${avatarVendeur}</div>`}
 
                                 <div class="seller-info">
 
@@ -1963,6 +2025,19 @@ nav {
 
     font-size: 8px;
     font-weight: 900;
+
+    /* La photo se pose par-dessus les initiales, qui restent dessous :
+       une adresse morte découvre le repli au lieu d'une icône cassée. */
+    position: relative;
+    overflow: hidden;
+}
+
+.seller-avatar img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .seller-info {

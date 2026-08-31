@@ -316,7 +316,7 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
 
     try {
         const rows = await db.query(`
-            SELECT p.*, u.prenom, u.nom, u.grade_actuel, u.type_compte,
+            SELECT p.*, u.prenom, u.nom, u.grade_actuel, u.type_compte, u.photo_profil_url,
                 (SELECT COUNT(*) FROM publications_likes pl WHERE pl.publication_id=p.id) AS nb_likes,
                 (SELECT COUNT(*) FROM publications_commentaires pc WHERE pc.publication_id=p.id) AS nb_commentaires,
                 EXISTS(SELECT 1 FROM publications_likes pl2 WHERE pl2.publication_id=p.id AND pl2.user_id=$1) AS jaime,
@@ -352,7 +352,7 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
             filtreAbonnements ? true : null]);
         publications = rows;
         for (const pub of publications) {
-            const comms = await db.query(`SELECT pc.*, u.prenom, u.nom FROM publications_commentaires pc LEFT JOIN utilisateurs u ON u.id=pc.auteur_id WHERE pc.publication_id=$1 ORDER BY pc.created_at ASC LIMIT 2`, [pub.id]);
+            const comms = await db.query(`SELECT pc.*, u.prenom, u.nom, u.photo_profil_url FROM publications_commentaires pc LEFT JOIN utilisateurs u ON u.id=pc.auteur_id WHERE pc.publication_id=$1 ORDER BY pc.created_at ASC LIMIT 2`, [pub.id]);
             pub.apercu_commentaires = comms;
         }
     } catch (err) { console.warn("⚠️ publications :", err.message); }
@@ -363,12 +363,24 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
         // sous sa marque, présentés comme sa communauté. C'est la même fuite
         // que le fil des publications, au même endroit du code.
         classement = await db.query(
-            `SELECT id, prenom, nom, grade_actuel, score_grade, type_compte
+            `SELECT id, prenom, nom, grade_actuel, score_grade, type_compte, photo_profil_url
                FROM utilisateurs
               WHERE COALESCE(communaute, $2) = $1
               ORDER BY score_grade DESC NULLS LAST LIMIT 5`,
             [COM.slug, communautes.DEFAUT]);
     } catch (err) { console.warn("⚠️ classement :", err.message); }
+
+    // Sa propre photo, pour l'afficher là où il écrit. Requête isolée : si
+    // elle échoue, on retombe sur les initiales et la page vit sa vie.
+    let moi = null;
+    if (connecte && req.session?.userId) {
+        try {
+            const rows = await db.query(
+                `SELECT prenom, nom, photo_profil_url FROM utilisateurs WHERE id = $1`,
+                [req.session.userId]);
+            moi = rows[0] || null;
+        } catch (err) { console.warn("⚠️ mon profil :", err.message); }
+    }
 
     let stories = [];
     try {
@@ -438,10 +450,11 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     const boutique = aBoutique
         ? { url: "/qg", icone: "layout-dashboard", libelle: "Ma boutique" }
         : (connecte
-            // /qg mène à son espace marchand, qui porte SA marque sur son
-            // service. Quelqu'un qui n'a pas encore de boutique y est guidé
-            // pour en créer une.
-            ? { url: "/qg", icone: "store", libelle: "Ouvrir ma boutique" }
+            // « Ouvrir ma boutique » pointait sur /qg — l'espace marchand,
+            // qui refusait précisément les comptes n'ayant pas encore de
+            // boutique. Le bouton menait donc à la porte fermée à la place
+            // du formulaire. On envoie là où l'on CRÉE une boutique.
+            ? { url: communautes.accueilMarchand(COM), icone: "store", libelle: "Ouvrir ma boutique" }
             : { url: COM.ecosysteme ? `/register?c=${COM.slug}` : `/c/${COM.slug}/inscription`,
                 icone: "store", libelle: "Ouvrir ma boutique" });
 
@@ -518,6 +531,35 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     const peutSabonner = (p) => Boolean(
         connecte && p.auteur_id && String(p.auteur_id) !== String(req.session?.userId));
 
+    // ── LE VISAGE DES GENS, ET LE CHEMIN VERS EUX ────────────────────────
+    //
+    // « Quand on est dans la marketplace ou dans la communauté et on clique
+    // sur un profil, il faut que ça affiche ce qu'il a publié — les liens
+    // des gens doivent être cliquables. » Et : « il faut qu'on voie la
+    // photo de profil de la personne. »
+    //
+    // Les deux étaient réservés à NOTRE communauté : `COM.ecosysteme ? <a>
+    // : <span>`. Chez une partenaire, un nom d'auteur n'était pas un lien —
+    // on voyait passer quelqu'un sans jamais pouvoir aller voir qui c'est ni
+    // ce qu'il vend. Or c'est exactement là que ça compte : sa communauté
+    // est faite de gens qui se découvrent.
+    //
+    // La page /vitrine existe déjà et est ouverte sur son service (module
+    // « vitrine »). Il n'y avait donc rien à construire — juste à arrêter de
+    // couper le lien.
+    const lienProfil = (id) => `/vitrine/${encodeURIComponent(id || "")}`;
+
+    // La photo se POSE sur les initiales, elle ne les remplace pas : une
+    // adresse morte — et il y en a, dans une base qui a des années — retire
+    // l'image et découvre les initiales dessous. Jamais une icône cassée.
+    const avatar = (personne, classe) => {
+        const init = initiales(personne.prenom, personne.nom);
+        const photo = String(personne.photo_profil_url || "").trim();
+        return `<span class="${classe}">${init}${photo
+            ? `<img src="${escapeHtml(photo)}" alt="" loading="lazy" onerror="this.remove()">`
+            : ""}</span>`;
+    };
+
     const feedHtml = publications.length ? publications.map(p => {
         const nomAuteur = escapeHtml(`${p.prenom||"Membre"} ${p.nom||""}`.trim());
         const isMarchand = p.type_compte === "marchand";
@@ -534,8 +576,8 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
             : (isMarchand ? "Boutique" : "Membre");
         const cat = catInfo(p.categorie);
         const commentairesHtml = p.apercu_commentaires.map(c => `
-            <div class="comment-item"><div class="comment-avatar">${initiales(c.prenom,c.nom)}</div>
-            <div class="comment-body"><strong>${escapeHtml(`${c.prenom||"Membre"} ${c.nom||""}`)}</strong><span>${escapeHtml(c.contenu)}</span></div></div>`).join("");
+            <div class="comment-item">${avatar(c, "comment-avatar")}
+            <div class="comment-body"><strong><a href="${lienProfil(c.auteur_id)}">${escapeHtml(`${c.prenom||"Membre"} ${c.nom||""}`)}</a></strong><span>${escapeHtml(c.contenu)}</span></div></div>`).join("");
         let mediaHtml = "";
         if (p.video_url) mediaHtml = `<div class="post-media"><video src="${escapeHtml(p.video_url)}" controls preload="metadata"></video></div>`;
         else if (p.image_url) mediaHtml = `<div class="post-media"><img src="${escapeHtml(p.image_url)}" alt="" loading="lazy"></div>`;
@@ -543,9 +585,9 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
         return `
         <article class="post-card" data-post-id="${p.id}" data-auteur-id="${escapeHtml(p.auteur_id || "")}">
             <div class="post-head">
-                ${COM.ecosysteme ? `<a class="post-avatar" href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${initiales(p.prenom,p.nom)}</a>` : `<span class="post-avatar">${initiales(p.prenom,p.nom)}</span>`}
+                <a class="post-avatar-lien" href="${lienProfil(p.auteur_id)}">${avatar(p, "post-avatar")}</a>
                 <div class="post-authorblock">
-                    <div class="post-author">${COM.ecosysteme ? `<a href="/vitrine/${encodeURIComponent(p.auteur_id||"")}">${nomAuteur}</a>` : nomAuteur} ${p.epingle?'<i data-lucide="pin" class="pin-ic"></i>':""}</div>
+                    <div class="post-author"><a href="${lienProfil(p.auteur_id)}">${nomAuteur}</a> ${p.epingle?'<i data-lucide="pin" class="pin-ic"></i>':""}</div>
                     <div class="post-meta"><span class="grade-chip ${isMarchand?"grade-chip--gold":""}">${isMarchand?"🏪":"👤"} ${grade}</span><span class="dot-sep">·</span><span>${timeAgo(p.created_at)}</span></div>
                 </div>
                 ${peutSabonner(p) ? `<button class="btn-abonner${p.abonne ? " on" : ""}" type="button" onclick="toggleAbonner(${p.id}, this)">${p.abonne ? "Abonné" : "S'abonner"}</button>` : ""}
@@ -574,8 +616,8 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
         : (filtre ? filtreVide(COM, filtre) : filVide(COM, connecte));
 
     const classementHtml = classement.length ? classement.map((u,i) => `
-        <${COM.ecosysteme ? `a class="rank-item" href="/vitrine/${encodeURIComponent(u.id)}"` : `div class="rank-item"`}><span class="rank-num rank-${i+1}">${i+1}</span><div class="rank-avatar">${initiales(u.prenom,u.nom)}</div>
-        <div class="rank-info"><strong>${escapeHtml(`${u.prenom||"Membre"} ${u.nom||""}`)}</strong><span>${avecGrades ? `${escapeHtml(u.grade_actuel||"Soldat")} · ${u.score_grade||0} pts` : (u.type_compte === "marchand" ? "Boutique" : "Membre")}</span></div></${COM.ecosysteme ? "a" : "div"}>`).join("") : `<p class="rank-empty">Le classement se remplira bientôt.</p>`;
+        <a class="rank-item" href="${lienProfil(u.id)}"><span class="rank-num rank-${i+1}">${i+1}</span>${avatar(u, "rank-avatar")}
+        <div class="rank-info"><strong>${escapeHtml(`${u.prenom||"Membre"} ${u.nom||""}`)}</strong><span>${avecGrades ? `${escapeHtml(u.grade_actuel||"Soldat")} · ${u.score_grade||0} pts` : (u.type_compte === "marchand" ? "Boutique" : "Membre")}</span></div></a>`).join("") : `<p class="rank-empty">Le classement se remplira bientôt.</p>`;
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
@@ -621,34 +663,24 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .icon-btn{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--border);border-radius:11px;color:var(--muted);}
 .icon-btn:hover{color:var(--blue);border-color:var(--blue);}
 .layout{display:grid;grid-template-columns:1fr;gap:24px;max-width:1300px;margin:0 auto;padding:26px 28px 90px;}
-/* ── LE FIL SUR DEUX COLONNES ──────────────────────────────────────
-   « Les publications doivent apparaître par deux et non par une dans
-   le fil d'actualité. » Une seule colonne sur un grand écran, ce sont
-   des cartes très larges avec beaucoup de vide autour, et il faut
-   faire défiler longtemps pour voir peu de choses.
+/* ── LE FIL SUR UNE SEULE COLONNE ───────────────────────────────────
+   Le fil est passé un temps sur deux colonnes. Retour à une carte par
+   ligne : « c'était beaucoup plus pro, ça fait un peu comme Facebook,
+   c'est beaucoup mieux ». Une colonne, c'est une photo qui a la place
+   d'être vue et un texte qui se lit sans se casser à trois mots par
+   ligne — c'est la mise en page de tous les fils que ses membres
+   connaissent déjà.
 
-   Le seuil est à 760 px, pas plus bas : sous cette largeur, deux
-   colonnes donnent des cartes d'environ 180 px, où le texte se casse
-   à trois mots par ligne et où la zone de commentaire ne tient plus.
-   Sur un téléphone, une carte par ligne reste la bonne réponse — et
-   c'est là que sa communauté lit.
-
-   align-items:start : sans lui, les deux cartes d'une même ligne
-   s'étirent à la hauteur de la plus grande, et une publication d'une
-   ligne se retrouve avec un grand vide sous elle parce que sa voisine
-   porte une photo. */
+   On garde la grille (plutôt qu'un simple empilement) pour deux
+   raisons qui ont coûté des corrections : min-width:0 sur les enfants,
+   sans quoi une longue URL sans espace élargit la carte et fait
+   déborder la page ; et la règle grid-column sur les bandeaux, qui
+   reste valable quelle que soit la largeur. */
 #feedContainer{display:grid;gap:14px;align-items:start;
-  /* auto-fill + minmax plutôt qu'un point de rupture sur la largeur de la
-     FENÊTRE : le fil vit entre deux colonnes latérales, donc la place dont
-     il dispose n'a rien à voir avec la taille de l'écran. Une règle en
-     « min-width:760px » donnait deux colonnes alors que la place réelle
-     n'en autorisait qu'une, et les cartes sortaient de l'écran à droite.
-     Ici, deux cartes apparaissent quand elles TIENNENT, une sinon — donc
-     une seule sur un téléphone, ce qui est la bonne réponse là-bas. */
-  grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));}
+  grid-template-columns:1fr;}
 /* Sans min-width:0, un élément de grille refuse de descendre sous la
    largeur de son contenu : une longue URL sans espace, et toute la colonne
-   déborde. C'est ce qui coupait la seconde carte. */
+   déborde. */
 #feedContainer > *{min-width:0;}
 .post-text{overflow-wrap:anywhere;}
 /* Le bandeau d'une sélection filtrée et la page vide tiennent toute la
@@ -680,13 +712,15 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .rank-1{background:linear-gradient(135deg,#d7b34c,#f0d98c);color:#1a1400;}
 .rank-2{background:linear-gradient(135deg,#b8c2cc,#e2e8ee);color:#0a0e12;}
 .rank-3{background:linear-gradient(135deg,#c98a52,#e0ab7a);color:#1a0e00;}
-.rank-avatar{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:9px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;}
+.rank-avatar{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:9px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;position:relative;overflow:hidden;}
 .rank-info{display:flex;flex-direction:column;min-width:0;} .rank-info strong{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .rank-info span{font-size:9px;color:var(--muted);}
 .rank-empty{color:var(--muted);font-size:11px;text-align:center;padding:10px 0;}
 .col-feed{max-width:640px;width:100%;margin:0 auto;}
 .composer{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;}
 .composer-top{display:flex;gap:12px;}
-.composer-avatar{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:12px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;}
+.composer-avatar{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:12px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;position:relative;overflow:hidden;}
+.composer-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.composer-avatar-lien{flex-shrink:0;line-height:0;}
 .composer textarea{flex:1;resize:none;min-height:44px;border:1px solid var(--border);border-radius:12px;background:var(--creux);color:var(--text);padding:12px;outline:none;font-size:13px;}
 .composer textarea:focus{border-color:var(--blue);}
 .cat-buttons{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
@@ -816,7 +850,14 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .post-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;container-type:inline-size;}
 .post-card:hover{border-color:rgba(0,217,255,.3);}
 .post-head{display:flex;align-items:center;gap:11px;margin-bottom:12px;}
-.post-avatar{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:13px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;text-decoration:none;}
+.post-avatar{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:13px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;text-decoration:none;
+  /* La photo est posée EN ABSOLU par-dessus les initiales, qui restent dans
+     le flux : si l'adresse de l'image est morte, le onerror la retire et les
+     initiales sont déjà là, à la bonne place. C'est la même règle que sur la
+     vitrine — le repli est dessous, jamais à côté. */
+  position:relative;overflow:hidden;}
+.post-avatar img,.rank-avatar img,.comment-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.post-avatar-lien{flex-shrink:0;line-height:0;}
 .post-authorblock{flex:1;min-width:0;}
 .post-author{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;}
 .post-author a,.rank-item{color:inherit;text-decoration:none;}
@@ -870,7 +911,8 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 @media(max-width:420px){.post-action-btn span{display:none;}}
 .comments-preview{display:flex;flex-direction:column;gap:8px;}
 .comment-item{display:flex;gap:8px;align-items:flex-start;}
-.comment-avatar{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:8px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;}
+.comment-avatar{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:8px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;position:relative;overflow:hidden;}
+.comment-body strong a{color:inherit;text-decoration:none;} .comment-body strong a:hover{color:var(--blue);}
 .comment-body{background:rgba(255,255,255,.03);border-radius:12px;padding:7px 11px;font-size:11.5px;flex:1;}
 .comment-body strong{display:block;font-size:10.5px;margin-bottom:2px;} .comment-body span{color:var(--muted);}
 .comment-box{display:flex;gap:8px;margin-top:10px;}
@@ -1064,7 +1106,9 @@ ${!connecte ? `
 </div>` : `
 <div class="composer">
 <div class="composer-top">
-<div class="composer-avatar">${initiales(req.session.nom?.split(" ")[1], req.session.nom?.split(" ")[0])}</div>
+<a class="composer-avatar-lien" href="${lienProfil(req.session.userId)}" title="Ma page — ma photo, mes produits, mes publications">${avatar(
+    moi || { prenom: req.session.nom?.split(" ")[0], nom: req.session.nom?.split(" ")[1] },
+    "composer-avatar")}</a>
 <textarea id="composerText" placeholder="Exprime-toi... partage, propose, forme, vends. Gagne des points à chaque publication !" rows="2"></textarea>
 </div>
 <div class="cat-buttons">${catButtonsHtml}</div>

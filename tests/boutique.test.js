@@ -113,6 +113,109 @@ const workspaceService = require(path.join(RACINE, "services", "workspaceService
     verifier(sorties === 1,
         `/qg a ${sorties} sortie(s) vers la création de boutique — il n'en faut qu'une, les mains vides`);
 
+    // ══════════════════════════════════════════════════════════════════════
+    // 4. « TOUT LE MONDE PEUT CRÉER SA BOUTIQUE »
+    //
+    // « Quand un de ses clients veut créer la boutique, il met "créer ma
+    // boutique", il n'a pas accès. Ça, même moi, ça me faisait ça hier. »
+    //
+    // La cause n'était ni un droit ni une panne : à l'inscription, la case
+    // cochée d'avance est « Découvrir » — `type_compte = 'client'`. Et /qg
+    // renvoyait TOUT compte client vers le fil d'actualité avant même de
+    // regarder s'il avait une boutique. Le bouton « Ouvrir ma boutique »,
+    // lui, pointait précisément sur /qg. Le bouton menait donc à la porte
+    // qui le refusait, et la page revenait d'où elle venait, sans un mot.
+    //
+    // Deux invariants à tenir, et le second est le plus facile à perdre :
+    // une fois la boutique créée, le compte doit CESSER d'être « client »,
+    // sinon la personne a une boutique où elle ne peut pas entrer.
+    // ══════════════════════════════════════════════════════════════════════
+
+    // ── a. Créer une boutique fait la marchande ─────────────────────────
+    const ECRITURES = [];
+    const Module = require("module");
+    const vraiRequire = Module.prototype.require;
+    Module.prototype.require = function (nom) {
+        if (nom === "../services/db") return {
+            query: async (q, p) => { ECRITURES.push({ sql: q, params: p || [] }); return []; },
+        };
+        return vraiRequire.apply(this, arguments);
+    };
+    delete require.cache[require.resolve(path.join(RACINE, "services", "workspaceService.js"))];
+    const wsPromu = require(path.join(RACINE, "services", "workspaceService.js"));
+    Module.prototype.require = vraiRequire;
+
+    const sessionClient = { typeCompte: "client", userId: "u-1" };
+    ECRITURES.length = 0;
+    verifier(await wsPromu.promouvoirEnMarchand(sessionClient) === true,
+        "promouvoirEnMarchand refuse de promouvoir un compte « client »");
+    verifier(sessionClient.typeCompte === "marchand",
+        "la session reste « client » après la création de sa boutique — /qg la renverra au fil d'actualité, boutique ou pas");
+    const ecrit = ECRITURES.find((e) => /UPDATE utilisateurs/i.test(e.sql));
+    verifier(!!ecrit,
+        "rien n'est écrit en base : à la prochaine connexion, le compte redevient « client » et la porte se referme");
+    verifier(!!ecrit && /type_compte\s*=\s*'marchand'/i.test(ecrit.sql) && ecrit.params.includes("u-1"),
+        "la promotion n'écrit pas le bon type, ou pas sur la bonne personne");
+
+    // Une agence n'est pas un client : ce chemin ne doit jamais la toucher.
+    const sessionAgence = { typeCompte: "agence", userId: "ag-1" };
+    ECRITURES.length = 0;
+    await wsPromu.promouvoirEnMarchand(sessionAgence);
+    verifier(sessionAgence.typeCompte === "agence",
+        "une agence est rétrogradée en marchand : elle perd les boutiques de ses clients");
+    verifier(!ECRITURES.length,
+        "une agence déclenche quand même une écriture en base");
+
+    // ── b. La création promeut, dans les deux parcours ──────────────────
+    // Le formulaire ET la conversation avec SAMII créent des boutiques. Un
+    // seul des deux corrigé, et la moitié des gens reste enfermée dehors.
+    // Les commentaires sont retirés d'abord : ce fichier CITE
+    // workspaceService.create() pour dire que les deux parcours partagent la
+    // même fonction, et le test comptait cette phrase comme un troisième
+    // parcours — puis accusait un bug qui n'existait pas.
+    for (const [nom, source] of [["le formulaire", creation.split("\n")
+        .filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n")]]) {
+        const blocsCreation = source.split("workspaceService.create(").slice(1);
+        verifier(blocsCreation.length >= 2,
+            `${nom} : il n'y a plus deux parcours de création — le contrôle ci-dessous ne vérifie plus rien`);
+        for (let i = 0; i < blocsCreation.length; i++) {
+            verifier(/promouvoirEnMarchand/.test(blocsCreation[i]),
+                `un parcours de création de boutique (n°${i + 1}) laisse le compte en « client » : la boutique existe, la personne ne peut pas y entrer`);
+        }
+    }
+
+    // ── c. /qg regarde les faits avant de fermer ────────────────────────
+    // Il refusait sur le seul type de compte. Il doit d'abord chercher une
+    // boutique à son nom — et n'a le droit de renvoyer au fil que s'il n'en
+    // trouve aucune.
+    //
+    // La tranche s'arrête à `const communautesM`, la ligne qui suit
+    // immédiatement ce bloc. Une première version allait jusqu'à
+    // `estAgenceProprietaire` : elle englobait la recherche de boutique du
+    // corps principal, donc elle disait oui même après avoir supprimé celle
+    // de la branche « client ». Un test qui regarde trop large ne regarde
+    // rien — le repère est vérifié juste en dessous pour que le jour où il
+    // bouge, ce soit une panne bruyante et pas un test devenu creux.
+    const debutClient = bloc.indexOf('typeCompte === "client"');
+    const finClient = bloc.indexOf("const communautesM", debutClient);
+    verifier(debutClient > 0 && finClient > debutClient,
+        "/qg : la branche des comptes « client » ne se délimite plus — les deux contrôles qui suivent ne vérifient plus rien");
+    const clientCode = bloc.slice(debutClient, finClient > 0 ? finClient : debutClient + 1200);
+    verifier(/getByOwner/.test(clientCode),
+        "/qg renvoie un compte « client » sans jamais chercher s'il a une boutique — c'est exactement le mur qu'on vient d'enlever");
+    verifier(/promouvoirEnMarchand/.test(clientCode),
+        "/qg laisse entrer un compte « client » sans corriger son type : il refera le mur au prochain clic");
+
+    // ── d. Le bouton ne pointe plus sur la porte fermée ─────────────────
+    const feed = fs.readFileSync(path.join(RACINE, "routes", "community.js"), "utf8");
+    const boutonCode = feed.split("\n")
+        .filter((l) => !/^\s*(\/\/|\*)/.test(l))
+        .join("\n");
+    const ouvrir = boutonCode.slice(boutonCode.indexOf("libelle: \"Ouvrir ma boutique\"") - 400,
+                                   boutonCode.indexOf("libelle: \"Ouvrir ma boutique\"") + 40);
+    verifier(/accueilMarchand\(/.test(ouvrir),
+        "« Ouvrir ma boutique » ne mène plus là où l'on CRÉE une boutique — s'il pointe sur /qg, il pointe sur la porte qui le refuse");
+
     if (echecs.length) {
         console.error(`❌ boutique : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
         for (const e of echecs) console.error("   • " + e);
