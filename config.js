@@ -291,10 +291,44 @@ module.exports = {
                 if (attendus.includes(nom)) continue;
                 if (nomme(nom) && ressemble(process.env[nom])) ajouter(process.env[nom], payantes);
             }
+
+            // ── LA PAYANTE RESTE CHEZ NOUS ──────────────────────────────
+            //
+            // « Gemini payante reste chez nous. »
+            //
+            // Les deux services de Render partagent ce dépôt : le nôtre et
+            // celui d'une partenaire. Une variable d'environnement recopiée
+            // par mégarde d'un service à l'autre — ça arrive, il y en a une
+            // quarantaine — et sa communauté se met à consommer NOTRE
+            // facture Gemini, sans plafond pour l'arrêter et sans que rien ne
+            // le signale avant le relevé.
+            //
+            // Le domaine décide, pas la variable : sur un service partenaire
+            // (COMMUNAUTE_PAR_DEFAUT rempli et différent de la maison), les
+            // clés payantes sont écartées, même si elles sont présentes.
+            // L'oubli tombe alors du côté sûr — c'est la même règle que la
+            // porte qui ferme nos modules chez elle.
+            const chezUnePartenaire = (() => {
+                const slug = String(process.env.COMMUNAUTE_PAR_DEFAUT || "").trim().toLowerCase();
+                if (!slug) return false;   // pas de marqueur = la maison
+                // Le nom de la maison est LU là où il est défini. Recopié ici,
+                // il se serait désaccordé le jour où il change, et la payante
+                // serait partie chez une partenaire sans un mot.
+                // `config/communautes.js` ne requiert rien : aucun cycle.
+                try {
+                    return slug !== require("./config/communautes").DEFAUT;
+                } catch {
+                    // Registre illisible : on refuse la payante. Entre payer
+                    // pour quelqu'un d'autre et se passer d'un dernier
+                    // recours, le second se répare et le premier se facture.
+                    return true;
+                }
+            })();
+
             return {
-                API_KEYS: [...gratuites, ...payantes],
+                API_KEYS: chezUnePartenaire ? gratuites : [...gratuites, ...payantes],
                 // Ce que le service ne doit PAS retenir comme point de départ.
-                PAYANTES: payantes,
+                PAYANTES: chezUnePartenaire ? [] : payantes,
             };
         })(),
     },

@@ -336,6 +336,65 @@ const CONFIG = require(path.join(RACINE, "config.js"));
             "toutes les gratuites sont au repos et la payante n'est pas atteinte — SAMII se tait alors qu'il a de quoi répondre");
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // 9. LA CLÉ PAYANTE NE SORT PAS DE CHEZ NOUS
+    //
+    // « Gemini payante reste chez nous. »
+    //
+    // Les deux services Render partagent ce dépôt. Une variable recopiée par
+    // mégarde d'un service à l'autre — il y en a une quarantaine — et la
+    // communauté d'une partenaire consomme NOTRE facture Gemini, sans
+    // plafond pour l'arrêter et sans que rien ne le signale avant le relevé.
+    //
+    // C'est le domaine qui décide, pas la présence de la variable.
+    // ══════════════════════════════════════════════════════════════════════
+    {
+        const avant = process.env.COMMUNAUTE_PAR_DEFAUT;
+
+        process.env.COMMUNAUTE_PAR_DEFAUT = "coindudigital";
+        delete require.cache[require.resolve(path.join(RACINE, "config.js"))];
+        const chezElle = require(path.join(RACINE, "config.js"));
+        verifier(!chezElle.GEMINI.API_KEYS.includes(PAYANTE),
+            "sur le service d'une partenaire, la clé payante est utilisable : sa communauté consomme notre facture, sans plafond pour l'arrêter");
+        verifier(chezElle.GEMINI.API_KEYS.includes(PRINCIPALE),
+            "le service d'une partenaire a perdu les clés gratuites au passage — SAMII n'y répond plus du tout");
+        verifier(chezElle.GEMINI.PAYANTES.length === 0,
+            "la liste des payantes n'est pas vidée chez une partenaire : le service pourrait encore s'y référer");
+
+        // Chez nous — marqueur absent, ou marqueur qui vaut la maison.
+        for (const marqueur of [undefined, "samii"]) {
+            if (marqueur === undefined) delete process.env.COMMUNAUTE_PAR_DEFAUT;
+            else process.env.COMMUNAUTE_PAR_DEFAUT = marqueur;
+            delete require.cache[require.resolve(path.join(RACINE, "config.js"))];
+            const chezNous = require(path.join(RACINE, "config.js"));
+            verifier(chezNous.GEMINI.API_KEYS.includes(PAYANTE),
+                `chez nous (COMMUNAUTE_PAR_DEFAUT=${marqueur ?? "absent"}), la payante est écartée — on a acheté un dernier recours qui ne sert jamais`);
+        }
+
+        // ── L'OUBLI TOMBE DU CÔTÉ SÛR ───────────────────────────────────
+        //
+        // Si le registre des communautés devient illisible, on ne SAIT PLUS
+        // chez qui on est. Entre payer pour quelqu'un d'autre et se passer
+        // d'un dernier recours, le second se répare et le premier se
+        // facture — sans plafond et sans alerte.
+        process.env.COMMUNAUTE_PAR_DEFAUT = "peu-importe";
+        const vraiR = Module.prototype.require;
+        Module.prototype.require = function (nom) {
+            if (String(nom).includes("config/communautes")) throw new Error("registre illisible");
+            return vraiR.apply(this, arguments);
+        };
+        delete require.cache[require.resolve(path.join(RACINE, "config.js"))];
+        let aveugle;
+        try { aveugle = require(path.join(RACINE, "config.js")); }
+        finally { Module.prototype.require = vraiR; }
+        verifier(aveugle && !aveugle.GEMINI.API_KEYS.includes(PAYANTE),
+            "registre illisible : on ne sait plus chez qui on est et la clé payante reste utilisable — c'est le cas où l'oubli se facture");
+
+        if (avant === undefined) delete process.env.COMMUNAUTE_PAR_DEFAUT;
+        else process.env.COMMUNAUTE_PAR_DEFAUT = avant;
+        delete require.cache[require.resolve(path.join(RACINE, "config.js"))];
+    }
+
     if (echecs.length) {
         console.error(`❌ clés Gemini : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
         for (const e of echecs) console.error("   • " + e);
