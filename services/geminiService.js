@@ -92,13 +92,66 @@ let depart = 0;
 // dit jamais non : c'est à nous de ne pas nous y installer.
 const PAYANTES = new Set(CONFIG.GEMINI.PAYANTES || []);
 
+// ── UNE CLÉ QUI VIENT DE DIRE NON N'EST PAS RE-DÉRANGÉE ─────────────────
+//
+// LE FAIT QU'ON IGNORAIT : le plafond gratuit (« generate_content_free_
+// tier_requests, limit: 20 ») se compte PAR PROJET GOOGLE, pas par clé.
+// Dix-sept clés réparties sur trois projets, ce sont trois compteurs de 20,
+// pas dix-sept. Deux exécutions du script de contrôle l'ont prouvé : 15
+// clés valides, puis 4 dix minutes plus tard, sans qu'une seule clé change.
+//
+// Ce que ça coûtait en production : le compteur d'un projet s'épuise, et la
+// rotation essaie quand même TOUTES les clés de ce projet, une par une.
+// Chacune répond non en ~300 ms. Quatorze clés dans le même projet, ce sont
+// quatre à cinq secondes de vide avant même d'atteindre le relais — pour un
+// client qui attend une réponse dans un chat.
+//
+// Google dit lui-même quand revenir (« Please retry in 46.9s »). On le
+// croit : la clé est mise de côté pour ce délai, et la rotation l'ignore
+// pendant ce temps. Les clés du même projet se marquent alors en une seule
+// passe, et les suivantes sont atteintes tout de suite.
+//
+// En mémoire, sans persistance : au redémarrage on ne sait plus rien et on
+// ré-essaie tout, ce qui est le bon comportement par défaut.
+const saturees = new Map();   // clé -> horodatage jusqu'auquel l'ignorer
+
+const REPOS_PAR_DEFAUT = 30000;   // si Google ne dit rien, une demi-minute
+const REPOS_MAX = 120000;         // et jamais plus de deux minutes d'aveuglement
+
+function delaiAvantRetour(err) {
+    const donnees = err?.response?.data;
+    // Deux formes vues en vrai : le texte du message (« Please retry in
+    // 46.974149174s ») et un champ structuré dans les détails de l'erreur.
+    const texte = String(donnees?.error?.message || "");
+    const parTexte = /retry in ([\d.]+)s/i.exec(texte);
+    if (parTexte) return Math.min(REPOS_MAX, Math.ceil(Number(parTexte[1]) * 1000));
+
+    const details = donnees?.error?.details;
+    if (Array.isArray(details)) {
+        for (const d of details) {
+            const parChamp = /^([\d.]+)s$/.exec(String(d?.retryDelay || ""));
+            if (parChamp) return Math.min(REPOS_MAX, Math.ceil(Number(parChamp[1]) * 1000));
+        }
+    }
+    return REPOS_PAR_DEFAUT;
+}
+
 // Essaie chaque clé Gemini disponible tour à tour : une clé saturée (429) ou
 // morte (400/403 sur la clé) passe la main à la suivante. Toute autre erreur
 // remonte tout de suite — changer de clé n'y changerait rien.
 async function postWithRotation(body) {
     let lastErr;
+    let ignorees = 0;
     for (let n = 0; n < KEYS.length; n++) {
         const i = (depart + n) % KEYS.length;
+
+        // Elle a dit non il y a peu et a annoncé quand revenir : on ne la
+        // redérange pas avant. C'est ce qui évite d'aligner quatorze refus
+        // du même projet avant d'atteindre une clé qui peut répondre.
+        const repos = saturees.get(KEYS[i]);
+        if (repos && repos > Date.now()) { ignorees++; continue; }
+        if (repos) saturees.delete(KEYS[i]);
+
         try {
             const reponse = await axios.post(urlFor(KEYS[i]), body);
             // Celle-ci a répondu : c'est par elle qu'on commencera la
@@ -113,6 +166,12 @@ async function postWithRotation(body) {
             const saturee = estQuotaDepasse(err);
             const morte = estCleMorte(err);
             if (!saturee && !morte) throw err;
+
+            // On note QUAND la redemander. Une clé morte est mise de côté
+            // longtemps : elle ne guérira pas toute seule, et le journal dit
+            // déjà de la retirer.
+            saturees.set(KEYS[i], Date.now() + (morte ? REPOS_MAX : delaiAvantRetour(err)));
+
             if (n < KEYS.length - 1) {
                 // La clé est identifiée par ses quatre derniers caractères :
                 // assez pour retrouver laquelle jeter dans la console Google,
@@ -122,6 +181,15 @@ async function postWithRotation(body) {
                 }, bascule sur la suivante...`);
             }
         }
+    }
+    // Toutes les clés sont soit épuisées, soit encore au repos. S'il n'y a
+    // eu AUCUN appel — tout était au repos — il n'y a pas d'erreur récente à
+    // relayer : on en fabrique une, sinon l'appelant recevrait `undefined` et
+    // planterait au lieu de basculer sur Groq/OpenRouter/DeepSeek.
+    if (!lastErr) {
+        const e = new Error(`Les ${ignorees} clés Gemini sont au repos (quota).`);
+        e.response = { status: 429, data: { error: { code: 429, status: "RESOURCE_EXHAUSTED" } } };
+        throw e;
     }
     throw lastErr;
 }

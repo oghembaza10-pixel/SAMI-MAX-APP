@@ -54,6 +54,7 @@ process.env.GEMINI_API_KEY_9 = "cle-secours-3-AIzaXXXXXXXXXXXXXX";
 const PRINCIPALE = process.env.GEMINI_API_KEY;
 const SECOURS_2  = process.env.GEMINI_API_KEY_2;
 const SECOURS_3  = process.env.GEMINI_API_KEY_3;
+const PAYANTE    = process.env["SAMII-API-Key"];
 
 const APPELS = [];
 let reponses = [];
@@ -265,7 +266,6 @@ const CONFIG = require(path.join(RACINE, "config.js"));
     // clé sans plafond ne dira jamais rien.
     // ══════════════════════════════════════════════════════════════════════
     {
-        const PAYANTE = process.env["SAMII-API-Key"];
         verifier(CONFIG.GEMINI.PAYANTES.includes(PAYANTE),
             "la clé payante n'est pas identifiée comme telle — rien n'empêchera le service de s'y installer");
         verifier(TROUVEES[TROUVEES.length - 1] === PAYANTE,
@@ -274,18 +274,66 @@ const CONFIG = require(path.join(RACINE, "config.js"));
         APPELS.length = 0;
         gemini = chargerService();
 
-        // Toutes les gratuites saturent : on doit finir sur la payante.
-        reponses = [erreur({ status: 429 }), erreur({ status: 429 }), erreur({ status: 429 })];
+        // Toutes les gratuites saturent. Elles annoncent un repos TRÈS court
+        // pour que le test puisse observer leur retour sans attendre —
+        // c'est le vrai délai annoncé par Google qui est lu, pas une valeur
+        // codée en dur dans le service.
+        const bref = { status: 429, data: { error: { code: 429, message: "Please retry in 0.05s" } } };
+        reponses = [erreur(bref), erreur(bref), erreur(bref)];
         await gemini.chat({ message: "un", useTools: false });
         verifier(APPELS[APPELS.length - 1] === PAYANTE,
             "quand tout le gratuit est saturé, la clé payante n'est jamais atteinte — SAMII se tait alors qu'il y a de quoi répondre");
 
-        // Et la requête suivante RETOURNE au gratuit.
+        // Le repos écoulé, la requête suivante RETOURNE au gratuit. C'est la
+        // propriété qui protège la facture : la payante ne doit jamais être
+        // préférée à une gratuite redevenue disponible.
+        await new Promise((r) => setTimeout(r, 120));
         APPELS.length = 0;
         reponses = [];
         await gemini.chat({ message: "deux", useTools: false });
         verifier(APPELS[0] === PRINCIPALE,
-            "après un passage sur la payante, SAMII y reste : le quota gratuit revient et on paie quand même, sans que rien ne le dise");
+            "le quota gratuit est revenu et SAMII reste sur la payante — on paie chaque message sans que rien ne le dise");
+        verifier(!APPELS.includes(PAYANTE),
+            "la clé payante est encore appelée alors qu'une gratuite vient de répondre");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 8. UNE CLÉ QUI VIENT DE DIRE NON N'EST PAS RE-DÉRANGÉE
+    //
+    // Le plafond gratuit se compte PAR PROJET GOOGLE, pas par clé. Deux
+    // exécutions du script de contrôle l'ont prouvé : 15 clés valides, puis
+    // 4 dix minutes plus tard, sans qu'une seule clé change — le script
+    // épuisait lui-même le compteur partagé qu'il mesurait.
+    //
+    // En production, ça voulait dire : le compteur d'un projet s'épuise, et
+    // la rotation essaie quand même TOUTES les clés de ce projet, une par
+    // une, à ~300 ms le refus. Quatorze clés dans le même projet, ce sont
+    // quatre à cinq secondes de vide avant d'atteindre le relais — pour
+    // quelqu'un qui attend une réponse dans un chat.
+    // ══════════════════════════════════════════════════════════════════════
+    {
+        APPELS.length = 0;
+        gemini = chargerService();
+
+        // Google annonce lui-même une minute d'attente.
+        const long = { status: 429, data: { error: { code: 429, message: "Please retry in 60s" } } };
+        reponses = [erreur(long), erreur(long), erreur(long)];
+        await gemini.chat({ message: "un", useTools: false });
+        const premierTour = APPELS.length;
+        verifier(premierTour >= 4,
+            `le premier tour n'a essayé que ${premierTour} clé(s) — il devait toutes les parcourir`);
+
+        // Deuxième requête : les trois gratuites ont dit « dans 60 secondes ».
+        // Aucune ne doit être recontactée ; on va droit à la payante.
+        APPELS.length = 0;
+        reponses = [];
+        await gemini.chat({ message: "deux", useTools: false });
+        for (const [cle, nom] of [[PRINCIPALE, "#1"], [SECOURS_2, "#2"], [SECOURS_3, "#3"]]) {
+            verifier(!APPELS.includes(cle),
+                `la clé ${nom} vient d'annoncer 60 secondes d'attente et elle est redérangée tout de suite — c'est un aller-retour perdu par message, multiplié par le nombre de clés du même projet`);
+        }
+        verifier(APPELS.includes(PAYANTE),
+            "toutes les gratuites sont au repos et la payante n'est pas atteinte — SAMII se tait alors qu'il a de quoi répondre");
     }
 
     if (echecs.length) {
