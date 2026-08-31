@@ -16,6 +16,23 @@ function urlFor(key) {
     return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
 }
 
+// UN 429, D'OÙ QU'IL VIENNE, EST UN QUOTA.
+//
+// Ce contrôle ne lisait le code QUE dans le corps JSON de la réponse
+// (`data.error.code`). Or un 429 n'arrive pas toujours avec ce corps : quand
+// il est émis par la façade de Google, un proxy ou une passerelle plutôt que
+// par le modèle lui-même, il n'y a que le statut HTTP et parfois une page
+// HTML. La condition tombait alors à faux, l'erreur remontait, et LA
+// ROTATION N'AVAIT PAS LIEU — les clés de secours n'étaient jamais
+// essayées, précisément le jour de forte charge où elles servent.
+//
+// Le statut HTTP fait donc foi, le corps JSON n'étant qu'une confirmation.
+function estQuotaDepasse(err) {
+    return err?.response?.status === 429
+        || err?.response?.data?.error?.code === 429
+        || err?.response?.data?.error?.status === "RESOURCE_EXHAUSTED";
+}
+
 // Essaie chaque clé Gemini disponible tour à tour : dès qu'une clé répond
 // 429 (quota dépassé), bascule sur la suivante. Une autre erreur (400, réseau...)
 // remonte immédiatement — inutile d'essayer les autres clés, ce ne serait pas un
@@ -27,8 +44,7 @@ async function postWithRotation(body) {
             return await axios.post(urlFor(KEYS[i]), body);
         } catch (err) {
             lastErr = err;
-            const isQuotaError = err.response?.data?.error?.code === 429;
-            if (!isQuotaError) throw err;
+            if (!estQuotaDepasse(err)) throw err;
             if (i < KEYS.length - 1) console.warn(`⏳ Clé Gemini #${i + 1} en quota dépassé, bascule sur la clé #${i + 2}...`);
         }
     }
@@ -404,7 +420,7 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
             text: textPart?.text || "SAMII n'a pas su répondre, réessaie autrement.",
         };
     } catch (err) {
-        const isQuotaError = err.response?.data?.error?.code === 429;
+        const isQuotaError = estQuotaDepasse(err);
         // "UNAVAILABLE" = Google dit lui-même que c'est un pic de charge
         // temporaire ("usually temporary") — pas un problème de clé/quota.
         // Sans ce cas, chaque pic basculait directement sur Groq, qui se
