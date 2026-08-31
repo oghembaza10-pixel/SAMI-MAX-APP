@@ -61,26 +61,65 @@ function estCleMorte(err) {
     return /API key not valid|API_KEY_INVALID|api key expired|passed credential/i.test(message);
 }
 
+// ON NE REPART PLUS DE LA PREMIÈRE CLÉ À CHAQUE FOIS.
+//
+// Sur les dix-sept clés en service, la n°1 était en quota dépassé et
+// annonçait elle-même « Please retry in 46.9s ». Or la boucle recommençait
+// systématiquement à l'indice 0 : CHAQUE requête, pendant ces 47 secondes,
+// commençait par un aller-retour vers une clé dont on savait déjà qu'elle
+// répondrait non. Sur une connexion depuis Douala, c'est une seconde perdue
+// avant que SAMII ne commence seulement à réfléchir — à chaque message.
+//
+// Le curseur retient donc où l'on s'est arrêté : la requête suivante
+// démarre sur la clé qui vient de répondre, et les clés saturées passent
+// naturellement derrière. La liste est toujours parcourue EN ENTIER (on
+// boucle sur la longueur), donc rien n'est jamais sauté — on change juste
+// le point de départ.
+//
+// Volontairement en mémoire, sans expiration : au redémarrage on repart de
+// la première, ce qui est correct puisqu'on ne sait plus rien. Une table de
+// quotas persistée serait une base de données à tenir à jour pour économiser
+// un aller-retour — le remède coûterait plus cher que le mal.
+let depart = 0;
+
+// Les clés payantes ne deviennent JAMAIS le point de départ.
+//
+// Sans cette règle, le curseur ci-dessus se retournerait contre nous : le
+// jour où toutes les gratuites saturent, on bascule sur la payante — elle
+// répond, elle devient le point de départ, et elle le RESTE. Le quota
+// gratuit revient une minute plus tard, personne ne le voit, et on paie
+// chaque message jusqu'au prochain redéploiement. Une clé sans plafond ne
+// dit jamais non : c'est à nous de ne pas nous y installer.
+const PAYANTES = new Set(CONFIG.GEMINI.PAYANTES || []);
+
 // Essaie chaque clé Gemini disponible tour à tour : une clé saturée (429) ou
 // morte (400/403 sur la clé) passe la main à la suivante. Toute autre erreur
 // remonte tout de suite — changer de clé n'y changerait rien.
 async function postWithRotation(body) {
     let lastErr;
-    for (let i = 0; i < KEYS.length; i++) {
+    for (let n = 0; n < KEYS.length; n++) {
+        const i = (depart + n) % KEYS.length;
         try {
-            return await axios.post(urlFor(KEYS[i]), body);
+            const reponse = await axios.post(urlFor(KEYS[i]), body);
+            // Celle-ci a répondu : c'est par elle qu'on commencera la
+            // prochaine fois, plutôt que par celles qu'on vient d'écarter.
+            // Sauf si elle est payante — on retourne alors au gratuit à la
+            // requête suivante, quitte à re-payer un aller-retour perdu.
+            if (!PAYANTES.has(KEYS[i])) depart = i;
+            else depart = 0;
+            return reponse;
         } catch (err) {
             lastErr = err;
             const saturee = estQuotaDepasse(err);
             const morte = estCleMorte(err);
             if (!saturee && !morte) throw err;
-            if (i < KEYS.length - 1) {
+            if (n < KEYS.length - 1) {
                 // La clé est identifiée par ses quatre derniers caractères :
                 // assez pour retrouver laquelle jeter dans la console Google,
                 // jamais assez pour que le journal livre un secret.
                 console.warn(`⏳ Clé Gemini #${i + 1} (…${String(KEYS[i]).slice(-4)}) ${
                     morte ? "INVALIDE — à retirer de Render" : "en quota dépassé"
-                }, bascule sur la clé #${i + 2}...`);
+                }, bascule sur la suivante...`);
             }
         }
     }

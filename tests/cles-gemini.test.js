@@ -78,10 +78,33 @@ Module.prototype.require = function (nom) {
     };
     return vraiRequire.apply(this, arguments);
 };
-delete require.cache[require.resolve(path.join(RACINE, "config.js"))];
-delete require.cache[require.resolve(path.join(RACINE, "services", "geminiService.js"))];
-const gemini = require(path.join(RACINE, "services", "geminiService.js"));
+// Le service garde en mémoire la clé sur laquelle il s'est arrêté (voir la
+// section 5). Pour les contrôles qui parlent de « la première clé essayée »,
+// il faut donc repartir d'un service NEUF — sinon le curseur d'un cas
+// précédent décale le suivant et le test mesure autre chose que ce qu'il dit.
+function chargerService() {
+    const vrai = Module.prototype.require;
+    Module.prototype.require = function (nom) {
+        if (nom === "axios") return {
+            post: async (url) => {
+                const cle = String(url).split("key=")[1];
+                APPELS.push(cle);
+                const suite = reponses.shift();
+                if (suite instanceof Error) throw suite;
+                return suite ?? { data: { candidates: [{ content: { parts: [{ text: "ok" }] } }] } };
+            },
+        };
+        return vrai.apply(this, arguments);
+    };
+    delete require.cache[require.resolve(path.join(RACINE, "config.js"))];
+    delete require.cache[require.resolve(path.join(RACINE, "services", "geminiService.js"))];
+    const service = require(path.join(RACINE, "services", "geminiService.js"));
+    Module.prototype.require = vrai;
+    return service;
+}
+
 Module.prototype.require = vraiRequire;
+let gemini = chargerService();
 
 const CONFIG = require(path.join(RACINE, "config.js"));
 
@@ -136,6 +159,7 @@ const CONFIG = require(path.join(RACINE, "config.js"));
 
     for (const [forme, description] of FORMES) {
         APPELS.length = 0;
+        gemini = chargerService();    // curseur remis à zéro : on parle bien de LA PREMIÈRE clé
         reponses = [erreur(forme)];   // la 1re clé sature, la 2e répondra
         try {
             await gemini.chat({ message: "bonjour", useTools: false });
@@ -165,6 +189,7 @@ const CONFIG = require(path.join(RACINE, "config.js"));
             "une clé désactivée (403)"],
     ]) {
         APPELS.length = 0;
+        gemini = chargerService();
         reponses = [erreur(forme)];
         try { await gemini.chat({ message: "bonjour", useTools: false }); } catch { /* peu importe */ }
         verifier(APPELS.includes(SECOURS_2),
@@ -177,6 +202,7 @@ const CONFIG = require(path.join(RACINE, "config.js"));
     // clés ne corrigerait rien, ferait dix-sept appels ratés au lieu d'un, et
     // masquerait notre bug derrière un faux problème de clés.
     APPELS.length = 0;
+    gemini = chargerService();
     reponses = [erreur({ status: 400, data: { error: { code: 400, message: "Invalid JSON payload received." } } })];
     try { await gemini.chat({ message: "bonjour", useTools: false }); } catch { /* attendu */ }
     verifier(!APPELS.includes(SECOURS_2),
@@ -184,6 +210,7 @@ const CONFIG = require(path.join(RACINE, "config.js"));
 
     // ── 5. Toutes les clés sont essayées avant d'abandonner ─────────────
     APPELS.length = 0;
+    gemini = chargerService();
     reponses = [
         erreur({ status: 429 }),
         erreur({ status: 429 }),
@@ -192,6 +219,74 @@ const CONFIG = require(path.join(RACINE, "config.js"));
     try { await gemini.chat({ message: "bonjour", useTools: false }); } catch { /* peu importe */ }
     verifier(APPELS.includes(SECOURS_3),
         "quand les deux premières clés sont épuisées, la troisième n'est jamais atteinte — la chaîne s'arrête à deux");
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 6. ON NE REPART PLUS DE LA CLÉ QU'ON SAIT SATURÉE
+    //
+    // Sur les dix-sept clés en service, la n°1 répondait 429 en annonçant
+    // elle-même « Please retry in 46.9s ». Or la boucle recommençait toujours
+    // à l'indice 0 : chaque requête, pendant ces 47 secondes, commençait par
+    // un aller-retour vers une clé dont on savait déjà qu'elle dirait non.
+    // Depuis Douala, c'est une seconde perdue avant que SAMII ne commence
+    // seulement à réfléchir — à chaque message.
+    // ══════════════════════════════════════════════════════════════════════
+    {
+        APPELS.length = 0;
+        gemini = chargerService();
+
+        // 1re requête : la clé #1 sature, la #2 répond.
+        reponses = [erreur({ status: 429 })];
+        await gemini.chat({ message: "un", useTools: false });
+        const premiere = [...APPELS];
+        verifier(premiere[0] === PRINCIPALE && premiere[1] === SECOURS_2,
+            `la première requête ne suit pas l'ordre attendu (${premiere.length} appel(s))`);
+
+        // 2e requête : plus rien ne doit toucher la clé saturée.
+        APPELS.length = 0;
+        reponses = [];
+        await gemini.chat({ message: "deux", useTools: false });
+        verifier(APPELS[0] === SECOURS_2,
+            "la requête suivante recommence par la clé qu'on vient de voir saturée — un aller-retour perdu à chaque message tant que son quota n'est pas revenu");
+        verifier(!APPELS.includes(PRINCIPALE),
+            "la clé saturée est encore contactée alors qu'une autre vient de répondre");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 7. LA CLÉ PAYANTE EST UN DERNIER RECOURS, PAS UN REFUGE
+    //
+    // « SAMII-API-Key, voici le nom de la clé PAYANTE. » « Après que le
+    // gratuit tombe en panne, on passe dessus. »
+    //
+    // Une clé payante n'a pas de plafond : elle répond toujours oui. C'est ce
+    // qui la rend dangereuse combinée au curseur ci-dessus — elle répond, elle
+    // devient le point de départ, et elle le RESTE. Le quota gratuit revient
+    // une minute plus tard, personne ne le voit, et on paie chaque message
+    // jusqu'au prochain redéploiement. Le gratuit dit non bruyamment ; une
+    // clé sans plafond ne dira jamais rien.
+    // ══════════════════════════════════════════════════════════════════════
+    {
+        const PAYANTE = process.env["SAMII-API-Key"];
+        verifier(CONFIG.GEMINI.PAYANTES.includes(PAYANTE),
+            "la clé payante n'est pas identifiée comme telle — rien n'empêchera le service de s'y installer");
+        verifier(TROUVEES[TROUVEES.length - 1] === PAYANTE,
+            "la clé payante n'est pas en dernier : elle sera facturée avant même que le gratuit ait servi");
+
+        APPELS.length = 0;
+        gemini = chargerService();
+
+        // Toutes les gratuites saturent : on doit finir sur la payante.
+        reponses = [erreur({ status: 429 }), erreur({ status: 429 }), erreur({ status: 429 })];
+        await gemini.chat({ message: "un", useTools: false });
+        verifier(APPELS[APPELS.length - 1] === PAYANTE,
+            "quand tout le gratuit est saturé, la clé payante n'est jamais atteinte — SAMII se tait alors qu'il y a de quoi répondre");
+
+        // Et la requête suivante RETOURNE au gratuit.
+        APPELS.length = 0;
+        reponses = [];
+        await gemini.chat({ message: "deux", useTools: false });
+        verifier(APPELS[0] === PRINCIPALE,
+            "après un passage sur la payante, SAMII y reste : le quota gratuit revient et on paie quand même, sans que rien ne le dise");
+    }
 
     if (echecs.length) {
         console.error(`❌ clés Gemini : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);

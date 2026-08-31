@@ -246,7 +246,20 @@ module.exports = {
         // accepté au passage : les noms de variables d'environnement n'en
         // portent normalement pas, mais Render en accepte, et une clé
         // valide refusée pour un tiret serait une panne pour rien.
-        API_KEYS: (() => {
+        // ── GRATUIT D'ABORD, PAYANT EN DERNIER ──────────────────────────
+        //
+        // « SAMII-API-Key, voici le nom de la clé PAYANTE. » « Après que le
+        // gratuit tombe en panne, on passe dessus. »
+        //
+        // Une clé payante n'a pas de plafond : elle répondra TOUJOURS oui.
+        // C'est précisément ce qui la rend dangereuse à mal placer — mise
+        // devant, ou même simplement retenue comme point de départ après un
+        // basculement, elle absorbe tout le trafic et la facture court sans
+        // que rien ne le signale. Le gratuit, lui, dit non bruyamment.
+        //
+        // Elle est donc marquée, rangée en dernier, et le service a
+        // l'interdiction de s'y installer (voir `depart` dans geminiService).
+        ...(() => {
             const nomme = (n) => /^(GEMINI|SAMII|GOOGLE)[-_]?.*(API)?[-_]?KEY/i.test(n)
                 && !/SECRET|WEBHOOK|CLIENT|OAUTH/i.test(n);
             // Une vraie clé Google fait ~39 caractères et commence par AIza.
@@ -262,22 +275,27 @@ module.exports = {
                 ...Array.from({ length: 19 }, (_, i) => `GEMINI_API_KEY_${i + 2}`),
             ];
             const vues = new Set();
-            const cles = [];
-            const ajouter = (v) => {
+            const gratuites = [];
+            const payantes = [];
+            const ajouter = (v, liste) => {
                 const c = String(v || "").trim();
                 if (!c || vues.has(c)) return;   // deux noms, une seule clé : on ne l'essaie pas deux fois
                 vues.add(c);
-                cles.push(c);
+                liste.push(c);
             };
 
-            for (const nom of attendus) if (ressemble(process.env[nom])) ajouter(process.env[nom]);
+            for (const nom of attendus) if (ressemble(process.env[nom])) ajouter(process.env[nom], gratuites);
             // Puis tout le reste, en fin de liste : une clé rangée sous un nom
-            // inattendu sert de secours, elle ne passe pas devant.
+            // inattendu est un dernier recours, elle ne passe jamais devant.
             for (const nom of Object.keys(process.env)) {
                 if (attendus.includes(nom)) continue;
-                if (nomme(nom) && ressemble(process.env[nom])) ajouter(process.env[nom]);
+                if (nomme(nom) && ressemble(process.env[nom])) ajouter(process.env[nom], payantes);
             }
-            return cles;
+            return {
+                API_KEYS: [...gratuites, ...payantes],
+                // Ce que le service ne doit PAS retenir comme point de départ.
+                PAYANTES: payantes,
+            };
         })(),
     },
 
