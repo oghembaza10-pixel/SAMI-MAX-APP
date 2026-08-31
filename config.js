@@ -231,10 +231,54 @@ module.exports = {
         // Rotation de clés : le plan gratuit Gemini plafonne à 20 req/min par clé.
         // GEMINI_API_KEY_2, _3, _4... (jusqu'à 20) sont des clés de secours facultatives —
         // dès qu'une clé tombe en quota (429), SAMII bascule automatiquement sur la suivante.
-        API_KEYS: [
-            process.env.GEMINI_API_KEY,
-            ...Array.from({ length: 19 }, (_, i) => process.env[`GEMINI_API_KEY_${i + 2}`]),
-        ].filter(Boolean),
+        //
+        // LE NOM NE DOIT PLUS ÊTRE UN PIÈGE.
+        //
+        // Une clé posée sur Render sous un nom que ce fichier ne lisait pas
+        // n'existait pas — sans erreur, sans ligne de journal, sans rien. On
+        // croyait avoir doublé le quota, et SAMII tombait quand même. C'est
+        // le genre de panne qui coûte des heures parce qu'il n'y a rien à
+        // regarder : tout va bien, sauf que la clé n'est nulle part.
+        //
+        // On arrête donc de deviner le nom : on RAMASSE toute variable dont
+        // le nom parle d'une clé Gemini. GEMINI_API_KEY_7, SAMII-API-Key,
+        // SAMII_API_KEY, GOOGLE_GEMINI_KEY — toutes entrent. Le tiret est
+        // accepté au passage : les noms de variables d'environnement n'en
+        // portent normalement pas, mais Render en accepte, et une clé
+        // valide refusée pour un tiret serait une panne pour rien.
+        API_KEYS: (() => {
+            const nomme = (n) => /^(GEMINI|SAMII|GOOGLE)[-_]?.*(API)?[-_]?KEY/i.test(n)
+                && !/SECRET|WEBHOOK|CLIENT|OAUTH/i.test(n);
+            // Une vraie clé Google fait ~39 caractères et commence par AIza.
+            // Ce contrôle évite de tirer sur une variable qui porte un nom
+            // approchant mais contient un identifiant, une URL ou un « true ».
+            const ressemble = (v) => typeof v === "string" && v.trim().length >= 20;
+
+            // Les noms attendus d'abord, DANS L'ORDRE : la principale reste
+            // la première essayée, donc le gratuit s'épuise avant qu'on passe
+            // sur la suivante — c'est la règle voulue.
+            const attendus = [
+                "GEMINI_API_KEY",
+                ...Array.from({ length: 19 }, (_, i) => `GEMINI_API_KEY_${i + 2}`),
+            ];
+            const vues = new Set();
+            const cles = [];
+            const ajouter = (v) => {
+                const c = String(v || "").trim();
+                if (!c || vues.has(c)) return;   // deux noms, une seule clé : on ne l'essaie pas deux fois
+                vues.add(c);
+                cles.push(c);
+            };
+
+            for (const nom of attendus) if (ressemble(process.env[nom])) ajouter(process.env[nom]);
+            // Puis tout le reste, en fin de liste : une clé rangée sous un nom
+            // inattendu sert de secours, elle ne passe pas devant.
+            for (const nom of Object.keys(process.env)) {
+                if (attendus.includes(nom)) continue;
+                if (nomme(nom) && ressemble(process.env[nom])) ajouter(process.env[nom]);
+            }
+            return cles;
+        })(),
     },
 
     // ==================================================

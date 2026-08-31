@@ -33,10 +33,37 @@ function estQuotaDepasse(err) {
         || err?.response?.data?.error?.status === "RESOURCE_EXHAUSTED";
 }
 
-// Essaie chaque clé Gemini disponible tour à tour : dès qu'une clé répond
-// 429 (quota dépassé), bascule sur la suivante. Une autre erreur (400, réseau...)
-// remonte immédiatement — inutile d'essayer les autres clés, ce ne serait pas un
-// problème de quota.
+// UNE CLÉ MORTE N'EST PAS UNE PANNE DE GEMINI.
+//
+// Sur dix-sept clés en service, neuf répondaient. Les huit autres avaient
+// été révoquées, supprimées de leur projet Google, ou leur projet fermé —
+// elles répondent 400 « API key not valid » ou 403.
+//
+// Or la rotation ne bougeait QUE sur un quota : toute autre erreur coupait
+// la boucle et partait droit sur le relais. Une clé morte en tête de liste
+// suffisait donc à ce que Gemini ne soit JAMAIS utilisé — pas une fois, à
+// aucune requête, quelles que soient les seize autres clés derrière. Avec
+// huit clés mortes sur dix-sept, la probabilité qu'une se retrouve devant
+// était énorme. C'est la panne de SAMII, bien plus que le quota.
+//
+// Une clé morte se saute donc comme une clé saturée. Ce qui remonte
+// vraiment, c'est ce qui ne se répare pas en changeant de clé : une
+// requête malformée, un modèle inconnu, une coupure réseau.
+function estCleMorte(err) {
+    const statut = err?.response?.status;
+    const message = String(err?.response?.data?.error?.message || "");
+    if (statut === 403) return true;                       // clé désactivée / API non activée
+    if (statut !== 400) return false;
+    // Un 400 n'est pas toujours une histoire de clé : ça peut être NOTRE
+    // requête. On ne saute que si Google parle explicitement de la clé,
+    // sinon on remonte l'erreur — la masquer ferait dix-sept appels ratés
+    // pour un bug qui est chez nous.
+    return /API key not valid|API_KEY_INVALID|api key expired|passed credential/i.test(message);
+}
+
+// Essaie chaque clé Gemini disponible tour à tour : une clé saturée (429) ou
+// morte (400/403 sur la clé) passe la main à la suivante. Toute autre erreur
+// remonte tout de suite — changer de clé n'y changerait rien.
 async function postWithRotation(body) {
     let lastErr;
     for (let i = 0; i < KEYS.length; i++) {
@@ -44,8 +71,17 @@ async function postWithRotation(body) {
             return await axios.post(urlFor(KEYS[i]), body);
         } catch (err) {
             lastErr = err;
-            if (!estQuotaDepasse(err)) throw err;
-            if (i < KEYS.length - 1) console.warn(`⏳ Clé Gemini #${i + 1} en quota dépassé, bascule sur la clé #${i + 2}...`);
+            const saturee = estQuotaDepasse(err);
+            const morte = estCleMorte(err);
+            if (!saturee && !morte) throw err;
+            if (i < KEYS.length - 1) {
+                // La clé est identifiée par ses quatre derniers caractères :
+                // assez pour retrouver laquelle jeter dans la console Google,
+                // jamais assez pour que le journal livre un secret.
+                console.warn(`⏳ Clé Gemini #${i + 1} (…${String(KEYS[i]).slice(-4)}) ${
+                    morte ? "INVALIDE — à retirer de Render" : "en quota dépassé"
+                }, bascule sur la clé #${i + 2}...`);
+            }
         }
     }
     throw lastErr;
