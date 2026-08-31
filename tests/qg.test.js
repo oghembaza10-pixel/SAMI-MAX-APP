@@ -117,6 +117,17 @@ function marque(html) {
         verifier(liens.includes("/settings"), `/c/${slug} : ses membres n'ont plus accès à leurs réglages`);
         verifier(liens.includes("/logout"), `/c/${slug} : ses membres ne peuvent plus se déconnecter`);
 
+        // ── PAS DE GRADES MILITAIRES DANS SON QG ─────────────────────────
+        // « Enlève les grades aussi, Soldat etc. » Le casque, « SOLDAT », la
+        // jauge qui se remplit vers « CAPORAL » : c'est notre jeu, et il
+        // trône en haut de chaque page du QG.
+        if (COM.grades === false) {
+            verifier(!/class="qg-grade-bar"/.test(html),
+                `/c/${slug} : la barre de grade (🪖 SOLDAT → CAPORAL) est toujours en haut de son QG`);
+            verifier(!/>SOLDAT</.test(html),
+                `/c/${slug} : « SOLDAT » s'affiche dans son QG`);
+        }
+
         // Le chemin du retour mène chez ELLE.
         verifier(liens.includes(`/c/${slug}`),
             `/c/${slug} : le lien « communauté » de son QG ne ramène pas chez elle`);

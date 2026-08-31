@@ -40,7 +40,10 @@ const Module = require("module");
 const vraiRequire = Module.prototype.require;
 const PUBLICATIONS = [{
     id: 1, auteur_id: "u2", prenom: "Marlyse", nom: "Kamga",
-    grade_actuel: "Créatrice", type_compte: "marchand", categorie: "formation",
+    // Un VRAI grade, pas un mot inventé : avec « Créatrice », le contrôle
+    // qui interdit les grades chez une partenaire ne trouvait jamais rien
+    // et disait oui même quand la page les réaffichait.
+    grade_actuel: "Soldat", type_compte: "marchand", categorie: "formation",
     contenu: "Ma formation est en ligne.", created_at: new Date(), epingle: false,
     nb_likes: 3, nb_commentaires: 1, jaime: false, apercu_commentaires: [],
 }];
@@ -53,7 +56,7 @@ Module.prototype.require = function (nom) {
         query: async (q, p) => {
             REQUETES.push({ sql: q, params: p || [] });
             if (/FROM publications p/.test(q)) return PUBLICATIONS;
-            if (/score_grade/.test(q)) return [{ id: "u2", prenom: "M", nom: "K", grade_actuel: "C", score_grade: 10, type_compte: "marchand" }];
+            if (/score_grade/.test(q)) return [{ id: "u2", prenom: "M", nom: "K", grade_actuel: "Caporal", score_grade: 10, type_compte: "marchand" }];
             if (/DISTINCT ON \(s\.auteur_id\)/.test(q)) return [{ auteur_id: "u9", prenom: "Ines", nom: "A", created_at: new Date(), vue: false }];
             if (/AS total FROM/.test(q)) return [{ total: 42 }];
             return [];
@@ -90,6 +93,38 @@ function rendre(slug, connecte) {
 // Une adresse qui ne fait naviguer personne : image, police, feuille.
 const RESSOURCE = /\.(png|jpe?g|svg|ico|webp|css|js|json|woff2?)($|\?)/i;
 
+// ── LES GRADES SONT À NOUS ──────────────────────────────────────────────
+//
+// « Enlève les grades aussi, Soldat etc. »
+//
+// « Soldat », « Caporal », le casque, la jauge qui se remplit vers le grade
+// suivant : c'est notre jeu, et il est militaire. Sur une communauté de
+// ressources numériques à Douala, ça n'évoque rien et ça détonne avec ce
+// qui s'y vend.
+//
+// Ce qu'on retire, c'est l'HABILLAGE. Les points continuent de se compter
+// en base et servent toujours à classer les membres les plus actifs — un
+// classement sans grade reste un classement.
+//
+// La liste est LUE dans public/js/qg.js, là où les grades sont vraiment
+// définis. Recopiée ici, elle se serait décorrélée au premier grade ajouté,
+// et le test aurait continué à dire oui.
+//
+// La comparaison respecte la CASSE, et c'est nécessaire : « Général » est un
+// grade, « salon général » est du français. Une première version, écrite en
+// insensible à la casse, accusait la page d'afficher un grade alors qu'elle
+// disait « Entrer dans le salon général ». Un grade s'affiche toujours avec
+// une majuscule — « Soldat » dans le fil, « SOLDAT » dans la barre du QG.
+const NOMS_DE_GRADE = [...require("fs")
+    .readFileSync(path.join(RACINE, "public", "js", "qg.js"), "utf8")
+    .matchAll(/\{\s*nom:\s*'([^']+)'\s*,\s*icon:/g)].map((m) => m[1]);
+if (NOMS_DE_GRADE.length < 3) {
+    console.error("❌ communauté : impossible de lire la liste des grades dans public/js/qg.js");
+    process.exit(1);
+}
+const MOTS_DE_GRADE = new RegExp(
+    "\\b(" + NOMS_DE_GRADE.flatMap((n) => [n, n.toUpperCase()]).join("|") + ")\\b");
+
 function liensSortants(html, slug) {
     const tous = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
     return [...new Set(tous)].filter((u) => {
@@ -124,6 +159,18 @@ function liensSortants(html, slug) {
 }
 
 (async () => {
+    // ── 0. CE QUI A ÉTÉ DEMANDÉ, ÉCRIT NOIR SUR BLANC ────────────────────
+    // « Enlève les grades aussi, Soldat etc. »
+    //
+    // Le contrôle plus bas respecte le choix de chaque communauté : si
+    // quelqu'un retire « grades: false » de sa configuration, ce contrôle
+    // se saute lui-même et ne dit rien. Il faut donc figer la DEMANDE, pas
+    // seulement sa mise en œuvre.
+    verifier(communautes.get("coindudigital").grades === false,
+        "« grades: false » a disparu de la configuration du Coin Du Digital — les grades militaires vont réapparaître chez elle");
+    verifier(communautes.get(communautes.DEFAUT).grades !== false,
+        "les grades ont été retirés de NOTRE communauté — ce n'est pas ce qui a été demandé");
+
     // ── 1. La communauté partenaire est close ────────────────────────────
     for (const slug of Object.keys(communautes.COMMUNAUTES)) {
         if (slug === communautes.DEFAUT) continue;
@@ -137,6 +184,19 @@ function liensSortants(html, slug) {
             const fuites = liensSortants(html, slug);
             verifier(fuites.length === 0,
                 `/c/${slug} (${connecte ? "connecté" : "visiteur"}) : ${fuites.length} lien(s) sortent de sa communauté — ${fuites.join(", ")}`);
+
+            // Aucun grade militaire, si sa communauté n'en veut pas. On
+            // retire les commentaires du gabarit : ils EXPLIQUENT le choix,
+            // et le mot « Soldat » y figure forcément.
+            if (communautes.get(slug).grades === false) {
+                const sansCommentaires = html
+                    .replace(/<!--[\s\S]*?-->/g, "")
+                    .replace(/\/\*[\s\S]*?\*\//g, "")
+                    .split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n");
+                const trouves = sansCommentaires.match(new RegExp(MOTS_DE_GRADE.source, "g")) || [];
+                verifier(trouves.length === 0,
+                    `/c/${slug} (${connecte ? "connecté" : "visiteur"}) : des grades s'affichent encore — ${[...new Set(trouves)].join(", ")}`);
+            }
 
             // Notre marque n'apparaît pas chez elle. On ignore les commentaires
             // et les scripts : c'est ce que LIT le visiteur qui compte.

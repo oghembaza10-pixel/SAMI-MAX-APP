@@ -19,6 +19,19 @@
 <% if (typeof vueAgence !== 'undefined' && vueAgence) { %>
 <a href="/agence" style="display:flex; align-items:center; gap:8px; background:rgba(0,217,255,.1); border-bottom:1px solid rgba(0,217,255,.25); color:#00d9ff; text-decoration:none; font-size:12.5px; font-weight:700; padding:9px 16px;">← Retour au QG Agence — vous visualisez cet espace en tant qu'agence</a>
 <% } %>
+<%#
+  La barre de grade — casque, SOLDAT, la jauge qui se remplit vers CAPORAL.
+  C'est notre jeu, et il est militaire. Sur une communauté de ressources
+  numériques, ça n'évoque rien et ça détonne avec ce qui s'y vend.
+
+  Le drapeau est une DÉCISION DE COMMUNAUTÉ, comme les modules : non
+  déclaré, on garde — donc rien ne change chez nous, ni chez quelqu'un qui
+  n'a rien demandé. C'est l'habillage qu'on retire, pas les points : ils
+  continuent de compter en base et servent à classer les membres actifs.
+%>
+<% const _avecGrades = !(typeof communaute !== "undefined" && communaute && communaute.grades === false)
+        && !(typeof COM !== "undefined" && COM && COM.grades === false); %>
+<% if (_avecGrades) { %>
 <div class="qg-grade-bar">
     <span class="qg-grade-bar__icon" id="grade-icon">🪖</span>
     <span class="qg-grade-bar__nom" id="grade-nom" data-i18n="grade.soldat">SOLDAT</span>
@@ -27,6 +40,7 @@
     </div>
     <span class="qg-grade-bar__next" id="grade-next" data-i18n="grade.next.caporal">→ CAPORAL</span>
 </div>
+<% } %>
 <div class="qg-shell">
     <%- include("partials/qg-nav", { actif: "affaires" }) %>
     <div class="qg-nav-overlay" id="qg-nav-overlay"></div>

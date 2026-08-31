@@ -84,6 +84,20 @@ const COMMUNAUTES = {
         // efface toute trace de notre marque. Une seule ligne à changer.
         assistant: "L'assistant",
         ecosysteme: false,
+        // ── PAS DE GRADES ICI ────────────────────────────────────────────
+        //
+        // « Enlève les grades aussi, Soldat etc. »
+        //
+        // « Soldat », « Caporal », la petite icône de casque, la barre qui
+        // se remplit vers le grade suivant : c'est NOTRE jeu, et il est
+        // militaire. Sur une communauté de ressources numériques à Douala,
+        // ça n'évoque rien — au mieux c'est décoratif, au pire ça détonne
+        // avec ce qu'elle vend.
+        //
+        // Les points continuent de se compter en base (ils servent à
+        // classer les membres les plus actifs). C'est l'HABILLAGE militaire
+        // qu'on retire, pas le classement.
+        grades: false,
         // ── Le partage ───────────────────────────────────────────────────
         // Sur une vente faite chez elle, la plateforme prend `taux`, et cette
         // commission se partage : `partPartenaire` pour elle, le reste pour

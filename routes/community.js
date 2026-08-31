@@ -463,6 +463,12 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     // l'administratrice de CETTE communauté. Ce n'est qu'un affichage — la
     // route refait le contrôle, parce que cacher un bouton n'a jamais
     // empêché personne d'envoyer la requête.
+    // Les grades sont une décision de communauté : notre jeu militaire
+    // (Soldat, Caporal, la barre qui se remplit) n'a rien à faire chez une
+    // partenaire qui vend des formations. « grades » non déclaré = on garde,
+    // pour que rien ne change chez nous ni chez qui n'a rien demandé.
+    const avecGrades = COM.grades !== false;
+
     const estSien = (p) => Boolean(
         connecte && p.auteur_id && String(p.auteur_id) === String(req.session?.userId));
 
@@ -514,8 +520,18 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
 
     const feedHtml = publications.length ? publications.map(p => {
         const nomAuteur = escapeHtml(`${p.prenom||"Membre"} ${p.nom||""}`.trim());
-        const grade = escapeHtml(p.grade_actuel||"Soldat");
         const isMarchand = p.type_compte === "marchand";
+        // Sans les grades, la pastille dit ce qui est UTILE à savoir sur
+        // la personne : est-ce qu'elle vend ici. « 🏪 Soldat » n'apprenait
+        // rien ; « 🏪 Boutique » dit à qui on peut acheter.
+        //
+        // Déclaré APRÈS isMarchand, et pas avant : une constante lue avant
+        // sa déclaration lève une ReferenceError, et ici ça aurait mis toute
+        // sa page en erreur 500. Trouvé en rendant la page, pas en la
+        // relisant.
+        const grade = avecGrades
+            ? escapeHtml(p.grade_actuel || "Soldat")
+            : (isMarchand ? "Boutique" : "Membre");
         const cat = catInfo(p.categorie);
         const commentairesHtml = p.apercu_commentaires.map(c => `
             <div class="comment-item"><div class="comment-avatar">${initiales(c.prenom,c.nom)}</div>
@@ -559,7 +575,7 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
 
     const classementHtml = classement.length ? classement.map((u,i) => `
         <${COM.ecosysteme ? `a class="rank-item" href="/vitrine/${encodeURIComponent(u.id)}"` : `div class="rank-item"`}><span class="rank-num rank-${i+1}">${i+1}</span><div class="rank-avatar">${initiales(u.prenom,u.nom)}</div>
-        <div class="rank-info"><strong>${escapeHtml(`${u.prenom||"Membre"} ${u.nom||""}`)}</strong><span>${escapeHtml(u.grade_actuel||"Soldat")} · ${u.score_grade||0} pts</span></div></${COM.ecosysteme ? "a" : "div"}>`).join("") : `<p class="rank-empty">Le classement se remplira bientôt.</p>`;
+        <div class="rank-info"><strong>${escapeHtml(`${u.prenom||"Membre"} ${u.nom||""}`)}</strong><span>${avecGrades ? `${escapeHtml(u.grade_actuel||"Soldat")} · ${u.score_grade||0} pts` : (u.type_compte === "marchand" ? "Boutique" : "Membre")}</span></div></${COM.ecosysteme ? "a" : "div"}>`).join("") : `<p class="rank-empty">Le classement se remplira bientôt.</p>`;
 
     res.send(`<!DOCTYPE html>
 <html lang="fr">
