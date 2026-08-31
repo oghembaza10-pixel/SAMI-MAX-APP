@@ -126,35 +126,27 @@ const MOTS_DE_GRADE = new RegExp(
     "\\b(" + NOMS_DE_GRADE.flatMap((n) => [n, n.toUpperCase()]).join("|") + ")\\b");
 
 function liensSortants(html, slug) {
+    // ── LA PORTE EST LA SEULE DÉFINITION DE « CE QUI EST À ELLE » ────────
+    //
+    // Ce garde tenait sa propre liste d'exceptions : /qg, /client-qg,
+    // /settings, /discussions, /logout… et il fallait l'allonger à chaque
+    // fois qu'on lui donnait quelque chose. Deux listes qui disent la même
+    // chose finissent toujours par se contredire — et c'est la plus laxiste
+    // qui gagne, en silence.
+    //
+    // On demande donc au code qui décide : config/modules-qg. Si la porte
+    // laisse passer cette adresse sur son service, ce n'est pas une fuite ;
+    // si elle la referme, c'en est une, et le lien ne devrait pas être
+    // affiché — sinon on clique et on rebondit.
+    const modulesQg = require(path.join(RACINE, "config", "modules-qg"));
+    const regles = modulesQg.cheminsAutorises(communautes.get(slug));
     const tous = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
     return [...new Set(tous)].filter((u) => {
         if (u.startsWith("#") || u.startsWith("mailto:") || u.startsWith("http")) return false;
         if (RESSOURCE.test(u)) return false;
-        if (u.startsWith(`/c/${slug}`)) return false;
         // Les portes d'entrée d'un compte, à condition de porter le retour.
         if (/^\/(register|login)\?c=/.test(u)) return false;
-        // ── LA RÈGLE A ÉVOLUÉ, ET C'EST ASSUMÉ ──────────────────────────
-        // À l'origine, sa communauté vivait DANS notre site : tout ce qui
-        // sortait de /c/<slug> l'emmenait chez nous, donc tout devait rester
-        // dedans. Elle a maintenant son propre service, et ces pages-là
-        // portent SA marque quand elles y sont servies — son espace
-        // marchand, son espace client, ses réglages. Les lui interdire
-        // reviendrait à lui interdire sa propre boutique.
-        //
-        // Ce qui reste interdit, c'est NOTRE catalogue : marketplace,
-        // academy, arsenal, coffre, hub, developpeurs, apps, et notre
-        // communauté. Ces pages n'ont pas été converties et affichent
-        // toujours « OG · TECHNOLOGY ».
-        if (/^\/(qg|client-qg|settings|discussions)(\/|$|#|\?)/.test(u)) return false;
-        // Sortir de son compte n'est pas sortir de sa communauté. Il n'y
-        // avait AUCUN moyen de se déconnecter sur cette page — ni ici, ni
-        // dans l'en-tête. Sur un téléphone qu'on prête, ce qui est courant,
-        // c'est le compte de quelqu'un d'autre qu'on garde ouvert.
-        //
-        // /logout ne rend pas de page : il vide la session et renvoie à
-        // l'accueil. Aucune marque à fuiter.
-        if (u === "/logout") return false;
-        return true;
+        return !modulesQg.chemineAutorise(u, regles);
     });
 }
 

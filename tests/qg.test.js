@@ -280,7 +280,7 @@ function marque(html) {
         const liens = liensNav(html);
         verifier(!/OG · TECHNOLOGY/.test(html),
             `/c/${slug} : « OG · TECHNOLOGY » est écrit sur la page de SON assistant`);
-        for (const interdit of ["/marketplace", "/academy", "/arsenal", "/coffre", "/community", "/hub"]) {
+        for (const interdit of ["/academy", "/arsenal", "/coffre", "/community", "/hub"]) {
             verifier(!liens.includes(interdit),
                 `/c/${slug} : « ${interdit} » est dans la colonne de la page de son assistant`);
         }
@@ -327,7 +327,7 @@ function marque(html) {
         for (const slug of Object.keys(communautes.COMMUNAUTES)) {
             if (slug === communautes.DEFAUT) continue;
             const liens = liensBarre(await rendreBarre(slug, viaLeService));
-            for (const interdit of ["/hub", "/marketplace", "/academy", "/community", "/arsenal"]) {
+            for (const interdit of ["/hub", "/academy", "/community", "/arsenal"]) {
                 verifier(!liens.includes(interdit),
                     `/c/${slug} : « ${interdit} » est dans la barre de « Connecter mes outils » (${commentPasse}) — le module qu'on lui a laissé lui sert le sommaire de tout le reste`);
             }
@@ -339,6 +339,126 @@ function marque(html) {
     }
     verifier(!/og\.png/.test(await rendreBarre("coindudigital", true)),
         "notre logo est affiché en haut de la barre sur son service");
+
+    // ── LA MARKETPLACE, OUVERTE MAIS SANS L'ALGÉRIE ──────────────────────
+    //
+    // « On va relâcher la Marketplace pour Inès. Mais tu enlèves ce qui est
+    // algérien, genre local. Tu laisses juste Local, et on ne veut pas
+    // savoir si c'est algérien ou camerounais. »
+    //
+    // Un drapeau algérien sur une communauté camerounaise dit à ses membres
+    // qu'ils sont sur le site de quelqu'un d'autre. Et mettre un drapeau
+    // camerounais ferait la même erreur dans l'autre sens : elle vend aussi
+    // hors du Cameroun. « Local » sans pays, c'est ce qui est près de chez
+    // soi, où que ce soit.
+    // Déclarée ici : le bloc de la porte, qui définit PARTENAIRE et regles,
+    // vient plus bas dans ce fichier.
+    const ELLE = communautes.get("coindudigital");
+    const sesRegles = modulesQg.cheminsAutorises(ELLE);
+    verifier(modulesQg.autorises(ELLE).some((m) => m.id === "marketplace"),
+        "la Marketplace n'est plus donnée au Coin Du Digital — c'est pourtant ce qui a été demandé");
+    verifier(modulesQg.chemineAutorise("/marketplace", sesRegles) &&
+             modulesQg.chemineAutorise("/marketplace/publier", sesRegles),
+        "la Marketplace est dans ses modules mais la porte la referme");
+    verifier(!modulesQg.MINIMAL.includes("marketplace"),
+        "la Marketplace a été ajoutée à MINIMAL — la prochaine partenaire hériterait d'une décision prise pour Inès seule");
+
+    const mk = ELLE.marketplace || {};
+    verifier(typeof mk.local === "string" && !/🇩🇿|Algér/i.test(mk.local),
+        `l'espace local de sa Marketplace s'appelle « ${mk.local} » — il ne doit nommer aucun pays`);
+    verifier(!/🇨🇲|Cameroun/i.test(mk.local || ""),
+        "l'espace local nomme le Cameroun — « on ne veut pas savoir si c'est algérien ou camerounais »");
+    verifier(Array.isArray(mk.conversions) && mk.conversions.length > 0
+        && !mk.conversions.includes("DZD") && !mk.conversions.includes("MAD"),
+        `les prix de sa Marketplace se convertissent en ${JSON.stringify(mk.conversions)} — le dinar algérien et le dirham ne lui parlent pas`);
+
+    // Le franc CFA doit être connu du convertisseur, sinon la conversion
+    // rend le montant en euros sans le dire et le prix devient faux.
+    const devises = require(path.join(RACINE, "services", "devises"));
+    for (const d of mk.conversions || []) {
+        verifier(Math.abs(devises.depuisEUR(1, d) - 655.957) < 0.01,
+            `1 € ne fait pas 655,957 ${d} — la parité du franc CFA est fixée par accord, ce n'est pas un taux de marché`);
+    }
+
+    // ── SA MARKETPLACE EST VIDE, ET CLOISONNÉE ──────────────────────────
+    //
+    // « Tu lui mets une Marketplace VIDE, rattachée aux comptes des membres
+    // et à leur profil. Tu enlèves ce qui est à nous : les fournisseurs. »
+    //
+    // La table `annonces` n'avait AUCUNE notion de communauté. Sa
+    // Marketplace aurait donc affiché nos 203 annonces — produits CJ,
+    // fournisseurs importés, annonces de tous les marchands. C'est la même
+    // fuite que le fil, les discussions et le classement : elle revient à
+    // chaque table qu'on n'a pas encore visitée, parce qu'une table sans
+    // colonne `communaute` est GLOBALE par défaut.
+    // On INTERROGE la route au lieu de relire son texte : la requête
+    // principale assemble son WHERE dans un tableau (clauses.join), donc le
+    // mot « communaute » n'apparaît nulle part dans la chaîne SQL. Une
+    // relecture de source aurait crié à tort — et, pire, se serait tue le
+    // jour où quelqu'un aurait assemblé un filtre absent de la même façon.
+    const REQ_MK = [];
+    const Module = require("module");
+    const vraiRequire = Module.prototype.require;
+    Module.prototype.require = function (nom) {
+        if (nom === "../services/db") return {
+            query: async (q, p) => { REQ_MK.push({ sql: q, params: p || [] }); return []; },
+        };
+        if (nom === "../services/journalService") return { ecrire: async () => {} };
+        if (nom === "../services/gradeService") return { ajouterPoints: async () => {} };
+        if (nom === "../services/chargily") return {};
+        return vraiRequire.apply(this, arguments);
+    };
+    delete require.cache[require.resolve(path.join(RACINE, "routes", "marketplace.js"))];
+    const routeurMk = require(path.join(RACINE, "routes", "marketplace.js"));
+    Module.prototype.require = vraiRequire;
+
+    async function ouvrirMarketplace(slug) {
+        REQ_MK.length = 0;
+        const couche = routeurMk.stack.find((c) => c.route && c.route.path === "/" && c.route.methods.get);
+        await new Promise((resolve) => {
+            const req = { query: {}, params: {}, session: { loggedIn: true, userId: "u1", email: "u@x.cm" } };
+            const res = {
+                locals: { COM: communautes.get(slug) },
+                status() { return this; }, type() { return this; },
+                send: resolve, json: resolve, redirect: () => resolve(), render: () => resolve(),
+            };
+            let i = 0;
+            const suite = () => { const h = couche.route.stack[i++]?.handle; if (h) h(req, res, suite); else resolve(); };
+            suite();
+        });
+        return REQ_MK.filter((r) => /FROM annonces/i.test(r.sql));
+    }
+
+    const sesLectures = await ouvrirMarketplace("coindudigital");
+    verifier(sesLectures.length > 0, "la Marketplace ne lit plus aucune annonce");
+    for (const r of sesLectures) {
+        verifier(/communaute/.test(r.sql),
+            `la Marketplace lit les annonces sans filtrer par communauté — les 203 nôtres s'afficheraient chez elle : ${r.sql.replace(/\s+/g, " ").trim().slice(0, 100)}`);
+        verifier(r.params.includes("coindudigital"),
+            `la Marketplace filtre, mais pas sur SA communauté (${JSON.stringify(r.params)})`);
+    }
+    const nosLectures = await ouvrirMarketplace(communautes.DEFAUT);
+    for (const r of nosLectures) {
+        verifier(r.params.includes(communautes.DEFAUT),
+            "sur notre service, la Marketplace ne lit plus nos propres annonces");
+    }
+
+    // Les fournisseurs et l'import sont à nous.
+    verifier(ELLE.marketplace?.fournisseurs === false,
+        "les fournisseurs (Import International, régions, catalogue CJ) sont de nouveau proposés chez elle — ce sont NOS accords, pas les siens");
+    verifier(communautes.get(communautes.DEFAUT).marketplace?.fournisseurs !== false,
+        "les fournisseurs ont disparu de NOTRE Marketplace");
+
+    // La barre du bas suit ses modules : sur un téléphone, c'est la
+    // navigation principale, celle qu'on a sous le pouce.
+    const { mobileNav } = require(path.join(RACINE, "views", "partials", "mobileNav"));
+    const barreElle = mobileNav("/marketplace", ELLE, { userId: "u1" });
+    for (const interdit of ["/arsenal", "/academy", "/coffre"]) {
+        verifier(!barreElle.includes(`href="${interdit}"`),
+            `la barre du bas affiche « ${interdit} » sur son service — on appuie, on rebondit`);
+    }
+    verifier(mobileNav("/marketplace", communautes.get(communautes.DEFAUT)).includes('href="/arsenal"'),
+        "la barre du bas de la maison a perdu l'Arsenal");
 
     // ── L'OUBLI DOIT TOMBER DU CÔTÉ SÛR ──────────────────────────────────
     // Les tests ci-dessus prouvent que la colonne est juste quand la route
@@ -361,7 +481,7 @@ function marque(html) {
     for (const slug of Object.keys(communautes.COMMUNAUTES)) {
         if (slug === communautes.DEFAUT) continue;
         const liens = liensNav(await rendreSansCommunaute(slug));
-        for (const interdit of ["/marketplace", "/arsenal", "/community", "/hub"]) {
+        for (const interdit of ["/arsenal", "/community", "/hub"]) {
             verifier(!liens.includes(interdit),
                 `/c/${slug} : une route qui oublie de passer la communauté rend « ${interdit} » sur SON domaine — l'oubli doit tomber du côté sûr`);
         }
@@ -386,7 +506,7 @@ function marque(html) {
         "la maison s'est mise à filtrer ses propres adresses — ce garde ne doit rien changer chez nous");
 
     // ── Ce qui doit rester fermé ─────────────────────────────────────────
-    for (const notre of ["/hub", "/marketplace", "/marketplace/produit/42", "/academy",
+    for (const notre of ["/hub", "/academy",
                          "/arsenal", "/coffre", "/parrainage", "/billing", "/cartes",
                          "/agence", "/apps", "/developpeurs", "/api/v1", "/api/v1/produits",
                          "/api-docs", "/community", "/stories", "/drivers", "/livreur",
@@ -404,6 +524,8 @@ function marque(html) {
     // L'autre moitié du travail, et la plus facile à oublier : une porte
     // trop fermée casse son application sans que rien ne le dise.
     for (const sien of ["/qg", "/workspace/create", "/connect/tools", "/connect/whatsapp",
+                        // « On va relâcher la Marketplace pour Inès. »
+                        "/marketplace", "/marketplace/publier", "/marketplace/produit/42",
                         "/discussions", "/discussions/12", "/samii", "/samii/griot",
                         "/automatisations", "/vitrine/u1", "/settings", "/profile",
                         "/c/coindudigital", "/c/coindudigital/inscription",
@@ -488,7 +610,9 @@ function marque(html) {
         "/auth/woocommerce/callback": true, "/auth/woocommerce/return": true,
         "/connect/woocommerce": true, "/webhook/woocommerce": true,
         // à nous
-        "/hub": false, "/marketplace": false, "/academy": false, "/arsenal": false,
+        "/hub": false, "/academy": false, "/arsenal": false,
+        // Ouverte pour Inès : « on va relâcher la Marketplace ».
+        "/marketplace": true,
         "/coffre": false, "/parrainage": false, "/billing": false, "/cartes": false,
         "/agence": false, "/apps": false, "/developpeurs": false, "/api/v1": false,
         "/api-docs": false, "/community": false, "/stories": false, "/drivers": false,

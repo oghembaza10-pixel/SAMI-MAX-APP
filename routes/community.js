@@ -1175,7 +1175,12 @@ ${enTeteFiltre}
   <span class="bulle-halo"></span><i data-lucide="bot"></i>
 </button>
 
-${COM.ecosysteme ? mobileNav("/community") : ""}
+${
+  // Elle était simplement supprimée chez une partenaire : ses membres se
+  // retrouvaient sans aucune navigation en bas de l'écran, là où le pouce
+  // la cherche. Elle suit maintenant ses modules à elle.
+  mobileNav(communautes.accueil(COM), COM, { userId: req.session?.userId })
+}
 <script>
 if (typeof lucide!=="undefined") lucide.createIcons();
 
@@ -1648,7 +1653,11 @@ function sharePost(id){const url=window.location.origin+PAGE_COM+"#post-"+id;if(
 // "produit"/"service" — n'utilise que des données réelles (contenu de la
 // publication, pays du profil) ; laisse prix/catégorie vides plutôt que
 // d'inventer une valeur (affichage "Sur devis"/"Autre" déjà géré ailleurs).
-async function diffuserVersMarketplace(pub, userId, nomAuteur) {
+// `slugCom` est passé par l'appelant, qui seul connaît la communauté :
+// cette fonction tourne APRÈS la réponse HTTP et n'a donc plus accès à
+// `res`. C'est la même leçon que pour la réponse de l'assistant — une
+// fonction de fond qui lit `res` plante au moment exact où elle sert.
+async function diffuserVersMarketplace(pub, userId, nomAuteur, slugCom) {
     const titre = (pub.contenu || "Service proposé").slice(0, 180) || "Service proposé";
     const categorieAnnonce = pub.categorie === "service" ? "service-autre" : null;
 
@@ -1659,9 +1668,12 @@ async function diffuserVersMarketplace(pub, userId, nomAuteur) {
     } catch { /* pays optionnel */ }
 
     const rows = await db.query(
-        `INSERT INTO annonces (titre, categorie, prix, pays, description, photo_url, vendeur_id, vendeur_nom, type_vendeur, actif)
-         VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,'particulier',true) RETURNING id`,
-        [titre, categorieAnnonce, pays, pub.contenu || "", pub.image_url || null, userId, nomAuteur]
+        // La communauté voyage avec l'annonce : une vente publiée chez elle
+        // reste chez elle. Sans ça, ses membres remplissaient NOTRE
+        // Marketplace sans le savoir, et ne retrouvaient jamais leur annonce.
+        `INSERT INTO annonces (titre, categorie, prix, pays, description, photo_url, vendeur_id, vendeur_nom, type_vendeur, actif, communaute)
+         VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,'particulier',true,$8) RETURNING id`,
+        [titre, categorieAnnonce, pays, pub.contenu || "", pub.image_url || null, userId, nomAuteur, slugCom]
     );
     return rows[0]?.id || null;
 }
@@ -1709,7 +1721,7 @@ router.post("/publier", requireAuth, async (req, res) => {
                     let resultatId = null;
                     try {
                         if (module === "marketplace" && ["produit","service"].includes(cat)) {
-                            resultatId = await diffuserVersMarketplace(pub, req.session.userId, nomAuteur);
+                            resultatId = await diffuserVersMarketplace(pub, req.session.userId, nomAuteur, communauteDeLAction(req, res).slug);
                         } else if (module === "academy" && cat === "formation") {
                             resultatId = await diffuserVersAcademy(pub, req.session.userId, nomAuteur);
                         }
@@ -1784,12 +1796,12 @@ router.post("/vendre", requireAuth, async (req, res) => {
         const rows = await db.query(
             `INSERT INTO annonces
                (titre, categorie, prix, devise, pays, description, photo_url,
-                vendeur_id, vendeur_nom, type_vendeur, section_vitrine, actif)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'particulier',$10,true)
+                vendeur_id, vendeur_nom, type_vendeur, section_vitrine, actif, communaute)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'particulier',$10,true,$11)
              RETURNING id`,
             [titre, TYPES_VENTE[type].categorie, String(prix), devise, pays,
              description, photo || null, req.session.userId, nomAuteur,
-             TYPES_VENTE[type].label],
+             TYPES_VENTE[type].label, communauteDeLAction(req, res).slug],
         );
         const annonceId = rows[0]?.id || null;
 

@@ -7,6 +7,7 @@ const express = require("express");
 const crypto = require("crypto");
 const router = express.Router();
 const db = require("../services/db");
+const communautes = require("../config/communautes");
 const journalService = require("../services/journalService");
 const gradeService = require("../services/gradeService");
 const chargily = require("../services/chargily");
@@ -24,7 +25,7 @@ const verificationService = require("../services/verificationService");
 // Retourne du HTML déjà échappé — ne PAS ré-échapper le résultat, contrairement
 // aux autres champs texte libre de ce fichier (le prix vient d'un formulaire
 // marchand, donc potentiellement non fiable dans la branche "pas de match").
-function prixAvecConversion(prixStr) {
+function prixAvecConversion(prixStr, COM) {
     const brut = prixStr || "Sur devis";
     const match = String(brut).match(/^([\d.,]+)\s*(EUR|€)$/i);
     if (!match) return escapeHtml(brut);
@@ -32,9 +33,17 @@ function prixAvecConversion(prixStr) {
     const montantEur = Number(match[1].replace(",", ".")) || 0;
     if (!montantEur) return escapeHtml(brut);
 
-    const dzd = devises.formater(devises.depuisEUR(montantEur, "DZD"), "DZD");
-    const mad = devises.formater(devises.depuisEUR(montantEur, "MAD"), "MAD");
-    return `${montantEur.toFixed(2)}€ <span class="prix-converti">≈ ${escapeHtml(dzd)} / ${escapeHtml(mad)}</span>`;
+    // Les devises montrées à côté de l'euro dépendent de qui regarde. Le
+    // dinar algérien et le dirham marocain ne disent rien à quelqu'un de
+    // Douala : le prix devient un chiffre qu'il faut aller convertir
+    // ailleurs, donc un produit qu'on n'achète pas.
+    //
+    // Non déclaré = notre couple d'origine, pour que rien ne bouge chez nous.
+    const cibles = COM?.marketplace?.conversions || ["DZD", "MAD"];
+    const converties = cibles
+        .map((d) => escapeHtml(devises.formater(devises.depuisEUR(montantEur, d), d)))
+        .join(" / ");
+    return `${montantEur.toFixed(2)}€ <span class="prix-converti">≈ ${converties}</span>`;
 }
 const { mobileNav } = require("../views/partials/mobileNav");
 
@@ -210,6 +219,10 @@ const SERVICES_CHIPS_HTML = (SERVICES_RAPIDES || [])
 // simplement regarder.
 router.get("/", async (req, res) => {
 
+    // La communauté du SERVICE : elle décide du libellé de l'espace
+    // local et des devises affichées à côté de l'euro.
+    const COM = res.locals?.COM || null;
+
     const {
         categorie,
         recherche,
@@ -269,6 +282,23 @@ router.get("/", async (req, res) => {
         const params = [];
 
         let index = 1;
+
+        // ── CHACUNE SA MARKETPLACE ──────────────────────────────────────
+        //
+        // Sans ce filtre, sa Marketplace affiche nos 203 annonces : les
+        // produits CJ, les fournisseurs importés, et les annonces de tous
+        // les marchands de la plateforme. C'est la même fuite que le fil,
+        // les discussions et le classement — elle revient à chaque table
+        // qu'on n'a pas encore visitée, parce qu'une table sans notion de
+        // communauté est globale par défaut.
+        //
+        // Le COALESCE range tout l'existant chez nous, ce qui est exact :
+        // tout ce qui a été publié jusqu'ici l'a été chez nous. Sa
+        // Marketplace démarre donc vide, et se remplit de ce que SES
+        // membres y mettent.
+        clauses.push(`COALESCE(communaute, $${index}) = $${index + 1}`);
+        params.push(communautes.DEFAUT, (COM || communautes.get(communautes.DEFAUT)).slug);
+        index += 2;
 
         if (
             categorie &&
@@ -498,7 +528,13 @@ router.get("/", async (req, res) => {
 
     // "local" a désormais son propre onglet d'espace (voir espaceRowHtml) —
     // on ne le répète pas dans les chips de sous-filtre international.
-    const regionChipsHtml =
+    // Déclaré AVANT son premier usage : une constante lue avant sa
+    // déclaration lève une ReferenceError, et toute la Marketplace serait
+    // tombée en 500. C'est la troisième fois de la session que je fais
+    // cette faute ; elle ne se voit qu'au rendu, jamais à la relecture.
+    const avecFournisseurs = COM?.marketplace?.fournisseurs !== false;
+
+    const regionChipsHtml = !avecFournisseurs ? "" :
         (SUPPLIER_REGIONS || [])
             .filter(r => r.id !== "local")
             .map(r => `
@@ -512,7 +548,20 @@ router.get("/", async (req, res) => {
             `)
             .join("");
 
-    const espaceRowHtml = `
+    // ── LES ESPACES : LOCAL / IMPORT ────────────────────────────────────
+    //
+    // « Tu enlèves ce qui est à nous : les fournisseurs. »
+    //
+    // « Import International » est notre catalogue de dropshipping — nos
+    // accords, nos partenaires, nos 203 annonces. Chez elle, il ferait deux
+    // promesses fausses : que ces produits sont disponibles, et qu'elle a un
+    // réseau d'import qu'elle n'a pas.
+    //
+    // Et sans import, la distinction « Local / Import » n'a plus d'objet :
+    // tout ce qui est chez elle EST local. On ne laisse donc pas un onglet
+    // « Local » seul à côté de « Tout voir » — deux boutons qui donnent la
+    // même liste, c'est une hésitation qu'on impose au visiteur pour rien.
+    const espaceRowHtml = avecFournisseurs ? `
         <a
             href="/marketplace"
             class="espace-tab ${!espace ? "active" : ""}"
@@ -524,7 +573,7 @@ router.get("/", async (req, res) => {
             href="/marketplace?espace=local"
             class="espace-tab espace-tab--local ${espace === "local" ? "active" : ""}"
         >
-            🇩🇿 Algérie &amp; Local
+            ${escapeHtml(COM?.marketplace?.local || "🇩🇿 Algérie & Local")}
         </a>
         <a
             href="/marketplace?espace=international"
@@ -532,7 +581,7 @@ router.get("/", async (req, res) => {
         >
             🌍 Import International
         </a>
-    `;
+    ` : "";
 
     // ----------------------------------------------------------------------
     // CARDS
@@ -559,7 +608,7 @@ router.get("/", async (req, res) => {
                         )
                     );
 
-                const prix = prixAvecConversion(a.prix);
+                const prix = prixAvecConversion(a.prix, COM);
 
                 const paysP =
                     escapeHtml(
@@ -840,7 +889,9 @@ router.get("/", async (req, res) => {
 >
 
 <title>
-    ${escapeHtml(MARKETPLACE_NAME || "SAMII Marketplace")}
+    ${escapeHtml(COM && !COM.ecosysteme
+        ? `Marketplace — ${COM.nom}`
+        : (MARKETPLACE_NAME || "SAMII Marketplace"))}
 </title>
 ${pixelPurchaseHtml}
 <link rel="manifest" href="/manifest.json">
@@ -876,6 +927,15 @@ ${pixelPurchaseHtml}
     --gold-border: rgba(217,179,108,.35);
     --silver-bright: #C6CAD2;
 }
+
+/* Sa palette, posée APRÈS la nôtre : à spécificité égale, la dernière
+   règle gagne. Une communauté qui ne déclare pas de couleurs garde
+   exactement l'apparence d'origine — donc rien ne change chez nous.
+
+   La Marketplace était en noir et or, comme le QG. Sur une marque blanche
+   et noire, c'était la seule page qui restait sombre : on voyait qu'on
+   changeait de maison en y entrant. */
+:root { ${COM ? communautes.styleDe(COM) : ""} }
 
 /* Mode jour — le bouton lune/soleil (#themeBtn) est déjà câblé en JS
    (toggle de body.light + persistance localStorage), mais aucune règle
@@ -964,8 +1024,12 @@ select {
         1px solid
         rgba(var(--blue-rgb),.12);
 
-    background:
-        rgba(3,7,13,.94);
+    /* Le fond était écrit en dur (rgba(3,7,13,.94)) : sur une marque
+       blanche, la colonne restait noire à côté d'un contenu clair, et on
+       voyait qu'on changeait de maison en entrant. En passant par le jeton,
+       elle suit la communauté — et ne change rien chez nous, où --panel EST
+       ce noir-là. */
+    background: var(--panel);
 
     backdrop-filter: blur(20px);
 
@@ -2466,76 +2530,57 @@ nav {
         <div class="brand">
 
             <div class="brand-mark">
-                OG
+                ${escapeHtml(COM && !COM.ecosysteme ? COM.sigle : "OG")}
             </div>
 
             <div class="brand-name">
-                SAMII
+                ${escapeHtml(COM && !COM.ecosysteme ? COM.marque : "SAMII")}
                 <span>
-                    TECHNOLOGY
+                    ${escapeHtml(COM && !COM.ecosysteme ? COM.marqueSuite : "TECHNOLOGY")}
                 </span>
             </div>
 
         </div>
 
         <nav>
-
-            <a
-                href="/qg"
-                class="side-link"
-            >
-                <i data-lucide="layout-dashboard"></i>
-                <span data-i18n="marketplace.nav.qg">QG Central</span>
-            </a>
-
-            <a
-                href="/marketplace"
-                class="side-link active"
-            >
-                <i data-lucide="store"></i>
-                <span data-i18n="marketplace.nav.marketplace">Marketplace</span>
-            </a>
-
-            <a
-                href="/community"
-                class="side-link"
-            >
-                <i data-lucide="users"></i>
-                <span data-i18n="marketplace.nav.community">Communauté</span>
-            </a>
-
-            <a
-                href="/marketplace/services-demandes"
-                class="side-link"
-            >
-                <i data-lucide="concierge-bell"></i>
-                <span data-i18n="marketplace.nav.services">Demandes de service</span>
-            </a>
-
-            <a
-                href="/discussions"
-                class="side-link"
-            >
-                <i data-lucide="message-circle"></i>
-                <span data-i18n="marketplace.nav.discussions">Discussions</span>
-            </a>
-
-            <a
-                href="/arsenal"
-                class="side-link"
-            >
-                <i data-lucide="shield-check"></i>
-                <span data-i18n="marketplace.nav.arsenal">Arsenal</span>
-            </a>
-
-            <a
-                href="/academy"
-                class="side-link"
-            >
-                <i data-lucide="graduation-cap"></i>
-                <span data-i18n="marketplace.nav.academy">Academy</span>
-            </a>
-
+${(() => {
+    // ── SA COLONNE, PAS LA NÔTRE ────────────────────────────────────────
+    //
+    // Ces sept entrées étaient écrites en dur : QG Central, Marketplace,
+    // Communauté, Demandes de service, Discussions, Arsenal, Academy.
+    // Sur son service, la Marketplace qu'on vient de lui ouvrir servait
+    // donc le sommaire de tout ce qu'on ne lui a PAS donné — et les liens
+    // menaient à des pages que la porte referme, donc à des rebonds.
+    //
+    // Même registre que partout ailleurs : config/modules-qg.js, filtré par
+    // ce à quoi sa communauté a droit.
+    const modulesQg = require("../config/modules-qg");
+    const laCom = COM || communautes.get(communautes.DEFAUT);
+    const ctx = { userId: req.session?.userId || "" };
+    const LIBELLES = { affaires: "QG Central", communaute: "Communauté" };
+    const entrees = modulesQg.autorises(laCom)
+        .filter((m) => ["affaires", "marketplace", "communaute", "academy", "discussions", "arsenal", "assistant"].includes(m.id));
+    // « Demandes de service » appartient à la Marketplace : elle suit donc
+    // le module marketplace, et disparaît avec lui.
+    const extra = entrees.some((m) => m.id === "marketplace")
+        ? [{ href: "/marketplace/services-demandes", icone: "concierge-bell", libelle: "Demandes de service" }]
+        : [];
+    const lignes = entrees.map((m) => ({
+        href: modulesQg.lien(m, laCom, ctx),
+        icone: m.icone,
+        libelle: m.id === "assistant" ? laCom.assistant : (LIBELLES[m.id] || m.libelle),
+        cle: m.cle,
+    }));
+    // On insère les demandes de service juste après la Marketplace, là où
+    // elles étaient.
+    const i = lignes.findIndex((l) => l.href === "/marketplace");
+    if (i >= 0) lignes.splice(i + 1, 0, ...extra.map((e) => ({ ...e, cle: "" })));
+    return lignes.map((l) => `
+            <a href="${l.href}" class="side-link">
+                <i data-lucide="${escapeHtml(l.icone)}"></i>
+                <span${l.cle ? ` data-i18n="${escapeHtml(l.cle)}"` : ""}>${escapeHtml(l.libelle)}</span>
+            </a>`).join("");
+})()}
         </nav>
 
     </div>
@@ -2544,13 +2589,17 @@ nav {
 
         <div class="side-ai">
             <span class="side-ai-dot"></span>
-            <span data-i18n="marketplace.sideAi">SAMII ENGINE ACTIVE</span>
+            ${COM && !COM.ecosysteme
+                ? `<span>${escapeHtml(COM.moteur)}</span>`
+                : `<span data-i18n="marketplace.sideAi">SAMII ENGINE ACTIVE</span>`}
         </div>
 
-        <div class="side-text" data-i18n="marketplace.sideText">
+        ${COM && !COM.ecosysteme
+            ? `<div class="side-text">${escapeHtml(COM.moteurTexte)}</div>`
+            : `<div class="side-text" data-i18n="marketplace.sideText">
             Marketplace synchronisée avec
             l'écosystème SAMII.
-        </div>
+        </div>`}
 
         <div class="og-lang-switch">
             <span data-lang-btn="fr">FR</span>
@@ -2572,10 +2621,10 @@ nav {
         <div class="mobile-brand">
 
             <div class="brand-mark">
-                OG
+                ${escapeHtml(COM && !COM.ecosysteme ? COM.sigle : "OG")}
             </div>
 
-            SAMII
+            ${escapeHtml(COM && !COM.ecosysteme ? COM.marque : "SAMII")}
 
         </div>
 
@@ -2690,7 +2739,7 @@ nav {
 
     <div class="more-filters-panel" id="moreFiltersPanel" ${region ? "" : `style="display:none;"`}>
 
-        ${espace !== "local" ? `
+        ${(espace !== "local" && avecFournisseurs) ? `
         <div class="region-row">
 
             <a
@@ -2726,7 +2775,9 @@ nav {
 
                 <span class="live-dot"></span>
 
-                <span data-i18n="marketplace.live">SAMII MARKETPLACE · LIVE</span>
+                ${COM && !COM.ecosysteme
+                    ? `<span>${escapeHtml(COM.marque)} ${escapeHtml(COM.marqueSuite)} · MARKETPLACE</span>`
+                    : `<span data-i18n="marketplace.live">SAMII MARKETPLACE · LIVE</span>`}
 
             </div>
 
@@ -2775,8 +2826,9 @@ nav {
                             </h3>
 
                             <p style="color:var(--muted);font-size:12px;margin:8px 0 16px;">
-                                Vélo, chambre à louer, service, produit d'un grossiste algérien...
-                                sois le premier à publier ici.
+                                ${escapeHtml(COM?.marketplace?.exemples
+                                    || "Vélo, chambre à louer, service, produit d'un grossiste algérien…")}
+                                Sois le premier à publier ici.
                             </p>
 
                             <a
@@ -2824,7 +2876,7 @@ nav {
 
         <div class="cart-title">
             Mon panier
-            <span>SAMII</span>
+            <span>${escapeHtml(COM && !COM.ecosysteme ? COM.marque : "SAMII")}</span>
         </div>
 
         <button
@@ -2882,7 +2934,7 @@ nav {
     id="toast"
 ></div>
 
-${mobileNav("/marketplace")}
+${mobileNav("/marketplace", COM, { userId: req.session?.userId })}
 
 <script>
 
@@ -3987,6 +4039,10 @@ router.get(
     requireAuth,
     async (req, res) => {
 
+    // La communauté du SERVICE : elle décide du libellé de l'espace
+    // local et des devises affichées à côté de l'euro.
+    const COM = res.locals?.COM || null;
+
         let annonces = [];
 
         try {
@@ -4004,6 +4060,10 @@ router.get(
                     WHERE
                         f.user_id = $1
 
+                    -- Ses favoris chez elle : sans ça, un produit mis de
+                    -- côté chez nous réapparaît dans sa liste à elle.
+                    AND COALESCE(a.communaute, $2) = $3
+
                     AND
                         a.actif = true
 
@@ -4011,7 +4071,9 @@ router.get(
                         f.created_at DESC
                     `,
                     [
-                        req.session.userId
+                        req.session.userId,
+                        communautes.DEFAUT,
+                        (COM || communautes.get(communautes.DEFAUT)).slug
                     ]
                 );
 
@@ -4092,7 +4154,7 @@ router.get(
                                         <div
                                             class="product-price"
                                         >
-                                            ${prixAvecConversion(annonce.prix)}
+                                            ${prixAvecConversion(annonce.prix, COM)}
                                         </div>
 
                                     </div>
@@ -4340,6 +4402,10 @@ router.get(
     "/produit/:id",
     async (req, res) => {
 
+    // La communauté du SERVICE : elle décide du libellé de l'espace
+    // local et des devises affichées à côté de l'euro.
+    const COM = res.locals?.COM || null;
+
         const id =
             parseInt(
                 req.params.id,
@@ -4372,8 +4438,16 @@ router.get(
                         id = $1
                     AND
                         actif = true
+                    -- Ouvrir une fiche produit se faisait sur le seul
+                    -- numéro. Les identifiants se suivent : un membre de
+                    -- chez elle voyait n'importe lequel de nos 203 produits
+                    -- en tapant un entier, sur SON domaine et sous SA
+                    -- marque. C'est la porte qu'on a déjà fermée deux fois
+                    -- ailleurs, et qui reste ouverte tant qu'on ne l'a pas
+                    -- fermée table par table.
+                    AND COALESCE(communaute, $2) = $3
                     `,
-                    [id]
+                    [id, communautes.DEFAUT, (COM || communautes.get(communautes.DEFAUT)).slug]
                 );
 
             produit =
@@ -4809,7 +4883,7 @@ button {
     </h1>
 
     <div class="price" id="pd-price">
-        ${prixAvecConversion(produit.prix)}
+        ${prixAvecConversion(produit.prix, COM)}
     </div>
 
     ${variantes.length ? `
@@ -6425,7 +6499,12 @@ router.post(
                     vendeur_id,
                     vendeur_nom,
                     type_vendeur,
-                    actif
+                    actif,
+                    -- Là où l'annonce est publiée. Sans cette colonne, tout
+                    -- ce que ses membres mettent en vente atterrit chez
+                    -- nous : invisible pour eux, et visible par tout le
+                    -- monde chez nous.
+                    communaute
                 )
                 VALUES
                 (
@@ -6441,7 +6520,8 @@ router.post(
                     $10,
                     $11,
                     'marchand',
-                    true
+                    true,
+                    $12
                 )
                 `,
                 [
@@ -6455,7 +6535,8 @@ router.post(
                     photosJsonDb,
                     cleanRegion || null,
                     vendeurId,
-                    nom
+                    nom,
+                    (res.locals?.COM || communautes.get(communautes.DEFAUT)).slug
                 ]
             );
 
@@ -6491,9 +6572,16 @@ router.get("/mes-produits", requireAuth, async (req, res) => {
     let mesAnnonces = [];
     try {
         mesAnnonces = await db.query(
+            // Une même personne peut vendre chez nous ET chez elle : on ne
+            // lui montre ici que les annonces de la boutique où elle se
+            // trouve, sinon elle modifie sans le voir une annonce publiée
+            // ailleurs.
             `SELECT id, titre, prix, photo_url, photos_urls, section_vitrine, en_vedette, actif
-             FROM annonces WHERE vendeur_id = $1 ORDER BY created_at DESC LIMIT 200`,
-            [req.session.userId]
+             FROM annonces
+             WHERE vendeur_id = $1 AND COALESCE(communaute, $2) = $3
+             ORDER BY created_at DESC LIMIT 200`,
+            [req.session.userId, communautes.DEFAUT,
+             (res.locals?.COM || communautes.get(communautes.DEFAUT)).slug]
         );
     } catch (err) {
         console.error("❌ GET /marketplace/mes-produits :", err.message);

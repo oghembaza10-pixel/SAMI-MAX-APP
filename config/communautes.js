@@ -112,7 +112,54 @@ const COMMUNAUTES = {
         // ce qui n'est pas nommé ici n'existe pas pour eux. Un module ajouté
         // demain au QG de la maison n'apparaîtra pas chez elle tant que
         // personne ne l'aura décidé — l'oubli va dans le sens sûr.
-        qg: { modules: require("./modules-qg").MINIMAL },
+        // MINIMAL + la Marketplace : « On va relâcher la Marketplace pour
+        // Inès. » On l'ajoute ICI et pas dans MINIMAL, qui reste la dotation
+        // prudente d'une nouvelle partenaire — sinon la prochaine hériterait
+        // d'une décision prise pour elle seule, sans que personne l'ait
+        // voulu.
+        qg: { modules: [...require("./modules-qg").MINIMAL, "marketplace"] },
+        // ── LA MARKETPLACE, SANS L'ALGÉRIE ───────────────────────────────
+        //
+        // « Tu enlèves ce qui est algérien, genre local. Tu laisses juste
+        // Local, et on ne veut pas savoir si c'est algérien ou camerounais. »
+        //
+        // L'onglet s'appelait « 🇩🇿 Algérie & Local ». Un drapeau algérien
+        // sur une communauté camerounaise, ça dit à ses membres qu'ils sont
+        // sur le site de quelqu'un d'autre. Et mettre un drapeau camerounais
+        // à la place ferait la même erreur dans l'autre sens : elle vend
+        // aussi hors du Cameroun.
+        //
+        // « Local » sans pays : ce qui se trouve près de chez soi, où que ce
+        // soit. Tout ce qu'il y a DEDANS ne bouge pas — photo, description,
+        // prix, catégories, la publication d'annonce.
+        marketplace: {
+            local: "📍 Local",
+            // Les devises montrées à côté de l'euro sur un produit importé.
+            // Le franc CFA d'Afrique centrale, celui de Douala — pas le
+            // dinar algérien ni le dirham marocain, qui ne lui parlent pas.
+            conversions: ["XAF"],
+            // Ce qu'on cite en exemple quand l'espace local est vide. La
+            // version d'origine parlait d'« un grossiste algérien ».
+            exemples: "Une formation, un service, un produit d'un fournisseur près de chez toi…",
+            // ── PAS DE FOURNISSEURS, PAS D'IMPORT ────────────────────────
+            //
+            // « Tu lui mets une Marketplace VIDE, sans nos colonnes,
+            // rattachée aux comptes des membres et à leur profil. Tu enlèves
+            // ce qui est à nous : les fournisseurs et les modules comme
+            // Arsenal. »
+            //
+            // « Import International » est notre catalogue de dropshipping :
+            // les 203 annonces CJ, les régions de fournisseurs, les
+            // partenaires. Ce sont NOS accords commerciaux, pas les siens.
+            // Les lui montrer ferait deux promesses fausses à la fois : que
+            // ces produits sont disponibles chez elle, et qu'elle a un réseau
+            // d'import qu'elle n'a pas.
+            //
+            // Sa Marketplace, c'est ce que SES membres y mettent. Elle
+            // démarre vide, et c'est normal — une place de marché se
+            // remplit par ceux qui y vendent.
+            fournisseurs: false,
+        },
         // ── QUI ADMINISTRE CETTE COMMUNAUTÉ ──────────────────────────────
         // Son espace d'administration — membres, publications, ventes, et
         // ce qui lui revient — s'ouvre à cette adresse-là.
@@ -159,6 +206,29 @@ const COMMUNAUTES = {
             // Un gris à peine perceptible garde du relief sans couleur.
             "--halo-1": "rgba(0,0,0,.028)",
             "--halo-2": "rgba(0,0,0,.022)",
+            // ── LES JETONS DE LA MARKETPLACE ─────────────────────────────
+            //
+            // Cette page utilise seize jetons, pas les treize des autres.
+            // Sans les trois derniers, sa Marketplace s'affichait à moitié :
+            // le contenu en blanc, mais la colonne de gauche et l'en-tête
+            // restés noirs — on voyait qu'on changeait de maison en entrant.
+            //
+            // Les variantes « -rgb » servent aux transparences (rgba(var(…),
+            // .5)) : sans elles, la valeur est invalide et la règle est
+            // ignorée en silence, donc un fond disparaît sans erreur.
+            "--bg-rgb": "247,246,243",
+            "--panel-rgb": "255,255,255",
+            "--blue-rgb": "17,17,20",
+            // Le second niveau de surface : les creux, les champs, les
+            // en-têtes de tableau. Entre le fond et les panneaux.
+            "--panel2": "#EFEDE8",
+            "--blue2": "#3A3A42",
+            // L'or, réservé aux prix. Décliné pour les fonds et bordures
+            // qui l'accompagnent.
+            "--gold-bright": "#A8801E",
+            "--gold-soft": "rgba(138,106,24,.09)",
+            "--gold-border": "rgba(138,106,24,.28)",
+            "--silver-bright": "#6A6A72",
         },
         hote: null,
         // SON application, installée depuis un lien — pas depuis un magasin.

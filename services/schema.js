@@ -337,6 +337,29 @@ const BLOCS = [
         ],
     },
     {
+        // ── CHAQUE MARKETPLACE CHEZ SOI ──────────────────────────────────
+        //
+        // « Tu lui mets une marketplace VIDE, sans nos colonnes, rattachée
+        // aux comptes des membres et à leur profil. »
+        //
+        // La table `annonces` n'avait aucune notion de communauté. Sa
+        // Marketplace aurait donc affiché nos 43 produits CJ, nos
+        // fournisseurs importés et les annonces de tous les marchands de la
+        // plateforme — exactement la fuite qu'on a déjà corrigée sur le fil,
+        // les discussions et le classement, et qui revient à chaque table
+        // qu'on n'a pas encore visitée.
+        //
+        // Le DEFAUT vaut 'samii' et le COALESCE range tout l'existant chez
+        // nous : c'est exact, tout ce qui a été publié jusqu'ici l'a été
+        // chez nous. Sa Marketplace démarre donc vide, et se remplit de ce
+        // que SES membres y mettent.
+        nom: "annonces.communaute",
+        sql: [
+            `ALTER TABLE annonces ADD COLUMN IF NOT EXISTS communaute TEXT DEFAULT 'samii'`,
+            `CREATE INDEX IF NOT EXISTS idx_annonces_communaute ON annonces (communaute, actif, created_at DESC)`,
+        ],
+    },
+    {
         // ── LES PUBLICATIONS MISES DE CÔTÉ ───────────────────────────────
         //
         // « Un bouton pour enregistrer. » Quelqu'un voit passer une astuce, un
