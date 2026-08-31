@@ -121,6 +121,31 @@ function appeler(chemin, corps = {}, session = {}, params = {}) {
             `${chemin} a modifié la base pour quelqu'un qui n'en a pas le droit`);
     }
 
+    // ── MODIFIER ET SUPPRIMER NE SE DONNENT PAS AUX MÊMES PERSONNES ─────
+    //
+    // « Quand quelqu'un publie, il doit être le seul à modifier ses
+    // publications. » La remarque vient de sa communauté, et elle avait
+    // raison contre moi : j'avais donné les deux droits à l'administratrice.
+    //
+    // Retirer une publication, c'est de la modération — elle en a besoin, et
+    // le membre voit que son texte a disparu. RÉÉCRIRE le texte de quelqu'un
+    // d'autre laisse des mots signés de son nom qu'il n'a jamais écrits, et
+    // il n'a aucun moyen de s'en apercevoir. Aucune modération ne vaut ça.
+    PUBLICATION = { id: 8, auteur_id: "u-un-membre", communaute: SLUG, contenu: "Ses mots à lui" };
+    REQUETES.length = 0;
+    const elleModifie = await appeler("/modifier/:id", { contenu: "des mots qui ne sont pas les siens" },
+        { email: COM.admin }, { id: "8" });
+    verifier(elleModifie.statusCode === 403,
+        "l'administratrice peut réécrire le texte d'un membre — il se retrouverait avec des mots signés de son nom qu'il n'a jamais écrits");
+    verifier(!REQUETES.find((q) => /UPDATE publications/i.test(q.sql)),
+        "le texte d'un membre a été réécrit par quelqu'un d'autre que lui");
+
+    // Elle garde en revanche le droit de RETIRER : c'est de la modération.
+    REQUETES.length = 0;
+    const elleSupprime = await appeler("/supprimer/:id", {}, { email: COM.admin }, { id: "8" });
+    verifier(elleSupprime.success === true,
+        "l'administratrice ne peut plus modérer sa propre communauté — elle doit pouvoir retirer une publication");
+
     // L'auteur, lui, passe.
     PUBLICATION = { id: 7, auteur_id: MOI, communaute: SLUG, contenu: "Mon texte" };
     REQUETES.length = 0;

@@ -463,10 +463,22 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
     // l'administratrice de CETTE communauté. Ce n'est qu'un affichage — la
     // route refait le contrôle, parce que cacher un bouton n'a jamais
     // empêché personne d'envoyer la requête.
-    const peutSupprimer = (p) => Boolean(
-        connecte && (
-            (p.auteur_id && String(p.auteur_id) === String(req.session?.userId)) ||
-            estAdmineDeChezElle));
+    const estSien = (p) => Boolean(
+        connecte && p.auteur_id && String(p.auteur_id) === String(req.session?.userId));
+
+    // MODIFIER ET SUPPRIMER NE SE DONNENT PAS AUX MÊMES PERSONNES.
+    //
+    // « Quand quelqu'un publie, il doit être le seul à modifier ses
+    // publications. » La remarque vient de sa communauté, et elle a raison
+    // contre moi : j'avais donné les deux droits à l'administratrice.
+    //
+    // Retirer une publication, c'est de la modération — elle en a besoin
+    // pour tenir sa communauté, et le membre voit que son texte a disparu.
+    // RÉÉCRIRE le texte de quelqu'un d'autre, c'est autre chose : ça laisse
+    // des mots signés de son nom qu'il n'a jamais écrits, et il n'a aucun
+    // moyen de s'en apercevoir. Aucune modération ne vaut ça.
+    const peutModifier = (p) => estSien(p);
+    const peutSupprimer = (p) => Boolean(estSien(p) || estAdmineDeChezElle);
 
     // Ce qu'on annonce en haut du fil quand il est filtré. Sans ça, « Mon
     // espace » sur un compte qui n'a rien publié ressemble à une communauté
@@ -531,8 +543,8 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
                 <button class="post-action-btn" type="button" onclick="toggleCommentBox(${p.id})"><i data-lucide="message-circle"></i> Commenter</button>
                 <button class="post-action-btn ${p.enregistre?"saved":""}" type="button" onclick="toggleEnregistrer(${p.id}, this)"><i data-lucide="bookmark"></i> <span>${p.enregistre?"Enregistré":"Enregistrer"}</span></button>
                 <button class="post-action-btn" type="button" onclick="sharePost(${p.id})"><i data-lucide="share-2"></i> Partager</button>
-                ${peutSupprimer(p) ? `<button class="post-action-btn post-action-btn--mien" type="button" onclick="modifierPost(${p.id})" title="Modifier"><i data-lucide="pencil"></i></button>
-                <button class="post-action-btn post-action-btn--danger" type="button" onclick="supprimerPost(${p.id})" title="Supprimer"><i data-lucide="trash-2"></i></button>` : ""}
+                ${peutModifier(p) ? `<button class="post-action-btn post-action-btn--mien" type="button" onclick="modifierPost(${p.id})" title="Modifier"><i data-lucide="pencil"></i></button>` : ""}
+                ${peutSupprimer(p) ? `<button class="post-action-btn post-action-btn--danger" type="button" onclick="supprimerPost(${p.id})" title="Supprimer"><i data-lucide="trash-2"></i></button>` : ""}
             </div>
             <div class="comments-preview">${commentairesHtml}</div>
             <div class="comment-box" id="comment-box-${p.id}" style="display:none;">
@@ -593,6 +605,39 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .icon-btn{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--border);border-radius:11px;color:var(--muted);}
 .icon-btn:hover{color:var(--blue);border-color:var(--blue);}
 .layout{display:grid;grid-template-columns:1fr;gap:24px;max-width:1300px;margin:0 auto;padding:26px 28px 90px;}
+/* ── LE FIL SUR DEUX COLONNES ──────────────────────────────────────
+   « Les publications doivent apparaître par deux et non par une dans
+   le fil d'actualité. » Une seule colonne sur un grand écran, ce sont
+   des cartes très larges avec beaucoup de vide autour, et il faut
+   faire défiler longtemps pour voir peu de choses.
+
+   Le seuil est à 760 px, pas plus bas : sous cette largeur, deux
+   colonnes donnent des cartes d'environ 180 px, où le texte se casse
+   à trois mots par ligne et où la zone de commentaire ne tient plus.
+   Sur un téléphone, une carte par ligne reste la bonne réponse — et
+   c'est là que sa communauté lit.
+
+   align-items:start : sans lui, les deux cartes d'une même ligne
+   s'étirent à la hauteur de la plus grande, et une publication d'une
+   ligne se retrouve avec un grand vide sous elle parce que sa voisine
+   porte une photo. */
+#feedContainer{display:grid;gap:14px;align-items:start;
+  /* auto-fill + minmax plutôt qu'un point de rupture sur la largeur de la
+     FENÊTRE : le fil vit entre deux colonnes latérales, donc la place dont
+     il dispose n'a rien à voir avec la taille de l'écran. Une règle en
+     « min-width:760px » donnait deux colonnes alors que la place réelle
+     n'en autorisait qu'une, et les cartes sortaient de l'écran à droite.
+     Ici, deux cartes apparaissent quand elles TIENNENT, une sinon — donc
+     une seule sur un téléphone, ce qui est la bonne réponse là-bas. */
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));}
+/* Sans min-width:0, un élément de grille refuse de descendre sous la
+   largeur de son contenu : une longue URL sans espace, et toute la colonne
+   déborde. C'est ce qui coupait la seconde carte. */
+#feedContainer > *{min-width:0;}
+.post-text{overflow-wrap:anywhere;}
+/* Le bandeau d'une sélection filtrée et la page vide tiennent toute la
+   largeur : ce sont des messages, pas des publications. */
+#feedContainer > .depart{grid-column:1 / -1;}
 @media (min-width:1100px){.layout{grid-template-columns:260px 1fr 280px;align-items:start;}}
 .col-side{display:none;} @media (min-width:1100px){.col-side{display:block;position:sticky;top:90px;}}
 .side-panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
@@ -752,7 +797,7 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .chat-bas button{padding:10px 15px;border-radius:10px;border:none;font-weight:700;font-size:12.5px;
   background:linear-gradient(135deg,var(--blue),var(--blue-2));color:var(--sur-accent);cursor:pointer;}
 @media(max-width:768px){.bulle{bottom:78px;right:14px;}.chat{bottom:142px;right:14px;}}
-.post-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+.post-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px;container-type:inline-size;}
 .post-card:hover{border-color:rgba(0,217,255,.3);}
 .post-head{display:flex;align-items:center;gap:11px;margin-bottom:12px;}
 .post-avatar{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:13px;font-weight:900;color:white;background:linear-gradient(135deg,var(--blue),var(--blue-2));flex-shrink:0;text-decoration:none;}
@@ -771,7 +816,11 @@ body.light .sidebar{background:rgba(247,251,254,.95);}
 .post-media{border-radius:14px;overflow:hidden;border:1px solid var(--border);margin-bottom:12px;}
 .post-media img,.post-media video{width:100%;max-height:420px;object-fit:cover;display:block;background:#000;}
 .post-stats{display:flex;gap:14px;font-size:11px;color:var(--muted);padding-bottom:10px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,.05);min-height:14px;}
-.post-actions{display:flex;gap:6px;margin-bottom:6px;}
+.post-actions{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+/* Cinq boutons dans une carte de 300 px : sans le retour à la ligne, le
+   dernier sortait du cadre. Le libellé disparaît quand la carte est
+   étroite — l'icône suffit, et une icône coupée ne sert à rien. */
+@container (max-width:340px){.post-action-btn span{display:none;}}
 .post-action-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--muted);font-size:11.5px;font-weight:700;}
 .post-action-btn svg{width:15px;height:15px;}
 .post-action-btn:hover{background:rgba(0,217,255,.06);color:var(--blue);}
@@ -1915,11 +1964,13 @@ router.post("/modifier/:id", requireAuth, async (req, res) => {
         // Mêmes droits que la suppression, et refaits ici : le bouton n'est
         // affiché qu'à qui de droit, mais un bouton caché n'empêche pas
         // d'envoyer la requête.
-        const estAuteur = pub.auteur_id && String(pub.auteur_id) === String(userId);
-        const estAdmine = Boolean(COM.admin && req.session?.email &&
-            String(req.session.email).trim().toLowerCase() === String(COM.admin).trim().toLowerCase());
-        if (!estAuteur && !estAdmine) {
-            return res.status(403).json({ success:false, error:"Cette publication n'est pas la tienne." });
+        // L'AUTEUR, ET PERSONNE D'AUTRE — pas même l'administratrice.
+        // Réécrire le texte de quelqu'un laisse des mots signés de son nom
+        // qu'il n'a jamais écrits, sans qu'il puisse s'en apercevoir. Elle
+        // peut retirer une publication (c'est de la modération, et ça se
+        // voit) ; elle ne peut pas en changer les mots.
+        if (!pub.auteur_id || String(pub.auteur_id) !== String(userId)) {
+            return res.status(403).json({ success:false, error:"Seul l'auteur peut modifier sa publication." });
         }
 
         await db.query(`UPDATE publications SET contenu = $1 WHERE id = $2`, [contenu, pub.id]);
