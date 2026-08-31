@@ -42,6 +42,14 @@ process.env["SAMII-API-Key"] = "cle-samii-AIzaXXXXXXXXXXXXXXXXX";
 process.env.GEMINI_WEBHOOK_SECRET = "secret-a-ne-pas-confondre-XXXXXX";
 process.env.GOOGLE_OAUTH_CLIENT_KEY = "391218285322-e6r6XXXXXXXXXXXX";
 process.env.SAMII_API_KEY_VIDE = "x";   // trop courte pour être une clé
+// LA VARIABLE D'UN AUTRE SERVICE. GOOGLE_API_KEY sert au Custom Search et à
+// YouTube. Un premier filtre trop large l'a ramassée comme clé Gemini : elle
+// est apparue en production comme une deuxième clé « payante », échouait à
+// chaque appel — son projet n'a pas l'API generativelanguage activée — et le
+// script de contrôle conseillait de la SUPPRIMER de Render. On aurait cassé
+// la recherche pour réparer Gemini.
+process.env.GOOGLE_API_KEY = "cle-custom-search-AIzaXXXXXXXXX";
+process.env.SAMII_API_TOKEN = "jeton-qui-nest-pas-une-cle-XXXXX";
 // LA MÊME CLÉ SOUS DEUX NOMS. C'est le cas le plus probable en vrai : on
 // renomme une variable sur Render et on oublie de supprimer l'ancienne, ou
 // on recolle la même clé deux fois. Sans dédoublonnage, elle est essayée
@@ -394,6 +402,24 @@ const CONFIG = require(path.join(RACINE, "config.js"));
         else process.env.COMMUNAUTE_PAR_DEFAUT = avant;
         delete require.cache[require.resolve(path.join(RACINE, "config.js"))];
     }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 10. ON NE REVENDIQUE PAS LA CLÉ D'UN AUTRE SERVICE
+    //
+    // Deviner large est utile pour TROUVER une clé, jamais pour en
+    // revendiquer une qui a déjà un propriétaire dans ce même fichier.
+    // ══════════════════════════════════════════════════════════════════════
+    for (const [valeur, nom, sert] of [
+        ["cle-custom-search-AIzaXXXXXXXXX", "GOOGLE_API_KEY", "au Custom Search et à YouTube"],
+        ["jeton-qui-nest-pas-une-cle-XXXXX", "SAMII_API_TOKEN", "à autre chose qu'à Gemini"],
+    ]) {
+        verifier(!CONFIG.GEMINI.API_KEYS.includes(valeur),
+            `${nom} sert ${sert} et se retrouve dans la rotation Gemini : elle échouera à chaque appel, et le script de contrôle conseillera de la supprimer`);
+        verifier(!CONFIG.GEMINI.PAYANTES.includes(valeur),
+            `${nom} est comptée comme une clé PAYANTE — elle fausse le décompte et le curseur`);
+    }
+    verifier(CONFIG.GEMINI.PAYANTES.length === 1,
+        `${CONFIG.GEMINI.PAYANTES.length} clés payantes détectées au lieu d'une seule — le filtre de noms ratisse encore trop large`);
 
     if (echecs.length) {
         console.error(`❌ clés Gemini : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);

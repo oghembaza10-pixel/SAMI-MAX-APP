@@ -107,8 +107,18 @@ async function main() {
     console.log(`${compte[VALIDE]} valide(s) · ${compte[QUOTA]} en quota · ${compte[INVALIDE]} à retirer · ${compte["indéterminé"]} indéterminée(s)`);
 
     if (aRetirer.length) {
-        console.log(`\n🧹 À supprimer de Render : ${aRetirer.join(", ")}`);
-        console.log(`   Le code les saute déjà, mais chacune coûte un aller-retour avant de passer la main.`);
+        // Ce conseil disait « à supprimer de Render », sec. Il a désigné
+        // GOOGLE_API_KEY — qui sert au Custom Search et à YouTube, et que ce
+        // script n'avait aucun titre à faire supprimer. Un outil de
+        // diagnostic qui donne un ordre doit dire ce qu'il ignore : il voit
+        // qu'une clé ne parle pas à Gemini, il ne voit pas à quoi d'autre
+        // elle sert.
+        console.log(`\n🧹 Ces clés ne répondent pas à Gemini : ${aRetirer.join(", ")}`);
+        console.log(`   Le code les saute déjà ; chacune coûte un aller-retour avant de passer la main.`);
+        console.log(`   AVANT DE SUPPRIMER : vérifie à quoi sert la variable. Une clé Google`);
+        console.log(`   peut être parfaitement valide pour un AUTRE service (Custom Search,`);
+        console.log(`   YouTube, Maps) et n'échouer ici que parce que l'API Gemini n'est pas`);
+        console.log(`   activée sur son projet. La retirer casserait ce service-là.`);
     }
 
     // ── CE QUI COMPTE VRAIMENT : COMBIEN DE COMPTEURS, PAS COMBIEN DE CLÉS ──

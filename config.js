@@ -260,8 +260,24 @@ module.exports = {
         // Elle est donc marquée, rangée en dernier, et le service a
         // l'interdiction de s'y installer (voir `depart` dans geminiService).
         ...(() => {
-            const nomme = (n) => /^(GEMINI|SAMII|GOOGLE)[-_]?.*(API)?[-_]?KEY/i.test(n)
-                && !/SECRET|WEBHOOK|CLIENT|OAUTH/i.test(n);
+            // « GOOGLE » a été retiré de ce filtre après l'avoir vu se
+            // retourner en production : GOOGLE_API_KEY, qui sert au Custom
+            // Search et à YouTube (voir le bloc GOOGLE plus haut), a été
+            // ramassée comme une clé Gemini. Elle apparaissait comme une
+            // deuxième clé « payante », échouait à chaque appel — son projet
+            // n'a pas l'API generativelanguage activée — et le script de
+            // contrôle allait jusqu'à conseiller de la SUPPRIMER de Render.
+            // On aurait cassé la recherche pour réparer Gemini.
+            //
+            // Le nom doit donc dire GEMINI ou SAMII. « GOOGLE_GEMINI_KEY »
+            // passe toujours, par GEMINI. Et les variables que ce fichier
+            // attribue déjà à un autre service sont exclues nommément :
+            // deviner large est utile pour trouver une clé, jamais pour en
+            // revendiquer une qui a déjà un propriétaire.
+            const RESERVEES = new Set(["GOOGLE_API_KEY"]);
+            const nomme = (n) => /^(GEMINI|SAMII)[-_]?.*(API)?[-_]?KEY/i.test(n)
+                && !RESERVEES.has(n.toUpperCase())
+                && !/SECRET|WEBHOOK|CLIENT|OAUTH|TOKEN/i.test(n);
             // Une vraie clé Google fait ~39 caractères et commence par AIza.
             // Ce contrôle évite de tirer sur une variable qui porte un nom
             // approchant mais contient un identifiant, une URL ou un « true ».
