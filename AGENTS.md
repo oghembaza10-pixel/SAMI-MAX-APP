@@ -142,6 +142,53 @@ commencer, `npm test` avant de pousser.
 
 ---
 
+## TU N'ES PAS SEUL SUR CE DÉPÔT
+
+Un autre assistant (Claude Code) travaille sur ce projet depuis des mois,
+en continu, avec le propriétaire. Le code que tu lis n'est pas un brouillon :
+chaque bizarrerie a une raison, et la plupart sont écrites juste au-dessus,
+en commentaire.
+
+**La règle, en une phrase : on demande avant de défaire.**
+
+Concrètement, tu DEMANDES au propriétaire avant de :
+
+- **supprimer ou réécrire du code qui marche** — surtout s'il porte un
+  commentaire expliquant *pourquoi* il est ainsi. Ce commentaire est la
+  trace d'une panne réelle. Le supprimer, c'est la reproduire ;
+- **toucher à la porte** (`index.js`), au registre des communautés
+  (`config/communautes.js`) ou aux modules (`config/modules-qg.js`) — ces
+  trois fichiers décident de ce qu'une partenaire voit. Une erreur ici ne
+  casse pas une page : elle montre notre marque et nos données à ses
+  membres ;
+- **retirer un filtre `communaute` d'une requête SQL** — même s'il a l'air
+  redondant. Il ne l'est jamais ;
+- **modifier un test qui échoue.** Un test rouge dit quelque chose. On
+  corrige le code, pas la mesure. Si le test est vraiment faux, on le dit
+  et on explique pourquoi ;
+- **changer le schéma de la base**, renommer une colonne, ou lancer une
+  migration. La base est en production, avec de vrais comptes dedans ;
+- **modifier `package.json`, ajouter une dépendance, ou changer une
+  variable d'environnement.**
+
+Ce que tu peux faire sans demander : lire, chercher, expliquer, proposer,
+et écrire du code neuf dans un fichier neuf.
+
+**Avant de commencer, toujours :** `git pull`, puis `npm test`. Si c'est
+déjà rouge avant que tu touches à quoi que ce soit, dis-le — ne construis
+pas par-dessus.
+
+**Avant de pousser, toujours :** `npm test` à nouveau. Et si tu as touché à
+une page, ouvre-la vraiment (voir « Faire tourner l'application pour de
+vrai ») : les tests ne rendent pas les pages, et trois bugs de ce projet
+n'étaient visibles qu'à l'écran.
+
+**Un seul de nous deux sur un même fichier à la fois.** Si tu vois un
+fichier modifié récemment sur `partner/coin-du-digital` ou `OG.LABO`,
+demande avant d'y entrer.
+
+---
+
 ## Ce qu'on ne fait jamais
 
 - **Coller une clé ou un jeton dans une conversation.** Une clé qui passe

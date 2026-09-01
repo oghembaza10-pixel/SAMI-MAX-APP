@@ -1,0 +1,45 @@
+---
+description: Règles de la maison SAMII OS — à respecter sur toute modification
+alwaysApply: true
+---
+
+# SAMII OS — lis AGENTS.md avant de coder
+
+Le fichier `AGENTS.md`, à la racine, contient les règles de ce dépôt.
+**Ouvre-le et lis-le en entier avant ta première modification.** Chaque
+règle vient d'une panne réelle en production, devant un client.
+
+## Le strict minimum, si tu ne lis rien d'autre
+
+1. **Tu n'es pas seul ici.** Un autre assistant travaille sur ce dépôt en
+   continu avec le propriétaire. Le code que tu lis n'est pas un brouillon.
+   **Demande avant de défaire quoi que ce soit qui marche déjà** — surtout
+   s'il y a un commentaire au-dessus expliquant pourquoi c'est ainsi.
+
+2. **C'est une plateforme en marque blanche.** Un même code sert notre
+   communauté (`samii`) et celle d'une partenaire (`coindudigital`, à
+   Douala). **Elle ne doit jamais voir notre marque, nos modules, nos
+   données.** La communauté vient de `res.locals.COM`, jamais du compte.
+
+3. **Toute lecture en base est filtrée par communauté.** Une table sans
+   `WHERE COALESCE(x.communaute, $defaut) = $slug` est globale : ses
+   membres voient nos données. Ne retire jamais ce filtre.
+
+4. **Ne touche pas à ces trois fichiers sans demander :** `index.js` (la
+   porte), `config/communautes.js`, `config/modules-qg.js`.
+
+5. **`npm test` avant de commencer ET avant de pousser.** 22 suites. Un
+   test rouge se corrige dans le code, jamais en modifiant le test.
+
+6. **Jamais de backtick dans un commentaire à l'intérieur d'un template
+   literal.** Ce piège a coûté huit pannes ici. Node signale l'erreur des
+   centaines de lignes plus loin.
+
+7. **Jamais de clé ou de jeton dans le code ni dans le chat.** Elles vivent
+   dans Render.
+
+## Branches
+
+- `OG.LABO` → **la principale**, celle que déploie la production
+- `partner/coin-du-digital` → le travail sur la communauté d'Inès
+- `main` → mort, vieux dépôt sans ancêtre commun. Ne pas l'utiliser.
