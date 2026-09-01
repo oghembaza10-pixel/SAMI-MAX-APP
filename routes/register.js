@@ -17,14 +17,7 @@ const workspaceService = require("../services/workspaceService");
 // « déclaré à côté de l'usage » de « pas déclaré du tout » — et c'est
 // exactement le mélange qui a fait planter GET /login.
 const communautes = require("../config/communautes");
-
-// Où renvoyer quelqu'un venu d'une communauté partenaire. Rien pour la
-// communauté maison : ses membres vont bien dans leur QG.
-function retourCommunaute(req) {
-    const slug = req.session?.communaute;
-    if (!slug || slug === communautes.DEFAUT || !communautes.existe(slug)) return null;
-    return "/c/" + slug;
-}
+const { apresConnexion } = require("../services/retour");
 
 // D'où vient ce compte. `?c=` d'abord — c'est l'intention du lien sur lequel
 // la personne vient de cliquer — puis la session, qui garde la trace de la
@@ -424,7 +417,7 @@ router.post("/", async (req, res) => {
 
                 if (typeCompteExistant === "client") {
                     req.session.workspaceId = null;
-                    return res.json({ success: true, redirect: retourCommunaute(req) || "/client-qg" });
+                    return res.json({ success: true, redirect: apresConnexion(req, res, { typeCompte: "client" }) });
                 }
 
                 const workspaces = await db.query(`SELECT * FROM workspaces WHERE owner_email = $1`, [email]);
@@ -432,7 +425,13 @@ router.post("/", async (req, res) => {
                 req.session.workspaceId = workspace?.id || null;
                 if (workspace) req.session.metier = workspace.metier;
 
-                res.json({ success: true, redirect: retourCommunaute(req) || (workspace ? "/qg" : "/hub") });
+                res.json({
+                    success : true,
+                    redirect: apresConnexion(req, res, {
+                        typeCompte  : typeCompteExistant,
+                        aUneBoutique: !!workspace,
+                    }),
+                });
             });
             return;
         }
@@ -509,12 +508,14 @@ router.post("/", async (req, res) => {
             req.session.workspaceId = workspaceExistant?.workspaceId || null;
             if (workspaceExistant) req.session.metier = workspaceExistant.metier;
 
-            const redirection =
-                typeCompte === "agence"  ? "/agence" :
-                typeCompte === "client"  ? "/client-qg" :
-                workspaceExistant        ? "/qg" : "/hub";
-
-            res.json({ success: true, message: "✅ Compte créé !", redirect: retourCommunaute(req) || redirection });
+            res.json({
+                success : true,
+                message : "✅ Compte créé !",
+                redirect: apresConnexion(req, res, {
+                    typeCompte,
+                    aUneBoutique: !!workspaceExistant,
+                }),
+            });
         });
 
     } catch (err) {

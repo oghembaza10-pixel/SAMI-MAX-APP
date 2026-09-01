@@ -6,6 +6,10 @@ const router = express.Router();
 const crypto = require("crypto");
 const workspaceService = require("../services/workspaceService");
 const metiers = require("../services/metiers");
+// Au niveau du module, une seule fois — même règle que dans register.js :
+// un require enfoui dans une fonction ne se distingue pas d'un require
+// oublié, et c'est ce mélange qui avait fait planter GET /login.
+const communautes = require("../config/communautes");
 
 function requireAuth(req, res, next) {
     if (!req.session?.loggedIn) return res.redirect("/login");
@@ -16,7 +20,16 @@ function generateWorkspaceId() {
     return `WS-${crypto.randomUUID()}`;
 }
 
+// La liste s'arrêtait au Maghreb, à l'Europe et au Golfe : un marchand de
+// Douala ne pouvait choisir que « Autre », sans devise. Sa boutique
+// démarrait donc sans monnaie — pour une place de marché qui affiche déjà
+// les prix en francs CFA, c'est un mur dès la première question.
 const PAYS_DEVISE = {
+    CM: { label: "Cameroun", devise: "XAF" },
+    CI: { label: "Côte d'Ivoire", devise: "XOF" },
+    SN: { label: "Sénégal",  devise: "XOF" },
+    GA: { label: "Gabon",    devise: "XAF" },
+    CD: { label: "RD Congo", devise: "CDF" },
     DZ: { label: "Algérie",  devise: "DZD" },
     FR: { label: "France",   devise: "EUR" },
     MA: { label: "Maroc",    devise: "MAD" },
@@ -47,6 +60,33 @@ router.get("/create", requireAuth, async (req, res) => {
     }
 
     const metier = req.query.metier || "";
+
+    // ── LA MARQUE DE CETTE PAGE VIENT DU SERVICE ────────────────────────
+    //
+    // C'est le PREMIER écran d'un nouveau marchand chez une partenaire :
+    // il vient de se connecter et on lui demande le nom de sa boutique.
+    // Cette page annonçait « Je suis SAMII » et « Bonjour Général » — notre
+    // nom et notre vocabulaire militaire — sur le domaine d'Inès, à
+    // quelqu'un qui n'a jamais entendu parler de nous.
+    //
+    // Le nom de l'assistant et les grades sont déjà des données dans
+    // `config/communautes.js` : on les lit, on ne les réécrit pas.
+    const COM = res.locals?.COM || communautes.get(communautes.DEFAUT);
+    const ASSISTANT = COM.assistant || "SAMII";
+    // « Général », « mon Général » : c'est NOTRE jeu de grades. Une
+    // communauté qui les a retirés (`grades: false`) ne doit pas les voir
+    // revenir par la porte de derrière.
+    const GRADES = COM.grades !== false;
+    const SALUT = {
+        fr: GRADES ? "Bonjour Général !" : "Bonjour !",
+        en: GRADES ? "Hello General!"    : "Hello!",
+        ar: GRADES ? "مرحبًا أيها الجنرال!" : "مرحبًا!",
+        zh: GRADES ? "你好，将军！"        : "你好！",
+    };
+    const TITRE = COM.ecosysteme
+        ? `${ASSISTANT} vous accueille`
+        : `Bienvenue — ${COM.nom}`;
+
     const paysOptions = Object.entries(PAYS_DEVISE)
         .map(([code, p]) => `<option value="${code}" data-devise="${p.devise}">${p.label}</option>`)
         .join("");
@@ -56,7 +96,7 @@ router.get("/create", requireAuth, async (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>SAMII vous accueille</title>
+    <title>${TITRE}</title>
     <style>
         *{ box-sizing:border-box; margin:0; padding:0; }
         body{ background:#050505; font-family:Arial,sans-serif; display:flex; justify-content:center; align-items:center; min-height:100vh; color:white; padding:20px; }
@@ -88,7 +128,7 @@ router.get("/create", requireAuth, async (req, res) => {
     <div class="samii-line">
         <div class="samii-avatar">🤖</div>
         <div class="samii-bubble" data-i18n="ws.welcome">
-            Bonjour Général ! Je suis <b>SAMII</b>. Avant de construire votre QG${metier ? ` <b>${metier}</b>` : ""}, j'ai besoin de quelques infos pour bien l'adapter à votre réalité.
+            ${SALUT.fr} Je suis <b>${ASSISTANT}</b>. Avant de construire votre QG${metier ? ` <b>${metier}</b>` : ""}, j'ai besoin de quelques infos pour bien l'adapter à votre réalité.
         </div>
     </div>
     <form id="form-workspace">
@@ -127,7 +167,7 @@ router.get("/create", requireAuth, async (req, res) => {
 <script>
 const I18N = {
     fr: {
-        'ws.welcome': 'Bonjour Général ! Je suis <b>SAMII</b>. Avant de construire votre QG${metier ? ` <b>${metier}</b>` : ""}, j\\'ai besoin de quelques infos pour bien l\\'adapter à votre réalité.',
+        'ws.welcome': '${SALUT.fr} Je suis <b>${ASSISTANT}</b>. Avant de construire votre QG${metier ? ` <b>${metier}</b>` : ""}, j\\'ai besoin de quelques infos pour bien l\\'adapter à votre réalité.',
         'ws.nom.label': 'Nom de votre boutique / entreprise', 'ws.nom.ph': 'Ex : Le Souverain Store',
         'ws.metier.label': 'Votre métier', 'ws.metier.ecommerce': 'E-commerce', 'ws.metier.restaurant': 'Restaurant', 'ws.metier.autre': 'Autre',
         'ws.metierCustom.label': 'Précisez votre métier', 'ws.metierCustom.ph': 'Ex : Coiffeur',
@@ -135,11 +175,11 @@ const I18N = {
         'ws.pays.label': 'Votre pays', 'ws.pays.placeholder': 'Choisissez votre pays',
         'ws.devise.label': 'Devise', 'ws.devise.ph': 'Sera pré-remplie selon le pays',
         'ws.submit': 'Créer mon QG',
-        'msg.creating': '⏳ SAMII prépare votre QG...', 'msg.created': '✅ QG créé ! Redirection...',
+        'msg.creating': '⏳ ${ASSISTANT} prépare votre QG...', 'msg.created': '✅ QG créé ! Redirection...',
         'msg.error_default': '❌ Erreur. Réessayez.',
     },
     en: {
-        'ws.welcome': 'Hello General! I am <b>SAMII</b>. Before building your HQ${metier ? ` <b>${metier}</b>` : ""}, I need a few details to tailor it to your business.',
+        'ws.welcome': '${SALUT.en} I am <b>${ASSISTANT}</b>. Before building your HQ${metier ? ` <b>${metier}</b>` : ""}, I need a few details to tailor it to your business.',
         'ws.nom.label': 'Name of your store / business', 'ws.nom.ph': 'E.g.: Le Souverain Store',
         'ws.metier.label': 'Your business type', 'ws.metier.ecommerce': 'E-commerce', 'ws.metier.restaurant': 'Restaurant', 'ws.metier.autre': 'Other',
         'ws.metierCustom.label': 'Specify your business type', 'ws.metierCustom.ph': 'E.g.: Hairdresser',
@@ -147,11 +187,11 @@ const I18N = {
         'ws.pays.label': 'Your country', 'ws.pays.placeholder': 'Choose your country',
         'ws.devise.label': 'Currency', 'ws.devise.ph': 'Will be filled in based on your country',
         'ws.submit': 'Create my HQ',
-        'msg.creating': '⏳ SAMII is preparing your HQ...', 'msg.created': '✅ HQ created! Redirecting...',
+        'msg.creating': '⏳ ${ASSISTANT} is preparing your HQ...', 'msg.created': '✅ HQ created! Redirecting...',
         'msg.error_default': '❌ Error. Please try again.',
     },
     ar: {
-        'ws.welcome': 'مرحبًا أيها الجنرال! أنا <b>SAMII</b>. قبل بناء مقر قيادتك${metier ? ` <b>${metier}</b>` : ""}، أحتاج إلى بعض المعلومات لتكييفه مع نشاطك.',
+        'ws.welcome': '${SALUT.ar} أنا <b>${ASSISTANT}</b>. قبل بناء مقر قيادتك${metier ? ` <b>${metier}</b>` : ""}، أحتاج إلى بعض المعلومات لتكييفه مع نشاطك.',
         'ws.nom.label': 'اسم متجرك / شركتك', 'ws.nom.ph': 'مثال: متجر السيادة',
         'ws.metier.label': 'مجال نشاطك', 'ws.metier.ecommerce': 'تجارة إلكترونية', 'ws.metier.restaurant': 'مطعم', 'ws.metier.autre': 'آخر',
         'ws.metierCustom.label': 'حدد مجال نشاطك', 'ws.metierCustom.ph': 'مثال: حلّاق',
@@ -159,11 +199,11 @@ const I18N = {
         'ws.pays.label': 'بلدك', 'ws.pays.placeholder': 'اختر بلدك',
         'ws.devise.label': 'العملة', 'ws.devise.ph': 'ستُملأ تلقائيًا حسب البلد',
         'ws.submit': 'إنشاء مقر قيادتي',
-        'msg.creating': '⏳ SAMII يجهّز مقر قيادتك...', 'msg.created': '✅ تم إنشاء المقر! جارٍ التحويل...',
+        'msg.creating': '⏳ ${ASSISTANT} يجهّز مقر قيادتك...', 'msg.created': '✅ تم إنشاء المقر! جارٍ التحويل...',
         'msg.error_default': '❌ خطأ. حاول مرة أخرى.',
     },
     zh: {
-        'ws.welcome': '你好，将军！我是 <b>SAMII</b>。在搭建你的指挥部${metier ? ` <b>${metier}</b>` : ""}之前，我需要一些信息来更好地适配你的业务。',
+        'ws.welcome': '${SALUT.zh}我是 <b>${ASSISTANT}</b>。在搭建你的指挥部${metier ? ` <b>${metier}</b>` : ""}之前，我需要一些信息来更好地适配你的业务。',
         'ws.nom.label': '你的店铺 / 企业名称', 'ws.nom.ph': '例如：Le Souverain Store',
         'ws.metier.label': '你的行业', 'ws.metier.ecommerce': '电商', 'ws.metier.restaurant': '餐饮', 'ws.metier.autre': '其他',
         'ws.metierCustom.label': '请说明你的行业', 'ws.metierCustom.ph': '例如：理发师',
@@ -171,7 +211,7 @@ const I18N = {
         'ws.pays.label': '你的国家', 'ws.pays.placeholder': '选择你的国家',
         'ws.devise.label': '货币', 'ws.devise.ph': '将根据国家自动填写',
         'ws.submit': '创建我的指挥部',
-        'msg.creating': '⏳ SAMII 正在准备你的指挥部...', 'msg.created': '✅ 指挥部已创建！正在跳转...',
+        'msg.creating': '⏳ ${ASSISTANT} 正在准备你的指挥部...', 'msg.created': '✅ 指挥部已创建！正在跳转...',
         'msg.error_default': '❌ 错误，请重试。',
     },
 };

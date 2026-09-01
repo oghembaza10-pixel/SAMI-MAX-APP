@@ -5,16 +5,8 @@ const express = require("express");
 const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const db      = require("../services/db");
-const { suiteSure } = require("../services/retour");
+const { suiteSure, apresConnexion } = require("../services/retour");
 const communautes = require("../config/communautes");
-
-// Où renvoyer quelqu'un venu d'une communauté partenaire. Rien pour la
-// communauté maison : ses membres vont bien dans leur QG.
-function retourCommunaute(req) {
-    const slug = req.session?.communaute;
-    if (!slug || slug === communautes.DEFAUT || !communautes.existe(slug)) return null;
-    return "/c/" + slug;
-}
 
 // ── GET /login ────────────────────────────────────────────────
 router.get("/", (req, res) => {
@@ -259,7 +251,7 @@ router.post("/", async (req, res) => {
                 req.session.typeCompte = "client";
                 req.session.workspaceId = null;
 
-                res.json({ success: true, redirect: suite || retourCommunaute(req) || "/client-qg" });
+                res.json({ success: true, redirect: apresConnexion(req, res, { suite, typeCompte: "client" }) });
             });
             return;
         }
@@ -284,12 +276,17 @@ router.post("/", async (req, res) => {
                 req.session.workspaceId = null;
             }
 
-            // Une agence atterrit toujours sur son QG Agence, même si elle
-            // possède aussi une boutique à elle : son point d'entrée, c'est
+            // Où l'on atterrit dépend de la communauté du service, pas d'une
+            // page écrite en dur : chez une partenaire, « /hub » et
+            // « /agence » sont fermés, et y envoyer quelqu'un après une
+            // connexion réussie donnait une 404. Voir `apresConnexion`.
+            //
+            // Chez nous, une agence atterrit toujours sur son QG Agence, même
+            // si elle possède aussi une boutique : son point d'entrée, c'est
             // la vue d'ensemble de ses clients, pas une boutique isolée.
             res.json({
                 success : true,
-                redirect: suite || retourCommunaute(req) || (typeCompte === "agence" ? "/agence" : (workspace ? "/qg" : "/hub")),
+                redirect: apresConnexion(req, res, { suite, typeCompte, aUneBoutique: !!workspace }),
             });
         });
 

@@ -48,4 +48,51 @@ function suiteSure(valeur) {
     return s;
 }
 
-module.exports = { suiteSure };
+// ── ET QUAND PERSONNE N'A DEMANDÉ DE DESTINATION ? ──────────────────────
+//
+// LE BUG QUI A DONNÉ CE CODE. Sur le domaine d'Inès, on se connectait
+// correctement — bon email, bon mot de passe, session créée — et on
+// atterrissait sur une page 404.
+//
+// La destination par défaut d'un marchand sans boutique était écrite en dur :
+// « /hub ». Le Hub est NOTRE page (nos boutiques, nos métiers, notre
+// marque) ; la porte le ferme chez une partenaire. Connexion réussie,
+// arrivée dans le vide. Même chose pour « /client-qg » côté acheteur.
+//
+// La communauté était bien connue à cet instant — mais on la cherchait au
+// mauvais endroit : dans `session.communaute`, que seul un lien `?c=` pose.
+// Quelqu'un qui tape l'adresse de sa communauté directement, ou qui revient
+// par un favori, n'a jamais ce marqueur. Or c'est le SERVICE qui décide de
+// la communauté (`res.locals.COM`), pas le chemin parcouru.
+//
+// Ici on demande donc au registre où va cette personne CHEZ ELLE :
+// `accueilMarchand` / `accueilClient` connaissent déjà la réponse pour
+// chaque communauté. Une page fermée n'est plus une impasse.
+//
+// L'ordre est délibéré :
+//   1. `suite`  — la page qu'on voulait vraiment ouvrir (déjà validée)
+//   2. `?c=`    — la communauté traversée, utile sur NOTRE domaine, où
+//                 `COM` vaut toujours « samii »
+//   3. le service — la maison de cette personne, jamais une page en dur
+function apresConnexion(req, res, { suite, typeCompte, aUneBoutique } = {}) {
+    const communautes = require("../config/communautes");
+    const COM = res?.locals?.COM || communautes.get(communautes.DEFAUT);
+
+    if (suite) return suite;
+
+    // La communauté d'où l'on vient, quand elle diffère de celle du service.
+    const traversee = req?.session?.communaute;
+    if (traversee && traversee !== COM.slug
+        && traversee !== communautes.DEFAUT && communautes.existe(traversee)) {
+        return "/c/" + communautes.nettoyer(traversee);
+    }
+
+    if (typeCompte === "client") return communautes.accueilClient(COM);
+    // Le QG Agence est un espace à nous : chez une partenaire, une agence
+    // est un marchand comme un autre. Sans ce garde, on rouvrait la même
+    // 404 par une autre porte.
+    if (typeCompte === "agence" && COM.ecosysteme) return "/agence";
+    return aUneBoutique ? "/qg" : communautes.accueilMarchand(COM);
+}
+
+module.exports = { suiteSure, apresConnexion };

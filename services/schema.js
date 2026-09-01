@@ -337,6 +337,27 @@ const BLOCS = [
         ],
     },
     {
+        // ── LE THÈME CHOISI À L'INSCRIPTION ──────────────────────────────
+        //
+        // Trouvé en montant une base neuve : `POST /register` écrit
+        // `theme_visuel`, et AUCUN fichier de ce dépôt ne crée cette
+        // colonne. Elle n'existe en production que parce qu'on l'y a ajoutée
+        // à la main, un jour, sans le noter nulle part.
+        //
+        // Conséquence : le jour où l'on repart d'une base vide — une
+        // deuxième partenaire, une restauration, un environnement de test —
+        // la toute première inscription répond « Erreur serveur. Réessayez. »
+        // et personne ne peut créer de compte. Le code est bon, c'est la
+        // base qui ne l'a jamais suivi.
+        //
+        // Le défaut « strategiste » est celui que `POST /register` applique
+        // déjà quand le thème demandé n'est pas débloqué.
+        nom: "thème visuel du compte",
+        sql: [
+            `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS theme_visuel TEXT DEFAULT 'strategiste'`,
+        ],
+    },
+    {
         // ── CHAQUE MARKETPLACE CHEZ SOI ──────────────────────────────────
         //
         // « Tu lui mets une marketplace VIDE, sans nos colonnes, rattachée
