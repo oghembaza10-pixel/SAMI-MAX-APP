@@ -114,7 +114,7 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         }
         try {
             const briefing = require("../services/briefing");
-            const { donnees, indisponibles } = await briefing.collecter(identite, context.COM || null);
+            const { donnees, indisponibles } = await briefing.collecter(identite, context.communaute ? { slug: context.communaute } : null);
             return {
                 success: true,
                 periode: donnees.fenetre,

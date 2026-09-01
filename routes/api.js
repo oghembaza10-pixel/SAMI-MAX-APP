@@ -142,7 +142,12 @@ router.post("/chat", requireAuth, async (req, res) => {
                 workspaceId: req.session?.workspaceId || null,
                 isAdmin: req.session?.isAdmin === true,
             },
-            COM: res.locals?.COM || null,
+            // LE SLUG, PAS TOUTE LA FICHE. `brain/prompts/index.js` sérialise
+            // le contexte entier dans le prompt (JSON.stringify, ligne 82) :
+            // y poser l'objet communauté injectait ses couleurs, ses modules
+            // et sa commission dans CHAQUE message. Le briefing n'a besoin
+            // que du slug pour cloisonner.
+            communaute: res.locals?.COM?.slug || null,
         };
 
         // Pièce jointe : uploadée sur Cloudinary côté client, on ne reçoit

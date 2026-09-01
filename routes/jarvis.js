@@ -271,6 +271,15 @@ body{
             window.VoixSortie.activer();
             btnVoix.textContent = "🔊 Voix active";
             btnVoix.classList.add("actif");
+            // ON PARLE TOUT DE SUITE, et ce n'est pas de la coquetterie :
+            // sans ce mot, « la voix ne marche pas » et « il ne repond pas »
+            // se ressemblent exactement. Ici, le clic prouve la chaine
+            // audio en une seconde, independamment du cerveau.
+            window.VoixSortie.parler("Je t'écoute.").then(function (ok) {
+                if (!ok) {
+                    poser("", "La voix ne sort pas sur cet appareil. Vérifie le volume et l'onglet.");
+                }
+            });
         }
     });
 
@@ -295,13 +304,56 @@ body{
         champ.value = "";
         poser("reflechit", "<b>${assistant} réfléchit…</b>");
 
+        // ── POURQUOI UN DELAI D'ATTENTE, ET POURQUOI IL EST VISIBLE ────
+        //
+        // Premiere version : aucun delai. Une requete qui ne revenait jamais
+        // laissait la bulle tourner en or pour l'eternite, sans un mot. Vu
+        // de l'exterieur, ca ne se distingue pas d'une page morte — et c'est
+        // exactement ce qui s'est passe : « il parle pas, il repond pas ».
+        //
+        // La chaine derriere /api/chat peut etre longue : 17 cles Gemini en
+        // rotation, deux nouvelles tentatives espacees, puis Groq, puis
+        // OpenRouter, puis DeepSeek. Une minute est possible. Ce qui n'est
+        // pas acceptable, c'est le silence pendant cette minute.
+        var horloge = null;
+        var abandon = new AbortController();
+        var depart = Date.now();
+        var minuteur = setInterval(function () {
+            var s = Math.round((Date.now() - depart) / 1000);
+            if (s >= 8) poser("reflechit", "<b>${assistant} cherche…</b> " + s + " s");
+        }, 1000);
+        horloge = setTimeout(function () { abandon.abort(); }, 45000);
+
         try {
             var rep = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: texte, page: "jarvis" })
+                body: JSON.stringify({ message: texte, page: "jarvis" }),
+                signal: abandon.signal
             });
-            var data = await rep.json();
+
+            // Le corps n'est pas toujours du JSON : un proxy, une limite de
+            // debit ou une page d'erreur renvoient du HTML. Lire d'abord le
+            // texte permet de DIRE ce qui s'est passe au lieu de tomber dans
+            // un « erreur reseau » qui n'explique rien.
+            var brut = await rep.text();
+            var data = null;
+            try { data = JSON.parse(brut); } catch (e) { data = null; }
+
+            if (!data) {
+                ajouter("lui", "Le serveur a répondu " + rep.status
+                    + ", mais pas en JSON. Voici le début de sa réponse : "
+                    + brut.slice(0, 160));
+                poser("", "Réponse inattendue du serveur.");
+                return;
+            }
+            if (!rep.ok) {
+                ajouter("lui", "Le serveur a refusé (" + rep.status + ") : "
+                    + (data.error || data.reply || "sans explication."));
+                poser("", "Refus du serveur (" + rep.status + ").");
+                return;
+            }
+
             var reponse = data.reply || "Je n'ai pas de réponse pour le moment.";
             ajouter("lui", reponse);
             poser("", "Je t'écoute.");
@@ -310,9 +362,17 @@ body{
             // pepin audio.
             window.VoixSortie.parler(reponse);
         } catch (err) {
-            ajouter("lui", "Je n'ai pas réussi à joindre le serveur. Réessaie.");
-            poser("", "Connexion perdue.");
+            if (err.name === "AbortError") {
+                ajouter("lui", "Je n'ai pas eu de réponse au bout de 45 secondes. "
+                    + "Le moteur est saturé ou une clé est à bout de quota. Réessaie.");
+                poser("", "Aucune réponse en 45 s.");
+            } else {
+                ajouter("lui", "Je n'ai pas réussi à joindre le serveur — " + err.message);
+                poser("", "Connexion perdue.");
+            }
         } finally {
+            clearInterval(minuteur);
+            clearTimeout(horloge);
             enCours = false;
         }
     }
