@@ -272,6 +272,59 @@ const CLIENT = "237655443322";
             "sans texte de repli, Green API reçoit un appel de modèle qu'il ne comprend pas — l'envoi est perdu sans erreur");
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // 7. LE CATALOGUE DES MODÈLES
+    //
+    // Le texte des modèles vit chez Meta ; nous n'envoyons qu'un nom et des
+    // valeurs ORDONNÉES. Une erreur d'ordre ne se voit nulle part : Meta
+    // accepte n'importe quel texte dans n'importe quelle variable, et le
+    // client reçoit « Bonjour 15 000 FCFA, votre commande Marlyse est
+    // confirmée ». Aucune erreur, aucun journal — juste un marchand humilié
+    // devant son client.
+    //
+    // Le catalogue fixe donc l'ordre à UN endroit, et
+    // scripts/test-whatsapp.js le confronte à ce que Meta déclare vraiment.
+    // ══════════════════════════════════════════════════════════════════════
+    {
+        const catalogue = require(path.join(RACINE, "config", "modeles-whatsapp.js"));
+
+        const p = catalogue.pour("commande.confirmee", ["Marlyse", "CMD-42", "15 000 FCFA", "3 sept"]);
+        verifier(p?.nom === "commande_confirmee",
+            "l'événement « commande confirmée » ne trouve plus son modèle — la confirmation ne partira jamais hors fenêtre");
+        verifier(p?.langue === "fr",
+            "le modèle est demandé dans une autre langue que celle approuvée : Meta refuse l'envoi");
+        verifier(JSON.stringify(p?.variables) === JSON.stringify(["Marlyse", "CMD-42", "15 000 FCFA", "3 sept"]),
+            "les valeurs ne partent pas dans l'ordre déclaré — le client lira le montant à la place de son nom");
+
+        // Le repli est calculé PAR le catalogue, pas par l'appelant : le même
+        // message ne doit pas exister en deux versions qui divergent.
+        verifier(/Marlyse/.test(p?.repli || "") && /CMD-42/.test(p?.repli || ""),
+            "le texte de repli ne reprend pas les valeurs : les marchands sur Green API reçoivent un message à trous");
+
+        // Un événement inconnu ne doit pas fabriquer un nom de modèle : mieux
+        // vaut rendre null et laisser l'appelant écrire en texte libre.
+        verifier(catalogue.pour("evenement.inexistant", []) === null,
+            "un événement inconnu renvoie quand même un modèle — on appellera chez Meta un nom qui n'existe pas");
+
+        // Chaque modèle du catalogue doit être complet : sans nom, l'appel
+        // part vide ; sans liste de variables, on ne sait plus combien en
+        // envoyer.
+        for (const [cle, m] of Object.entries(catalogue.MODELES)) {
+            verifier(typeof m.nom === "string" && m.nom.length > 0,
+                `le modèle « ${cle} » n'a pas de nom`);
+            verifier(Array.isArray(m.variables),
+                `le modèle « ${cle} » ne déclare pas l'ordre de ses variables`);
+            verifier(typeof m.repli === "function",
+                `le modèle « ${cle} » n'a pas de texte de repli — un marchand sur Green API ne recevra rien`);
+        }
+
+        // Tout événement branché doit pointer vers un modèle qui existe.
+        for (const [evenement, cle] of Object.entries(catalogue.POUR)) {
+            verifier(Boolean(catalogue.MODELES[cle]),
+                `l'événement « ${evenement} » pointe vers « ${cle} », qui n'est pas dans le catalogue`);
+        }
+    }
+
     if (echecs.length) {
         console.error(`❌ WhatsApp SAMII : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
         for (const e of echecs) console.error("   • " + e);
