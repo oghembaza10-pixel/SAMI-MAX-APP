@@ -8,6 +8,7 @@ const express = require("express");
 const axios = require("axios");
 const CONFIG = require("../config");
 const connectorService = require("../services/connectorService");
+const journalService = require("../services/journalService");
 const router = express.Router();
 
 const CLIENT_ID = CONFIG.GOOGLE.OAUTH.CLIENT_ID;
@@ -96,6 +97,42 @@ router.get("/auth/google/callback", requireAuth, async (req, res) => {
         // connectorService.save() fusionne avec la config existante, donc
         // omettre la clé ici garde l'ancien refresh_token intact.
         if (refresh_token) configToSave.refreshToken = refresh_token;
+
+        // ── CE QU'IL A VRAIMENT ACCORDÉ ─────────────────────────────────
+        //
+        // Même piège que chez Meta : l'écran de consentement de Google
+        // affiche une case par service, et le marchand peut en décocher.
+        // La connexion réussit quand même — Google renvoie simplement une
+        // liste `scope` plus courte que celle qu'on a demandée.
+        //
+        // Sans ce contrôle, on garde un connecteur qui a l'air branché, et
+        // c'est trois jours plus tard, sur un « SAMII, lis mes mails »,
+        // qu'on découvre que Gmail n'a jamais été accordé.
+        //
+        // Le libellé n'est pas le nom technique : « gmail.readonly » ne dit
+        // rien à un marchand de Douala. Ce qui lui parle, c'est ce qu'il
+        // perd.
+        const ACCORDES = new Set(String(scope || "").split(/\s+/).filter(Boolean));
+        const A_QUOI_CA_SERT = {
+            "https://www.googleapis.com/auth/gmail.readonly": "lire tes emails",
+            "https://www.googleapis.com/auth/gmail.send"    : "envoyer un email en ton nom",
+            "https://www.googleapis.com/auth/calendar"      : "voir et créer tes rendez-vous",
+            "https://www.googleapis.com/auth/drive.readonly": "lire tes fichiers Drive",
+            "https://www.googleapis.com/auth/spreadsheets"  : "créer tes rapports",
+        };
+        const manquants = Object.keys(A_QUOI_CA_SERT).filter(
+            (s) => SCOPES.includes(s) && !ACCORDES.has(s),
+        );
+        if (manquants.length) {
+            const detail = manquants.map((s) => A_QUOI_CA_SERT[s]).join(", ");
+            console.warn(`⚠️ Google connecté SANS : ${detail} — workspace ${workspaceId}`);
+            await journalService.log({
+                action: "google.permission_manquante",
+                details: `Google est connecté, mais SAMII ne pourra pas : ${detail}. `
+                       + `La case a été décochée à l'autorisation, ou le scope n'est pas encore vérifié par Google.`,
+                workspaceId,
+            });
+        }
 
         await connectorService.save(workspaceId, "google", configToSave);
 

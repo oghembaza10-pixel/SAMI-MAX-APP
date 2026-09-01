@@ -56,6 +56,28 @@ async function getValidAccessToken(workspaceId) {
         // réalité. Une erreur réseau/temporaire ne déclenche pas ça.
         if (err.response?.data?.error === "invalid_grant") {
             await connectorService.disconnect(workspaceId, "google");
+            // ÉCRIT AU JOURNAL, pas seulement dans la console. Désactiver le
+            // connecteur remet l'affichage d'accord avec la réalité, mais
+            // personne n'est PRÉVENU : le marchand découvre la coupure le
+            // jour où il demande ses mails. Au journal, SAMII peut le dire
+            // de lui-même quand on lui demande ce qui s'est passé — et le
+            // fondateur voit d'un coup d'oeil combien de marchands ont
+            // décroché.
+            //
+            // C'est particulièrement utile tant que l'application Google est
+            // en mode « Test » : dans ce mode Google fait expirer les jetons
+            // au bout de SEPT JOURS, pour tout le monde, sans prévenir. Une
+            // ligne par semaine et par marchand dans le journal, c'est le
+            // signal qui dit qu'il est temps de faire vérifier l'app.
+            try {
+                await require("./journalService").log({
+                    action: "google.deconnecte",
+                    details: "Le jeton Google n'est plus valide (invalid_grant) : révoqué par le marchand, "
+                           + "ou expiré au bout de 7 jours parce que l'application Google est encore en mode Test. "
+                           + "Il faut recliquer sur « Connecter Google ».",
+                    workspaceId,
+                });
+            } catch { /* le journal ne doit jamais faire échouer un renouvellement */ }
         }
         return null;
     }
