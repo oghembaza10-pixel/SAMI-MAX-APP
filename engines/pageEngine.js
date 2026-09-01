@@ -139,6 +139,24 @@ async function publierInstagram(texte) {
     }
 }
 
+// ── ON VÉRIFIE LA PORTE AVANT DE PRÉPARER LE COLIS ──────────────────────
+//
+// CE QUI SE PASSAIT. `runInstagram` appelait `genererPost` — une vraie
+// génération Gemini — PUIS découvrait qu'Instagram n'est pas connecté. Trois
+// fois par jour, tous les jours, un appel au modèle était dépensé pour un
+// texte que personne ne lirait jamais.
+//
+// Ce n'est pas anodin : le plafond gratuit de Gemini se compte par projet et
+// par minute, et ces appels-là partent aux heures rondes (9 h, 14 h, 19 h) —
+// exactement quand des clients écrivent. On payait un texte mort avec le
+// quota d'un client vivant.
+//
+// Et ça se voyait nulle part : l'échec part dans console.error, lisible
+// seulement dans les journaux de Render.
+//
+// Depuis le refus d'`instagram_basic` par Meta, ce cas n'est plus théorique :
+// la publication Instagram ne peut PAS aboutir tant que la permission n'est
+// pas accordée. Autant ne pas dépenser pour elle.
 async function runFacebook() {
     const texte = await genererPost("facebook");
     const resultat = await publierFacebook(texte);
@@ -146,9 +164,35 @@ async function runFacebook() {
 }
 
 async function runInstagram() {
+    // La sonde d'abord. Une génération coûte du quota ; une vérification de
+    // connecteur coûte une lecture en base.
+    const creds = await instagramPret();
+    if (!creds.pret) {
+        console.warn(`⚠️ Page Engine (Instagram) : rien n'est publié, et rien n'est généré — ${creds.raison}`);
+        return;
+    }
     const texte = await genererPost("instagram");
     const resultat = await publierInstagram(texte);
     console.log(resultat.success ? "✅ Page Engine : post Instagram publié." : `❌ Page Engine (Instagram) : ${resultat.error}`);
+}
+
+// Lit les connecteurs, rien d'autre. Séparée de `publierInstagram` pour
+// pouvoir être appelée AVANT la génération — c'était tout le problème.
+async function instagramPret() {
+    try {
+        const [fbConnecteur, igConnecteur] = await Promise.all([
+            connectorService.getOne(CONFIG.META.OG_WORKSPACE_ID, "facebook"),
+            connectorService.getOne(CONFIG.META.OG_WORKSPACE_ID, "instagram"),
+        ]);
+        const fbToken = resolveFacebookCreds(fbConnecteur?.config).accessToken;
+        const creds = resolveInstagramCreds(igConnecteur?.config, fbToken);
+        if (!creds.igAccountId || !creds.accessToken) {
+            return { pret: false, raison: "compte Instagram non relié (igAccountId ou token manquant)." };
+        }
+        return { pret: true };
+    } catch (err) {
+        return { pret: false, raison: `lecture des connecteurs impossible (${err.message}).` };
+    }
 }
 
 // Utilisés par les boutons admin "Publier maintenant" — génèrent ET
@@ -168,7 +212,7 @@ async function posterMaintenantInstagram() {
 }
 
 module.exports = {
-    runFacebook, runInstagram,
+    runFacebook, runInstagram, instagramPret,
     genererPost, publierFacebook, publierInstagram,
     posterMaintenantFacebook, posterMaintenantInstagram,
 };
