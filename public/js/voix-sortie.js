@@ -88,11 +88,48 @@
     // liste est souvent vide, et elle se remplit une fraction de seconde
     // plus tard. Sans cette attente, SAMII parle anglais au premier
     // message et français à partir du deuxième.
+    // ── SAMII EST UN « IL » ─────────────────────────────────────────────
+    //
+    // « Elle parle avec une voix féminine alors que SAMII c'est un
+    //   masculin. »
+    //
+    // L'API des navigateurs ne dit PAS le genre d'une voix : il n'y a ni
+    // champ, ni convention. Il n'y a que le nom. On tient donc deux listes,
+    // construites sur les voix françaises réellement livrées par les
+    // systèmes courants — Thomas sur Apple, Paul et Claude sur Windows,
+    // Google français sur Android/Chrome (féminine).
+    //
+    // Ces listes seront incomplètes un jour ou l'autre : un système sortira
+    // une voix qu'on ne connaît pas. D'où le troisième niveau — à défaut de
+    // masculin identifié, on prend une voix française qui n'est PAS
+    // reconnue comme féminine, plutôt que la première venue. Se tromper en
+    // silence vers le neutre vaut mieux que se tromper vers le féminin.
+    const MASCULINES_FR = /thomas|paul|claude|henri|nicolas|guillaume|mathieu|daniel|yannick|jacques|pierre|antoine|male|homme/i;
+    const FEMININES_FR  = /am[ée]lie|audrey|marie|virginie|hortense|julie|chantal|c[ée]line|siwis|charlotte|louise|female|femme|google fran[çc]ais/i;
+
     function choisirVoixNavigateur() {
         const voix = global.speechSynthesis.getVoices() || [];
         if (!voix.length) return null;
         const fr = voix.filter((v) => (v.lang || "").toLowerCase().startsWith("fr"));
-        return fr.find((v) => /google|natural|enhanced|premium/i.test(v.name)) || fr[0] || null;
+        if (!fr.length) return null;
+        // 1. Un masculin nommé, et de préférence de bonne qualité.
+        const masculines = fr.filter((v) => MASCULINES_FR.test(v.name));
+        if (masculines.length) {
+            return masculines.find((v) => /natural|enhanced|premium|neural/i.test(v.name)) || masculines[0];
+        }
+        // 2. À défaut, tout sauf un féminin connu.
+        const neutres = fr.filter((v) => !FEMININES_FR.test(v.name));
+        if (neutres.length) return neutres[0];
+        // 3. Il ne reste que du féminin : mieux que le silence.
+        return fr[0];
+    }
+
+    // Le navigateur a-t-il vraiment une voix masculine française ? La
+    // réponse décide de l'ordre des fournisseurs, plus bas.
+    function navigateurAUnHomme() {
+        if (!navigateurDisponible()) return false;
+        return (global.speechSynthesis.getVoices() || [])
+            .some((v) => (v.lang || "").toLowerCase().startsWith("fr") && MASCULINES_FR.test(v.name));
     }
 
     function parlerNavigateur(texte) {
@@ -197,11 +234,30 @@
         etat.parle = true;
         prevenir("parle-debut", { texte: dire });
 
+        // ── L'ORDRE DÉPEND DU GENRE, PAS DE LA QUALITÉ ─────────────────
+        //
+        // Kokoro n'a QU'UNE voix française, et elle est féminine : dans
+        // « ff_siwis », le second f veut dire female. Il n'existe pas de
+        // voix masculine française dans ce modèle — vérifié, ce n'est pas
+        // un réglage qu'on aurait raté.
+        //
+        // Or SAMII est un « il ». Une belle voix qui n'est pas la sienne
+        // vaut moins qu'une voix plus synthétique qui l'est. Quand le
+        // navigateur a un vrai masculin français, il passe donc DEVANT
+        // Kokoro. Sinon Kokoro reprend la tête, faute de mieux.
+        //
+        // Le jour où Kokoro publie une voix « fm_… », il suffira de
+        // l'ajouter et de retirer cette inversion.
         let dit = false;
-        // Kokoro s'il est déjà chargé — jamais en l'attendant. Attendre
-        // 80 Mo avant le premier mot, c'est un silence qu'on prend pour une
-        // panne.
-        if (etat.kokoro) dit = await parlerKokoro(dire);
+        if (navigateurAUnHomme()) {
+            dit = await parlerNavigateur(dire);
+            if (!dit && etat.kokoro) dit = await parlerKokoro(dire);
+        } else {
+            // Kokoro s'il est déjà chargé — jamais en l'attendant. Attendre
+            // 80 Mo avant le premier mot, c'est un silence qu'on prend pour
+            // une panne.
+            if (etat.kokoro) dit = await parlerKokoro(dire);
+        }
         if (!dit) dit = await parlerElevenLabs(dire);
         if (!dit) dit = await parlerNavigateur(dire);
 
@@ -240,7 +296,10 @@
         desactiver,
         estActive: () => etat.actif,
         parleEnCeMoment: () => etat.parle,
-        fournisseur: () => (etat.kokoro ? "kokoro" : "navigateur"),
+        fournisseur: () => (navigateurAUnHomme() ? "navigateur (voix masculine)"
+            : etat.kokoro ? "kokoro (féminine, faute de masculin français)" : "navigateur"),
+        // Exposé pour pouvoir vérifier le choix depuis un test ou la console.
+        voixRetenue: () => choisirVoixNavigateur(),
         disponible: () => navigateurDisponible() || typeof Audio !== "undefined",
         surEvenement: (fn) => { if (typeof fn === "function") ecouteurs.push(fn); },
         pourLOreille,

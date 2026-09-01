@@ -68,16 +68,26 @@ const SCOPES = [
     "pages_manage_posts",
     "pages_manage_metadata",
     "pages_read_engagement",
-    "instagram_basic",
-    "instagram_manage_messages",
-    // Sans cette permission, publier sur Instagram échoue à l'exécution :
-    // instagram_basic ne donne que la lecture du profil et des médias. Le
-    // code de publication (services/meta.publishInstagramPost, en deux temps
-    // conteneur puis media_publish) était correct, mais la permission n'était
-    // jamais demandée — la publication Instagram automatique ne pouvait donc
-    // pas fonctionner. Comme les autres permissions avancées, elle doit être
-    // approuvée par Meta pour valoir au-delà des comptes de test de l'app.
-    "instagram_content_publish",
+    // ── INSTAGRAM RETIRÉ LE 2 SEPTEMBRE 2026 ────────────────────────────
+    //
+    // Meta a REFUSÉ `instagram_basic` au contrôle du 1er septembre. Les deux
+    // autres permissions Instagram en dépendent : sans elle, elles ne valent
+    // rien, même approuvées.
+    //
+    // L'app est passée en Live avec les quatre approuvées. Les demander
+    // quand même aurait deux effets, tous les deux mauvais :
+    //
+    //   1. l'écran de consentement du marchand affiche trois cases qu'il ne
+    //      peut pas cocher — plus long, plus inquiétant, pour rien ;
+    //   2. le risque qu'une de ces permissions devienne INVALIDE côté Meta,
+    //      et là ce n'est plus cosmétique : c'est TOUT le login qui tombe.
+    //      C'est exactement ce qui est arrivé avec pages_read_user_content
+    //      (voir le commentaire plus haut) — une seule permission invalide
+    //      dans la liste, et plus personne ne se connecte.
+    //
+    // On ne demande donc que ce qu'on a. À remettre le jour où
+    // `instagram_basic` est approuvée — et pas avant.
+    //   "instagram_basic", "instagram_manage_messages", "instagram_content_publish"
 ].join(",");
 
 function requireAuth(req, res, next) {
@@ -392,8 +402,18 @@ router.get("/auth/meta/callback", requireAuth, async (req, res) => {
         });
         const page = (pagesRes.data.data || [])[0] || null;
 
+        // Cet appel exige `instagram_basic`, qu'on ne demande plus (voir
+        // SCOPES). Le tenter quand même, c'est un aller-retour réseau à
+        // chaque connexion pour un échec certain, et un avertissement dans
+        // les journaux qui laisse croire que le marchand n'a pas de compte
+        // Instagram alors qu'on n'a simplement pas le droit de regarder.
+        //
+        // La condition est liée aux SCOPES, pas écrite en dur : le jour où
+        // `instagram_basic` est approuvée et remise dans la liste, ce bloc
+        // se réveille tout seul. Une ligne à remettre au lieu de deux.
+        const INSTAGRAM_DEMANDE = SCOPES.includes("instagram_basic");
         let igAccountId = "";
-        if (page) {
+        if (page && INSTAGRAM_DEMANDE) {
             try {
                 const igRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/${page.id}`, {
                     params: { fields: "instagram_business_account", access_token: page.access_token },
@@ -415,10 +435,63 @@ router.get("/auth/meta/callback", requireAuth, async (req, res) => {
             console.warn("⚠️ Aucun compte pub Meta trouvé :", adErr.response?.data?.error?.message || adErr.message);
         }
 
+        // ── CE QU'IL A VRAIMENT ACCORDÉ, PAS CE QU'ON A DEMANDÉ ─────────
+        //
+        // Maintenant que l'app est en Live, un marchand peut DÉCOCHER des
+        // cases dans l'écran de consentement de Meta — et Meta ne s'en
+        // plaint pas : la connexion réussit quand même. On se retrouve donc
+        // avec un connecteur qui a l'air branché, et une publication qui
+        // échouera dans trois jours sans que personne comprenne pourquoi.
+        //
+        // Même chose si une permission perd son Accès avancé : elle est
+        // silencieusement retirée du jeton.
+        //
+        // On demande donc à Meta la liste réelle, on l'enregistre à côté du
+        // jeton, et ce qui manque est écrit AU JOURNAL — d'où SAMII le lit
+        // quand on lui demande ce qui s'est passé. Une permission manquante
+        // n'est plus une découverte, c'est une ligne.
+        let accordees = [];
+        let refusees = [];
+        try {
+            const permsRes = await axios.get(`https://graph.facebook.com/${GRAPH_VERSION}/me/permissions`, {
+                params: { access_token: accessToken },
+            });
+            for (const p of permsRes.data.data || []) {
+                (p.status === "granted" ? accordees : refusees).push(p.permission);
+            }
+        } catch (permErr) {
+            console.warn("⚠️ Lecture des permissions Meta impossible :", permErr.response?.data?.error?.message || permErr.message);
+        }
+
+        // Les permissions SANS lesquelles une promesse faite au marchand ne
+        // tient pas. Le reste est du confort.
+        const INDISPENSABLES = {
+            pages_show_list      : "lister ses Pages Facebook",
+            pages_manage_posts   : "publier sur sa Page",
+            pages_read_engagement: "lire les réactions et commentaires",
+        };
+        const manquantes = Object.keys(INDISPENSABLES)
+            .filter((p) => accordees.length && !accordees.includes(p));
+
+        if (manquantes.length) {
+            const detail = manquantes.map((p) => `${p} (${INDISPENSABLES[p]})`).join(", ");
+            console.warn(`⚠️ Meta connecté SANS : ${detail} — workspace ${workspaceId}`);
+            await journalService.log({
+                action: "meta.permission_manquante",
+                details: `Connexion Meta acceptée, mais ces permissions manquent : ${detail}. `
+                       + `Soit le marchand a décoché la case, soit l'app n'a pas l'Accès avancé dessus.`,
+                workspaceId,
+            });
+        }
+
         await connectorService.save(workspaceId, "facebook", {
             pageId: page?.id || "",
             pageName: page?.name || "",
             pageAccessToken: page?.access_token || "",
+            // Gardées telles quelles : le jour où une publication échoue, on
+            // sait ce que ce jeton pouvait faire au moment où il a été créé.
+            permissionsAccordees: accordees,
+            permissionsRefusees : refusees,
             connectedAt: new Date().toISOString(),
         });
 

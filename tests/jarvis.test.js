@@ -218,6 +218,48 @@ function rendre(COM, session) {
     verifier(!/https?:/.test(voixSortie.pourLOreille("va sur https://exemple.com/x")),
         "les URL sont épelées à voix haute");
 
+    // ── SAMII EST UN « IL » ─────────────────────────────────────────────
+    //
+    // « Elle parle avec une voix féminine alors que SAMII c'est un masculin. »
+    //
+    // Kokoro n'a qu'une voix française et elle est féminine (ff_siwis, le
+    // second f pour female). Le navigateur, lui, en a de vraies masculines.
+    // On vérifie donc que le choix tombe sur l'homme quand il existe.
+    function fenetreAvecVoix(listeVoix) {
+        const fenetre = {
+            navigator: {},
+            speechSynthesis: {
+                cancel() {},
+                getVoices: () => listeVoix,
+                speak(u) { setTimeout(() => u.onend && u.onend(), 0); },
+            },
+            SpeechSynthesisUtterance: function (t) { this.text = t; },
+            Audio: function () { this.play = () => Promise.reject(new Error("pas de son")); },
+            fetch: async () => ({ json: async () => ({ success: false }) }),
+        };
+        // eslint-disable-next-line no-new-func
+        new Function("window", voix)(fenetre);
+        return fenetre.VoixSortie;
+    }
+
+    const apple = fenetreAvecVoix([
+        { name: "Amélie", lang: "fr-CA" }, { name: "Thomas", lang: "fr-FR" },
+    ]).voixRetenue();
+    verifier(apple && apple.name === "Thomas",
+        `sur Apple, SAMII prendrait « ${apple && apple.name} » — une voix féminine pour un assistant masculin`);
+
+    const windows = fenetreAvecVoix([
+        { name: "Microsoft Hortense - French (France)", lang: "fr-FR" },
+        { name: "Microsoft Paul - French (France)", lang: "fr-FR" },
+    ]).voixRetenue();
+    verifier(windows && /Paul/.test(windows.name),
+        `sur Windows, SAMII prendrait « ${windows && windows.name} » au lieu de la voix masculine disponible`);
+
+    // Le cas où AUCUN masculin n'existe : on ne doit pas rester muet.
+    const androide = fenetreAvecVoix([{ name: "Google français", lang: "fr-FR" }]).voixRetenue();
+    verifier(androide && androide.name === "Google français",
+        "sans voix masculine française, SAMII ne parle plus du tout — mieux vaut une voix imparfaite que le silence");
+
     voixSortie.desactiver();
     const apresCoupure = dits.length;
     await voixSortie.parler("on ne doit plus rien entendre");
