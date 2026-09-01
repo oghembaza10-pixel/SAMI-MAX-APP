@@ -164,8 +164,17 @@ router.get("/", requireAuth, async (req, res) => {
         // et le nombre de non-lus. DISTINCT ON plutôt que deux requêtes —
         // c'est la même question, elle ne doit avoir qu'une réponse.
         const conversations = await db.query(
-            `SELECT DISTINCT ON (autre)
-                    autre, contenu, created_at, non_lus, prenom, nom, photo_profil_url
+            // Les colonnes sont QUALIFIÉES. « created_at » existe des deux
+            // côtés de la jointure — dans la sous-requête et dans
+            // `utilisateurs` — et Postgres refuse la requête entière :
+            // « column reference "created_at" is ambiguous ». La page
+            // rendait un 500. Rien ne l'avait vu : les tests remplacent la
+            // base par une fonction qui n'exécute pas le SQL, donc une
+            // requête invalide y passe sans bruit. Seul un vrai Postgres le
+            // dit.
+            `SELECT DISTINCT ON (t.autre)
+                    t.autre, t.contenu, t.created_at, t.non_lus,
+                    u.prenom, u.nom, u.photo_profil_url
                FROM (
                  SELECT CASE WHEN m.expediteur_id = $1 THEN m.destinataire_id ELSE m.expediteur_id END AS autre,
                         m.contenu, m.created_at,
@@ -178,7 +187,7 @@ router.get("/", requireAuth, async (req, res) => {
                     AND COALESCE(m.communaute, $3) = $2
                ) t
                LEFT JOIN utilisateurs u ON u.id = t.autre
-              ORDER BY autre, created_at DESC`,
+              ORDER BY t.autre, t.created_at DESC`,
             [moi, com, communautes.DEFAUT],
         ).then((rows) => rows.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
 
