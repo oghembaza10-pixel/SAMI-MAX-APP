@@ -51,14 +51,26 @@ function variablesDuBouton(composants = []) {
 
 async function main() {
     const token = CONFIG.META?.WHATSAPP_CLOUD?.TOKEN;
-    const wabaId = process.env.META_WABA_ID;
+    // En argument d'abord : on peut alors essayer un identifiant tout de
+    // suite, sans poser une variable sur Render et attendre un redéploiement
+    // pour découvrir qu'on s'est trompé de numéro.
+    const wabaId = (process.argv[2] || "").trim() || process.env.META_WABA_ID;
 
     if (!token) throw new Error("META_WHATSAPP_TOKEN absent — impossible d'interroger Meta.");
     if (!wabaId) {
         throw new Error(
-            "META_WABA_ID absent. C'est l'identifiant du compte WhatsApp Business "
-            + "(Gestionnaire WhatsApp → Paramètres du compte, ou dans l'URL business_id=…). "
-            + "Ce n'est ni le token ni le PHONE_NUMBER_ID.",
+            "Identifiant du compte WhatsApp Business (WABA) manquant.\n\n"
+            + "  Essayez tout de suite, sans rien poser sur Render :\n"
+            + "      node scripts/test-whatsapp.js <WABA_ID>\n\n"
+            + "  OÙ LE TROUVER — c'est un numéro à part, et trois identifiants\n"
+            + "  se ressemblent ici :\n"
+            + "    • business_id=… dans l'URL  → le PORTEFEUILLE Business Manager. Ce n'est PAS lui.\n"
+            + "    • PHONE_NUMBER_ID           → le numéro d'envoi. Ce n'est pas lui non plus.\n"
+            + "    • WABA ID                   → celui-ci. Gestionnaire WhatsApp →\n"
+            + "      Paramètres du compte, ligne « Identifiant du compte WhatsApp Business ».\n"
+            + "      Ou : developers.facebook.com → votre app → WhatsApp → Configuration de l'API,\n"
+            + "      champ « WhatsApp Business Account ID ».\n\n"
+            + "  Une fois le bon trouvé, posez-le sur Render : META_WABA_ID",
         );
     }
 
@@ -70,7 +82,25 @@ async function main() {
         });
         modelesMeta = r.data?.data || [];
     } catch (err) {
-        const d = err.response?.data?.error?.message || err.message;
+        const meta = err.response?.data?.error || {};
+        const d = meta.message || err.message;
+        // Meta répond la même chose — « Unsupported get request » — qu'on lui
+        // donne un identifiant de portefeuille, un identifiant de numéro, ou
+        // un WABA auquel le token n'a pas droit. Trois causes, un seul
+        // message : sans cette explication, on tourne en rond à changer le
+        // token alors que c'est l'identifiant qui est faux.
+        if (/Unsupported get request|does not exist|cannot be loaded/i.test(d)) {
+            throw new Error(
+                `Meta ne reconnaît pas « ${wabaId} » comme un compte WhatsApp Business.\n\n`
+                + `  Trois causes possibles, et Meta ne les distingue pas :\n`
+                + `    1. C'est un identifiant de PORTEFEUILLE (business_id de l'URL), pas un WABA.\n`
+                + `    2. C'est le PHONE_NUMBER_ID, qui désigne le numéro et non le compte.\n`
+                + `    3. C'est le bon WABA, mais le token système n'a pas accès à ce compte\n`
+                + `       (Business Settings → Utilisateurs système → Ajouter des actifs →\n`
+                + `        cocher le compte WhatsApp, droit « Gérer »).\n\n`
+                + `  Message brut de Meta : ${d}`,
+            );
+        }
         throw new Error(`Meta a refusé la lecture des modèles : ${d}`);
     }
 
