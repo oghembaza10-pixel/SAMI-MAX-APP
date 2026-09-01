@@ -62,6 +62,30 @@ function variablesDuBouton(composants = []) {
 // donné un portefeuille, il porte la liste de ses comptes WhatsApp. On
 // essaie donc, dans l'ordre, jusqu'à trouver — plutôt que de renvoyer
 // quelqu'un chercher un numéro dans une console à cinq niveaux de menus.
+// PLUSIEURS COMPTES, UN SEUL QUI COMPTE.
+//
+// Le compte porte quatre WABA : « WhatsApp for Shopify », deux comptes au
+// même nom, et un compte de test. Prendre le premier de la liste, c'est une
+// chance sur quatre de tomber juste — et quand on se trompe, le script
+// annonce « 0 modèle » et on croit que les modèles ont disparu.
+//
+// On demande donc à chacun combien de modèles il porte, et on garde celui
+// qui en a. C'est la seule façon de distinguer ces comptes de l'extérieur :
+// leurs noms ne les distinguent pas.
+async function celuiQuiPorteLesModeles(token, comptes) {
+    let meilleur = { id: comptes[0].id, comptage: -1 };
+    for (const c of comptes) {
+        try {
+            const r = await axios.get(`${GRAPH}/${c.id}/message_templates`, {
+                params: { limit: 200, access_token: token }, timeout: 15000,
+            });
+            const n = (r.data?.data || []).length;
+            if (n > meilleur.comptage) meilleur = { id: c.id, comptage: n, nom: c.name };
+        } catch { /* compte inaccessible : il ne peut pas être le bon */ }
+    }
+    return meilleur;
+}
+
 async function trouverWaba(token, candidat) {
     const essais = [];
 
@@ -83,11 +107,12 @@ async function trouverWaba(token, candidat) {
         for (const arete of ["owned_whatsapp_business_accounts", "client_whatsapp_business_accounts"]) {
             try {
                 const r = await axios.get(`${GRAPH}/${candidat}/${arete}`, {
-                    params: { limit: 25, access_token: token }, timeout: 15000,
+                    params: { limit: 25, fields: "id,name", access_token: token }, timeout: 15000,
                 });
                 const comptes = r.data?.data || [];
                 if (comptes.length) {
-                    return { id: comptes[0].id, via: `portefeuille ${candidat}`, tous: comptes };
+                    const choisi = await celuiQuiPorteLesModeles(token, comptes);
+                    return { id: choisi.id, via: `portefeuille ${candidat}`, tous: comptes, comptage: choisi.comptage };
                 }
             } catch { /* on continue : ce n'était pas un portefeuille non plus */ }
         }
@@ -103,7 +128,9 @@ async function trouverWaba(token, candidat) {
         const portees = r.data?.data?.granular_scopes || [];
         for (const p of portees) {
             if (/whatsapp_business_(messaging|management)/.test(p.scope) && p.target_ids?.length) {
-                return { id: p.target_ids[0], via: "droits du token", tous: p.target_ids.map((id) => ({ id })) };
+                const comptes = p.target_ids.map((id) => ({ id }));
+                const choisi = await celuiQuiPorteLesModeles(token, comptes);
+                return { id: choisi.id, via: "droits du token", tous: comptes, comptage: choisi.comptage };
             }
         }
         essais.push("le token ne déclare aucun compte WhatsApp dans ses droits");
@@ -140,8 +167,9 @@ async function main() {
     const wabaId = trouve.id;
     console.log(`Compte WhatsApp Business : ${wabaId}  (trouvé via ${trouve.via})`);
     if (trouve.tous && trouve.tous.length > 1) {
-        console.log(`⚠️  ${trouve.tous.length} comptes disponibles : ${trouve.tous.map((c) => c.id).join(", ")}`);
-        console.log(`   J'utilise le premier. Précisez-en un autre en argument si ce n'est pas le bon.`);
+        console.log(`   ${trouve.tous.length} comptes WhatsApp sur ce portefeuille : ${trouve.tous.map((c) => c.id).join(", ")}`);
+        console.log(`   J'ai gardé celui qui porte le plus de modèles (${trouve.comptage ?? "?"}).`
+            + ` Précisez-en un autre en argument si ce n'est pas le bon.`);
     }
     if (!process.env.META_WABA_ID) {
         console.log(`💡 À poser sur Render pour ne plus avoir à chercher : META_WABA_ID=${wabaId}`);
