@@ -614,6 +614,12 @@ function marque(html) {
         "/auth/woocommerce/callback": true, "/auth/woocommerce/return": true,
         "/connect/woocommerce": true, "/webhook/woocommerce": true,
         // à nous
+        // SAMII Jarvis : la bulle de cristal raconte l'activité d'un compte,
+        // et celle de TOUTE la plateforme quand c'est le fondateur qui
+        // regarde. Elle est hors de /samii exprès — sous ce préfixe, que ses
+        // membres ont, elle se serait ouverte chez elle par simple parenté
+        // de chemin.
+        "/jarvis": false,
         "/hub": false, "/academy": false, "/arsenal": false,
         // Ouverte pour Inès : « on va relâcher la Marketplace ».
         "/marketplace": true,

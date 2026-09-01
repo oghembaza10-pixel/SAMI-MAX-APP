@@ -6,7 +6,7 @@ const path = require("path");
 // portefeuille.test.js exige une VRAIE base (PGTEST_URL) et se saute d'elle-même
 // sinon : un grand livre ne se prouve pas contre une base simulée, qui dirait
 // oui à tout — y compris à un solde négatif.
-const SUITES = ["permissions.test.js", "bus.test.js", "paliers.test.js", "whatsapp.test.js", "cartes.test.js", "liens.test.js", "langues.test.js", "communaute.test.js", "vitrine.test.js", "qg.test.js", "discussions.test.js", "admin-communaute.test.js", "publications.test.js", "boutique.test.js", "profils.test.js", "cles-gemini.test.js", "whatsapp-samii.test.js", "messages.test.js", "atterrissage.test.js", "gabarits.test.js", "paiements.test.js", "portefeuille.test.js"];
+const SUITES = ["permissions.test.js", "bus.test.js", "paliers.test.js", "whatsapp.test.js", "cartes.test.js", "liens.test.js", "langues.test.js", "communaute.test.js", "vitrine.test.js", "qg.test.js", "discussions.test.js", "admin-communaute.test.js", "publications.test.js", "boutique.test.js", "profils.test.js", "cles-gemini.test.js", "whatsapp-samii.test.js", "messages.test.js", "atterrissage.test.js", "jarvis.test.js", "gabarits.test.js", "paiements.test.js", "portefeuille.test.js"];
 let echecs = 0;
 
 for (const suite of SUITES) {

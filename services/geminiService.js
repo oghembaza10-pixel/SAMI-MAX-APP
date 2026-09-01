@@ -382,6 +382,15 @@ const TOOLS = [
                 },
             },
             {
+                name: "resume_journee",
+                // La description est le seul endroit où l'on peut interdire
+                // l'invention. Sans la dernière phrase, le modèle reçoit un
+                // tableau vide et comble le vide : il dira « tu as reçu
+                // quelques emails » parce que la phrase sonne juste.
+                description: "Va chercher en base ce qui s'est réellement passé ces dernières 24 heures : commandes, paiements, nouveaux comptes, rendez-vous, activité, messages non lus, et les emails si Gmail est connecté. Appelle cette fonction dès qu'on te demande ce qui s'est passé aujourd'hui, un bilan, un résumé de la journée, où en est l'activité, ou s'il y a des problèmes. La réponse contient une liste 'indisponibles' : tu DOIS annoncer ces sources manquantes à voix haute et ne JAMAIS inventer de chiffre pour elles.",
+                parameters: { type: "OBJECT", properties: {} },
+            },
+            {
                 name: "consulter_gmail",
                 description: "Consulte les derniers emails reçus dans la boîte Gmail du marchand connecté (sujet, expéditeur, extrait). Utilise cette fonction dès qu'on te demande ce qu'il y a dans le mail, les derniers messages reçus, etc.",
                 parameters: { type: "OBJECT", properties: {} },
@@ -478,7 +487,12 @@ const TOOLS = [
 const SEARCH_TOOLS = [
     {
         functionDeclarations: TOOLS[0].functionDeclarations.filter(fn =>
-            ["rechercher_prospects", "consulter_gmail", "envoyer_email", "consulter_agenda", "creer_evenement_agenda", "lister_fichiers_drive", "creer_rapport_sheets", "envoyer_facture"].includes(fn.name)
+            // `resume_journee` est ICI et pas dans les outils clients : il
+            // lit l'activité du compte connecté. Un client qui discute avec
+            // la boutique d'un marchand ne doit jamais pouvoir demander
+            // « qu'est-ce qui s'est passé aujourd'hui » et recevoir le
+            // chiffre d'affaires de ce marchand.
+            ["resume_journee", "rechercher_prospects", "consulter_gmail", "envoyer_email", "consulter_agenda", "creer_evenement_agenda", "lister_fichiers_drive", "creer_rapport_sheets", "envoyer_facture"].includes(fn.name)
         ),
     },
 ];

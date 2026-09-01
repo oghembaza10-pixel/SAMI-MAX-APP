@@ -128,6 +128,21 @@ router.post("/chat", requireAuth, async (req, res) => {
             connaissances: connaissancesTexte,
             audience: "souverain",
             memoireUtilisateur: memoireActuelle,
+            // ── L'IDENTITÉ, RECOPIÉE DE LA SESSION ──────────────────────
+            //
+            // `resume_journee` lit l'activité d'un compte : commandes,
+            // paiements, boîte mail. Il lui faut donc savoir DE QUI on
+            // parle — et cette réponse ne peut venir que d'ici.
+            //
+            // `req.body` est juste au-dessus, avec workspaceId lisible
+            // depuis la page. On ne s'en sert pas : ce serait « donne-moi
+            // le bilan du workspace du voisin » en une ligne de console.
+            identite: {
+                userId: req.session?.userId || null,
+                workspaceId: req.session?.workspaceId || null,
+                isAdmin: req.session?.isAdmin === true,
+            },
+            COM: res.locals?.COM || null,
         };
 
         // Pièce jointe : uploadée sur Cloudinary côté client, on ne reçoit
@@ -346,12 +361,25 @@ router.post("/samii-resume", requireAuth, async (req, res) => {
     }
 });
 
-router.post("/speak", async (req, res) => {
+// `requireAuth` : cette route était ouverte à tout Internet, seule de son
+// espèce parmi les routes de chat. Sans clé ElevenLabs c'était inoffensif —
+// elle répondait `fallback: true` à tout le monde. Le jour où une clé est
+// posée, c'est une facture à l'air libre : n'importe qui peut envoyer du
+// texte en boucle et le faire lire à nos frais.
+//
+// Une porte qu'on n'a jamais fermée parce qu'il n'y avait rien derrière est
+// une porte qu'on oublie le jour où on range quelque chose dans la pièce.
+router.post("/speak", requireAuth, async (req, res) => {
     try {
         const elevenlabs = require("../services/elevenlabs");
-        const { text } = req.body;
+        const texte = String(req.body?.text || "");
+        // Une réponse de SAMII fait quelques centaines de caractères. Sans
+        // borne, un seul appel peut demander la lecture d'un livre.
+        if (texte.length > 5000) {
+            return res.json({ success: false, error: "Texte trop long." });
+        }
         if (!elevenlabs.isEnabled()) return res.json({ success: false, fallback: true });
-        const result = await elevenlabs.textToSpeech(text);
+        const result = await elevenlabs.textToSpeech(texte);
         res.json(result);
     } catch (err) {
         console.error("❌ POST /api/speak :", err.message);

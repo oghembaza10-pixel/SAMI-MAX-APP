@@ -28,6 +28,9 @@ class SamiiPlanner {
             case "rechercher_prospects":
                 return await this.rechercherProspects(args);
 
+            case "resume_journee":
+                return await this.resumeJournee(context);
+
             case "consulter_gmail":
                 return await this.consulterGmail(context);
 
@@ -92,6 +95,41 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         } catch (err) {
             console.error("❌ Planner.rechercherProspects :", err.message);
             return { success: false, error: "Erreur lors de la recherche." };
+        }
+    }
+
+    // ── « QU'EST-CE QUI S'EST PASSÉ AUJOURD'HUI ? » ─────────────────────
+    //
+    // L'identité vient de `context.identite`, qui est recopiée de la SESSION
+    // par routes/api.js — jamais du corps de la requête. Un identifiant
+    // accepté depuis la page, et n'importe qui demande le bilan de
+    // n'importe qui.
+    //
+    // Sans identité, on ne devine pas : on refuse. Une IA à qui l'on répond
+    // « rien » raconte une journée plausible.
+    async resumeJournee(context) {
+        const identite = context?.identite;
+        if (!identite) {
+            return { success: false, error: "Je ne sais pas de quel compte parler — reconnecte-toi." };
+        }
+        try {
+            const briefing = require("../services/briefing");
+            const { donnees, indisponibles } = await briefing.collecter(identite, context.COM || null);
+            return {
+                success: true,
+                periode: donnees.fenetre,
+                perimetre: donnees.perimetre,
+                donnees,
+                // Répété dans la charge utile ET dans la description de
+                // l'outil : c'est la consigne la plus importante, et une
+                // consigne donnée une seule fois se perd dans un long
+                // contexte.
+                indisponibles,
+                consigne: "Annonce clairement chaque source de la liste 'indisponibles'. N'invente aucun chiffre pour elles.",
+            };
+        } catch (err) {
+            console.error("❌ Planner.resumeJournee :", err.message);
+            return { success: false, error: "Je n'ai pas pu lire l'activité pour le moment." };
         }
     }
 

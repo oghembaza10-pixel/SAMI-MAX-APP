@@ -350,6 +350,11 @@ app.use("/samii/miroir", requireAuth, require("./routes/miroir"));
 app.use("/samii/messager-eclair", requireAuth, require("./routes/messagereclair"));
 app.use("/samii/oracle-financier", requireAuth, require("./routes/oraclefinancier"));
 app.use("/samii",     requireAuth, require("./routes/samii-mode"));
+// SAMII JARVIS — la bulle de cristal. Volontairement HORS de /samii : ce
+// préfixe appartient au module `assistant`, que les partenaires ont, et
+// cette page raconte l'activité d'un compte. Sous /samii elle se serait
+// ouverte chez elles par simple préfixe. Voir routes/jarvis.js.
+app.use("/jarvis",    requireAuth, require("./routes/jarvis"));
 app.use("/connect",   require("./routes/connector"));
 app.use("/youtube",   require("./routes/youtube"));
 app.use("/autopost",  require("./routes/autopost"));

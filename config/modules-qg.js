@@ -81,6 +81,21 @@ const MODULES = [
     // L'assistant, c'est le moteur ET ses outils (Griot, Miroir, Oracle…),
     // tous montés sous /samii. C'est ce qu'on lui a promis : l'automatisation.
     { id: "assistant",   libelle: "SAMII",               cle: "qg.nav.samii",        icone: "bot",             href: "/samii",          rang: "more", separateurAvant: true, pastille: true, chemins: ["/samii", "/automatisations"] },
+    // ── SAMII JARVIS — la bulle de cristal ───────────────────────────────
+    //
+    // Un module À PART, et pas une page de plus sous `assistant`. Deux
+    // raisons, et la deuxième est la vraie :
+    //
+    // 1. `assistant` est dans MINIMAL : les membres d'une partenaire l'ont.
+    //    Ranger Jarvis sous /samii l'aurait ouverte chez elles par préfixe.
+    // 2. Cette page RACONTE L'ACTIVITÉ d'un compte — commandes, paiements,
+    //    boîte mail — et, pour le fondateur, celle de toute la plateforme.
+    //    Ce n'est pas un outil de plus, c'est un poste de pilotage.
+    //
+    // Absent de MINIMAL : fermé par défaut chez toute partenaire. Le jour
+    // où on décide d'en offrir une version à l'une d'elles, c'est une
+    // ligne dans SA liste — pas une décision prise pour toutes.
+    { id: "jarvis",      libelle: "SAMII Jarvis",        cle: "qg.nav.jarvis",       icone: "orbit",           href: "/jarvis",         rang: "more", chemins: ["/jarvis"] },
 
     // ── Le bas de la colonne ─────────────────────────────────────────────
     { id: "vitrine",     libelle: "Ma Vitrine",          cle: "qg.nav.vitrine",      icone: "user-circle",     href: (COM, ctx) => `/vitrine/${ctx.userId || ""}`, rang: "bas", nouvelOnglet: true, chemins: ["/vitrine"] },
