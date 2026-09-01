@@ -13,6 +13,11 @@ const db            = require("../services/db");
 const journalService = require("../services/journalService");
 const connectorService = require("../services/connectorService");
 const confirmationsQuota = require("../services/confirmationsQuota");
+// Le canal officiel : c'est lui qui tient le carnet (à qui parle-t-on) et la
+// fenêtre de 24 h (a-t-on le droit de parler). Requis au niveau du module,
+// jamais dans une fonction — un require caché dans une branche rarement
+// prise, c'est une panne qui n'apparaît qu'en production.
+const samii = require("../services/whatsappSamii");
 const transcription  = require("../services/transcription");
 const produitsService = require("../services/produitsService");
 const fournisseurs   = require("../services/whatsappFournisseurs");
@@ -261,8 +266,52 @@ router.post("/", async (req, res) => {
             }
             console.log(`   ↳ message entrant, numéro ${lu.phoneNumberId || "?"}`);
 
-            const workspaceId = await getWorkspaceParNumeroCloud(lu.phoneNumberId, lu.numeroAffiche);
-            if (workspaceId) console.log(`   ↳ marchand trouvé : ${workspaceId}`);
+            // ── LE NUMÉRO OFFICIEL DE SAMII ────────────────────────────────
+            //
+            // « Je veux que tout le monde utilise cette API de Meta. »
+            //
+            // Un seul numéro pour toute la plateforme : la recherche par
+            // numéro ne peut plus désigner un marchand, puisqu'ils l'ont tous
+            // en commun. Le message arrive nu.
+            //
+            // C'est le CARNET qui répond : le tout premier message vient du
+            // lien pré-rempli et porte le code de la boutique entre crochets ;
+            // on le retient, et les fois suivantes le numéro du client suffit.
+            //
+            // Ce branchement passe AVANT la recherche par numéro. Dans
+            // l'autre ordre, le numéro officiel finirait par tomber sur le
+            // premier marchand qui l'a déclaré, et tous les clients de la
+            // plateforme atterriraient chez lui.
+            const officiel = samii.canalOfficiel();
+            let workspaceId = null;
+
+            if (officiel && String(lu.phoneNumberId) === String(officiel.phoneNumberId)) {
+                const fiche = await samii.noterEntrant({
+                    numero: lu.sender,
+                    texte: lu.texte,
+                    nom: lu.senderName,
+                });
+                workspaceId = fiche?.workspace_id || null;
+                console.log(`   ↳ canal officiel SAMII — boutique : ${workspaceId || "inconnue"}`);
+
+                if (!workspaceId) {
+                    // On ne se tait pas. La fenêtre de 24 h vient de s'ouvrir
+                    // (le client a écrit), donc ce texte libre part vraiment
+                    // et ne coûte rien. Se taire ici, c'est quelqu'un qui
+                    // écrit à un numéro qui ne répond jamais.
+                    await samii.ecrire({
+                        to: lu.sender,
+                        texte: "Bonjour 👋 Je suis SAMII. Pour vous mettre en relation avec la bonne boutique, "
+                             + "ouvrez WhatsApp depuis le bouton « Contacter la boutique » sur sa page — "
+                             + "je saurai alors de qui il s'agit et je pourrai vous aider tout de suite.",
+                    });
+                    return;
+                }
+            } else {
+                workspaceId = await getWorkspaceParNumeroCloud(lu.phoneNumberId, lu.numeroAffiche);
+                if (workspaceId) console.log(`   ↳ marchand trouvé : ${workspaceId}`);
+            }
+
             if (!workspaceId) {
                 console.log(`⚠️ WhatsApp Cloud : marchand introuvable pour ${lu.numeroAffiche || lu.phoneNumberId}`);
                 return;

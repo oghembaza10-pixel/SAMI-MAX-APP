@@ -42,6 +42,7 @@ const pixelsService = require("../services/pixelsService");
 // rien ne distingue « déclaré à côté de son usage » de « pas déclaré du
 // tout » — et c'est ce mélange qui avait fait planter GET /login.
 const communautes = require("../config/communautes");
+const samii = require("./../services/whatsappSamii");
 
 function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, (c) => ({
@@ -128,7 +129,8 @@ async function renderVitrine(userId, req, res) {
         const rows = await db.query(
             `SELECT id, prenom, nom, email, telephone, pays, bio_vitrine,
                     photo_profil_url, banniere_url, grade_actuel, type_compte,
-                    metier, sous_domaine, vitrine_theme, vitrine_grille, created_at
+                    metier, sous_domaine, vitrine_theme, vitrine_grille, created_at,
+                    workspace_boutique_id
              FROM utilisateurs WHERE id = $1`,
             [userId],
         );
@@ -226,6 +228,14 @@ async function renderVitrine(userId, req, res) {
     const autres = sections.get("__autres") || [];
     sections.delete("__autres");
 
+    // Le lien WhatsApp pré-rempli n'apparaît que si le canal officiel a un
+    // numéro ET que cette boutique a un espace de travail : un lien wa.me
+    // sans numéro n'ouvre rien, et sans code de boutique il envoie un message
+    // que SAMII ne saura pas router.
+    const lienWhatsApp = user.workspace_boutique_id
+        ? samii.lienContact(user.workspace_boutique_id, nomComplet)
+        : "";
+
     const estProprietaire = req.session?.userId === user.id;
     const lienPublic = user.sous_domaine
         ? `https://${user.sous_domaine}.souverain-store.com`
@@ -234,7 +244,7 @@ async function renderVitrine(userId, req, res) {
     res.send(gabarit({
         user, nomComplet, theme, grande, produits, vedettes, sections, autres,
         publications, avis, note, vuesTotales, pixelsHtml, lienPublic,
-        estProprietaire, COM,
+        estProprietaire, COM, lienWhatsApp,
     }));
 }
 
@@ -311,7 +321,7 @@ function gabarit(d) {
     const {
         user, nomComplet, theme, grande, produits, vedettes, sections, autres,
         publications, avis, note, vuesTotales, pixelsHtml, lienPublic, estProprietaire,
-        COM,
+        COM, lienWhatsApp,
     } = d;
 
     const bio = (user.bio_vitrine || "").trim();
@@ -691,6 +701,13 @@ img{max-width:100%;display:block}
 
     <div class="actions">
         <button class="btn btn--fort" id="btnContact">💬 Contacter la boutique</button>
+        ${lienWhatsApp ? `
+        <!-- LE LIEN PRÉ-REMPLI.
+             Un seul numéro WhatsApp sert toute la plateforme : le message
+             qui part porte donc le code de CETTE boutique entre crochets,
+             sinon SAMII reçoit un message nu et ne sait pas à qui il parle.
+             Le client n'a rien à taper — il appuie sur envoyer. -->
+        <a class="btn" href="${escapeHtml(lienWhatsApp)}" target="_blank" rel="noopener">💚 WhatsApp</a>` : ""}
         <button class="btn" id="btnPartager">🔗 Partager</button>
         <a class="btn" href="/marketplace?vendeur=${encodeURIComponent(user.id)}">🛍 Tous ses produits</a>
         ${estProprietaire ? `<a class="btn" href="/settings#boutique">⚙️ Modifier ma boutique</a>` : ""}

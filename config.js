@@ -187,7 +187,18 @@ module.exports = {
         // Utilisateur(ice)s système → Générer un token).
         WHATSAPP_CLOUD: {
             TOKEN          : process.env.META_WHATSAPP_TOKEN,
-            PHONE_NUMBER_ID: process.env.META_WHATSAPP_PHONE_NUMBER_ID || "1304094159450033",
+            // PAS DE NUMÉRO ÉCRIT EN DUR ICI.
+            //
+            // Cette ligne portait « || "1304094159450033" ». Une valeur de
+            // repli sur un identifiant d'expéditeur, c'est SAMII qui se met à
+            // écrire depuis un numéro que personne n'a choisi le jour où la
+            // variable manque — et l'envoi RÉUSSIT, donc rien ne le signale.
+            // Sans variable, le canal se déclare non configuré et le dit.
+            PHONE_NUMBER_ID: process.env.META_WHATSAPP_PHONE_NUMBER_ID,
+            // Le numéro tel qu'on l'écrit dans un lien wa.me — ce n'est PAS
+            // le même que PHONE_NUMBER_ID, qui est un identifiant interne à
+            // Meta. Confondre les deux donne un lien qui n'ouvre rien.
+            NUMERO         : process.env.META_WHATSAPP_NUMERO,
         },
     },
 

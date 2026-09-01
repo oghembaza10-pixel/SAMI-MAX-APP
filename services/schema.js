@@ -464,6 +464,43 @@ const BLOCS = [
             `CREATE INDEX IF NOT EXISTS idx_paiements_communaute ON paiements (communaute, statut, paye_le DESC)`,
         ],
     },
+    {
+        // ── LE CARNET WHATSAPP DU NUMÉRO OFFICIEL ────────────────────────
+        //
+        // « Je veux que tout le monde utilise cette API de Meta. »
+        //
+        // Un seul numéro pour toute la plateforme fait apparaître deux
+        // questions que Green API ne posait pas, parce que là-bas le numéro
+        // du marchand répondait aux deux tout seul.
+        //
+        // 1. À QUI PARLE-T-ON ? Un message arrive nu : rien dedans ne dit à
+        //    quelle boutique le client s'adresse. Le code de boutique n'est
+        //    dans le tout premier message (celui du lien pré-rempli), donc
+        //    il faut s'en souvenir — sinon SAMII redemande à chaque fois.
+        //
+        // 2. A-T-ON LE DROIT DE PARLER ? WhatsApp n'autorise le texte libre
+        //    que 24 h après le dernier message DU CLIENT. Passé ce délai,
+        //    seuls les modèles approuvés passent, et ils se facturent. Sans
+        //    cette date, on ne peut pas choisir — et deviner coûte soit un
+        //    message qui n'arrive pas, soit un modèle payé pour rien.
+        //
+        // Une table, ces deux réponses. La clé est le numéro : c'est ce que
+        // Meta nous donne, et c'est stable.
+        nom: "whatsapp_contacts",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS whatsapp_contacts (
+                numero          TEXT PRIMARY KEY,
+                workspace_id    TEXT,
+                communaute      TEXT DEFAULT 'samii',
+                nom_client      TEXT,
+                dernier_entrant TIMESTAMPTZ,
+                dernier_sortant TIMESTAMPTZ,
+                created_at      TIMESTAMPTZ NOT NULL DEFAULT now())`,
+            // « Qui a écrit récemment à cette boutique ? » — la question du
+            // marchand qui ouvre sa messagerie.
+            `CREATE INDEX IF NOT EXISTS idx_wa_contacts_workspace ON whatsapp_contacts (workspace_id, dernier_entrant DESC)`,
+        ],
+    },
 ];
 
 // ── Les élargissements de type ───────────────────────────────────────────

@@ -114,6 +114,84 @@ async function envoyer(config, { to, message }) {
     }
 }
 
+// ── Envoi d'un MODÈLE approuvé ───────────────────────────────────────────
+//
+// WhatsApp n'autorise le texte libre que dans les 24 h qui suivent le dernier
+// message DU CLIENT. Au-delà — et pour tout message qu'on envoie en premier —
+// seul un modèle validé par Meta passe. C'est la seule façon de confirmer une
+// commande le lendemain, d'annoncer une livraison, ou de relancer.
+//
+// Un modèle est appelé PAR SON NOM, pas par son texte : le texte vit chez
+// Meta, approuvé. On ne fournit que les variables, dans l'ordre où elles
+// apparaissent ({{1}}, {{2}}...). Une variable en trop ou en moins et Meta
+// refuse l'envoi entier — d'où le contrôle avant de partir.
+//
+// Green API ne connaît pas les modèles : il n'a pas de fenêtre de 24 h non
+// plus, puisque c'est un vrai téléphone. On y envoie donc le texte de repli,
+// qui est le même message écrit en clair — sinon un marchand resté sur Green
+// ne recevrait plus rien du tout.
+async function envoyerModele(config, { to, nom, langue = "fr", variables = [], variablesBouton = [], replide = "" }) {
+    if (!to || !nom) return { success: false, error: "Destinataire ou modèle manquant." };
+    if (!estComplete(config)) return { success: false, error: "WhatsApp non configuré pour cet espace." };
+
+    const fournisseur = fournisseurDe(config);
+    if (fournisseur === "green") {
+        if (!replide) return { success: false, error: "Green API ne gère pas les modèles, et aucun texte de repli n'a été fourni." };
+        return envoyer(config, { to, message: replide });
+    }
+
+    const composants = [];
+    if (variables.length) {
+        composants.push({
+            type: "body",
+            parameters: variables.map((v) => ({ type: "text", text: String(v ?? "") })),
+        });
+    }
+    // Un bouton d'URL dynamique : Meta n'accepte la partie variable de
+    // l'adresse que déclarée séparément, jamais collée dans le corps.
+    if (variablesBouton.length) {
+        composants.push({
+            type: "button",
+            sub_type: "url",
+            index: "0",
+            parameters: variablesBouton.map((v) => ({ type: "text", text: String(v ?? "") })),
+        });
+    }
+
+    const corps = {
+        messaging_product: "whatsapp",
+        to: String(to).replace(/[^\d]/g, ""),
+        type: "template",
+        template: {
+            name: nom,
+            language: { code: langue },
+            ...(composants.length ? { components: composants } : {}),
+        },
+    };
+
+    try {
+        if (fournisseur === "cloud") {
+            await axios.post(`${GRAPH}/${config.phoneNumberId}/messages`, corps, {
+                headers: { Authorization: `Bearer ${config.token}`, "Content-Type": "application/json" },
+                timeout: 20000,
+            });
+        } else {
+            await axios.post(`${D360}/messages`, corps, {
+                headers: { "D360-API-KEY": config.apiKey, "Content-Type": "application/json" },
+                timeout: 20000,
+            });
+        }
+        return { success: true };
+    } catch (err) {
+        const detail = err.response?.data?.error?.message || err.response?.data?.message || err.message;
+        // Le nom du modèle est dans le message : c'est LUI qu'on cherchera
+        // dans les journaux quand un envoi ne part pas. « Envoi refusé » sans
+        // le nom oblige à deviner lequel des sept est en cause.
+        console.error(`❌ WhatsApp modèle « ${nom} » (${fournisseur}) :`, detail);
+        return { success: false, error: detail };
+    }
+}
+
 function corpsTexte(to, message) {
     // `to` sans "+" ni espaces : les deux API refusent le reste.
     return {
@@ -219,6 +297,7 @@ module.exports = {
     estFamilleCloud,
     estComplete,
     envoyer,
+    envoyerModele,
     declarerWebhook,
     lireWebhookCloud,
     telechargerMedia,
