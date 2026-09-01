@@ -39,6 +39,20 @@ function requireAuth(req, res, next) {
     next();
 }
 
+// LE FONDATEUR N'EST PAS UN UTILISATEUR CONNECTÉ COMME LES AUTRES.
+//
+// `session.isAdmin` est posé par /admin/login, et cette session-là n'a pas
+// `loggedIn`. Les deux cohabitent : on peut être l'un, l'autre, ou les
+// deux. La page d'état du moteur accepte donc les deux chemins.
+//
+// Un refus renvoie 404, pas 403 : pour tout le monde sauf lui, cette page
+// n'existe pas. Un « accès refusé » annonce qu'il y a quelque chose
+// derrière, et donne envie d'y aller.
+function requireFondateur(req, res, next) {
+    if (req.session?.isAdmin !== true) return res.status(404).send("Not found");
+    next();
+}
+
 function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, (c) => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -363,8 +377,15 @@ body{
             window.VoixSortie.parler(reponse);
         } catch (err) {
             if (err.name === "AbortError") {
-                ajouter("lui", "Je n'ai pas eu de réponse au bout de 45 secondes. "
-                    + "Le moteur est saturé ou une clé est à bout de quota. Réessaie.");
+                // ON NE NOMME PAS LA CAUSE. La version precedente affirmait
+                // « le moteur est satur? ou une cle est a bout de quota » —
+                // une supposition presentee comme un diagnostic, alors que
+                // la page n'a aucun moyen de le savoir. Ca envoie chercher au
+                // mauvais endroit. On dit ce qu'on constate, et on indique ou
+                // la reponse se trouve vraiment.
+                ajouter("lui", "Pas de réponse au bout de 45 secondes. "
+                    + "Je ne sais pas pourquoi d'ici — l'état réel du moteur "
+                    + "est sur /jarvis/moteur.");
                 poser("", "Aucune réponse en 45 s.");
             } else {
                 ajouter("lui", "Je n'ai pas réussi à joindre le serveur — " + err.message);
@@ -445,6 +466,107 @@ body{
 </script>
 </body>
 </html>`);
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// GET /jarvis/moteur — L'ÉTAT DU MOTEUR, SANS SUPPOSITION
+//
+// « Comment ça un problème de quota alors qu'on a mis une clé payante ? »
+//
+// La question était juste. La page disait « le moteur est saturé » parce
+// que ça semblait probable — personne ne l'avait vérifié. Cette page-ci
+// ne suppose rien : elle liste les clés réellement chargées, le nom de la
+// variable qui les a apportées, et, sur demande, ce que Google répond pour
+// chacune.
+//
+// RÉSERVÉE AU FONDATEUR. Elle nomme les variables d'environnement et l'état
+// de la facturation : ce n'est pas une page de marchand, encore moins une
+// page de partenaire. `requireAuth` ne suffit donc pas.
+//
+// AUCUNE CLÉ N'EN SORT. Quatre caractères de fin, de quoi reconnaître une
+// ligne dans une liste — jamais de quoi s'en servir.
+// ══════════════════════════════════════════════════════════════════════════
+router.get("/moteur", requireFondateur, async (req, res) => {
+    const gemini = require("../services/geminiService");
+    const etat = gemini.etat();
+    // La sonde appelle Google : on ne la lance QUE si on la demande. Sans
+    // ce garde, ouvrir la page par curiosité ferait dix-sept appels.
+    const sonde = req.query.sonder === "1" ? await gemini.sonder() : null;
+
+    const pastille = (v) => ({
+        valide: "#4caf50", quota: "#e0a030", morte: "#e05555",
+    }[v] || "#8a8f9e");
+
+    const lignes = (sonde || etat.cles).map((k) => `
+        <tr>
+            <td>${escapeHtml(k.nom)}</td>
+            <td class="mono">…${escapeHtml(k.empreinte)}</td>
+            <td>${k.classee === "payante"
+                ? "<b style=\"color:#C5A059\">payante ?</b>"
+                : "gratuite"}</td>
+            <td>${sonde
+                ? `<b style="color:${pastille(k.verdict)}">${escapeHtml(k.verdict)}</b><br>
+                   <span class="petit">${escapeHtml(k.detail || "")}</span>`
+                : (k.saturee
+                    ? `<b style="color:#e0a030">mise de côté</b> — retour dans ${k.repriseDansSecondes} s`
+                    : "en service")}</td>
+        </tr>`).join("");
+
+    res.send(`<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>État du moteur</title>
+<style>
+body{background:#06080f;color:#e8e6df;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    padding:24px 16px;max-width:900px;margin:0 auto;line-height:1.6;}
+h1{font-size:1.2rem;letter-spacing:.06em;margin-bottom:4px;}
+h2{font-size:.9rem;color:#8a8f9e;font-weight:500;margin:26px 0 8px;letter-spacing:.05em;}
+a{color:#5ad4ff;}
+table{width:100%;border-collapse:collapse;font-size:.86rem;margin-top:8px;}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:top;}
+th{color:#8a8f9e;font-weight:500;font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;color:#8a8f9e;}
+.petit{font-size:.76rem;color:#8a8f9e;}
+.encadre{border:1px solid rgba(197,160,89,.3);background:rgba(197,160,89,.06);
+    border-radius:10px;padding:14px 16px;margin:18px 0;font-size:.86rem;}
+.bouton{display:inline-block;margin-top:14px;border:1px solid rgba(90,212,255,.4);
+    background:rgba(90,212,255,.12);color:#e8e6df;border-radius:999px;padding:9px 18px;
+    text-decoration:none;font-size:.86rem;}
+.relais span{display:inline-block;margin-right:14px;font-size:.86rem;}
+</style></head><body>
+
+<a href="/jarvis">&larr; Retour à la bulle</a>
+<h1>État du moteur SAMII</h1>
+<p class="petit">Ce que le service a réellement chargé — pas ce qu'on croit avoir posé sur Render.</p>
+
+<div class="encadre">
+    <b>⚠️ « Payante » est une supposition sur le NOM, pas un fait.</b><br>
+    Une clé dont le nom n'est pas <span class="mono">GEMINI_API_KEY…</span> est rangée en
+    dernier et marquée « payante ». Mais <b>aucune API ne dit si un projet Google a la
+    facturation activée</b> — et le plafond gratuit se compte <b>par projet</b>, pas par clé.
+    Une clé créée dans un projet sans facturation plafonnera comme les autres, à
+    20 requêtes/minute. Seule la console Google Cloud tranche.
+</div>
+
+<h2>Clés chargées : ${etat.total}${etat.chezUnePartenaire ? " — service partenaire, les payantes sont écartées" : ""}</h2>
+<table>
+    <tr><th>Variable</th><th>Clé</th><th>Rangée</th><th>${sonde ? "Ce que dit Google" : "État connu"}</th></tr>
+    ${lignes || '<tr><td colspan="4">Aucune clé Gemini chargée.</td></tr>'}
+</table>
+
+${sonde ? "" : `<a class="bouton" href="/jarvis/moteur?sonder=1">Demander à Google, clé par clé</a>
+<p class="petit">Cet appel liste les modèles — il ne consomme <b>aucun</b> quota de génération.</p>`}
+
+<h2>Si Gemini ne répond plus, qui prend le relais ?</h2>
+<p class="relais">
+    <span>Groq : <b style="color:${etat.relais.groq ? "#4caf50" : "#e05555"}">${etat.relais.groq ? "prêt" : "aucune clé"}</b></span>
+    <span>OpenRouter : <b style="color:${etat.relais.openrouter ? "#4caf50" : "#e05555"}">${etat.relais.openrouter ? "prêt" : "aucune clé"}</b></span>
+    <span>DeepSeek : <b style="color:${etat.relais.deepseek ? "#4caf50" : "#e05555"}">${etat.relais.deepseek ? "prêt" : "aucune clé"}</b></span>
+</p>
+<p class="petit">L'ordre est : Gemini (toutes les clés) → Groq → OpenRouter → DeepSeek.
+Si les trois relais sont sans clé, une saturation de Gemini laisse SAMII muet.</p>
+
+</body></html>`);
 });
 
 module.exports = router;

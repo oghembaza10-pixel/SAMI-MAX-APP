@@ -304,19 +304,31 @@ module.exports = {
             const vues = new Set();
             const gratuites = [];
             const payantes = [];
-            const ajouter = (v, liste) => {
+            // L'INVENTAIRE : quel NOM de variable a donné quelle clé, et où
+            // elle a été rangée. Aucune clé n'y figure — seulement les quatre
+            // derniers caractères, de quoi la reconnaître dans une liste sans
+            // qu'elle puisse servir à quiconque la lirait.
+            //
+            // Il existe parce que « on a mis une clé payante » et « la clé
+            // payante est en service » sont deux choses différentes, et que
+            // rien ne permettait de le vérifier autrement qu'en lisant ce
+            // fichier. Une clé posée sous un nom que personne ne relit est
+            // une clé qui n'existe pas.
+            const inventaire = [];
+            const ajouter = (v, liste, nom, rang) => {
                 const c = String(v || "").trim();
                 if (!c || vues.has(c)) return;   // deux noms, une seule clé : on ne l'essaie pas deux fois
                 vues.add(c);
                 liste.push(c);
+                inventaire.push({ nom, empreinte: c.slice(-4), rang });
             };
 
-            for (const nom of attendus) if (ressemble(process.env[nom])) ajouter(process.env[nom], gratuites);
+            for (const nom of attendus) if (ressemble(process.env[nom])) ajouter(process.env[nom], gratuites, nom, "gratuite");
             // Puis tout le reste, en fin de liste : une clé rangée sous un nom
             // inattendu est un dernier recours, elle ne passe jamais devant.
             for (const nom of Object.keys(process.env)) {
                 if (attendus.includes(nom)) continue;
-                if (nomme(nom) && ressemble(process.env[nom])) ajouter(process.env[nom], payantes);
+                if (nomme(nom) && ressemble(process.env[nom])) ajouter(process.env[nom], payantes, nom, "payante");
             }
 
             // ── LA PAYANTE RESTE CHEZ NOUS ──────────────────────────────
@@ -356,6 +368,21 @@ module.exports = {
                 API_KEYS: chezUnePartenaire ? gratuites : [...gratuites, ...payantes],
                 // Ce que le service ne doit PAS retenir comme point de départ.
                 PAYANTES: chezUnePartenaire ? [] : payantes,
+                // ⚠️ « PAYANTE » EST UNE SUPPOSITION SUR LE NOM, PAS UN FAIT.
+                //
+                // Ce fichier range en « payante » toute clé dont le nom n'est
+                // pas dans la liste attendue. Il n'a AUCUN moyen de savoir si
+                // le projet Google derrière a la facturation activée — et le
+                // plafond gratuit se compte par PROJET, pas par clé. Une clé
+                // créée dans un projet sans facturation est donc « payante »
+                // ici et gratuite chez Google : elle plafonnera comme les
+                // autres, à 20 requêtes par minute.
+                //
+                // Seule une sonde le dit vraiment (voir geminiService.sonder).
+                INVENTAIRE: chezUnePartenaire
+                    ? inventaire.filter((e) => e.rang === "gratuite")
+                    : inventaire,
+                CHEZ_UNE_PARTENAIRE: chezUnePartenaire,
             };
         })(),
     },

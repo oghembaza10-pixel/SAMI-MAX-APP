@@ -354,7 +354,13 @@ app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 // préfixe appartient au module `assistant`, que les partenaires ont, et
 // cette page raconte l'activité d'un compte. Sous /samii elle se serait
 // ouverte chez elles par simple préfixe. Voir routes/jarvis.js.
-app.use("/jarvis",    requireAuth, require("./routes/jarvis"));
+// Pas de requireAuth ici : ce fichier a ses PROPRES gardes, et il en a
+// deux différents. La bulle demande une session utilisateur ; la page
+// d'état du moteur demande le fondateur (session.isAdmin), qui n'a pas
+// `loggedIn`. Le garde global d'index.js barrait donc le fondateur à sa
+// propre page de diagnostic. Une porte de plus n'est pas une porte de
+// mieux quand elle ne connaît pas les gens qui doivent passer.
+app.use("/jarvis",    require("./routes/jarvis"));
 app.use("/connect",   require("./routes/connector"));
 app.use("/youtube",   require("./routes/youtube"));
 app.use("/autopost",  require("./routes/autopost"));

@@ -10,7 +10,15 @@ const SAMII_PROMPT = require("../brain/prompts/index");
 const { METIERS } = require("./metiers");
 const LISTE_METIERS = METIERS.filter(m => m.id !== "autre").map(m => m.id).join(", ");
 const MODEL = "gemini-3.6-flash";
-const KEYS  = CONFIG.GEMINI.API_KEYS.length > 0 ? CONFIG.GEMINI.API_KEYS : [CONFIG.GEMINI.API_KEY];
+// `.filter(Boolean)` : sans clé configurée du tout, GEMINI_API_KEY vaut
+// undefined et la liste contenait donc un trou. La rotation construisait
+// alors une URL « ?key=undefined », et l'état du moteur plantait en lisant
+// ses quatre derniers caractères. Une liste vide est un cas honnête — le
+// relais (Groq, OpenRouter, DeepSeek) prend la main ; une liste qui contient
+// undefined est un mensonge sur ce qu'on a.
+const KEYS = (CONFIG.GEMINI.API_KEYS.length > 0
+    ? CONFIG.GEMINI.API_KEYS
+    : [CONFIG.GEMINI.API_KEY]).filter(Boolean);
 
 function urlFor(key) {
     return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
@@ -826,4 +834,100 @@ async function receive(msg) {
     console.log("📥 Gemini receive :", msg);
 }
 
-module.exports = { send, chat, chatLibre, chatWithFunctionResult, chatWithSearch, chatViaOpenRouter, summarize, receive, TOOLS };
+// ══════════════════════════════════════════════════════════════════════════
+// L'ÉTAT DU MOTEUR — pour arrêter de deviner
+//
+// « Comment ça un problème de quota alors qu'on a mis une clé payante ? »
+//
+// La question était juste, et la réponse honnête était : je n'en savais
+// rien. La page disait « le moteur est saturé » parce que ça SEMBLAIT
+// probable, pas parce que quelqu'un l'avait vérifié. Une supposition
+// affichée comme un diagnostic fait perdre plus de temps qu'un silence.
+//
+// Ces deux fonctions ne supposent rien.
+// ══════════════════════════════════════════════════════════════════════════
+
+// Ce que le service SAIT, tout de suite, sans appeler Google : combien de
+// clés, laquelle est rangée en payante, laquelle est mise de côté et
+// jusqu'à quand. Aucune clé n'en sort — seulement les quatre derniers
+// caractères, déjà calculés par config.js.
+function etat() {
+    const maintenant = Date.now();
+    const inventaire = CONFIG.GEMINI.INVENTAIRE || [];
+    return {
+        chezUnePartenaire: !!CONFIG.GEMINI.CHEZ_UNE_PARTENAIRE,
+        total: KEYS.length,
+        // `depart` est le curseur de rotation : il dit par où la prochaine
+        // requête commencera. Utile pour comprendre pourquoi une clé n'est
+        // jamais atteinte.
+        prochainDepart: depart % Math.max(1, KEYS.length),
+        cles: KEYS.map((cle, i) => {
+            const fiche = inventaire.find((e) => e.empreinte === cle.slice(-4));
+            const jusqua = saturees.get(cle) || 0;
+            return {
+                rang: i + 1,
+                nom: fiche?.nom || "(nom inconnu)",
+                empreinte: cle.slice(-4),
+                classee: fiche?.rang || (PAYANTES.has(cle) ? "payante" : "gratuite"),
+                saturee: jusqua > maintenant,
+                repriseDansSecondes: jusqua > maintenant ? Math.ceil((jusqua - maintenant) / 1000) : 0,
+            };
+        }),
+        relais: {
+            groq: !!CONFIG.GROQ?.API_KEY,
+            openrouter: !!CONFIG.OPENROUTER?.API_KEY,
+            deepseek: !!CONFIG.DEEPSEEK?.API_KEY,
+        },
+    };
+}
+
+// ── LA SONDE ────────────────────────────────────────────────────────────
+//
+// GET /v1beta/models : la liste des modèles. Cet appel prouve que la clé
+// est acceptée SANS toucher au compteur de génération — c'est la seule
+// façon de contrôler dix-sept clés sans épuiser soi-même le quota qu'on
+// mesure. Deux exécutions du script de diagnostic l'avaient appris à leurs
+// dépens : 15 clés valides, puis 4 dix minutes plus tard, sans qu'aucune
+// clé n'ait changé. C'était le contrôle qui consommait.
+//
+// CE QUE LA SONDE NE PEUT PAS DIRE : si le projet Google a la facturation
+// activée. Aucune réponse de cette API ne le contient. « Payante » reste
+// une supposition sur le NOM de la variable jusqu'à ce que quelqu'un
+// regarde la console Google Cloud. On le dit plutôt que de le masquer.
+async function sonder() {
+    const inventaire = CONFIG.GEMINI.INVENTAIRE || [];
+    const resultats = [];
+    for (const cle of KEYS) {
+        const fiche = inventaire.find((e) => e.empreinte === cle.slice(-4));
+        const commun = {
+            nom: fiche?.nom || "(nom inconnu)",
+            empreinte: cle.slice(-4),
+            classee: fiche?.rang || (PAYANTES.has(cle) ? "payante" : "gratuite"),
+        };
+        try {
+            await axios.get(
+                `https://generativelanguage.googleapis.com/v1beta/models?key=${cle}&pageSize=1`,
+                { timeout: 8000 },
+            );
+            resultats.push({ ...commun, verdict: "valide",
+                detail: "La clé est acceptée par Google." });
+        } catch (err) {
+            const statut = err?.response?.status;
+            const message = String(err?.response?.data?.error?.message || err.message);
+            if (statut === 429) {
+                resultats.push({ ...commun, verdict: "quota",
+                    detail: "Clé bonne, mais son PROJET Google est saturé en ce moment. "
+                          + "Le plafond gratuit se compte par projet, pas par clé." });
+            } else if (estCleMorte(err)) {
+                resultats.push({ ...commun, verdict: "morte",
+                    detail: `Refusée par Google (${statut}) : ${message.slice(0, 140)}` });
+            } else {
+                resultats.push({ ...commun, verdict: "indeterminé",
+                    detail: `${statut || "réseau"} : ${message.slice(0, 140)}` });
+            }
+        }
+    }
+    return resultats;
+}
+
+module.exports = { send, chat, chatLibre, chatWithFunctionResult, chatWithSearch, chatViaOpenRouter, summarize, receive, TOOLS, etat, sonder };

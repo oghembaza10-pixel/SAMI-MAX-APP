@@ -351,7 +351,30 @@ router.post("/samii/feedback", requireAdmin, async (req, res) => {
 });
 
 router.get("/", requireAdmin, async (req, res) => {
-    let stats = {};
+    // ── DES ZÉROS, PAS UN OBJET VIDE ────────────────────────────────────
+    //
+    // CE QUI EST ARRIVÉ. `stats` partait à `{}`, le bloc `try` le
+    // remplissait, et le `res.send` en dessous est HORS du try. Une seule
+    // requête en échec (une colonne pas encore migrée sur un environnement,
+    // une table absente) laissait donc `stats` vide — et la page lisait
+    // `Number(stats.commissionConfirmee || 0).toFixed(2)` sur `undefined`.
+    //
+    // Ce n'est pas une page cassée : c'est une exception dans un gestionnaire
+    // asynchrone, donc un rejet non intercepté, donc Node QUI S'ARRÊTE. Tout
+    // le serveur. SAMII, les boutiques, les webhooks de paiement, la
+    // communauté d'Inès — tout tombe parce qu'une statistique d'administration
+    // n'a pas pu se calculer. Render redémarre, et pendant ce temps personne
+    // n'a de réponse.
+    //
+    // Avec des zéros, le pire devient : un tableau de bord qui affiche 0 et
+    // un message d'erreur. Le site, lui, reste debout.
+    let stats = {
+        utilisateurs: 0, marchands: 0, clients: 0, agences: 0, clientsAgence: 0,
+        workspaces: 0, commandesTotal: 0, commandesJour: 0,
+        commissionConfirmee: 0, commissionEnAttente: 0,
+        ccpDemandes: 0, candidaturesTotal: 0, candidaturesNouvelles: 0,
+        verifsEnAttente: 0, achatsExternes: 0,
+    };
     let candidatures = [];
     let ccpDemandes = [];
     let verifications = [];
@@ -566,8 +589,8 @@ router.get("/", requireAdmin, async (req, res) => {
         ${statCard("🏬", stats.workspaces, "Workspaces")}
         ${statCard("📦", stats.commandesTotal, "Commandes totales")}
         ${statCard("📦", stats.commandesJour, "Commandes aujourd'hui", "var(--green)")}
-        ${statCard("💸", stats.commissionConfirmee.toFixed(2) + "$", "Parrainage confirmé", "var(--green)")}
-        ${statCard("⏳", stats.commissionEnAttente.toFixed(2) + "$", "Parrainage en attente", "var(--gold)")}
+        ${statCard("💸", Number(stats.commissionConfirmee || 0).toFixed(2) + "$", "Parrainage confirmé", "var(--green)")}
+        ${statCard("⏳", Number(stats.commissionEnAttente || 0).toFixed(2) + "$", "Parrainage en attente", "var(--gold)")}
         ${statCard("🏦", stats.ccpDemandes, "Demandes CCP")}
         ${statCard("🤝", stats.candidaturesTotal, "Candidatures partenariat")}
         ${statCard("🆕", stats.candidaturesNouvelles, "Nouvelles candidatures", "var(--blue)")}
