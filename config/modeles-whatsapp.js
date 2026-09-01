@@ -33,21 +33,21 @@
 //
 // `repli` est le texte envoyé aux marchands restés sur Green API, qui ne
 // connaît pas les modèles. Sans lui, ils cessent de recevoir en silence.
+// LES CHIFFRES CI-DESSOUS NE SONT PAS DEVINÉS.
+//
+// Une première version de ce fichier portait des nombres de variables
+// inventés d'après le nom des modèles. `scripts/test-whatsapp.js`, en
+// interrogeant Meta, en a corrigé trois d'un coup :
+//   • commande_confirmee n'existe pas (créé puis supprimé le 1er sept.)
+//   • echec_de_la_livraison attend 3 variables, on en déclarait 2
+//   • rejoinds_samii n'en attend AUCUNE, on en déclarait 1
+//
+// Aucune de ces trois erreurs n'aurait laissé de trace en production : Meta
+// accepte du texte dans n'importe quelle variable. Les valeurs seraient
+// simplement parties décalées, et le client aurait lu une phrase absurde
+// signée du marchand. Relancer ce script après chaque modification chez Meta
+// est la seule façon de garder les deux côtés d'accord.
 const MODELES = {
-    // ── Ce qui doit TOUJOURS arriver ─────────────────────────────────────
-    commande_confirmee: {
-        nom: "commande_confirmee",
-        langue: "fr",
-        // ⚠️ Déclaré en MARKETING sur le compte. Un client qui a refusé les
-        // messages promotionnels ne le recevra donc PAS — alors que c'est le
-        // message qui doit toujours arriver. À faire repasser en Utilitaire
-        // chez Meta (⋯ → Modifier la catégorie).
-        categorie: "MARKETING",
-        variables: ["prenom", "reference", "montant", "livraison_prevue"],
-        repli: (v) => `Bonjour ${v[0]}, votre commande ${v[1]} est confirmée.\n`
-                    + `Montant : ${v[2]}\nLivraison prévue : ${v[3]}`,
-    },
-
     livraison_estime: {
         nom: "livraison_estime",
         langue: "fr",
@@ -68,18 +68,40 @@ const MODELES = {
         nom: "echec_de_la_livraison",
         langue: "fr",
         categorie: "UTILITY",
-        variables: ["prenom", "reference"],
-        repli: (v) => `Bonjour ${v[0]}, la livraison de votre commande ${v[1]} n'a pas pu se faire. `
-                    + `Répondez à ce message pour qu'on la reprogramme.`,
+        // TROIS variables, confirmé par Meta. Le nom de la troisième reste à
+        // vérifier sur le texte approuvé — le script l'affiche désormais.
+        // La position est juste, c'est ce qui compte pour l'envoi ; le nom
+        // n'est qu'une aide à la lecture de ce fichier.
+        variables: ["prenom", "reference", "detail"],
+        repli: (v) => `Bonjour ${v[0]}, la livraison de votre commande ${v[1]} n'a pas pu se faire`
+                    + `${v[2] ? ` (${v[2]})` : ""}. Répondez à ce message pour qu'on la reprogramme.`,
     },
 
     rejoinds_samii: {
         nom: "rejoinds_samii",
         langue: "fr",
         categorie: "MARKETING",
-        variables: ["prenom"],
-        repli: (v) => `Bonjour ${v[0]}, rejoignez-nous sur SAMII.`,
+        // AUCUNE variable : le texte est entièrement figé chez Meta. En
+        // envoyer une faisait rejeter l'appel — Meta refuse un composant
+        // « body » dont il n'a pas besoin.
+        variables: [],
+        repli: () => `Rejoignez-nous sur SAMII.`,
     },
+};
+
+// ── CE QUI MANQUE ENCORE ─────────────────────────────────────────────────
+//
+// `commande_confirmee` a été créé le 1er septembre à 04:55 puis supprimé une
+// minute plus tard. C'est le message le plus important de la chaîne : sans
+// lui, une commande passée hors de la fenêtre de 24 h n'est jamais confirmée
+// au client. À recréer chez Meta, en UTILITY (et non en Marketing : un
+// client ayant refusé la publicité ne recevrait jamais sa confirmation).
+//
+// Tant qu'il n'existe pas, `pour("commande.confirmee")` renvoie null et
+// l'appelant retombe sur son texte libre — ce qui marche dans la fenêtre de
+// 24 h, et seulement là.
+const MANQUANTS = {
+    commande_confirmee: "à recréer chez Meta, catégorie UTILITY",
 };
 
 // ── CE QUE LE CODE APPELLE ───────────────────────────────────────────────
@@ -88,7 +110,11 @@ const MODELES = {
 // n'est pas décorative : le jour où un modèle est refusé par Meta ou renommé,
 // on change UNE ligne ici, et pas les cinq endroits qui envoient.
 const POUR = {
-    "commande.confirmee": "commande_confirmee",
+    // « commande.confirmee » n'est PAS branché : le modèle n'existe plus chez
+    // Meta. Le laisser pointer vers un nom absent ferait échouer chaque envoi
+    // avec une erreur que personne ne lit. Sans entrée ici, pour() renvoie
+    // null et l'appelant écrit en texte libre — ce qui arrive vraiment dans
+    // la fenêtre de 24 h. Ligne à rétablir dès que le modèle est recréé.
     "commande.expediee": "livraison_estime",
     "commande.livree": "commande_livree",
     "livraison.echouee": "echec_de_la_livraison",
@@ -112,4 +138,4 @@ function pour(evenement, valeurs = []) {
     };
 }
 
-module.exports = { MODELES, POUR, pour };
+module.exports = { MODELES, POUR, MANQUANTS, pour };

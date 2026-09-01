@@ -222,6 +222,20 @@ async function main() {
             + ` ${varsCorps} variable(s)${varsBouton ? ` + ${varsBouton} bouton` : ""}`
             + (connu ? "" : "   ← non déclaré dans le catalogue"),
         );
+
+        // LE TEXTE APPROUVÉ, MOT POUR MOT.
+        //
+        // Compter les variables dit COMBIEN en envoyer ; seul le texte dit
+        // LESQUELLES et dans quel ordre. Sans lui, on sait qu'il en faut
+        // trois et on met le nom en deuxième position au lieu de la
+        // première — Meta accepte, et le client lit une phrase absurde.
+        // C'est la seule information qui empêche vraiment cette erreur.
+        const corps = (m.components || []).find((c) => c.type === "BODY");
+        if (corps?.text) {
+            for (const ligne of String(corps.text).split("\n")) {
+                if (ligne.trim()) console.log(`      │ ${ligne.trim()}`);
+            }
+        }
     }
 
     // ── 2. Ce que le code croit, et que Meta contredit ───────────────────

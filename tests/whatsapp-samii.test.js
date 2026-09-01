@@ -288,18 +288,60 @@ const CLIENT = "237655443322";
     {
         const catalogue = require(path.join(RACINE, "config", "modeles-whatsapp.js"));
 
-        const p = catalogue.pour("commande.confirmee", ["Marlyse", "CMD-42", "15 000 FCFA", "3 sept"]);
-        verifier(p?.nom === "commande_confirmee",
-            "l'événement « commande confirmée » ne trouve plus son modèle — la confirmation ne partira jamais hors fenêtre");
+        const p = catalogue.pour("commande.expediee", ["Marlyse", "CMD-42", "3 sept"]);
+        verifier(p?.nom === "livraison_estime",
+            "l'événement « commande expédiée » ne trouve plus son modèle — le suivi ne partira jamais hors fenêtre");
         verifier(p?.langue === "fr",
             "le modèle est demandé dans une autre langue que celle approuvée : Meta refuse l'envoi");
-        verifier(JSON.stringify(p?.variables) === JSON.stringify(["Marlyse", "CMD-42", "15 000 FCFA", "3 sept"]),
-            "les valeurs ne partent pas dans l'ordre déclaré — le client lira le montant à la place de son nom");
+        verifier(JSON.stringify(p?.variables) === JSON.stringify(["Marlyse", "CMD-42", "3 sept"]),
+            "les valeurs ne partent pas dans l'ordre déclaré — le client lira la date à la place de son nom");
 
         // Le repli est calculé PAR le catalogue, pas par l'appelant : le même
         // message ne doit pas exister en deux versions qui divergent.
         verifier(/Marlyse/.test(p?.repli || "") && /CMD-42/.test(p?.repli || ""),
             "le texte de repli ne reprend pas les valeurs : les marchands sur Green API reçoivent un message à trous");
+
+        // ── UN MODÈLE QUI N'EXISTE PLUS N'EST PAS BRANCHÉ ────────────────
+        //
+        // `commande_confirmee` a été créé chez Meta le 1er septembre à 04:55
+        // puis supprimé à 04:56. Le laisser dans la table des événements
+        // ferait échouer chaque confirmation avec une erreur que personne ne
+        // lit. Non branché, pour() rend null et l'appelant écrit en texte
+        // libre — ce qui arrive vraiment, dans la fenêtre de 24 h.
+        verifier(catalogue.pour("commande.confirmee", ["Marlyse"]) === null,
+            "« commande.confirmee » pointe vers un modèle que Meta ne connaît pas : chaque confirmation échouera en silence");
+        verifier(Boolean(catalogue.MANQUANTS?.commande_confirmee),
+            "le modèle manquant n'est plus documenté : on oubliera qu'il faut le recréer, et personne ne saura pourquoi les confirmations ne partent pas");
+
+        // rejoinds_samii n'a AUCUNE variable chez Meta. En envoyer une fait
+        // rejeter l'appel : Meta refuse un composant « body » dont il n'a pas
+        // besoin. C'est une des trois erreurs que le script a débusquées.
+        // ── CE QUE META NOUS A RÉPONDU LE 1er SEPTEMBRE ──────────────────
+        //
+        // Ces nombres ne sont pas un choix : ce sont les comptes que Meta a
+        // déclarés quand scripts/test-whatsapp.js les a lus. Ils sont fixés
+        // ici pour qu'un retour en arrière — quelqu'un qui « corrige » 3 en
+        // 2 parce que le nom du modèle ne suggère que deux valeurs — fasse
+        // échouer la suite au lieu de partir en production.
+        //
+        // Ce contrôle ne remplace PAS le script : si le modèle change chez
+        // Meta, seul le script le verra. Il empêche seulement de défaire une
+        // correction qui a coûté un aller-retour.
+        for (const [cle, attendu] of [
+            ["livraison_estime", 3],
+            ["commande_livree", 2],
+            ["echec_de_la_livraison", 3],
+            ["rejoinds_samii", 0],
+        ]) {
+            const n = catalogue.MODELES[cle]?.variables?.length;
+            verifier(n === attendu,
+                `« ${cle} » déclare ${n} variable(s), Meta en attendait ${attendu} au dernier contrôle — `
+                + `les valeurs partiraient décalées et le client lirait une phrase absurde signée du marchand`);
+        }
+
+        const invit = catalogue.pour("invitation", ["Marlyse"]);
+        verifier(invit && invit.variables.length === 0,
+            `l'invitation part avec ${invit?.variables.length} variable(s) alors que Meta n'en attend aucune — l'envoi sera rejeté`);
 
         // Un événement inconnu ne doit pas fabriquer un nom de modèle : mieux
         // vaut rendre null et laisser l'appelant écrire en texte libre.
