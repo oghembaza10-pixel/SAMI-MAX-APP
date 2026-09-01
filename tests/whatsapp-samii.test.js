@@ -339,6 +339,26 @@ const CLIENT = "237655443322";
                 + `les valeurs partiraient décalées et le client lirait une phrase absurde signée du marchand`);
         }
 
+        // ── LE SENS, PAS SEULEMENT LE COMPTE ────────────────────────────
+        //
+        // echec_de_la_livraison attend bien trois valeurs — mais {{2}} est
+        // une DATE et {{3}} un NUMÉRO DE TÉLÉPHONE, pas une référence de
+        // commande. Le catalogue disait [prenom, reference, detail] : bon
+        // compte, sens faux. SAMII aurait écrit « nous avons tenté de livrer
+        // votre commande le CMD-2026-0042 ».
+        //
+        // Le comptage ne peut pas attraper ça. On fige donc les noms, qui
+        // sont la seule trace de ce que le texte approuvé demande vraiment.
+        const echec = catalogue.MODELES.echec_de_la_livraison?.variables || [];
+        verifier(!echec.includes("reference"),
+            "echec_de_la_livraison réclame une référence de commande : le texte approuvé attend une DATE à cette place — le client lira « livrer votre commande le CMD-2026-0042 »");
+        verifier(echec[1] === "date_tentative" && echec[2] === "telephone_contact",
+            `echec_de_la_livraison déclare [${echec.join(", ")}] — le texte approuvé attend prénom, date de tentative, téléphone`);
+
+        const rendu = catalogue.pour("livraison.echouee", ["Marlyse", "28 août", "+237 655443322"]);
+        verifier(/le 28 août/.test(rendu?.repli || ""),
+            "le texte de repli ne place pas la date là où le message approuvé l'attend : les deux versions du même message racontent des choses différentes");
+
         const invit = catalogue.pour("invitation", ["Marlyse"]);
         verifier(invit && invit.variables.length === 0,
             `l'invitation part avec ${invit?.variables.length} variable(s) alors que Meta n'en attend aucune — l'envoi sera rejeté`);

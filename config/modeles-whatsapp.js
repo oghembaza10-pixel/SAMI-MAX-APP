@@ -52,29 +52,50 @@ const MODELES = {
         nom: "livraison_estime",
         langue: "fr",
         categorie: "UTILITY",
+        // Texte approuvé :
+        //   Bonjour {{1}}, votre commande {{2}} est en route et devrait
+        //   arriver bientôt. Livraison estimée : {{3}}
         variables: ["prenom", "reference", "date_estimee"],
-        repli: (v) => `Bonjour ${v[0]}, votre commande ${v[1]} arrive le ${v[2]}.`,
+        repli: (v) => `Bonjour ${v[0]}, votre commande ${v[1]} est en route.\n`
+                    + `Livraison estimée : ${v[2]}`,
     },
 
     commande_livree: {
         nom: "commande_livree",
         langue: "fr",
         categorie: "UTILITY",
+        // Texte approuvé :
+        //   Salut {{1}}, votre commande {{2}} a été livrée.
+        //   Besoin de retourner ou de remplacer un article ?
         variables: ["prenom", "reference"],
-        repli: (v) => `Bonjour ${v[0]}, votre commande ${v[1]} a été livrée. Tout est conforme ?`,
+        repli: (v) => `Salut ${v[0]}, votre commande ${v[1]} a été livrée.\n`
+                    + `Besoin de retourner ou de remplacer un article ? Répondez à ce message.`,
     },
 
     echec_de_la_livraison: {
         nom: "echec_de_la_livraison",
         langue: "fr",
         categorie: "UTILITY",
-        // TROIS variables, confirmé par Meta. Le nom de la troisième reste à
-        // vérifier sur le texte approuvé — le script l'affiche désormais.
-        // La position est juste, c'est ce qui compte pour l'envoi ; le nom
-        // n'est qu'une aide à la lecture de ce fichier.
-        variables: ["prenom", "reference", "detail"],
-        repli: (v) => `Bonjour ${v[0]}, la livraison de votre commande ${v[1]} n'a pas pu se faire`
-                    + `${v[2] ? ` (${v[2]})` : ""}. Répondez à ce message pour qu'on la reprogramme.`,
+        // ⚠️ CELUI-CI N'ATTEND PAS DE RÉFÉRENCE DE COMMANDE.
+        //
+        // Texte approuvé chez Meta, mot pour mot :
+        //   Bonjour {{1}},
+        //   Nous avons tenté de livrer votre commande le {{2}}, mais sans succès.
+        //   Pour reprogrammer la livraison, veuillez nous contacter au {{3}}.
+        //
+        // {{2}} est une DATE et {{3}} un NUMÉRO DE TÉLÉPHONE. Ce fichier
+        // déclarait [prenom, reference, detail] : le compte était juste — trois
+        // valeurs — mais le sens était faux. SAMII aurait écrit « nous avons
+        // tenté de livrer votre commande le CMD-2026-0042 », et rien n'aurait
+        // signalé quoi que ce soit.
+        //
+        // C'est précisément l'erreur que compter les variables ne peut pas
+        // attraper. Seul le texte approuvé la montre — d'où son affichage
+        // dans scripts/test-whatsapp.js.
+        variables: ["prenom", "date_tentative", "telephone_contact"],
+        repli: (v) => `Bonjour ${v[0]},\n`
+                    + `Nous avons tenté de livrer votre commande le ${v[1]}, mais sans succès.\n`
+                    + `Pour reprogrammer la livraison, contactez-nous au ${v[2]}.`,
     },
 
     rejoinds_samii: {
@@ -85,7 +106,8 @@ const MODELES = {
         // envoyer une faisait rejeter l'appel — Meta refuse un composant
         // « body » dont il n'a pas besoin.
         variables: [],
-        repli: () => `Rejoignez-nous sur SAMII.`,
+        repli: () => `Laisse Sami s'occuper du travail lourd et concentre-toi sur l'essentiel.\n`
+                   + `Rejoins le mouvement dès maintenant.`,
     },
 };
 
@@ -103,6 +125,22 @@ const MODELES = {
 const MANQUANTS = {
     commande_confirmee: "à recréer chez Meta, catégorie UTILITY",
 };
+
+// ── CE QUI EXISTE CHEZ META ET NE SERT À RIEN ────────────────────────────
+//
+// Volontairement NON branchés. Les laisser dans le catalogue reviendrait à
+// choisir au hasard entre deux messages presque identiques selon le
+// fichier qu'on lit.
+//
+//   commande_livre   « Bonne nouvelle ! Votre commande {{2}} a été livrée. »
+//                    Doublon de commande_livree, à un « e » près. Deux
+//                    modèles pour le même événement, c'est un jour où l'on
+//                    corrige le texte de l'un et où l'autre continue de
+//                    partir, inchangé.
+//   contenu          Aucune variable, objet inconnu. Rien ne l'appelle.
+//
+// À supprimer chez Meta quand le doute est levé.
+const INUTILISES = ["commande_livre", "contenu"];
 
 // ── CE QUE LE CODE APPELLE ───────────────────────────────────────────────
 //
@@ -138,4 +176,4 @@ function pour(evenement, valeurs = []) {
     };
 }
 
-module.exports = { MODELES, POUR, MANQUANTS, pour };
+module.exports = { MODELES, POUR, MANQUANTS, INUTILISES, pour };
