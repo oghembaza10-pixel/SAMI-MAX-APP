@@ -234,6 +234,86 @@ function appeler(methode, chemin, { corps = {}, query = {}, session } = {}) {
             `/c/${slug} : « Mes messages » n'est pas dans la colonne — les questions des clients arrivent et personne ne les voit`);
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // 9. LES ENTRÉES SONT VISIBLES LÀ OÙ SES MEMBRES VIVENT
+    //
+    // Le module ajouté au registre apparaît dans la colonne du QG — et
+    // NULLE PART AILLEURS. La page de sa communauté a sa propre barre
+    // latérale, écrite à la main : « je ne vois rien pour les messages sur
+    // Le Coin Du Digital » venait de là. Ses membres ne sont pas des
+    // marchands, ils ne passent jamais par le QG.
+    //
+    // On rend donc la page et on regarde ce qui s'y trouve vraiment.
+    // ══════════════════════════════════════════════════════════════════════
+    {
+        const PUBS = [{
+            id: 1, auteur_id: "u2", prenom: "Marlyse", nom: "Kamga",
+            grade_actuel: "Soldat", type_compte: "marchand", categorie: "formation",
+            contenu: "Ma formation est en ligne.", created_at: new Date(), epingle: false,
+            nb_likes: 0, nb_commentaires: 0, jaime: false, apercu_commentaires: [],
+        }];
+        Module.prototype.require = function (nom) {
+            if (nom === "../services/db") return {
+                query: async (q) => {
+                    if (/FROM publications p/.test(q)) return PUBS;
+                    if (/score_grade/.test(q)) return [];
+                    if (/DISTINCT ON \(s\.auteur_id\)/.test(q)) return [];
+                    if (/AS total FROM/.test(q)) return [{ total: 12 }];
+                    return [];
+                },
+            };
+            if (nom === "../services/gradeService") return {};
+            return vraiRequire.apply(this, arguments);
+        };
+        delete require.cache[require.resolve(path.join(RACINE, "routes", "community.js"))];
+        const communaute = require(path.join(RACINE, "routes", "community.js"));
+        Module.prototype.require = vraiRequire;
+
+        const couche = communaute.stack.find((c) => c.route && c.route.path.includes("/c/:slug"));
+        const html = await new Promise((resolve) => {
+            const req = { params: { slug: SLUG }, query: {},
+                session: { loggedIn: true, userId: MOI, email: "moi@x.cm", nom: "Ouahid G" } };
+            const res = { send: resolve, redirect: () => resolve("REDIRIGÉ"), locals: {} };
+            let i = 0;
+            const next = () => { const h = couche.route.stack[i++]?.handle; if (h) h(req, res, next); };
+            next();
+        });
+
+        verifier(/href="\/messages"/.test(html),
+            "la page de sa communauté n'a aucun lien vers « Mes messages » — ses membres ne passent jamais par le QG, ils ne le verront donc jamais");
+        // On vise le BOUTON, pas la fonction. Une première version cherchait
+        // « ecrireA( » n'importe où dans la page : la définition de la
+        // fonction suffisait à la satisfaire, et retirer tous les boutons ne
+        // faisait rien crier.
+        const boutonsMessage = [...html.matchAll(/onclick="ecrireA\(([^"]*)\)"/g)].map((m) => m[1]);
+        verifier(boutonsMessage.length >= 1,
+            "aucun bouton pour écrire à l'auteur d'une publication : il faut passer par sa vitrine, et on perd la moitié des gens en route");
+
+        // LE NOM NE DOIT PAS ÊTRE INJECTÉ DANS L'ATTRIBUT.
+        //
+        // Une version l'y mettait entre guillemets doubles — ce qui refermait
+        // l'attribut au milieu et rendait le bouton mort. Le bouton se passe
+        // lui-même, et le nom est lu depuis la carte.
+        for (const arg of boutonsMessage) {
+            verifier(arg.trim() === "this",
+                `le bouton passe « ${arg} » au lieu de « this » : injecter un nom dans l'attribut le referme au premier guillemet, et un nom à apostrophe casse la page`);
+        }
+        verifier(/id="cpt-messages"/.test(html),
+            "pas de compteur de non-lus sur sa page : une question de client attend dans une boîte que personne n'ouvre");
+
+        // L'ATTRIBUT NE DOIT PAS ÊTRE CASSÉ.
+        //
+        // Une première version écrivait le nom de l'auteur DANS l'attribut
+        // onclick, entre guillemets doubles — ce qui refermait l'attribut au
+        // milieu. Le bouton ne faisait plus rien, et un nom portant une
+        // apostrophe aurait emporté la page entière.
+        const onclicks = [...html.matchAll(/onclick="([^"]*)"/g)].map((m) => m[1]);
+        for (const code of onclicks) {
+            verifier(!/["]/.test(code),
+                `un attribut onclick contient un guillemet double : « ${code.slice(0, 60)} » — l'attribut se referme au milieu et le bouton est mort`);
+        }
+    }
+
     if (echecs.length) {
         console.error(`❌ messages : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
         for (const e of echecs) console.error("   • " + e);

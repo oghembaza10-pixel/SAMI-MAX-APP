@@ -601,6 +601,7 @@ router.get(["/", "/c/:slug", "/:slug"], lectureOuverte, async (req, res) => {
                 <button class="post-action-btn" type="button" onclick="toggleCommentBox(${p.id})"><i data-lucide="message-circle"></i> Commenter</button>
                 <button class="post-action-btn ${p.enregistre?"saved":""}" type="button" onclick="toggleEnregistrer(${p.id}, this)"><i data-lucide="bookmark"></i> <span>${p.enregistre?"Enregistré":"Enregistrer"}</span></button>
                 <button class="post-action-btn" type="button" onclick="sharePost(${p.id})"><i data-lucide="share-2"></i> Partager</button>
+                ${peutSabonner(p) ? `<button class="post-action-btn" type="button" onclick="ecrireA(this)"><i data-lucide="mail"></i> Message</button>` : ""}
                 ${peutModifier(p) ? `<button class="post-action-btn post-action-btn--mien" type="button" onclick="modifierPost(${p.id})" title="Modifier"><i data-lucide="pencil"></i></button>` : ""}
                 ${peutSupprimer(p) ? `<button class="post-action-btn post-action-btn--danger" type="button" onclick="supprimerPost(${p.id})" title="Supprimer"><i data-lucide="trash-2"></i></button>` : ""}
             </div>
@@ -1032,6 +1033,13 @@ ${connecte ? `<a href="/c/${COM.slug}?f=abonnements" class="side-link${filtreAbo
 <a href="/c/${COM.slug}?f=formation" class="side-link${filtre === "formation" ? " active" : ""}"><i data-lucide="graduation-cap"></i> Les formations</a>
 <a href="/c/${COM.slug}?f=service" class="side-link${filtre === "service" ? " active" : ""}"><i data-lucide="concierge-bell"></i> Les services</a>
 ${connecte ? `<a href="/c/${COM.slug}?f=enregistres" class="side-link${filtreEnregistres ? " active" : ""}"><i data-lucide="bookmark"></i> Mes enregistrements</a>` : ""}
+<!-- MES MESSAGES, ICI AUSSI.
+     Cette barre latérale est écrite à la main, séparément de la colonne du
+     QG : ajouter le module au registre ne l'y fait PAS apparaître. Ses
+     membres vivent sur cette page — laisser le lien uniquement dans le QG,
+     c'est le réserver aux marchands, alors que tout le monde reçoit des
+     messages. -->
+${connecte ? `<a href="/messages" class="side-link"><i data-lucide="mail"></i> Mes messages<span id="cpt-messages" style="margin-left:auto;font-size:11px;font-weight:800;color:var(--blue);"></span></a>` : ""}
 <div class="side-titre">La communauté</div>
 ${connecte ? `<a href="#" class="side-link" onclick="ouvrirBoost();return false;"><i data-lucide="rocket"></i> Mettre en avant</a>` : ""}
 <a href="#" class="side-link" onclick="ouvrirApropos();return false;"><i data-lucide="info"></i> À propos</a>`}
@@ -1244,6 +1252,17 @@ if (typeof lucide!=="undefined") lucide.createIcons();
 // Le routeur est monté aux DEUX adresses, /community et /c. Sous /c, la
 // communauté ne vient pas de l'URL — un POST n'a pas de slug — mais du
 // service ou de la session. Il n'y a donc rien à ajouter au chemin.
+// Le compteur de messages non lus, dans la barre latérale de sa communauté.
+// Ses membres vivent sur cette page : sans ce chiffre ici, une question de
+// client attend dans une boîte que personne n'ouvre.
+fetch("/messages/non-lus")
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    var c = document.getElementById("cpt-messages");
+    if (c && d.success && d.nonLus > 0) c.textContent = d.nonLus;
+  })
+  .catch(function () {});
+
 const BASE_COM = ${JSON.stringify(COM.ecosysteme ? "/community" : "/c")};
 // Le lien qu'on copie en partageant, lui, doit être l'adresse PUBLIQUE de
 // la page — celle qu'on peut coller dans une story et qui ouvre le fil.
@@ -1687,6 +1706,41 @@ async function postComment(id){
     try{const res=await fetch(BASE_COM + "/commenter/"+id,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contenu})});
     const j=await res.json(); if(j.success) window.location.reload(); else showToast(j.error||"Erreur.");}catch(e){showToast("Erreur réseau.");}
 }
+// ── ÉCRIRE À QUELQU'UN DEPUIS LE FIL ─────────────────────────────────
+// « Sur chaque profil on doit pouvoir lui laisser un message. » Depuis le
+// fil, sans quitter la page : passer par la vitrine pour poser une question
+// fait perdre la moitié des gens en route.
+// Le bouton se passe LUI-MÊME en argument, et on lit l'auteur depuis la
+// carte. Une première version injectait le nom dans l'attribut onclick,
+// entre guillemets doubles : ces guillemets fermaient l'attribut, et le
+// bouton ne faisait plus rien. Un nom portant une apostrophe aurait cassé
+// la page entière.
+function ecrireA(bouton) {
+  var carte = bouton.closest(".post-card");
+  if (!carte) return;
+  var qui = carte.getAttribute("data-auteur-id");
+  var lien = carte.querySelector(".post-author a");
+  var nom = lien ? lien.textContent.trim() : "ce membre";
+  if (!qui) return;
+  var texte = window.prompt("Ton message à " + nom + " :");
+  if (texte === null) return;
+  texte = texte.trim();
+  if (!texte) return;
+  // Adresse ABSOLUE, sans BASE_COM : la messagerie est la même pour toutes
+  // les communautés, c'est le service qui décide de laquelle il s'agit.
+  fetch("/messages/envoyer", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ destinataire: qui, contenu: texte }),
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (rep) {
+    if (!rep.success) throw new Error(rep.error || "refusé");
+    alert("✅ Message envoyé à " + nom + ".\nSa réponse arrivera dans « Mes messages ».");
+  })
+  .catch(function (err) { alert("Message non envoyé : " + err.message); });
+}
+
 function sharePost(id){const url=window.location.origin+PAGE_COM+"#post-"+id;if(navigator.share)navigator.share({url}).catch(()=>{});else{navigator.clipboard.writeText(url);showToast("🔗 Lien copié !");}}
 </script>
 <script src="/js/pwa-register.js"></script>
