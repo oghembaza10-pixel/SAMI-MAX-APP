@@ -197,7 +197,12 @@ function appeler(methode, chemin, { corps = {}, query = {}, session } = {}) {
         "on marque comme lus des messages qu'on n'a pas reçus : le compteur de l'autre personne tombe à zéro sans qu'elle ait rien lu");
 
     // La liste des conversations, elle aussi, part de la session.
-    const liste = REQUETES.find((r) => /DISTINCT ON \(autre\)/i.test(r.sql));
+    // « DISTINCT ON », sans nommer la colonne : elle a dû être qualifiée
+    // (t.autre) parce que « created_at » existait des deux côtés de la
+    // jointure et rendait la requête ambiguë. Un motif collé au nom exact
+    // s'est mis à ne plus rien trouver — donc à ne plus rien vérifier — au
+    // moment précis où l'on corrigeait la requête.
+    const liste = REQUETES.find((r) => /DISTINCT ON \(/i.test(r.sql));
     verifier(!!liste && liste.params[0] === MOI,
         "la liste des conversations n'est pas celle de la personne connectée");
     verifier(!!liste && /communaute/i.test(liste.sql) && liste.params.includes(SLUG),
