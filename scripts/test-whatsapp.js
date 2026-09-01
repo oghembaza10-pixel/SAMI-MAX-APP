@@ -49,30 +49,104 @@ function variablesDuBouton(composants = []) {
     return n;
 }
 
+// ── TROUVER LE WABA TOUT SEUL ────────────────────────────────────────────
+//
+// Trois identifiants se ressemblent dans la console Meta — le portefeuille
+// (business_id de l'URL), le numéro d'envoi (PHONE_NUMBER_ID) et le compte
+// WhatsApp (WABA) — et Meta ne dit jamais clairement lequel on lui a donné.
+// Il répond « Unsupported get request » pour l'un, « (#100) Tried accessing
+// nonexisting field » pour l'autre. On perd un quart d'heure par essai.
+//
+// Alors on arrête de demander. Le token SAIT à quels comptes il a droit :
+// `debug_token` les liste dans ses portées granulaires. Et si on nous a
+// donné un portefeuille, il porte la liste de ses comptes WhatsApp. On
+// essaie donc, dans l'ordre, jusqu'à trouver — plutôt que de renvoyer
+// quelqu'un chercher un numéro dans une console à cinq niveaux de menus.
+async function trouverWaba(token, candidat) {
+    const essais = [];
+
+    // 1. Le candidat EST peut-être déjà un WABA : la seule preuve qui vaille,
+    //    c'est qu'il réponde sur la liste des modèles.
+    if (candidat) {
+        try {
+            await axios.get(`${GRAPH}/${candidat}/message_templates`, {
+                params: { limit: 1, access_token: token }, timeout: 15000,
+            });
+            return { id: candidat, via: "fourni" };
+        } catch (err) {
+            essais.push(`« ${candidat} » n'est pas un compte WhatsApp : ${err.response?.data?.error?.message || err.message}`);
+        }
+
+        // 2. C'est peut-être un PORTEFEUILLE — c'est le cas le plus fréquent,
+        //    parce que c'est le numéro visible dans l'URL. Un portefeuille
+        //    porte la liste de ses comptes WhatsApp.
+        for (const arete of ["owned_whatsapp_business_accounts", "client_whatsapp_business_accounts"]) {
+            try {
+                const r = await axios.get(`${GRAPH}/${candidat}/${arete}`, {
+                    params: { limit: 25, access_token: token }, timeout: 15000,
+                });
+                const comptes = r.data?.data || [];
+                if (comptes.length) {
+                    return { id: comptes[0].id, via: `portefeuille ${candidat}`, tous: comptes };
+                }
+            } catch { /* on continue : ce n'était pas un portefeuille non plus */ }
+        }
+    }
+
+    // 3. Le token lui-même sait à quoi il a droit. C'est la source la plus
+    //    fiable : ce sont exactement les comptes sur lesquels on pourra
+    //    vraiment travailler, pas ceux qu'on peut seulement nommer.
+    try {
+        const r = await axios.get(`${GRAPH}/debug_token`, {
+            params: { input_token: token, access_token: token }, timeout: 15000,
+        });
+        const portees = r.data?.data?.granular_scopes || [];
+        for (const p of portees) {
+            if (/whatsapp_business_(messaging|management)/.test(p.scope) && p.target_ids?.length) {
+                return { id: p.target_ids[0], via: "droits du token", tous: p.target_ids.map((id) => ({ id })) };
+            }
+        }
+        essais.push("le token ne déclare aucun compte WhatsApp dans ses droits");
+    } catch (err) {
+        essais.push(`lecture des droits du token impossible : ${err.response?.data?.error?.message || err.message}`);
+    }
+
+    return { id: null, essais };
+}
+
 async function main() {
     const token = CONFIG.META?.WHATSAPP_CLOUD?.TOKEN;
     // En argument d'abord : on peut alors essayer un identifiant tout de
     // suite, sans poser une variable sur Render et attendre un redéploiement
     // pour découvrir qu'on s'est trompé de numéro.
-    const wabaId = (process.argv[2] || "").trim() || process.env.META_WABA_ID;
+    const candidat = (process.argv[2] || "").trim() || process.env.META_WABA_ID || "";
 
     if (!token) throw new Error("META_WHATSAPP_TOKEN absent — impossible d'interroger Meta.");
-    if (!wabaId) {
+
+    // On ne demande plus le bon numéro : on le cherche. Un portefeuille, un
+    // WABA, ou rien du tout — le token suffit dans le dernier cas.
+    const trouve = await trouverWaba(token, candidat);
+    if (!trouve.id) {
         throw new Error(
-            "Identifiant du compte WhatsApp Business (WABA) manquant.\n\n"
-            + "  Essayez tout de suite, sans rien poser sur Render :\n"
-            + "      node scripts/test-whatsapp.js <WABA_ID>\n\n"
-            + "  OÙ LE TROUVER — c'est un numéro à part, et trois identifiants\n"
-            + "  se ressemblent ici :\n"
-            + "    • business_id=… dans l'URL  → le PORTEFEUILLE Business Manager. Ce n'est PAS lui.\n"
-            + "    • PHONE_NUMBER_ID           → le numéro d'envoi. Ce n'est pas lui non plus.\n"
-            + "    • WABA ID                   → celui-ci. Gestionnaire WhatsApp →\n"
-            + "      Paramètres du compte, ligne « Identifiant du compte WhatsApp Business ».\n"
-            + "      Ou : developers.facebook.com → votre app → WhatsApp → Configuration de l'API,\n"
-            + "      champ « WhatsApp Business Account ID ».\n\n"
-            + "  Une fois le bon trouvé, posez-le sur Render : META_WABA_ID",
+            "Aucun compte WhatsApp Business trouvé.\n\n"
+            + trouve.essais.map((e) => `  • ${e}`).join("\n")
+            + "\n\n  Le plus probable : le token système n'a pas encore le compte WhatsApp\n"
+            + "  dans ses actifs. Business Settings → Utilisateurs système → votre\n"
+            + "  utilisateur → Ajouter des actifs → Comptes WhatsApp → cocher le compte,\n"
+            + "  droit « Gérer ». Sans ça, le token peut envoyer mais pas lire.",
         );
     }
+
+    const wabaId = trouve.id;
+    console.log(`Compte WhatsApp Business : ${wabaId}  (trouvé via ${trouve.via})`);
+    if (trouve.tous && trouve.tous.length > 1) {
+        console.log(`⚠️  ${trouve.tous.length} comptes disponibles : ${trouve.tous.map((c) => c.id).join(", ")}`);
+        console.log(`   J'utilise le premier. Précisez-en un autre en argument si ce n'est pas le bon.`);
+    }
+    if (!process.env.META_WABA_ID) {
+        console.log(`💡 À poser sur Render pour ne plus avoir à chercher : META_WABA_ID=${wabaId}`);
+    }
+    console.log("");
 
     let modelesMeta = [];
     try {
@@ -89,7 +163,7 @@ async function main() {
         // un WABA auquel le token n'a pas droit. Trois causes, un seul
         // message : sans cette explication, on tourne en rond à changer le
         // token alors que c'est l'identifiant qui est faux.
-        if (/Unsupported get request|does not exist|cannot be loaded/i.test(d)) {
+        if (/Unsupported get request|nonexisting field|does not exist|cannot be loaded/i.test(d)) {
             throw new Error(
                 `Meta ne reconnaît pas « ${wabaId} » comme un compte WhatsApp Business.\n\n`
                 + `  Trois causes possibles, et Meta ne les distingue pas :\n`
