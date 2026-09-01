@@ -701,6 +701,13 @@ img{max-width:100%;display:block}
 
     <div class="actions">
         <button class="btn btn--fort" id="btnContact">💬 Contacter la boutique</button>
+        ${!estProprietaire ? `
+        <!-- ÉCRIRE AU VENDEUR, SANS RIEN INSTALLER.
+             WhatsApp suppose un numéro public et l'application. Ici, un
+             membre déjà connecté écrit en deux clics, et le vendeur retrouve
+             tout dans « Mes messages » de son QG. C'est le seul chemin qui
+             marche pour quelqu'un qui n'a pas envie de donner son numéro. -->
+        <button class="btn" id="btnMessage">✉️ Laisser un message</button>` : ""}
         ${lienWhatsApp ? `
         <!-- LE LIEN PRÉ-REMPLI.
              Un seul numéro WhatsApp sert toute la plateforme : le message
@@ -792,6 +799,7 @@ ${estProprietaire ? `
     // JSON.stringify, jamais par concaténation dans du texte JS.
     var NOM = ${JSON.stringify(nomComplet)};
     var LIEN = ${JSON.stringify(lienPublic)};
+    var PROPRIETAIRE = ${JSON.stringify(String(user.id || ""))};
 
     // ── SA PHOTO ET SA COUVERTURE, DEPUIS SA PAGE ────────────────────
     //
@@ -962,6 +970,38 @@ ${estProprietaire ? `
     }
     document.getElementById("bulle").addEventListener("click", bascule);
     document.getElementById("btnContact").addEventListener("click", bascule);
+
+    // ── Laisser un message au vendeur ────────────────────────────────
+    var btnMsg = document.getElementById("btnMessage");
+    if (btnMsg) btnMsg.addEventListener("click", function () {
+        var texte = window.prompt("Votre message à " + NOM + " :");
+        if (texte === null) return;              // annulé
+        texte = texte.trim();
+        if (!texte) return;
+        btnMsg.disabled = true;
+        fetch("/messages/envoyer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ destinataire: PROPRIETAIRE, contenu: texte }),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (rep) {
+            if (!rep.success) throw new Error(rep.error || "refusé");
+            btnMsg.textContent = "✅ Message envoyé";
+        })
+        .catch(function (err) {
+            // Le cas le plus fréquent : pas connecté. On le dit, et on
+            // emmène — plutôt que d'afficher « refusé » et laisser bloqué.
+            if (/connecte/i.test(err.message)) {
+                if (confirm("Il faut un compte pour écrire au vendeur. Se connecter ?")) {
+                    window.location.href = "/login";
+                }
+            } else {
+                alert("Message non envoyé : " + err.message);
+            }
+            btnMsg.disabled = false;
+        });
+    });
     document.getElementById("btnHautContact").addEventListener("click", bascule);
 
     function ajouter(qui, texte) {

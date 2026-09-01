@@ -233,6 +233,22 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(() => {});
 
+    // ── Mes messages : combien attendent ────────────────────────────────
+    // La pastille est posée sur CHAQUE page du QG, pas seulement sur celles
+    // qui chargent qg-data : quelqu'un qui reçoit une question de client
+    // pendant qu'il règle ses paramètres doit la voir arriver là aussi.
+    function rafraichirMessages() {
+        fetch('/messages/non-lus')
+            .then(r => r.json())
+            .then(data => {
+                const badge = document.getElementById('badge-messages-non-lus');
+                if (!badge || !data.success) return;
+                badge.textContent = data.nonLus > 0 ? ' (' + data.nonLus + ')' : '';
+            })
+            .catch(() => {});
+    }
+    rafraichirMessages();
+
     const qgBackLink = document.getElementById('qg-back-link');
     if (window.location.pathname.startsWith('/qg/')) {
         localStorage.setItem('ogLastQG', window.location.pathname);
@@ -1001,6 +1017,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (shop) socket.emit('join', shop);
             if (workspaceId) socket.emit('join', workspaceId);
             if (userId) socket.emit('join', userId);
+        });
+        // Un message qui arrive pendant qu'on travaille : la pastille monte
+        // toute seule, sans recharger la page.
+        socket.on('message-prive', (m) => {
+            const badge = document.getElementById('badge-messages-non-lus');
+            if (badge) {
+                const actuel = parseInt((badge.textContent.match(/\d+/) || [0])[0], 10) || 0;
+                badge.textContent = ' (' + (actuel + 1) + ')';
+            }
+            afficherNotification('✉️ Nouveau message de ' + (m && m.de ? m.de : 'un membre'));
         });
         socket.on('parrainage:gain', (gain) => {
             if (gain.statut !== 'confirmee') return;

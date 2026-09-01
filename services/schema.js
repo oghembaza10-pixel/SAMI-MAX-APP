@@ -501,6 +501,49 @@ const BLOCS = [
             `CREATE INDEX IF NOT EXISTS idx_wa_contacts_workspace ON whatsapp_contacts (workspace_id, dernier_entrant DESC)`,
         ],
     },
+    {
+        // ── ÉCRIRE À QUELQU'UN, DEPUIS SON PROFIL ────────────────────────
+        //
+        // « Sur chaque profil on doit pouvoir lui laisser un message, et il
+        // doit avoir un espace Mes messages dans son QG pour les lire. »
+        //
+        // C'est ce qui manquait pour qu'une marketplace serve à vendre. On
+        // voyait un produit, on voyait qui le vendait — et il n'y avait
+        // aucun moyen de lui poser une question. Le seul chemin était
+        // WhatsApp, qui suppose un numéro et une application installée.
+        //
+        // POURQUOI PAS `discussions`. Cette table-là porte des salons : des
+        // conversations à plusieurs, attachées à une communauté, que
+        // n'importe quel membre ouvre. Ici c'est l'inverse — deux personnes,
+        // et personne d'autre ne doit voir. Mélanger les deux, c'est le
+        // jour où une requête de salon remonte un message privé.
+        nom: "messages_prives",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS messages_prives (
+                id             BIGSERIAL PRIMARY KEY,
+                expediteur_id  TEXT NOT NULL,
+                destinataire_id TEXT NOT NULL,
+                contenu        TEXT NOT NULL,
+                -- La communauté du message, pas celle des personnes : quelqu'un
+                -- présent des deux côtés ne doit pas voir sa conversation de
+                -- chez nous apparaître sur le domaine d'une partenaire.
+                communaute     TEXT DEFAULT 'samii',
+                -- Le contexte : « à propos de cette annonce ». Un message qui
+                -- arrive sans objet oblige le vendeur à deviner de quoi on
+                -- parle, alors qu'il a trente produits en ligne.
+                annonce_id     TEXT,
+                lu_le          TIMESTAMPTZ,
+                created_at     TIMESTAMPTZ NOT NULL DEFAULT now())`,
+            // « Qu'est-ce que j'ai reçu ? » — la question de la boîte de
+            // réception, posée à chaque ouverture du QG.
+            `CREATE INDEX IF NOT EXISTS idx_mp_destinataire ON messages_prives (destinataire_id, communaute, created_at DESC)`,
+            // Une conversation, dans les deux sens : c'est la même paire.
+            `CREATE INDEX IF NOT EXISTS idx_mp_paire ON messages_prives (expediteur_id, destinataire_id, created_at DESC)`,
+            // Le compteur de non-lus, affiché sur chaque page du QG : sans
+            // cet index il relit toute la table à chaque affichage.
+            `CREATE INDEX IF NOT EXISTS idx_mp_non_lus ON messages_prives (destinataire_id, lu_le) WHERE lu_le IS NULL`,
+        ],
+    },
 ];
 
 // ── Les élargissements de type ───────────────────────────────────────────

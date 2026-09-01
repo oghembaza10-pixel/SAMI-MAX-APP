@@ -377,6 +377,9 @@ app.use("/community",   require("./routes/community"));
 app.use("/c",           require("./routes/auth-communaute"));
 app.use("/c",           require("./routes/community"));
 app.use("/discussions", require("./routes/discussions"));
+// « Mes messages » : le courrier laissé sur un profil ou sous une annonce.
+// Distinct de /discussions, qui porte les salons ouverts à la communauté.
+app.use("/messages", require("./routes/messages"));
 app.use("/stories",     require("./routes/stories"));
 app.use("/marketplace", require("./routes/marketplace"));
 app.use("/drivers",     require("./routes/drivers"));

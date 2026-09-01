@@ -592,6 +592,10 @@ function marque(html) {
         "/qg": true, "/qg/:metier": true, "/qg/:metier/connecter": true,
         "/workspace": true, "/connect": true,
         "/discussions": true, "/samii": true, "/automatisations": true,
+        // « Mes messages » : le courrier laissé sur un profil ou sous une
+        // annonce. Sa marketplace ne servirait à rien sans un moyen de
+        // parler au vendeur — c'est donc à elle, comme sa communauté.
+        "/messages": true,
         "/vitrine": true, "/settings": true, "/profile": true,
         "/samii/chasseur-stock": true, "/samii/diplomate": true, "/samii/griot": true,
         "/samii/memoire-client": true, "/samii/messager-eclair": true,

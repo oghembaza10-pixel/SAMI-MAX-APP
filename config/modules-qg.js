@@ -68,6 +68,12 @@ const MODULES = [
     { id: "affaires",    libelle: "Mes affaires",        cle: "qg.nav.myBusiness",   icone: "briefcase",       href: "/qg",             rang: "more", separateurAvant: true, chemins: ["/qg", "/workspace"] },
     { id: "connect",     libelle: "Connecter mes outils", cle: "qg.nav.connectTools", icone: "plug-zap",       href: "/connect/tools",  rang: "more", chemins: ["/connect"] },
     { id: "discussions", libelle: "Discussions",        cle: "qg.nav.discussions",  icone: "messages-square", href: "/discussions",    rang: "more", chemins: ["/discussions"] },
+    // « Mes messages » n'est PAS « Discussions ». Les discussions sont des
+    // salons — plusieurs personnes, ouverts à la communauté. Ici, deux
+    // personnes et personne d'autre : c'est là qu'arrivent les questions
+    // laissées sur un profil ou sous une annonce. Les confondre dans la
+    // colonne, c'est chercher sa question de client dans un salon public.
+    { id: "messages",    libelle: "Mes messages",        cle: "qg.nav.messages",     icone: "mail",            href: "/messages",       rang: "more", badge: "badge-messages-non-lus", chemins: ["/messages"] },
     { id: "api",         libelle: "API & Webhooks",      cle: "qg.nav.api",          icone: "terminal",        href: "/developpeurs",   rang: "more", chemins: ["/developpeurs", "/api/v1", "/api-docs"] },
     { id: "apps",        libelle: "Applications",        cle: "qg.nav.apps",         icone: "blocks",          href: "/apps",           rang: "more", chemins: ["/apps"] },
     { id: "arsenal",     libelle: "Arsenal",             cle: "qg.nav.arsenal",      icone: "sword",           href: "/arsenal",        rang: "more", chemins: ["/arsenal", "/guerre"] },
@@ -212,7 +218,7 @@ function chemineAutorise(chemin, regles) {
 // Il porte SON nom, pas le nôtre — le libellé vient de `COM.assistant`, et
 // le moteur derrière est le même. C'est ce qu'on lui apporte, et c'est la
 // raison pour laquelle elle vient chez nous plutôt que sur un site vitrine.
-const MINIMAL = ["communaute", "discussions", "affaires", "connect", "assistant", "vitrine", "reglages"];
+const MINIMAL = ["communaute", "discussions", "messages", "affaires", "connect", "assistant", "vitrine", "reglages"];
 
 // La liste blanche d'une communauté. `null` (la maison) = tout.
 function autorises(COM) {

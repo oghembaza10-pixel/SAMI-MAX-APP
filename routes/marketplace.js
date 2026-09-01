@@ -5062,6 +5062,20 @@ button {
             🛒 Ajouter au panier
         </button>
 
+        <!-- POSER UNE QUESTION AVANT D'ACHETER.
+             « Est-ce que vous livrez à Yaoundé ? », « c'est quelle taille ? » —
+             sans réponse à ça, beaucoup n'achètent simplement pas. Le message
+             part avec la référence du produit : le vendeur, qui en a trente en
+             ligne, sait tout de suite de quoi on parle. -->
+        <button
+            type="button"
+            id="pd-message"
+            style="background:#1a2530;color:#f5fbff;"
+            onclick="ecrireAuVendeur()"
+        >
+            ✉️ Poser une question
+        </button>
+
         <button
             type="button"
             style="background:#1a2530;color:#f5fbff;"
@@ -5121,6 +5135,9 @@ button {
 
 <script>
 const PD_SPLIT = ${variantesSplit ? "true" : "false"};
+// L'identifiant du vendeur, posé par le serveur : c'est à lui que
+// part la question. JSON.stringify, jamais de concaténation.
+const PD_VENDEUR = ${JSON.stringify(String(produit.vendeur_id || ""))};
 const PD_COMBOS = ${JSON.stringify(comboLookup)};
 const PD_BASE_PRIX = ${JSON.stringify(produit.prix || "Sur devis")};
 
@@ -5175,6 +5192,41 @@ function currentItem() {
         variante: selectedVariant,
         quantity: 1,
     };
+}
+
+function ecrireAuVendeur() {
+    var texte = window.prompt("Votre question au vendeur :");
+    if (texte === null) return;
+    texte = texte.trim();
+    if (!texte) return;
+    var b = document.getElementById("pd-message");
+    b.disabled = true;
+    fetch("/messages/envoyer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            destinataire: PD_VENDEUR,
+            contenu: texte,
+            annonce: "${id}",
+        }),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (rep) {
+        if (!rep.success) throw new Error(rep.error || "refusé");
+        b.textContent = "✅ Question envoyée";
+    })
+    .catch(function (err) {
+        // Sans compte, on ne peut pas écrire. Le dire et emmener, plutôt que
+        // d'afficher un refus qui ne mène nulle part.
+        if (/connecte/i.test(err.message)) {
+            if (confirm("Il faut un compte pour écrire au vendeur. Se connecter ?")) {
+                window.location.href = "/login";
+            }
+        } else {
+            alert("Message non envoyé : " + err.message);
+        }
+        b.disabled = false;
+    });
 }
 
 function ajouterAuPanier() {
