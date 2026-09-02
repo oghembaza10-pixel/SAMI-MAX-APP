@@ -204,6 +204,51 @@ async function instagram(workspaceId) {
     }
 }
 
+// ── WHATSAPP CLOUD DE META — LE CANAL OFFICIEL SAMII ──────────────────────
+//
+// C'est CE canal-là quand on dit « WhatsApp par l'API Meta » : le numéro
+// d'OG Technology, un jeton d'utilisateur système permanent, aucun téléphone
+// à appairer. Rien à voir avec Green API, qui est le canal des marchands.
+//
+// `services/whatsappSamii.js` sait déjà l'utiliser. Ce qui manquait, c'était
+// de dire s'il est configuré ET s'il répond — deux choses différentes : une
+// configuration complète avec un jeton expiré a l'air parfaite et n'envoie
+// rien.
+async function whatsappSamii() {
+    titre("WHATSAPP CLOUD — canal officiel SAMII");
+    const CONFIG = require("../config");
+    const c = CONFIG.META?.WHATSAPP_CLOUD || {};
+
+    console.log(`  META_WHATSAPP_TOKEN           : ${empreinte(c.TOKEN)}`);
+    console.log(`  META_WHATSAPP_PHONE_NUMBER_ID : ${c.PHONE_NUMBER_ID || "(absent)"}`);
+    console.log(`  META_WHATSAPP_NUMERO          : ${c.NUMERO || "(absent)"}`);
+
+    if (!c.TOKEN || !c.PHONE_NUMBER_ID) {
+        console.log(`\n  ⛔ canal NON configuré — il manque : `
+                  + [!c.TOKEN && "META_WHATSAPP_TOKEN",
+                     !c.PHONE_NUMBER_ID && "META_WHATSAPP_PHONE_NUMBER_ID"].filter(Boolean).join(", "));
+        console.log(`\n  Où les trouver : developers.facebook.com → l'app → WhatsApp →`);
+        console.log(`  Configuration de l'API. « Identifiant du numéro de téléphone »`);
+        console.log(`  est PHONE_NUMBER_ID — ce n'est PAS le numéro lui-même.`);
+        return;
+    }
+
+    // On interroge le numéro : si ça répond, le jeton est valide ET le numéro
+    // appartient bien à ce compte. `quality_rating` est le chiffre qui compte
+    // — un numéro en RED est bridé par Meta, et rien ne le dirait autrement.
+    const r = await lire(`${GRAPH}/${c.PHONE_NUMBER_ID}`
+                       + `?fields=display_phone_number,verified_name,quality_rating,code_verification_status`
+                       + `&access_token=${encodeURIComponent(c.TOKEN)}`);
+    if (r.code !== 200) {
+        return console.log(`\n  ❌ HTTP ${r.code} — ${motif(r)}`);
+    }
+    console.log(`\n  ✅ ${r.corps.display_phone_number} — « ${r.corps.verified_name} »`);
+    console.log(`     qualité : ${r.corps.quality_rating}   vérification : ${r.corps.code_verification_status}`);
+    if (String(r.corps.quality_rating).toUpperCase() === "RED") {
+        console.log(`     ⛔ qualité RED : Meta bride ce numéro. Les envois seront ralentis.`);
+    }
+}
+
 // ── WHATSAPP ──────────────────────────────────────────────────────────────
 //
 // TROIS fournisseurs possibles, et ils ne se sondent pas pareil. Ma première
@@ -340,6 +385,7 @@ async function verifierWorkspace(workspaceId) {
     try {
         await meta(workspaceId);
         await instagram(workspaceId);
+        await whatsappSamii();
         await whatsapp(workspaceId);
     } catch (err) {
         console.error("\n❌", err.message);
