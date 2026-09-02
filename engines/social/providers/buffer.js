@@ -2,6 +2,21 @@
 // PROVIDER BUFFER — Facebook, Instagram, LinkedIn, TikTok
 // ==========================================================================
 //
+// ── CE QUE « NON ACCORDÉE » VEUT DIRE, ET NE VEUT PAS DIRE ───────────────
+//
+// Correction d'une erreur répétée plusieurs fois dans ce dossier : j'ai
+// écrit que `pages_manage_posts` « n'est pas accordée », donc que publier
+// sur Facebook échouerait. C'est faux pour NOS comptes.
+//
+// Meta n'exige la revue d'application que pour les utilisateurs TIERS. Une
+// personne qui a un rôle sur l'app — administrateur, développeur, testeur —
+// peut accorder toutes les permissions à ses propres Pages, revue ou pas.
+// L'app SAMII GPT est dans ce cas pour le compte du fondateur.
+//
+// Donc : chez nous, ça passe. Chez un marchand qui n'a aucun rôle sur
+// l'app, ça bloquera tant que la revue n'est pas obtenue. Le code ne
+// présume rien : il tente, et garde le message exact de Meta.
+//
 // ── POURQUOI BUFFER PLUTÔT QUE META EN DIRECT ─────────────────────────────
 //
 // Publier sur une page Facebook par l'API de Meta demande la permission
