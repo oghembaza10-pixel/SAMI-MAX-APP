@@ -2,7 +2,7 @@
 // SAMII OS — ABONNEMENTS (Stripe Checkout + Webhooks)
 // ==========================================================================
 // Variables d'environnement nécessaires :
-//   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
+//   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET_BILLING (ou STRIPE_WEBHOOK_SECRET),
 //   STRIPE_PRICE_STANDARD, STRIPE_PRICE_PRO
 // ==========================================================================
 
@@ -966,7 +966,7 @@ router.post("/webhook", async (req, res) => {
         event = stripe.webhooks.constructEvent(
             req.body,
             req.headers["stripe-signature"],
-            process.env.STRIPE_WEBHOOK_SECRET
+            process.env.STRIPE_WEBHOOK_SECRET_BILLING || process.env.STRIPE_WEBHOOK_SECRET
         );
     } catch (err) {
         console.error("❌ Signature webhook Stripe invalide :", err.message);

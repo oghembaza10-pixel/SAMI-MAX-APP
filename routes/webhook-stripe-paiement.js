@@ -38,7 +38,26 @@ const router = express.Router();
 const paiements = require("../services/paiements");
 
 router.post("/", async (req, res) => {
-    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    // ── DEUX ADRESSES, DEUX SECRETS ──────────────────────────────────────────
+    //
+    // SAMII expose DEUX webhooks Stripe, montés à des adresses différentes :
+    //
+    //     /billing/webhook           les abonnements
+    //     /webhook/stripe-paiement   les achats à l'unité (cartes, produits)
+    //
+    // Chez Stripe, chaque adresse est un « endpoint » distinct avec son PROPRE
+    // secret de signature. Les deux routes lisaient pourtant la même variable
+    // `STRIPE_WEBHOOK_SECRET` : une seule valeur pouvait y tenir, donc l'une des
+    // deux aurait rejeté chaque notification avec « signature invalide ».
+    //
+    // Et cet échec est le pire qui soit : le client PAIE VRAIMENT, Stripe
+    // encaisse, et SAMII ne débloque rien. Silencieux des deux côtés.
+    //
+    // Chaque route lit donc désormais SA variable, avec repli sur la variable
+    // commune — pour qu'une installation qui n'a qu'un seul webhook branché
+    // continue de marcher sans rien changer.
+    const secret = process.env.STRIPE_WEBHOOK_SECRET_PAIEMENT
+                || process.env.STRIPE_WEBHOOK_SECRET;
     const cle = process.env.STRIPE_SECRET_KEY;
 
     if (!secret || !cle) {

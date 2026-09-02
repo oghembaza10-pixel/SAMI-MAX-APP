@@ -248,7 +248,11 @@ async function stripe() {
     const cle = String(process.env.STRIPE_SECRET_KEY || "").trim();
 
     console.log(`  STRIPE_SECRET_KEY      : ${empreinte(cle)}`);
-    console.log(`  STRIPE_WEBHOOK_SECRET  : ${empreinte(process.env.STRIPE_WEBHOOK_SECRET)}`);
+    // DEUX webhooks, donc DEUX secrets : Stripe donne un secret par adresse,
+    // et SAMII expose /billing/webhook ET /webhook/stripe-paiement.
+    console.log(`  …_SECRET_BILLING       : ${empreinte(process.env.STRIPE_WEBHOOK_SECRET_BILLING)}`);
+    console.log(`  …_SECRET_PAIEMENT      : ${empreinte(process.env.STRIPE_WEBHOOK_SECRET_PAIEMENT)}`);
+    console.log(`  …_SECRET (repli commun): ${empreinte(process.env.STRIPE_WEBHOOK_SECRET)}`);
     console.log(`  STRIPE_PRICE_STANDARD  : ${process.env.STRIPE_PRICE_STANDARD || "(absent)"}`);
     console.log(`  STRIPE_PRICE_PRO       : ${process.env.STRIPE_PRICE_PRO || "(absent)"}`);
 
@@ -308,10 +312,24 @@ async function stripe() {
         }
     }
 
-    if (!process.env.STRIPE_WEBHOOK_SECRET) {
-        console.log(`\n  ⛔ STRIPE_WEBHOOK_SECRET absente : un paiement RÉUSSI ne sera jamais`);
-        console.log(`     confirmé côté SAMII. Le client paie, et son palier ne change pas.`);
-        console.log(`     Stripe → Développeurs → Webhooks → ${"${CONFIG_APP_URL}"}/billing/webhook`);
+    // ── LE SILENCE LE PLUS CHER ──────────────────────────────────────────
+    //
+    // Sans secret, la signature est refusée : Stripe encaisse, le client a
+    // payé, et SAMII ne débloque rien. Aucune erreur visible des deux côtés.
+    const commun = process.env.STRIPE_WEBHOOK_SECRET;
+    for (const [quoi, v, chemin] of [
+        ["abonnements",     process.env.STRIPE_WEBHOOK_SECRET_BILLING,  "/billing/webhook"],
+        ["achats à l'unité", process.env.STRIPE_WEBHOOK_SECRET_PAIEMENT, "/webhook/stripe-paiement"],
+    ]) {
+        if (!v && !commun) {
+            console.log(`\n  ⛔ aucun secret pour les ${quoi} (${chemin}) :`);
+            console.log(`     le client paie VRAIMENT, et rien ne se débloque.`);
+        }
+    }
+    if (!process.env.STRIPE_WEBHOOK_SECRET_BILLING && !process.env.STRIPE_WEBHOOK_SECRET_PAIEMENT && commun) {
+        console.log(`\n  ⚠️  les deux webhooks retombent sur le secret commun.`);
+        console.log(`     Stripe donne un secret DIFFÉRENT par adresse : l'un des deux`);
+        console.log(`     rejettera chaque notification en « signature invalide ».`);
     }
 }
 
