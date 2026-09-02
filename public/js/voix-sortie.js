@@ -132,16 +132,63 @@
             .some((v) => (v.lang || "").toLowerCase().startsWith("fr") && MASCULINES_FR.test(v.name));
     }
 
-    function parlerNavigateur(texte) {
+    // ── LE BUG QUI FAISAIT PARLER UNE FEMME ─────────────────────────────
+    //
+    // `getVoices()` renvoie une LISTE VIDE au premier appel sur Chrome et
+    // Edge : le système charge ses voix de façon asynchrone et prévient
+    // ensuite par l'événement `voiceschanged`. Personne ne l'écoutait.
+    //
+    // Conséquence, et elle tombait toujours au pire moment : au tout premier
+    // message — celui du bouton « Voix active » — la liste était vide, aucune
+    // voix n'était posée sur l'énoncé, et le navigateur prenait SA voix par
+    // défaut. Qui est féminine sur la plupart des systèmes. Le choix
+    // masculin écrit juste au-dessus ne servait à rien tant qu'il n'avait
+    // rien à choisir.
+    //
+    // On attend donc la liste. Une seconde au maximum : passé ce délai, un
+    // système qui n'a rien annoncé n'a probablement rien à annoncer, et
+    // mieux vaut une voix par défaut que le silence.
+    let voixPretes = null;
+    function attendreLesVoix() {
+        if (voixPretes) return voixPretes;
+        voixPretes = new Promise((resoudre) => {
+            if (!navigateurDisponible()) return resoudre();
+            if ((global.speechSynthesis.getVoices() || []).length) return resoudre();
+            let fini = false;
+            const finir = () => { if (!fini) { fini = true; resoudre(); } };
+            try { global.speechSynthesis.addEventListener("voiceschanged", finir, { once: true }); }
+            catch { /* vieux navigateur sans addEventListener sur cet objet */ }
+            setTimeout(finir, 1000);
+        });
+        return voixPretes;
+    }
+
+    async function parlerNavigateur(texte) {
+        if (!navigateurDisponible()) return false;
+        await attendreLesVoix();
         return new Promise((resoudre) => {
-            if (!navigateurDisponible()) return resoudre(false);
             global.speechSynthesis.cancel();
             const dire = new global.SpeechSynthesisUtterance(texte);
             dire.lang = "fr-FR";
             dire.rate = 1.02;
-            dire.pitch = 1;
             const voix = etat.voixNavigateur || choisirVoixNavigateur();
             if (voix) { etat.voixNavigateur = voix; dire.voice = voix; }
+
+            // ── QUAND IL N'Y A AUCUNE VOIX MASCULINE ────────────────────
+            //
+            // Sur Android il n'existe souvent qu'une seule voix française,
+            // et elle est féminine. On ne peut pas la remplacer — mais on
+            // peut la descendre. Un pitch à 0,72 rend une voix nettement
+            // plus grave, et c'est la différence entre « ça ne va pas » et
+            // « ça passe ».
+            //
+            // Ce n'est PAS une vraie voix d'homme, et il ne faut pas le
+            // prétendre : c'est le moins mauvais choix là où le système ne
+            // propose rien d'autre. Là où un masculin existe, on n'y touche
+            // pas — le baisser rendrait Thomas caverneux.
+            const estMasculine = voix && MASCULINES_FR.test(voix.name);
+            dire.pitch = estMasculine ? 1 : 0.72;
+
             dire.onend = () => resoudre(true);
             dire.onerror = () => resoudre(false);
             global.speechSynthesis.speak(dire);
@@ -248,15 +295,25 @@
         //
         // Le jour où Kokoro publie une voix « fm_… », il suffira de
         // l'ajouter et de retirer cette inversion.
+        // On attend la liste AVANT de décider qui parle : sans ça,
+        // `navigateurAUnHomme()` répondait non au premier message — la liste
+        // étant vide — et laissait Kokoro, qui n'a qu'une voix française et
+        // féminine, prendre la main. La décision se prenait donc toujours
+        // sur une information absente.
+        await attendreLesVoix();
+
         let dit = false;
         if (navigateurAUnHomme()) {
             dit = await parlerNavigateur(dire);
             if (!dit && etat.kokoro) dit = await parlerKokoro(dire);
         } else {
-            // Kokoro s'il est déjà chargé — jamais en l'attendant. Attendre
-            // 80 Mo avant le premier mot, c'est un silence qu'on prend pour
-            // une panne.
-            if (etat.kokoro) dit = await parlerKokoro(dire);
+            // AUCUN masculin nommé sur ce système. Kokoro n'en a pas non
+            // plus — sa seule voix française est féminine. Entre une belle
+            // voix de femme et une voix de synthèse descendue au grave, on
+            // choisit celle qui est LA SIENNE. C'est ce qui a été demandé,
+            // et la qualité passe après l'identité.
+            dit = await parlerNavigateur(dire);
+            if (!dit && etat.kokoro) dit = await parlerKokoro(dire);
         }
         if (!dit) dit = await parlerElevenLabs(dire);
         if (!dit) dit = await parlerNavigateur(dire);

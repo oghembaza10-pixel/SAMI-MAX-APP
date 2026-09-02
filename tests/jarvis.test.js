@@ -260,6 +260,67 @@ function rendre(COM, session) {
     verifier(androide && androide.name === "Google français",
         "sans voix masculine française, SAMII ne parle plus du tout — mieux vaut une voix imparfaite que le silence");
 
+    // ── LE PREMIER MESSAGE, QUAND LES VOIX N'ARRIVENT QU'APRÈS ──────────
+    //
+    // LE BUG QUI A FAIT PARLER UNE FEMME. `getVoices()` rend une liste VIDE
+    // au premier appel sur Chrome et Edge — le système charge ses voix en
+    // asynchrone puis annonce « voiceschanged ». Personne ne l'écoutait.
+    //
+    // Le tout premier message (celui du bouton « Voix active ») tombait donc
+    // toujours avant la liste : aucune voix posée, voix par défaut du
+    // système, féminine. Le choix masculin ne servait à rien, faute d'avoir
+    // quelque chose à choisir.
+    function fenetreRetardee(listeVoix, retardMs) {
+        const dits = [];
+        let pretes = false;
+        const abonnes = [];
+        setTimeout(() => { pretes = true; abonnes.forEach((f) => f()); }, retardMs);
+        const fenetre = {
+            navigator: {},
+            speechSynthesis: {
+                cancel() {},
+                getVoices: () => (pretes ? listeVoix : []),
+                addEventListener: (nom, fn) => { if (nom === "voiceschanged") abonnes.push(fn); },
+                speak(u) { dits.push({ voix: u.voice && u.voice.name, pitch: u.pitch });
+                           setTimeout(() => u.onend && u.onend(), 0); },
+            },
+            SpeechSynthesisUtterance: function (t) { this.text = t; },
+            Audio: function () { this.play = () => Promise.reject(new Error("pas de son")); },
+            fetch: async () => ({ json: async () => ({ success: false }) }),
+        };
+        // eslint-disable-next-line no-new-func
+        new Function("window", voix)(fenetre);
+        return { V: fenetre.VoixSortie, dits };
+    }
+
+    const edge = fenetreRetardee([
+        { name: "Microsoft Hortense", lang: "fr-FR" },
+        { name: "Microsoft Paul - French (France)", lang: "fr-FR" },
+    ], 120);
+    edge.V.activer();
+    await edge.V.parler("Je t'écoute.");
+    verifier(edge.dits[0] && /Paul/.test(String(edge.dits[0].voix)),
+        `au PREMIER message, SAMII prend « ${edge.dits[0] && edge.dits[0].voix} » — les voix n'étaient pas encore chargées et on n'a pas attendu`);
+
+    // Là où aucune voix masculine n'existe (Android n'en a souvent qu'une,
+    // féminine), on descend le ton. Ce n'est pas une vraie voix d'homme,
+    // c'est le moins mauvais choix — mais ne rien faire serait pire.
+    const seuleFeminine = fenetreRetardee([{ name: "Google français", lang: "fr-FR" }], 80);
+    seuleFeminine.V.activer();
+    await seuleFeminine.V.parler("Deux commandes aujourd'hui.");
+    verifier(seuleFeminine.dits[0] && seuleFeminine.dits[0].pitch < 0.9,
+        `sans voix masculine, le ton n'est pas descendu (pitch ${seuleFeminine.dits[0] && seuleFeminine.dits[0].pitch}) — SAMII reste une femme`);
+
+    // Et là où un vrai masculin existe, on n'y touche PAS : descendre Thomas
+    // le rendrait caverneux.
+    const vraiMasculin = fenetreRetardee([
+        { name: "Amélie", lang: "fr-CA" }, { name: "Thomas", lang: "fr-FR" },
+    ], 80);
+    vraiMasculin.V.activer();
+    await vraiMasculin.V.parler("Bonjour.");
+    verifier(vraiMasculin.dits[0] && vraiMasculin.dits[0].pitch === 1,
+        `le ton d'une vraie voix masculine est modifié (pitch ${vraiMasculin.dits[0] && vraiMasculin.dits[0].pitch}) — Thomas n'a pas besoin d'être descendu`);
+
     voixSortie.desactiver();
     const apresCoupure = dits.length;
     await voixSortie.parler("on ne doit plus rien entendre");
@@ -271,8 +332,19 @@ function rendre(COM, session) {
     // Kokoro dans une suite de tests.
     verifier(/kokoro/i.test(voix), "le fournisseur Kokoro a disparu");
     verifier(/api\/speak/.test(voix), "ElevenLabs n'est plus atteignable — la route redevient morte");
-    verifier(/if \(etat\.kokoro\) dit = await parlerKokoro/.test(voix),
-        "la voix attend le chargement de Kokoro avant de parler — le premier mot se ferait attendre");
+    // CE TEST LISAIT LA SOURCE, et la correction du premier message l'a
+    // cassé alors que le comportement était intact. Une assertion qui suit
+    // la FORME du code casse quand la forme change, et se tait quand c'est
+    // le sens qui change. On mesure donc ce qui compte vraiment : le temps
+    // avant le premier mot. Attendre 80 Mo de modèle, c'est un silence qu'on
+    // prend pour une panne.
+    const chrono = fenetreRetardee([{ name: "Thomas", lang: "fr-FR" }], 50);
+    chrono.V.activer();
+    const depart = Date.now();
+    await chrono.V.parler("Vite.");
+    const attente = Date.now() - depart;
+    verifier(attente < 900,
+        `il s'est écoulé ${attente} ms avant le premier mot — la voix attend probablement le chargement de Kokoro`);
 
     // ── 6. LA PAGE ELLE-MÊME ────────────────────────────────────────────
     verifier(page.includes("Bonjour Inès"),
