@@ -168,11 +168,56 @@ async function whatsapp(workspaceId) {
         : "  ⛔ NON appairé : rien ne partira. Rescanne le QR dans Green API.");
 }
 
+// ── LE WORKSPACE EXISTE-T-IL SEULEMENT ? ──────────────────────────────────
+//
+// Sans ce contrôle, un identifiant erroné donnait « aucun connecteur
+// facebook pour ce workspace » — un message qui envoie chercher un
+// connecteur manquant alors que c'est l'IDENTIFIANT qui est faux.
+//
+// Vu en vrai : SOCIAL_WORKSPACE posée sans le préfixe « WS- ». Les trois
+// sondes ont répondu « rien de configuré », et tout était configuré.
+async function verifierWorkspace(workspaceId) {
+    try {
+        const r = await db.query(`SELECT nom FROM workspaces WHERE id = $1`, [workspaceId]);
+        if (r.length) { console.log(`  ✅ trouvé : « ${r[0].nom} »`); return true; }
+
+        console.log(`  ❌ AUCUN workspace ne porte cet identifiant.`);
+
+        // L'erreur la plus probable, nommée explicitement.
+        const avecPrefixe = await db.query(`SELECT id, nom FROM workspaces WHERE id = $1`,
+                                           [`WS-${workspaceId}`]);
+        if (avecPrefixe.length) {
+            console.log(`\n  💡 « WS-${workspaceId} » existe (« ${avecPrefixe[0].nom} »).`);
+            console.log(`     Le préfixe « WS- » manque dans SOCIAL_WORKSPACE.`);
+            return false;
+        }
+
+        // Sinon : ceux qui ont des connecteurs sociaux, pour choisir sans SQL.
+        const candidats = await db.query(
+            `SELECT w.id, w.nom, count(c.id)::int AS n
+               FROM workspaces w JOIN connecteurs c ON c.workspace_id = w.id
+              WHERE c.actif AND c.type IN ('facebook','instagram','whatsapp','telegram')
+              GROUP BY w.id, w.nom ORDER BY n DESC LIMIT 5`);
+        if (candidats.length) {
+            console.log(`\n  Workspaces qui ont des connecteurs sociaux actifs :`);
+            for (const c of candidats) console.log(`     ${c.id}  « ${c.nom} »  ${c.n} connecteur(s)`);
+        }
+        return false;
+    } catch (err) {
+        console.log(`  ⚠️  vérification impossible : ${err.message}`);
+        return true;   // on tente quand même les sondes
+    }
+}
+
 (async () => {
     const workspaceId = process.env.SOCIAL_WORKSPACE || process.argv[2] || null;
     console.log(`workspace : ${workspaceId || "(SOCIAL_WORKSPACE non posée)"}`);
     if (!workspaceId) {
         console.log("Passe-le en argument : node scripts/sonder-connexions.js WS-xxxx");
+        process.exit(1);
+    }
+    if (!(await verifierWorkspace(workspaceId))) {
+        console.log("\nRien d'autre à sonder tant que l'identifiant n'est pas le bon.\n");
         process.exit(1);
     }
     try {
