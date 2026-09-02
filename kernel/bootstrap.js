@@ -86,6 +86,27 @@ scheduler.add("0 9 * * *", "Guerre - compte à rebours communauté", guerreEngin
     // propre fréquence (voir engines/autopostEngine.js).
     const autopostEngine = require("../engines/autopostEngine");
     scheduler.add("0 * * * *", "Auto-post marchand - vérification horaire", autopostEngine.runCheck);
+
+    // ── LES AGENTS SOCIAUX ────────────────────────────────────────────────
+    //
+    // Sans ces trois lignes, SOCIAL_MODE=AUTO ne changeait presque rien :
+    // la chaîne savait préparer et programmer, mais personne ne l'appelait,
+    // et `publisher.passer()` n'était branché nulle part. SAMII attendait un
+    // clic humain — c'est-à-dire l'inverse de ce qu'on lui demande.
+    //
+    // Les trois tâches vérifient le mode elles-mêmes : en MANUAL elles
+    // tournent et ne font rien. Il n'y a donc pas deux endroits où le mode
+    // est décidé, et couper AUTO depuis Render suffit à tout arrêter.
+    const socialCycle = require("../engines/social/cycle");
+    // Toutes les 5 minutes : expédie ce qui est dû. Rythme court exprès —
+    // un contenu programmé pour 14 h doit partir à 14 h, pas à 15 h.
+    scheduler.add("*/5 * * * *", "Agents sociaux - envoi de ce qui est dû", socialCycle.envoyer);
+    // Toutes les heures : le cycle décide lui-même si l'heure est une heure
+    // de publication (SOCIAL_HEURES) et si le plafond du jour est atteint.
+    scheduler.add("5 * * * *", "Agents sociaux - préparation automatique", socialCycle.preparer);
+    // Les statistiques, quand un collecteur existera.
+    scheduler.add("0 */6 * * *", "Agents sociaux - relevé des statistiques", socialCycle.mesurer);
+
     scheduler.start();
 }
 

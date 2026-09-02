@@ -274,7 +274,7 @@ async function chainesPour(slug) {
 // sinon. `schedulingType: automatic` laisse Buffer choisir l'heure de la
 // file — c'est ce qu'on veut pour un « publie maintenant », Buffer étant
 // justement l'outil qui sait quand publier.
-async function publier({ plateforme, texte, media, quand }) {
+async function publier({ plateforme, texte, media, mediaType, quand }) {
     if (!configure()) return { ok: false, erreur: "BUFFER_ACCESS_TOKEN n'est pas posée" };
     if (!texte) return { ok: false, erreur: "texte vide" };
 
@@ -290,7 +290,23 @@ async function publier({ plateforme, texte, media, quand }) {
             mode: quand ? "customScheduled" : "addToQueue",
         };
         if (quand) entree.dueAt = new Date(quand).toISOString();
-        if (media) entree.imageUrl = media;
+
+        // ── UNE VIDÉO N'EST PAS UNE IMAGE ────────────────────────────────
+        //
+        // Envoyer l'URL d'un .mp4 dans `imageUrl` est la façon la plus
+        // simple de faire échouer un Reel : Buffer essaie de le traiter
+        // comme une image, et le message d'erreur qui revient ne parle pas
+        // de vidéo. On distingue donc explicitement.
+        //
+        // Le type est déduit de l'extension quand l'appelant ne le donne
+        // pas : c'est imparfait, mais c'est mieux que de tout traiter
+        // comme une image.
+        if (media) {
+            const type = String(mediaType || "").toLowerCase()
+                || (/\.(mp4|mov|m4v|webm)(\?|$)/i.test(media) ? "video" : "image");
+            if (type === "video") entree.videoUrl = media;
+            else entree.imageUrl = media;
+        }
 
         const r = await appeler(
             `mutation Publier($input: CreatePostInput!) {

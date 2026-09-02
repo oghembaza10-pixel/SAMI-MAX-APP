@@ -582,6 +582,172 @@ console.log("── WhatsApp : d'où vient la liste ──");
     process.env.WHATSAPP_DIFFUSION = ancien || "";
 }
 
+console.log("── Les formats : reel, post, photo ──");
+{
+    const formats = require("../config/formats-sociaux");
+
+    // Un reel EXIGE une vidéo. Ce n'est pas une préférence de style : sans
+    // elle, la plateforme refuse.
+    verifier(formats.mediaExige("reel") === "video", "un reel exige une vidéo");
+    verifier(formats.mediaExige("post") === null, "un post n'exige rien");
+    verifier(formats.mediaConvient("reel", "image").ok === false,
+             "une image ne fait pas un reel : " + formats.mediaConvient("reel", "image").raison);
+    verifier(formats.mediaConvient("reel", "video").ok === true, "une vidéo, oui");
+
+    // Le choix automatique : c'est CETTE fonction que le cycle appelle, et
+    // c'est le seul endroit où « quel format » se décide.
+    verifier(formats.choisir({ plateforme: "instagram", mediaType: "video" }).format === "reel",
+             "Instagram + une vidéo → un reel");
+    verifier(formats.choisir({ plateforme: "instagram", mediaType: "image" }).format === "photo",
+             "Instagram + une image → une photo");
+    verifier(formats.choisir({ plateforme: "instagram" }).ok === false,
+             "Instagram sans média → refus (la plateforme l'exige)");
+    verifier(formats.choisir({ plateforme: "linkedin" }).format === "post",
+             "LinkedIn sans média → un post, c'est permis");
+
+    // Un format qu'on ne sait pas transporter ne doit jamais être choisi :
+    // le préparer produirait un contenu qui échoue à la dernière étape.
+    verifier(formats.publiable("story") === false, "on ne sait pas encore envoyer une story");
+    verifier(formats.pourPlateforme("instagram").includes("story"),
+             "elle est pourtant déclarée sur Instagram — les deux notions sont distinctes");
+    verifier(formats.choisir({ plateforme: "instagram", mediaType: "image" }).format !== "story",
+             "et le choix automatique ne la retient donc jamais");
+
+    // Couper un format depuis Render, sans déploiement.
+    process.env.SOCIAL_FORMATS_COUPES = "reel";
+    verifier(formats.estCoupe("reel"), "un format se coupe par variable d'environnement");
+    verifier(formats.choisir({ plateforme: "instagram", mediaType: "video" }).ok === false,
+             "reels coupés : une vidéo ne trouve plus de format sur Instagram");
+    process.env.SOCIAL_FORMATS_COUPES = "";
+    verifier(formats.choisir({ plateforme: "instagram", mediaType: "video" }).format === "reel",
+             "et ils reviennent dès qu'on découpe");
+}
+
+console.log("── Buffer : une vidéo ne part pas dans imageUrl ──");
+{
+    // Envoyer l'URL d'un .mp4 dans `imageUrl` est la façon la plus simple
+    // de faire échouer un reel, avec un message d'erreur qui ne parle même
+    // pas de vidéo. Vérifié sur la requête réellement formée.
+    // Vérifié sur la requête RÉELLEMENT formée, contre un serveur local qui
+    // parle le GraphQL de Buffer. Regarder le texte source aurait prouvé
+    // que le code est écrit, pas qu'il envoie la bonne chose.
+    const http = require("http");
+    const recu = [];
+    const faux = http.createServer((req, res) => {
+        let corps = "";
+        req.on("data", (c) => { corps += c; });
+        req.on("end", () => {
+            let q = {}; try { q = JSON.parse(corps); } catch { /* illisible */ }
+            recu.push(q);
+            const t = String(q.query || "");
+            res.writeHead(200, { "Content-Type": "application/json" });
+            if (/organizations/.test(t)) return res.end(JSON.stringify({ data: { account: { organizations: [{ id: "o1", name: "Essai" }] } } }));
+            if (/channels/.test(t)) return res.end(JSON.stringify({ data: { channels: [{ id: "c_ig", name: "insta", service: "instagram" }] } }));
+            res.end(JSON.stringify({ data: { createPost: { post: { id: "p1", text: "ok" } } } }));
+        });
+    });
+    await new Promise((r) => faux.listen(0, "127.0.0.1", r));
+
+    const port = faux.address().port;
+    const ancienne = { adr: process.env.BUFFER_ADRESSE, jeton: process.env.BUFFER_ACCESS_TOKEN, pf: process.env.BUFFER_PLATEFORMES };
+    process.env.BUFFER_ADRESSE = `http://127.0.0.1:${port}`;
+    process.env.BUFFER_ACCESS_TOKEN = "un-jeton-de-controle-suffisamment-long";
+    process.env.BUFFER_PLATEFORMES = "instagram";
+    delete require.cache[require.resolve("../engines/social/providers/buffer")];
+    const buffer = require("../engines/social/providers/buffer");
+
+    const envois = () => recu.filter((q) => /createPost/.test(String(q.query || ""))).map((q) => q.variables.input);
+
+    await buffer.publier({ plateforme: "instagram", texte: "Une légende de reel.", media: "https://x.test/v.mp4", mediaType: "video" });
+    let dernier = envois().pop();
+    verifier(dernier.videoUrl === "https://x.test/v.mp4", "une vidéo part dans videoUrl");
+    verifier(!dernier.imageUrl, "et surtout PAS dans imageUrl — c'est ce qui casse un reel");
+
+    await buffer.publier({ plateforme: "instagram", texte: "Une légende de photo.", media: "https://x.test/p.jpg", mediaType: "image" });
+    dernier = envois().pop();
+    verifier(dernier.imageUrl === "https://x.test/p.jpg" && !dernier.videoUrl, "une image part dans imageUrl");
+
+    // Personne ne déclare le type : l'extension tranche. Imparfait, mais
+    // très supérieur à « tout est une image ».
+    await buffer.publier({ plateforme: "instagram", texte: "Sans type déclaré.", media: "https://x.test/auto.mp4" });
+    dernier = envois().pop();
+    verifier(dernier.videoUrl === "https://x.test/auto.mp4", "un .mp4 sans type déclaré est reconnu comme une vidéo");
+
+    faux.close();
+    if (ancienne.adr === undefined) delete process.env.BUFFER_ADRESSE; else process.env.BUFFER_ADRESSE = ancienne.adr;
+    process.env.BUFFER_ACCESS_TOKEN = ancienne.jeton || "";
+    if (ancienne.pf === undefined) delete process.env.BUFFER_PLATEFORMES; else process.env.BUFFER_PLATEFORMES = ancienne.pf;
+    delete require.cache[require.resolve("../engines/social/providers/buffer")];
+}
+
+console.log("── La vitrine : d'où vient le média ──");
+{
+    // Sans média, SAMII ne peut pas publier sur Instagram — la plateforme
+    // le refuse. La vitrine est la seule source réelle et gratuite : les
+    // vrais produits du catalogue, avec leurs vraies photos et vidéos.
+    const vitrine = require("../engines/social/vitrine");
+
+    const m = vitrine.mediasDe({
+        photo_url: "https://x.test/a.jpg",
+        photos_urls: JSON.stringify(["https://x.test/a.jpg", "https://x.test/b.jpg", "/relatif.jpg"]),
+        videos: ["https://x.test/v.mp4"],
+    });
+    verifier(m.images.length === 2, "les doublons sont retirés (photo_url est souvent la première de photos_urls)");
+    verifier(!m.images.includes("/relatif.jpg"),
+             "une URL relative est écartée : Buffer et Meta téléchargent depuis CHEZ EUX");
+    verifier(m.videos.length === 1, "la vidéo est vue");
+
+    verifier(vitrine.urlPubliable("http://x.test/a.jpg") === false, "http:// est refusé, pas seulement le relatif");
+    verifier(vitrine.lireListe("{cassé").length === 0, "un JSON illisible ne remonte pas comme une URL");
+    verifier(vitrine.lireListe(null).length === 0, "et une colonne vide ne fait rien tomber");
+}
+
+console.log("── Le cycle automatique : les garde-fous ──");
+{
+    // En AUTO, l'erreur ne s'affiche pas sur un écran : elle publie sur les
+    // comptes de vrais gens, plusieurs fois, sans que personne regarde.
+    const cycle = require("../engines/social/cycle");
+    const anciennes = { max: process.env.SOCIAL_MAX_PAR_JOUR, h: process.env.SOCIAL_HEURES };
+
+    delete process.env.SOCIAL_MAX_PAR_JOUR;
+    verifier(cycle.maxParJour() === 2, "sans réglage, 2 publications par plateforme et par jour");
+    process.env.SOCIAL_MAX_PAR_JOUR = "0";
+    verifier(cycle.maxParJour() === 0, "0 est une valeur valide : elle arrête tout");
+    process.env.SOCIAL_MAX_PAR_JOUR = "n'importe quoi";
+    verifier(cycle.maxParJour() === 2, "une valeur illisible retombe sur le défaut, elle ne débride pas");
+
+    delete process.env.SOCIAL_HEURES;
+    verifier(cycle.heuresAutorisees().join() === "9,14,19", "sans réglage : 9 h, 14 h, 19 h");
+    process.env.SOCIAL_HEURES = "8, 20 , 99, abc";
+    verifier(cycle.heuresAutorisees().join() === "8,20",
+             "les espaces passent, 99 et abc sont écartés — une heure invalide ne doit pas ouvrir la journée");
+
+    // Le mode est décidé à UN seul endroit. Le cycle ne le redéduit pas.
+    process.env.SOCIAL_MODE = "MANUAL";
+    const r = await cycle.preparer();
+    verifier(r.fait === false && /MANUAL/.test(r.raison), "en MANUAL, le cycle ne prépare rien : " + r.raison);
+    const e = await cycle.envoyer();
+    verifier(e.traitees === 0 && /MANUAL/.test(e.raison), "et il n'envoie rien non plus");
+
+    if (anciennes.max === undefined) delete process.env.SOCIAL_MAX_PAR_JOUR;
+    else process.env.SOCIAL_MAX_PAR_JOUR = anciennes.max;
+    if (anciennes.h === undefined) delete process.env.SOCIAL_HEURES;
+    else process.env.SOCIAL_HEURES = anciennes.h;
+}
+
+console.log("── AUTO exige DEUX verrous, pas un ──");
+{
+    // Une variable qu'on change d'un clic finit changée par erreur, et ici
+    // l'erreur publie sur les comptes de vrais gens.
+    process.env.SOCIAL_MODE = "AUTO";
+    process.env.SOCIAL_AUTO_CONFIRME = "";
+    verifier(social.mode() === "SEMI_AUTO", "AUTO sans confirmation retombe en SEMI_AUTO");
+    process.env.SOCIAL_AUTO_CONFIRME = "oui";
+    verifier(social.mode() === "AUTO", "les deux verrous ensemble donnent AUTO");
+    process.env.SOCIAL_AUTO_CONFIRME = "";
+    process.env.SOCIAL_MODE = "MANUAL";
+}
+
 console.log("── Le mode MANUAL bloque la programmation ──");
 {
     process.env.SOCIAL_MODE = "MANUAL";
