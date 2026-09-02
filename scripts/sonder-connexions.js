@@ -52,6 +52,25 @@ function lire(url) {
 
 function titre(t) { console.log(`\n══════ ${t} ══════`); }
 
+// Même chose que `lire`, mais avec des en-têtes : Stripe veut un Bearer là
+// où Meta prend la clé dans l'URL. Une seule fonction pour les deux aurait
+// mélangé deux façons d'authentifier qui n'ont rien à voir.
+function lireAvec(url, headers) {
+    return new Promise((resolve) => {
+        const r = https.get(url, { headers }, (res) => {
+            let b = "";
+            res.on("data", (d) => { b += d; });
+            res.on("end", () => {
+                let j = null;
+                try { j = JSON.parse(b); } catch { /* réponse illisible */ }
+                resolve({ code: res.statusCode, corps: j, brut: b.slice(0, 300) });
+            });
+        });
+        r.on("error", (e) => resolve({ code: 0, erreur: e.message }));
+        r.setTimeout(20000, () => { r.destroy(); resolve({ code: 0, erreur: "délai dépassé" }); });
+    });
+}
+
 // Le motif d'une réponse ratée, qui ne dit JAMAIS « undefined ».
 // Meta répond parfois du JSON structuré, parfois du texte brut (un proxy,
 // une page d'erreur). Un motif vide envoie chercher à l'aveugle — et c'est
@@ -201,6 +220,98 @@ async function instagram(workspaceId) {
         console.log(`  ✅ ${r.corps.username} — ${r.corps.followers_count} abonnés, ${r.corps.media_count} publications`);
     } else {
         console.log(`  ❌ HTTP ${r.code} — ${motif(r)}`);
+    }
+}
+
+// ── STRIPE ────────────────────────────────────────────────────────────────
+//
+// Tout le code existe déjà : `POST /billing/checkout` crée un abonnement,
+// `/billing/webhook` le confirme, `services/paiements.js` encaisse les
+// achats à l'unité (cartes, produits). Rien à construire.
+//
+// Ce qui manque en pratique, ce sont QUATRE variables — et surtout les deux
+// identifiants de tarif, qui ne peuvent être créés que dans Stripe.
+//
+// ── LE CONTRÔLE QUI COMPTE VRAIMENT ───────────────────────────────────────
+//
+// On ne se contente pas de vérifier que les variables existent : on demande
+// à Stripe le MONTANT de chaque tarif et on le compare à `config/paliers.js`.
+//
+// C'est exactement le risque que ce fichier de paliers a été écrit pour
+// éviter — « le prix était écrit deux fois, et le jour où elles divergent,
+// on facture un montant qu'on n'a jamais affiché ». Sauf que la deuxième
+// copie vit maintenant chez Stripe, hors du dépôt, où aucun test ne peut la
+// voir. Cette sonde est le seul endroit d'où l'écart est visible.
+async function stripe() {
+    titre("STRIPE");
+    const paliers = require("../config/paliers");
+    const cle = String(process.env.STRIPE_SECRET_KEY || "").trim();
+
+    console.log(`  STRIPE_SECRET_KEY      : ${empreinte(cle)}`);
+    console.log(`  STRIPE_WEBHOOK_SECRET  : ${empreinte(process.env.STRIPE_WEBHOOK_SECRET)}`);
+    console.log(`  STRIPE_PRICE_STANDARD  : ${process.env.STRIPE_PRICE_STANDARD || "(absent)"}`);
+    console.log(`  STRIPE_PRICE_PRO       : ${process.env.STRIPE_PRICE_PRO || "(absent)"}`);
+
+    if (!cle) {
+        console.log(`\n  ⛔ sans STRIPE_SECRET_KEY, aucun paiement n'est possible.`);
+        console.log(`     dashboard.stripe.com → Développeurs → Clés d'API → clé secrète`);
+        return;
+    }
+
+    const entetes = { Authorization: `Bearer ${cle}` };
+
+    // Le compte : la clé est-elle valide, et est-on en TEST ou en RÉEL ?
+    // Se croire en réel alors qu'on est en test, c'est encaisser zéro euro
+    // pendant des semaines sans que rien ne le signale.
+    const compte = await lireAvec("https://api.stripe.com/v1/account", entetes);
+    if (compte.code !== 200) {
+        return console.log(`\n  ❌ clé refusée : HTTP ${compte.code} — ${motif(compte)}`);
+    }
+    const reel = cle.startsWith("sk_live_");
+    console.log(`\n  ✅ compte « ${compte.corps.business_profile?.name || compte.corps.id} »`);
+    console.log(`     mode : ${reel ? "RÉEL (sk_live) — les paiements sont encaissés" : "TEST (sk_test) — AUCUN euro n'arrive"}`);
+    if (compte.corps.charges_enabled === false) {
+        console.log(`     ⛔ charges_enabled = false : Stripe n'accepte pas encore de paiement sur ce compte.`);
+    }
+
+    // Les deux tarifs d'abonnement, comparés aux paliers.
+    for (const [palier, variable] of [["standard", "STRIPE_PRICE_STANDARD"], ["pro", "STRIPE_PRICE_PRO"]]) {
+        const id = String(process.env[variable] || "").trim();
+        const attendu = paliers.PALIERS?.[palier]?.prix;
+        console.log(`\n  ── ${palier} — ${attendu} $ attendu (config/paliers.js) ──`);
+        if (!id) {
+            console.log(`     ⛔ ${variable} absente : le bouton « Payer par carte » répondra « Plan invalide ».`);
+            console.log(`        Stripe → Catalogue de produits → créer un tarif RÉCURRENT mensuel de ${attendu} $`);
+            continue;
+        }
+        const t = await lireAvec(`https://api.stripe.com/v1/prices/${encodeURIComponent(id)}`, entetes);
+        if (t.code !== 200) {
+            console.log(`     ❌ tarif introuvable : HTTP ${t.code} — ${motif(t)}`);
+            continue;
+        }
+        const montant = t.corps.unit_amount != null ? t.corps.unit_amount / 100 : null;
+        const devise = String(t.corps.currency || "").toUpperCase();
+        const recurrence = t.corps.recurring?.interval || null;
+        console.log(`     montant : ${montant} ${devise}   récurrence : ${recurrence || "AUCUNE"}   actif : ${t.corps.active}`);
+
+        if (!recurrence) {
+            console.log(`     ⛔ tarif PONCTUEL : \`mode: "subscription"\` le refusera. Il faut un tarif récurrent.`);
+        }
+        if (t.corps.active === false) {
+            console.log(`     ⛔ tarif archivé : Stripe refusera de l'utiliser.`);
+        }
+        // L'écart qui facture un montant jamais affiché.
+        if (montant != null && attendu != null && Number(montant) !== Number(attendu)) {
+            console.log(`     ⛔ ÉCART : Stripe facture ${montant} ${devise}, la page affiche ${attendu} $.`);
+            console.log(`        Aligne l'un sur l'autre — c'est exactement ce que config/paliers.js`);
+            console.log(`        existe pour empêcher, et cette copie-là est hors du dépôt.`);
+        }
+    }
+
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+        console.log(`\n  ⛔ STRIPE_WEBHOOK_SECRET absente : un paiement RÉUSSI ne sera jamais`);
+        console.log(`     confirmé côté SAMII. Le client paie, et son palier ne change pas.`);
+        console.log(`     Stripe → Développeurs → Webhooks → ${"${CONFIG_APP_URL}"}/billing/webhook`);
     }
 }
 
@@ -426,6 +537,7 @@ async function verifierWorkspace(workspaceId) {
     try {
         await meta(workspaceId);
         await instagram(workspaceId);
+        await stripe();
         await whatsappSamii();
         await whatsapp(workspaceId);
     } catch (err) {
