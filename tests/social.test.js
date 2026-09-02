@@ -342,6 +342,87 @@ console.log("── L'analyste n'invente pas de statistiques ──");
     verifier(/aucune recommandation/i.test(cmp.recommandation), "et refuse de recommander : " + cmp.recommandation);
 }
 
+
+console.log("── Buffer : le provider qui publie vraiment ──");
+{
+    const buffer = require("../engines/social/providers/buffer");
+    const ancien = process.env.BUFFER_ACCESS_TOKEN;
+
+    process.env.BUFFER_ACCESS_TOKEN = "";
+    verifier(buffer.configure() === false, "sans jeton, Buffer se déclare non configuré");
+    const r = await buffer.publier({ plateforme: "facebook", texte: "Un contenu assez long pour passer." });
+    verifier(r.ok === false, "et il refuse de publier");
+    verifier(/BUFFER_ACCESS_TOKEN/.test(r.erreur), "en nommant la variable manquante");
+
+    process.env.BUFFER_ACCESS_TOKEN = "un-jeton-de-controle-suffisamment-long";
+    verifier(buffer.configure() === true, "avec un jeton, il se déclare configuré");
+    process.env.BUFFER_ACCESS_TOKEN = ancien || "";
+    buffer.oublier();
+
+    verifier(buffer.plateformes.join() === "facebook,instagram,linkedin,tiktok",
+             "Buffer couvre les 4 plateformes qu'il sait servir");
+    verifier(!buffer.plateformes.includes("telegram") && !buffer.plateformes.includes("whatsapp"),
+             "et PAS Telegram ni WhatsApp — SAMII les fait elle-même");
+}
+
+console.log("── Buffer passe devant Meta, et Meta reprend si Buffer part ──");
+{
+    const ancien = process.env.BUFFER_ACCESS_TOKEN;
+    process.env.SOCIAL_PUBLICATION_REELLE = "oui";
+
+    // Meta en direct n'a pas `pages_manage_posts` : Buffer doit gagner.
+    process.env.BUFFER_ACCESS_TOKEN = "un-jeton-de-controle-suffisamment-long";
+    verifier(providers.pour("facebook").provider.nom === "buffer",
+             "Facebook passe par Buffer quand il est configuré");
+    verifier(providers.pour("instagram").provider.nom === "buffer", "Instagram aussi");
+
+    // Et le repli : retirer le jeton doit rendre la main à Meta, sans
+    // toucher au code.
+    process.env.BUFFER_ACCESS_TOKEN = "";
+    verifier(providers.pour("facebook").provider.nom === "meta",
+             "sans Buffer, Meta reprend la main tout seul");
+    verifier(/buffer non configur/i.test(providers.pour("facebook").raison || ""),
+             "et l'écran dit pourquoi : " + providers.pour("facebook").raison);
+
+    // LinkedIn n'a QUE Buffer : sans lui, c'est la simulation, pas un échec.
+    verifier(providers.pour("linkedin").provider.nom === "mock",
+             "LinkedIn sans Buffer retombe en simulation");
+
+    process.env.BUFFER_ACCESS_TOKEN = ancien || "";
+    process.env.SOCIAL_PUBLICATION_REELLE = "";
+}
+
+console.log("── WhatsApp : d'où vient la liste ──");
+{
+    const wa = require("../engines/social/providers/whatsapp");
+    const ancien = process.env.WHATSAPP_DIFFUSION;
+
+    process.env.WHATSAPP_DIFFUSION = "";
+    const vide = await wa.resoudreDestinataires({ workspaceId: null });
+    verifier(vide.liste.length === 0, "sans source, aucune liste");
+
+    // Doublons et bruit : une cliente ne doit pas recevoir deux fois.
+    process.env.WHATSAPP_DIFFUSION = "+237 600 000 001, +237600000001 , +237600000002, 12";
+    const depuisEnv = await wa.resoudreDestinataires({ workspaceId: null });
+    verifier(depuisEnv.liste.length === 2, "les doublons sont retirés");
+    verifier(!depuisEnv.liste.includes("12"), "et ce qui n'est pas un numéro est écarté");
+    verifier(depuisEnv.source === "WHATSAPP_DIFFUSION", "la source est nommée");
+
+    // Ce qu'on demande l'emporte sur ce qui est enregistré.
+    const depuisAppel = await wa.resoudreDestinataires({ destinataires: ["+237699999999"], workspaceId: null });
+    verifier(depuisAppel.source === "appel", "l'appel l'emporte sur la variable");
+    verifier(depuisAppel.liste.join() === "+237699999999", "et c'est bien SON numéro");
+
+    // Le plafond, qui n'est PAS réglable.
+    process.env.WHATSAPP_DIFFUSION = Array.from({ length: 50 }, (_, i) => "+23760000" + String(i).padStart(4, "0")).join(",");
+    const trop = await wa.publier({ texte: "Bonjour, une offre du jour." });
+    verifier(trop.ok === false, "50 destinataires : refusé");
+    verifier(/bannir/.test(trop.erreur), "et le motif dit le vrai risque");
+    verifier(wa.MAX_DESTINATAIRES === 20, "le plafond est de 20, écrit en dur");
+
+    process.env.WHATSAPP_DIFFUSION = ancien || "";
+}
+
 console.log("── Le mode MANUAL bloque la programmation ──");
 {
     process.env.SOCIAL_MODE = "MANUAL";

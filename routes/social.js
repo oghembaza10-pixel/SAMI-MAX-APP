@@ -186,7 +186,10 @@ router.get("/", async (req, res) => {
   </div>
   <div style="margin-top:6px">
     <b>Plateformes :</b> ${etat.publication.plateformes.map((p) =>
-      `<span class="puce ${p.coupee ? "coupe" : ""}">${echapper(p.slug)} → ${echapper(p.providerUtilise || "—")}</span>`).join("")}
+      `<span class="puce ${p.coupee ? "coupe" : ""}" title="${echapper(p.note || "")}">${echapper(p.slug)} → ${echapper(p.providerUtilise || "—")}${
+        (p.providersReels || []).length > 1
+          ? " (" + p.providersReels.map((x) => x.nom + (x.configure ? "" : "✗")).join(" puis ") + ")"
+          : ""}</span>`).join("")}
   </div>
 </div>
 
@@ -232,6 +235,27 @@ ${runs.map((r) => `<tr>
   <td>${r.erreur ? `<span style="color:#ff9b9b">${echapper(r.erreur.slice(0, 100))}</span>` : "—"}</td>
 </tr>`).join("")}
 </table>` : `<div class="vide">Aucun agent n'a encore tourné.</div>`}
+</div>
+
+<h2>Buffer</h2>
+<div class="bandeau">
+${await (async () => {
+    const b = require("../engines/social/providers/buffer");
+    const e = await b.etat();
+    if (!e.configure) return `<div>⚠️ ${echapper(e.raison)}</div>`;
+    if (!e.joignable) return `<div style="color:#ff9b9b">❌ Buffer injoignable : ${echapper(e.raison)}</div>`;
+    return `<div><b>Organisation :</b> ${echapper(e.organisation?.nom || "—")}</div>`
+      + `<div style="margin-top:6px"><b>Chaînes connectées :</b> `
+      + (e.chainesBuffer.length
+          ? e.chainesBuffer.map((c) => `<span class="puce">${echapper(c.service)} · ${echapper(c.nom)}</span>`).join("")
+          : "<i>aucune — connecte tes comptes dans Buffer d'abord</i>") + "</div>"
+      + `<div style="margin-top:10px">`
+      + Object.entries(e.parPlateforme).map(([slug, v]) =>
+          `<div>${v.pret ? "✅" : "⚠️"} <b>${echapper(slug)}</b> : ${
+            v.pret ? v.chaines.map((c) => echapper(c.nom)).join(", ")
+                   : `<span style="color:#e0b341">${echapper(v.raison)}</span>`}</div>`).join("")
+      + `</div>`;
+})()}
 </div>
 
 <h2>Ce qu'on ne sait pas encore</h2>

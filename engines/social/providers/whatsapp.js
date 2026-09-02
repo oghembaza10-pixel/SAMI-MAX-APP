@@ -32,19 +32,66 @@
 // soir de lancement.
 
 const whatsapp = require("../../../services/whatsapp");
+const connectorService = require("../../../services/connectorService");
 
 // Volontairement en dur. Voir ci-dessus.
 const MAX_DESTINATAIRES = 20;
 
+// ── D'OÙ VIENT LA LISTE ───────────────────────────────────────────────────
+//
+// Trois sources, dans cet ordre :
+//
+//   1. celle passée à l'appel           — un envoi ponctuel décidé sur le moment
+//   2. `connecteurs.config.diffusion`   — la liste du marchand, posée une fois
+//   3. `WHATSAPP_DIFFUSION`             — la nôtre, sur Render
+//
+// L'ordre compte : ce qu'on demande explicitement l'emporte toujours sur ce
+// qui est enregistré. Sans ça, une liste oubliée en base recevrait un
+// message destiné à quelqu'un d'autre.
+//
+// Les numéros sont normalisés (chiffres et « + » seulement) et dédoublonnés :
+// un numéro écrit deux fois dans la liste, c'est une cliente qui reçoit deux
+// fois le même message.
+function nettoyer(liste) {
+    const vus = new Set();
+    return (liste || [])
+        .map((n) => String(n || "").replace(/[^\d+]/g, "").trim())
+        .filter((n) => {
+            if (n.length < 8) return false;      // ce n'est pas un numéro
+            if (vus.has(n)) return false;
+            vus.add(n);
+            return true;
+        });
+}
+
+async function resoudreDestinataires({ destinataires, workspaceId }) {
+    const donnes = nettoyer(destinataires);
+    if (donnes.length) return { liste: donnes, source: "appel" };
+
+    if (workspaceId) {
+        try {
+            const c = await connectorService.getOne(workspaceId, "whatsapp");
+            const enregistres = nettoyer(c?.config?.diffusion);
+            if (enregistres.length) return { liste: enregistres, source: "connecteur du marchand" };
+        } catch { /* pas de connecteur : on continue */ }
+    }
+
+    const nôtre = nettoyer(String(process.env.WHATSAPP_DIFFUSION || "").split(","));
+    if (nôtre.length) return { liste: nôtre, source: "WHATSAPP_DIFFUSION" };
+
+    return { liste: [], source: null };
+}
+
 async function publier({ texte, workspaceId, destinataires }) {
     if (!texte) return { ok: false, erreur: "texte vide" };
 
-    const liste = Array.isArray(destinataires) ? destinataires.filter(Boolean) : [];
+    const { liste, source } = await resoudreDestinataires({ destinataires, workspaceId });
     if (!liste.length) {
         return {
             ok: false,
-            erreur: "WhatsApp n'est pas un fil : il faut une liste de destinataires. "
-                  + "L'envoi à une liste depuis les agents sociaux n'est pas encore construit.",
+            erreur: "WhatsApp n'est pas un fil : il faut des destinataires. "
+                  + "Aucun n'a été trouvé — ni dans l'appel, ni dans le connecteur du marchand "
+                  + "(config.diffusion), ni dans WHATSAPP_DIFFUSION.",
         };
     }
     if (liste.length > MAX_DESTINATAIRES) {
@@ -79,12 +126,17 @@ async function publier({ texte, workspaceId, destinataires }) {
             partiel: resultats,
         };
     }
-    return { ok: true, id: `wa_${reussis}_destinataires` };
+    // La source est dans l'identifiant : en relisant `social_publications`
+    // dans six mois, « à qui ce message est-il parti » a une réponse.
+    return { ok: true, id: `wa_${reussis}_destinataires_via_${String(source).replace(/\s+/g, "_")}` };
 }
 
 module.exports = {
     nom: "whatsapp",
     plateformes: ["whatsapp"],
     publier,
+    // Exportées pour que les tests puissent vérifier la résolution et le
+    // nettoyage sans envoyer un seul message.
+    resoudreDestinataires, nettoyer,
     MAX_DESTINATAIRES,
 };

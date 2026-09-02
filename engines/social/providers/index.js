@@ -48,6 +48,9 @@ const plateformes = require("../../../config/plateformes-sociales");
 // `plateforme → provider`. Un provider peut servir plusieurs plateformes
 // (Meta couvre Facebook, Instagram et Messenger) : c'est exactement ce que
 // fera Buffer, qui les couvrira presque toutes.
+// Une plateforme peut avoir PLUSIEURS providers réels — Facebook peut
+// passer par Buffer ou par Meta en direct. On garde donc une liste, dans
+// l'ordre d'enregistrement, et le premier qui se déclare prêt gagne.
 const PROVIDERS = {};
 
 function enregistrer(provider) {
@@ -55,7 +58,8 @@ function enregistrer(provider) {
         throw new Error("Provider invalide : il faut au moins { nom, publier() }");
     }
     for (const slug of provider.plateformes || []) {
-        PROVIDERS[slug] = provider;
+        if (!PROVIDERS[slug]) PROVIDERS[slug] = [];
+        PROVIDERS[slug].push(provider);
     }
     return provider;
 }
@@ -80,9 +84,39 @@ function pour(slug) {
     if (plateformes.estCoupee(propre)) return { provider: null, raison: `${propre} est coupée (SOCIAL_PLATEFORMES_COUPEES)` };
     if (!publicationReelleAutorisee()) return { provider: mock, raison: "simulation (SOCIAL_PUBLICATION_REELLE ≠ oui)" };
 
-    const reel = PROVIDERS[propre];
-    if (!reel) return { provider: mock, raison: `aucun provider réel pour ${propre} — simulation` };
-    return { provider: reel, raison: null };
+    // ── QUAND DEUX PROVIDERS SAVENT FAIRE LA MÊME CHOSE ──────────────────
+    //
+    // Facebook et Instagram ont deux chemins : Buffer, et Meta en direct.
+    //
+    // Meta en direct EXIGE `pages_manage_posts`, qui n'est pas accordée —
+    // il échouerait sur une erreur de permission. Buffer, lui, publie
+    // aujourd'hui. Le premier provider PRÊT gagne donc, et l'ordre
+    // d'enregistrement en bas de ce fichier place Buffer devant.
+    //
+    // « Prêt » se demande au provider lui-même (`configure()`), jamais
+    // deviné ici : c'est lui qui sait s'il a son jeton.
+    //
+    // Le jour où Meta accorde la permission, on retire Buffer de la liste
+    // ou on inverse l'ordre — sans toucher aux agents ni au publieur.
+    const candidats = PROVIDERS[propre] || [];
+    if (!candidats.length) return { provider: mock, raison: `aucun provider réel pour ${propre} — simulation` };
+
+    const pret = candidats.find((p) => typeof p.configure !== "function" || p.configure());
+    if (!pret) {
+        return {
+            provider: mock,
+            raison: `aucun provider configuré pour ${propre} `
+                  + `(${candidats.map((p) => p.nom).join(", ")}) — simulation`,
+        };
+    }
+    // Quand un provider est écarté parce qu'il n'est pas configuré, on le
+    // DIT : « Buffer non configuré, on passe par Meta » est une information
+    // qui évite une heure de recherche.
+    const ecartes = candidats.slice(0, candidats.indexOf(pret)).map((p) => p.nom);
+    return {
+        provider: pret,
+        raison: ecartes.length ? `${ecartes.join(", ")} non configuré(s), ${pret.nom} prend la main` : null,
+    };
 }
 
 // ── PUBLIER ───────────────────────────────────────────────────────────────
@@ -135,7 +169,11 @@ function etat() {
                 nom: p.nom,
                 genre: p.genre,
                 coupee: plateformes.estCoupee(p.slug),
-                providerReel: PROVIDERS[p.slug]?.nom || null,
+                // Tous les candidats, dans l'ordre, avec celui qui est prêt.
+                providersReels: (PROVIDERS[p.slug] || []).map((x) => ({
+                    nom: x.nom,
+                    configure: typeof x.configure !== "function" ? true : x.configure(),
+                })),
                 providerUtilise: provider?.nom || null,
                 note: raison,
             };
@@ -148,7 +186,18 @@ function etat() {
 // L'ordre n'a pas d'importance : chacun déclare les plateformes qu'il
 // couvre. TikTok et LinkedIn n'en ont pas — c'est volontaire et visible :
 // `etat()` les montrera sans provider réel, ce qui est la vérité.
+// ── L'ORDRE COMPTE ────────────────────────────────────────────────────────
+//
+// Buffer EN PREMIER pour Facebook, Instagram, LinkedIn et TikTok : c'est le
+// seul chemin qui publie réellement aujourd'hui, Meta n'ayant pas accordé
+// `pages_manage_posts`.
+//
+// Meta ensuite, en second : il reprendra la main tout seul le jour où
+// BUFFER_ACCESS_TOKEN est retirée, sans qu'on touche à une ligne de code.
+enregistrer(require("./buffer"));
 enregistrer(require("./meta"));
+// Ces deux-là n'ont pas de concurrent : SAMII les fait elle-même, et Buffer
+// ne les gère pas.
 enregistrer(require("./telegram"));
 enregistrer(require("./whatsapp"));
 
