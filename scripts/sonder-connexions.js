@@ -249,11 +249,24 @@ async function whatsappSamii() {
     //
     // Le numéro RÉPOND en lecture, et pourtant l'envoi peut échouer. Deux
     // états le disent, et ma première version n'en surveillait qu'un.
+    // ── CE QUE `code_verification_status` NE DIT PAS ─────────────────────
+    //
+    // Ma première version criait « ⛔ l'envoi peut être refusé » dès que ce
+    // champ n'était pas VERIFIED. C'était une DÉDUCTION, pas une mesure —
+    // exactement l'erreur que je venais de corriger sur pages_manage_posts.
+    //
+    // Ce champ porte sur le code d'enregistrement du numéro, pas sur le
+    // droit d'envoyer. Un numéro actif, avec des modèles approuvés et des
+    // messages reçus, envoie très bien avec EXPIRED affiché ici.
+    //
+    // On le RAPPORTE donc sans en tirer de conclusion. La seule preuve qu'un
+    // envoi passe, c'est un envoi — et une sonde de diagnostic n'envoie pas
+    // de message à quelqu'un pour se rassurer.
     const verif = String(r.corps.code_verification_status || "").toUpperCase();
-    if (verif !== "VERIFIED") {
-        console.log(`     ⛔ vérification ${verif} : Meta redemande la validation du numéro.`);
-        console.log(`        Tant que ce n'est pas VERIFIED, l'envoi peut être refusé.`);
-        console.log(`        → WhatsApp Manager → Numéros de téléphone → le numéro → Vérifier.`);
+    if (verif && verif !== "VERIFIED") {
+        console.log(`     ℹ️  code_verification_status = ${verif}`);
+        console.log(`        Concerne le code d'ENREGISTREMENT, pas le droit d'envoyer.`);
+        console.log(`        Un numéro actif envoie très bien avec cet état.`);
     }
     if (String(r.corps.quality_rating).toUpperCase() === "RED") {
         console.log(`     ⛔ qualité RED : Meta bride ce numéro. Les envois seront ralentis.`);
