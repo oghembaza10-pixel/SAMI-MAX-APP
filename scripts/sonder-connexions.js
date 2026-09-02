@@ -52,6 +52,18 @@ function lire(url) {
 
 function titre(t) { console.log(`\n══════ ${t} ══════`); }
 
+// Le motif d'une réponse ratée, qui ne dit JAMAIS « undefined ».
+// Meta répond parfois du JSON structuré, parfois du texte brut (un proxy,
+// une page d'erreur). Un motif vide envoie chercher à l'aveugle — et c'est
+// exactement ce qu'une sonde de diagnostic ne doit pas faire.
+function motif(r) {
+    return r?.corps?.error?.message
+        || r?.corps?.message
+        || r?.erreur
+        || (r?.brut && String(r.brut).trim())
+        || "aucun détail rendu";
+}
+
 async function connecteur(workspaceId, type) {
     if (!workspaceId) return null;
     try {
@@ -69,53 +81,106 @@ async function connecteur(workspaceId, type) {
     }
 }
 
-// ── META : CE QUI EST VRAIMENT ACCORDÉ ────────────────────────────────────
+// ── META ──────────────────────────────────────────────────────────────────
 //
-// `/me/permissions` rend la liste avec, pour chacune, « granted » ou
-// « declined ». C'est la seule réponse qui fasse autorité — l'écran du
-// tableau de bord Meta montre ce qui est DEMANDÉ, pas ce qui est ACCORDÉ.
+// ── L'ERREUR QUE CETTE FONCTION A FAITE, ET CE QU'ELLE APPREND ────────────
+//
+// Première version : `/me/permissions` avec le jeton de PAGE. Meta a répondu
+//
+//     (#100) Tried accessing nonexisting field (permissions)
+//
+// et c'est logique. Un jeton de Page fait de `/me` la PAGE elle-même, et une
+// Page n'a pas de champ `permissions` — ce champ appartient à l'UTILISATEUR.
+// Deux jetons différents, deux questions différentes :
+//
+//   jeton UTILISATEUR (workspaces.meta_access_token)
+//       « qu'est-ce que la personne a accordé à l'app ? » → /me/permissions
+//
+//   jeton de PAGE (connecteurs.config.pageAccessToken)
+//       « qu'est-ce que je peux faire sur CETTE page ? » → /{pageId}
+//
+// Le second est celui qui publie. On sonde donc les deux, séparément.
 async function meta(workspaceId) {
     titre("META");
     const c = await connecteur(workspaceId, "facebook");
     if (!c) return console.log("  ⚠️  aucun connecteur « facebook » pour ce workspace");
+
     console.log(`  connecteur actif : ${c.actif}`);
     console.log(`  pageId           : ${c.config.pageId || "(absent)"}`);
-    console.log(`  pageAccessToken  : ${empreinte(c.config.pageAccessToken)}`);
-    const jeton = c.config.pageAccessToken;
-    if (!jeton) return console.log("  ❌ sans jeton de page, rien n'est interrogeable");
+    console.log(`  jeton de page    : ${empreinte(c.config.pageAccessToken)}`);
 
-    const perms = await lire(`${GRAPH}/me/permissions?access_token=${encodeURIComponent(jeton)}`);
-    if (perms.code !== 200) {
-        return console.log(`  ❌ HTTP ${perms.code} — ${perms.corps?.error?.message || perms.erreur || perms.brut}`);
-    }
-    const liste = perms.corps?.data || [];
-    const accordees = liste.filter((p) => p.status === "granted").map((p) => p.permission);
-    const refusees = liste.filter((p) => p.status !== "granted").map((p) => p.permission);
-    console.log(`\n  ✅ ACCORDÉES (${accordees.length}) : ${accordees.join(", ") || "aucune"}`);
-    if (refusees.length) console.log(`  ⛔ NON ACCORDÉES : ${refusees.join(", ")}`);
+    // ── 1. LE JETON UTILISATEUR : CE QUI A ÉTÉ ACCORDÉ ───────────────────
+    let jetonUtilisateur = null;
+    try {
+        const w = await db.query(`SELECT meta_access_token FROM workspaces WHERE id = $1`, [workspaceId]);
+        jetonUtilisateur = w[0]?.meta_access_token || null;
+    } catch { /* colonne absente sur une base ancienne */ }
 
-    // Celles dont SAMII a besoin, nommées une par une : « il manque une
-    // permission » n'aide personne, « il manque pages_manage_posts » si.
-    const requises = {
-        pages_manage_posts: "publier sur la Page",
-        pages_read_engagement: "lire les statistiques d'un post",
-        pages_show_list: "trouver la Page",
-        instagram_basic: "publier sur Instagram",
-        instagram_manage_insights: "lire les statistiques Instagram",
-    };
-    console.log("\n  Ce dont SAMII a besoin :");
-    for (const [p, quoi] of Object.entries(requises)) {
-        console.log(`    ${accordees.includes(p) ? "✅" : "⛔"} ${p.padEnd(28)} ${quoi}`);
-    }
+    console.log(`  jeton utilisateur: ${empreinte(jetonUtilisateur)}`);
 
-    // Les Pages réellement administrées par ce jeton.
-    const pages = await lire(`${GRAPH}/me/accounts?fields=id,name,access_token&access_token=${encodeURIComponent(jeton)}`);
-    if (pages.code === 200) {
-        const l = pages.corps?.data || [];
-        console.log(`\n  Pages administrées (${l.length}) :`);
-        for (const p of l) console.log(`    ${p.id}  ${p.name}  jeton: ${empreinte(p.access_token)}`);
+    if (jetonUtilisateur) {
+        const perms = await lire(`${GRAPH}/me/permissions?access_token=${encodeURIComponent(jetonUtilisateur)}`);
+        if (perms.code === 200) {
+            const liste = perms.corps?.data || [];
+            const accordees = liste.filter((x) => x.status === "granted").map((x) => x.permission);
+            const refusees = liste.filter((x) => x.status !== "granted").map((x) => x.permission);
+            console.log(`\n  ✅ ACCORDÉES (${accordees.length}) : ${accordees.join(", ") || "aucune"}`);
+            if (refusees.length) console.log(`  ⛔ REFUSÉES : ${refusees.join(", ")}`);
+
+            // Nommées une par une : « il manque une permission » n'aide
+            // personne, « il manque pages_manage_posts » si.
+            const requises = {
+                pages_manage_posts: "publier sur la Page",
+                pages_read_engagement: "lire les statistiques d'un post",
+                pages_show_list: "trouver la Page",
+                instagram_basic: "publier sur Instagram",
+                instagram_manage_insights: "lire les statistiques Instagram",
+            };
+            console.log("\n  Ce dont SAMII a besoin :");
+            for (const [k, quoi] of Object.entries(requises)) {
+                console.log(`    ${accordees.includes(k) ? "✅" : "⛔"} ${k.padEnd(28)} ${quoi}`);
+            }
+        } else {
+            console.log(`  ⚠️  /me/permissions : HTTP ${perms.code} — `
+                      + `${motif(perms)}`);
+        }
     } else {
-        console.log(`\n  ⚠️  /me/accounts : HTTP ${pages.code} — ${pages.corps?.error?.message || pages.erreur}`);
+        console.log(`  ⚠️  aucun jeton utilisateur en base (workspaces.meta_access_token)`);
+        console.log(`      → la liste des permissions accordées n'est pas lisible.`);
+        console.log(`      Reconnecte Meta depuis le QG pour l'enregistrer.`);
+    }
+
+    // ── 2. LE JETON DE PAGE : EST-CE QU'IL MARCHE ? ──────────────────────
+    //
+    // C'est LUI qui publie. On interroge la Page directement — pas `/me`,
+    // qui prête à confusion selon le type de jeton.
+    if (!c.config.pageAccessToken || !c.config.pageId) {
+        return console.log("\n  ❌ sans pageId ET jeton de page, aucune publication n'est possible");
+    }
+    const page = await lire(`${GRAPH}/${c.config.pageId}`
+                          + `?fields=name,category,fan_count,link`
+                          + `&access_token=${encodeURIComponent(c.config.pageAccessToken)}`);
+    if (page.code === 200) {
+        console.log(`\n  ✅ Page joignable : « ${page.corps.name} » — ${page.corps.fan_count} abonnés`);
+        console.log(`     ${page.corps.link || ""}`);
+    } else {
+        console.log(`\n  ❌ Page injoignable : HTTP ${page.code} — `
+                  + `${motif(page)}`);
+        return;
+    }
+
+    // Le jeton de page porte ses propres permissions : c'est la réponse
+    // définitive à « est-ce que SAMII peut publier ». Elle vit dans
+    // `/me/permissions` côté utilisateur, mais le champ `tasks` de la Page
+    // dit ce que CE jeton a le droit de faire.
+    const taches = await lire(`${GRAPH}/${c.config.pageId}?fields=tasks`
+                            + `&access_token=${encodeURIComponent(c.config.pageAccessToken)}`);
+    if (taches.code === 200 && Array.isArray(taches.corps?.tasks)) {
+        const t = taches.corps.tasks;
+        console.log(`     tâches autorisées : ${t.join(", ")}`);
+        console.log(t.includes("CREATE_CONTENT")
+            ? "     ✅ CREATE_CONTENT présent — ce jeton peut publier"
+            : "     ⛔ CREATE_CONTENT absent — ce jeton ne peut PAS publier");
     }
 }
 
@@ -135,7 +200,7 @@ async function instagram(workspaceId) {
     if (r.code === 200) {
         console.log(`  ✅ ${r.corps.username} — ${r.corps.followers_count} abonnés, ${r.corps.media_count} publications`);
     } else {
-        console.log(`  ❌ HTTP ${r.code} — ${r.corps?.error?.message || r.erreur}`);
+        console.log(`  ❌ HTTP ${r.code} — ${motif(r)}`);
     }
 }
 
@@ -193,7 +258,7 @@ async function whatsapp(workspaceId) {
                            + `?fields=display_phone_number,verified_name,quality_rating,code_verification_status`
                            + `&access_token=${encodeURIComponent(config.token)}`);
         if (r.code !== 200) {
-            return console.log(`  ❌ HTTP ${r.code} — ${r.corps?.error?.message || r.erreur || r.brut}`);
+            return console.log(`  ❌ HTTP ${r.code} — ${motif(r)}`);
         }
         console.log(`  ✅ ${r.corps.display_phone_number} — « ${r.corps.verified_name} »`);
         console.log(`     qualité : ${r.corps.quality_rating}   vérification : ${r.corps.code_verification_status}`);
@@ -212,7 +277,7 @@ async function whatsapp(workspaceId) {
     console.log(`  jeton       : ${empreinte(config.apiToken)}`);
     const r = await lire(`https://api.green-api.com/waInstance${config.apiId}/getStateInstance/${config.apiToken}`);
     if (r.code !== 200) {
-        return console.log(`  ❌ HTTP ${r.code} — ${r.corps?.message || r.erreur || r.brut}`);
+        return console.log(`  ❌ HTTP ${r.code} — ${motif(r)}`);
     }
     console.log(`  état        : ${r.corps?.stateInstance}`);
     console.log(r.corps?.stateInstance === "authorized"
