@@ -1,0 +1,168 @@
+# ==========================================================================
+# LE GARDIEN DU SCHÉMA
+# ==========================================================================
+#
+# ── POURQUOI CE FICHIER EXISTE ────────────────────────────────────────────
+#
+# Trois fois dans la même journée, le même bug :
+#
+#   `utilisateurs.theme_visuel`        — lue à l'inscription, créée nulle part
+#   `workspaces.auto_post_config`      — lue par /autopost, créée nulle part
+#   `samii_connaissances` (la table)   — lue à CHAQUE conversation, créée nulle part
+#
+# Ces trois-là ne se voient pas en production : la base de production les a,
+# posées à la main un jour, par quelqu'un qui ne l'a écrit nulle part. Elles
+# se voient le jour où l'on repart d'une base vide — une deuxième partenaire,
+# une restauration, un environnement d'essai. Et ce jour-là, la troisième ne
+# retire pas « une fonctionnalité » : elle rend SAMII muette à chaque
+# message, en répondant une phrase qui invite à réessayer.
+#
+# ── CE QUE LES TESTS NE PEUVENT PAS ATTRAPER ──────────────────────────────
+#
+# `npm test` passe sur les 23 suites même avec ces trois trous. C'est normal
+# et ce n'est pas un défaut des tests : ils utilisent des doublures de base
+# qui n'exécutent aucun SQL. Une doublure prouve qu'on DEMANDE la bonne
+# chose ; elle ne peut pas prouver que la base saurait RÉPONDRE.
+#
+# Seule une vraie base vide le prouve. C'est le seul travail de ce fichier :
+# il ne relit pas le code, il fait tourner le vrai serveur contre un vrai
+# Postgres neuf et regarde s'il tient debout.
+#
+# ── COÛT ──────────────────────────────────────────────────────────────────
+#
+# Dépôt privé : 2 000 minutes Linux offertes par mois. Ce travail en prend
+# environ deux. La limite de dépense d'un compte gratuit est à 0 € par
+# défaut : si le quota s'épuise, le travail s'arrête, il ne se facture pas.
+
+name: Base neuve
+
+on:
+  push:
+    branches: [OG.LABO, "partner/**", "claude/**"]
+  pull_request:
+  workflow_dispatch:      # bouton « lancer » à la main, depuis l'onglet Actions
+
+jobs:
+  demarrage-sur-base-vide:
+    name: SAMII démarre-t-elle sur une base vide ?
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      # Un Postgres neuf, vide, jeté à la fin. Aucune colonne posée à la
+      # main : c'est tout l'intérêt.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: samii
+          POSTGRES_PASSWORD: samii
+          POSTGRES_DB: samii
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U samii"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://samii:samii@127.0.0.1:5432/samii
+      NODE_ENV: production
+      SESSION_SECRET: secret-de-controle-jamais-utilise-en-vrai
+      # Aucune clé d'IA, aucune clé de paiement, aucun jeton : ce contrôle
+      # ne doit RIEN pouvoir appeler dehors. Si un jour il en réclame une,
+      # c'est que le code appelle un service payant au démarrage — et ça,
+      # c'est le bug à corriger, pas un secret à ajouter ici.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci || npm install
+
+      # ── L'ÉTAPE QUI N'EXISTAIT PAS ─────────────────────────────────────
+      #
+      # Sans elle, la base neuve n'a pas une seule table et l'inscription
+      # répond « Erreur serveur ». C'est ce contrôle qui l'a révélé : le
+      # schéma de SAMII vivait dans 33 scripts lancés à la main, dans un
+      # ordre écrit nulle part.
+      #
+      # Si cette étape casse un jour, ça veut dire qu'un nouveau script a
+      # été ajouté sans être inscrit dans `poser-les-fondations.js` — et
+      # donc qu'une base neuve n'aura pas cette table.
+      - name: Poser les fondations (33 scripts, dans l'ordre)
+        env:
+          PGSSLMODE: disable
+        run: npm run fondations
+
+      # `ssl: { rejectUnauthorized: false }` dans index.js parle à un
+      # Postgres distant. Celui d'ici est local et sans TLS : on le dit à
+      # `pg` par la variable qu'il lit lui-même, sans toucher au code.
+      - name: Démarrer SAMII sur la base vide
+        env:
+          PGSSLMODE: disable
+        run: |
+          node index.js > /tmp/samii.log 2>&1 &
+          echo $! > /tmp/samii.pid
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:10000/health > /dev/null; then
+              echo "✅ le serveur répond après ${i}s"
+              exit 0
+            fi
+            if ! kill -0 "$(cat /tmp/samii.pid)" 2>/dev/null; then
+              echo "❌ LE SERVEUR S'EST ARRÊTÉ AU DÉMARRAGE"
+              cat /tmp/samii.log
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "❌ le serveur n'a jamais répondu"
+          cat /tmp/samii.log
+          exit 1
+
+      # Le cœur du contrôle. Chaque étape refait, sur une base neuve, un
+      # geste que quelqu'un fera vraiment.
+      - name: Un compte se crée, se connecte, et atterrit sur une page
+        run: node .github/scripts/parcours-base-neuve.js
+
+      # Une colonne absente ne fait pas toujours tomber le serveur : elle
+      # écrit « column X does not exist » dans le journal et la page
+      # s'affiche à moitié. On lit donc ce que le serveur a dit de
+      # lui-même — c'est là que les trois bugs du jour se sont signalés
+      # AVANT de faire des dégâts.
+      - name: Le journal du serveur ne doit nommer aucune colonne absente
+        if: always()
+        run: |
+          echo "──────── journal complet ────────"
+          cat /tmp/samii.log
+          echo "─────────────────────────────────"
+          if grep -qiE 'does not exist|relation .* does not exist|column .* does not exist' /tmp/samii.log; then
+            echo ""
+            echo "❌ LA BASE NE SUIT PAS LE CODE — lignes fautives :"
+            grep -iE 'does not exist' /tmp/samii.log | sort -u
+            echo ""
+            echo "Ajoute la colonne ou la table manquante dans services/schema.js."
+            exit 1
+          fi
+          echo "✅ aucune colonne ni table manquante"
+
+      - name: Arrêter le serveur
+        if: always()
+        run: kill "$(cat /tmp/samii.pid)" 2>/dev/null || true
+
+  suites-de-tests:
+    name: Les 23 suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci || npm install
+      - run: npm test

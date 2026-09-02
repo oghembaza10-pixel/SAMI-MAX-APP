@@ -8,6 +8,68 @@
 // reste du code sans avoir à convertir manuellement partout.
 process.env.TZ = "Africa/Algiers";
 
+// ══════════════════════════════════════════════════════════════════════════
+// SENTRY — SAVOIR QU'UNE ERREUR EST ARRIVÉE
+//
+// ── LE PROBLÈME ───────────────────────────────────────────────────────────
+//
+// Quand SAMII casse chez une marchande, la seule trace est une ligne dans
+// les journaux de Render. Ils défilent, ils s'effacent, et personne ne les
+// regarde à 22 h un samedi. On l'apprend donc par un message : « ça marche
+// pas ». Sans page, sans heure, sans pile d'appel. La table `journal` posée
+// plus bas garde le message de l'erreur, mais pas OÙ elle s'est produite ni
+// DANS QUEL ORDRE le code y est arrivé.
+//
+// ── POURQUOI ICI, TOUT EN HAUT ────────────────────────────────────────────
+//
+// Sentry pose ses crochets sur les modules Node (http, pg, express) au
+// moment où il démarre. Un module déjà chargé n'est plus instrumenté. Cet
+// appel doit donc précéder TOUS les require() de l'application — y compris
+// `express`. C'est la même règle que `process.env.TZ` juste au-dessus.
+//
+// ── AUCUNE CLÉ DANS CE DÉPÔT ──────────────────────────────────────────────
+//
+// Le DSN se pose sur Render, dans les variables d'environnement, et nulle
+// part ailleurs. Sans lui, ce bloc ne fait STRICTEMENT rien : pas de
+// module chargé, pas de requête sortante, pas de ralentissement. SAMII
+// tourne exactement comme avant.
+//
+// ── CE QU'ON NE LUI ENVOIE PAS ────────────────────────────────────────────
+//
+// `sendDefaultPii: false` : ni adresses IP, ni en-têtes, ni corps de
+// requête. Une erreur sur une commande ne doit pas expédier le téléphone et
+// l'adresse d'une cliente de Douala vers un service américain. On veut
+// savoir OÙ ça casse, pas QUI était en train d'acheter.
+//
+// ── LA LIMITE, DITE FRANCHEMENT ───────────────────────────────────────────
+//
+// L'offre gratuite s'arrête à 5 000 erreurs par mois, et au-delà les
+// suivantes sont jetées EN SILENCE. Elle n'accepte qu'un seul utilisateur :
+// ce sera toi, pas Inès.
+(function brancherSentry() {
+    const dsn = (process.env.SENTRY_DSN || "").trim();
+    if (!dsn) return;   // pas de DSN = ce bloc n'existe pas
+    try {
+        require("@sentry/node").init({
+            dsn,
+            // Le nom du service, pour distinguer les deux déploiements qui
+            // partagent ce dépôt : chez nous et chez la partenaire. Sans
+            // ça, les erreurs des deux arrivent mélangées.
+            environment: process.env.COMMUNAUTE_PAR_DEFAUT || "maison",
+            sendDefaultPii: false,
+            // Aucune mesure de performance : on veut les pannes, pas un
+            // suivi de vitesse — et chaque transaction envoyée consomme le
+            // quota gratuit.
+            tracesSampleRate: 0,
+        });
+        console.log("🛰️  Sentry branché —", process.env.COMMUNAUTE_PAR_DEFAUT || "maison");
+    } catch (err) {
+        // Un outil de surveillance qui empêche le serveur de démarrer est
+        // une panne qu'on s'est infligée pour éviter les pannes.
+        console.error("⚠️ Sentry n'a pas pu démarrer, on continue sans :", err.message);
+    }
+})();
+
 const path             = require("path");
 const express          = require("express");
 const session          = require("express-session");
@@ -149,8 +211,53 @@ const webhookLimiter = rateLimit({
 app.use(["/webhook", "/billing/webhook"], webhookLimiter);
 
 // ── HEALTHCHECK ─────────────────────────────────────────
-app.get("/health", (req, res) => {
-    res.status(200).json({ status: "ok", uptime: process.uptime() });
+//
+// ── UN CONTRÔLE DE SANTÉ QUI RÉPOND TOUJOURS OUI NE CONTRÔLE RIEN ───────
+//
+// Cette route répondait `200 {status:"ok"}` sans jamais rien vérifier. Elle
+// prouvait une seule chose : que Node est vivant. Or Node reste vivant
+// quand la base est morte — vu en direct pendant cette séance : Postgres
+// arrêté, le journal du serveur plein de `ECONNREFUSED`, et `/health` qui
+// répondait 200 sans broncher.
+//
+// C'est la pire panne possible pour un moniteur : il affiche du vert, ne
+// prévient personne, et c'est une marchande qui découvre que sa boutique
+// ne charge plus. Un moniteur branché sur une route qui ment est pire
+// qu'aucun moniteur — il donne la tranquillité sans la mériter.
+//
+// On interroge donc la base pour de vrai. `SELECT 1` ne lit aucune table :
+// il ne peut pas échouer pour une autre raison qu'une base injoignable, et
+// il ne coûte rien même appelé toutes les minutes.
+//
+// ── POURQUOI 503 ET PAS 500 ─────────────────────────────────────────────
+//
+// 503 « Service Unavailable » est le code que les moniteurs (Uptime Kuma,
+// UptimeRobot) et les orchestrateurs comprennent comme « en panne,
+// réessaie », là où un 500 ressemble à un bug applicatif. Render s'en sert
+// aussi pour décider si une instance doit recevoir du trafic.
+app.get("/health", async (req, res) => {
+    const debut = Date.now();
+    try {
+        await require("./services/db").query("SELECT 1");
+        res.status(200).json({
+            status: "ok",
+            base: "ok",
+            baseMs: Date.now() - debut,
+            uptime: Math.round(process.uptime()),
+        });
+    } catch (err) {
+        // Le message de l'erreur est renvoyé : cette route n'est protégée
+        // par aucune session (un moniteur n'en a pas), donc on ne met ici
+        // que ce qu'on accepte de rendre public. `err.message` de `pg`
+        // donne « connect ECONNREFUSED … » — un état, pas un secret.
+        console.error("❌ /health : base injoignable —", err.message);
+        res.status(503).json({
+            status: "degrade",
+            base: "injoignable",
+            detail: err.message,
+            uptime: Math.round(process.uptime()),
+        });
+    }
 });
 
 // ── SESSION (Supabase/Postgres — persiste aux redéploiements) ──

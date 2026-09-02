@@ -6,9 +6,11 @@
   "private": true,
   "scripts": {
     "start": "node index.js",
-    "test": "node tests/lancer.js"
+    "test": "node tests/lancer.js",
+    "fondations": "node scripts/poser-les-fondations.js"
   },
   "dependencies": {
+    "@sentry/node": "^10.73.0",
     "airtable": "^0.12.2",
     "axios": "^1.6.0",
     "bcrypt": "^5.1.1",

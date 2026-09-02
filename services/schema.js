@@ -311,6 +311,81 @@ const BLOCS = [
         ],
     },
     {
+        // ── LA TABLE QUI REND SAMII MUETTE ───────────────────────────────
+        //
+        // `services/connaissances.js` lit `samii_connaissances` à CHAQUE
+        // conversation. Aucun fichier de ce dépôt ne la crée : elle
+        // n'existait que dans la base de production, posée à la main un
+        // jour, et `scripts/securiser-rls.js` se contente de la citer.
+        //
+        // Sur une base qui ne l'a jamais eue, la conséquence n'est pas
+        // « une fonctionnalité en moins » : `POST /api/chat` lève, tombe
+        // dans son `catch`, et répond « SAMII démarre. Réessaie dans
+        // quelques instants. » — à chaque message, pour toujours. Le chat
+        // écrit et la bulle Jarvis sont morts ensemble, sans un mot qui
+        // dise pourquoi.
+        //
+        // Observé pendant la vérification : la bulle a répondu exactement
+        // cette phrase, et le journal du serveur disait
+        // `relation "samii_connaissances" does not exist`.
+        //
+        // Les colonnes reprennent celles que `connaissances.js` écrit et
+        // relit, sans en inventer une de plus.
+        // ── TROIS AUTRES, TROUVÉES PAR LE MÊME CONTRÔLE ──────────────────
+        //
+        // Une fois `samii_connaissances` réparée, le démarrage sur base vide
+        // a nommé trois manques de plus. Tous du même genre : lus par le
+        // code, créés nulle part.
+        //
+        //   `discussions` (+ ses deux tables sœurs)  — le bloc « communautés
+        //      partenaires » de ce fichier fait un ALTER dessus. Sur une base
+        //      neuve cet ALTER échoue, donc la colonne `communaute` n'existe
+        //      pas, donc le cloisonnement entre communautés — celui qui
+        //      empêche une membre de chez elle de lire NOTRE salle générale —
+        //      n'est pas en place. Une table absente devient ici un trou de
+        //      sécurité, pas seulement une page morte.
+        //
+        //   `utilisateurs.workspace_boutique_id` — lue par vitrine-page,
+        //      marketplace, settings et admin.
+        //
+        //   `utilisateurs.memoire` — lue et écrite à chaque conversation par
+        //      `memoireUtilisateur`. Sans elle, SAMII n'apprend rien de
+        //      personne, en silence.
+        //
+        // Les colonnes reprennent celles que les requêtes existantes écrivent
+        // et relisent, sans en inventer.
+        nom: "salons de discussion",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS discussions (
+                id         BIGSERIAL PRIMARY KEY,
+                type       TEXT NOT NULL DEFAULT 'general',
+                nom        TEXT,
+                created_by TEXT,
+                communaute TEXT DEFAULT 'samii',
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+            `CREATE TABLE IF NOT EXISTS discussion_membres (
+                id            BIGSERIAL PRIMARY KEY,
+                discussion_id BIGINT NOT NULL REFERENCES discussions(id) ON DELETE CASCADE,
+                user_id       TEXT NOT NULL,
+                role          TEXT DEFAULT 'membre',
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (discussion_id, user_id))`,
+            `CREATE TABLE IF NOT EXISTS discussion_messages (
+                id            BIGSERIAL PRIMARY KEY,
+                discussion_id BIGINT NOT NULL REFERENCES discussions(id) ON DELETE CASCADE,
+                expediteur_id TEXT,
+                contenu       TEXT,
+                type          TEXT DEFAULT 'texte',
+                media_url     TEXT,
+                nom_auteur    TEXT,
+                est_ia        BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+            `CREATE INDEX IF NOT EXISTS idx_disc_messages ON discussion_messages (discussion_id, created_at DESC)`,
+            `CREATE INDEX IF NOT EXISTS idx_disc_membres ON discussion_membres (user_id)`,
+        ],
+    },
+    {
         // ── Les communautés partenaires ──────────────────────────────────
         // Une créatrice amène son public sous sa marque. Sans ces deux
         // colonnes, « chez elle » n'existe qu'en apparence : le fil des
@@ -375,26 +450,67 @@ const BLOCS = [
         ],
     },
     {
-        // ── LA TABLE QUI REND SAMII MUETTE ───────────────────────────────
+        nom: "colonnes du compte",
+        sql: [
+            // L'espace boutique rattaché au compte. TEXT : `workspaces.id`
+            // est un TEXT dans cette base, pas un entier.
+            `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS workspace_boutique_id TEXT`,
+            // JSONB : `memoireUtilisateur` y écrit un objet entier via
+            // `JSON.stringify` et le relit tel quel.
+            `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS memoire JSONB`,
+            // Les réglages permanents que SAMII applique à CHAQUE
+            // conversation. Lue par `memoireUtilisateur` et `/api/directives`.
+            `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS directives_permanentes TEXT`,
+        ],
+    },
+    {
+        // ── LA MÉMOIRE ET LES LOIS ───────────────────────────────────────
         //
-        // `services/connaissances.js` lit `samii_connaissances` à CHAQUE
-        // conversation. Aucun fichier de ce dépôt ne la crée : elle
-        // n'existait que dans la base de production, posée à la main un
-        // jour, et `scripts/securiser-rls.js` se contente de la citer.
+        // Troisième couche révélée par le démarrage sur base vide. Comme les
+        // précédentes : lues par le code, créées nulle part.
         //
-        // Sur une base qui ne l'a jamais eue, la conséquence n'est pas
-        // « une fonctionnalité en moins » : `POST /api/chat` lève, tombe
-        // dans son `catch`, et répond « SAMII démarre. Réessaie dans
-        // quelques instants. » — à chaque message, pour toujours. Le chat
-        // écrit et la bulle Jarvis sont morts ensemble, sans un mot qui
-        // dise pourquoi.
+        //   `samii_lois` — les lois souveraines que `brain/prompts/sovereign`
+        //      charge au démarrage. Sans la table, SAMII tourne SANS ses
+        //      règles de conduite et rien ne le dit à l'écran.
         //
-        // Observé pendant la vérification : la bulle a répondu exactement
-        // cette phrase, et le journal du serveur disait
-        // `relation "samii_connaissances" does not exist`.
+        //   `projets_samii` + `samii_conversations.projet_id` — le classement
+        //      des conversations par projet. Sans la colonne,
+        //      `enregistrerTour` échoue à CHAQUE message : SAMII répond, puis
+        //      oublie tout, sans que personne le remarque.
         //
-        // Les colonnes reprennent celles que `connaissances.js` écrit et
-        // relit, sans en inventer une de plus.
+        // La table des lois est créée VIDE : son contenu est une décision
+        // éditoriale, pas une structure. Une base neuve démarre donc sans
+        // lois plutôt qu'avec des lois inventées ici.
+        nom: "mémoire de SAMII et lois souveraines",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS samii_lois (
+                id          BIGSERIAL PRIMARY KEY,
+                numero      INTEGER,
+                table_ref   TEXT,
+                titre_table TEXT,
+                titre_loi   TEXT,
+                texte       TEXT,
+                mots_cles   TEXT,
+                actif       BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+            `CREATE INDEX IF NOT EXISTS idx_lois_actives ON samii_lois (numero, id) WHERE actif`,
+
+            `CREATE TABLE IF NOT EXISTS projets_samii (
+                id         BIGSERIAL PRIMARY KEY,
+                user_id    TEXT NOT NULL,
+                nom        TEXT NOT NULL DEFAULT 'Projet sans nom',
+                archive    BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+            `CREATE INDEX IF NOT EXISTS idx_projets_user ON projets_samii (user_id, updated_at DESC) WHERE NOT archive`,
+
+            // NULL = la conversation générale, hors projet. C'est ce que
+            // `samiiMemoire` interroge avec `projet_id IS NULL`.
+            `ALTER TABLE samii_conversations ADD COLUMN IF NOT EXISTS projet_id BIGINT`,
+            `CREATE INDEX IF NOT EXISTS idx_conv_projet ON samii_conversations (user_id, projet_id)`,
+        ],
+    },
+    {
         nom: "connaissances permanentes de SAMII",
         sql: [
             `CREATE TABLE IF NOT EXISTS samii_connaissances (
