@@ -901,6 +901,47 @@ console.log("── Les collecteurs : l'apprentissage devient possible ──");
     verifier((await col.instagram({ externe_id: "buf_1", workspace_id: "w1", provider: "buffer" })) === null,
              "un identifiant Buffer n'est pas interrogé chez Meta — appel inutile évité");
 
+    // ── LE SCHÉMA RÉEL DE BUFFER ─────────────────────────────────────────
+    //
+    // Découvert par introspection sur le vrai compte, depuis le Web Shell de
+    // Render — seul endroit d'où api.buffer.com est joignable.
+    //
+    //     Post { metrics: [PostMetric] }
+    //     PostMetric { name: String, type: PostMetricType, unit, value: Float }
+    //
+    // J'avais deviné un OBJET aux champs nommés (`metrics { impressions
+    // reach likes }`). C'est une LISTE. La requête aurait échoué.
+    //
+    // On reconnaît donc par ALIAS sur `type` ET `name` : `type` est une
+    // énumération dont les valeurs peuvent changer, `name` est une chaîne
+    // pensée pour être lue par un humain, et les deux diffèrent d'un réseau
+    // à l'autre.
+    const rang = col.rangerMetriques([
+        // La PLUS GRANDE est en PREMIER, exprès. Rangée dans l'ordre
+        // inverse, « le dernier gagne » donnerait le même résultat que
+        // « le plus grand », et l'assertion ne prouverait rien.
+        { type: "VIDEO_VIEWS", name: "Video views", value: 1500 },
+        { type: "IMPRESSIONS", name: "Impressions", value: 1240 },
+        { type: "REACH",       name: "Reach",       value: 980  },
+        { type: "LIKES",       name: "Likes",       value: 42   },
+        { type: "SAVES",       name: "Saves",       value: 3    },
+    ]);
+    verifier(rang.portee === 980, "la portée est reconnue");
+    verifier(rang.likes === 42, "les likes aussi");
+    verifier(rang.vues === 1500,
+             "deux métriques dans la même case : on garde la PLUS GRANDE — "
+             + "sous-estimer une portée fausserait toute comparaison");
+    verifier(rang.saves === undefined,
+             "ce qui n'est reconnu par aucun alias n'entre pas dans nos chiffres…");
+    verifier(col.ALIAS.vues.includes("impressions") && col.ALIAS.clics.includes("clicks"),
+             "…et les alias sont écrits à UN seul endroit");
+
+    // La casse et la ponctuation ne doivent pas décider si une mesure compte.
+    verifier(col.normaliser("Video views") === "videoviews", "la normalisation absorbe espaces et casse");
+    verifier(Object.keys(col.rangerMetriques([{ type: "LIKES", value: "pas un nombre" }])).length === 0,
+             "une valeur illisible est ignorée, pas convertie en 0");
+    verifier(Object.keys(col.rangerMetriques(null)).length === 0, "une liste absente ne fait rien tomber");
+
     // La mise en forme commune : chaque plateforme nomme ses chiffres
     // autrement, on les ramène à un vocabulaire unique une seule fois.
     const m = col.mesure({ vues: "1240", likes: 28, brut: { x: 1 } });

@@ -167,53 +167,104 @@ async function instagram(pub) {
 
 // ── BUFFER ────────────────────────────────────────────────────────────────
 //
-// La clé API d'OG Technology porte `engagements:lire` et `aperçus : lire` —
-// vu sur l'écran des permissions. Buffer PEUT donc rendre des chiffres.
+// Le schéma réel, découvert par introspection sur le compte d'OG Technology
+// (`__schema` interrogé depuis le Web Shell de Render, seul endroit d'où
+// api.buffer.com est joignable) :
 //
-// Mais je n'ai pas pu vérifier la forme exacte de sa requête d'analytique :
-// api.buffer.com n'est pas joignable depuis l'environnement de
-// développement, et inventer un schéma GraphQL au jugé aurait donné un
-// collecteur qui échoue en silence.
+//     post(input: PostInput) -> Post
+//     PostInput  { id: PostId }
+//     Post       { metrics: [PostMetric], metricsUpdatedAt: DateTime, … }
+//     PostMetric { name: String, type: PostMetricType, unit: …, value: Float }
 //
-// Ce collecteur fait donc la seule chose honnête : il DEMANDE, et si Buffer
-// ne comprend pas la requête, il rend `null` avec le message exact de
-// Buffer, visible sur /social. Le premier passage réel dira si le champ
-// s'appelle bien `metrics` — et le corriger sera alors une ligne, pas une
-// enquête.
+// ── CE QUE J'AVAIS DEVINÉ FAUX ────────────────────────────────────────────
+//
+// J'avais écrit `metrics { impressions reach likes comments shares clicks }`,
+// c'est-à-dire un OBJET aux champs nommés. C'est une LISTE. La requête
+// aurait échoué — proprement, en rendant `null` avec le message de Buffer,
+// mais elle n'aurait jamais rendu un chiffre.
+//
+// ── POURQUOI ON NE CODE PAS LES NOMS EN DUR ───────────────────────────────
+//
+// `type` est une énumération dont je ne connais pas les valeurs exactes, et
+// `name` est une chaîne pensée pour être lue par un humain. Les deux peuvent
+// changer, et ils diffèrent d'un réseau à l'autre : Instagram ne rend pas
+// les mêmes métriques que LinkedIn.
+//
+// On reconnaît donc par ALIAS, sur `type` ET sur `name`, à la casse et à la
+// ponctuation près. Ce qui n'est reconnu par aucun alias n'est pas perdu :
+// `brut` garde la liste entière, et le jour où l'on veut une mesure de plus,
+// elle est déjà en base.
+const ALIAS = {
+    vues:         ["impressions", "views", "videoviews", "plays", "postimpressions"],
+    portee:       ["reach", "uniqueimpressions", "accountsreached"],
+    likes:        ["likes", "reactions", "favorites"],
+    commentaires: ["comments", "replies"],
+    partages:     ["shares", "reposts", "retweets"],
+    clics:        ["clicks", "linkclicks", "urlclicks", "postclicks"],
+};
+
+function normaliser(x) {
+    return String(x || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+// Range une liste de PostMetric dans notre vocabulaire. Quand deux métriques
+// tombent dans la même case (« Impressions » et « Video views »), on garde
+// la plus grande : sous-estimer une portée fausserait une comparaison.
+function rangerMetriques(liste) {
+    const sortie = {};
+    for (const m of liste || []) {
+        const valeur = Number(m?.value);
+        if (!Number.isFinite(valeur)) continue;
+        const cles = [normaliser(m.type), normaliser(m.name)];
+        for (const [nôtre, alias] of Object.entries(ALIAS)) {
+            if (cles.some((c) => c && alias.includes(c))) {
+                sortie[nôtre] = Math.max(sortie[nôtre] || 0, valeur);
+                break;
+            }
+        }
+    }
+    return sortie;
+}
+
 async function bufferMetrics(pub) {
     if (!pub.externe_id) return null;
     const buffer = require("./providers/buffer");
     if (!buffer.configure()) return null;
 
     // Un envoi Buffer peut viser plusieurs chaînes : l'identifiant est alors
-    // « id1,id2 ». On mesure la première — additionner des portées de deux
+    // « id1,id2 ». On mesure la première — additionner les portées de deux
     // réseaux différents ne voudrait rien dire.
     const id = String(pub.externe_id).split(",")[0].trim();
 
+    // La variable est typée `PostInput!` plutôt que `PostId!` : c'est la
+    // forme que le schéma déclare, et elle survit à un changement du scalaire.
     const r = await buffer.interroger(
-        `query Mesures($id: String!) {
-            post(input: { id: $id }) {
+        `query Mesures($input: PostInput!) {
+            post(input: $input) {
                 id
-                metrics { impressions reach likes comments shares clicks }
+                metricsUpdatedAt
+                metrics { name type unit value }
             }
-        }`, { id });
+        }`, { input: { id } });
 
     if (!r.ok) {
         console.warn(`⚠️ collecteur buffer (${id}) :`, r.erreur);
         return null;
     }
-    const m = r.donnees?.post?.metrics;
-    if (!m) return null;
+    const liste = r.donnees?.post?.metrics;
+    // Une publication trop récente n'a pas encore de chiffres. Ce n'est pas
+    // un échec, mais ce n'est pas non plus une mesure de zéro : on rend
+    // `null` pour qu'elle soit relue au prochain passage.
+    if (!Array.isArray(liste) || !liste.length) return null;
 
-    return mesure({
-        vues: m.impressions,
-        portee: m.reach,
-        likes: m.likes,
-        commentaires: m.comments,
-        partages: m.shares,
-        clics: m.clicks,
-        brut: r.donnees,
-    });
+    const range = rangerMetriques(liste);
+    if (!Object.keys(range).length) {
+        console.warn(`⚠️ collecteur buffer (${id}) : ${liste.length} métrique(s) rendue(s), `
+                   + `aucune reconnue — ${liste.map((m) => m.type || m.name).join(", ")}`);
+        return null;
+    }
+
+    return mesure({ ...range, brut: r.donnees });
 }
 
 // Instagram et LinkedIn partent par Buffer : c'est lui qui a les chiffres.
@@ -240,4 +291,7 @@ function brancher(analytics) {
     return Object.keys(analytics.COLLECTEURS);
 }
 
-module.exports = { brancher, facebook, instagram, bufferMetrics, instagramOuBuffer, mesure, GRAPH };
+module.exports = {
+    brancher, facebook, instagram, bufferMetrics, instagramOuBuffer,
+    mesure, rangerMetriques, normaliser, ALIAS, GRAPH,
+};
