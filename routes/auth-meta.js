@@ -64,10 +64,33 @@ const SCOPES = [
     "business_management",
     "ads_management",
     "ads_read",
-    "pages_manage_ads",
-    "pages_manage_posts",
-    "pages_manage_metadata",
-    "pages_read_engagement",
+    // ── LOT 3 RETIRÉ LE 2 SEPTEMBRE 2026 ────────────────────────────────
+    //
+    //   "pages_manage_ads", "pages_manage_posts",
+    //   "pages_manage_metadata", "pages_read_engagement"
+    //
+    // POURQUOI, ET C'EST LA LEÇON DE CE FICHIER :
+    // « PRÊTE POUR LE TEST » N'EST PAS « APPROUVÉE ».
+    //
+    // Le 17/08 on les a remises parce que le tableau de bord Meta les
+    // affichait « Prête pour le test ». C'était vrai — et ça voulait dire
+    // Accès STANDARD : elles marchaient pour les comptes ayant un rôle dans
+    // l'app, c'est-à-dire pour nous. Tant que l'app était en mode
+    // Développement, la différence ne se voyait pas.
+    //
+    // L'app est passée en LIVE le 2 septembre. À partir de là, seul l'Accès
+    // AVANCÉ vaut pour un vrai marchand. Le contrôle du 1er septembre a
+    // approuvé pages_show_list, business_management, public_profile et
+    // email — pas celles-ci.
+    //
+    // Les garder aurait produit exactement le pire scénario : une connexion
+    // qui réussit, un connecteur qui a l'air branché, et une publication qui
+    // échoue en silence chez un marchand qui ne comprend pas. On ne demande
+    // que ce qu'on a.
+    //
+    // Le code de publication (services/meta.publishPagePost, pageEngine,
+    // Griot) reste en place : il se réveillera dès que ces permissions
+    // seront réellement approuvées et remises ici.
     // ── INSTAGRAM RETIRÉ LE 2 SEPTEMBRE 2026 ────────────────────────────
     //
     // Meta a REFUSÉ `instagram_basic` au contrôle du 1er septembre. Les deux
@@ -465,10 +488,15 @@ router.get("/auth/meta/callback", requireAuth, async (req, res) => {
 
         // Les permissions SANS lesquelles une promesse faite au marchand ne
         // tient pas. Le reste est du confort.
+        // Ce qu'on DEMANDE et sans quoi une promesse ne tient pas. La liste
+        // suit les SCOPES : alerter sur une permission qu'on ne réclame plus
+        // ferait un avertissement par connexion, tous les jours, pour une
+        // situation parfaitement voulue — et un avertissement permanent
+        // n'est plus un avertissement, c'est du bruit qu'on apprend à
+        // ignorer, y compris le jour où il compte.
         const INDISPENSABLES = {
-            pages_show_list      : "lister ses Pages Facebook",
-            pages_manage_posts   : "publier sur sa Page",
-            pages_read_engagement: "lire les réactions et commentaires",
+            pages_show_list    : "lister ses Pages Facebook",
+            business_management: "accéder à son Business Manager",
         };
         const manquantes = Object.keys(INDISPENSABLES)
             .filter((p) => accordees.length && !accordees.includes(p));

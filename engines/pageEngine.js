@@ -157,7 +157,48 @@ async function publierInstagram(texte) {
 // Depuis le refus d'`instagram_basic` par Meta, ce cas n'est plus théorique :
 // la publication Instagram ne peut PAS aboutir tant que la permission n'est
 // pas accordée. Autant ne pas dépenser pour elle.
+// Lit les connecteurs, rien d'autre — comme instagramPret. Séparée de
+// `publierFacebook` pour être appelable AVANT la génération.
+async function facebookPret() {
+    try {
+        const connecteur = await connectorService.getOne(CONFIG.META.OG_WORKSPACE_ID, "facebook");
+        const creds = resolveFacebookCreds(connecteur?.config);
+        if (!creds.pageId || !creds.accessToken) {
+            return { pret: false, raison: creds.tokenUtilisateurSeul
+                ? "un token utilisateur est enregistré, pas un token de Page."
+                : "Page Facebook non connectée (pageId ou token manquant)." };
+        }
+        // ── LA PERMISSION, PAS SEULEMENT LE JETON ───────────────────────
+        //
+        // Depuis le 2 septembre on ne demande plus `pages_manage_posts` :
+        // elle n'était que « Prête pour le test », pas approuvée, et l'app
+        // est passée en Live. Un jeton de Page peut donc exister sans porter
+        // le droit de publier.
+        //
+        // Le connecteur garde la liste réelle des permissions accordées
+        // (voir routes/auth-meta.js). Si elle est là et que le droit n'y est
+        // pas, inutile de faire écrire un texte à SAMII : personne ne le
+        // lira. On économise un appel au modèle, trois fois par jour.
+        const accordees = connecteur?.config?.permissionsAccordees;
+        if (Array.isArray(accordees) && accordees.length && !accordees.includes("pages_manage_posts")) {
+            return { pret: false, raison: "le droit de publier (pages_manage_posts) n'est pas accordé — "
+                   + "cette permission attend l'approbation de Meta." };
+        }
+        return { pret: true };
+    } catch (err) {
+        return { pret: false, raison: `lecture des connecteurs impossible (${err.message}).` };
+    }
+}
+
 async function runFacebook() {
+    // La sonde d'abord, la génération ensuite. Une vérification coûte une
+    // lecture en base ; une génération coûte du quota Gemini, et elle part
+    // aux heures rondes — exactement quand des clients écrivent.
+    const etat = await facebookPret();
+    if (!etat.pret) {
+        console.warn(`⚠️ Page Engine (Facebook) : rien n'est publié, et rien n'est généré — ${etat.raison}`);
+        return;
+    }
     const texte = await genererPost("facebook");
     const resultat = await publierFacebook(texte);
     console.log(resultat.success ? "✅ Page Engine : post Facebook publié." : `❌ Page Engine (Facebook) : ${resultat.error}`);
@@ -212,7 +253,7 @@ async function posterMaintenantInstagram() {
 }
 
 module.exports = {
-    runFacebook, runInstagram, instagramPret,
+    runFacebook, runInstagram, instagramPret, facebookPret,
     genererPost, publierFacebook, publierInstagram,
     posterMaintenantFacebook, posterMaintenantInstagram,
 };
