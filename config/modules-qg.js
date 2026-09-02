@@ -141,6 +141,10 @@ const SOCLE = [
     "/paiement",        // encaisser : c'est la raison d'être de tout le reste
     "/admin/communaute",// SON tableau de bord à elle
     "/verification",    // vérification d'e-mail
+    // Le choix du QG quand on en a plusieurs. C'est une étape du parcours de
+    // connexion : la fermer chez une partenaire déposerait ses marchands à
+    // deux boutiques sur une 404 juste après s'être connectés.
+    "/mes-qg",
     // OAuth. Ces routes sont montées à la RACINE, sans préfixe : elles ne
     // ressemblent à aucun module et se seraient fait fermer sans bruit.
     // « Se connecter avec Google » aurait cessé de marcher chez elle, et

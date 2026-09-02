@@ -265,6 +265,7 @@ router.post("/", async (req, res) => {
         // ORDER BY), et deux autres endroits faisaient pareil chacun de leur
         // côté. Une même personne pouvait atterrir dans un QG différent d'une
         // connexion à l'autre — y compris dans un bac à sable.
+        const mesQg    = await workspaceService.listerParPertinence(email);
         const workspace = await workspaceService.qgPrincipal(email);
 
         req.session.regenerate((err) => {
@@ -293,7 +294,11 @@ router.post("/", async (req, res) => {
             // la vue d'ensemble de ses clients, pas une boutique isolée.
             res.json({
                 success : true,
-                redirect: apresConnexion(req, res, { suite, typeCompte, aUneBoutique: !!workspace }),
+                redirect: apresConnexion(req, res, {
+                    suite, typeCompte,
+                    aUneBoutique   : !!workspace,
+                    nombreBoutiques: mesQg.length,
+                }),
             });
         });
 

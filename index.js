@@ -508,6 +508,10 @@ app.use("/password-reset", require("./routes/password-reset"));
 // ══════════════════════════════════════════════════════
 app.use("/hub",       require("./routes/hub"));
 app.use("/workspace", require("./routes/workspace"));
+// Le choix du QG quand on en possède plusieurs. Fait partie du parcours de
+// connexion, donc ouvert partout : un marchand d'une communauté partenaire
+// peut lui aussi avoir deux boutiques.
+app.use("/mes-qg", require("./routes/mes-qg"));
 app.use("/client-qg", require("./routes/client-qg"));
 app.use("/dashboard", requireAuth, require("./routes/dashboard"));
 app.use("/tools",     requireAuth, require("./routes/tools"));

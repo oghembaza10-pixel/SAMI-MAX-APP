@@ -74,7 +74,7 @@ function suiteSure(valeur) {
 //   2. `?c=`    — la communauté traversée, utile sur NOTRE domaine, où
 //                 `COM` vaut toujours « samii »
 //   3. le service — la maison de cette personne, jamais une page en dur
-function apresConnexion(req, res, { suite, typeCompte, aUneBoutique } = {}) {
+function apresConnexion(req, res, { suite, typeCompte, aUneBoutique, nombreBoutiques } = {}) {
     const communautes = require("../config/communautes");
     const COM = res?.locals?.COM || communautes.get(communautes.DEFAUT);
 
@@ -105,6 +105,21 @@ function apresConnexion(req, res, { suite, typeCompte, aUneBoutique } = {}) {
     // Le garde `COM.ecosysteme` reste : chez une partenaire, /agence est
     // fermé, et y déposer quelqu'un rouvrait une 404 par une autre porte.
     if (typeCompte === "agence" && COM.ecosysteme && !aUneBoutique) return "/agence";
+
+    // ── PLUSIEURS QG : ON DEMANDE, ON NE DEVINE PAS ──────────────────────
+    //
+    // « Sinon au moment de se connecter je veux avoir le choix de choisir. »
+    //
+    // Deux heuristiques ont été essayées avant d'en arriver là, et les deux
+    // se sont trompées : aucune donnée en base ne dit « c'est ici que je
+    // travaille ». Seule la personne le sait.
+    //
+    // Le contrôle porte bien sur DEUX et plus : quelqu'un qui n'a qu'une
+    // boutique ne doit pas payer un clic pour un choix qui n'existe pas.
+    // Et /mes-qg respecte le choix déjà retenu, donc cette page n'est pas
+    // une corvée à chaque connexion — elle reste une porte, pas un péage.
+    if (Number(nombreBoutiques) > 1) return "/mes-qg";
+
     return aUneBoutique ? "/qg" : communautes.accueilMarchand(COM);
 }
 

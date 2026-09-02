@@ -170,22 +170,44 @@ async function getById(workspaceId) {
 // L'ordre, décidé ici et nulle part ailleurs :
 //   1. jamais un bac à sable tant qu'un vrai QG existe
 //   2. jamais un QG suspendu tant qu'un actif existe
-//   3. le plus récemment modifié — c'est là qu'on travaille
+//   3. celui où il s'est passé quelque chose le plus récemment
 //   4. le plus récemment créé, pour trancher les égalités
 //
 // Le bac à sable est TRIÉ, pas filtré : quelqu'un qui n'a que ça doit
 // quand même pouvoir entrer quelque part.
+//
+// ── POURQUOI PAS `updated_at` ────────────────────────────────────────────
+//
+// C'était ma première version, et elle était fausse. `updated_at` bouge au
+// moindre réglage : sur le compte du fondateur, elle désignait « Ma Boutique
+// Test » — zéro commande, zéro journal, jamais utilisée — devant « Ma
+// Boutique OG », 23 commandes et 28 lignes de journal.
+//
+// Ce qui dit où quelqu'un TRAVAILLE, c'est l'activité : une commande, une
+// ligne de journal. D'où le GREATEST ci-dessous.
+//
+// Et même corrigé, ce tri reste une heuristique : deux boutiques actives le
+// même jour restent à égalité. C'est pour ça que `qgPrincipal` regarde
+// D'ABORD le choix écrit de la personne — voir plus bas.
+const DERNIERE_VIE = `
+    GREATEST(
+        COALESCE((SELECT max(j.created_at)   FROM journal   j WHERE j.workspace_id = w.id), '-infinity'),
+        COALESCE((SELECT max(o.date_commande) FROM commandes o WHERE o.workspace_id = w.id), '-infinity'),
+        COALESCE(w.updated_at, '-infinity'),
+        COALESCE(w.created_at, '-infinity')
+    )`;
+
 const ORDRE_QG = `
-    ORDER BY COALESCE(est_bac_a_sable, FALSE) ASC,
-             (COALESCE(statut, 'actif') <> 'actif') ASC,
-             updated_at DESC NULLS LAST,
-             created_at DESC NULLS LAST`;
+    ORDER BY COALESCE(w.est_bac_a_sable, FALSE) ASC,
+             (COALESCE(w.statut, 'actif') <> 'actif') ASC,
+             ${DERNIERE_VIE} DESC,
+             w.created_at DESC NULLS LAST`;
 
 // Tous les QG d'une personne, du plus pertinent au moins pertinent.
 async function listerParPertinence(email) {
     try {
         const rows = await db.query(
-            `SELECT * FROM workspaces WHERE owner = $1 OR owner_email = $1 ${ORDRE_QG} LIMIT 50`,
+            `SELECT w.* FROM workspaces w WHERE w.owner = $1 OR w.owner_email = $1 ${ORDRE_QG} LIMIT 50`,
             [email]);
         return rows;
     } catch (err) {
@@ -194,12 +216,62 @@ async function listerParPertinence(email) {
     }
 }
 
-// Le QG principal : celui où l'on dépose quelqu'un qui vient de se
-// connecter. Rend la ligne brute — les appelants ont besoin de champs
-// différents (id, metier, nom).
+// ── LE QG PRINCIPAL ───────────────────────────────────────────────────────
+//
+// Celui où l'on dépose quelqu'un qui vient de se connecter.
+//
+// L'ordre des deux sources n'est pas négociable :
+//
+//   1. CE QUE LA PERSONNE A CHOISI (`utilisateurs.qg_principal`)
+//   2. à défaut seulement, l'heuristique d'activité
+//
+// Un choix explicite bat toujours une devinette, aussi bonne soit-elle. Le
+// choix est quand même VÉRIFIÉ : on ne dépose personne dans un QG qui ne lui
+// appartient plus (boutique vendue, fermée, ou identifiant devenu invalide).
+// Sans ce contrôle, une valeur périmée en base enverrait sur une page morte
+// à chaque connexion, sans que rien ne l'explique.
+//
+// Rend la ligne brute — les appelants ont besoin de champs différents.
 async function qgPrincipal(email) {
     const rows = await listerParPertinence(email);
-    return rows[0] || null;
+    if (!rows.length) return null;
+
+    try {
+        const u = await db.query(
+            `SELECT qg_principal FROM utilisateurs WHERE email = $1 LIMIT 1`, [email]);
+        const choisi = u[0]?.qg_principal;
+        if (choisi) {
+            const retenu = rows.find((w) => w.id === choisi);
+            if (retenu) return retenu;
+            console.warn(`⚠️ qgPrincipal : ${email} a choisi « ${choisi} », `
+                       + `qui ne lui appartient plus — retour au tri par activité`);
+        }
+    } catch (err) {
+        // La colonne peut ne pas encore exister sur une base qui n'a pas
+        // rejoué le schéma. Ce n'est pas une raison pour empêcher quelqu'un
+        // de se connecter : on retombe simplement sur l'heuristique.
+        console.warn("⚠️ qgPrincipal — choix illisible :", err.message);
+    }
+
+    return rows[0];
+}
+
+// Écrire le choix. Refuse un QG qui n'appartient pas à la personne : cette
+// fonction sera appelée depuis une requête HTTP, donc avec une valeur qui
+// vient du dehors.
+async function choisirQgPrincipal(email, workspaceId) {
+    const rows = await listerParPertinence(email);
+    if (!rows.some((w) => w.id === workspaceId)) {
+        return { ok: false, erreur: "ce QG n'appartient pas à ce compte" };
+    }
+    try {
+        await db.query(`UPDATE utilisateurs SET qg_principal = $1 WHERE email = $2`,
+                       [workspaceId, email]);
+        return { ok: true, workspaceId };
+    } catch (err) {
+        console.error("❌ choisirQgPrincipal :", err.message);
+        return { ok: false, erreur: err.message };
+    }
 }
 
 async function getActiveWorkspace(email) {
@@ -327,7 +399,9 @@ module.exports = {
     getByOwner,
     listerParPertinence,
     qgPrincipal,
+    choisirQgPrincipal,
     ORDRE_QG,
+    DERNIERE_VIE,
     getById,
     getActiveWorkspace,
     getByMetier,

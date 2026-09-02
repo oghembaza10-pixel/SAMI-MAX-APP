@@ -78,6 +78,7 @@ Module.prototype.require = function (nom) {
         // requête. Le tri lui-même est en SQL : une doublure ne peut pas le
         // prouver, c'est le contrôle sur base réelle qui s'en charge.
         qgPrincipal: async () => BOUTIQUES[0] || null,
+        listerParPertinence: async () => BOUTIQUES,
     };
     return vraiRequire.apply(this, arguments);
 };
@@ -204,6 +205,32 @@ const FORMES = [
         verifier(co && co.redirect === attendu,
             `chez nous, ${forme.nom} allait sur « ${attendu} » et va maintenant sur « ${co && co.redirect} »`);
     }
+
+    // ── 2 bis. PLUSIEURS QG : ON DEMANDE, ON NE DEVINE PAS ──────────────
+    //
+    // « Sinon au moment de se connecter je veux avoir le choix de choisir. »
+    //
+    // Deux heuristiques ont été essayées avant d'en arriver là et les deux se
+    // sont trompées sur un compte réel. Personne ne doit plus être déposé
+    // d'autorité dans l'une de ses boutiques.
+    COMPTE = {
+        id: "u-1", email: "essai@exemple.com", prenom: "O.", nom: "G.",
+        password_hash: HASH, type_compte: "marchand",
+        statut_acces: "actif", email_verifie: true,
+    };
+    BOUTIQUES = [{ id: "ws-1", metier: "ecommerce" }, { id: "ws-2", metier: "garage" }];
+    for (const [nom, COM] of [["chez nous", MAISON], ["chez elle", PARTENAIRE]]) {
+        const co = await appeler(POST_LOGIN, { COM, corps: IDENTIFIANTS });
+        verifier(co && co.redirect === "/mes-qg",
+            `${nom}, quelqu'un qui a DEUX boutiques est déposé d'autorité sur « ${co && co.redirect} » au lieu de choisir`);
+        verifier(co && porteOuverte(co.redirect, COM),
+            `${nom}, la page de choix du QG est fermée par la porte : 404 juste après une connexion réussie`);
+    }
+    // Une seule boutique : pas de clic en plus pour un choix qui n'existe pas.
+    BOUTIQUES = [{ id: "ws-1", metier: "ecommerce" }];
+    const seule = await appeler(POST_LOGIN, { COM: MAISON, corps: IDENTIFIANTS });
+    verifier(seule && seule.redirect === "/qg",
+        `avec UNE seule boutique on impose quand même le choix : « ${seule && seule.redirect} »`);
 
     // ── 3. LA DESTINATION DEMANDÉE PASSE AVANT TOUT ─────────────────────
     poser(FORMES[1]);

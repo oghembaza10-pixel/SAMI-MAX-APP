@@ -422,6 +422,7 @@ router.post("/", async (req, res) => {
 
                 // Même question qu'à la connexion, donc même réponse : le
                 // choix du QG est écrit dans workspaceService, pas ici.
+                const mesQg     = await workspaceService.listerParPertinence(email);
                 const workspace = await workspaceService.qgPrincipal(email);
                 req.session.workspaceId = workspace?.id || null;
                 if (workspace) req.session.metier = workspace.metier;
@@ -429,8 +430,9 @@ router.post("/", async (req, res) => {
                 res.json({
                     success : true,
                     redirect: apresConnexion(req, res, {
-                        typeCompte  : typeCompteExistant,
-                        aUneBoutique: !!workspace,
+                        typeCompte     : typeCompteExistant,
+                        aUneBoutique   : !!workspace,
+                        nombreBoutiques: mesQg.length,
                     }),
                 });
             });

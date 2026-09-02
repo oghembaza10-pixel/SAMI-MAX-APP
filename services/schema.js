@@ -461,6 +461,21 @@ const BLOCS = [
             // Les réglages permanents que SAMII applique à CHAQUE
             // conversation. Lue par `memoireUtilisateur` et `/api/directives`.
             `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS directives_permanentes TEXT`,
+            // ── LE QG OÙ L'ON VEUT ATTERRIR ──────────────────────────────
+            //
+            // Quelqu'un qui possède plusieurs boutiques doit pouvoir DIRE
+            // laquelle est la sienne. Sans cette colonne, la connexion devait
+            // deviner, et aucune heuristique ne devine juste :
+            //
+            //   par `updated_at`      → tombait sur « Ma Boutique Test »,
+            //                           vide, jamais utilisée
+            //   par dernière activité → deux boutiques à égalité le même
+            //                           jour, départagées au hasard
+            //
+            // Un choix écrit n'est pas une devinette. Vide, on retombe sur le
+            // tri par activité (voir workspaceService.ORDRE_QG), qui reste le
+            // meilleur défaut pour qui n'a jamais choisi.
+            `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS qg_principal TEXT`,
         ],
     },
     {

@@ -591,6 +591,10 @@ function marque(html) {
         "/verification": true, "/telegram": true,
         "/qg": true, "/qg/:metier": true, "/qg/:metier/connecter": true,
         "/workspace": true, "/connect": true,
+        // Le choix du QG quand on en a plusieurs : une étape du parcours de
+        // connexion. Fermée chez elle, ses marchands à deux boutiques
+        // tomberaient sur une 404 juste après s'être connectés.
+        "/mes-qg": true,
         "/discussions": true, "/samii": true, "/automatisations": true,
         // « Mes messages » : le courrier laissé sur un profil ou sous une
         // annonce. Sa marketplace ne servirait à rien sans un moyen de
