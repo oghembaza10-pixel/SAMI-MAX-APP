@@ -115,6 +115,10 @@ function pour(slug) {
     const ecartes = candidats.slice(0, candidats.indexOf(pret)).map((p) => p.nom);
     return {
         provider: pret,
+        // Tous ceux qui sont prêts, dans l'ordre. `publier()` s'en sert pour
+        // essayer le suivant quand le premier dit « je ne sers pas cette
+        // plateforme-là » — voir plus bas.
+        candidats: candidats.filter((p) => typeof p.configure !== "function" || p.configure()),
         raison: ecartes.length ? `${ecartes.join(", ")} non configuré(s), ${pret.nom} prend la main` : null,
     };
 }
@@ -125,35 +129,63 @@ function pour(slug) {
 // `{ ok: false, erreur }`. Une exception qui remonte ici ferait tomber le
 // planificateur, et une plateforme en panne arrêterait la publication sur
 // toutes les autres.
+// ── « JE NE SERS PAS CETTE PLATEFORME-LÀ » N'EST PAS UN ÉCHEC ────────────
+//
+// Vu sur le compte Buffer réel d'OG Technology : trois chaînes connectées
+// (LinkedIn page, LinkedIn profil, Instagram) et AUCUN Facebook — le plan
+// gratuit est plafonné à trois.
+//
+// Buffer est donc « configuré » (il a son jeton) mais incapable de servir
+// Facebook. Sans ce qui suit, il échouait et Meta — le second candidat —
+// n'avait jamais sa chance. On ne voyait qu'une moitié du problème.
+//
+// Un provider peut maintenant rendre `passeLaMain: true` pour dire « ce
+// n'est pas un échec de publication, c'est que je ne couvre pas cette
+// plateforme ». Le suivant est alors essayé, et si tous refusent, l'erreur
+// finale les nomme TOUS — parce que « pourquoi Facebook ne part pas » a
+// deux raisons aujourd'hui, pas une.
 async function publier({ plateforme, texte, media, mediaType, workspaceId, variantId }) {
-    const { provider, raison } = pour(plateforme);
+    const { provider, candidats, raison } = pour(plateforme);
     if (!provider) return { ok: false, provider: null, erreur: raison };
 
+    // La simulation et les plateformes à un seul provider ne bouclent pas.
+    const aEssayer = (candidats && candidats.length) ? candidats : [provider];
     const debut = Date.now();
-    try {
-        const resultat = await provider.publier({
-            plateforme, texte, media, mediaType, workspaceId, variantId,
-        });
-        return {
-            ok: !!resultat?.ok,
-            provider: provider.nom,
-            simulation: provider.nom === "mock",
-            note: raison,
-            id: resultat?.id || null,
-            url: resultat?.url || null,
-            erreur: resultat?.ok ? null : (resultat?.erreur || "échec sans motif"),
-            dureeMs: Date.now() - debut,
-        };
-    } catch (err) {
-        // Un provider qui lève est un provider mal écrit — mais ce n'est pas
-        // une raison pour que la publication des six autres plateformes
-        // s'arrête. On note et on continue.
-        console.error(`❌ Provider ${provider.nom} a levé :`, err.message);
-        return {
-            ok: false, provider: provider.nom, simulation: provider.nom === "mock",
-            erreur: err.message, dureeMs: Date.now() - debut,
-        };
+    const refus = [];
+
+    for (const p of aEssayer) {
+        try {
+            const resultat = await p.publier({
+                plateforme, texte, media, mediaType, workspaceId, variantId,
+            });
+            if (resultat?.ok) {
+                return {
+                    ok: true, provider: p.nom, simulation: p.nom === "mock", note: raison,
+                    id: resultat.id || null, url: resultat.url || null,
+                    erreur: null, dureeMs: Date.now() - debut,
+                };
+            }
+            refus.push(`${p.nom} : ${resultat?.erreur || "échec sans motif"}`);
+            // Un vrai échec de publication s'arrête là : réessayer chez le
+            // voisin publierait peut-être DEUX FOIS le même contenu.
+            if (!resultat?.passeLaMain) break;
+        } catch (err) {
+            // Un provider qui lève est mal écrit — ce n'est pas une raison
+            // pour que les six autres plateformes s'arrêtent.
+            console.error(`❌ Provider ${p.nom} a levé :`, err.message);
+            refus.push(`${p.nom} : ${err.message}`);
+            break;
+        }
     }
+
+    return {
+        ok: false,
+        provider: aEssayer[0]?.nom || null,
+        simulation: aEssayer[0]?.nom === "mock",
+        note: raison,
+        erreur: refus.join(" · ") || "échec sans motif",
+        dureeMs: Date.now() - debut,
+    };
 }
 
 // Ce que l'interface montre au fondateur : qui est branché, qui ne l'est

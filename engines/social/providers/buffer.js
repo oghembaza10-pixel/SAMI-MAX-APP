@@ -161,7 +161,7 @@ function choixPose(slug) {
 // deviner quand plusieurs correspondent.
 async function chainesPour(slug) {
     const service = SERVICE[String(slug).toLowerCase()];
-    if (!service) return { ok: false, erreur: `Buffer ne gère pas « ${slug} » dans cette version` };
+    if (!service) return { ok: false, passeLaMain: true, erreur: `Buffer ne gère pas « ${slug} » dans cette version` };
 
     const c = await chaines();
     if (!c.ok) return { ok: false, erreur: c.erreur };
@@ -170,6 +170,14 @@ async function chainesPour(slug) {
     if (!correspondantes.length) {
         return {
             ok: false,
+            // Ce n'est PAS un échec de publication : Buffer n'a simplement
+            // pas cette plateforme. Le registre doit donc essayer le
+            // provider suivant plutôt que de s'arrêter là.
+            //
+            // Vu en vrai : le plan gratuit de Buffer plafonne à 3 chaînes, et
+            // les trois sont prises par LinkedIn (×2) et Instagram. Facebook
+            // n'y est pas.
+            passeLaMain: true,
             erreur: `aucune chaîne ${service} connectée dans Buffer `
                   + `(connectées : ${c.chaines.map((x) => x.service).join(", ") || "aucune"})`,
         };
@@ -218,7 +226,7 @@ async function publier({ plateforme, texte, media, quand }) {
     if (!texte) return { ok: false, erreur: "texte vide" };
 
     const cibles = await chainesPour(plateforme);
-    if (!cibles.ok) return { ok: false, erreur: cibles.erreur };
+    if (!cibles.ok) return { ok: false, erreur: cibles.erreur, passeLaMain: !!cibles.passeLaMain };
 
     const resultats = [];
     for (const chaine of cibles.chaines) {

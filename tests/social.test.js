@@ -392,6 +392,56 @@ console.log("── Buffer passe devant Meta, et Meta reprend si Buffer part ─
     process.env.SOCIAL_PUBLICATION_REELLE = "";
 }
 
+
+console.log("── Un provider qui ne sert pas une plateforme passe la main ──");
+{
+    // Vu sur le vrai compte Buffer d'OG Technology : 3 chaînes (LinkedIn
+    // page, LinkedIn profil, Instagram), plan gratuit plafonné à 3, et
+    // AUCUN Facebook. Buffer est donc configuré mais incapable de servir
+    // Facebook — et sans la passe de main, Meta n'avait jamais sa chance.
+    process.env.SOCIAL_PUBLICATION_REELLE = "oui";
+    const ancien = process.env.BUFFER_ACCESS_TOKEN;
+    process.env.BUFFER_ACCESS_TOKEN = "";   // Buffer écarté : non configuré
+
+    // TikTok n'a que Buffer aujourd'hui. On ajoute derrière lui un provider
+    // qui passe la main, puis un qui publie.
+    let passeAppele = false, prendAppele = false;
+    providers.enregistrer({
+        nom: "passe", plateformes: ["tiktok"], configure: () => true,
+        publier: async () => { passeAppele = true; return { ok: false, passeLaMain: true, erreur: "pas ma plateforme" }; },
+    });
+    providers.enregistrer({
+        nom: "prend", plateformes: ["tiktok"], configure: () => true,
+        publier: async () => { prendAppele = true; return { ok: true, id: "ok_tiktok" }; },
+    });
+
+    const r = await providers.publier({ plateforme: "tiktok", texte: "Un contenu assez long pour passer." });
+    verifier(passeAppele, "le premier provider a bien été essayé");
+    verifier(r.ok === true, "le second reprend quand le premier passe la main");
+    verifier(prendAppele && r.provider === "prend", "et c'est lui qui a publié", r.provider);
+
+    // ── LE POINT INVERSE, TOUT AUSSI IMPORTANT ───────────────────────────
+    //
+    // Un VRAI échec ne doit PAS faire essayer le suivant : republier chez
+    // le voisin, c'est le même contenu deux fois.
+    //
+    // Messenger a déjà `meta` en tête, et meta échoue sans passer la main
+    // (« workspaceId manquant »). Le provider ajouté derrière ne doit donc
+    // jamais être appelé.
+    let jamaisAppele = false;
+    providers.enregistrer({
+        nom: "jamais", plateformes: ["messenger"], configure: () => true,
+        publier: async () => { jamaisAppele = true; return { ok: true, id: "ne_devrait_pas_arriver" }; },
+    });
+    const r2 = await providers.publier({ plateforme: "messenger", texte: "Un contenu assez long pour passer." });
+    verifier(r2.ok === false, "un vrai échec reste un échec");
+    verifier(jamaisAppele === false, "et le provider suivant n'est PAS appelé — pas de double publication");
+    verifier(!/ne_devrait_pas_arriver/.test(JSON.stringify(r2)), "rien n'a été publié en douce");
+
+    process.env.BUFFER_ACCESS_TOKEN = ancien || "";
+    process.env.SOCIAL_PUBLICATION_REELLE = "";
+}
+
 console.log("── WhatsApp : d'où vient la liste ──");
 {
     const wa = require("../engines/social/providers/whatsapp");
