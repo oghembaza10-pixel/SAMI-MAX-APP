@@ -139,31 +139,83 @@ async function instagram(workspaceId) {
     }
 }
 
-// ── WHATSAPP (GREEN API) ──────────────────────────────────────────────────
+// ── WHATSAPP ──────────────────────────────────────────────────────────────
 //
-// `getStateInstance` dit si le téléphone est réellement appairé.
-// « authorized » = ça marche. Tout le reste veut dire que WhatsApp n'enverra
-// rien, même si la configuration a l'air complète.
+// TROIS fournisseurs possibles, et ils ne se sondent pas pareil. Ma première
+// version ne testait que Green API et concluait « instance supprimée » —
+// une réponse juste sur le mauvais fournisseur, donc inutile.
+//
+//   cloud      l'API WhatsApp Cloud de META, en direct. Le WABA est à nous,
+//              on parle au Graph avec un phoneNumberId et un jeton.
+//   360dialog  même format de corps, autre hôte.
+//   green      Green API : un téléphone appairé par QR code.
+//
+// `services/whatsappFournisseurs.js` sait déjà envoyer par les trois. Ce qui
+// manquait, c'était de savoir LEQUEL est configuré et s'il répond.
 async function whatsapp(workspaceId) {
     titre("WHATSAPP");
     const c = await connecteur(workspaceId, "whatsapp");
+    const fournisseurs = require("../services/whatsappFournisseurs");
     const CONFIG = require("../config");
-    const source = c?.config?.apiId
-        ? { id: c.config.apiId, jeton: c.config.apiToken, ou: "connecteur du marchand" }
-        : { id: CONFIG.WHATSAPP?.INSTANCE, jeton: CONFIG.WHATSAPP?.API_KEY, ou: "canal partagé SAMII" };
 
-    console.log(`  source     : ${source.ou}`);
-    console.log(`  instance   : ${source.id || "(absente)"}`);
-    console.log(`  jeton      : ${empreinte(source.jeton)}`);
-    if (!source.id || !source.jeton) return console.log("  ❌ instance ou jeton manquant — aucun envoi possible");
+    let config = c?.config || {};
+    let ou = "connecteur du marchand";
 
-    const r = await lire(`https://api.green-api.com/waInstance${source.id}/getStateInstance/${source.jeton}`);
+    if (!fournisseurs.estComplete(config)) {
+        // Le canal partagé SAMII, toujours du Green API.
+        config = { fournisseur: "green", apiId: CONFIG.WHATSAPP?.INSTANCE, apiToken: CONFIG.WHATSAPP?.API_KEY };
+        ou = "canal partagé SAMII (variables d'environnement)";
+    }
+
+    const f = fournisseurs.fournisseurDe(config);
+    console.log(`  source      : ${ou}`);
+    console.log(`  fournisseur : ${f}`);
+
+    if (!fournisseurs.estComplete(config)) {
+        const attendus = fournisseurs.FOURNISSEURS[f]?.champs || [];
+        console.log(`  ❌ configuration incomplète — il manque : `
+                  + attendus.filter((x) => !config[x]).join(", "));
+        console.log(`\n  Pour l'API Cloud de Meta, le connecteur doit porter :`);
+        console.log(`     { "fournisseur": "cloud", "phoneNumberId": "…", "token": "…" }`);
+        return;
+    }
+
+    // ── L'API CLOUD DE META ──────────────────────────────────────────────
+    //
+    // On interroge le numéro lui-même : s'il répond, le jeton est valide ET
+    // le numéro appartient bien à ce WABA. `quality_rating` est le chiffre
+    // qui compte vraiment — un numéro en RED est limité par Meta, et rien
+    // dans l'application ne le dirait.
+    if (f === "cloud" || f === "360dialog") {
+        console.log(`  phoneNumberId : ${config.phoneNumberId}`);
+        console.log(`  jeton         : ${empreinte(config.token)}`);
+        const r = await lire(`${GRAPH}/${config.phoneNumberId}`
+                           + `?fields=display_phone_number,verified_name,quality_rating,code_verification_status`
+                           + `&access_token=${encodeURIComponent(config.token)}`);
+        if (r.code !== 200) {
+            return console.log(`  ❌ HTTP ${r.code} — ${r.corps?.error?.message || r.erreur || r.brut}`);
+        }
+        console.log(`  ✅ ${r.corps.display_phone_number} — « ${r.corps.verified_name} »`);
+        console.log(`     qualité : ${r.corps.quality_rating}   vérification : ${r.corps.code_verification_status}`);
+        if (String(r.corps.quality_rating).toUpperCase() === "RED") {
+            console.log(`     ⛔ qualité RED : Meta limite ce numéro. Les envois seront bridés.`);
+        }
+        return;
+    }
+
+    // ── GREEN API ────────────────────────────────────────────────────────
+    //
+    // `getStateInstance` dit si le téléphone est réellement appairé.
+    // « authorized » = ça marche. Tout le reste veut dire que rien ne partira,
+    // même avec une configuration qui a l'air complète.
+    console.log(`  instance    : ${config.apiId}`);
+    console.log(`  jeton       : ${empreinte(config.apiToken)}`);
+    const r = await lire(`https://api.green-api.com/waInstance${config.apiId}/getStateInstance/${config.apiToken}`);
     if (r.code !== 200) {
         return console.log(`  ❌ HTTP ${r.code} — ${r.corps?.message || r.erreur || r.brut}`);
     }
-    const etat = r.corps?.stateInstance;
-    console.log(`  état       : ${etat}`);
-    console.log(etat === "authorized"
+    console.log(`  état        : ${r.corps?.stateInstance}`);
+    console.log(r.corps?.stateInstance === "authorized"
         ? "  ✅ le téléphone est appairé — WhatsApp peut envoyer"
         : "  ⛔ NON appairé : rien ne partira. Rescanne le QR dans Green API.");
 }
