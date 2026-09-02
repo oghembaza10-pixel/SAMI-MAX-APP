@@ -261,9 +261,23 @@ app.get("/health", async (req, res) => {
 });
 
 // ── SESSION (Supabase/Postgres — persiste aux redéploiements) ──
+// ── LA MÊME RÈGLE QUE `services/db.js`, PAS UNE COPIE ───────────────────
+//
+// `ssl: { rejectUnauthorized: false }` était écrit en dur ici. C'était la
+// deuxième écriture de la même règle, et celle-ci avait perdu la
+// condition : elle EXIGEAIT TLS, toujours.
+//
+// Ça n'a jamais mordu parce que la base de Render et une base Debian
+// locale acceptent toutes deux TLS. Le contrôle automatique l'a trouvé en
+// démarrant SAMII contre l'image Docker `postgres:16`, qui ne l'accepte
+// pas : « The server does not support SSL connections », et toute requête
+// touchant la session — l'inscription, le chat, le QG — répondait 500.
+//
+// On lit donc la valeur là où elle est décidée. Une règle recopiée finit
+// toujours par diverger de son original ; celle-là l'avait déjà fait.
 const pgPool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
+    ssl: db.SSL,
 });
 
 app.use(session({
