@@ -244,9 +244,37 @@ async function whatsappSamii() {
     }
     console.log(`\n  ✅ ${r.corps.display_phone_number} — « ${r.corps.verified_name} »`);
     console.log(`     qualité : ${r.corps.quality_rating}   vérification : ${r.corps.code_verification_status}`);
+
+    // ── CE QUI BLOQUE VRAIMENT UN ENVOI ──────────────────────────────────
+    //
+    // Le numéro RÉPOND en lecture, et pourtant l'envoi peut échouer. Deux
+    // états le disent, et ma première version n'en surveillait qu'un.
+    const verif = String(r.corps.code_verification_status || "").toUpperCase();
+    if (verif !== "VERIFIED") {
+        console.log(`     ⛔ vérification ${verif} : Meta redemande la validation du numéro.`);
+        console.log(`        Tant que ce n'est pas VERIFIED, l'envoi peut être refusé.`);
+        console.log(`        → WhatsApp Manager → Numéros de téléphone → le numéro → Vérifier.`);
+    }
     if (String(r.corps.quality_rating).toUpperCase() === "RED") {
         console.log(`     ⛔ qualité RED : Meta bride ce numéro. Les envois seront ralentis.`);
     }
+
+    // ── LE PIÈGE DES DEUX JETONS ─────────────────────────────────────────
+    //
+    // La liste des permissions affichée plus haut est celle du jeton
+    // UTILISATEUR. Le canal WhatsApp utilise un jeton d'UTILISATEUR SYSTÈME,
+    // qui porte SES PROPRES permissions, attribuées dans Business Settings.
+    //
+    // Voir « whatsapp_business_messaging : refusée » côté utilisateur et en
+    // conclure que WhatsApp ne peut pas envoyer serait faux — et c'est
+    // exactement le genre de raccourci qui m'a fait affirmer trois fois
+    // qu'une permission manquait alors qu'elle était là.
+    //
+    // La preuve que le jeton système a bien des droits WhatsApp, c'est que
+    // la requête ci-dessus a RÉPONDU.
+    console.log(`\n     Note : ce canal utilise META_WHATSAPP_TOKEN (utilisateur système),`);
+    console.log(`     pas le jeton utilisateur listé plus haut. Ses permissions sont`);
+    console.log(`     distinctes — cette lecture réussie prouve qu'il en a.`);
 }
 
 // ── WHATSAPP ──────────────────────────────────────────────────────────────
