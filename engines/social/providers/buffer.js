@@ -406,5 +406,9 @@ module.exports = {
     plateformes: ["facebook", "instagram", "linkedin", "tiktok"],
     publier,
     etat, chaines, chainesPour, oublier, configure, sert, motifEcart, plateformesAutorisees,
+    // Exposé pour le collecteur de statistiques : il a besoin d'interroger
+    // Buffer avec sa propre requête, sans réécrire l'authentification ni la
+    // gestion d'erreur — deux copies du même appel divergeraient.
+    interroger: appeler,
     ADRESSE, SERVICE,
 };

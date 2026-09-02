@@ -326,8 +326,21 @@ console.log("── L'analyste n'invente pas de statistiques ──");
     const analytics = require("../engines/social/agents/analytics");
     const couv = analytics.couverture();
     verifier(couv.length === 7, "la couverture est dite pour les 7 plateformes");
-    verifier(couv.every((c) => c.collecteur === false), "aucun collecteur n'existe encore — c'est la vérité d'aujourd'hui");
-    verifier(couv.every((c) => !!c.raison), "et chacune dit POURQUOI elle n'en a pas");
+    // Cette ligne affirmait « aucun collecteur n'existe encore ». C'était
+    // vrai, et ça ne l'est plus : Facebook, Instagram et LinkedIn en ont un.
+    // Le test a crié au moment où le fait a changé — c'est exactement son
+    // travail, et la ligne suit la réalité au lieu de la figer.
+    verifier(couv.filter((c) => c.collecteur).map((c) => c.slug).sort().join() === "facebook,instagram,linkedin",
+             "trois plateformes sont mesurables : " + couv.filter((c) => c.collecteur).map((c) => c.slug).join(", "));
+    verifier(couv.filter((c) => !c.collecteur).length === 4,
+             "les quatre autres ne le sont pas, et chacune dit pourquoi");
+    // Celles QUI N'EN ONT PAS doivent dire pourquoi. Celles qui en ont un
+    // n'ont rien à expliquer — exiger une raison partout obligerait à en
+    // inventer une là où il n'y a pas de problème.
+    verifier(couv.filter((c) => !c.collecteur).every((c) => !!c.raison),
+             "chaque plateforme NON mesurable dit pourquoi elle ne l'est pas");
+    verifier(couv.filter((c) => c.collecteur).every((c) => !c.raison),
+             "et celles qui sont mesurables n'affichent aucun motif d'excuse");
 
     // Une publication simulée n'a pas de statistiques à collecter.
     prevoir([{ id: 1, statut: "published", provider: "mock", plateforme: "telegram" }], []);
@@ -852,6 +865,48 @@ console.log("── Pexels : la clé part NUE, jamais en Bearer ──");
     if (ancien.adr === undefined) delete process.env.PEXELS_ADRESSE; else process.env.PEXELS_ADRESSE = ancien.adr;
     process.env.PEXELS_API_KEY = ancien.cle || "";
     delete require.cache[require.resolve("../services/pexels")];
+}
+
+console.log("── Les collecteurs : l'apprentissage devient possible ──");
+{
+    // `analytics.COLLECTEURS` était VIDE. Donc `social_analytics` restait
+    // vide, donc l'agent d'apprentissage restait sous son seuil de 5 relevés
+    // et refusait éternellement de conclure. Il était honnête et
+    // définitivement muet — pas par prudence, par absence de données.
+    const analytics = require("../engines/social/agents/analytics");
+    const branches = Object.keys(analytics.COLLECTEURS);
+    verifier(branches.includes("facebook"), "Facebook a un collecteur");
+    verifier(branches.includes("instagram"), "Instagram aussi");
+    verifier(branches.includes("linkedin"), "LinkedIn aussi");
+    verifier(!branches.includes("telegram"),
+             "Telegram n'en a PAS : l'API des bots n'expose pas les vues d'un canal, "
+             + "et un zéro inventé fausserait toutes les moyennes");
+
+    const couv = analytics.couverture();
+    verifier(couv.find((c) => c.slug === "facebook").collecteur === true,
+             "et l'écran le dit : Facebook est mesurable");
+    verifier(couv.find((c) => c.slug === "telegram").collecteur === false,
+             "Telegram ne l'est pas, et c'est affiché plutôt que caché");
+
+    // ── LA GARANTIE QUI COMPTE ───────────────────────────────────────────
+    //
+    // « Ne pas créer un FAUX système d'apprentissage. » Un collecteur qui
+    // rend 0 quand il n'a pas pu mesurer serait pire que pas de collecteur :
+    // ce zéro se mélangerait aux vrais et fausserait chaque moyenne.
+    const col = require("../engines/social/collecteurs");
+    verifier((await col.facebook({ externe_id: null, workspace_id: "w1" })) === null,
+             "sans identifiant externe : null, jamais un zéro");
+    verifier((await col.facebook({ externe_id: "1_2", workspace_id: null })) === null,
+             "sans workspace : null aussi");
+    verifier((await col.instagram({ externe_id: "buf_1", workspace_id: "w1", provider: "buffer" })) === null,
+             "un identifiant Buffer n'est pas interrogé chez Meta — appel inutile évité");
+
+    // La mise en forme commune : chaque plateforme nomme ses chiffres
+    // autrement, on les ramène à un vocabulaire unique une seule fois.
+    const m = col.mesure({ vues: "1240", likes: 28, brut: { x: 1 } });
+    verifier(m.mesures.vues === 1240, "les chaînes de caractères sont converties en nombres");
+    verifier(m.mesures.commentaires === 0, "ce qui manque vaut 0 dans la forme, pas undefined");
+    verifier(m.brut.x === 1, "la réponse d'origine est gardée pour plus tard");
 }
 
 console.log("── Le mode MANUAL bloque la programmation ──");

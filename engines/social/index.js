@@ -40,6 +40,14 @@ const providers = require("./providers");
 const store = require("../../services/socialStore");
 const plateformes = require("../../config/plateformes-sociales");
 
+// ── LES COLLECTEURS, BRANCHÉS AU CHARGEMENT ───────────────────────────────
+//
+// `analytics.COLLECTEURS` était vide, donc `social_analytics` restait vide,
+// donc l'agent d'apprentissage restait sous son seuil de 5 relevés et
+// refusait éternellement de conclure. Il était honnête et définitivement
+// muet. Cette ligne est ce qui lui donne de quoi apprendre.
+require("./collecteurs").brancher(analytics);
+
 const AGENTS = { strategist, creator, adapter, reviewer, publisher, analytics, learning };
 
 // ── LE MODE ───────────────────────────────────────────────────────────────
