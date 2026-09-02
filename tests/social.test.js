@@ -839,7 +839,8 @@ console.log("── Pexels : la clé part NUE, jamais en Bearer ──");
     // Le jeton ne doit jamais se retrouver dans un état affiché.
     const e = await pexels.etat({ recherche: "technology" });
     verifier(!JSON.stringify(e).includes("CLE-DE-CONTROLE"), "la clé ne fuit pas dans l'état");
-    verifier(e.appelsRestants === "42", "les appels restants sont remontés — 200/heure, on veut le savoir");
+    verifier(e.appelsRestants === "42",
+             "les appels restants viennent de l'en-tête, pas d'un chiffre écrit en dur");
 
     // Sans clé : refus nommé, jamais une exception.
     process.env.PEXELS_API_KEY = "";

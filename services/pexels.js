@@ -23,8 +23,12 @@
 // automatique doit éviter.
 //
 // Pexels est gratuit, sans carte bancaire, et donne de la vraie vidéo
-// verticale. 200 requêtes par heure, 20 000 par mois : le cycle en fait
-// quelques-unes par jour.
+// verticale. Le quota dépend de la clé : la documentation annonce 200
+// requêtes par heure et 20 000 par mois, mais l'en-tête renvoyé par la vraie
+// clé d'OG Technology disait 24 997 restants au premier appel. On ne fige
+// donc AUCUN chiffre ici — c'est `x-ratelimit-remaining` qui fait foi, et il
+// est remonté jusqu'à l'écran. De toute façon le cycle en fait quelques-unes
+// par jour.
 //
 // ── L'API ─────────────────────────────────────────────────────────────────
 //
@@ -104,7 +108,12 @@ async function appeler(chemin, parametres) {
                                       + "ou envoyée avec « Bearer » alors qu'elle se pose nue" };
         }
         if (code === 429) {
-            return { ok: false, erreur: "Pexels limite les appels (429) — 200 par heure, 20 000 par mois" };
+            // Pas de chiffre inventé dans ce message : il varie selon la
+            // clé, et une valeur fausse envoie chercher au mauvais endroit.
+            const reste = err.response?.headers?.["x-ratelimit-remaining"];
+            return { ok: false, erreur: "Pexels limite les appels (429)"
+                              + (reste !== undefined ? ` — ${reste} restants` : "")
+                              + " — le quota se lit sur /social" };
         }
         return { ok: false, erreur: code ? `HTTP ${code} — ${detail}` : detail };
     }
