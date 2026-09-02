@@ -6,6 +6,7 @@ const router = express.Router();
 const db = require("../services/db");
 const workspaceService = require("../services/workspaceService");
 const connectorService = require("../services/connectorService");
+const autopostEngine = require("../engines/autopostEngine");
 const abonnementService = require("../services/abonnementService");
 const paliers = require("../config/paliers");
 
@@ -42,9 +43,31 @@ router.get("/", requireAuth, async (req, res) => {
         connectorService.getByWorkspace(workspaceId),
     ]);
 
+    // ── CONNECTÉ NE VEUT PAS DIRE PUBLIABLE ─────────────────────────────
+    //
+    // Cette page marquait un canal « connecté » dès qu'un connecteur actif
+    // existait. Depuis que l'app Meta est en Live, ça ne suffit plus : un
+    // marchand peut avoir Facebook parfaitement connecté et ne PAS avoir le
+    // droit de publier (`pages_manage_posts` n'est pas encore approuvée).
+    //
+    // Il cochait alors une case, enregistrait, et attendait des
+    // publications qui ne partiraient jamais. Une case qu'on peut cocher
+    // pour rien est une promesse qu'on ne tient pas.
+    //
+    // La décision vient d'`autopostEngine.canauxPublieables` — LE MÊME code
+    // que celui qui publie vraiment. Deux réponses à la même question
+    // finissent toujours par diverger, et c'est l'affichage qui ment.
+    const { possibles, empeches } = await autopostEngine.canauxPublieables(
+        workspaceId, CANAUX_DISPONIBLES.map((c) => c.id),
+    );
+    const raisonDe = (id) => {
+        const ligne = empeches.find((e) => e.startsWith(id + " :"));
+        return ligne ? ligne.slice(id.length + 3) : "";
+    };
     const canauxConnectes = CANAUX_DISPONIBLES.map(c => ({
         ...c,
-        connecte: connecteurs.some(x => x.type === c.type && x.actif),
+        connecte: possibles.includes(c.id),
+        raison  : raisonDe(c.id),
     }));
 
     res.render("autopost", { canaux: canauxConnectes, config, error: null, success: false });

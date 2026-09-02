@@ -41,7 +41,12 @@
                    <%= c.connecte ? "" : "disabled" %>
                    style="width:16px;height:16px;">
             <%= c.label %>
-            <% if (!c.connecte) { %><span style="font-size:0.75rem;color:#666;">— non connecté (<a href="/connect/tools" style="color:#d4af37;">connecter →</a>)</span><% } %>
+<%
+            /* On distingue deux refus qui n'appellent PAS le même geste :
+               « pas connecté » se répare en un clic ; « en attente de Meta »
+               ne se répare pas du tout côté marchand. Lui proposer de
+               « connecter » dans ce second cas l'enverrait tourner en rond. */
+            %><% if (!c.connecte && c.raison && c.raison.indexOf("pas connecté") === -1) { %><span style="font-size:0.75rem;color:#8a7a4a;">— <%= c.raison %></span><% } else if (!c.connecte) { %><span style="font-size:0.75rem;color:#666;">— non connecté (<a href="/connect/tools" style="color:#d4af37;">connecter →</a>)</span><% } %>
           </label>
         <% }) %>
 

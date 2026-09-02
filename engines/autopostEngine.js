@@ -135,12 +135,80 @@ async function publierYoutube(workspaceId, { titre, description, videoUrl }) {
     }
 }
 
+// ── CE QU'ON PEUT VRAIMENT PUBLIER, AVANT DE DÉPENSER ───────────────────
+//
+// CE QUI SE PASSAIT. Pour chaque marchand ayant activé l'auto-post, on
+// générait le texte (un appel Gemini) PUIS le visuel (une image Runware,
+// qui est PAYANTE) — et on découvrait seulement ensuite que la publication
+// était impossible. Multiplié par le nombre de marchands, et répété à
+// chaque échéance.
+//
+// Depuis que l'app Meta est en Live, ce n'est plus théorique : on ne
+// demande plus `pages_manage_posts` (elle n'était que « Prête pour le
+// test », pas approuvée), donc AUCUNE publication sur une Page n'aboutit.
+// Sans ce filtre, chaque marchand nous coûterait un texte et une image par
+// échéance, pour rien.
+//
+// On ne devine pas : on lit la liste des permissions réellement accordées,
+// enregistrée au moment de la connexion (voir routes/auth-meta.js). Un
+// connecteur ancien, sans cette liste, n'est PAS exclu — on n'invente pas
+// un refus à partir d'une information qu'on n'a pas.
+async function canauxPublieables(workspaceId, canaux) {
+    const possibles = [];
+    const empeches = [];
+
+    for (const canal of canaux) {
+        if (canal === "youtube") { possibles.push(canal); continue; }
+
+        const type = canal === "instagram" ? "instagram" : "facebook";
+        const connecteur = await connectorService.getOne(workspaceId, type);
+
+        if (!connecteur?.actif || !connecteur.config?.pageAccessToken) {
+            empeches.push(`${canal} : pas connecté`);
+            continue;
+        }
+        // Instagram : la permission a été refusée par Meta, on ne la demande
+        // plus. Rien ne peut aboutir.
+        if (canal === "instagram" && !connecteur.config?.igAccountId) {
+            empeches.push("instagram : aucun compte Instagram relié");
+            continue;
+        }
+        const accordees = connecteur.config?.permissionsAccordees;
+        if (Array.isArray(accordees) && accordees.length && !accordees.includes("pages_manage_posts")) {
+            empeches.push(`${canal} : le droit de publier n'est pas accordé (en attente de Meta)`);
+            continue;
+        }
+        possibles.push(canal);
+    }
+    return { possibles, empeches };
+}
+
 async function traiterWorkspace(w) {
     const config = w.auto_post_config || {};
     if (!config.actif || !estDu(config)) return;
 
-    const canaux = config.canaux || [];
-    if (!canaux.length) return;
+    const demandes = config.canaux || [];
+    if (!demandes.length) return;
+
+    // LE FILTRE AVANT LA DÉPENSE. Une lecture en base coûte quelques
+    // millisecondes ; un texte et une image coûtent du quota et de l'argent.
+    const { possibles: canaux, empeches } = await canauxPublieables(w.id, demandes);
+
+    if (!canaux.length) {
+        // Écrit au journal, pas seulement dans la console : c'est comme ça
+        // que le marchand peut l'apprendre en demandant à SAMII, au lieu de
+        // croire que ses publications partent.
+        await journalService.log({
+            action: "autopost.impossible",
+            details: `Rien n'a été publié ni généré — ${empeches.join(" ; ")}.`,
+            workspaceId: w.id,
+        });
+        console.warn(`⚠️ Auto-post (workspace ${w.id}) : rien à publier — ${empeches.join(" ; ")}`);
+        return;
+    }
+    if (empeches.length) {
+        console.warn(`⚠️ Auto-post (workspace ${w.id}) : ${empeches.join(" ; ")}`);
+    }
 
     const pack = await genererContenu(w, config.sujet);
     if (!pack?.legende) return;
@@ -194,4 +262,4 @@ async function runCheck() {
     }
 }
 
-module.exports = { runCheck };
+module.exports = { runCheck, canauxPublieables };
