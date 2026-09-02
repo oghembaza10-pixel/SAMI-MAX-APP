@@ -75,8 +75,53 @@ function jeton() {
     return String(process.env.BUFFER_ACCESS_TOKEN || "").trim();
 }
 
+// ── CE QUE BUFFER A LE DROIT DE SERVIR ────────────────────────────────────
+//
+// « fb en utilise api meta, whatsapp aussi, telegram — on a tout ça.
+//   Ne mélange pas. Buffer gère que insta. »
+//
+// Techniquement Buffer sait publier sur Facebook, LinkedIn et TikTok. Mais
+// SAMII a déjà ses propres chemins pour Facebook (Meta), WhatsApp (Green
+// API) et Telegram, et deux chemins vers la même page, c'est le jour où
+// l'on publie deux fois sans comprendre pourquoi.
+//
+// `BUFFER_PLATEFORMES` tranche, depuis Render, sans toucher au code :
+//
+//     BUFFER_PLATEFORMES=instagram              ← ce qui a été demandé
+//     BUFFER_PLATEFORMES=instagram,linkedin     ← si LinkedIn passe aussi par Buffer
+//
+// Non posée, Buffer garde sa couverture complète : un défaut silencieux qui
+// RESTREINT serait pire, on chercherait pendant une heure pourquoi une
+// plateforme ne part pas.
+function plateformesAutorisees() {
+    const brut = String(process.env.BUFFER_PLATEFORMES || "").trim();
+    if (!brut) return Object.keys(SERVICE);
+    return brut.split(",").map((s) => s.trim().toLowerCase()).filter((s) => SERVICE[s]);
+}
+
 function configure() {
     return !!jeton();
+}
+
+// ── « EST-CE QUE TU SERS CETTE PLATEFORME-LÀ ? » ──────────────────────────
+//
+// `configure()` répond « ai-je mon jeton ». Ce n'est PAS la même question
+// que « vas-tu traiter Facebook ». Sans cette seconde question, l'écran du
+// fondateur affichait « facebook → buffer » alors que Buffer refusait
+// Facebook et passait la main à Meta — vu sur l'écran réel, corrigé ici.
+//
+// Le registre l'appelle quand elle existe. `passeLaMain` reste en place :
+// l'une décide de l'affichage et du choix, l'autre rattrape à l'exécution.
+function sert(slug) {
+    return plateformesAutorisees().includes(String(slug || "").toLowerCase());
+}
+
+// La phrase, écrite UNE fois. Elle sert au registre (pour l'écran) et à
+// `chainesPour` (pour l'erreur de publication). Écrite deux fois, elle
+// aurait divergé le jour où la variable change de nom.
+function motifEcart(slug) {
+    return `${String(slug).toLowerCase()} est volontairement hors de Buffer `
+         + `(BUFFER_PLATEFORMES=${plateformesAutorisees().join(",")})`;
 }
 
 // ── L'APPEL ───────────────────────────────────────────────────────────────
@@ -160,8 +205,16 @@ function choixPose(slug) {
 // Quelles chaînes Buffer servir pour cette plateforme. Refuse plutôt que de
 // deviner quand plusieurs correspondent.
 async function chainesPour(slug) {
-    const service = SERVICE[String(slug).toLowerCase()];
+    const propre = String(slug).toLowerCase();
+    const service = SERVICE[propre];
     if (!service) return { ok: false, passeLaMain: true, erreur: `Buffer ne gère pas « ${slug} » dans cette version` };
+
+    // Écarté volontairement par BUFFER_PLATEFORMES : ce n'est pas un échec,
+    // c'est un choix. On passe donc la main au provider suivant (Meta pour
+    // Facebook), au lieu de bloquer.
+    if (!sert(propre)) {
+        return { ok: false, passeLaMain: true, erreur: motifEcart(propre) };
+    }
 
     const c = await chaines();
     if (!c.ok) return { ok: false, erreur: c.erreur };
@@ -303,6 +356,9 @@ async function etat() {
     return {
         configure: true,
         joignable: true,
+        // Ce que Buffer a le DROIT de servir, pour que l'écran ne laisse pas
+        // croire qu'il couvre Facebook alors qu'on l'en a écarté.
+        autorisees: plateformesAutorisees(),
         organisation: c.organisation,
         // Aucune donnée sensible ici : des noms de pages et des identifiants
         // de chaînes, pas de jeton.
@@ -318,6 +374,6 @@ module.exports = {
     // faire elle-même.
     plateformes: ["facebook", "instagram", "linkedin", "tiktok"],
     publier,
-    etat, chaines, chainesPour, oublier, configure,
+    etat, chaines, chainesPour, oublier, configure, sert, motifEcart, plateformesAutorisees,
     ADRESSE, SERVICE,
 };

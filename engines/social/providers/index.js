@@ -98,28 +98,70 @@ function pour(slug) {
     //
     // Le jour où Meta accorde la permission, on retire Buffer de la liste
     // ou on inverse l'ordre — sans toucher aux agents ni au publieur.
-    const candidats = PROVIDERS[propre] || [];
-    if (!candidats.length) return { provider: mock, raison: `aucun provider réel pour ${propre} — simulation` };
+    // ── DEUX QUESTIONS, PAS UNE ──────────────────────────────────────────
+    //
+    // `configure()` : « as-tu ton jeton ? »
+    // `sert(slug)`  : « vas-tu traiter CETTE plateforme-là ? »
+    //
+    // Buffer a son jeton mais peut être volontairement écarté de Facebook
+    // (BUFFER_PLATEFORMES). Sans la seconde question, l'écran du fondateur
+    // annonçait « facebook → buffer » alors que Facebook partait chez Meta.
+    // Un écran qui ment sur le chemin coûte une heure de recherche le jour
+    // où une publication manque.
+    const pretEtSert = (p, slug) =>
+        (typeof p.configure !== "function" || p.configure())
+        && (typeof p.sert !== "function" || p.sert(slug));
 
-    const pret = candidats.find((p) => typeof p.configure !== "function" || p.configure());
+    // « Pas de jeton » et « écarté exprès » sont deux situations
+    // différentes : la première se répare, la seconde a été décidée. Les
+    // confondre enverrait chercher un jeton qui est déjà là.
+    const pourquoiEcarte = (p, slug) => {
+        if (typeof p.configure === "function" && !p.configure()) return `${p.nom} non configuré`;
+        if (typeof p.sert === "function" && !p.sert(slug)) {
+            // Le provider explique lui-même, s'il sait — « BUFFER_PLATEFORMES=
+            // instagram » se corrige, « écarté exprès » laisse chercher.
+            return typeof p.motifEcart === "function"
+                ? `${p.nom} : ${p.motifEcart(slug)}`
+                : `${p.nom} écarté de ${slug} exprès`;
+        }
+        return p.nom;
+    };
+
+    // ── ICI, SIMULER SERAIT UN MENSONGE ──────────────────────────────────
+    //
+    // À ce point, SOCIAL_PUBLICATION_REELLE vaut « oui » : quelqu'un a
+    // explicitement demandé que ça parte. Retomber sur le mock écrivait
+    // alors `social_publications.statut = 'published'` pour un contenu qui
+    // n'a jamais quitté le serveur.
+    //
+    // Trouvé en restreignant Buffer à Instagram : LinkedIn n'avait plus
+    // aucun chemin, et se déclarait publié. On REFUSE, en nommant la raison.
+    // Une publication manquante qui le dit se répare ; une publication
+    // fantôme se découvre des semaines plus tard.
+    const candidats = PROVIDERS[propre] || [];
+    if (!candidats.length) {
+        return { provider: null, raison: `aucun provider réel pour ${propre} — rien n'a été publié` };
+    }
+
+    const pret = candidats.find((p) => pretEtSert(p, propre));
     if (!pret) {
         return {
-            provider: mock,
-            raison: `aucun provider configuré pour ${propre} `
-                  + `(${candidats.map((p) => p.nom).join(", ")}) — simulation`,
+            provider: null,
+            raison: `aucun provider ne prend ${propre} `
+                  + `(${candidats.map((p) => pourquoiEcarte(p, propre)).join(", ")}) — rien n'a été publié`,
         };
     }
     // Quand un provider est écarté parce qu'il n'est pas configuré, on le
     // DIT : « Buffer non configuré, on passe par Meta » est une information
     // qui évite une heure de recherche.
-    const ecartes = candidats.slice(0, candidats.indexOf(pret)).map((p) => p.nom);
+    const ecartes = candidats.slice(0, candidats.indexOf(pret)).map((p) => pourquoiEcarte(p, propre));
     return {
         provider: pret,
-        // Tous ceux qui sont prêts, dans l'ordre. `publier()` s'en sert pour
-        // essayer le suivant quand le premier dit « je ne sers pas cette
-        // plateforme-là » — voir plus bas.
-        candidats: candidats.filter((p) => typeof p.configure !== "function" || p.configure()),
-        raison: ecartes.length ? `${ecartes.join(", ")} non configuré(s), ${pret.nom} prend la main` : null,
+        // Tous ceux qui sont prêts ET qui servent cette plateforme, dans
+        // l'ordre. `publier()` s'en sert pour essayer le suivant quand le
+        // premier dit « je ne sers pas cette plateforme-là » — voir plus bas.
+        candidats: candidats.filter((p) => pretEtSert(p, propre)),
+        raison: ecartes.length ? `${ecartes.join(", ")} — ${pret.nom} prend la main` : null,
     };
 }
 
@@ -205,6 +247,10 @@ function etat() {
                 providersReels: (PROVIDERS[p.slug] || []).map((x) => ({
                     nom: x.nom,
                     configure: typeof x.configure !== "function" ? true : x.configure(),
+                    // Configuré mais écarté exprès de cette plateforme-là :
+                    // sans ce champ, l'écran montre « buffer ✅ » en face de
+                    // Facebook alors que Facebook part chez Meta.
+                    sert: typeof x.sert !== "function" ? true : x.sert(p.slug),
                 })),
                 providerUtilise: provider?.nom || null,
                 note: raison,

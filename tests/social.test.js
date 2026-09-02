@@ -365,6 +365,112 @@ console.log("── Buffer : le provider qui publie vraiment ──");
              "et PAS Telegram ni WhatsApp — SAMII les fait elle-même");
 }
 
+console.log("── BUFFER_PLATEFORMES : qui Buffer a le droit de servir ──");
+{
+    // « fb en utilise api meta, whatsapp aussi, telegram — on a tout ça.
+    //   Ne mélange pas. Buffer gère que insta. »
+    //
+    // Deux chemins vers la même page Facebook, c'est le jour où l'on publie
+    // deux fois sans comprendre pourquoi. Cette variable tranche depuis
+    // Render, sans toucher au code.
+    const buffer = require("../engines/social/providers/buffer");
+    const ancien = process.env.BUFFER_PLATEFORMES;
+    const ancienJeton = process.env.BUFFER_ACCESS_TOKEN;
+
+    // Non posée : couverture complète. Un défaut qui RESTREINDRAIT en
+    // silence ferait chercher une heure pourquoi une plateforme ne part pas.
+    delete process.env.BUFFER_PLATEFORMES;
+    verifier(buffer.plateformesAutorisees().join() === "facebook,instagram,linkedin,tiktok",
+             "non posée, Buffer garde ses 4 plateformes");
+
+    process.env.BUFFER_PLATEFORMES = "instagram";
+    verifier(buffer.plateformesAutorisees().join() === "instagram",
+             "posée à instagram, il ne sert plus qu'Instagram");
+
+    // Écarté n'est PAS échoué : Facebook doit continuer vers Meta.
+    process.env.BUFFER_ACCESS_TOKEN = "un-jeton-de-controle-suffisamment-long";
+    buffer.oublier();
+    const fb = await buffer.chainesPour("facebook");
+    verifier(fb.ok === false, "Facebook n'est plus servi par Buffer");
+    verifier(fb.passeLaMain === true,
+             "mais c'est un CHOIX, pas un échec : il passe la main à Meta");
+    verifier(/BUFFER_PLATEFORMES/.test(fb.erreur),
+             "et l'erreur nomme la variable qui décide : " + fb.erreur);
+
+    // Les espaces, la casse et une valeur inconnue ne doivent pas faire
+    // tomber la publication de tout le monde.
+    process.env.BUFFER_PLATEFORMES = " INSTAGRAM , mastodon ";
+    verifier(buffer.plateformesAutorisees().join() === "instagram",
+             "espaces et casse absorbés, une plateforme inconnue ignorée");
+
+    // ── L'ÉCRAN NE DOIT PAS MENTIR SUR LE CHEMIN ─────────────────────────
+    //
+    // Trouvé en ouvrant la vraie page /social : elle annonçait
+    // « facebook → buffer » alors que Buffer refusait Facebook et passait la
+    // main à Meta. `configure()` répond « ai-je mon jeton », pas « vais-je
+    // traiter Facebook » — il fallait la seconde question.
+    process.env.SOCIAL_PUBLICATION_REELLE = "oui";
+    process.env.BUFFER_PLATEFORMES = "instagram";
+    verifier(providers.pour("facebook").provider.nom === "meta",
+             "Facebook écarté de Buffer : le registre désigne Meta, pas Buffer");
+    verifier(providers.pour("instagram").provider.nom === "buffer",
+             "Instagram reste chez Buffer");
+    // ── ET SURTOUT : PAS DE PUBLICATION FANTÔME ──────────────────────────
+    //
+    // LinkedIn n'a plus aucun chemin. Retomber sur le mock aurait écrit
+    // `statut = 'published'` pour un contenu qui n'est jamais parti — un
+    // mensonge en base, découvert des semaines plus tard.
+    verifier(providers.pour("linkedin").provider === null,
+             "LinkedIn n'a plus aucun chemin : AUCUN provider, pas un mock");
+    verifier(/BUFFER_PLATEFORMES/.test(providers.pour("linkedin").raison || ""),
+             "le motif distingue « écarté exprès » de « non configuré » : "
+             + providers.pour("linkedin").raison);
+    const fantome = await providers.publier({
+        plateforme: "linkedin", workspaceId: "w1", texte: "Un contenu professionnel assez long.",
+    });
+    verifier(fantome.ok === false, "et publier() ÉCHOUE au lieu de se déclarer publié");
+    verifier(/rien n'a été publié/.test(fantome.erreur), "en le disant : " + fantome.erreur);
+
+    // Et l'écran doit pouvoir le montrer plateforme par plateforme.
+    const fbEtat = providers.etat().plateformes.find((p) => p.slug === "facebook");
+    const bufferSurFb = fbEtat.providersReels.find((x) => x.nom === "buffer");
+    verifier(bufferSurFb.configure === true && bufferSurFb.sert === false,
+             "l'état dit « Buffer configuré, mais ne sert pas Facebook »");
+    process.env.SOCIAL_PUBLICATION_REELLE = "";
+
+    // Le refus doit être PUREMENT LOCAL : décidé avant le moindre appel
+    // réseau. Sinon une panne de Buffer changerait la réponse à « est-ce que
+    // Facebook passe par Buffer ? », qui ne dépend que de nous.
+    //
+    // C'est prouvé en pointant l'adresse sur un port fermé : si un appel
+    // partait, il échouerait, et `passeLaMain` disparaîtrait.
+    const ancienneAdresse = process.env.BUFFER_ADRESSE;
+    process.env.BUFFER_ADRESSE = "http://127.0.0.1:1";   // personne n'écoute
+    delete require.cache[require.resolve("../engines/social/providers/buffer")];
+    const horsLigne = require("../engines/social/providers/buffer");
+    process.env.BUFFER_PLATEFORMES = "instagram";
+    process.env.BUFFER_ACCESS_TOKEN = "un-jeton-de-controle-suffisamment-long";
+    const sansReseau = await horsLigne.chainesPour("facebook");
+    verifier(sansReseau.passeLaMain === true,
+             "Buffer injoignable : Facebook passe quand même la main à Meta");
+
+    // Et quand Buffer est vraiment injoignable, l'écran le dit sans jamais
+    // recopier le jeton dans le message d'erreur.
+    const e = await horsLigne.etat();
+    verifier(e.joignable === false, "l'état dit que Buffer est injoignable");
+    verifier(!JSON.stringify(e).includes("un-jeton-de-controle"),
+             "et le jeton ne fuit pas dans le message d'erreur : " + String(e.raison).slice(0, 70));
+
+    if (ancienneAdresse === undefined) delete process.env.BUFFER_ADRESSE;
+    else process.env.BUFFER_ADRESSE = ancienneAdresse;
+    delete require.cache[require.resolve("../engines/social/providers/buffer")];
+
+    if (ancien === undefined) delete process.env.BUFFER_PLATEFORMES;
+    else process.env.BUFFER_PLATEFORMES = ancien;
+    process.env.BUFFER_ACCESS_TOKEN = ancienJeton || "";
+    buffer.oublier();
+}
+
 console.log("── Buffer passe devant Meta, et Meta reprend si Buffer part ──");
 {
     const ancien = process.env.BUFFER_ACCESS_TOKEN;
@@ -384,9 +490,12 @@ console.log("── Buffer passe devant Meta, et Meta reprend si Buffer part ─
     verifier(/buffer non configur/i.test(providers.pour("facebook").raison || ""),
              "et l'écran dit pourquoi : " + providers.pour("facebook").raison);
 
-    // LinkedIn n'a QUE Buffer : sans lui, c'est la simulation, pas un échec.
-    verifier(providers.pour("linkedin").provider.nom === "mock",
-             "LinkedIn sans Buffer retombe en simulation");
+    // LinkedIn n'a QUE Buffer : sans lui, il n'y a plus de chemin du tout.
+    // La publication réelle étant demandée, on refuse — on ne simule pas.
+    verifier(providers.pour("linkedin").provider === null,
+             "LinkedIn sans Buffer : aucun chemin, et la simulation n'est pas un repli");
+    verifier(/buffer non configuré/.test(providers.pour("linkedin").raison || ""),
+             "et le motif nomme le jeton manquant : " + providers.pour("linkedin").raison);
 
     process.env.BUFFER_ACCESS_TOKEN = ancien || "";
     process.env.SOCIAL_PUBLICATION_REELLE = "";

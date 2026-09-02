@@ -186,10 +186,17 @@ router.get("/", async (req, res) => {
   </div>
   <div style="margin-top:6px">
     <b>Plateformes :</b> ${etat.publication.plateformes.map((p) =>
-      `<span class="puce ${p.coupee ? "coupe" : ""}" title="${echapper(p.note || "")}">${echapper(p.slug)} → ${echapper(p.providerUtilise || "—")}${
+      // Aucun provider = rien ne partira sur cette plateforme. C'est
+      // l'information la plus importante de cette ligne : elle ne peut pas
+      // rester dans une infobulle qu'on ne survole jamais.
+      `<span class="puce ${p.coupee || !p.providerUtilise ? "coupe" : ""}" title="${echapper(p.note || "")}">${
+        echapper(p.slug)} → ${echapper(p.providerUtilise || "aucun chemin")}${
         (p.providersReels || []).length > 1
-          ? " (" + p.providersReels.map((x) => x.nom + (x.configure ? "" : "✗")).join(" puis ") + ")"
+          ? " (" + p.providersReels.map((x) =>
+              x.nom + (!x.configure ? "✗" : x.sert === false ? "⛔" : "")).join(" puis ") + ")"
           : ""}</span>`).join("")}
+    ${etat.publication.plateformes.filter((p) => !p.providerUtilise && !p.coupee).map((p) =>
+      `<div style="margin-top:6px;color:#e0b341">⚠️ <b>${echapper(p.slug)}</b> : ${echapper(p.note || "aucun provider")}</div>`).join("")}
   </div>
 </div>
 
@@ -249,11 +256,22 @@ ${await (async () => {
       + (e.chainesBuffer.length
           ? e.chainesBuffer.map((c) => `<span class="puce">${echapper(c.service)} · ${echapper(c.nom)}</span>`).join("")
           : "<i>aucune — connecte tes comptes dans Buffer d'abord</i>") + "</div>"
+      // Ce que Buffer a le DROIT de servir. Sans cette ligne, le ⚠️ en face
+      // de Facebook se lit comme une panne, alors que c'est une décision :
+      // Facebook passe par Meta, WhatsApp par Green API, Telegram par SAMII.
+      + `<div style="margin-top:6px"><b>Autorisé à servir :</b> `
+      + `<span class="puce">${e.autorisees.map(echapper).join("</span><span class=\"puce\">")}</span>`
+      + (process.env.BUFFER_PLATEFORMES ? "" : " <i>(BUFFER_PLATEFORMES non posée — couverture complète)</i>")
+      + `</div>`
       + `<div style="margin-top:10px">`
-      + Object.entries(e.parPlateforme).map(([slug, v]) =>
-          `<div>${v.pret ? "✅" : "⚠️"} <b>${echapper(slug)}</b> : ${
+      + Object.entries(e.parPlateforme).map(([slug, v]) => {
+          // « Écarté exprès » n'est pas « en panne ». Le premier n'appelle
+          // aucune action, le second si — l'écran doit les distinguer.
+          const exprès = !v.pret && /volontairement hors de Buffer/.test(v.raison || "");
+          return `<div>${v.pret ? "✅" : exprès ? "⛔" : "⚠️"} <b>${echapper(slug)}</b> : ${
             v.pret ? v.chaines.map((c) => echapper(c.nom)).join(", ")
-                   : `<span style="color:#e0b341">${echapper(v.raison)}</span>`}</div>`).join("")
+                   : `<span style="color:${exprès ? "#8c93a8" : "#e0b341"}">${echapper(v.raison)}</span>`}</div>`;
+        }).join("")
       + `</div>`;
 })()}
 </div>
