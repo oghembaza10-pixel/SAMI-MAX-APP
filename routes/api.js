@@ -419,6 +419,49 @@ router.post("/speak", requireAuth, async (req, res) => {
     }
 });
 
+// ── PIPER : LA VOIX D'HOMME QUAND LE TÉLÉPHONE N'EN A PAS ────────────────
+//
+// Sur Android, aucune voix d'homme française n'existe — mesuré dans un vrai
+// navigateur. `voix-sortie.js` descendait alors la hauteur de la voix
+// disponible à 0,72 : plus grave, mais pas un homme. Cette route synthétise
+// la phrase sur le serveur, avec un vrai modèle masculin, et renvoie un
+// fichier audio que n'importe quel téléphone sait jouer.
+//
+// `requireAuth`, pour la même raison que /api/speak juste au-dessus : une
+// route de synthèse ouverte à Internet, c'est notre processeur offert à
+// qui veut. Ici il n'y a pas de facture à la clé — le coût est en temps de
+// calcul, ce qui sur Render revient au même.
+router.post("/voix/piper", requireAuth, async (req, res) => {
+    const piper = require("../services/piper");
+    // Le texte arrive sous `text` : même nom que /api/speak, pour que le
+    // navigateur n'ait pas deux conventions à retenir.
+    const texte = String(req.body?.text || "");
+    if (texte.length > piper.MAX_CARACTERES) {
+        return res.json({ success: false, error: "Texte trop long." });
+    }
+    const audio = await piper.synthetiser(texte);
+    // `fallback: true` est le mot que `voix-sortie.js` comprend déjà pour
+    // « ce fournisseur ne peut pas, passe au suivant » — même convention
+    // qu'ElevenLabs, pas une deuxième à apprendre.
+    if (!audio) return res.json({ success: false, fallback: true });
+    res.set("Content-Type", "audio/wav");
+    // Deux fois la même phrase (« Je t'écoute. ») revient souvent : autant
+    // que le téléphone la garde une minute plutôt que de refaire calculer
+    // le serveur. `private` : ce n'est pas une réponse à mettre en cache
+    // partagé, elle contient ce que SAMII a dit à cette personne-là.
+    res.set("Cache-Control", "private, max-age=60");
+    res.send(audio);
+});
+
+// L'état, pour le fondateur seulement : dit précisément POURQUOI Piper est
+// éteint. « PIPER_MODELE n'est pas posée » et « le fichier pointé n'existe
+// pas » se réparent différemment, et depuis Render on ne voit ni l'un ni
+// l'autre sans cette route.
+router.get("/voix/piper/etat", (req, res) => {
+    if (req.session?.isAdmin !== true) return res.status(404).send("Not found");
+    res.json(require("../services/piper").etat());
+});
+
 // ── CONNECTEURS (PostgreSQL) ─────────────────────────────
 router.get("/connecteurs", requireAuth, async (req, res) => {
     const workspaceId = req.session.workspaceId;

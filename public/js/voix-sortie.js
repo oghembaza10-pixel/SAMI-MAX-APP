@@ -47,6 +47,10 @@
         kokoro: null,
         kokoroEnCours: false,
         kokoroEchoue: false,
+        // null = pas encore demandé, true/false = réponse du serveur.
+        // Retenu pour ne pas refaire un aller-retour réseau avant chaque
+        // phrase sur un serveur où Piper n'est pas installé.
+        piper: null,
         parle: false,
         actif: false,          // l'utilisateur a-t-il allumé la voix ?
         audio: null,
@@ -250,6 +254,53 @@
     }
 
     // ── FOURNISSEUR 3 : ELEVENLABS (payant, dort sans clé) ──────────────
+    // ── PIPER : UNE VRAIE VOIX D'HOMME, SYNTHÉTISÉE SUR LE SERVEUR ──────
+    //
+    // Le seul fournisseur qui donne un homme français là où le téléphone
+    // n'en a aucun — le cas d'Android, donc le cas le plus courant chez la
+    // marchande à Douala.
+    //
+    // `etat.piper` retient le résultat : `null` tant qu'on n'a pas essayé,
+    // puis `true`/`false`. Sans ça, un serveur sans Piper installé se
+    // ferait interroger à chaque phrase pour la même réponse — un
+    // aller-retour réseau inutile avant CHAQUE mot, sur une connexion
+    // mobile.
+    async function parlerPiper(texte) {
+        if (etat.piper === false) return false;
+        try {
+            const rep = await fetch("/api/voix/piper", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: texte }),
+            });
+            // Piper renvoie du WAV brut quand il a réussi, du JSON quand il
+            // décline. Le type de contenu tranche, pas une devinette sur le
+            // corps.
+            if (!rep.ok || !(rep.headers.get("content-type") || "").includes("audio")) {
+                etat.piper = false;
+                return false;
+            }
+            etat.piper = true;
+            const url = URL.createObjectURL(await rep.blob());
+            return await new Promise((resoudre) => {
+                const lecteur = new Audio(url);
+                etat.audio = lecteur;
+                // On rend la mémoire dans les deux cas : sans ça, chaque
+                // phrase laisse un blob derrière elle et l'onglet grossit
+                // pendant toute la conversation.
+                const finir = (ok) => { URL.revokeObjectURL(url); resoudre(ok); };
+                lecteur.onended = () => finir(true);
+                lecteur.onerror = () => finir(false);
+                lecteur.play().catch(() => finir(false));
+            });
+        } catch {
+            // Une panne réseau n'est pas une preuve que Piper est absent :
+            // on ne met pas `etat.piper` à false ici, sinon une coupure de
+            // trois secondes éteindrait la voix pour toute la session.
+            return false;
+        }
+    }
+
     async function parlerElevenLabs(texte) {
         try {
             const rep = await fetch("/api/speak", {
@@ -307,12 +358,25 @@
             dit = await parlerNavigateur(dire);
             if (!dit && etat.kokoro) dit = await parlerKokoro(dire);
         } else {
-            // AUCUN masculin nommé sur ce système. Kokoro n'en a pas non
-            // plus — sa seule voix française est féminine. Entre une belle
-            // voix de femme et une voix de synthèse descendue au grave, on
-            // choisit celle qui est LA SIENNE. C'est ce qui a été demandé,
-            // et la qualité passe après l'identité.
-            dit = await parlerNavigateur(dire);
+            // ── AUCUN MASCULIN SUR CE SYSTÈME ───────────────────────────
+            //
+            // C'est le cas d'Android, donc le plus courant chez la
+            // marchande. Avant, on n'avait ici que des mauvais choix :
+            // Kokoro n'a qu'une voix française et elle est féminine, et le
+            // navigateur ne pouvait offrir qu'une voix descendue au grave.
+            // On prenait la seconde — pas parce qu'elle était bonne, mais
+            // parce qu'elle était LA SIENNE.
+            //
+            // Piper change ça : c'est une vraie voix d'homme, synthétisée
+            // sur notre serveur, qui ne demande RIEN au téléphone. Il passe
+            // donc en premier ici — et seulement ici. Là où le système a
+            // déjà un Paul ou un Thomas, on ne va pas faire travailler le
+            // serveur pour faire moins bien.
+            //
+            // S'il n'est pas installé, il décline en un aller-retour et on
+            // retombe exactement sur le comportement d'avant.
+            dit = await parlerPiper(dire);
+            if (!dit) dit = await parlerNavigateur(dire);
             if (!dit && etat.kokoro) dit = await parlerKokoro(dire);
         }
         if (!dit) dit = await parlerElevenLabs(dire);
