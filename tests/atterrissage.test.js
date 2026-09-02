@@ -73,6 +73,11 @@ Module.prototype.require = function (nom) {
     if (nom === "../services/referralService") return { enregistrerParrainage: async () => ({}) };
     if (nom === "../services/workspaceService") return {
         getByOwner: async () => BOUTIQUES.map((b) => ({ workspaceId: b.id, metier: b.metier })),
+        // Le choix du QG est écrit UNE fois dans le service — la connexion
+        // et l'inscription l'appellent au lieu de refaire chacune sa
+        // requête. Le tri lui-même est en SQL : une doublure ne peut pas le
+        // prouver, c'est le contrôle sur base réelle qui s'en charge.
+        qgPrincipal: async () => BOUTIQUES[0] || null,
     };
     return vraiRequire.apply(this, arguments);
 };
@@ -120,6 +125,11 @@ const FORMES = [
     { nom: "un marchand sans boutique",   type: "marchand", boutique: false },
     { nom: "un marchand avec sa boutique", type: "marchand", boutique: true  },
     { nom: "une agence",                  type: "agence",   boutique: false },
+    // Le cas qui manquait, et c'est celui qui était cassé : une agence QUI
+    // TIENT AUSSI SA BOUTIQUE. Elle était envoyée sur /agence quoi qu'il
+    // arrive — « je me connecte et je tombe sur agence au lieu de mon
+    // propre poste de commandement ».
+    { nom: "une agence avec sa boutique", type: "agence",   boutique: true  },
 ];
 
 (async () => {
@@ -182,6 +192,10 @@ const FORMES = [
         "marchand|false": "/hub",
         "marchand|true" : "/qg",
         "agence|false"  : "/agence",
+        // Le QG Agence est une vue sur les clients des AUTRES. Quand on a sa
+        // propre boutique, sa maison c'est son QG à soi — /agence reste à un
+        // clic dans le menu, l'inverse n'était pas vrai.
+        "agence|true"   : "/qg",
     };
     for (const forme of FORMES) {
         poser(forme);

@@ -420,8 +420,9 @@ router.post("/", async (req, res) => {
                     return res.json({ success: true, redirect: apresConnexion(req, res, { typeCompte: "client" }) });
                 }
 
-                const workspaces = await db.query(`SELECT * FROM workspaces WHERE owner_email = $1`, [email]);
-                const workspace = workspaces[0] || null;
+                // Même question qu'à la connexion, donc même réponse : le
+                // choix du QG est écrit dans workspaceService, pas ici.
+                const workspace = await workspaceService.qgPrincipal(email);
                 req.session.workspaceId = workspace?.id || null;
                 if (workspace) req.session.metier = workspace.metier;
 

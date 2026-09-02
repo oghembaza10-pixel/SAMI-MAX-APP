@@ -152,10 +152,63 @@ async function getById(workspaceId) {
     }
 }
 
+// ── « LEQUEL DE SES QG ? » — LA RÈGLE, ÉCRITE UNE SEULE FOIS ─────────────
+//
+// Trois endroits posaient cette question, et les trois se contentaient de
+// prendre la première ligne venue : `LIMIT 1` ici, `[0]` dans login.js,
+// `[0]` dans register.js — tous les trois SANS `ORDER BY`.
+//
+// Or sans tri, Postgres rend les lignes dans l'ordre qui l'arrange. Cet
+// ordre change avec le plan d'exécution, un VACUUM, une simple mise à jour.
+// Ce n'est pas une préférence de style : c'est un résultat non déterministe.
+//
+// Vu en vrai sur le compte du fondateur : HUIT workspaces pour la même
+// adresse, dont deux bacs à sable (« Boutique d'essai », « Restaurant
+// d'essai »). Se connecter pouvait donc déposer dans un décor de
+// démonstration un jour sur deux, sans que rien ne l'explique.
+//
+// L'ordre, décidé ici et nulle part ailleurs :
+//   1. jamais un bac à sable tant qu'un vrai QG existe
+//   2. jamais un QG suspendu tant qu'un actif existe
+//   3. le plus récemment modifié — c'est là qu'on travaille
+//   4. le plus récemment créé, pour trancher les égalités
+//
+// Le bac à sable est TRIÉ, pas filtré : quelqu'un qui n'a que ça doit
+// quand même pouvoir entrer quelque part.
+const ORDRE_QG = `
+    ORDER BY COALESCE(est_bac_a_sable, FALSE) ASC,
+             (COALESCE(statut, 'actif') <> 'actif') ASC,
+             updated_at DESC NULLS LAST,
+             created_at DESC NULLS LAST`;
+
+// Tous les QG d'une personne, du plus pertinent au moins pertinent.
+async function listerParPertinence(email) {
+    try {
+        const rows = await db.query(
+            `SELECT * FROM workspaces WHERE owner = $1 OR owner_email = $1 ${ORDRE_QG} LIMIT 50`,
+            [email]);
+        return rows;
+    } catch (err) {
+        console.error("❌ workspaceService.listerParPertinence :", err.message);
+        return [];
+    }
+}
+
+// Le QG principal : celui où l'on dépose quelqu'un qui vient de se
+// connecter. Rend la ligne brute — les appelants ont besoin de champs
+// différents (id, metier, nom).
+async function qgPrincipal(email) {
+    const rows = await listerParPertinence(email);
+    return rows[0] || null;
+}
+
 async function getActiveWorkspace(email) {
     try {
         const rows = await db.query(
-            `SELECT * FROM workspaces WHERE (owner = $1 OR owner_email = $1) AND (statut = 'actif' OR statut IS NULL) LIMIT 1`,
+            `SELECT * FROM workspaces
+              WHERE (owner = $1 OR owner_email = $1)
+                AND (statut = 'actif' OR statut IS NULL)
+              ${ORDRE_QG} LIMIT 1`,
             [email]
         );
         if (!rows[0]) return null;
@@ -272,6 +325,9 @@ async function remove(recordId) {
 
 module.exports = {
     getByOwner,
+    listerParPertinence,
+    qgPrincipal,
+    ORDRE_QG,
     getById,
     getActiveWorkspace,
     getByMetier,

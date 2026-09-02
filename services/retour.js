@@ -88,10 +88,23 @@ function apresConnexion(req, res, { suite, typeCompte, aUneBoutique } = {}) {
     }
 
     if (typeCompte === "client") return communautes.accueilClient(COM);
-    // Le QG Agence est un espace à nous : chez une partenaire, une agence
-    // est un marchand comme un autre. Sans ce garde, on rouvrait la même
-    // 404 par une autre porte.
-    if (typeCompte === "agence" && COM.ecosysteme) return "/agence";
+
+    // ── UNE AGENCE QUI TIENT AUSSI SA BOUTIQUE ───────────────────────────
+    //
+    // Avant : `typeCompte === "agence"` envoyait sur /agence, TOUJOURS, même
+    // pour quelqu'un qui possède ses propres QG. « Je me connecte et je
+    // tombe sur agence au lieu de mon propre poste de commandement. »
+    //
+    // C'est le bon reproche. Le QG Agence est une vue sur les clients des
+    // AUTRES ; quand on a sa propre boutique, sa maison c'est son QG à soi.
+    // /agence reste à un clic dans le menu, l'inverse n'était pas vrai.
+    //
+    // Une agence SANS boutique va toujours sur /agence : c'est son seul
+    // espace, l'y envoyer reste juste.
+    //
+    // Le garde `COM.ecosysteme` reste : chez une partenaire, /agence est
+    // fermé, et y déposer quelqu'un rouvrait une 404 par une autre porte.
+    if (typeCompte === "agence" && COM.ecosysteme && !aUneBoutique) return "/agence";
     return aUneBoutique ? "/qg" : communautes.accueilMarchand(COM);
 }
 

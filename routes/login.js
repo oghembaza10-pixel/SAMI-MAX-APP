@@ -6,6 +6,7 @@ const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const db      = require("../services/db");
 const { suiteSure, apresConnexion } = require("../services/retour");
+const workspaceService = require("../services/workspaceService");
 const communautes = require("../config/communautes");
 
 // ── GET /login ────────────────────────────────────────────────
@@ -257,8 +258,14 @@ router.post("/", async (req, res) => {
         }
 
         // ── Compte Marchand : chercher son workspace ──
-        const workspaces = await db.query(`SELECT * FROM workspaces WHERE owner_email = $1`, [email]);
-        const workspace = workspaces[0] || null;
+        // ── LEQUEL DE SES QG ? ────────────────────────────────────────────
+        //
+        // La question a UNE réponse, écrite dans workspaceService. Avant,
+        // elle était posée ici sans aucun tri (`[0]` sur une requête sans
+        // ORDER BY), et deux autres endroits faisaient pareil chacun de leur
+        // côté. Une même personne pouvait atterrir dans un QG différent d'une
+        // connexion à l'autre — y compris dans un bac à sable.
+        const workspace = await workspaceService.qgPrincipal(email);
 
         req.session.regenerate((err) => {
             if (err) return res.json({ success: false, error: "Erreur session." });
