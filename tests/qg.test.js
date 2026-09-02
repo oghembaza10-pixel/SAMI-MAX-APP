@@ -620,6 +620,10 @@ function marque(html) {
         // membres ont, elle se serait ouverte chez elle par simple parenté
         // de chemin.
         "/jarvis": false,
+        // Les agents sociaux pilotent le contenu d'OG Technology. Ils ne
+        // sont pas à elle : la porte les ferme sur son domaine, et le
+        // routeur exige en plus le fondateur.
+        "/social": false,
         "/hub": false, "/academy": false, "/arsenal": false,
         // Ouverte pour Inès : « on va relâcher la Marketplace ».
         "/marketplace": true,

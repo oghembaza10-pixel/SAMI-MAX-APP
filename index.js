@@ -547,6 +547,11 @@ app.use("/samii",     requireAuth, require("./routes/samii-mode"));
 // propre page de diagnostic. Une porte de plus n'est pas une porte de
 // mieux quand elle ne connaît pas les gens qui doivent passer.
 app.use("/jarvis",    require("./routes/jarvis"));
+// Les agents sociaux. Comme /jarvis, sans `requireAuth` ici : le routeur
+// pose sa propre porte (fondateur uniquement), et la porte des communautés
+// juste au-dessus la ferme déjà chez une partenaire — le contenu d'OG
+// Technology ne se pilote pas depuis le domaine d'Inès.
+app.use("/social",    require("./routes/social"));
 app.use("/connect",   require("./routes/connector"));
 app.use("/youtube",   require("./routes/youtube"));
 app.use("/autopost",  require("./routes/autopost"));

@@ -736,6 +736,159 @@ const BLOCS = [
             `CREATE INDEX IF NOT EXISTS idx_mp_non_lus ON messages_prives (destinataire_id, lu_le) WHERE lu_le IS NULL`,
         ],
     },
+    {
+        // ══════════════════════════════════════════════════════════════════
+        // LES AGENTS SOCIAUX
+        // ══════════════════════════════════════════════════════════════════
+        //
+        // ── CE QUI N'EST PAS CRÉÉ ICI, ET POURQUOI ───────────────────────
+        //
+        // `social_accounts` était demandé. Il N'EST PAS créé : la table
+        // `connecteurs` fait déjà exactement ça — (workspace_id, type,
+        // plateforme, config, actif) — et elle porte DÉJÀ les identifiants
+        // Facebook, Instagram, Telegram et WhatsApp posés par
+        // `routes/connector.js`. En créer une deuxième, ce serait deux
+        // endroits où un compte peut être « connecté », qui divergeraient
+        // le jour où l'un est mis à jour et pas l'autre. On lit
+        // `connecteurs`.
+        //
+        // `social_schedules` était demandé séparément de
+        // `social_publications`. Les deux sont FUSIONNÉES ici, pour la même
+        // raison : une publication programmée n'est pas un objet différent
+        // d'une publication, c'est la même avec `statut = 'scheduled'` et
+        // une date. Deux tables marchant au pas l'une de l'autre finissent
+        // toujours par se désynchroniser — c'est exactement le bug trouvé
+        // ce matin (une règle écrite deux fois, une seule à jour).
+        //
+        // ── LA CHAÎNE ────────────────────────────────────────────────────
+        //
+        //   social_posts        l'idée, une fois. « Parler de la livraison
+        //                       gratuite cette semaine. »
+        //   social_post_variants une version PAR plateforme. Le même sujet
+        //                       ne s'écrit pas pareil sur LinkedIn et TikTok.
+        //   social_publications une TENTATIVE d'envoi d'une variante, avec
+        //                       son résultat — programmée, réussie, ratée.
+        //   social_analytics    ce que la plateforme a répondu plus tard :
+        //                       vues, likes, clics. Jamais inventé.
+        //   social_agent_runs   ce que chaque agent a fait, combien de temps,
+        //                       et ce qu'il a produit.
+        nom: "agents sociaux",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS social_posts (
+                id            BIGSERIAL PRIMARY KEY,
+                workspace_id  TEXT,
+                -- La communauté, comme partout ailleurs : le contenu de chez
+                -- elle ne doit jamais apparaître chez nous.
+                communaute    TEXT DEFAULT 'samii',
+                titre         TEXT,
+                -- Le contenu SOURCE, avant adaptation. C'est lui que le
+                -- Content Creator écrit et que le Platform Adapter décline.
+                contenu       TEXT,
+                objectif      TEXT,
+                theme         TEXT,
+                -- Empreinte du contenu, pour refuser un doublon sans avoir à
+                -- comparer des milliers de textes entre eux.
+                empreinte     TEXT,
+                statut        TEXT NOT NULL DEFAULT 'draft',
+                mode          TEXT NOT NULL DEFAULT 'MANUAL',
+                cree_par      TEXT,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+            `CREATE INDEX IF NOT EXISTS idx_sp_ws ON social_posts (workspace_id, created_at DESC)`,
+            `CREATE INDEX IF NOT EXISTS idx_sp_statut ON social_posts (statut, created_at DESC)`,
+            // Le garde-fou anti-doublon : deux fois la même idée dans le même
+            // espace, c'est refusé par la base, pas seulement par du code
+            // qu'on peut contourner.
+            `CREATE UNIQUE INDEX IF NOT EXISTS idx_sp_empreinte
+                ON social_posts (workspace_id, empreinte) WHERE empreinte IS NOT NULL`,
+
+            `CREATE TABLE IF NOT EXISTS social_post_variants (
+                id            BIGSERIAL PRIMARY KEY,
+                post_id       BIGINT NOT NULL REFERENCES social_posts(id) ON DELETE CASCADE,
+                plateforme    TEXT NOT NULL,
+                texte         TEXT,
+                hashtags      TEXT,
+                cta           TEXT,
+                media_url     TEXT,
+                media_type    TEXT,
+                statut        TEXT NOT NULL DEFAULT 'draft',
+                -- Ce que le relecteur a trouvé. Gardé même quand c'est bon :
+                -- « pourquoi SAMII a-t-elle refusé ce post » est la question
+                -- qu'on posera, et sans trace on ne peut pas y répondre.
+                revue         JSONB,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                UNIQUE (post_id, plateforme))`,
+            `CREATE INDEX IF NOT EXISTS idx_spv_post ON social_post_variants (post_id)`,
+            `CREATE INDEX IF NOT EXISTS idx_spv_statut ON social_post_variants (statut, plateforme)`,
+
+            `CREATE TABLE IF NOT EXISTS social_publications (
+                id            BIGSERIAL PRIMARY KEY,
+                variant_id    BIGINT NOT NULL REFERENCES social_post_variants(id) ON DELETE CASCADE,
+                workspace_id  TEXT,
+                plateforme    TEXT NOT NULL,
+                statut        TEXT NOT NULL DEFAULT 'scheduled',
+                -- NULL = à publier dès que possible.
+                programmee_le TIMESTAMPTZ,
+                publiee_le    TIMESTAMPTZ,
+                -- L'identifiant rendu PAR la plateforme. C'est la seule
+                -- preuve qu'une publication existe vraiment là-bas, et la
+                -- clé pour aller rechercher ses statistiques plus tard.
+                externe_id    TEXT,
+                externe_url   TEXT,
+                -- Le provider qui a fait le travail : "meta", "telegram",
+                -- "mock"… Sans ça, impossible de savoir après coup si un
+                -- résultat vient d'une vraie publication ou d'une simulation.
+                provider      TEXT,
+                essais        INTEGER NOT NULL DEFAULT 0,
+                erreur        TEXT,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+            `CREATE INDEX IF NOT EXISTS idx_spub_variant ON social_publications (variant_id)`,
+            // La question du planificateur : « qu'y a-t-il à publier
+            // maintenant ». Sans cet index, il relit toute la table à chaque
+            // passage.
+            `CREATE INDEX IF NOT EXISTS idx_spub_a_publier
+                ON social_publications (programmee_le) WHERE statut = 'scheduled'`,
+            `CREATE INDEX IF NOT EXISTS idx_spub_ws ON social_publications (workspace_id, created_at DESC)`,
+
+            `CREATE TABLE IF NOT EXISTS social_analytics (
+                id             BIGSERIAL PRIMARY KEY,
+                publication_id BIGINT REFERENCES social_publications(id) ON DELETE CASCADE,
+                plateforme     TEXT NOT NULL,
+                impressions    BIGINT,
+                vues           BIGINT,
+                likes          BIGINT,
+                commentaires   BIGINT,
+                partages       BIGINT,
+                clics          BIGINT,
+                abonnes_gagnes BIGINT,
+                -- Ce que la plateforme a renvoyé, brut. Les colonnes
+                -- ci-dessus sont notre lecture ; celle-ci est la source, pour
+                -- le jour où on aura mal interprété un champ.
+                brut           JSONB,
+                -- QUAND la mesure a été prise. Les chiffres d'un post
+                -- bougent pendant des jours : une ligne sans date est une
+                -- ligne qu'on ne peut pas comparer.
+                releve_le      TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+            `CREATE INDEX IF NOT EXISTS idx_sa_pub ON social_analytics (publication_id, releve_le DESC)`,
+
+            `CREATE TABLE IF NOT EXISTS social_agent_runs (
+                id           BIGSERIAL PRIMARY KEY,
+                agent        TEXT NOT NULL,
+                workspace_id TEXT,
+                post_id      BIGINT,
+                statut       TEXT NOT NULL DEFAULT 'ok',
+                -- Ce qu'on lui a donné et ce qu'il a rendu. C'est ce qui
+                -- permet de comprendre APRÈS COUP pourquoi un agent a produit
+                -- ce qu'il a produit — sinon on ne peut que deviner.
+                entree       JSONB,
+                sortie       JSONB,
+                erreur       TEXT,
+                duree_ms     INTEGER,
+                created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+            `CREATE INDEX IF NOT EXISTS idx_sar_agent ON social_agent_runs (agent, created_at DESC)`,
+            `CREATE INDEX IF NOT EXISTS idx_sar_post ON social_agent_runs (post_id)`,
+        ],
+    },
 ];
 
 // ── Les élargissements de type ───────────────────────────────────────────

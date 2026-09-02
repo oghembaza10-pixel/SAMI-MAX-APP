@@ -262,4 +262,11 @@ async function runCheck() {
     }
 }
 
-module.exports = { runCheck, canauxPublieables };
+// `publierFacebook` / `publierInstagram` sont exposées pour que le provider
+// Meta des agents sociaux (engines/social/providers/meta.js) les APPELLE au
+// lieu d'en écrire une deuxième version. Deux chemins vers l'API de Meta,
+// c'est un seul des deux qui serait corrigé le jour où elle change.
+//
+// Ajout purement additif : rien de ce qui existait n'est modifié, `runCheck`
+// et `canauxPublieables` continuent d'être exportées à l'identique.
+module.exports = { runCheck, canauxPublieables, publierFacebook, publierInstagram, publierYoutube };
