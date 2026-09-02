@@ -25,7 +25,7 @@ const store = require("../../../services/socialStore");
 
 const NOM = "adapter";
 
-async function adapter({ workspaceId, postId, contenu, hook, cta, hashtags, cibles, media, mediaType } = {}) {
+async function adapter({ workspaceId, postId, contenu, hook, cta, hashtags, cibles, media, mediaType, credit, ctaImpose } = {}) {
     return base.executer(NOM, { workspaceId, postId, entree: { cibles, longueur: contenu?.length } }, async () => {
         if (!contenu) throw new Error("aucun contenu à adapter");
 
@@ -102,11 +102,42 @@ Réponds UNIQUEMENT en JSON valide, sans texte autour :
                 tags = liste.join(" ");
             }
 
+            // ── LE CRÉDIT DU MÉDIA ───────────────────────────────────
+            //
+            // Quand l'image ou la vidéo vient de Pexels, ses règles
+            // demandent de créditer l'auteur — et c'est la condition pour
+            // dépasser les limites d'appels.
+            //
+            // Ajouté ICI, de façon déterministe, et pas plus loin : le
+            // relecteur doit juger le texte RÉELLEMENT publié. Le poser
+            // après la relecture reviendrait à modifier un contenu déjà
+            // approuvé, ce qui viderait le relecteur de son sens.
+            //
+            // Et pas confié au modèle : à quoi bon une obligation qu'une
+            // reformulation peut faire disparaître.
+            if (credit?.ligne && !texte.includes(credit.ligne)) {
+                const avecCredit = `${texte}\n\n${credit.ligne}`;
+                // Sauf si ça fait déborder la plateforme — auquel cas c'est
+                // la légende qui recule, jamais le crédit qui saute.
+                texte = avecCredit.length <= p.maxCaracteres
+                    ? avecCredit
+                    : `${texte.slice(0, p.maxCaracteres - credit.ligne.length - 2)}\n\n${credit.ligne}`;
+            }
+
             const variante = {
                 plateforme: slug,
                 texte,
                 hashtags: tags,
-                cta: String(v.cta || cta || "").slice(0, 200),
+                // ── UN CTA IMPOSÉ N'EST PAS UNE SUGGESTION ───────────
+                //
+                // Quand la campagne écrit « Crée ton QG gratuitement », ce
+                // n'est pas au modèle de le reformuler : c'est la promesse,
+                // et elle doit être la même partout.
+                //
+                // Vu en éprouvant le cycle : le CTA du modèle passait devant
+                // celui de la campagne, qui n'était donc jamais utilisé.
+                // Sans `ctaImpose`, le registre des campagnes était décoratif.
+                cta: String(ctaImpose || v.cta || cta || "").slice(0, 200),
                 mediaUrl: media || null,
                 mediaType: mediaType || null,
             };

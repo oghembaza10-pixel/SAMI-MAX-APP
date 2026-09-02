@@ -748,6 +748,111 @@ console.log("── AUTO exige DEUX verrous, pas un ──");
     process.env.SOCIAL_MODE = "MANUAL";
 }
 
+console.log("── Les campagnes : ce que SAMII a à dire ──");
+{
+    // « Il invite les gens à le rejoindre, ou il parle de développement
+    //   personnel, ou il invite les gens à tester SAMII. »
+    //
+    // Avant, le cycle ne savait raconter qu'un produit du catalogue. Un
+    // compte qui ne publie que des fiches produit ne recrute personne.
+    const campagnes = require("../config/campagnes-sociales");
+
+    verifier(campagnes.liste().length === 4, "quatre campagnes déclarées");
+    for (const c of campagnes.liste()) {
+        verifier(!!c.objectif && !!c.cta, `${c.slug} porte un objectif ET un appel à l'action`);
+        verifier(["catalogue", "pexels"].includes(c.source), `${c.slug} dit où chercher son média`);
+    }
+    verifier(campagnes.get("produit").source === "catalogue", "seul « produit » puise dans le catalogue");
+    verifier(campagnes.get("rejoindre").source === "pexels",
+             "les autres passent par Pexels — elles n'ont aucun produit derrière elles");
+
+    // La rotation. Sans elle, le tirage pondéré sortait deux fois le même
+    // sujet dans la journée, et ça se voit.
+    const t = campagnes.choisir({ dejaFaites: ["rejoindre", "essayer", "developpement"] });
+    verifier(t.ok && t.campagne.slug === "produit",
+             "un sujet déjà passé aujourd'hui n'est pas repris tant qu'il en reste");
+    const tout = campagnes.choisir({ dejaFaites: campagnes.ORDRE });
+    verifier(tout.ok && !!tout.repetition,
+             "quand tout est passé, on recommence PLUTÔT que de ne rien publier : " + tout.repetition);
+
+    // Couper depuis Render, comme les plateformes et les formats.
+    process.env.SOCIAL_CAMPAGNES_COUPEES = "rejoindre,essayer,developpement";
+    verifier(campagnes.listeActives().map((c) => c.slug).join() === "produit",
+             "une campagne se coupe par variable d'environnement");
+    process.env.SOCIAL_CAMPAGNES_COUPEES = "rejoindre,essayer,developpement,produit";
+    verifier(campagnes.choisir({}).ok === false, "tout couper est possible, et c'est dit");
+    process.env.SOCIAL_CAMPAGNES_COUPEES = "";
+
+    // Le sujet Pexels est tiré parmi ceux de la campagne, jamais inventé.
+    const r = campagnes.recherche("rejoindre");
+    verifier(campagnes.get("rejoindre").recherches.includes(r),
+             "le sujet de recherche vient de la campagne : " + r);
+    verifier(campagnes.recherche("produit") === null,
+             "une campagne catalogue n'a pas de sujet Pexels");
+}
+
+console.log("── Pexels : la clé part NUE, jamais en Bearer ──");
+{
+    // Le piège de cette API : presque toutes les autres veulent « Bearer »,
+    // celle-ci veut la clé brute. Se tromper donne un 401 muet.
+    const http = require("http");
+    const recu = [];
+    const faux = http.createServer((req, res) => {
+        recu.push({ url: req.url, auth: req.headers.authorization || "" });
+        res.writeHead(200, { "Content-Type": "application/json", "X-Ratelimit-Remaining": "42" });
+        res.end(JSON.stringify({ videos: [{
+            id: 1, duration: 20, url: "https://www.pexels.com/video/1/",
+            user: { name: "Awa Diallo", url: "https://www.pexels.com/@awa" },
+            video_files: [
+                { file_type: "video/mp4", width: 2160, height: 3840, link: "https://v.test/4k.mp4" },
+                { file_type: "video/mp4", width: 1080, height: 1920, link: "https://v.test/vertical.mp4" },
+                { file_type: "video/quicktime", width: 1080, height: 1920, link: "https://v.test/x.mov" },
+            ],
+        }] }));
+    });
+    await new Promise((r) => faux.listen(0, "127.0.0.1", r));
+
+    const ancien = { adr: process.env.PEXELS_ADRESSE, cle: process.env.PEXELS_API_KEY };
+    process.env.PEXELS_ADRESSE = `http://127.0.0.1:${faux.address().port}`;
+    process.env.PEXELS_API_KEY = "CLE-DE-CONTROLE";
+    delete require.cache[require.resolve("../services/pexels")];
+    const pexels = require("../services/pexels");
+
+    const v = await pexels.video({ recherche: "african entrepreneur" });
+    verifier(v.ok === true, "une vidéo est trouvée");
+    verifier(recu[0].auth === "CLE-DE-CONTROLE",
+             "la clé part NUE — « Bearer » ferait un 401 que rien n'explique");
+    verifier(/orientation=portrait/.test(recu[0].url), "on demande du vertical : un reel recadré est raté");
+    verifier(/min_duration=5/.test(recu[0].url) && /max_duration=45/.test(recu[0].url),
+             "la durée est bornée à la SOURCE, pas filtrée après");
+
+    // Le choix du fichier : ni la 4K (trop lourde), ni le .mov (refusé).
+    verifier(v.media === "https://v.test/vertical.mp4",
+             "la verticale ≤1080 est retenue, pas la 4K ni le .mov : " + v.media);
+
+    // Le crédit n'est pas une option : les règles de Pexels le demandent, et
+    // c'est la condition pour dépasser les limites d'appels.
+    verifier(v.credit.auteur === "Awa Diallo", "l'auteur est crédité");
+    verifier(v.credit.ligne === "Vidéo : Awa Diallo · Pexels", "la ligne est prête à coller");
+    verifier(/pexels\.com/.test(v.credit.lienMedia), "et elle renvoie vers Pexels");
+
+    // Le jeton ne doit jamais se retrouver dans un état affiché.
+    const e = await pexels.etat({ recherche: "technology" });
+    verifier(!JSON.stringify(e).includes("CLE-DE-CONTROLE"), "la clé ne fuit pas dans l'état");
+    verifier(e.appelsRestants === "42", "les appels restants sont remontés — 200/heure, on veut le savoir");
+
+    // Sans clé : refus nommé, jamais une exception.
+    process.env.PEXELS_API_KEY = "";
+    const sans = await pexels.chercher({ recherche: "x" });
+    verifier(sans.ok === false && /PEXELS_API_KEY/.test(sans.erreur),
+             "sans clé, il refuse en nommant la variable");
+
+    faux.close();
+    if (ancien.adr === undefined) delete process.env.PEXELS_ADRESSE; else process.env.PEXELS_ADRESSE = ancien.adr;
+    process.env.PEXELS_API_KEY = ancien.cle || "";
+    delete require.cache[require.resolve("../services/pexels")];
+}
+
 console.log("── Le mode MANUAL bloque la programmation ──");
 {
     process.env.SOCIAL_MODE = "MANUAL";

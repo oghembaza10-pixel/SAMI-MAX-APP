@@ -218,4 +218,66 @@ async function couverture({ communaute } = {}) {
     }
 }
 
-module.exports = { choisir, couverture, mediasDe, lireListe, urlPubliable, FENETRE };
+// ── LE MÉDIA D'UNE CAMPAGNE ───────────────────────────────────────────────
+//
+// Le point d'entrée du cycle automatique. Il ne dit pas OÙ chercher — il dit
+// de quoi il veut parler, et c'est la campagne qui porte la réponse
+// (`source: "catalogue"` ou `source: "pexels"`).
+//
+// Pourquoi ici et pas dans le cycle : la vitrine est déjà « d'où vient ce
+// qu'on montre ». Laisser le cycle choisir entre deux sources aurait mis
+// cette décision à un deuxième endroit, et le prochain appelant l'aurait
+// recopiée.
+//
+// ── LE REPLI, ET POURQUOI IL COMPTE ───────────────────────────────────────
+//
+// Vérifié en base : sur 203 annonces, AUCUNE n'a de vidéo. Une campagne
+// produit ne peut donc pas faire de reel aujourd'hui. Plutôt que d'annuler,
+// on retombe sur l'image du produit — et on le DIT dans `repli`, pour que
+// « pourquoi ce n'est pas un reel » ait une réponse à l'écran.
+async function choisirPourCampagne({ campagne, communaute, prefererVideo = true } = {}) {
+    const campagnes = require("../../config/campagnes-sociales");
+    const c = campagnes.get(campagne);
+    if (!c) return { ok: false, raison: `campagne inconnue : ${campagne}` };
+
+    if (c.source === "catalogue") {
+        const r = await choisir({ communaute, prefererVideo });
+        return r.ok ? { ...r, campagne: c.slug, source: "catalogue" } : r;
+    }
+
+    // ── PEXELS ───────────────────────────────────────────────────────────
+    const pexels = require("../../services/pexels");
+    if (!pexels.configure()) {
+        return {
+            ok: false,
+            raison: "PEXELS_API_KEY n'est pas posée — les campagnes qui ne parlent pas "
+                  + "d'un produit n'ont aucune image à montrer",
+        };
+    }
+
+    const sujet = campagnes.recherche(c.slug);
+    const r = await pexels.chercher({ recherche: sujet, prefererVideo });
+    if (!r.ok) return { ok: false, raison: `Pexels : ${r.erreur}`, campagne: c.slug };
+
+    return {
+        ok: true,
+        campagne: c.slug,
+        source: "pexels",
+        repli: r.repli || null,
+        // Pas de produit : cette campagne ne vend rien.
+        produit: null,
+        media: r.media,
+        mediaType: r.mediaType,
+        // Le crédit voyage AVEC le média. Les règles de Pexels demandent de
+        // créditer l'auteur, et c'est la condition pour dépasser les limites
+        // d'appels — ce n'est donc pas une option qu'un appelant peut oublier.
+        credit: r.credit,
+        recherche: sujet,
+        duree: r.duree || null,
+    };
+}
+
+module.exports = {
+    choisir, choisirPourCampagne, couverture,
+    mediasDe, lireListe, urlPubliable, FENETRE,
+};

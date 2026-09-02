@@ -59,7 +59,7 @@ function mode() {
 // Ne publie JAMAIS, quel que soit le mode. Publier est une décision
 // distincte, prise par `publier()` ou par le planificateur — c'est ce qui
 // permet de faire tourner toute la chaîne sans risque.
-async function preparer({ workspaceId, communaute, theme, objectif, angle, cibles, media, mediaType, creePar } = {}) {
+async function preparer({ workspaceId, communaute, theme, objectif, angle, cibles, media, mediaType, credit, cta, ctaImpose, creePar } = {}) {
     const etapes = [];
 
     // 1. CRÉER
@@ -81,6 +81,14 @@ async function preparer({ workspaceId, communaute, theme, objectif, angle, cible
         workspaceId, postId: post.id,
         contenu: contenu.contenu, hook: contenu.hook, cta: contenu.cta,
         hashtags: contenu.hashtags, cibles, media, mediaType,
+        // L'appel à l'action vient de la campagne quand elle en impose un :
+        // « Crée ton QG gratuitement » n'est pas au modèle de l'inventer.
+        cta: cta || contenu.cta,
+        // Imposé par la campagne : l'adaptateur ne le laissera pas réécrire.
+        ctaImpose,
+        // Le crédit du média voyage jusqu'à l'adaptateur, qui le pose dans
+        // CHAQUE variante avant la relecture.
+        credit,
     });
     etapes.push({ agent: "adapter", ok: adapte.ok, erreur: adapte.erreur, alertes: adapte.alertes });
     if (!adapte.ok) {

@@ -43,6 +43,7 @@ const analytics = require("./agents/analytics");
 const providers = require("./providers");
 const plateformes = require("../../config/plateformes-sociales");
 const formats = require("../../config/formats-sociaux");
+const campagnes = require("../../config/campagnes-sociales");
 const db = require("../../services/db");
 
 // ── LES RÉGLAGES ──────────────────────────────────────────────────────────
@@ -92,6 +93,27 @@ async function partiesAujourdhui(plateforme) {
     }
 }
 
+// ── DE QUOI A-T-ON DÉJÀ PARLÉ AUJOURD'HUI ─────────────────────────────────
+//
+// Le créateur écrit `cree_par = "cycle-auto:<campagne>"` sur chaque post.
+// C'est cette trace qu'on relit — pas une variable en mémoire, qui serait
+// remise à zéro au premier redémarrage de Render et laisserait SAMII
+// republier trois fois « rejoignez-nous » dans la même journée.
+async function campagnesDuJour() {
+    try {
+        const r = await db.query(
+            `SELECT DISTINCT cree_par FROM social_posts
+              WHERE cree_par LIKE 'cycle-auto:%'
+                AND created_at >= date_trunc('day', now())`);
+        return r.map((x) => String(x.cree_par).split(":")[1]).filter(Boolean);
+    } catch (err) {
+        // Illisible : on ne bloque pas la publication pour ça. Au pire un
+        // sujet revient deux fois — c'est moins grave que ne rien publier.
+        console.warn("⚠️ cycle social — campagnes du jour illisibles :", err.message);
+        return [];
+    }
+}
+
 // Les plateformes qui peuvent encore recevoir quelque chose maintenant.
 async function ciblesDisponibles() {
     const retenues = [];
@@ -136,22 +158,43 @@ async function preparer({ forcer = false } = {}) {
         return { fait: false, raison: "aucune plateforme disponible", ecartees };
     }
 
+    // ── DE QUOI ON PARLE AUJOURD'HUI ─────────────────────────────────────
+    //
+    // Avant, le cycle ne savait raconter qu'UNE chose : un produit du
+    // catalogue. Un compte qui ne publie que des fiches produit ne recrute
+    // personne — or SAMII a d'abord besoin qu'on la rejoigne, pas qu'on lui
+    // achète un casque.
+    //
+    // La rotation regarde ce qui est DÉJÀ parti aujourd'hui, lu en base :
+    // sans ça, le tirage sortait deux fois « rejoignez-nous » de suite un
+    // jour sur trois.
+    const dejaFaites = await campagnesDuJour();
+    const tirage = campagnes.choisir({ dejaFaites });
+    if (!tirage.ok) return { fait: false, raison: tirage.raison, ecartees };
+    const campagne = tirage.campagne;
+
     // ── LE MÉDIA D'ABORD, LE TEXTE ENSUITE ───────────────────────────────
     //
     // Dans cet ordre, et pas l'inverse. Instagram REFUSE une publication
     // sans image : écrire un texte pour découvrir ensuite qu'on n'a rien à
     // montrer, c'est brûler un appel au modèle pour rien.
     //
-    // On demande une vidéo en priorité — c'est ce qui permet un reel. La
-    // vitrine dit elle-même si elle a dû se rabattre sur une image.
-    const choix = await vitrine.choisir({ communaute: communaute(), prefererVideo: true });
+    // On demande une vidéo en priorité — c'est ce qui permet un reel. Le
+    // catalogue n'en a AUCUNE (vérifié : 0 vidéo sur 203 annonces), Pexels
+    // si. C'est la campagne qui dit où chercher, pas ce code-ci.
+    const choix = await vitrine.choisirPourCampagne({
+        campagne: campagne.slug, communaute: communaute(), prefererVideo: true,
+    });
     if (!choix.ok) {
         // Sans média, il reste les plateformes qui n'en exigent pas.
         const sansMedia = retenues.filter((slug) => !plateformes.get(slug).mediaRequis);
         if (!sansMedia.length) {
-            return { fait: false, raison: `aucun média disponible (${choix.raison}) et toutes les cibles en exigent un`, ecartees };
+            return { fait: false, campagne: campagne.slug,
+                     raison: `aucun média disponible (${choix.raison}) et toutes les cibles en exigent un`,
+                     ecartees };
         }
-        return preparerEtProgrammer({ cibles: sansMedia, media: null, mediaType: null, produit: null, ecartees, noteMedia: choix.raison });
+        return preparerEtProgrammer({ campagne, cibles: sansMedia, media: null, mediaType: null,
+                                      produit: null, ecartees, noteMedia: choix.raison });
     }
 
     // On ne garde que les cibles dont un format transportable accepte ce
@@ -168,32 +211,42 @@ async function preparer({ forcer = false } = {}) {
     }
 
     return preparerEtProgrammer({
+        campagne,
         cibles: compatibles.map((c) => c.slug),
         formats: compatibles,
         media: choix.media,
         mediaType: choix.mediaType,
         produit: choix.produit,
+        credit: choix.credit || null,
+        source: choix.source,
+        recherche: choix.recherche || null,
         noteMedia: choix.repli,
         ecartees,
     });
 }
 
-async function preparerEtProgrammer({ cibles, formats: choisis, media, mediaType, produit, ecartees, noteMedia }) {
+async function preparerEtProgrammer({ campagne, cibles, formats: choisis, media, mediaType,
+                                      produit, credit, source, recherche, ecartees, noteMedia }) {
     // Le thème vient d'un vrai produit quand il y en a un : SAMII parle de
-    // ce qu'elle vend, pas d'un sujet abstrait tiré au sort.
+    // ce qu'elle vend, pas d'un sujet abstrait tiré au sort. Sinon c'est la
+    // campagne qui donne le sujet.
     const theme = produit
         ? `${produit.titre}${produit.prix ? ` — ${produit.prix} ${produit.devise || ""}`.trim() : ""}`
-        : null;
+        : campagne?.nom || null;
 
     const prepare = await social.preparer({
         workspaceId: workspace(),
         communaute: communaute(),
         theme,
-        objectif: "faire découvrir un produit disponible maintenant",
-        angle: produit?.description || null,
+        objectif: campagne?.objectif || "faire découvrir un produit disponible maintenant",
+        angle: produit?.description || campagne?.angle || null,
+        // L'appel à l'action est écrit dans la campagne : « Crée ton QG
+        // gratuitement » n'est pas au modèle de l'inventer à chaque passage.
+        cta: campagne?.cta || null,
+        ctaImpose: campagne?.cta || null,
         cibles,
-        media, mediaType,
-        creePar: "cycle-auto",
+        media, mediaType, credit,
+        creePar: `cycle-auto:${campagne?.slug || "produit"}`,
     });
 
     if (!prepare.ok) {
@@ -213,6 +266,10 @@ async function preparerEtProgrammer({ cibles, formats: choisis, media, mediaType
         fait: true,
         postId: prepare.postId,
         mode: social.mode(),
+        campagne: campagne?.slug || null,
+        source: source || null,
+        recherche: recherche || null,
+        credit: credit?.ligne || null,
         produit: produit ? { id: produit.id, titre: produit.titre } : null,
         media, mediaType,
         formats: choisis || null,
@@ -271,12 +328,18 @@ async function etat() {
         heures: heuresAutorisees(),
         prochainesCibles: retenues,
         ecartees,
+        // De quoi SAMII parle, et de quoi elle a déjà parlé aujourd'hui.
+        campagnes: campagnes.listeActives().map((c) => ({
+            slug: c.slug, nom: c.nom, source: c.source, poids: c.poids,
+        })),
+        campagnesDuJour: await campagnesDuJour().catch(() => []),
+        pexels: await require("../../services/pexels").etat().catch((e) => ({ erreur: e.message })),
         catalogue: await vitrine.couverture({ communaute: communaute() }),
     };
 }
 
 module.exports = {
-    preparer, envoyer, mesurer, etat,
+    preparer, envoyer, mesurer, etat, campagnesDuJour,
     ciblesDisponibles, partiesAujourdhui,
     maxParJour, heuresAutorisees, communaute, workspace,
 };

@@ -4,10 +4,22 @@ async function run() {
     try {
         await db.query(`ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS parrainage_le TIMESTAMP;`);
 
+        // ── LE GARDE ATTRAPAIT LA MAUVAISE EXCEPTION ─────────────────────
+        //
+        // `duplicate_object` seul ne suffit pas. Une contrainte UNIQUE crée
+        // aussi un INDEX du même nom : quand il existe déjà, Postgres lève
+        // `duplicate_table` (42P07, « relation ... already exists »), pas
+        // `duplicate_object`. Le garde ne rattrapait donc rien.
+        //
+        // Conséquence, vue en relançant `npm run fondations` sur une base
+        // déjà remplie : le script échouait, et « les fondations » — qui ont
+        // pour raison d'être d'être rejouables — ne l'étaient pas.
         await db.query(`
             DO $$ BEGIN
                 ALTER TABLE utilisateurs ADD CONSTRAINT utilisateurs_code_parrainage_key UNIQUE (code_parrainage);
-            EXCEPTION WHEN duplicate_object THEN NULL;
+            EXCEPTION
+                WHEN duplicate_object THEN NULL;
+                WHEN duplicate_table  THEN NULL;
             END $$;
         `);
 
