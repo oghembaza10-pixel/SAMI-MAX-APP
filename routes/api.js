@@ -178,8 +178,35 @@ router.post("/chat", requireAuth, async (req, res) => {
 
         res.json({ ...result, messageId });
     } catch (err) {
+        // ── NE PAS NOMMER UNE CAUSE QU'ON NE CONNAÎT PAS ────────────────
+        //
+        // Ce message disait « SAMII démarre. Réessaie dans quelques
+        // instants. » quoi qu'il arrive. Or ce `catch` attrape TOUT : une
+        // table absente, une requête refusée, un moteur sans clé. Pendant
+        // la vérification, la vraie cause était
+        // `relation "samii_connaissances" does not exist` — une panne
+        // permanente. On invitait donc à réessayer une chose qui ne
+        // marcherait jamais, et personne ne pouvait le savoir depuis
+        // l'écran.
+        //
+        // On dit maintenant ce qu'on sait (SAMII n'a pas pu répondre), on
+        // ne dit pas ce qu'on ignore (pourquoi), et on écrit la vraie
+        // raison au journal — c'est là que SAMII va la lire quand on lui
+        // demande ce qui s'est passé.
         console.error("❌ API chat :", err.message);
-        res.json({ success: false, reply: "SAMII démarre. Réessaie dans quelques instants." });
+        try {
+            require("../services/journalService").log({
+                action: "erreur.chat",
+                details: err.message,
+                workspaceId: req.session?.workspaceId || null,
+                userId: req.session?.userId || null,
+            });
+        } catch { /* le journal ne doit jamais aggraver une erreur */ }
+        res.json({
+            success: false,
+            reply: "Je n'ai pas pu répondre à ce message. Réessaie ; si ça se répète, "
+                 + "c'est de mon côté et c'est écrit dans le journal.",
+        });
     }
 });
 

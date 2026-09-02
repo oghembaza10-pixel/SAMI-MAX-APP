@@ -358,6 +358,61 @@ const BLOCS = [
         ],
     },
     {
+        // ── LA MÊME OMISSION, UN CRAN PLUS LOIN ──────────────────────────
+        //
+        // `workspaces.auto_post_config` n'est créée nulle part au démarrage :
+        // seul `scripts/verif-securite-tables.js` la pose, et ce script est
+        // lancé à la main. Sur une base qui ne l'a jamais vu passer,
+        // `GET /autopost` interroge une colonne absente et tombe.
+        //
+        // Trouvé pendant la vérification : sur la base d'essai, cette page
+        // ne renvoyait pas une erreur — elle arrêtait le serveur entier.
+        // Le filet à promesses d'`index.js` empêche désormais l'arrêt ; ce
+        // bloc-ci empêche l'erreur elle-même.
+        nom: "réglage de publication automatique",
+        sql: [
+            `ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS auto_post_config JSONB`,
+        ],
+    },
+    {
+        // ── LA TABLE QUI REND SAMII MUETTE ───────────────────────────────
+        //
+        // `services/connaissances.js` lit `samii_connaissances` à CHAQUE
+        // conversation. Aucun fichier de ce dépôt ne la crée : elle
+        // n'existait que dans la base de production, posée à la main un
+        // jour, et `scripts/securiser-rls.js` se contente de la citer.
+        //
+        // Sur une base qui ne l'a jamais eue, la conséquence n'est pas
+        // « une fonctionnalité en moins » : `POST /api/chat` lève, tombe
+        // dans son `catch`, et répond « SAMII démarre. Réessaie dans
+        // quelques instants. » — à chaque message, pour toujours. Le chat
+        // écrit et la bulle Jarvis sont morts ensemble, sans un mot qui
+        // dise pourquoi.
+        //
+        // Observé pendant la vérification : la bulle a répondu exactement
+        // cette phrase, et le journal du serveur disait
+        // `relation "samii_connaissances" does not exist`.
+        //
+        // Les colonnes reprennent celles que `connaissances.js` écrit et
+        // relit, sans en inventer une de plus.
+        nom: "connaissances permanentes de SAMII",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS samii_connaissances (
+                id             BIGSERIAL PRIMARY KEY,
+                user_id        TEXT NOT NULL,
+                titre          TEXT,
+                contenu_resume TEXT NOT NULL,
+                fichier_url    TEXT,
+                fichier_nom    TEXT,
+                actif          BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at     TIMESTAMPTZ NOT NULL DEFAULT now())`,
+            // La seule question posée à cette table : « qu'est-ce que ce
+            // compte m'a appris, du plus récent au plus ancien ».
+            `CREATE INDEX IF NOT EXISTS idx_connaissances_user
+                ON samii_connaissances (user_id, created_at DESC) WHERE actif`,
+        ],
+    },
+    {
         // ── CHAQUE MARKETPLACE CHEZ SOI ──────────────────────────────────
         //
         // « Tu lui mets une marketplace VIDE, sans nos colonnes, rattachée

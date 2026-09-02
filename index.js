@@ -23,6 +23,71 @@ const workspaceService = require("./services/workspaceService");
 const db                = require("./services/db");
 const paliers           = require("./config/paliers");
 
+// ══════════════════════════════════════════════════════════════════════════
+// EXPRESS 4 NE SAIT PAS ATTRAPER UNE PROMESSE REJETÉE
+//
+// CE QU'ON A VU EN FAISANT TOURNER L'APPLICATION. Une requête vers
+// /autopost a fait S'ARRÊTER NODE — pas la page, le processus entier.
+//
+// La cause est une construction qu'on écrit partout sans y penser :
+//
+//     router.get("/", requireAuth, async (req, res) => { ... })
+//
+// Express 4 appelle ce gestionnaire et ignore la promesse qu'il renvoie. Si
+// elle est rejetée — une colonne absente, une base momentanément
+// injoignable, un champ nul là où on n'en attendait pas — personne ne
+// l'attrape, et Node arrête le processus sur un rejet non intercepté.
+// 33 routes de ce dépôt étaient dans ce cas au moment où ces lignes sont
+// écrites, et la 34e aurait été écrite le mois prochain.
+//
+// ── POURQUOI ICI, ET PAS 33 try/catch ───────────────────────────────────
+//
+// Un try/catch par route, c'est 33 corrections et un oubli garanti. Ici, on
+// enveloppe UNE fois la mécanique qu'Express utilise pour enregistrer un
+// gestionnaire : toutes les routes en profitent, y compris celles qui
+// n'existent pas encore.
+//
+// ── CE QUE ÇA CHANGE, EXACTEMENT ────────────────────────────────────────
+//
+// Rien pour un gestionnaire qui réussit. Pour un gestionnaire qui échoue,
+// l'erreur part vers `next(err)` — donc vers le gestionnaire d'erreurs en
+// bas de ce fichier, qui répond une page ou du JSON selon la demande.
+//
+// SANS ÇA, ET C'EST LE PIÈGE : le garde-fou `unhandledRejection` (plus bas)
+// empêche bien le processus de mourir, mais PERSONNE NE RÉPOND AU CLIENT.
+// La requête reste suspendue jusqu'à ce que le navigateur abandonne. Vu en
+// vrai : le serveur restait debout, et la page tournait dans le vide.
+// Ne pas planter ne suffit pas ; il faut répondre.
+//
+// Les gestionnaires d'ERREUR (quatre paramètres) ne sont pas touchés :
+// Express les reconnaît à leur nombre d'arguments, et les envelopper leur
+// ferait perdre ce signalement.
+(function attraperLesPromesses() {
+    const Route = require("express/lib/router/route");
+    const METHODES = ["get", "post", "put", "delete", "patch", "all", "options", "head"];
+    for (const methode of METHODES) {
+        const original = Route.prototype[methode];
+        if (typeof original !== "function") continue;
+        Route.prototype[methode] = function (...gestionnaires) {
+            return original.apply(this, gestionnaires.flat().map((g) => {
+                if (typeof g !== "function" || g.length === 4) return g;
+                const enveloppe = function (req, res, next) {
+                    try {
+                        const resultat = g.call(this, req, res, next);
+                        if (resultat && typeof resultat.catch === "function") resultat.catch(next);
+                        return resultat;
+                    } catch (err) { next(err); }
+                };
+                // Le nombre d'arguments est conservé : du code qui inspecte
+                // `handler.length` (Express lui-même le fait) doit continuer
+                // à voir ce qu'il voyait.
+                Object.defineProperty(enveloppe, "length", { value: g.length });
+                return enveloppe;
+            }));
+        };
+    }
+})();
+
 const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server);
@@ -696,6 +761,102 @@ app.get("/test-telegram", async (req, res) => {
     const result   = await telegram.send("8276462482", "👑 SAMII OS — Test direct !");
     res.json(result);
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+// LE FILET — UNE PAGE QUI TOMBE NE DOIT PAS EMPORTER LE SERVEUR
+//
+// CE QU'ON A VU EN FAISANT TOURNER L'APPLICATION. Une requête vers
+// /autopost a fait S'ARRÊTER NODE. Pas la page : le processus. SAMII, les
+// boutiques, les webhooks de paiement, la communauté d'Inès — tout, pendant
+// que Render redémarre.
+//
+// La cause est une construction courante et invisible :
+//
+//     router.get("/", requireAuth, async (req, res) => { ... })
+//
+// Express 4 ne sait rien faire d'une promesse rejetée. Le `async` en fait
+// une, personne ne l'attrape, et Node arrête le processus sur un rejet non
+// intercepté. Il suffit d'une colonne absente, d'une base momentanément
+// injoignable, d'un champ nul là où on n'en attendait pas.
+//
+// À la date où ces lignes sont écrites, 33 routes du dépôt sont dans ce cas.
+// On pourrait ajouter 33 try/catch — et le 34e serait oublié le mois
+// prochain. On pose donc le filet à l'unique endroit qui les couvre toutes,
+// y compris celles qui n'existent pas encore.
+//
+// ── DEUX FILETS, PAS UN ─────────────────────────────────────────────────
+//
+// 1. Le gestionnaire d'erreurs Express, pour ce qui remonte jusqu'à lui.
+// 2. `unhandledRejection`, pour ce qui lui échappe — une promesse lancée
+//    hors d'une requête (un moteur planifié, un `.then` oublié) n'a aucun
+//    `res` où atterrir.
+//
+// ── ON JOURNALISE FORT ──────────────────────────────────────────────────
+//
+// Un filet qui avale en silence est pire que pas de filet : le bug reste,
+// et plus personne ne le voit. Chaque prise est donc écrite avec sa pile
+// complète, et ce qui arrive pendant une requête part aussi dans la table
+// `journal` — d'où SAMII le lit quand on lui demande ce qui s'est passé.
+//
+// ── TOUTE ERREUR N'EST PAS UNE PANNE ────────────────────────────────────
+//
+// `express.json()` lève une erreur portant `status: 400` quand le corps
+// reçu n'est pas du JSON valide : ce n'est pas notre serveur qui casse,
+// c'est l'appelant qui envoie n'importe quoi. Avant ce filet, Express
+// répondait 400. Un filet qui répondrait 500 à tout mentirait deux fois :
+// il accuserait le serveur, et il noierait le journal sous des erreurs
+// qui ne sont pas les nôtres. On garde donc le code que l'erreur porte
+// quand c'est un 4xx, et on ne journalise que ce qui est vraiment de
+// notre côté.
+app.use((err, req, res, next) => {
+    const porte = Number(err.status || err.statusCode);
+    const code = porte >= 400 && porte <= 499 ? porte : 500;
+
+    if (code === 500) {
+        console.error(`❌ ERREUR NON INTERCEPTÉE sur ${req.method} ${req.originalUrl} :`, err);
+        try {
+            require("./services/journalService").log({
+                action: "erreur.route",
+                details: `${req.method} ${req.originalUrl} — ${err.message}`,
+                workspaceId: req.session?.workspaceId || null,
+                userId: req.session?.userId || null,
+            });
+        } catch { /* le journal ne doit jamais aggraver une erreur */ }
+    } else {
+        console.warn(`⚠️ Requête refusée (${code}) sur ${req.method} ${req.originalUrl} : ${err.message}`);
+    }
+
+    if (res.headersSent) return next(err);
+
+    // Une requête de données reçoit du JSON, une page reçoit une page. Sinon
+    // le navigateur affiche du JSON brut, ou le script reçoit du HTML et
+    // échoue sur une erreur qui n'a plus rien à voir avec la vraie.
+    const veutHtml = (req.headers.accept || "").includes("text/html");
+    if (!veutHtml) {
+        return res.status(code).json({
+            error: code === 500 ? "Erreur serveur." : "Requête invalide.",
+        });
+    }
+    const titre = code === 500
+        ? "Cette page n'a pas pu s'afficher."
+        : "Cette demande n'a pas pu être traitée.";
+    res.status(code).send(`<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Erreur</title></head>
+<body style="background:#0b0b0f;color:#e8e6df;font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;padding:24px;text-align:center">
+<div><h1 style="font-size:1.1rem;font-weight:600">${titre}</h1>
+<p style="color:#8a8f9e;font-size:.9rem;max-width:420px;line-height:1.6">
+Le reste du site fonctionne. Reviens en arrière, ou retourne à l'accueil.</p>
+<a href="/" style="color:#5ad4ff">Retour à l'accueil</a></div></body></html>`);
+});
+
+process.on("unhandledRejection", (raison) => {
+    console.error("❌ PROMESSE REJETÉE HORS REQUÊTE — le serveur reste debout :", raison);
+});
+// `uncaughtException` n'est PAS intercepté ici, volontairement. Une
+// exception synchrone qui remonte jusqu'au sommet laisse le processus dans
+// un état dont on ne sait rien ; continuer serait servir des réponses
+// fausses. Le rejet de promesse, lui, est presque toujours une requête qui a
+// mal tourné — le reste du serveur va parfaitement bien.
 
 // ── SERVEUR ────────────────────────────────────────────────
 server.listen(CONFIG.PORT, () => {
