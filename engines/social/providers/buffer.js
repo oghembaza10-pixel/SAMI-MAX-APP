@@ -187,8 +187,26 @@ async function chaines({ forcer = false } = {}) {
     const org = orgs.donnees?.account?.organizations?.[0];
     if (!org?.id) return { ok: false, erreur: "aucune organisation Buffer sur ce compte" };
 
+    // ── LE TYPE DE L'IDENTIFIANT N'EST PAS « String » ────────────────────
+    //
+    // Buffer déclare `organizationId` comme un `OrganizationId!`, un type
+    // à lui, pas une chaîne. La requête partait en `$id: String!` et Buffer
+    // la refusait AVANT de l'exécuter :
+    //
+    //     Variable "$id" of type "String!" used in position
+    //     expecting type "OrganizationId!"
+    //
+    // Conséquence relevée en production le 3 septembre : la liste des
+    // chaînes ne se chargeait jamais, donc AUCUNE publication Buffer ne
+    // trouvait son canal. Facebook (Meta direct) et Telegram passaient ;
+    // LinkedIn et Instagram, qui passent par Buffer, échouaient tous les
+    // deux — sur un message parlant de types GraphQL, qui ne dit pas qu'on
+    // vient de perdre deux réseaux.
+    //
+    // Même famille que `PostInput`/`PostId` côté métriques : chez Buffer,
+    // les identifiants sont typés. On ne devine pas, on écrit le type.
     const c = await appeler(
-        `query GetChannels($id: String!) { channels(input: { organizationId: $id }) { id name service } }`,
+        `query GetChannels($id: OrganizationId!) { channels(input: { organizationId: $id }) { id name service } }`,
         { id: org.id });
     if (!c.ok) return { ok: false, erreur: c.erreur };
 

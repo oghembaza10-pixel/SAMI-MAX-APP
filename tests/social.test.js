@@ -378,6 +378,32 @@ console.log("── Buffer : le provider qui publie vraiment ──");
              "et PAS Telegram ni WhatsApp — SAMII les fait elle-même");
 }
 
+console.log("── Buffer : chez lui, les identifiants sont TYPÉS ──");
+{
+    // Relevé en production le 3 septembre, dans `social_publications.erreur` :
+    //
+    //   linkedin — buffer : Variable "$id" of type "String!" used in
+    //   position expecting type "OrganizationId!"
+    //
+    // La requête était refusée AVANT exécution, donc la liste des chaînes ne
+    // se chargeait jamais, donc AUCUNE publication Buffer ne trouvait son
+    // canal. Facebook (Meta direct) et Telegram passaient ; LinkedIn et
+    // Instagram — les deux réseaux qui passent par Buffer — échouaient, sur
+    // un message parlant de types GraphQL qui ne dit pas qu'on vient de
+    // perdre deux réseaux.
+    //
+    // Ce contrôle lit le fichier plutôt que d'appeler Buffer : la panne
+    // était dans le TEXTE de la requête, et c'est ce texte qu'on garde.
+    const source = require("fs").readFileSync(
+        path.join(__dirname, "..", "engines", "social", "providers", "buffer.js"), "utf8");
+    const requete = /query GetChannels\(([^)]*)\)/.exec(source);
+    verifier(requete !== null, "la requête GetChannels existe toujours");
+    verifier(/OrganizationId!/.test(requete[1]),
+        `organizationId doit être typé OrganizationId!, pas « ${requete && requete[1]} » — Buffer refuse la requête sinon`);
+    verifier(!/String!/.test(requete[1]),
+        "String! est revenu dans GetChannels : LinkedIn et Instagram cesseront de publier");
+}
+
 console.log("── BUFFER_PLATEFORMES : qui Buffer a le droit de servir ──");
 {
     // « fb en utilise api meta, whatsapp aussi, telegram — on a tout ça.
