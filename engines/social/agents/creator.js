@@ -37,15 +37,37 @@ Interdits :
 - pas de jargon technique non expliqué
 - pas de familiarité forcée ni d'emojis en rafale`;
 
-async function creer({ workspaceId, theme, objectif, angle } = {}) {
-    return base.executer(NOM, { workspaceId, entree: { theme, objectif, angle } }, async () => {
+// ── LA FORME CHANGE CE QU'ON DEMANDE ──────────────────────────────────────
+//
+// Un texte qui accompagne une vidéo et un texte qui se suffit à lui-même ne
+// s'écrivent pas pareil : le premier commente ce qu'on voit, le second doit
+// porter l'image tout seul. Demander la même chose aux deux donnait des
+// posts nus qui commençaient par « Regardez ça ».
+//
+// `script_video` n'est demandé que quand il y a une vidéo — sinon c'est un
+// champ payé en jetons que personne ne lit.
+const CONSIGNE_FORME = {
+    video: "Ce contenu accompagnera une VIDÉO courte, verticale. Le texte "
+         + "complète l'image, il ne la décrit pas.",
+    image: "Ce contenu accompagnera UNE IMAGE fixe. Le texte porte l'essentiel "
+         + "du message ; l'image ne fait qu'attirer l'œil.",
+    texte: "Ce contenu partira SANS AUCUNE IMAGE — rien que du texte. Il doit "
+         + "donc tenir debout seul : une accroche qui arrête le défilement dès "
+         + "la première ligne, et une idée complète. N'écris jamais « regardez », "
+         + "« voici » ou « ci-dessous » : il n'y a rien à regarder.",
+};
+
+async function creer({ workspaceId, theme, objectif, angle, forme } = {}) {
+    return base.executer(NOM, { workspaceId, entree: { theme, objectif, angle, forme } }, async () => {
         if (!theme) throw new Error("aucun thème donné au créateur");
 
+        const avecVideo = forme === "video";
         const message = `${IDENTITE}
 
 Écris UN contenu source sur ce thème : « ${theme} ».
 ${objectif ? `Objectif : ${objectif}` : ""}
 ${angle ? `Angle imposé : ${angle}` : ""}
+${CONSIGNE_FORME[forme] || ""}
 
 Ce contenu sera ensuite adapté à plusieurs plateformes — écris donc le FOND,
 pas encore la mise en forme d'un réseau précis.
@@ -57,22 +79,41 @@ Réponds UNIQUEMENT en JSON valide, sans texte autour :
   "hook": "une accroche de moins de 90 caractères",
   "cta": "un appel à l'action concret, une seule action",
   "hashtags": ["5 mots-clés pertinents, sans le #"],
-  "idee_visuel": "ce qu'on devrait montrer en image, décrit en une phrase",
-  "script_video": "un script de 20 secondes, parlé, pour une vidéo courte"
+  "idee_visuel": "ce qu'on devrait montrer en image, décrit en une phrase"${
+    avecVideo ? `,
+  "script_video": "un script de 20 secondes, parlé, pour une vidéo courte"` : ""}
 }`;
 
         const brut = await base.demander(message, { workspaceId, source: "social-creator" });
         const json = base.lireJson(brut);
 
-        // Un contenu vide qui remonterait la chaîne serait publié comme tel.
-        // On refuse ici, à la source.
-        if (!json?.contenu || String(json.contenu).trim().length < 40) {
-            throw new Error("le créateur n'a pas produit de contenu exploitable");
+        // ── UN REFUS DOIT DIRE CE QU'IL A VU ─────────────────────────────
+        //
+        // Avant, les trois échecs possibles — pas de JSON du tout, un JSON
+        // sans champ `contenu`, un `contenu` trop court — rendaient LA MÊME
+        // phrase : « le créateur n'a pas produit de contenu exploitable ».
+        // En base, c'est tout ce qui restait. Impossible de savoir s'il
+        // fallait corriger l'invite, le modèle, ou la lecture du JSON.
+        //
+        // On garde donc un extrait de ce que le modèle a réellement écrit.
+        // C'est sans risque : `useTools:false` et un texte de campagne — il
+        // n'y a pas de jeton dans cette réponse, et `resumerPourLaTrace`
+        // coupe de toute façon à 500 caractères.
+        const apercu = String(brut).replace(/\s+/g, " ").trim().slice(0, 200);
+        if (!json) {
+            throw new Error(`réponse illisible (pas de JSON) — le modèle a écrit : « ${apercu} »`);
+        }
+        if (!json.contenu) {
+            throw new Error(`JSON lu mais sans champ « contenu » — clés reçues : ${Object.keys(json).join(", ") || "aucune"}`);
+        }
+        const contenu = String(json.contenu).trim();
+        if (contenu.length < 40) {
+            throw new Error(`contenu trop court (${contenu.length} caractères, minimum 40) : « ${contenu} »`);
         }
 
         return {
             titre: String(json.titre || theme).slice(0, 200),
-            contenu: String(json.contenu).trim(),
+            contenu,
             hook: String(json.hook || "").slice(0, 200),
             cta: String(json.cta || "").slice(0, 200),
             hashtags: (Array.isArray(json.hashtags) ? json.hashtags : [])

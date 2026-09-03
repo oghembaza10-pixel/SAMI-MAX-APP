@@ -67,11 +67,11 @@ function mode() {
 // Ne publie JAMAIS, quel que soit le mode. Publier est une décision
 // distincte, prise par `publier()` ou par le planificateur — c'est ce qui
 // permet de faire tourner toute la chaîne sans risque.
-async function preparer({ workspaceId, communaute, theme, objectif, angle, cibles, media, mediaType, credit, cta, ctaImpose, creePar } = {}) {
+async function preparer({ workspaceId, communaute, theme, objectif, angle, cibles, media, mediaType, credit, cta, ctaImpose, creePar, forme } = {}) {
     const etapes = [];
 
     // 1. CRÉER
-    const contenu = await creator.creer({ workspaceId, theme, objectif, angle });
+    const contenu = await creator.creer({ workspaceId, theme, objectif, angle, forme });
     etapes.push({ agent: "creator", ok: contenu.ok, erreur: contenu.erreur });
     if (!contenu.ok) return { ok: false, etape: "creator", erreur: contenu.erreur, etapes };
 
@@ -87,10 +87,16 @@ async function preparer({ workspaceId, communaute, theme, objectif, angle, cible
     // 3. ADAPTER
     const adapte = await adapter.adapter({
         workspaceId, postId: post.id,
-        contenu: contenu.contenu, hook: contenu.hook, cta: contenu.cta,
+        contenu: contenu.contenu, hook: contenu.hook,
         hashtags: contenu.hashtags, cibles, media, mediaType,
         // L'appel à l'action vient de la campagne quand elle en impose un :
         // « Crée ton QG gratuitement » n'est pas au modèle de l'inventer.
+        //
+        // Cette clé était écrite DEUX fois dans cet objet (`cta: contenu.cta`
+        // juste au-dessus, puis celle-ci). JavaScript garde la dernière, donc
+        // le résultat était bon — mais la ligne morte laissait croire que le
+        // CTA du créateur servait, et la prochaine réécriture pouvait
+        // inverser l'ordre sans qu'aucun test ne bronche.
         cta: cta || contenu.cta,
         // Imposé par la campagne : l'adaptateur ne le laissera pas réécrire.
         ctaImpose,

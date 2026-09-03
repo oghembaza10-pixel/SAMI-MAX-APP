@@ -958,6 +958,175 @@ console.log("── Le mode MANUAL bloque la programmation ──");
     verifier(/MANUAL/.test(r.erreur), "et le motif nomme le mode : " + r.erreur.slice(0, 60));
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// LE 3 SEPTEMBRE — POURQUOI SAMII N'AVAIT RIEN PUBLIÉ
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Une seule ligne en base disait tout : `creator / erreur / 103250 ms` —
+// « le créateur n'a pas produit de contenu exploitable ». Le message
+// accusait le modèle d'avoir mal écrit. En réalité, AUCUN fournisseur
+// n'avait répondu : `chat()` avait rendu sa phrase d'excuse, que le
+// créateur avait reçue comme un texte parfaitement valide.
+//
+// Ces vérifications gardent la distinction. Chacune a été cassée à la main
+// pour confirmer qu'elle crie.
+
+console.log("── Une non-réponse de l'IA n'est pas un texte ──");
+{
+    const base = require("../engines/social/agents/base");
+    const gemini = require("../services/geminiService");
+    const vraiChat = gemini.chat;
+
+    // 1. La chaîne entière est tombée : `chat()` rend sa phrase d'excuse,
+    //    marquée `degrade`. L'agent doit LEVER, pas la prendre pour un texte.
+    gemini.chat = async () => ({
+        type: "text", degrade: true, motif: "les 4 fournisseurs ont échoué",
+        text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute.",
+    });
+    let leve = null;
+    try { await base.demander("peu importe", {}); } catch (e) { leve = e.message; }
+    verifier(leve !== null, "une réponse dégradée fait lever l'agent au lieu de descendre la chaîne");
+    verifier(/fournisseurs/.test(leve), "et le motif dit QUI n'a pas répondu : " + leve.slice(0, 70));
+
+    // 2. Le drapeau, pas la phrase. Si un jour quelqu'un reformule le texte
+    //    d'excuse, la détection doit survivre — c'est pour ça qu'on ne
+    //    compare pas des chaînes de caractères.
+    gemini.chat = async () => ({ type: "text", degrade: true, motif: "peu importe", text: "une phrase toute neuve" });
+    leve = null;
+    try { await base.demander("peu importe", {}); } catch (e) { leve = e.message; }
+    verifier(leve !== null, "c'est le drapeau qui décide, pas le texte de la phrase");
+
+    // 3. Un texte vide n'est pas une réponse non plus.
+    gemini.chat = async () => ({ type: "text", text: "   " });
+    leve = null;
+    try { await base.demander("peu importe", {}); } catch (e) { leve = e.message; }
+    verifier(leve !== null && /vide/.test(leve), "un texte vide est refusé, pas rendu comme \"\"");
+
+    // 4. Un appel d'outil alors qu'on a passé `useTools:false`.
+    gemini.chat = async () => ({ type: "function_call", name: "chercher" });
+    leve = null;
+    try { await base.demander("peu importe", {}); } catch (e) { leve = e.message; }
+    verifier(leve !== null && /function_call/.test(leve), "un appel d'outil inattendu est nommé, pas avalé");
+
+    // 5. Et une vraie réponse passe toujours.
+    gemini.chat = async () => ({ type: "text", text: "  du vrai contenu  " });
+    verifier(await base.demander("x", {}) === "du vrai contenu", "une vraie réponse passe, et arrive nettoyée");
+
+    gemini.chat = vraiChat;
+}
+
+console.log("── Le créateur dit CE QU'IL A VU quand il refuse ──");
+{
+    const creator = require("../engines/social/agents/creator");
+    const gemini = require("../services/geminiService");
+    const vraiChat = gemini.chat;
+    prevoir([], [], [], []);
+
+    // Avant, ces trois cas rendaient tous LA MÊME phrase. En base, il ne
+    // restait donc rien pour savoir laquelle des trois s'était produite.
+    gemini.chat = async () => ({ type: "text", text: "Bien sûr ! Voici votre contenu :" });
+    let r = await creator.creer({ theme: "un thème" });
+    verifier(r.ok === false, "pas de JSON du tout : le créateur refuse");
+    verifier(/illisible/.test(r.erreur), "et il dit que c'est illisible");
+    verifier(/Bien sûr/.test(r.erreur), "et il RECOPIE ce que le modèle a écrit : " + r.erreur.slice(0, 60));
+
+    prevoir([], [], [], []);
+    gemini.chat = async () => ({ type: "text", text: '{"titre":"un titre","hook":"une accroche"}' });
+    r = await creator.creer({ theme: "un thème" });
+    verifier(r.ok === false && /sans champ/.test(r.erreur), "JSON valide mais sans « contenu » : dit autrement");
+    verifier(/titre/.test(r.erreur), "et il liste les clés reçues : " + r.erreur.slice(0, 70));
+
+    prevoir([], [], [], []);
+    gemini.chat = async () => ({ type: "text", text: '{"contenu":"trop court"}' });
+    r = await creator.creer({ theme: "un thème" });
+    verifier(r.ok === false && /trop court/.test(r.erreur), "contenu trop court : troisième message, distinct");
+    verifier(/10 caractères/.test(r.erreur), "et il donne la longueur mesurée : " + r.erreur.slice(0, 60));
+
+    // Les trois messages doivent être DIFFÉRENTS — c'est tout l'objet du
+    // correctif. S'ils redevenaient identiques, la panne redeviendrait
+    // impossible à diagnostiquer sans relire le code.
+    prevoir([], [], [], []);
+    gemini.chat = async () => ({ type: "text", text: "pas de json" });
+    const a = (await creator.creer({ theme: "t" })).erreur;
+    prevoir([], [], [], []);
+    gemini.chat = async () => ({ type: "text", text: '{"titre":"x"}' });
+    const b = (await creator.creer({ theme: "t" })).erreur;
+    verifier(a !== b, "deux pannes différentes ne rendent pas le même message");
+
+    gemini.chat = vraiChat;
+}
+
+console.log("── Le prix n'est pas écrit deux fois ──");
+{
+    const vitrine = require("../engines/social/vitrine");
+    // `annonces.prix` est une colonne TEXTE où CJ écrit déjà la devise.
+    // Relevé en base : prix = "12.94 EUR", devise = "EUR". Le thème envoyé
+    // au modèle valait « … — 12.94 EUR EUR ».
+    verifier(vitrine.etiquettePrix("12.94 EUR", "EUR") === "12.94 EUR",
+        "une devise déjà présente n'est pas recollée");
+    verifier(vitrine.etiquettePrix("12.94 eur", "EUR") === "12.94 eur",
+        "même en minuscules");
+    verifier(vitrine.etiquettePrix("1500", "DZD") === "1500 DZD",
+        "une devise absente est bien ajoutée");
+    verifier(vitrine.etiquettePrix("", "EUR") === null,
+        "pas de prix, pas d'étiquette — et surtout pas une devise toute seule");
+    verifier(vitrine.etiquettePrix("1500", "") === "1500",
+        "pas de devise : le prix sort nu, sans espace en trop");
+}
+
+console.log("── Le HTML de CJ n'entre pas dans l'invite ──");
+{
+    const vitrine = require("../engines/social/vitrine");
+    // Relevé en base le 3 septembre, tel quel.
+    const brut = '<p><span style="font-weight: bold;">Overview:<br/></span>Classic notched lapel.&nbsp;</p>';
+    const propre = vitrine.enTexte(brut);
+    verifier(!/[<>]/.test(propre), "plus une seule balise : « " + propre + " »");
+    verifier(!/&nbsp;/.test(propre), "plus d'entité HTML");
+    verifier(/Overview/.test(propre) && /notched lapel/.test(propre), "le texte utile, lui, survit");
+    verifier(!/ {2}/.test(propre), "et les espaces multiples sont ramenés à un seul");
+    verifier(vitrine.enTexte(null) === "", "rien ne donne rien, jamais « null »");
+}
+
+console.log("── SAMII ne publie pas QUE des vidéos ──");
+{
+    const campagnes = require("../config/campagnes-sociales");
+    process.env.SOCIAL_FORMES_COUPEES = "";
+
+    // Sur 400 tirages, les trois formes doivent apparaître pour une campagne
+    // qui les déclare toutes. Un tirage qui ne sortirait qu'une forme ferait
+    // exactement ce qu'on veut arrêter : un fil qui n'est que de la vidéo.
+    const vues = new Set();
+    for (let i = 0; i < 400; i++) vues.add(campagnes.choisirForme("developpement").forme);
+    verifier(vues.has("texte"), "le texte seul sort réellement");
+    verifier(vues.has("image"), "l'image aussi");
+    verifier(vues.has("video"), "et la vidéo aussi");
+
+    // « produit » ne part JAMAIS sans photo : un manteau sans image ne vend
+    // rien, et le catalogue n'a aucune vidéo.
+    const vuesProduit = new Set();
+    for (let i = 0; i < 200; i++) vuesProduit.add(campagnes.choisirForme("produit").forme);
+    verifier(vuesProduit.size === 1 && vuesProduit.has("image"),
+        "la campagne produit ne sort qu'en image, jamais en texte nu ni en vidéo");
+
+    // L'arrêt d'urgence, comme partout ailleurs dans ce dépôt.
+    process.env.SOCIAL_FORMES_COUPEES = "texte,video";
+    const apresCoupe = new Set();
+    for (let i = 0; i < 100; i++) apresCoupe.add(campagnes.choisirForme("developpement").forme);
+    verifier(apresCoupe.size === 1 && apresCoupe.has("image"),
+        "SOCIAL_FORMES_COUPEES retire une forme sans déploiement");
+
+    // Tout couper ne doit pas rendre `undefined` : l'appelant planterait.
+    process.env.SOCIAL_FORMES_COUPEES = "texte,video,image";
+    const t = campagnes.choisirForme("developpement");
+    verifier(t.forme === "image" && t.parDefaut === true,
+        "tout couper retombe sur image, et le DIT (parDefaut)");
+    process.env.SOCIAL_FORMES_COUPEES = "";
+
+    // Une campagne ajoutée demain sans `formes` ne doit pas devenir muette.
+    verifier(campagnes.formesDe("inconnue").video === 3,
+        "une campagne sans formes déclarées garde l'ancien comportement");
+}
+
 console.log(`\n✅ social : ${passees} vérifications passées`);
 })().catch((e) => {
     console.error("\n❌ social :", e.message);

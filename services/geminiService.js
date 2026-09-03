@@ -202,6 +202,34 @@ async function postWithRotation(body) {
     throw lastErr;
 }
 
+// ── « JE N'AI PAS DE RÉPONSE » DOIT SE VOIR ───────────────────────────────
+//
+// Ce qui a coûté une journée entière de publications : quand toute la chaîne
+// (Gemini → Groq → OpenRouter → DeepSeek) échouait, `chat()` rendait une
+// PHRASE — « SAMII réfléchit un peu plus longtemps que prévu » — dans un
+// `{ type:"text" }` parfaitement normal.
+//
+// Pour un humain dans une conversation, c'est la bonne réponse : mieux vaut
+// une phrase honnête qu'une page d'erreur. Mais pour un AGENT qui attend du
+// JSON, cette phrase est indiscernable d'une vraie réponse. Le créateur l'a
+// reçue, n'a pas su la lire, et a tracé « le créateur n'a pas produit de
+// contenu exploitable » — accusant le modèle d'avoir mal écrit alors
+// qu'AUCUN fournisseur n'avait répondu. Une panne d'IA totale se lisait
+// comme un problème de rédaction. On cherche au mauvais endroit.
+//
+// Le drapeau ne remplace pas la phrase, il la QUALIFIE : l'appelant humain
+// continue d'afficher `text` sans rien changer ; l'appelant machine teste
+// `degrade` et sait qu'il n'y a rien eu.
+function sansReponse(provider, motif) {
+    return {
+        type: "text",
+        provider: provider || "gemini",
+        degrade: true,
+        motif: motif || "aucune réponse",
+        text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute.",
+    };
+}
+
 // ── RELAIS OPENROUTER : si Gemini est en panne ou en quota épuisé sur toutes
 // ses clés, SAMII continue de répondre aux clients et de confirmer/créer
 // leurs commandes via un modèle différent plutôt que de rester silencieux.
@@ -308,11 +336,8 @@ async function chatViaOpenAiCompatible({ provider, model, poster, message, conte
             assistantMessage: choice.message,
         };
     }
-    return {
-        type: "text",
-        provider,
-        text: choice?.message?.content || "SAMII n'a pas su répondre, réessaie autrement.",
-    };
+    if (!choice?.message?.content) return sansReponse(provider, `${provider} a répondu sans texte`);
+    return { type: "text", provider, text: choice.message.content };
 }
 
 async function chatViaGroq(args) {
@@ -579,11 +604,12 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
             };
         }
         const textPart = parts.find(p => p.text);
-        return {
-            type: "text",
-            provider: "gemini",
-            text: textPart?.text || "SAMII n'a pas su répondre, réessaie autrement.",
-        };
+        // Gemini a répondu 200, mais sans texte : filtre de sécurité, arrêt
+        // sur `MAX_TOKENS`, candidat vide. Ce n'est pas une réponse.
+        if (!textPart?.text) {
+            return sansReponse("gemini", `Gemini a répondu sans texte (finishReason=${candidate?.finishReason || "?"})`);
+        }
+        return { type: "text", provider: "gemini", text: textPart.text };
     } catch (err) {
         const isQuotaError = estQuotaDepasse(err);
         // "UNAVAILABLE" = Google dit lui-même que c'est un pic de charge
@@ -619,7 +645,9 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
                     return await chatViaDeepSeek({ message, context, useTools, history });
                 } catch (deepseekErr) {
                     console.error("❌ DeepSeek (relais) :", deepseekErr.response?.data || deepseekErr.message);
-                    return { type: "text", provider: "gemini", text: "SAMII réfléchit un peu plus longtemps que prévu, réessaie dans une minute." };
+                    return sansReponse("gemini", "les 4 fournisseurs ont échoué "
+                        + `(gemini: ${err.message} | groq: ${groqErr.message} `
+                        + `| openrouter: ${fallbackErr.message} | deepseek: ${deepseekErr.message})`);
                 }
             }
         }
@@ -707,19 +735,19 @@ async function chatWithSearch({ message, context = {} }) {
         try {
             console.warn("🔀 Relais Groq (Gemini search indisponible)...");
             const fallback = await chatViaGroq({ message, context, useTools: false });
-            return { type: "text", text: fallback.text, sources: [] };
+            return { ...fallback, sources: [] };
         } catch (groqErr) {
             console.error("❌ Groq (relais search) :", groqErr.response?.data || groqErr.message);
             try {
                 console.warn("🔀 Relais OpenRouter (Groq search indisponible aussi)...");
                 const fallback = await chatViaOpenRouter({ message, context, useTools: false });
-                return { type: "text", text: fallback.text, sources: [] };
+                return { ...fallback, sources: [] };
             } catch (openrouterErr) {
                 console.error("❌ OpenRouter (relais search) :", openrouterErr.response?.data || openrouterErr.message);
                 try {
                     console.warn("🔀 Relais DeepSeek (OpenRouter search indisponible aussi)...");
                     const fallback = await chatViaDeepSeek({ message, context, useTools: false });
-                    return { type: "text", text: fallback.text, sources: [] };
+                    return { ...fallback, sources: [] };
                 } catch (deepseekErr) {
                     console.error("❌ DeepSeek (relais search) :", deepseekErr.response?.data || deepseekErr.message);
                     return { type: "text", text: "SAMII démarre actuellement. Réessaie dans quelques instants.", sources: [] };

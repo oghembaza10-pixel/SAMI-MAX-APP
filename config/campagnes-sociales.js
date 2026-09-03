@@ -31,6 +31,8 @@
 //                illustration. C'est ce champ qui décide où la vitrine va
 //                chercher le média.
 //   poids        la fréquence relative dans la rotation
+//   formes       sous quelles FORMES cette campagne peut sortir, et à quelle
+//                fréquence chacune : `video`, `image`, `texte`. Voir plus bas.
 //
 // ── LE TON ────────────────────────────────────────────────────────────────
 //
@@ -57,6 +59,7 @@ const CAMPAGNES = {
         ],
         source: "pexels",
         poids: 3,
+        formes: { video: 3, image: 2, texte: 1 },
     },
 
     // ── ESSAYER ──────────────────────────────────────────────────────────
@@ -79,6 +82,7 @@ const CAMPAGNES = {
         ],
         source: "pexels",
         poids: 3,
+        formes: { video: 3, image: 2, texte: 1 },
     },
 
     // ── DÉVELOPPEMENT PERSONNEL ──────────────────────────────────────────
@@ -102,6 +106,9 @@ const CAMPAGNES = {
         ],
         source: "pexels",
         poids: 2,
+        // Une idée utile se lit très bien sans image. C'est la campagne où
+        // le texte seul est le plus légitime.
+        formes: { video: 2, image: 2, texte: 3 },
     },
 
     // ── UN PRODUIT ───────────────────────────────────────────────────────
@@ -115,7 +122,11 @@ const CAMPAGNES = {
         cta: "Commande dans ton QG",
         recherches: [],
         source: "catalogue",
+        // Jamais en texte seul : « voici un manteau à 12,94 € » sans photo
+        // ne vend rien. Et le catalogue n'a aucune vidéo (vérifié : 0 sur
+        // 203 annonces) — d'où `video: 0`, qui évite un tirage voué au repli.
         poids: 2,
+        formes: { video: 0, image: 3, texte: 0 },
     },
 };
 
@@ -181,6 +192,56 @@ function choisir({ dejaFaites = [] } = {}) {
     };
 }
 
+// ── SOUS QUELLE FORME ON SORT AUJOURD'HUI ─────────────────────────────────
+//
+// « Il n'est pas obligé de faire que des vidéos. Il peut de temps en temps
+//   faire des posts directement, juste l'écriture. »
+//
+// Avant, le cycle demandait TOUJOURS `prefererVideo: true`. Trois
+// conséquences, toutes mauvaises :
+//
+//   1. un fil qui n'est que de la vidéo se lit comme une chaîne, pas comme
+//      quelqu'un qui parle ;
+//   2. chaque passage consommait un appel Pexels même quand le texte seul
+//      aurait été meilleur — du quota brûlé pour rien ;
+//   3. une idée de développement personnel est SOUVENT plus forte nue. Lui
+//      coller une photo de lever de soleil l'affaiblit.
+//
+// La forme est tirée au sort, pondérée, et déclarée par la campagne : c'est
+// elle qui sait si elle supporte le texte seul. Un poids à 0 exclut la
+// forme — « produit » ne part jamais sans photo.
+const FORMES = ["video", "image", "texte"];
+
+// L'arrêt d'urgence, même geste que pour les plateformes et les campagnes :
+//     SOCIAL_FORMES_COUPEES=texte
+function formeEstCoupee(forme) {
+    const coupees = String(process.env.SOCIAL_FORMES_COUPEES || "")
+        .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    return coupees.includes(String(forme || "").toLowerCase());
+}
+
+function formesDe(slug) {
+    const c = get(slug);
+    // Sans déclaration, on garde l'ancien comportement — vidéo d'abord.
+    // Une campagne ajoutée demain sans y penser ne doit pas se retrouver
+    // muette.
+    return c?.formes || { video: 3, image: 2, texte: 0 };
+}
+
+function choisirForme(slug) {
+    const poids = formesDe(slug);
+    const tickets = [];
+    for (const f of FORMES) {
+        if (formeEstCoupee(f)) continue;
+        for (let i = 0; i < Math.max(0, Number(poids[f]) || 0); i++) tickets.push(f);
+    }
+    // Tout est à 0 ou tout est coupé : on ne renvoie pas `undefined`, qui
+    // ferait planter l'appelant. « image » est le plus petit dénominateur
+    // commun — toutes les plateformes l'acceptent.
+    if (!tickets.length) return { forme: "image", parDefaut: true };
+    return { forme: tickets[Math.floor(Math.random() * tickets.length)], parDefaut: false };
+}
+
 // Le sujet de recherche Pexels, tiré au sort parmi ceux de la campagne.
 // Écrit ici plutôt que dans le cycle : c'est une propriété de la campagne.
 function recherche(slug) {
@@ -190,6 +251,7 @@ function recherche(slug) {
 }
 
 module.exports = {
-    CAMPAGNES, ORDRE,
+    CAMPAGNES, ORDRE, FORMES,
     existe, get, liste, listeActives, estCoupee, choisir, recherche,
+    formesDe, choisirForme, formeEstCoupee,
 };

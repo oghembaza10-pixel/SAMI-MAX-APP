@@ -173,17 +173,44 @@ async function preparer({ forcer = false } = {}) {
     if (!tirage.ok) return { fait: false, raison: tirage.raison, ecartees };
     const campagne = tirage.campagne;
 
+    // ── SOUS QUELLE FORME ─────────────────────────────────────────────────
+    //
+    // Vidéo, image, ou rien du tout. Le tirage vit dans le registre des
+    // campagnes — c'est la campagne qui sait si elle supporte le texte nu.
+    // Avant, la réponse était « vidéo » à tous les coups, et un fil qui
+    // n'est que de la vidéo n'a plus de voix.
+    const { forme, parDefaut } = campagnes.choisirForme(campagne.slug);
+    if (parDefaut) ecartees.push("toutes les formes de cette campagne sont à 0 ou coupées — repli sur image");
+
+    // ── LE TEXTE SEUL ────────────────────────────────────────────────────
+    //
+    // On ne va PAS chercher de média : c'est tout l'intérêt. On économise
+    // l'appel Pexels, et on ne garde que les plateformes qui acceptent un
+    // post sans image — Instagram, lui, refuse, et le dire ici évite un
+    // échec garanti plus loin.
+    if (forme === "texte") {
+        const sansMedia = retenues.filter((slug) => !plateformes.get(slug).mediaRequis);
+        for (const slug of retenues) {
+            if (plateformes.get(slug).mediaRequis) ecartees.push(`${slug} : exige un média, or ce passage est en texte seul`);
+        }
+        if (!sansMedia.length) {
+            return { fait: false, campagne: campagne.slug, forme,
+                     raison: "passage en texte seul, mais toutes les cibles exigent un média", ecartees };
+        }
+        return preparerEtProgrammer({ campagne, forme, cibles: sansMedia, media: null, mediaType: null,
+                                      produit: null, ecartees });
+    }
+
     // ── LE MÉDIA D'ABORD, LE TEXTE ENSUITE ───────────────────────────────
     //
     // Dans cet ordre, et pas l'inverse. Instagram REFUSE une publication
     // sans image : écrire un texte pour découvrir ensuite qu'on n'a rien à
     // montrer, c'est brûler un appel au modèle pour rien.
     //
-    // On demande une vidéo en priorité — c'est ce qui permet un reel. Le
-    // catalogue n'en a AUCUNE (vérifié : 0 vidéo sur 203 annonces), Pexels
+    // Le catalogue n'a AUCUNE vidéo (vérifié : 0 sur 203 annonces), Pexels
     // si. C'est la campagne qui dit où chercher, pas ce code-ci.
     const choix = await vitrine.choisirPourCampagne({
-        campagne: campagne.slug, communaute: communaute(), prefererVideo: true,
+        campagne: campagne.slug, communaute: communaute(), prefererVideo: forme === "video",
     });
     if (!choix.ok) {
         // Sans média, il reste les plateformes qui n'en exigent pas.
@@ -193,7 +220,7 @@ async function preparer({ forcer = false } = {}) {
                      raison: `aucun média disponible (${choix.raison}) et toutes les cibles en exigent un`,
                      ecartees };
         }
-        return preparerEtProgrammer({ campagne, cibles: sansMedia, media: null, mediaType: null,
+        return preparerEtProgrammer({ campagne, forme, cibles: sansMedia, media: null, mediaType: null,
                                       produit: null, ecartees, noteMedia: choix.raison });
     }
 
@@ -212,6 +239,7 @@ async function preparer({ forcer = false } = {}) {
 
     return preparerEtProgrammer({
         campagne,
+        forme,
         cibles: compatibles.map((c) => c.slug),
         formats: compatibles,
         media: choix.media,
@@ -225,13 +253,19 @@ async function preparer({ forcer = false } = {}) {
     });
 }
 
-async function preparerEtProgrammer({ campagne, cibles, formats: choisis, media, mediaType,
+async function preparerEtProgrammer({ campagne, forme, cibles, formats: choisis, media, mediaType,
                                       produit, credit, source, recherche, ecartees, noteMedia }) {
     // Le thème vient d'un vrai produit quand il y en a un : SAMII parle de
     // ce qu'elle vend, pas d'un sujet abstrait tiré au sort. Sinon c'est la
     // campagne qui donne le sujet.
+    // Le prix vient déjà formaté de la vitrine (`prixAffiche`) : recoller la
+    // devise ici produisait « 12.94 EUR EUR », parce que `annonces.prix` est
+    // du texte qui la contient déjà. La règle est chez la vitrine, qui
+    // connaît la colonne ; ici on se contente de l'afficher.
+    const etiquette = produit?.prixAffiche
+        || (produit ? vitrine.etiquettePrix(produit.prix, produit.devise) : null);
     const theme = produit
-        ? `${produit.titre}${produit.prix ? ` — ${produit.prix} ${produit.devise || ""}`.trim() : ""}`
+        ? `${produit.titre}${etiquette ? ` — ${etiquette}` : ""}`
         : campagne?.nom || null;
 
     const prepare = await social.preparer({
@@ -247,10 +281,14 @@ async function preparerEtProgrammer({ campagne, cibles, formats: choisis, media,
         cibles,
         media, mediaType, credit,
         creePar: `cycle-auto:${campagne?.slug || "produit"}`,
+        // La forme voyage jusqu'au créateur : un texte seul ne s'écrit pas
+        // comme une légende sous une vidéo.
+        forme: forme || null,
     });
 
     if (!prepare.ok) {
-        return { fait: false, etape: prepare.etape, raison: prepare.erreur, doublon: prepare.doublon, ecartees };
+        return { fait: false, forme: forme || null, etape: prepare.etape,
+                 raison: prepare.erreur, doublon: prepare.doublon, ecartees };
     }
     if (!prepare.approuvees) {
         // Le relecteur a tout refusé. C'est son travail — on ne force pas.
@@ -267,6 +305,7 @@ async function preparerEtProgrammer({ campagne, cibles, formats: choisis, media,
         postId: prepare.postId,
         mode: social.mode(),
         campagne: campagne?.slug || null,
+        forme: forme || null,
         source: source || null,
         recherche: recherche || null,
         credit: credit?.ligne || null,

@@ -102,6 +102,52 @@ function mediasDe(annonce) {
 // demande d'abord un produit qui a une vidéo, et se rabat sur une image
 // si le catalogue n'en a pas. Le rabattement est DIT dans le résultat, pas
 // silencieux — « pourquoi ce n'est pas un reel » doit avoir une réponse.
+// ── CE QUE LE CATALOGUE CONTIENT VRAIMENT ─────────────────────────────────
+//
+// Les fiches importées de CJ ne sont pas du texte : ce sont des fragments de
+// page HTML, en anglais, avec `<p>`, `<span style="…">`, `<br/>`, `&nbsp;`.
+// La description partait telle quelle dans l'invite du créateur comme
+// « Angle imposé » — 600 caractères de balises. Relevé en base le 3
+// septembre : `entree->angle` commençait par
+// `<p><span style="font-weight: bold;">Overview:<br/>`.
+//
+// On demandait donc à SAMII d'écrire un post français en s'appuyant sur du
+// balisage anglais. Le nettoyage n'est pas cosmétique : c'est la différence
+// entre une consigne et du bruit.
+function enTexte(brut) {
+    return String(brut || "")
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<\/(p|div|li|tr|h[1-6])>/gi, " ")
+        .replace(/<[^>]*>/g, "")
+        // Les entités que CJ sème le plus : espace insécable et compagnie.
+        .replace(/&nbsp;/gi, " ").replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<").replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, '"').replace(/&#39;/gi, "'")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 600);
+}
+
+// ── LE PRIX, ÉCRIT UNE FOIS ───────────────────────────────────────────────
+//
+// `annonces.prix` est une colonne TEXTE, et CJ y écrit déjà la devise :
+// la valeur en base vaut « 12.94 EUR », pas « 12.94 ». Le cycle recollait
+// `devise` derrière — d'où le thème réellement envoyé au modèle le
+// 3 septembre : « … — 12.94 EUR EUR ».
+//
+// La règle vit ici, à côté de la colonne qu'elle connaît, et pas chez
+// chaque appelant qui devrait la redécouvrir.
+function etiquettePrix(prix, devise) {
+    const p = String(prix ?? "").trim();
+    if (!p) return null;
+    const d = String(devise ?? "").trim();
+    if (!d) return p;
+    // Déjà présente (en fin de chaîne ou comme mot) : on ne la répète pas.
+    return new RegExp(`(^|\\s)${d.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`, "i").test(p)
+        ? p
+        : `${p} ${d}`;
+}
+
 async function choisir({ communaute, prefererVideo = false, exclureIds = [] } = {}) {
     let lignes;
     try {
@@ -165,9 +211,11 @@ async function choisir({ communaute, prefererVideo = false, exclureIds = [] } = 
         produit: {
             id: annonce.id,
             titre: annonce.titre,
-            description: String(annonce.description || "").slice(0, 600),
+            description: enTexte(annonce.description),
             prix: annonce.prix || null,
             devise: annonce.devise || null,
+            // Le prix DÉJÀ écrit tel qu'on doit l'afficher. Voir `etiquettePrix`.
+            prixAffiche: etiquettePrix(annonce.prix, annonce.devise),
             categorie: annonce.categorie || null,
         },
         media: video || medias.images[0],
@@ -280,4 +328,5 @@ async function choisirPourCampagne({ campagne, communaute, prefererVideo = true 
 module.exports = {
     choisir, choisirPourCampagne, couverture,
     mediasDe, lireListe, urlPubliable, FENETRE,
+    enTexte, etiquettePrix,
 };

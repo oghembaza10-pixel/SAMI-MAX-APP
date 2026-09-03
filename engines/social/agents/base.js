@@ -88,13 +88,33 @@ function resumerPourLaTrace(sortie) {
 //
 // `useTools: false` : on veut du texte, pas que SAMII décide d'appeler un
 // outil au milieu de la rédaction d'une légende.
+// ── UNE NON-RÉPONSE N'EST PAS UN TEXTE ────────────────────────────────────
+//
+// `gemini.chat()` rend une phrase d'excuse quand plus aucun fournisseur ne
+// répond, parce que c'est ce qu'il faut dire à un client dans une
+// conversation. Un agent, lui, doit LEVER : sinon la phrase descend la
+// chaîne, personne n'arrive à la lire, et l'échec est imputé au maillon
+// suivant. C'est exactement ce qui s'est produit le 3 septembre — trace
+// `creator/erreur` : « le créateur n'a pas produit de contenu exploitable »,
+// alors qu'il n'avait rien reçu du tout.
+//
+// La distinction se fait sur le drapeau `degrade` posé par geminiService, et
+// PAS sur le texte de la phrase : comparer des phrases, c'est se condamner à
+// oublier la comparaison le jour où la phrase change.
 async function demander(message, { workspaceId, source } = {}) {
     const r = await gemini.chat({
         message,
         context: { source: source || "social-agents", workspaceId, audience: "souverain" },
         useTools: false,
     });
-    return r?.type === "text" ? (r.text || "") : "";
+    if (r?.degrade) throw new Error(`aucune réponse de l'IA — ${r.motif || "chaîne épuisée"}`);
+    // `useTools:false` est passé juste au-dessus : un appel d'outil ici veut
+    // dire que le moteur n'a pas respecté la consigne. Le taire rendrait ""
+    // et ferait accuser l'agent d'avoir mal écrit.
+    if (r?.type !== "text") throw new Error(`l'IA a répondu « ${r?.type || "rien"} » au lieu d'un texte`);
+    const texte = String(r.text || "").trim();
+    if (!texte) throw new Error("l'IA a renvoyé un texte vide");
+    return texte;
 }
 
 // ── LIRE DU JSON QUE L'IA A ÉCRIT ─────────────────────────────────────────
