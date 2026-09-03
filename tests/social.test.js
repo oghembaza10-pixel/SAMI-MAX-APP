@@ -404,6 +404,61 @@ console.log("── Buffer : chez lui, les identifiants sont TYPÉS ──");
         "String! est revenu dans GetChannels : LinkedIn et Instagram cesseront de publier");
 }
 
+console.log("── Buffer : la charge respecte le schéma introspecté ──");
+{
+    // Le schéma réel de `CreatePostInput`, relevé par introspection sur le
+    // serveur de Buffer le 3 septembre. Ce bloc garde CHAQUE fait mesuré :
+    // si le code se remet à inventer, la suite le dit avant la production.
+    // ── ON LIT LE CODE, PAS LES COMMENTAIRES ─────────────────────────
+    //
+    // Première version de ce contrôle : il criait « customScheduled n'est
+    // pas une valeur de SchedulingType » alors que le code était corrigé.
+    // Il lisait le COMMENTAIRE juste au-dessus, qui cite l'ancienne ligne
+    // fautive pour expliquer la panne. Un contrôle qui lit du texte doit
+    // d'abord retirer ce qui n'est pas exécuté — sinon documenter une
+    // erreur revient à la commettre.
+    const source = require("fs").readFileSync(
+        path.join(__dirname, "..", "engines", "social", "providers", "buffer.js"), "utf8")
+        .split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n");
+
+    // Les deux champs que j'avais inventés. Aucun des deux n'existe.
+    verifier(!/entree\.videoUrl|videoUrl:/.test(source),
+        "videoUrl est revenu dans la charge — ce champ n'existe pas chez Buffer");
+    verifier(!/entree\.imageUrl|imageUrl:/.test(source),
+        "imageUrl est revenu dans la charge — il n'existe pas non plus, il n'avait jamais été atteint");
+
+    // Les deux obligatoires qui manquaient. Sans eux, createPost échoue
+    // TOUJOURS — y compris pour un post en texte seul.
+    verifier(/assets:\s*\[\]/.test(source),
+        "assets n'est plus initialisé : il est obligatoire, même vide, sinon Buffer refuse tout");
+    verifier(/needsApproval:\s*false/.test(source),
+        "needsApproval a disparu : il est obligatoire, et à true SAMII déposerait des brouillons que personne ne validerait");
+
+    // La forme du média, d'après AssetInput { document, image, video }.
+    verifier(/\{ video: \{ url: media \} \}/.test(source), "une vidéo part en { video: { url } }");
+    verifier(/\{ image: \{ url: media \} \}/.test(source), "une image part en { image: { url } }");
+
+    // Les valeurs d'énumération. Une chaîne libre passerait la compilation
+    // et serait refusée par Buffer à l'exécution.
+    const SHARE_MODE = ["addToQueue", "customScheduled", "shareNext", "shareNow"];
+    const SCHEDULING = ["automatic", "notification"];
+    // Ce contrôle a déjà servi : il a attrapé `schedulingType:
+    // "customScheduled"` — une valeur de ShareMode glissée dans
+    // SchedulingType parce que les deux champs se ressemblent et
+    // changeaient ensemble. Buffer aurait refusé les publications
+    // PROGRAMMÉES, et seulement celles-là.
+    for (const [ligne, permis, quoi] of [
+        [/\bmode:\s*(?:quand \? )?"([a-zA-Z]+)"(?: : "([a-zA-Z]+)")?/, SHARE_MODE, "ShareMode"],
+        [/\bschedulingType:\s*(?:quand \? )?"([a-zA-Z]+)"(?: : "([a-zA-Z]+)")?/, SCHEDULING, "SchedulingType"],
+    ]) {
+        const m = ligne.exec(source);
+        verifier(m !== null, `impossible de relire les valeurs de ${quoi} dans le code`);
+        if (m) for (const v of [m[1], m[2]].filter(Boolean)) {
+            verifier(permis.includes(v), `« ${v} » n'est pas une valeur de ${quoi} (${permis.join(", ")})`);
+        }
+    }
+}
+
 console.log("── BUFFER_PLATEFORMES : qui Buffer a le droit de servir ──");
 {
     // « fb en utilise api meta, whatsapp aussi, telegram — on a tout ça.
@@ -662,7 +717,7 @@ console.log("── Les formats : reel, post, photo ──");
              "et ils reviennent dès qu'on découpe");
 }
 
-console.log("── Buffer : une vidéo ne part pas dans imageUrl ──");
+console.log("── Buffer : la requête réellement envoyée ──");
 {
     // Envoyer l'URL d'un .mp4 dans `imageUrl` est la façon la plus simple
     // de faire échouer un reel, avec un message d'erreur qui ne parle même
@@ -697,20 +752,57 @@ console.log("── Buffer : une vidéo ne part pas dans imageUrl ──");
 
     const envois = () => recu.filter((q) => /createPost/.test(String(q.query || ""))).map((q) => q.variables.input);
 
+    // ── CE TEST ENCODAIT MA PROPRE INVENTION ─────────────────────────
+    //
+    // Il exigeait `dernier.videoUrl === …` et passait au vert, parce qu'il
+    // vérifiait que le code fait ce que le code fait. Ni `videoUrl` ni
+    // `imageUrl` n'existent chez Buffer : le faux serveur, lui, acceptait
+    // tout. Un test peut confirmer une erreur avec autant d'aplomb qu'une
+    // vérité — c'est ce qui le rend dangereux quand la forme attendue vient
+    // de moi et non du serveur.
+    //
+    // Il porte maintenant le schéma introspecté :
+    //     assets: [ { video: { url } } ]  ou  [ { image: { url } } ]
     await buffer.publier({ plateforme: "instagram", texte: "Une légende de reel.", media: "https://x.test/v.mp4", mediaType: "video" });
     let dernier = envois().pop();
-    verifier(dernier.videoUrl === "https://x.test/v.mp4", "une vidéo part dans videoUrl");
-    verifier(!dernier.imageUrl, "et surtout PAS dans imageUrl — c'est ce qui casse un reel");
+    verifier(dernier.assets?.[0]?.video?.url === "https://x.test/v.mp4", "une vidéo part dans assets[0].video.url");
+    verifier(!dernier.assets?.[0]?.image, "et pas en image — c'est ce qui casse un reel");
+    verifier(dernier.videoUrl === undefined && dernier.imageUrl === undefined,
+        "aucun champ inventé ne subsiste dans la charge");
+
+    // LES OBLIGATOIRES. Sans eux, Buffer refuse TOUT — y compris un texte
+    // seul. C'est la raison pour laquelle il n'avait jamais rien publié.
+    verifier(Array.isArray(dernier.assets), "assets est une liste, il est obligatoire");
+    verifier(dernier.needsApproval === false, "needsApproval est envoyé, et à false : SAMII publie, elle ne dépose pas un brouillon");
+    verifier(typeof dernier.channelId === "string" && dernier.channelId, "channelId est envoyé");
+    verifier(dernier.mode === "addToQueue", "mode vaut une valeur de ShareMode");
+    verifier(dernier.schedulingType === "automatic", "schedulingType vaut une valeur de SchedulingType");
 
     await buffer.publier({ plateforme: "instagram", texte: "Une légende de photo.", media: "https://x.test/p.jpg", mediaType: "image" });
     dernier = envois().pop();
-    verifier(dernier.imageUrl === "https://x.test/p.jpg" && !dernier.videoUrl, "une image part dans imageUrl");
+    verifier(dernier.assets?.[0]?.image?.url === "https://x.test/p.jpg" && !dernier.assets?.[0]?.video,
+        "une image part dans assets[0].image.url");
+
+    // Un texte seul : la liste part VIDE, elle ne disparaît pas.
+    await buffer.publier({ plateforme: "instagram", texte: "Rien qu'un texte." });
+    dernier = envois().pop();
+    verifier(Array.isArray(dernier.assets) && dernier.assets.length === 0,
+        "sans média, assets est une liste vide — pas absente, sinon Buffer refuse le post");
+
+    // Un post programmé : c'est `mode` qui porte la date, pas
+    // `schedulingType`. Confondre les deux faisait refuser TOUTES les
+    // publications programmées, et seulement celles-là.
+    await buffer.publier({ plateforme: "instagram", texte: "Pour plus tard.", quand: "2026-12-01T10:00:00Z" });
+    dernier = envois().pop();
+    verifier(dernier.mode === "customScheduled", "une date programmée passe par mode");
+    verifier(dernier.schedulingType === "automatic", "et schedulingType reste automatic — customScheduled n'en est pas une valeur");
+    verifier(typeof dernier.dueAt === "string", "la date part dans dueAt");
 
     // Personne ne déclare le type : l'extension tranche. Imparfait, mais
     // très supérieur à « tout est une image ».
     await buffer.publier({ plateforme: "instagram", texte: "Sans type déclaré.", media: "https://x.test/auto.mp4" });
     dernier = envois().pop();
-    verifier(dernier.videoUrl === "https://x.test/auto.mp4", "un .mp4 sans type déclaré est reconnu comme une vidéo");
+    verifier(dernier.assets?.[0]?.video?.url === "https://x.test/auto.mp4", "un .mp4 sans type déclaré est reconnu comme une vidéo");
 
     faux.close();
     if (ancienne.adr === undefined) delete process.env.BUFFER_ADRESSE; else process.env.BUFFER_ADRESSE = ancienne.adr;

@@ -316,29 +316,71 @@ async function publier({ plateforme, texte, media, mediaType, quand }) {
 
     const resultats = [];
     for (const chaine of cibles.chaines) {
+        // ── CE QUE `CreatePostInput` EXIGE VRAIMENT ──────────────────────
+        //
+        // Relevé par introspection le 3 septembre, après deux refus en
+        // production. Cinq champs sont OBLIGATOIRES (`Type!` sans défaut) :
+        //
+        //     assets [AssetInput!]!   channelId ChannelId!   mode ShareMode!
+        //     needsApproval Boolean!  schedulingType SchedulingType!
+        //
+        // `assets` et `needsApproval` n'étaient pas envoyés. `createPost`
+        // ne pouvait donc réussir dans AUCUN cas — pas même un texte seul.
+        // Ce n'était pas « le média ne part pas » : Buffer n'a jamais rien
+        // publié. `assets: []` est la forme d'un post sans média — la liste
+        // est obligatoire, son contenu ne l'est pas.
+        //
+        // `needsApproval: false` : SAMII publie, elle ne dépose pas un
+        // brouillon qu'un humain devra valider dans Buffer. Le contrôle
+        // humain existe déjà en amont — c'est le relecteur, et le mode
+        // SEMI_AUTO. En ajouter un second ici arrêterait tout sans que rien
+        // ne le dise.
         const entree = {
             text: texte,
             channelId: chaine.id,
-            schedulingType: quand ? "customScheduled" : "automatic",
+            assets: [],
+            needsApproval: false,
+            // ── DEUX ÉNUMÉRATIONS DISTINCTES, PAS UN RÉGLAGE EN DOUBLE ───
+            //
+            //   ShareMode        addToQueue | customScheduled | shareNext | shareNow
+            //   SchedulingType   automatic  | notification
+            //
+            // Le code écrivait `schedulingType: "customScheduled"` — une
+            // valeur de ShareMode, glissée dans SchedulingType parce que les
+            // deux champs se ressemblent et changeaient ensemble. Buffer
+            // aurait refusé toute publication PROGRAMMÉE, et seulement
+            // celles-là : le genre de panne qui n'apparaît qu'une fois sur
+            // trois et qu'on met des semaines à relier à sa cause.
+            //
+            // Les deux champs répondent à deux questions différentes :
+            //   mode           → QUAND (la file, ou une date précise)
+            //   schedulingType → COMMENT (Buffer publie, ou notifie un humain)
+            //
+            // SAMII publie toute seule : `automatic` dans les deux cas.
+            schedulingType: "automatic",
             mode: quand ? "customScheduled" : "addToQueue",
         };
         if (quand) entree.dueAt = new Date(quand).toISOString();
 
-        // ── UNE VIDÉO N'EST PAS UNE IMAGE ────────────────────────────────
+        // ── LE MÉDIA PASSE PAR `assets`, PAS PAR UNE URL À PLAT ──────────
         //
-        // Envoyer l'URL d'un .mp4 dans `imageUrl` est la façon la plus
-        // simple de faire échouer un Reel : Buffer essaie de le traiter
-        // comme une image, et le message d'erreur qui revient ne parle pas
-        // de vidéo. On distingue donc explicitement.
+        // `imageUrl` et `videoUrl` n'existent pas chez Buffer. Je les avais
+        // inventés tous les deux ; seul `videoUrl` s'est fait prendre, parce
+        // qu'`imageUrl` n'avait jamais été atteint — les tentatives mouraient
+        // plus tôt.
         //
-        // Le type est déduit de l'extension quand l'appelant ne le donne
-        // pas : c'est imparfait, mais c'est mieux que de tout traiter
-        // comme une image.
+        // La vraie forme, d'après `AssetInput { document, image, video }` :
+        //
+        //     assets: [ { image: { url: "…/photo.jpg" } } ]
+        //     assets: [ { video: { url: "…/clip.mp4" } } ]
+        //
+        // Chaque entrée porte EXACTEMENT un de ces trois. L'URL doit être
+        // joignable publiquement, sans authentification : Buffer va
+        // télécharger le fichier depuis chez lui.
         if (media) {
             const type = String(mediaType || "").toLowerCase()
                 || (/\.(mp4|mov|m4v|webm)(\?|$)/i.test(media) ? "video" : "image");
-            if (type === "video") entree.videoUrl = media;
-            else entree.imageUrl = media;
+            entree.assets = [type === "video" ? { video: { url: media } } : { image: { url: media } }];
         }
 
         const r = await appeler(
