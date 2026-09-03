@@ -36,6 +36,12 @@ process.env.GEMINI_API_KEY_2 = "cle-secours-2-AIzaXXXXXXXXXXXXXX";
 process.env.GEMINI_API_KEY_3 = "cle-secours-3-AIzaXXXXXXXXXXXXXX";
 // Celle qu'il a posée sous le nom qu'il voulait, tiret compris.
 process.env["SAMII-API-Key"] = "cle-samii-AIzaXXXXXXXXXXXXXXXXX";
+// LA CLÉ PAYANTE, SOUS SON VRAI NOM SUR RENDER : « API_KEY ». Tout court.
+// Le motif de ramassage exige que le nom COMMENCE par GEMINI ou SAMII :
+// « API_KEY » ne passait donc pas, et la clé payante n'était lue par
+// personne. Exactement la panne muette que tout ce bloc était censé
+// empêcher. Elle est maintenant déclarée nommément.
+process.env.API_KEY = "cle-payante-reelle-AIzaXXXXXXXX";
 // Des noms qui ressemblent mais qui ne sont PAS des clés : ils ne doivent
 // pas entrer dans la rotation, sinon SAMII passe son temps à essayer de
 // parler à Gemini avec un secret de webhook.
@@ -63,6 +69,7 @@ const PRINCIPALE = process.env.GEMINI_API_KEY;
 const SECOURS_2  = process.env.GEMINI_API_KEY_2;
 const SECOURS_3  = process.env.GEMINI_API_KEY_3;
 const PAYANTE    = process.env["SAMII-API-Key"];
+const PAYANTE_RENDER = process.env.API_KEY;
 
 const APPELS = [];
 let reponses = [];
@@ -131,6 +138,7 @@ const CONFIG = require(path.join(RACINE, "config.js"));
         ["cle-secours-2-AIzaXXXXXXXXXXXXXX", "GEMINI_API_KEY_2"],
         ["cle-secours-3-AIzaXXXXXXXXXXXXXX", "GEMINI_API_KEY_3"],
         ["cle-samii-AIzaXXXXXXXXXXXXXXXXX", "SAMII-API-Key (le nom qu'il a choisi, tiret compris)"],
+        ["cle-payante-reelle-AIzaXXXXXXXX", "API_KEY (le nom réel de la payante sur Render)"],
     ]) {
         verifier(TROUVEES.includes(valeur),
             `la clé posée sous « ${nom} » n'est pas ramassée — elle est sur Render et ne servira jamais, sans une seule ligne d'erreur pour le dire`);
@@ -276,8 +284,15 @@ const CONFIG = require(path.join(RACINE, "config.js"));
     {
         verifier(CONFIG.GEMINI.PAYANTES.includes(PAYANTE),
             "la clé payante n'est pas identifiée comme telle — rien n'empêchera le service de s'y installer");
-        verifier(TROUVEES[TROUVEES.length - 1] === PAYANTE,
-            "la clé payante n'est pas en dernier : elle sera facturée avant même que le gratuit ait servi");
+        verifier(CONFIG.GEMINI.PAYANTES.includes(PAYANTE_RENDER),
+            "la clé posée sous « API_KEY » n'est pas comptée comme payante — elle serait facturée sans garde-fou");
+        // Ce qui compte n'est pas QUELLE payante finit dernière, mais
+        // qu'AUCUNE gratuite ne se retrouve derrière une payante : dès
+        // qu'une payante passe devant, elle absorbe le trafic et la
+        // facture court alors que le gratuit était encore disponible.
+        const rangs = TROUVEES.map((c) => CONFIG.GEMINI.PAYANTES.includes(c));
+        verifier(rangs.indexOf(true) === -1 || !rangs.slice(rangs.indexOf(true)).includes(false),
+            "une clé gratuite est rangée APRÈS une payante : elle sera facturée avant même que le gratuit ait servi");
 
         APPELS.length = 0;
         gemini = chargerService();
@@ -418,8 +433,11 @@ const CONFIG = require(path.join(RACINE, "config.js"));
         verifier(!CONFIG.GEMINI.PAYANTES.includes(valeur),
             `${nom} est comptée comme une clé PAYANTE — elle fausse le décompte et le curseur`);
     }
-    verifier(CONFIG.GEMINI.PAYANTES.length === 1,
-        `${CONFIG.GEMINI.PAYANTES.length} clés payantes détectées au lieu d'une seule — le filtre de noms ratisse encore trop large`);
+    // Deux payantes dans ce jeu d'essai, et deux seulement : « SAMII-API-Key »
+    // (le nom historique) et « API_KEY » (le nom réel sur Render). Toute
+    // troisième signifierait que le filtre de noms s'est remis à ratisser.
+    verifier(CONFIG.GEMINI.PAYANTES.length === 2,
+        `${CONFIG.GEMINI.PAYANTES.length} clés payantes détectées au lieu de 2 — le filtre de noms ratisse encore trop large`);
 
     if (echecs.length) {
         console.error(`❌ clés Gemini : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);

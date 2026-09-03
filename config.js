@@ -289,6 +289,22 @@ module.exports = {
             const nomme = (n) => /^(GEMINI|SAMII)[-_]?.*(API)?[-_]?KEY/i.test(n)
                 && !RESERVEES.has(n.toUpperCase())
                 && !/SECRET|WEBHOOK|CLIENT|OAUTH|TOKEN/i.test(n);
+
+            // ── LE NOM DE LA CLÉ PAYANTE, DIT PAR SON PROPRIÉTAIRE ──────
+            //
+            // Sur Render, la clé Gemini PAYANTE s'appelle « API_KEY ». Tout
+            // court. Le motif ci-dessus exige que le nom COMMENCE par GEMINI
+            // ou SAMII : « API_KEY » ne passait donc pas, et la clé payante
+            // n'était lue par personne. Exactement la panne muette que ce
+            // bloc était censé empêcher — une clé posée sous un nom que le
+            // code ne lit pas n'existe pas.
+            //
+            // Elle est déclarée NOMMÉMENT et pas en élargissant le motif :
+            // « API_KEY » est un nom trop générique pour être attrapé par une
+            // expression régulière sans risquer de revendiquer la clé d'un
+            // autre service. Vérifié avant de l'ajouter : `process.env.API_KEY`
+            // n'est lu nulle part ailleurs dans ce dépôt.
+            const PAYANTES_NOMMEES = new Set(["API_KEY"]);
             // Une vraie clé Google fait ~39 caractères et commence par AIza.
             // Ce contrôle évite de tirer sur une variable qui porte un nom
             // approchant mais contient un identifiant, une URL ou un « true ».
@@ -328,7 +344,8 @@ module.exports = {
             // inattendu est un dernier recours, elle ne passe jamais devant.
             for (const nom of Object.keys(process.env)) {
                 if (attendus.includes(nom)) continue;
-                if (nomme(nom) && ressemble(process.env[nom])) ajouter(process.env[nom], payantes, nom, "payante");
+                const reconnue = PAYANTES_NOMMEES.has(nom.toUpperCase()) || nomme(nom);
+                if (reconnue && ressemble(process.env[nom])) ajouter(process.env[nom], payantes, nom, "payante");
             }
 
             // ── LA PAYANTE RESTE CHEZ NOUS ──────────────────────────────

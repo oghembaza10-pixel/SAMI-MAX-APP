@@ -185,7 +185,32 @@ async function main() {
     // écrit » de « aucun fournisseur n'a répondu » — les deux produisaient
     // le même message d'erreur avant le 3 septembre.
     titre("6. LA CHAÎNE D'IA (un appel réel, très court)");
-    dit("GEMINI_API_KEY", drapeau("GEMINI_API_KEY", { secret: true }));
+    // ── LES NOMS NE SONT PAS DEVINÉS, ILS SONT LUS ────────────────────
+    //
+    // Cette section affichait « GEMINI_API_KEY ❌ absente » : un nom que
+    // j'avais choisi, pas celui que le code lit. La clé payante s'appelle
+    // « API_KEY » sur Render — la sonde la déclarait donc absente alors
+    // qu'elle était posée. Une sonde qui invente des noms ment.
+    //
+    // On lit maintenant l'INVENTAIRE que `config.js` a réellement
+    // constitué : quel nom de variable a donné quelle clé, et dans quel
+    // rang. Aucune clé n'y figure, seulement ses quatre derniers
+    // caractères.
+    try {
+        const CONFIG = require("../config");
+        const inv = CONFIG.GEMINI?.INVENTAIRE || [];
+        if (!inv.length) {
+            dit("clés Gemini", "❌ AUCUNE trouvée — vérifier le nom de la variable sur Render");
+        } else {
+            dit("clés Gemini", `${inv.length} trouvée(s), essayées dans cet ordre :`);
+            inv.forEach((e, i) => dit(`   ${i + 1}. ${e.nom}`, `…${e.empreinte} (${e.rang})`));
+            dit("payantes écartées ?", CONFIG.GEMINI.CHEZ_UNE_PARTENAIRE
+                ? "✅ oui — service partenaire, la payante reste à la maison"
+                : "non — service maison, la payante sert en dernier recours");
+        }
+    } catch (err) {
+        dit("clés Gemini", `❌ config illisible : ${err.message}`);
+    }
     dit("GROQ_API_KEY", drapeau("GROQ_API_KEY", { secret: true }));
     dit("OPENROUTER_API_KEY", drapeau("OPENROUTER_API_KEY", { secret: true }));
     dit("DEEPSEEK_API_KEY", drapeau("DEEPSEEK_API_KEY", { secret: true }));
