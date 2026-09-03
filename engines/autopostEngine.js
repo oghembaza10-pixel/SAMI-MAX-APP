@@ -92,7 +92,11 @@ async function genererVisuelRunware(promptVisuel, type) {
     }
 }
 
-async function publierFacebook(workspaceId, { legende, imageUrl }) {
+// `videoUrl` est distinct d'`imageUrl` et ne peut pas ne pas l'être : Meta
+// n'utilise ni le même point d'entrée, ni les mêmes noms de paramètres pour
+// les deux. Faire voyager une vidéo sous le nom « imageUrl » a produit
+// « Invalid parameter » en production le 3 septembre.
+async function publierFacebook(workspaceId, { legende, imageUrl, videoUrl }) {
     try {
         const connecteur = await connectorService.getOne(workspaceId, "facebook");
         if (!connecteur?.actif || !connecteur.config?.pageAccessToken) {
@@ -100,7 +104,7 @@ async function publierFacebook(workspaceId, { legende, imageUrl }) {
         }
         await meta.publishPagePost(
             { pageId: connecteur.config.pageId, accessToken: connecteur.config.pageAccessToken },
-            { message: legende, imageUrl }
+            { message: legende, imageUrl, videoUrl }
         );
         return { success: true };
     } catch (err) {
@@ -108,7 +112,7 @@ async function publierFacebook(workspaceId, { legende, imageUrl }) {
     }
 }
 
-async function publierInstagram(workspaceId, { legende, imageUrl }) {
+async function publierInstagram(workspaceId, { legende, imageUrl, videoUrl }) {
     try {
         const connecteur = await connectorService.getOne(workspaceId, "instagram");
         if (!connecteur?.actif || !connecteur.config?.pageAccessToken) {
@@ -116,7 +120,7 @@ async function publierInstagram(workspaceId, { legende, imageUrl }) {
         }
         await meta.publishInstagramPost(
             { igAccountId: connecteur.config.igAccountId, accessToken: connecteur.config.pageAccessToken },
-            { imageUrl, caption: legende }
+            { imageUrl, videoUrl, caption: legende }
         );
         return { success: true };
     } catch (err) {

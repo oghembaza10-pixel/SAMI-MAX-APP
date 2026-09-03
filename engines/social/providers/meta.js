@@ -49,13 +49,23 @@
 const autopost = require("../../autopostEngine");
 const connectorService = require("../../../services/connectorService");
 
-async function publier({ plateforme, texte, media, workspaceId }) {
+async function publier({ plateforme, texte, media, mediaType, workspaceId }) {
     if (!workspaceId) return { ok: false, erreur: "workspaceId manquant" };
+
+    // Le type est DIT par l'appelant quand il le connaît (le cycle le sait :
+    // c'est lui qui a demandé une vidéo à Pexels). Sinon on le déduit de
+    // l'extension — un dernier recours, pas la règle.
+    const estVideo = media
+        ? String(mediaType || "").toLowerCase() === "video"
+          || (!mediaType && /\.(mp4|mov|m4v|webm)(\?|$)/i.test(media))
+        : false;
+    const imageUrl = media && !estVideo ? media : null;
+    const videoUrl = media && estVideo ? media : null;
 
     if (plateforme === "facebook") {
         // Exactement la fonction utilisée par l'auto-post quotidien.
         const r = await autopost.publierFacebook(workspaceId, {
-            legende: texte, imageUrl: media || null,
+            legende: texte, imageUrl, videoUrl,
         });
         return r.success ? { ok: true, id: r.id || null } : { ok: false, erreur: r.error };
     }
@@ -66,7 +76,7 @@ async function publier({ plateforme, texte, media, workspaceId }) {
         // laisser Meta renvoyer une erreur obscure.
         if (!media) return { ok: false, erreur: "Instagram exige une image ou une vidéo" };
         const r = await autopost.publierInstagram(workspaceId, {
-            legende: texte, imageUrl: media,
+            legende: texte, imageUrl, videoUrl,
         });
         return r.success ? { ok: true, id: r.id || null } : { ok: false, erreur: r.error };
     }
