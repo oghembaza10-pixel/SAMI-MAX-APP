@@ -130,7 +130,14 @@ async function ciblesDisponibles() {
 
         const deja = await partiesAujourdhui(p.slug);
         if (deja >= maxParJour()) {
-            ecartees.push(`${p.slug} : plafond atteint (${deja}/${maxParJour()} aujourd'hui)`);
+            // `partiesAujourdhui` rend MAX_SAFE_INTEGER quand la base est
+            // injoignable — c'est volontaire (mieux vaut ne rien publier que
+            // publier en boucle). Mais l'afficher tel quel donnait
+            // « plafond atteint (9007199254740991/2) », qui envoie chercher
+            // un problème de quota là où il y a un problème de base.
+            ecartees.push(deja === Number.MAX_SAFE_INTEGER
+                ? `${p.slug} : comptage impossible (base injoignable) — publication suspendue par sécurité`
+                : `${p.slug} : plafond atteint (${deja}/${maxParJour()} aujourd'hui)`);
             continue;
         }
         retenues.push(p.slug);

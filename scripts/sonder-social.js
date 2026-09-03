@@ -22,7 +22,13 @@
 // Elle ne publie rien et n'écrit rien : on peut la lancer en pleine
 // production sans se demander ce qu'elle va déclencher.
 
-require("dotenv").config();
+// PAS de `require("dotenv")` ici : ce paquet n'est installé nulle part dans
+// ce dépôt, et sur Render les variables sont déjà dans `process.env` avant
+// que Node démarre. La ligne a fait planter la sonde au premier lancement
+// en production — `MODULE_NOT_FOUND` — sur un script censé diagnostiquer.
+//
+// La même TZ que `index.js`, sinon `SOCIAL_HEURES` serait comparé à UTC et
+// la sonde dirait le contraire de ce que fait le serveur.
 process.env.TZ = process.env.TZ || "Africa/Algiers";
 
 const db = require("../services/db");
@@ -253,9 +259,8 @@ async function main() {
     process.exit(0);
 }
 
-function prochaineKtri(heures, h) { return heures.find((x) => x > h); }
 function prochaineHeure(heures, h) {
-    const suivante = prochaineKtri(heures, h);
+    const suivante = heures.find((x) => x > h);
     return suivante !== undefined ? suivante : `${heures[0]} (demain)`;
 }
 
