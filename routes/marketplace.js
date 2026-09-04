@@ -3645,15 +3645,49 @@ router.post(
                 return res.json({ success: false, error: "Un email valide est nécessaire pour suivre ta commande." });
             }
 
+            // ── CHACUN PAIE DANS SA MONNAIE ──────────────────────────────
+            //
+            // Ce bloc facturait faux. Trois défauts en cinq lignes :
+            //
+            //   let devise = "DZD"   → le dinar algérien par défaut, pour
+            //                          TOUT LE MONDE
+            //   devise = d           → dans la boucle : la devise du DERNIER
+            //                          article écrasait les précédentes
+            //   `pays`               → reçu du formulaire, jamais regardé
+            //
+            // Le total additionnait donc des montants de devises
+            // différentes, et l'étiquette finale était celle du dernier
+            // article du panier. Un panier EUR + DZD rendait une somme qui
+            // ne veut rien dire, dans une monnaie choisie au hasard.
+            //
+            // Relevé en base le 4 septembre : 8 commandes en EUR pour
+            // l'Algérie, 1 en DZD pour le MALI. Bourama Traoré, à Ségou,
+            // s'est vu facturer 200 dinars ALGÉRIENS.
+            //
+            // Le pays de l'acheteur décide maintenant, et chaque ligne est
+            // convertie AVANT d'être additionnée.
+            const devise = devises.pourPays(pays);
             let montantTotal = 0;
-            let devise = "DZD";
+            const refus = [];
             const lignes = items.map((it) => {
                 const qty = Number(it.quantity) || 1;
                 const { montant, devise: d } = parseMontantEtDevise(it.prix);
-                montantTotal += montant * qty;
-                devise = d;
+                const conv = devises.convertir(montant * qty, d, devise);
+                if (conv.ok) montantTotal += conv.montant;
+                else refus.push(`${it.titre || "un article"} (${conv.raison})`);
                 return `${it.titre || "Produit"}${it.variante ? ` (${it.variante})` : ""} x${qty}`;
             });
+
+            // Une conversion impossible ne doit JAMAIS être silencieuse : en
+            // ignorant la ligne, on encaisserait moins que le prix réel ; en
+            // gardant le montant brut, on facturerait des dinars pour des
+            // euros. On refuse, et on le dit.
+            if (refus.length) {
+                console.error("❌ commande refusée — conversion impossible :", refus.join(" · "));
+                return res.json({ success: false,
+                    error: "Nous ne pouvons pas calculer le prix dans ta monnaie pour le moment. Réessaie dans un instant." });
+            }
+            montantTotal = devises.arrondir(montantTotal, devise);
 
             const id = crypto.randomUUID();
             const workspaceId = await resoudreWorkspaceBoutique(req);
