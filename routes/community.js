@@ -1542,7 +1542,15 @@ document.querySelectorAll(".cat-btn").forEach(btn=>{
 document.getElementById("fileInput")?.addEventListener("change",async function(){
     const file=this.files[0]; if(!file) return;
     const status=document.getElementById("uploadStatus"); const preview=document.getElementById("uploadPreview");
-    status.style.display="block"; status.textContent="⏳ Envoi en cours...";
+    // ── DIRE CE QU'ON ENVOIE, ET COMBIEN ─────────────────────────────────
+    //
+    // Une vidéo de téléphone pèse des dizaines de mégaoctets. Sur une
+    // connexion mobile, l'envoi prend des minutes — pendant lesquelles
+    // « Envoi en cours... » ne dit pas si ça avance ou si c'est bloqué. On
+    // affiche donc le poids : 3 Mo et 60 Mo n'appellent pas la même patience.
+    const mo = Math.round(file.size / 104857.6) / 10;
+    status.style.display="block";
+    status.textContent="⏳ Envoi de " + mo + " Mo...";
     try{
         const fd=new FormData(); fd.append("file",file); fd.append("upload_preset","MARKETPLACE OG");
         const isVideo=file.type.startsWith("video"); const rt=isVideo?"video":"image";
@@ -1554,8 +1562,32 @@ document.getElementById("fileInput")?.addEventListener("change",async function()
             preview.innerHTML=(isVideo?'<video src="'+json.secure_url+'" controls></video>':'<img src="'+json.secure_url+'" alt="">')+'<button class="upload-remove" type="button" onclick="removeUpload()"><i data-lucide="x"></i></button>';
             if(typeof lucide!=="undefined")lucide.createIcons();
             status.style.display="none"; showToast("✅ Fichier prêt !");
-        } else { status.textContent="❌ Échec de l'envoi."; }
-    }catch(e){ status.textContent="❌ Erreur réseau."; }
+        } else {
+            // ── LE MESSAGE DE CLOUDINARY ÉTAIT JETÉ ──────────────────────
+            //
+            // Cette ligne disait « Échec de l'envoi. » et rien d'autre,
+            // alors que Cloudinary explique TOUJOURS pourquoi il refuse :
+            // « File size too large. Got 34567890. Maximum is 10485760 »,
+            // « Upload preset not found », « Invalid image file »...
+            //
+            // Le fichier ne passe jamais par notre serveur : le navigateur
+            // l'envoie directement à Cloudinary. Il n'y a donc RIEN dans
+            // les journaux de Render quand ça échoue. En jetant le seul
+            // message existant, on rendait la panne totalement invisible —
+            // impossible à diagnostiquer pour le membre comme pour nous.
+            //
+            // Vérifié le 4 septembre depuis le serveur : le compte et le
+            // préréglage acceptent bien image ET vidéo (2 Ko en 864 ms).
+            // Ce qui échouait n'était donc pas la configuration, et sans ce
+            // message on ne pouvait pas savoir quoi.
+            const raison = (json && json.error && json.error.message) ? json.error.message : "raison inconnue";
+            status.textContent = "❌ Refusé (" + mo + " Mo) : " + raison;
+            console.error("[envoi] Cloudinary a refusé :", raison, json);
+        }
+    }catch(e){
+        status.textContent = "❌ Envoi interrompu : " + (e && e.message ? e.message : "réseau");
+        console.error("[envoi] échec réseau :", e);
+    }
 });
 function removeUpload(){uploadedImageUrl="";uploadedVideoUrl="";document.getElementById("uploadPreview").style.display="none";document.getElementById("uploadPreview").innerHTML="";document.getElementById("fileInput").value="";}
 
