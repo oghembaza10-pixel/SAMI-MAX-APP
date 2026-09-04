@@ -1500,7 +1500,27 @@ const savedTheme=localStorage.getItem("samii_community_theme"); if(savedTheme===
 function upIcon(){const b=document.getElementById("themeBtn");if(!b)return;b.innerHTML=document.body.classList.contains("light")?'<i data-lucide="sun"></i>':'<i data-lucide="moon"></i>';if(typeof lucide!=="undefined")lucide.createIcons();}
 upIcon();
 document.getElementById("themeBtn")?.addEventListener("click",()=>{document.body.classList.toggle("light");localStorage.setItem("samii_community_theme",document.body.classList.contains("light")?"light":"dark");upIcon();});
-function showToast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2400);}
+function showToast(m){const t=document.getElementById("toast");if(!t)return;t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2400);}
+
+// ── UNE ERREUR DE SCRIPT NE DOIT PLUS ÊTRE MUETTE ───────────────────────
+//
+// Tout ce qu'on a cherché aujourd'hui — le bouton qui ne réagit pas, le
+// fichier qui ne part pas — avait la même forme : une erreur JavaScript
+// qui tue un gestionnaire, ne laisse RIEN dans les journaux du serveur, et
+// ne vit que dans la console du navigateur. Personne n'ouvre la console.
+//
+// Ce filet attrape ce qui reste et l'affiche. Il ne répare rien : il rend
+// la panne DISABLE au lieu d'invisible. C'est la différence entre une
+// heure de recherche et une capture d'écran.
+window.addEventListener("error", function (ev) {
+    const m = ev && ev.message ? ev.message : "erreur inconnue";
+    const ou = ev && ev.filename ? (" (ligne " + (ev.lineno || "?") + ")") : "";
+    showToast("⚠️ " + m + ou);
+});
+window.addEventListener("unhandledrejection", function (ev) {
+    const r = ev && ev.reason;
+    showToast("⚠️ " + ((r && r.message) ? r.message : String(r)));
+});
 
 const MODULES_PAR_CATEGORIE = {
     photo: [], video: [],
@@ -1517,6 +1537,12 @@ function updateDiffusionBox(cat) {
     const box = document.getElementById("diffusionBox");
     const opts = document.getElementById("diffusionOptions");
     const extras = MODULES_PAR_CATEGORIE[cat] || [];
+    // Ces deux boites vivent dans le composer : absentes pour un visiteur
+    // non connecte. Sans ce garde, la fonction leve AU MILIEU du
+    // gestionnaire de categorie — apres avoir allume le bouton, avant
+    // d'ouvrir le selecteur de fichier. Le bouton parait donc actif alors
+    // que plus rien ne se passe : exactement ce qu'on a vu a l'ecran.
+    if (!box || !opts) return;
     if (!extras.length) { box.classList.remove("show"); opts.innerHTML=""; return; }
     box.classList.add("show");
     opts.innerHTML = extras.map(m => {
@@ -1533,8 +1559,16 @@ document.querySelectorAll(".cat-btn").forEach(btn=>{
         selectedCategory=btn.dataset.cat;
         updateDiffusionBox(selectedCategory);
         if(selectedCategory==="photo"||selectedCategory==="video"){
-            document.getElementById("fileInput").accept=selectedCategory==="photo"?"image/*":"video/*";
-            document.getElementById("fileInput").click();
+            // On DIT pourquoi le selecteur ne s'ouvre pas, au lieu de
+            // laisser le bouton allume sur une page qui ne fait rien.
+            const champ = document.getElementById("fileInput");
+            if (!champ) { showToast("⚠️ Le champ fichier est introuvable sur cette page."); return; }
+            try {
+                champ.accept = selectedCategory==="photo" ? "image/*" : "video/*";
+                champ.click();
+            } catch (err) {
+                showToast("⚠️ Impossible d ouvrir le selecteur : " + (err && err.message ? err.message : "inconnu"));
+            }
         }
     });
 });
