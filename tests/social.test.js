@@ -1110,6 +1110,40 @@ console.log("── Les collecteurs : l'apprentissage devient possible ──");
     verifier(m.brut.x === 1, "la réponse d'origine est gardée pour plus tard");
 }
 
+console.log("── La mesure appelle l'analyste avec le BON paramètre ──");
+{
+    // Relevé en production le 4 septembre, dans social_agent_runs :
+    //
+    //     analytics / erreur : « publication undefined introuvable »
+    //     six fois, toutes les six heures, depuis la mise en service
+    //
+    // `cycle.mesurer()` passait `{ publication: pub }`, l'agent attend
+    // `{ publicationId }`. JavaScript ne dit rien sur un nom de champ qui
+    // ne correspond pas : l'agent recevait `undefined`. La boucle
+    // d'apprentissage n'a donc JAMAIS relevé une seule statistique — la
+    // fonctionnalité entière était morte, sans autre symptôme qu'un
+    // « undefined » au milieu d'une phrase française.
+    //
+    // Ce contrôle regarde ce que l'analyste REÇOIT, pas ce que le cycle
+    // croit envoyer.
+    const cycle = require("../engines/social/cycle");
+    const analytics = require("../engines/social/agents/analytics");
+    const vraiCollecter = analytics.collecter;
+    const recus = [];
+    analytics.collecter = async (args) => { recus.push(args); return { disponible: false }; };
+
+    prevoir([{ id: 77, plateforme: "linkedin", externe_id: "x", workspace_id: "w1" }]);
+    await cycle.mesurer({ limite: 1 });
+
+    verifier(recus.length === 1, "l'analyste est bien appelé");
+    verifier(recus[0] && recus[0].publicationId === 77,
+        "et il reçoit publicationId=77 — pas undefined, pas un objet sous un autre nom");
+    verifier(recus[0] && recus[0].publicationId !== undefined,
+        "aucun paramètre undefined ne descend jusqu'à l'agent");
+
+    analytics.collecter = vraiCollecter;
+}
+
 console.log("── Le mode MANUAL bloque la programmation ──");
 {
     process.env.SOCIAL_MODE = "MANUAL";

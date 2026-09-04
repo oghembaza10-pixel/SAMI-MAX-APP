@@ -354,7 +354,21 @@ async function mesurer({ limite = 30 } = {}) {
 
         const faites = [];
         for (const pub of dues) {
-            const r = await analytics.collecter({ publication: pub });
+            // ── LE NOM DU PARAMÈTRE NE CORRESPONDAIT PAS ─────────────────
+            //
+            // On passait `{ publication: pub }`, l'agent attend
+            // `{ publicationId }`. JavaScript ne dit rien : l'agent recevait
+            // `undefined` et refusait poliment —
+            //
+            //     analytics / erreur : « publication undefined introuvable »
+            //
+            // Six fois toutes les six heures, depuis la mise en service.
+            // Résultat : la boucle d'apprentissage n'a JAMAIS relevé une
+            // seule statistique. La fonctionnalité entière était morte, et
+            // le seul symptôme était une ligne d'erreur que personne ne
+            // relisait — le mot « undefined » au milieu d'une phrase
+            // française aurait dû sauter aux yeux.
+            const r = await analytics.collecter({ publicationId: pub.id });
             if (r?.disponible) faites.push(pub.id);
         }
         return { examinees: dues.length, relevees: faites.length, couverture: analytics.couverture() };
