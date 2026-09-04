@@ -377,10 +377,49 @@ async function publier({ plateforme, texte, media, mediaType, quand }) {
         // Chaque entrée porte EXACTEMENT un de ces trois. L'URL doit être
         // joignable publiquement, sans authentification : Buffer va
         // télécharger le fichier depuis chez lui.
+        const type = media
+            ? (String(mediaType || "").toLowerCase()
+               || (/\.(mp4|mov|m4v|webm)(\?|$)/i.test(media) ? "video" : "image"))
+            : null;
         if (media) {
-            const type = String(mediaType || "").toLowerCase()
-                || (/\.(mp4|mov|m4v|webm)(\?|$)/i.test(media) ? "video" : "image");
             entree.assets = [type === "video" ? { video: { url: media } } : { image: { url: media } }];
+        }
+
+        // ── INSTAGRAM VEUT SAVOIR CE QU'IL PUBLIE ────────────────────────
+        //
+        // Relevé en production le 3 septembre, une fois `assets` réparé :
+        //
+        //     buffer : og20250 : Invalid post: Instagram posts require
+        //     a type (post, story, or reel).
+        //
+        // Chez Instagram, un post, une story et un reel ne sont pas trois
+        // habillages du même objet : ce sont trois publications
+        // différentes, avec des durées de vie et des placements
+        // différents. Buffer refuse de choisir à notre place, et il a
+        // raison — deviner ici publierait des reels en stories qui
+        // disparaîtraient au bout de 24 h sans que personne ne comprenne
+        // pourquoi le compte ne grandit pas.
+        //
+        // `InstagramPostMetadataInput` exige `type: PostType!` et
+        // `shouldShareToFeed: Boolean!`. Les valeurs de PostType sont
+        // nommées par Buffer dans son propre message d'erreur — c'est la
+        // seule fois de ce chantier où le serveur a dicté la réponse.
+        //
+        // On ne pose ce bloc que pour Instagram : `metadata` ne porte que
+        // le réseau concerné, et Facebook comme LinkedIn publient déjà
+        // sans lui. Ajouter ce qui n'est pas demandé, c'est ce qui a
+        // cassé les trois fois précédentes.
+        if (String(plateforme).toLowerCase() === "instagram") {
+            entree.metadata = {
+                instagram: {
+                    // Une vidéo devient un reel : c'est le format qui porte
+                    // la portée aujourd'hui, et c'est ce qu'on cherche.
+                    type: type === "video" ? "reel" : "post",
+                    // Un reel qui n'est pas partagé au fil n'existe que
+                    // dans l'onglet Reels. On veut les deux.
+                    shouldShareToFeed: true,
+                },
+            };
         }
 
         const r = await appeler(

@@ -727,6 +727,7 @@ console.log("── Buffer : la requête réellement envoyée ──");
     // que le code est écrit, pas qu'il envoie la bonne chose.
     const http = require("http");
     const recu = [];
+    let avecLinkedIn = false;
     const faux = http.createServer((req, res) => {
         let corps = "";
         req.on("data", (c) => { corps += c; });
@@ -736,7 +737,9 @@ console.log("── Buffer : la requête réellement envoyée ──");
             const t = String(q.query || "");
             res.writeHead(200, { "Content-Type": "application/json" });
             if (/organizations/.test(t)) return res.end(JSON.stringify({ data: { account: { organizations: [{ id: "o1", name: "Essai" }] } } }));
-            if (/channels/.test(t)) return res.end(JSON.stringify({ data: { channels: [{ id: "c_ig", name: "insta", service: "instagram" }] } }));
+            if (/channels/.test(t)) return res.end(JSON.stringify({ data: { channels: avecLinkedIn
+                ? [{ id: "c_ig", name: "insta", service: "instagram" }, { id: "c_li", name: "og", service: "linkedin" }]
+                : [{ id: "c_ig", name: "insta", service: "instagram" }] } }));
             res.end(JSON.stringify({ data: { createPost: { post: { id: "p1", text: "ok" } } } }));
         });
     });
@@ -797,6 +800,45 @@ console.log("── Buffer : la requête réellement envoyée ──");
     verifier(dernier.mode === "customScheduled", "une date programmée passe par mode");
     verifier(dernier.schedulingType === "automatic", "et schedulingType reste automatic — customScheduled n'en est pas une valeur");
     verifier(typeof dernier.dueAt === "string", "la date part dans dueAt");
+
+    // ── INSTAGRAM EXIGE DE SAVOIR CE QU'IL PUBLIE ────────────────────
+    //
+    // Relevé en production une fois `assets` réparé :
+    //   « Invalid post: Instagram posts require a type (post, story, or reel). »
+    await buffer.publier({ plateforme: "instagram", texte: "Un reel.", media: "https://x.test/v.mp4", mediaType: "video" });
+    dernier = envois().pop();
+    verifier(dernier.metadata?.instagram?.type === "reel", "une vidéo devient un reel sur Instagram");
+    verifier(dernier.metadata.instagram.shouldShareToFeed === true,
+        "et elle est partagée au fil — sinon elle n'existe que dans l'onglet Reels");
+
+    await buffer.publier({ plateforme: "instagram", texte: "Une photo.", media: "https://x.test/p.jpg", mediaType: "image" });
+    dernier = envois().pop();
+    verifier(dernier.metadata?.instagram?.type === "post", "une image devient un post");
+
+    // `metadata` ne porte QUE le réseau concerné. En poser pour LinkedIn,
+    // qui publie déjà sans, c'est exactement le geste qui a cassé les
+    // trois fois précédentes : ajouter ce qui n'est pas demandé.
+    // Le faux serveur ne déclare qu'une chaîne Instagram : pour que
+    // LinkedIn ait vraiment une chaîne, on la lui donne ici. Sans ça,
+    // aucune mutation n'était envoyée et `envois().pop()` rendait
+    // l'envoi PRÉCÉDENT — le test lisait le metadata d'Instagram en
+    // croyant lire celui de LinkedIn, et criait à tort. Une doublure qui
+    // ne répond pas fait dire n'importe quoi à l'assertion suivante.
+    {
+        const ancienne = process.env.BUFFER_PLATEFORMES;
+        process.env.BUFFER_PLATEFORMES = "instagram,linkedin";
+        avecLinkedIn = true;
+        buffer.oublier();                    // relire les chaînes
+        const avant = envois().length;
+        await buffer.publier({ plateforme: "linkedin", texte: "Chez LinkedIn." });
+        const apres = envois();
+        verifier(apres.length === avant + 1, "une publication LinkedIn a bien été envoyée au serveur");
+        verifier(apres[apres.length - 1].metadata === undefined,
+            "aucun metadata n'est posé pour LinkedIn, qui n'en demande pas");
+        avecLinkedIn = false;
+        buffer.oublier();
+        process.env.BUFFER_PLATEFORMES = ancienne;
+    }
 
     // Personne ne déclare le type : l'extension tranche. Imparfait, mais
     // très supérieur à « tout est une image ».
