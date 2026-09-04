@@ -1469,7 +1469,31 @@ async function envoyerChat(){
   }
   chatOccupe = false;
 }
-document.getElementById("chatSaisie").addEventListener("keydown", function(e){
+// ── UN ÉLÉMENT ABSENT NE DOIT PAS TUER TOUTE LA PAGE ────────────────────
+//
+// Ces trois branchements sont au PREMIER NIVEAU du script : ils s'exécutent
+// au chargement, pas sur un clic. getElementById rend null quand l'élément
+// n'est pas là, et appeler addEventListener sur null lève une TypeError qui
+// arrête TOUT LE SCRIPT — pas seulement la ligne fautive.
+//
+// Or fileInput et composerSubmit vivent dans le composer, et le composer
+// est derrière le ternaire "!connecte ? invitation : composer" (ligne
+// ~1106) : ils N'EXISTENT PAS pour un visiteur non connecté.
+//
+// Résultat pour ce visiteur : la ligne fileInput levait, et tout ce qui
+// suit ne s'exécutait jamais — le bouton Publier, les j'aime, le menu
+// mobile, le thème. La page s'affichait normalement et NE RÉAGISSAIT À
+// RIEN. Aucun message, aucune trace serveur : l'erreur ne vit que dans la
+// console du navigateur, que personne n'ouvre.
+//
+// ATTENTION en modifiant ce commentaire : il est DANS un littéral de
+// gabarit. Un accent grave y ferme la chaîne, et une accolade précédée
+// d'un dollar y devient une interpolation. Les deux ont cassé ce fichier
+// pendant l'écriture de ce correctif — node --check les a attrapés.
+//
+// Le "?." était déjà utilisé plus haut pour themeBtn : la bonne façon
+// était connue, elle n'avait simplement pas été appliquée partout.
+document.getElementById("chatSaisie")?.addEventListener("keydown", function(e){
   if (e.key === "Enter") { e.preventDefault(); envoyerChat(); }
 });
 const savedTheme=localStorage.getItem("samii_community_theme"); if(savedTheme==="light") document.body.classList.add("light");
@@ -1515,7 +1539,7 @@ document.querySelectorAll(".cat-btn").forEach(btn=>{
     });
 });
 
-document.getElementById("fileInput").addEventListener("change",async function(){
+document.getElementById("fileInput")?.addEventListener("change",async function(){
     const file=this.files[0]; if(!file) return;
     const status=document.getElementById("uploadStatus"); const preview=document.getElementById("uploadPreview");
     status.style.display="block"; status.textContent="⏳ Envoi en cours...";
@@ -1549,7 +1573,7 @@ document.querySelectorAll(".amorce").forEach(function(b){
     });
 });
 
-document.getElementById("composerSubmit").addEventListener("click",async function(){
+document.getElementById("composerSubmit")?.addEventListener("click",async function(){
     const contenu=document.getElementById("composerText").value.trim();
     if(!contenu && !uploadedImageUrl && !uploadedVideoUrl){ showToast("Écris quelque chose ou ajoute un fichier."); return; }
     const diffusionCheckboxes=document.querySelectorAll('input[name="diffusion"]:checked');
