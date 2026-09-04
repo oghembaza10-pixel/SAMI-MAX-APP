@@ -585,6 +585,8 @@ function marque(html) {
         // à elle
         "/": true, "/c": true, "/health": true, "/webhook": true,
         "/webhook/chargily": true, "/webhook/meta": true, "/webhook/whatsapp": true,
+        // Les commentaires Facebook et Instagram : Meta appelle, nous répondons.
+        "/webhook/meta/commentaires": true,
         "/webhook/paiement-afrique": true, "/webhook/stripe-paiement": true,
         "/billing/webhook": true, "/login": true, "/register": true,
         "/password-reset": true, "/logout": true, "/api": true, "/paiement": true,

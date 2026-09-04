@@ -480,6 +480,12 @@ app.use("/webhook/whatsapp", require("./routes/webhook-whatsapp"));
 app.use("/", require("./routes/legal"));
 app.use("/", require("./routes/developers-en"));
 app.use("/webhook/meta", require("./routes/webhook-meta-deletion"));
+// Les commentaires Facebook et Instagram. Adresse DÉDIÉE plutôt que
+// « /webhook/meta » : le routeur de suppression de données est déjà monté
+// là, et deux routeurs sur un même préfixe se lisent dans l'ordre de
+// déclaration — c'est le genre de voisinage où l'un finit par avaler la
+// requête de l'autre le jour où quelqu'un ajoute un `router.post("/")`.
+app.use("/webhook/meta/commentaires", require("./routes/webhook-meta"));
 app.use("/webhook/chargily", require("./routes/webhook-chargily"));
 // Paiement mobile africain (SebPay — 17 pays, Orange Money et MTN).
 // En mode OBSERVATION : la route note tout ce qu'on lui envoie et ne valide
