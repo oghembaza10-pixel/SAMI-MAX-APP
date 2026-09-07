@@ -353,6 +353,85 @@
             box-shadow: inset 0 0 0 1px rgba(0,212,255,.09);
         }
 
+        /* ── LE RIDEAU ────────────────────────────────────────────────
+           Un visiteur ne pouvait NI voir les tarifs, NI nous joindre : la
+           barre du haut n'avait que les langues et « Se connecter ». Les
+           sections existaient (#tarifs, #modules) — rien n'y menait.
+           Un rideau plutôt qu'un menu classique : il tient sur un
+           téléphone, où sont nos marchands. */
+        .rideau-btn {
+            display: flex; align-items: center; gap: 7px;
+            padding: 8px 13px; border-radius: 9px; cursor: pointer;
+            font-family: var(--font-mono); font-size: .68rem;
+            letter-spacing: .08em; text-transform: uppercase;
+            color: var(--text-dim); background: rgba(255,255,255,.018);
+            border: 1px solid rgba(255,255,255,.055);
+            transition: .2s ease;
+        }
+        .rideau-btn:hover, .rideau-btn[aria-expanded="true"] {
+            color: var(--gold); border-color: rgba(212,169,74,.28);
+            background: var(--gold-soft);
+        }
+        .rideau-btn__traits { display: inline-flex; flex-direction: column; gap: 3px; }
+        .rideau-btn__traits i {
+            display: block; width: 15px; height: 1.5px;
+            background: currentColor; border-radius: 2px; transition: .25s ease;
+        }
+        .rideau-btn[aria-expanded="true"] .rideau-btn__traits i:nth-child(1) { transform: translateY(4.5px) rotate(45deg); }
+        .rideau-btn[aria-expanded="true"] .rideau-btn__traits i:nth-child(2) { opacity: 0; }
+        .rideau-btn[aria-expanded="true"] .rideau-btn__traits i:nth-child(3) { transform: translateY(-4.5px) rotate(-45deg); }
+
+        .rideau {
+            position: fixed; left: 0; right: 0; top: 0; z-index: 90;
+            background: rgba(8,10,14,.97);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(212,169,74,.16);
+            /* Fermé : replié vers le haut, hors de l'écran. Une transition
+               sur la hauteur plutôt que sur `display` — sinon le rideau
+               apparaît d'un coup, ce qui ne se lit pas comme un rideau. */
+            max-height: 0; overflow: hidden;
+            transition: max-height .38s cubic-bezier(.4,0,.2,1);
+        }
+        .rideau.ouvert { max-height: 80vh; overflow-y: auto; }
+        .rideau__dedans {
+            max-width: 1180px; margin: 0 auto;
+            padding: 86px 22px 30px;
+            display: grid; gap: 26px;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        }
+        .rideau__groupe h4 {
+            font-family: var(--font-mono); font-size: .6rem;
+            letter-spacing: .16em; text-transform: uppercase;
+            color: var(--gold); margin: 0 0 12px;
+        }
+        .rideau__groupe a {
+            display: block; padding: 9px 0; text-decoration: none;
+            color: #fff; font-size: .92rem; border-bottom: 1px solid rgba(255,255,255,.045);
+            transition: .18s ease;
+        }
+        .rideau__groupe a:hover { color: var(--blue-bright); padding-left: 6px; }
+        .rideau__groupe a span { display: block; font-size: .72rem; color: var(--text-dim); margin-top: 2px; }
+
+        /* ── WHATSAPP, TOUJOURS À PORTÉE DE POUCE ─────────────────────
+           On vend une plateforme qui automatise WhatsApp, et on ne pouvait
+           pas nous y écrire. En bas à droite : c'est là que le pouce arrive
+           sur un téléphone, et nos marchands sont sur téléphone. */
+        .wa-flottant {
+            position: fixed; right: 18px; bottom: 18px; z-index: 95;
+            display: flex; align-items: center; gap: 9px;
+            padding: 12px 17px; border-radius: 999px; text-decoration: none;
+            background: #25D366; color: #062611;
+            font-weight: 700; font-size: .86rem;
+            box-shadow: 0 10px 30px rgba(37,211,102,.32);
+            transition: .2s ease;
+        }
+        .wa-flottant:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(37,211,102,.42); }
+        .wa-flottant svg { width: 21px; height: 21px; fill: currentColor; flex: none; }
+        @media (max-width: 560px) {
+            .wa-flottant__texte { display: none; }
+            .wa-flottant { padding: 14px; right: 14px; bottom: 14px; }
+        }
+
         .btn-login-top {
             position: relative;
             overflow: hidden;
@@ -2789,9 +2868,84 @@
                 <span data-lang="ar">AR</span>
                 <span data-lang="zh">中</span>
             </div>
+            <button type="button" class="rideau-btn" id="rideau-btn"
+                    aria-expanded="false" aria-controls="rideau" aria-label="Menu">
+                <span class="rideau-btn__traits"><i></i><i></i><i></i></span>
+                <span data-i18n="nav.menu">Menu</span>
+            </button>
             <a href="#auth" class="btn-login-top" data-i18n="nav.login">Se connecter</a>
         </div>
     </header>
+
+    <!-- LE RIDEAU. Les sections existaient déjà (#modules, #tarifs,
+         #developpeurs) ; il n'y avait simplement aucun chemin vers elles. -->
+    <div class="rideau" id="rideau">
+        <div class="rideau__dedans">
+            <div class="rideau__groupe">
+                <h4 data-i18n="rideau.decouvrir">Découvrir</h4>
+                <a href="#modules">Modules<span>Ce que SAMII sait faire</span></a>
+                <a href="#tarifs">Tarifs<span>19 $ et 49 $ par mois</span></a>
+                <a href="#agences">Agences<span>Revendre SAMII</span></a>
+            </div>
+            <div class="rideau__groupe">
+                <h4 data-i18n="rideau.explorer">Explorer</h4>
+                <a href="/marketplace">Marketplace<span>Sans compte, entrée libre</span></a>
+                <a href="/community">Communauté<span>Voir avant de rejoindre</span></a>
+                <a href="#developpeurs">Développeurs<span>API et webhooks</span></a>
+            </div>
+            <div class="rideau__groupe">
+                <h4 data-i18n="rideau.contact">Nous joindre</h4>
+                <a href="https://wa.me/213558426208" target="_blank" rel="noopener">WhatsApp<span>+213 558 42 62 08</span></a>
+                <a href="mailto:contact@souverain-store.com">Email<span>contact@souverain-store.com</span></a>
+                <a href="#auth">Créer mon compte<span>Gratuit, 30 secondes</span></a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ── LE RIDEAU S'OUVRE ET SE FERME ─────────────────────────────────
+    //
+    // Trois façons de le fermer, et ce n'est pas du zèle : un menu qui ne
+    // se ferme QUE par son propre bouton piège les gens sur mobile, où la
+    // cible est petite et où le réflexe est de toucher à côté.
+    (function () {
+        var btn = document.getElementById("rideau-btn");
+        var rideau = document.getElementById("rideau");
+        if (!btn || !rideau) return;          // la page peut changer, pas de plantage
+
+        function poser(ouvert) {
+            rideau.classList.toggle("ouvert", ouvert);
+            btn.setAttribute("aria-expanded", ouvert ? "true" : "false");
+        }
+
+        btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            poser(btn.getAttribute("aria-expanded") !== "true");
+        });
+
+        // 1. Un clic sur un lien : on ferme, sinon le rideau reste ouvert
+        //    par-dessus la section vers laquelle on vient de sauter.
+        rideau.addEventListener("click", function (e) {
+            if (e.target.closest("a")) poser(false);
+        });
+
+        // 2. Un clic à côté.
+        document.addEventListener("click", function (e) {
+            if (!rideau.contains(e.target) && !btn.contains(e.target)) poser(false);
+        });
+
+        // 3. La touche Échap.
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") poser(false);
+        });
+    })();
+    </script>
+
+    <a class="wa-flottant" href="https://wa.me/213558426208" target="_blank" rel="noopener"
+       aria-label="Nous écrire sur WhatsApp">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.5h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.01-1.04 2.47s1.07 2.86 1.22 3.06c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.75-.72 2-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35M12.04 21.5h-.01a9.44 9.44 0 0 1-4.8-1.32l-.35-.2-3.57.93.95-3.48-.22-.36a9.4 9.4 0 0 1-1.44-5.02c0-5.2 4.24-9.44 9.45-9.44 2.52 0 4.89.99 6.67 2.77a9.38 9.38 0 0 1 2.76 6.68c0 5.2-4.24 9.44-9.44 9.44m8.04-17.48A11.36 11.36 0 0 0 12.04.7C5.76.7.65 5.8.65 12.08c0 2 .52 3.96 1.52 5.68L.56 23.5l5.88-1.54a11.36 11.36 0 0 0 5.6 1.43h.01c6.27 0 11.38-5.11 11.39-11.39a11.32 11.32 0 0 0-3.36-8.05"/></svg>
+        <span class="wa-flottant__texte">WhatsApp</span>
+    </a>
 
     <% if (typeof loggedIn !== 'undefined' && loggedIn) { %>
     <div style="max-width:1180px; margin:16px auto 0; padding:0 16px;">
@@ -2926,7 +3080,7 @@
         </div>
     </section>
 
-    <section class="modules-section">
+    <section class="modules-section" id="modules">
         <div class="section-head">
             <span class="section-head__icon">◎</span>
             <span class="section-head__title" data-i18n="modules.title">Ton arsenal, déjà prêt</span>
@@ -3370,6 +3524,7 @@
         const I18N = {
             fr: {
                 'brand.sub': 'Éditeur de SAMII', 'nav.login': 'Se connecter',
+                'nav.menu': 'Menu', 'rideau.decouvrir': 'Découvrir', 'rideau.explorer': 'Explorer', 'rideau.contact': 'Nous joindre',
                 'banner.welcome': 'Content de te revoir,', 'banner.continue': 'Continuer vers mon QG →',
                 'hero.badge': 'OG Technology', 'hero.badgeSub': 'éditeur de SAMII',
                 'hero.verified': 'Fournisseur de technologie vérifié par Meta',
@@ -3521,6 +3676,7 @@
             },
             en: {
                 'brand.sub': 'The company behind SAMII', 'nav.login': 'Log in',
+                'nav.menu': 'Menu', 'rideau.decouvrir': 'Discover', 'rideau.explorer': 'Explore', 'rideau.contact': 'Reach us',
                 'banner.welcome': 'Welcome back,', 'banner.continue': 'Go to my HQ →',
                 'hero.badge': 'OG Technology', 'hero.badgeSub': 'the company behind SAMII',
                 'hero.verified': 'Verified technology provider by Meta',
@@ -3672,6 +3828,7 @@
             },
             ar: {
                 'brand.sub': 'الشركة المطوّرة لـ SAMII', 'nav.login': 'تسجيل الدخول',
+                'nav.menu': 'القائمة', 'rideau.decouvrir': 'اكتشف', 'rideau.explorer': 'استكشف', 'rideau.contact': 'اتصل بنا',
                 'banner.welcome': 'سعداء بعودتك،', 'banner.continue': 'الذهاب إلى مقري ←',
                 'hero.badge': 'OG Technology', 'hero.badgeSub': 'الشركة المطوّرة لـ SAMII',
                 'hero.verified': 'مزوّد تقنية موثّق من Meta',
@@ -3823,6 +3980,7 @@
             },
             zh: {
                 'brand.sub': '全球总部', 'nav.login': '登录',
+                'nav.menu': '菜单', 'rideau.decouvrir': '了解', 'rideau.explorer': '探索', 'rideau.contact': '联系我们',
                 'banner.welcome': '欢迎回来，', 'banner.continue': '进入我的总部 →',
                 'hero.badge': 'SAMII OS · 运行中',
                 'hero.verified': 'Meta 认可的经验证技术供应商',
