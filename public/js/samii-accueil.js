@@ -79,30 +79,53 @@
         return { tour: t, points: d };
     }
 
-    function direSamii(cible, texte, fini) {
+    // Ouvre la bulle de SAMII et renvoie de quoi l'alimenter au fil de l'eau.
+    // Le curseur clignotant reste en dernier enfant : chaque morceau s'insère
+    // AVANT lui, ce qui donne l'impression d'un texte en train d'être tapé.
+    function ouvrirBulle(cible) {
         cible.points.remove();
         var b = document.createElement("div");
         b.className = "bulle";
         cible.tour.appendChild(b);
 
-        if (lent) { b.textContent = texte; defiler(); return fini && fini(); }
+        var curseur = null;
+        if (!lent) {
+            curseur = document.createElement("span");
+            curseur.className = "curseur";
+            b.appendChild(curseur);
+        }
+        return {
+            ajouter: function (texte) {
+                if (curseur) curseur.before(document.createTextNode(texte));
+                else b.appendChild(document.createTextNode(texte));
+                defiler();
+            },
+            fermer: function () {
+                if (curseur) { curseur.remove(); curseur = null; }
+                defiler();
+            },
+            vide: function () { return b.textContent.trim() === ""; },
+            ecrire: function (texte) {
+                b.textContent = texte;
+                curseur = null;
+                defiler();
+            },
+        };
+    }
 
-        var curseur = document.createElement("span");
-        curseur.className = "curseur";
-        b.appendChild(curseur);
-
+    // Le repli : quand le flux n'est pas disponible, on a le texte complet
+    // d'un coup et on le révèle quand même mot par mot. Même sensation, sans
+    // le vrai flux — c'est ce que voit un visiteur derrière un proxy qui met
+    // les réponses en tampon.
+    function reveler(bulle, texte, fini) {
+        if (lent) { bulle.ecrire(texte); return fini && fini(); }
         var morceaux = texte.split(/(\s+)/);
         var i = 0;
         (function pas() {
-            if (i >= morceaux.length) {
-                curseur.remove();
-                defiler();
-                return fini && fini();
-            }
-            curseur.before(document.createTextNode(morceaux[i]));
+            if (i >= morceaux.length) { bulle.fermer(); return fini && fini(); }
+            bulle.ajouter(morceaux[i]);
             var pause = morceaux[i].indexOf("\n\n") !== -1 ? 170 : 14 + Math.random() * 30;
             i++;
-            defiler();
             setTimeout(pas, pause);
         })();
     }
@@ -150,6 +173,21 @@
     }
 
     // ── ENVOI ────────────────────────────────────────────────────────────
+    function terminer(reponse, json) {
+        if (reponse) historique.push({ role: "model", message: reponse });
+        if (json && typeof json.restant === "number") restant = json.restant;
+        peindreJauge();
+        // La proposition de compte n'arrive jamais au premier message :
+        // SAMII rend service d'abord, il propose ensuite.
+        if (!memoireProposee && json && (json.limite || (restant !== null && restant <= 3))) {
+            memoireProposee = true;
+            proposerMemoire();
+        }
+        occupe = false;
+        envoyer.disabled = false;
+        champ.focus();
+    }
+
     function envoyerMessage(texte) {
         if (occupe || !texte) return;
         occupe = true;
@@ -158,32 +196,103 @@
         direMoi(texte);
         historique.push({ role: "user", message: texte });
         var cible = attendre();
+        var corps = JSON.stringify({ message: texte, historique: historique, langue: LANG });
 
+        // ── LE CHEMIN D'ABORD : LE FLUX ──────────────────────────────────
+        // fetch + ReadableStream plutôt que EventSource, parce qu'EventSource
+        // ne sait faire que des GET — et l'historique ne tient pas dans une URL.
+        if (!window.ReadableStream || !window.TextDecoder) return sansFlux(cible, corps);
+
+        fetch("/vitrine/chat/flux", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: corps,
+        })
+        .then(function (r) {
+            // Le serveur a répondu du JSON : c'est la limite de quota, ou une
+            // route absente. On laisse le chemin sans flux s'en occuper.
+            var type = r.headers.get("content-type") || "";
+            if (!r.ok || type.indexOf("text/event-stream") === -1 || !r.body) {
+                throw new Error("pas de flux");
+            }
+            return lireFlux(r.body, cible);
+        })
+        .catch(function () { sansFlux(cible, corps); });
+    }
+
+    // Lit le flux SSE et alimente la bulle à mesure. Ne rejette JAMAIS après
+    // avoir écrit un premier mot : à ce stade le visiteur voit déjà la réponse
+    // arriver, et recommencer sur l'autre route la ferait s'écrire deux fois.
+    function lireFlux(flux, cible) {
+        var lecteur = flux.getReader();
+        var decodeur = new TextDecoder();
+        var bulle = null;
+        var reste = "";
+        var complet = "";
+        var fini = null;
+        var aEcrit = false;
+
+        function traiter(bloc) {
+            reste += bloc;
+            var lignes = reste.split("\n");
+            reste = lignes.pop();
+            var evenement = "";
+            for (var i = 0; i < lignes.length; i++) {
+                var l = lignes[i];
+                if (l.indexOf("event:") === 0) { evenement = l.slice(6).trim(); continue; }
+                if (l.indexOf("data:") !== 0) continue;
+                var d;
+                try { d = JSON.parse(l.slice(5).trim()); } catch (e) { continue; }
+                if (evenement === "morceau" && d.t) {
+                    if (!bulle) bulle = ouvrirBulle(cible);
+                    bulle.ajouter(d.t);
+                    complet += d.t;
+                    aEcrit = true;
+                } else if (evenement === "fin") {
+                    fini = d;
+                }
+            }
+        }
+
+        return lecteur.read().then(function suite(res) {
+            if (!res.done) {
+                traiter(decodeur.decode(res.value, { stream: true }));
+                return lecteur.read().then(suite);
+            }
+            traiter(decodeur.decode());
+            if (!aEcrit) {
+                // Rien n'a été écrit : le flux s'est ouvert puis n'a rien
+                // donné. Si le serveur a joint un message de repli, on
+                // l'affiche ; sinon on relance sans flux.
+                if (fini && fini.reply) {
+                    var b = ouvrirBulle(cible);
+                    return new Promise(function (ok) {
+                        reveler(b, fini.reply, function () { terminer(fini.reply, fini); ok(); });
+                    });
+                }
+                throw new Error("flux vide");
+            }
+            if (bulle) bulle.fermer();
+            terminer(complet, fini || {});
+        });
+    }
+
+    // ── LE REPLI : L'ANCIENNE ROUTE, INCHANGÉE ───────────────────────────
+    function sansFlux(cible, corps) {
         fetch("/vitrine/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: texte, historique: historique, langue: LANG }),
+            body: corps,
         })
         .then(function (r) { return r.json(); })
         .then(function (json) {
             var reponse = (json && json.reply) || T.panne;
-            if (json && typeof json.restant === "number") { restant = json.restant; }
-            direSamii(cible, reponse, function () {
-                historique.push({ role: "model", message: reponse });
-                peindreJauge();
-                // La proposition de compte n'arrive jamais au premier message :
-                // SAMII rend service d'abord, il propose ensuite.
-                if (!memoireProposee && (json.limite || (restant !== null && restant <= 3))) {
-                    memoireProposee = true;
-                    proposerMemoire();
-                }
-                occupe = false;
-                envoyer.disabled = false;
-                champ.focus();
-            });
+            var bulle = ouvrirBulle(cible);
+            reveler(bulle, reponse, function () { terminer(reponse, json || {}); });
         })
         .catch(function () {
-            direSamii(cible, T.reseau || "", function () {
+            var bulle = ouvrirBulle(cible);
+            reveler(bulle, T.reseau || "", function () {
                 occupe = false;
                 envoyer.disabled = false;
             });

@@ -117,29 +117,40 @@ async function journaliserTour(req, message, reponse) {
     }
 }
 
+// Normalise ce qui arrive du navigateur. Écrite une fois et partagée par les
+// deux routes (/chat et /chat/flux) : ce sont les MÊMES garde-fous — taille du
+// message, taille de l'historique, langue autorisée — et les laisser diverger
+// reviendrait à ouvrir sur l'une la porte qu'on ferme sur l'autre.
+function preparerEntree(req) {
+    const messageBrut = String(req.body.message || "").trim();
+    if (!messageBrut) return null;
+
+    const message = messageBrut.slice(0, MAX_MESSAGE);
+    const langue = LANGUES.includes(req.body.langue) ? req.body.langue : "fr";
+
+    // L'historique vient du navigateur : on ne lui fait aucune confiance
+    // sur la taille ni sur la forme, on le normalise et on le tronque.
+    const historique = Array.isArray(req.body.historique)
+        ? req.body.historique
+            .slice(-MAX_HISTORIQUE)
+            .filter(h => h && typeof h.message === "string")
+            .map(h => ({
+                role: h.role === "model" ? "model" : "user",
+                message: String(h.message).slice(0, MAX_MESSAGE),
+            }))
+        : [];
+
+    const nbEchanges = Math.floor(historique.length / 2);
+    return { message, langue, historique, systemPrompt: SAMII_VITRINE_PROMPT({ langue, nbEchanges }) };
+}
+
 router.post("/chat", vitrineLimiter, async (req, res) => {
     try {
-        const messageBrut = String(req.body.message || "").trim();
-        if (!messageBrut) {
+        const entree = preparerEntree(req);
+        if (!entree) {
             return res.json({ success: false, reply: "Pose-moi ta question." });
         }
-        const message = messageBrut.slice(0, MAX_MESSAGE);
-        const langue = LANGUES.includes(req.body.langue) ? req.body.langue : "fr";
-
-        // L'historique vient du navigateur : on ne lui fait aucune confiance
-        // sur la taille ni sur la forme, on le normalise et on le tronque.
-        const historique = Array.isArray(req.body.historique)
-            ? req.body.historique
-                .slice(-MAX_HISTORIQUE)
-                .filter(h => h && typeof h.message === "string")
-                .map(h => ({
-                    role: h.role === "model" ? "model" : "user",
-                    message: String(h.message).slice(0, MAX_MESSAGE),
-                }))
-            : [];
-
-        const nbEchanges = Math.floor(historique.length / 2);
-        const systemPrompt = SAMII_VITRINE_PROMPT({ langue, nbEchanges });
+        const { message, langue, historique, systemPrompt } = entree;
 
         const reponse = await geminiService.chatLibre({ systemPrompt, message, history: historique });
 
@@ -178,6 +189,84 @@ router.post("/chat", vitrineLimiter, async (req, res) => {
             success: false,
             reply: "Une erreur est survenue. Réessaie dans un instant.",
         });
+    }
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// LA MÊME CHOSE, MAIS ÉCRITE SOUS LES YEUX DU VISITEUR
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Route ajoutée À CÔTÉ de /chat, qui ne change pas d'un octet. Un navigateur
+// qui ne sait pas lire un flux, un proxy d'entreprise qui met la réponse en
+// tampon, une extension qui casse EventSource : dans tous ces cas le client
+// retombe sur /chat et reçoit sa réponse d'un bloc. Remplacer l'ancienne
+// route aurait fait dépendre le chat entier d'une technique qui échoue
+// silencieusement chez une minorité de visiteurs — et une minorité de
+// visiteurs, quand on en a huit, c'est tout le monde.
+//
+// Le passage par le MÊME limiteur est volontaire : les deux routes partagent
+// le compteur, sinon il suffirait d'alterner entre elles pour doubler le quota.
+router.post("/chat/flux", vitrineLimiter, async (req, res) => {
+    const entree = preparerEntree(req);
+    if (!entree) {
+        return res.json({ success: false, reply: "Pose-moi ta question." });
+    }
+    const { message, langue, historique, systemPrompt } = entree;
+
+    // Content-Type SSE + désactivation explicite de la mise en tampon. Sans
+    // X-Accel-Buffering, un proxy nginx garde la réponse jusqu'à la fin et
+    // renvoie tout d'un coup : on aurait fait tout ce travail pour rien, et
+    // en production seulement, là où le proxy existe.
+    res.set({
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    });
+    res.flushHeaders?.();
+
+    const envoyer = (evenement, donnees) => {
+        res.write(`event: ${evenement}\ndata: ${JSON.stringify(donnees)}\n\n`);
+    };
+
+    // Le visiteur peut fermer l'onglet en plein milieu. On arrête alors
+    // d'écrire — sinon Node accumule des écritures sur une socket morte.
+    let vivant = true;
+    req.on("close", () => { vivant = false; });
+
+    try {
+        const reponse = await geminiService.chatLibreFlux(
+            { systemPrompt, message, history: historique },
+            (morceau) => { if (vivant) envoyer("morceau", { t: morceau }); },
+        );
+
+        if (!vivant) return res.end();
+
+        if (!reponse.text) {
+            envoyer("fin", {
+                success: false,
+                reply: "SAMII est momentanément indisponible. Réessaie dans une minute, ou laisse-moi ton email pour qu'on te recontacte.",
+                restant: resteAutorise(req),
+            });
+            return res.end();
+        }
+
+        const { email, tel } = extraireContact(message);
+        await enregistrerProspect({ email, tel, message, langue, ip: req.ip });
+        await journaliserTour(req, message, reponse.text);
+
+        envoyer("fin", {
+            success: true,
+            contactCapture: Boolean(email || tel),
+            restant: resteAutorise(req),
+        });
+        res.end();
+    } catch (err) {
+        console.error("❌ POST /vitrine/chat/flux :", err.message);
+        if (vivant) {
+            envoyer("fin", { success: false, reply: "Une erreur est survenue. Réessaie dans un instant." });
+            res.end();
+        }
     }
 });
 

@@ -20,8 +20,14 @@ const KEYS = (CONFIG.GEMINI.API_KEYS.length > 0
     ? CONFIG.GEMINI.API_KEYS
     : [CONFIG.GEMINI.API_KEY]).filter(Boolean);
 
-function urlFor(key) {
-    return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
+// `flux: true` demande la version en flux du même modèle : Google renvoie la
+// réponse par morceaux au fur et à mesure qu'il l'écrit, au format SSE, au
+// lieu d'attendre la fin pour tout envoyer d'un coup. Même modèle, même clé,
+// même facture — seule la livraison change.
+function urlFor(key, flux) {
+    const methode = flux ? "streamGenerateContent" : "generateContent";
+    const sse = flux ? "&alt=sse" : "";
+    return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:${methode}?key=${key}${sse}`;
 }
 
 // UN 429, D'OÙ QU'IL VIENNE, EST UN QUOTA.
@@ -147,7 +153,30 @@ function delaiAvantRetour(err) {
 // Essaie chaque clé Gemini disponible tour à tour : une clé saturée (429) ou
 // morte (400/403 sur la clé) passe la main à la suivante. Toute autre erreur
 // remonte tout de suite — changer de clé n'y changerait rien.
-async function postWithRotation(body) {
+// Remplace sur place le corps d'erreur en flux par l'objet JSON qu'il
+// contient, pour que les classificateurs d'erreur puissent le lire comme
+// d'habitude. Silencieuse par construction : si le corps est illisible ou
+// n'est pas du JSON, on laisse ce qu'il y avait — les classificateurs
+// retomberont sur le statut HTTP, qui suffit dans la plupart des cas.
+async function lireCorpsDErreur(err) {
+    const corps = err?.response?.data;
+    if (!corps || typeof corps.on !== "function") return;
+    try {
+        const morceaux = [];
+        for await (const m of corps) morceaux.push(m);
+        err.response.data = JSON.parse(Buffer.concat(morceaux).toString("utf8"));
+    } catch { /* corps illisible : le statut HTTP fera foi */ }
+}
+
+// `options.flux` bascule sur la livraison en flux. TOUT LE RESTE — l'ordre des
+// clés, la mise au repos d'une clé saturée, la détection d'une clé morte, le
+// choix de la clé de départ suivante — est rigoureusement identique, et c'est
+// la raison pour laquelle ce paramètre est passé ici plutôt que d'écrire une
+// seconde fonction de rotation à côté. Deux rotations en parallèle finiraient
+// par diverger, et le jour où elles divergent, c'est la moitié des clés qui
+// cesse d'être essayée sans que rien ne le dise.
+async function postWithRotation(body, options = {}) {
+    const flux = options.flux === true;
     let lastErr;
     let ignorees = 0;
     for (let n = 0; n < KEYS.length; n++) {
@@ -161,7 +190,8 @@ async function postWithRotation(body) {
         if (repos) saturees.delete(KEYS[i]);
 
         try {
-            const reponse = await axios.post(urlFor(KEYS[i]), body);
+            const reponse = await axios.post(urlFor(KEYS[i], flux), body,
+                flux ? { responseType: "stream", timeout: 60000 } : undefined);
             // Celle-ci a répondu : c'est par elle qu'on commencera la
             // prochaine fois, plutôt que par celles qu'on vient d'écarter.
             // Sauf si elle est payante — on retourne alors au gratuit à la
@@ -171,6 +201,17 @@ async function postWithRotation(body) {
             return reponse;
         } catch (err) {
             lastErr = err;
+            // EN FLUX, LE CORPS D'ERREUR EST LUI AUSSI UN FLUX.
+            //
+            // axios(responseType:"stream") livre `err.response.data` sous
+            // forme de flux, y compris quand la réponse est un 400. Or
+            // estCleMorte() a besoin de LIRE le message pour distinguer
+            // « clé invalide » (on passe à la suivante) de « notre requête
+            // est fautive » (on remonte). Sans cette lecture, une clé morte
+            // en tête de liste ferait échouer le flux sans jamais essayer
+            // les autres — exactement la panne décrite plus haut, réintroduite
+            // par la porte de derrière.
+            if (flux) await lireCorpsDErreur(err);
             const saturee = estQuotaDepasse(err);
             const morte = estCleMorte(err);
             if (!saturee && !morte) throw err;
@@ -704,6 +745,76 @@ async function chatLibre({ systemPrompt, message, history = [] }) {
     }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// LE MÊME CHAT, MAIS ÉCRIT SOUS LES YEUX DU VISITEUR
+// ══════════════════════════════════════════════════════════════════════════
+//
+// POURQUOI ÇA COMPTE PLUS QUE ÇA N'EN A L'AIR.
+//
+// chatLibre() attend que le modèle ait fini d'écrire, puis renvoie le pavé
+// complet. Pendant trois à huit secondes, le visiteur regarde un rond tourner.
+// Le contenu est identique, le temps total est identique — et la sensation est
+// l'opposée : un rond qui tourne puis un mur de texte, c'est un formulaire ;
+// des mots qui arrivent, c'est quelqu'un qui répond.
+//
+// Les gens qu'on vise connaissent déjà ce format par ailleurs. Ils repèrent la
+// différence en deux secondes, avant d'avoir lu une seule phrase.
+//
+// LE REPLI EST LA RÈGLE, PAS L'EXCEPTION. Si le flux échoue pour n'importe
+// quelle raison — clés épuisées, réseau qui coupe, réponse illisible — on
+// retombe sur chatLibre(), qui garde ses quatre fournisseurs de secours. Le
+// visiteur reçoit alors sa réponse d'un bloc : moins joli, jamais vide. Un
+// streaming qui casse le chat serait un très mauvais marché.
+//
+// `onMorceau` est appelée à chaque fragment reçu. La valeur de retour a
+// exactement la forme de chatLibre() — { text, provider } — pour que l'appelant
+// n'ait pas à savoir par quel chemin la réponse est arrivée.
+async function chatLibreFlux({ systemPrompt, message, history = [] }, onMorceau) {
+    const contents = [
+        { role: "user", parts: [{ text: systemPrompt }] },
+        { role: "model", parts: [{ text: "Compris." }] },
+        ...history.map(h => ({ role: h.role === "model" ? "model" : "user", parts: [{ text: h.message }] })),
+        { role: "user", parts: [{ text: message }] },
+    ];
+
+    try {
+        const reponse = await postWithRotation({ contents }, { flux: true });
+        let complet = "";
+        let reste = "";
+
+        // Google envoie du SSE : des lignes « data: {…} » séparées par des
+        // lignes vides. Un morceau TCP ne s'arrête pas sur une frontière de
+        // ligne — on garde donc toujours le fragment incomplet pour le
+        // recoller au suivant, sinon un JSON coupé en deux fait tout tomber.
+        for await (const bloc of reponse.data) {
+            reste += bloc.toString("utf8");
+            const lignes = reste.split("\n");
+            reste = lignes.pop();
+            for (const ligne of lignes) {
+                if (!ligne.startsWith("data:")) continue;
+                const charge = ligne.slice(5).trim();
+                if (!charge || charge === "[DONE]") continue;
+                let json;
+                try { json = JSON.parse(charge); } catch { continue; }
+                const morceau = json.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
+                if (!morceau) continue;
+                complet += morceau;
+                if (typeof onMorceau === "function") onMorceau(morceau);
+            }
+        }
+
+        if (complet.trim()) return { text: complet, provider: "gemini" };
+        throw new Error("Flux Gemini vide.");
+    } catch (err) {
+        console.error("❌ chatLibreFlux / Gemini :", err.response?.data?.error?.message || err.message);
+        // Le repli : chatLibre() et ses quatre fournisseurs. On renvoie tout
+        // d'un coup au visiteur plutôt que rien du tout.
+        const secours = await chatLibre({ systemPrompt, message, history });
+        if (secours.text && typeof onMorceau === "function") onMorceau(secours.text);
+        return secours;
+    }
+}
+
 async function chatWithSearch({ message, context = {} }) {
     try {
         const prompt = await SAMII_PROMPT(message, context);
@@ -958,4 +1069,4 @@ async function sonder() {
     return resultats;
 }
 
-module.exports = { send, chat, chatLibre, chatWithFunctionResult, chatWithSearch, chatViaOpenRouter, summarize, receive, TOOLS, etat, sonder };
+module.exports = { send, chat, chatLibre, chatLibreFlux, chatWithFunctionResult, chatWithSearch, chatViaOpenRouter, summarize, receive, TOOLS, etat, sonder };
