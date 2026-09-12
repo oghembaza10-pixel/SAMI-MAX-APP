@@ -185,25 +185,33 @@ const FORMES = [
             `chez elle, ${forme.nom} qui vient de créer son compte atterrit sur « ${neuf && neuf.redirect} » — page fermée : son tout premier écran est une erreur`);
     }
 
-    // ── 2. CHEZ NOUS : RIEN NE DOIT AVOIR BOUGÉ ─────────────────────────
-    // Les destinations historiques, une par une. Ce bloc est là pour crier
-    // si la correction ci-dessus a déplacé quelqu'un chez nous.
-    const ATTENDU_MAISON = {
-        "client|false"  : "/client-qg",
-        "marchand|false": "/hub",
-        "marchand|true" : "/qg",
-        "agence|false"  : "/agence",
-        // Le QG Agence est une vue sur les clients des AUTRES. Quand on a sa
-        // propre boutique, sa maison c'est son QG à soi — /agence reste à un
-        // clic dans le menu, l'inverse n'était pas vrai.
-        "agence|true"   : "/qg",
-    };
+    // ── 2. CHEZ NOUS : ON NE DÉCIDE PLUS À SA PLACE ─────────────────────
+    //
+    // CE BLOC A CHANGÉ DE RÈGLE, VOLONTAIREMENT.
+    //
+    // Il vérifiait cinq destinations imposées : /client-qg pour un acheteur,
+    // /hub pour un marchand sans boutique, /qg pour un marchand qui en a une,
+    // /agence pour une agence. Chacune était défendable prise seule, et
+    // l'ensemble revenait à choisir pour les gens dès la seconde qui suit
+    // leur mot de passe.
+    //
+    // « Après connexion, l'utilisateur doit rester libre de choisir son
+    // expérience. » Tout le monde atterrit donc dans la conversation, et
+    // c'est SAMII qui demande. Rien n'est perdu : le QG, les outils, la
+    // marketplace et le QG Agence sont dans la barre latérale, qui liste
+    // aussi les QG de la personne — voir tests/navigation-libre.test.js.
+    //
+    // Ce qui N'A PAS changé, et que ce bloc continue de prouver : la
+    // destination doit passer LA PORTE. Déposer quelqu'un sur une page que
+    // la porte ferme reste une 404 juste après une connexion réussie, quelle
+    // que soit la règle du moment.
     for (const forme of FORMES) {
         poser(forme);
         const co = await appeler(POST_LOGIN, { COM: MAISON, corps: IDENTIFIANTS });
-        const attendu = ATTENDU_MAISON[`${forme.type}|${forme.boutique}`];
-        verifier(co && co.redirect === attendu,
-            `chez nous, ${forme.nom} allait sur « ${attendu} » et va maintenant sur « ${co && co.redirect} »`);
+        verifier(co && co.redirect === "/",
+            `chez nous, ${forme.nom} est envoyé sur « ${co && co.redirect} » au lieu du chat — on décide encore à sa place`);
+        verifier(co && porteOuverte(co.redirect, MAISON),
+            `chez nous, ${forme.nom} atterrit sur une page que la porte ferme : « ${co && co.redirect} »`);
     }
 
     // ── 2 bis. PLUSIEURS QG : ON DEMANDE, ON NE DEVINE PAS ──────────────
@@ -227,10 +235,16 @@ const FORMES = [
             `${nom}, la page de choix du QG est fermée par la porte : 404 juste après une connexion réussie`);
     }
     // Une seule boutique : pas de clic en plus pour un choix qui n'existe pas.
+    // Chez nous, on atterrit dans la conversation et la boutique est déjà
+    // ouverte d'un clic dans la barre latérale ; chez une partenaire, le QG
+    // reste la destination, puisque le chat n'y est pas le produit.
     BOUTIQUES = [{ id: "ws-1", metier: "ecommerce" }];
     const seule = await appeler(POST_LOGIN, { COM: MAISON, corps: IDENTIFIANTS });
-    verifier(seule && seule.redirect === "/qg",
-        `avec UNE seule boutique on impose quand même le choix : « ${seule && seule.redirect} »`);
+    verifier(seule && seule.redirect === "/",
+        `avec UNE seule boutique, chez nous, on impose « ${seule && seule.redirect} » au lieu de laisser choisir`);
+    const seuleChezElle = await appeler(POST_LOGIN, { COM: PARTENAIRE, corps: IDENTIFIANTS });
+    verifier(seuleChezElle && seuleChezElle.redirect === "/qg",
+        `chez une partenaire, avec une seule boutique, on n'atterrit plus sur le QG : « ${seuleChezElle && seuleChezElle.redirect} »`);
 
     // ── 3. LA DESTINATION DEMANDÉE PASSE AVANT TOUT ─────────────────────
     poser(FORMES[1]);

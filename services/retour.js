@@ -87,7 +87,50 @@ function apresConnexion(req, res, { suite, typeCompte, aUneBoutique, nombreBouti
         return "/c/" + communautes.nettoyer(traversee);
     }
 
-    if (typeCompte === "client") return communautes.accueilClient(COM);
+    // ══════════════════════════════════════════════════════════════════════
+    // ON NE DÉCIDE PLUS À SA PLACE : ON LE DÉPOSE CHEZ SAMII
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // Cette fonction choisissait une destination pour chacun : le fil pour un
+    // client, /agence pour une agence, /qg pour un marchand. Chaque règle
+    // était défendable prise seule, et l'ensemble revenait à décider à la
+    // place des gens dès la seconde qui suit leur mot de passe.
+    //
+    // « Après connexion, l'utilisateur doit rester libre de choisir son
+    // expérience. » Il atterrit donc dans la conversation, et c'est SAMII qui
+    // demande — son QG, ses outils, la marketplace restent à un clic dans la
+    // barre latérale, qui liste maintenant ses QG.
+    //
+    // LE CHAT ET LE QG NE SONT PAS DEUX APPLICATIONS. Un seul SAMII, une
+    // seule mémoire : passer de l'un à l'autre ne coupe aucune conversation.
+    // La session porte déjà workspaceId (routes/login.js le pose avant
+    // d'appeler cette fonction), donc « Mon QG » s'ouvre depuis le chat sans
+    // repasser par une page de sélection.
+    //
+    // TROIS CHOSES CONTINUENT DE PASSER AVANT, et ce ne sont pas des
+    // exceptions à la règle — c'est la règle :
+    //   - `suite` (traité plus haut) : quelqu'un qu'on a interrompu pour
+    //     l'identifier retourne où il allait. Honorer une intention n'est pas
+    //     en imposer une.
+    //   - la communauté traversée (plus haut aussi) : chez une partenaire, on
+    //     reste chez elle.
+    //   - plusieurs QG : voir plus bas, on demande lequel.
+    //
+    // Chez une partenaire (`COM.ecosysteme` faux), RIEN NE CHANGE : « / » y
+    // redirige vers sa communauté, et le chat n'est pas son produit.
+    if (!COM.ecosysteme) {
+        if (typeCompte === "client") return communautes.accueilClient(COM);
+        if (Number(nombreBoutiques) > 1) return "/mes-qg";
+        return aUneBoutique ? "/qg" : communautes.accueilMarchand(COM);
+    }
+
+    // Plusieurs QG : on demande lequel avant de déposer dans la conversation.
+    // Ce n'est pas contradictoire avec la liberté — c'est une question dont
+    // seule la personne a la réponse, et la barre latérale du chat permettra
+    // d'en changer ensuite sans se reconnecter.
+    if (Number(nombreBoutiques) > 1) return "/mes-qg";
+
+    return "/";
 
     // ── UNE AGENCE QUI TIENT AUSSI SA BOUTIQUE ───────────────────────────
     //
@@ -104,23 +147,18 @@ function apresConnexion(req, res, { suite, typeCompte, aUneBoutique, nombreBouti
     //
     // Le garde `COM.ecosysteme` reste : chez une partenaire, /agence est
     // fermé, et y déposer quelqu'un rouvrait une 404 par une autre porte.
-    if (typeCompte === "agence" && COM.ecosysteme && !aUneBoutique) return "/agence";
-
-    // ── PLUSIEURS QG : ON DEMANDE, ON NE DEVINE PAS ──────────────────────
+    // ── CE QUI VIVAIT ICI ────────────────────────────────────────────────
     //
-    // « Sinon au moment de se connecter je veux avoir le choix de choisir. »
+    // Suivaient une règle pour les agences (« /agence, toujours ») et le
+    // retour final « /qg ou l'accueil marchand ». Les deux sont maintenant
+    // inatteignables : le bloc ci-dessus répond avant.
     //
-    // Deux heuristiques ont été essayées avant d'en arriver là, et les deux
-    // se sont trompées : aucune donnée en base ne dit « c'est ici que je
-    // travaille ». Seule la personne le sait.
-    //
-    // Le contrôle porte bien sur DEUX et plus : quelqu'un qui n'a qu'une
-    // boutique ne doit pas payer un clic pour un choix qui n'existe pas.
-    // Et /mes-qg respecte le choix déjà retenu, donc cette page n'est pas
-    // une corvée à chaque connexion — elle reste une porte, pas un péage.
-    if (Number(nombreBoutiques) > 1) return "/mes-qg";
-
-    return aUneBoutique ? "/qg" : communautes.accueilMarchand(COM);
+    // Elles ne sont pas déplacées, elles sont RETIRÉES. Du code mort qui
+    // contredit la règle en vigueur finit toujours par être relu comme la
+    // règle — c'est précisément ce qui avait laissé quatre secteurs
+    // abandonnés survivre dans routes/hub.js. Le choix qu'elles faisaient
+    // est maintenant offert dans la barre latérale du chat, où la personne
+    // le fait elle-même : QG Agence compris, pour un compte agence.
 }
 
 module.exports = { suiteSure, apresConnexion };

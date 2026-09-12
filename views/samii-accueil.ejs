@@ -152,6 +152,16 @@ a { color: inherit; text-decoration: none; }
 }
 .sortie--phare { color: var(--texte); font-weight: 500; }
 .sortie--phare .sortie__pic { background: linear-gradient(135deg, var(--cyan), var(--violet)); color: #0A0810; }
+
+/* Les QG : entrées de premier plan, puisqu'on y entre et qu'on en revient. */
+.cote__forme { margin: 0; }
+.cote__forme .sortie, .sortie--projet { width: 100%; text-align: start; font: inherit; font-size: .89rem; }
+.sortie__nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sortie--ici { color: var(--texte); background: var(--releve); }
+.sortie--ici .sortie__pic { background: linear-gradient(135deg, var(--cyan), var(--violet)); color: #0A0810; }
+.sortie__point { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--vert); }
+.sortie--discret { color: var(--tres-doux); font-size: .84rem; }
+.sortie--discret .sortie__pic { background: none; font-size: 1rem; }
 .cote__bas {
     margin-top: auto; padding: 14px 11px 0; border-top: 1px solid var(--ligne);
     color: var(--tres-doux); font-size: .74rem; line-height: 1.55;
@@ -265,6 +275,38 @@ html[dir="rtl"] .tour--moi .bulle { border-radius: var(--r-m) var(--r-m) var(--r
 .envoyer:disabled { opacity: .4; cursor: not-allowed; }
 html[dir="rtl"] .envoyer { transform: scaleX(-1); }
 
+/* Micro et trombone : discrets au repos, ils ne doivent pas concurrencer le
+   champ de saisie — c'est écrire qui reste l'action principale. */
+.outil {
+    width: 34px; height: 34px; flex: none; border-radius: 50%;
+    display: grid; place-items: center; font-size: .95rem;
+    color: var(--tres-doux);
+    transition: color .16s, background .16s;
+}
+.outil:hover { color: var(--texte); background: var(--releve); }
+.outil--actif {
+    color: #fff; background: #E5657A;
+    animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(229,101,122,.5); }
+    50%      { box-shadow: 0 0 0 7px rgba(229,101,122,0); }
+}
+
+.jointe {
+    max-width: 680px; margin: 0 auto 9px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border: 1px solid var(--ligne); border-radius: var(--r-m);
+    background: var(--panneau);
+}
+.jointe__vue { width: 38px; height: 38px; border-radius: var(--r-s); object-fit: cover; flex: none; }
+.jointe__nom { flex: 1; min-width: 0; font-size: .82rem; color: var(--doux); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jointe__retirer { width: 26px; height: 26px; flex: none; border-radius: 50%; color: var(--tres-doux); }
+.jointe__retirer:hover { color: var(--texte); background: var(--releve); }
+
+/* Une image envoyée par la personne s'affiche dans sa bulle. */
+.bulle__image { display: block; max-width: 220px; border-radius: var(--r-s); margin-bottom: 8px; }
+
 .jauge {
     max-width: 680px; margin: 9px auto 0; text-align: center;
     font-family: var(--mono); font-size: .68rem; color: var(--tres-doux);
@@ -313,12 +355,43 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
 
         <!-- La barre latérale reste COURTE et secondaire : ce sont les
              sorties de conversion, pas un menu de toutes les fonctions. -->
+        <%# ══ LA BARRE LATÉRALE EST LE CENTRE DE NAVIGATION ═════════════════
+            Le chat et le QG ne sont pas deux applications : un seul SAMII, une
+            seule mémoire. On ouvre son QG depuis la conversation, on y revient
+            sans rien perdre. Quand plusieurs QG existent, ils sont listés ici —
+            en changer ne demande pas de se reconnecter. %>
         <aside class="cote" id="cote">
+
+            <% if (loggedIn && qgs.length) { %>
+                <p class="cote__titre"><%= qgs.length > 1 ? L("Mes QG") : L("Mon QG") %></p>
+                <%# Un formulaire vers POST /mes-qg, et pas un lien fabriqué :
+                    cette route existe déjà et VÉRIFIE que le QG appartient bien
+                    à la personne avant d'écrire quoi que ce soit en session.
+                    Inventer un raccourci ici, c'est réécrire ce contrôle —
+                    et un contrôle réécrit est un contrôle à retrouver le jour
+                    où il manque. %>
+                <% qgs.forEach(function (q) { %>
+                    <form method="POST" action="/mes-qg" class="cote__forme">
+                        <input type="hidden" name="workspaceId" value="<%= q.id %>">
+                        <button type="submit" class="sortie <%= q.id === workspaceId ? 'sortie--ici' : '' %>">
+                            <span class="sortie__pic">🏢</span>
+                            <span class="sortie__nom"><%= q.nom %></span>
+                            <% if (q.id === workspaceId) { %><span class="sortie__point" aria-hidden="true"></span><% } %>
+                        </button>
+                    </form>
+                <% }); %>
+                <a class="sortie sortie--discret" href="/workspace/create">
+                    <span class="sortie__pic">＋</span><%= L("Ouvrir un QG") %>
+                </a>
+            <% } %>
+
             <p class="cote__titre"><%= L("Aller plus loin") %></p>
 
-            <a class="sortie sortie--phare" href="<%= loggedIn ? '/qg' : '/register' %>">
-                <span class="sortie__pic">🏛</span><%= L("Ouvrir un QG") %>
-            </a>
+            <% if (!loggedIn || !qgs.length) { %>
+                <a class="sortie sortie--phare" href="<%= loggedIn ? '/workspace/create' : '/register' %>">
+                    <span class="sortie__pic">🏛</span><%= L("Ouvrir un QG") %>
+                </a>
+            <% } %>
             <a class="sortie" href="<%= loggedIn ? '/connect/tools' : '/register' %>">
                 <span class="sortie__pic">🔌</span><%= L("Connecter mes outils") %>
             </a>
@@ -334,8 +407,28 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
             <a class="sortie" href="/community">
                 <span class="sortie__pic">👥</span><%= L("Communauté") %>
             </a>
+            <% if (loggedIn && typeCompte === "agence") { %>
+                <a class="sortie" href="/agence">
+                    <span class="sortie__pic">🗂</span><%= L("QG Agence") %>
+                </a>
+            <% } %>
 
-            <p class="cote__bas"><%= L("Le compte sert à une seule chose : que SAMII se souvienne de toi.") %></p>
+            <% if (loggedIn && projets.length) { %>
+                <p class="cote__titre" style="margin-top:14px;"><%= L("Mes projets") %></p>
+                <% projets.forEach(function (p) { %>
+                    <button class="sortie sortie--projet" data-projet="<%= p.id %>">
+                        <span class="sortie__pic">📁</span><span class="sortie__nom"><%= p.nom %></span>
+                    </button>
+                <% }); %>
+            <% } %>
+
+            <p class="cote__bas">
+                <% if (loggedIn) { %>
+                    <%= L("Le QG n'est pas une autre application : c'est l'espace où SAMII travaille avec toi.") %>
+                <% } else { %>
+                    <%= L("Le compte sert à une seule chose : que SAMII se souvienne de toi.") %>
+                <% } %>
+            </p>
         </aside>
 
         <div class="scene">
@@ -356,10 +449,40 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
             </section>
 
             <div class="pied">
+                <%# L'aperçu de la pièce jointe vit AU-DESSUS du champ : une
+                    image qu'on a choisie doit se voir avant l'envoi, sinon on
+                    ne sait pas laquelle part. %>
+                <div class="jointe" id="jointe" hidden>
+                    <img class="jointe__vue" id="jointe-vue" alt="">
+                    <span class="jointe__nom" id="jointe-nom"></span>
+                    <button class="jointe__retirer" id="jointe-retirer" type="button"
+                            aria-label="<%= L("Retirer la pièce jointe") %>">✕</button>
+                </div>
+
                 <form class="saisie" id="saisie">
+                    <% if (loggedIn) { %>
+                        <%# Micro et pièce jointe demandent un compte : la
+                            transcription et la lecture d'image coûtent bien
+                            plus cher qu'un message texte, et /api/chat comme
+                            /api/chat/transcribe sont déjà derrière requireAuth.
+                            Les afficher à un visiteur anonyme promettrait
+                            quelque chose qui répondrait 302 vers /login. %>
+                        <button class="outil" id="joindre" type="button"
+                                aria-label="<%= L("Joindre une image") %>"
+                                title="<%= L("Joindre une image") %>">🖇</button>
+                        <input type="file" id="fichier" accept="image/*" hidden>
+                    <% } %>
+
                     <input id="champ" autocomplete="off" enterkeyhint="send"
                            placeholder="<%= L("Écris à SAMII…") %>"
                            aria-label="<%= L("Écris à SAMII…") %>">
+
+                    <% if (loggedIn) { %>
+                        <button class="outil" id="micro" type="button"
+                                aria-label="<%= L("Parler à SAMII") %>"
+                                title="<%= L("Parler plutôt qu'écrire") %>">🎙</button>
+                    <% } %>
+
                     <button class="envoyer" id="envoyer" type="submit" aria-label="<%= L("Envoyer") %>">↑</button>
                 </form>
                 <p class="jauge" id="jauge"></p>
@@ -382,9 +505,20 @@ window.SAMII_T = <%- JSON.stringify({
     memFin:     L("Pas de mur : tu peux continuer sans compte."),
     creer:      L("Créer mon compte"),
     connecter:  L("J'ai déjà un compte"),
+    ecoute:     L("Je t'écoute…"),
+    microRefus: L("Micro indisponible. Vérifie l'autorisation dans ton navigateur."),
+    microVide:  L("Je n'ai rien entendu. Réessaie."),
+    envoiRate:  L("L'image n'est pas partie. Réessaie."),
+    tropLourd:  L("Image trop lourde (10 Mo maximum)."),
+    quota:      L("Tu as atteint ta limite de messages pour le moment."),
 }) %>;
 window.SAMII_LANG = "<%= lang %>";
 window.SAMII_CONNECTE = <%= loggedIn ? "true" : "false" %>;
+<%# Connecté, le chat de la page d'accueil parle à /api/chat — la MÊME route
+    que le chat du QG : même mémoire (samii_conversations), mêmes projets,
+    mêmes images. C'est ce qui fait qu'il n'y a qu'un seul SAMII, et non un
+    assistant de vitrine et un autre dedans qui s'ignorent. %>
+window.SAMII_CLOUDINARY = <%- JSON.stringify({ nuage: cloudinary.CLOUD_NAME, preset: cloudinary.UPLOAD_PRESET }) %>;
 </script>
 <script src="/js/samii-accueil.js?v=1"></script>
 <script src="/js/pwa-register.js" defer></script>

@@ -65,6 +65,10 @@ function locales(lang, extra = {}) {
         nom: "",
         typeCompte: "client",
         tarifs: paliers.PALIERS,
+        // Les locales ajoutées quand la barre latérale est devenue le centre
+        // de navigation. Par défaut : un visiteur anonyme, sans QG ni projet.
+        qgs: [], projets: [], workspaceId: "",
+        cloudinary: require(path.join(RACINE, "config", "cloudinary.js")),
     }, extra);
 }
 

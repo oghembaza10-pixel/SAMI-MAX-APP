@@ -450,6 +450,25 @@ const EN = {
     "Créer mon compte": "Create my account",
     "J'ai déjà un compte": "I already have an account",
 
+    // ── Le chat connecté : micro, image, projets, navigation libre ───────
+    "Mon QG": "My HQ",
+    "Mes QG": "My HQs",
+    "Mes projets": "My projects",
+    "QG Agence": "Agency HQ",
+    "Le QG n'est pas une autre application : c'est l'espace où SAMII travaille avec toi.":
+        "The HQ isn't another app: it's the space where SAMII works with you.",
+    "Joindre une image": "Attach an image",
+    "Retirer la pièce jointe": "Remove attachment",
+    "Parler plutôt qu'écrire": "Speak instead of typing",
+    "Je t'écoute…": "Listening…",
+    "Micro indisponible. Vérifie l'autorisation dans ton navigateur.":
+        "Microphone unavailable. Check the permission in your browser.",
+    "Je n'ai rien entendu. Réessaie.": "I didn't catch that. Try again.",
+    "L'image n'est pas partie. Réessaie.": "The image didn't upload. Try again.",
+    "Image trop lourde (10 Mo maximum).": "Image too large (10 MB maximum).",
+    "Tu as atteint ta limite de messages pour le moment.":
+        "You've reached your message limit for now.",
+
     // ── Le hub des métiers ───────────────────────────────────────────────
     "Les métiers que SAMII connaît": "The trades SAMII knows",
     "Commerce, santé, beauté, restauration, artisanat : SAMII parle le vocabulaire de ton métier et connaît son rythme.":
@@ -682,6 +701,24 @@ const AR = {
         "لا يوجد جدار: يمكنك المتابعة بدون حساب.",
     "Créer mon compte": "إنشاء حسابي",
     "J'ai déjà un compte": "لديّ حساب بالفعل",
+
+    // ── Le chat connecté : micro, image, projets, navigation libre ───────
+    "Mes QG": "مقرّاتي",
+    "Mes projets": "مشاريعي",
+    "QG Agence": "مقرّ الوكالة",
+    "Le QG n'est pas une autre application : c'est l'espace où SAMII travaille avec toi.":
+        "المقرّ ليس تطبيقًا آخر: إنه المساحة التي يعمل فيها SAMII معك.",
+    "Joindre une image": "إرفاق صورة",
+    "Retirer la pièce jointe": "إزالة المرفق",
+    "Parler plutôt qu'écrire": "تحدّث بدل الكتابة",
+    "Je t'écoute…": "أستمع إليك…",
+    "Micro indisponible. Vérifie l'autorisation dans ton navigateur.":
+        "الميكروفون غير متاح. تحقّق من الإذن في متصفّحك.",
+    "Je n'ai rien entendu. Réessaie.": "لم أسمع شيئًا. حاول مرة أخرى.",
+    "L'image n'est pas partie. Réessaie.": "لم تُرسل الصورة. حاول مرة أخرى.",
+    "Image trop lourde (10 Mo maximum).": "الصورة كبيرة جدًا (١٠ ميغابايت كحد أقصى).",
+    "Tu as atteint ta limite de messages pour le moment.":
+        "لقد بلغت حدّ الرسائل في الوقت الحالي.",
 
     // ── Le hub des métiers ───────────────────────────────────────────────
     "Les métiers que SAMII connaît": "المهن التي يعرفها SAMII",

@@ -725,8 +725,46 @@ function donneesAccueil(req) {
     };
 }
 
-app.get("/", (req, res) => {
-    res.render("samii-accueil", donneesAccueil(req));
+// LA BARRE LATÉRALE EST LE CENTRE DE NAVIGATION, PAS UN MENU DE PLUS.
+//
+// Depuis le chat on ouvre son QG ; depuis son QG on revient au chat. Ce ne
+// sont pas deux applications : c'est un seul SAMII, une seule mémoire, et le
+// QG est l'espace où il travaille avec vous. Pour que ce soit vrai, la barre
+// doit connaître les QG de la personne — sinon « entrer dans mon QG » reste
+// un lien mort pour qui en possède plusieurs, et il faut se reconnecter pour
+// en changer.
+//
+// Les deux lectures échouent en silence : une base indisponible ne doit pas
+// empêcher de PARLER à SAMII, qui est la raison d'être de la page. On perd
+// alors la liste, pas la conversation.
+async function espacesDe(req) {
+    if (!req.session?.loggedIn) return { qgs: [], projets: [] };
+    const vide = { qgs: [], projets: [] };
+    try {
+        const workspaceService = require("./services/workspaceService");
+        const projetsService = require("./services/projetsService");
+        const [qgs, projets] = await Promise.all([
+            req.session.email ? workspaceService.getByOwner(req.session.email) : [],
+            req.session.userId ? projetsService.lister(req.session.userId) : [],
+        ]);
+        return {
+            qgs: (qgs || []).map((w) => ({ id: w.id, nom: w.nom || w.id, metier: w.metier || "" })),
+            projets: (projets || []).slice(0, 12),
+        };
+    } catch (err) {
+        console.error("❌ espacesDe :", err.message);
+        return vide;
+    }
+}
+
+app.get("/", async (req, res) => {
+    const espaces = await espacesDe(req);
+    res.render("samii-accueil", {
+        ...donneesAccueil(req),
+        ...espaces,
+        workspaceId: req.session?.workspaceId || "",
+        cloudinary: require("./config/cloudinary"),
+    });
 });
 
 // L'ancienne vitrine, intacte, hors de la route « / ».

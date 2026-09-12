@@ -10,8 +10,11 @@ function requireAuth(req, res, next) {
     next();
 }
 
-const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
-const CLOUDINARY_UPLOAD_PRESET = "MARKETPLACE OG";
+// Les deux valeurs publiques viennent de config/cloudinary.js : elles
+// vivaient en copie ici, dans marketplace.js et dans samii-page.js.
+const CLOUDINARY = require("../config/cloudinary");
+const CLOUDINARY_CLOUD_NAME = CLOUDINARY.CLOUD_NAME;
+const CLOUDINARY_UPLOAD_PRESET = CLOUDINARY.UPLOAD_PRESET;
 
 function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));

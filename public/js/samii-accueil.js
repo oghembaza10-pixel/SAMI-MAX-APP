@@ -25,6 +25,7 @@
     var LANG = window.SAMII_LANG || "fr";
     var CONNECTE = window.SAMII_CONNECTE === true;
 
+    var CLOUD     = window.SAMII_CLOUDINARY || {};
     var fil       = document.getElementById("fil");
     var colonne   = document.getElementById("colonne");
     var ouverture = document.getElementById("ouverture");
@@ -59,11 +60,18 @@
         if (amorces)   { amorces.remove();   amorces = null; }
     }
 
-    function direMoi(texte) {
+    function direMoi(texte, image) {
         var t = bloc("tour tour--moi");
         var b = document.createElement("div");
         b.className = "bulle";
-        b.textContent = texte;
+        if (image) {
+            var img = document.createElement("img");
+            img.className = "bulle__image";
+            img.src = image;
+            img.alt = "";
+            b.appendChild(img);
+        }
+        if (texte) b.appendChild(document.createTextNode(texte));
         t.appendChild(b);
         defiler();
     }
@@ -189,13 +197,23 @@
     }
 
     function envoyerMessage(texte) {
-        if (occupe || !texte) return;
+        if (occupe || (!texte && !jointeUrl)) return;
         occupe = true;
         envoyer.disabled = true;
         rangerOuverture();
-        direMoi(texte);
+        direMoi(texte, jointeUrl);
         historique.push({ role: "user", message: texte });
         var cible = attendre();
+
+        // ── CONNECTÉ : LA MÊME ROUTE QUE LE CHAT DU QG ───────────────────
+        //
+        // /api/chat porte la mémoire complète (samii_conversations), les
+        // projets et les images. C'est ce qui fait qu'il n'y a QU'UN SAMII :
+        // ce qui se dit ici se retrouve dans le QG, et inversement. Faire
+        // parler la page d'accueil à /vitrine/chat aurait créé un second
+        // assistant, amnésique, sous le même nom.
+        if (CONNECTE) return envoyerConnecte(texte, cible);
+
         var corps = JSON.stringify({ message: texte, historique: historique, langue: LANG });
 
         // ── LE CHEMIN D'ABORD : LE FLUX ──────────────────────────────────
@@ -299,11 +317,179 @@
         });
     }
 
+    // ══ CONNECTÉ : /api/chat, MÉMOIRE COMPLÈTE, PROJETS, IMAGES ══════════
+    //
+    // Cette route ne diffuse pas encore en flux — elle passe par le planner du
+    // QG, qui peut appeler des outils avant de répondre. On révèle donc le
+    // texte mot par mot à l'arrivée, comme sur le chemin de repli : la
+    // sensation est la même, et le jour où /api/chat diffusera, seule cette
+    // fonction changera.
+    function envoyerConnecte(texte, cible) {
+        var image = jointeUrl;
+        viderJointe();
+
+        fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                message: texte,
+                imageUrl: image || null,
+                projetId: projetActif || null,
+            }),
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (json) {
+            var reponse = (json && json.reply) || (json && json.quotaExceeded ? T.quota : T.panne);
+            var bulle = ouvrirBulle(cible);
+            reveler(bulle, reponse, function () { terminer(reponse, json || {}); });
+        })
+        .catch(function () {
+            var bulle = ouvrirBulle(cible);
+            reveler(bulle, T.reseau || "", function () {
+                occupe = false;
+                envoyer.disabled = false;
+            });
+        });
+    }
+
+    // ══ LA PIÈCE JOINTE ══════════════════════════════════════════════════
+    //
+    // L'envoi va directement de ce navigateur à Cloudinary, avec un préréglage
+    // non signé : l'image ne traverse pas notre serveur, qui n'a donc ni à la
+    // recevoir, ni à la stocker, ni à la repayer. /api/chat ne reçoit ensuite
+    // qu'une adresse. C'est déjà ce que fait le chat du QG — même préréglage,
+    // désormais lu depuis config/cloudinary.js.
+    var jointeUrl = null;
+    var projetActif = null;
+    var joindre = document.getElementById("joindre");
+    var fichier = document.getElementById("fichier");
+    var jointe = document.getElementById("jointe");
+    var jointeVue = document.getElementById("jointe-vue");
+    var jointeNom = document.getElementById("jointe-nom");
+    var jointeRetirer = document.getElementById("jointe-retirer");
+
+    function viderJointe() {
+        jointeUrl = null;
+        if (fichier) fichier.value = "";
+        if (jointe) jointe.hidden = true;
+    }
+
+    if (joindre && fichier) {
+        joindre.addEventListener("click", function () { fichier.click(); });
+        fichier.addEventListener("change", function () {
+            var f = fichier.files && fichier.files[0];
+            if (!f) return;
+            // 10 Mo : la même limite que celle du serveur pour l'audio. Un
+            // refus annoncé ici vaut mieux qu'un envoi de trente secondes
+            // qui échoue à l'arrivée.
+            if (f.size > 10 * 1024 * 1024) { alerter(T.tropLourd); fichier.value = ""; return; }
+
+            jointeNom.textContent = f.name;
+            jointeVue.src = URL.createObjectURL(f);
+            jointe.hidden = false;
+            joindre.classList.add("outil--actif");
+
+            var forme = new FormData();
+            forme.append("file", f);
+            forme.append("upload_preset", CLOUD.preset);
+            fetch("https://api.cloudinary.com/v1_1/" + CLOUD.nuage + "/image/upload", { method: "POST", body: forme })
+                .then(function (r) { return r.json(); })
+                .then(function (json) {
+                    joindre.classList.remove("outil--actif");
+                    if (!json || !json.secure_url) throw new Error("envoi refusé");
+                    jointeUrl = json.secure_url;
+                })
+                .catch(function () {
+                    joindre.classList.remove("outil--actif");
+                    viderJointe();
+                    alerter(T.envoiRate);
+                });
+        });
+    }
+    if (jointeRetirer) jointeRetirer.addEventListener("click", viderJointe);
+
+    // ══ LE MICRO ═════════════════════════════════════════════════════════
+    //
+    // On n'envoie pas le message tout seul après transcription : le texte est
+    // déposé dans le champ et la personne relit avant d'envoyer. Une
+    // transcription se trompe, et un message parti de travers coûte un
+    // crédit et une explication.
+    var micro = document.getElementById("micro");
+    var enregistreur = null;
+    var morceauxAudio = [];
+
+    function alerter(texte) {
+        if (!texte) return;
+        rangerOuverture();
+        var cible = attendre();
+        var bulle = ouvrirBulle(cible);
+        bulle.ecrire(texte);
+    }
+
+    if (micro) {
+        micro.addEventListener("click", async function () {
+            if (enregistreur && enregistreur.state === "recording") {
+                enregistreur.stop();
+                return;
+            }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined") {
+                return alerter(T.microRefus);
+            }
+            try {
+                var flux = await navigator.mediaDevices.getUserMedia({ audio: true });
+                morceauxAudio = [];
+                enregistreur = new MediaRecorder(flux);
+                enregistreur.ondataavailable = function (e) { if (e.data.size) morceauxAudio.push(e.data); };
+                enregistreur.onstop = function () {
+                    // La piste est coupée explicitement : sans ça, le point
+                    // rouge « micro actif » reste allumé dans l'onglet après
+                    // l'enregistrement, et on a l'air d'écouter en continu.
+                    flux.getTracks().forEach(function (p) { p.stop(); });
+                    micro.classList.remove("outil--actif");
+                    champ.placeholder = placeholderInitial;
+
+                    var forme = new FormData();
+                    forme.append("audio", new Blob(morceauxAudio, { type: "audio/webm" }), "audio.webm");
+                    fetch("/api/chat/transcribe", { method: "POST", body: forme })
+                        .then(function (r) { return r.json(); })
+                        .then(function (json) {
+                            var t = (json && json.text || "").trim();
+                            if (!t) return alerter(T.microVide);
+                            champ.value = champ.value ? champ.value + " " + t : t;
+                            champ.focus();
+                        })
+                        .catch(function () { alerter(T.microVide); });
+                };
+                enregistreur.start();
+                micro.classList.add("outil--actif");
+                champ.placeholder = T.ecoute || "";
+            } catch (e) {
+                alerter(T.microRefus);
+            }
+        });
+    }
+
+    // ══ LES PROJETS ══════════════════════════════════════════════════════
+    // Cliquer un projet bascule le fil dans ce projet : /api/chat vérifie
+    // l'appartenance de son côté, on ne fait que transmettre le choix.
+    var placeholderInitial = champ.placeholder;
+    document.querySelectorAll(".sortie--projet").forEach(function (b) {
+        b.addEventListener("click", function () {
+            var etait = projetActif;
+            document.querySelectorAll(".sortie--projet").forEach(function (x) { x.classList.remove("sortie--ici"); });
+            if (etait === b.dataset.projet) { projetActif = null; return; }
+            projetActif = b.dataset.projet;
+            b.classList.add("sortie--ici");
+            if (cote) cote.classList.remove("ouverte");
+            champ.focus();
+        });
+    });
+
     // ── BRANCHEMENTS ─────────────────────────────────────────────────────
     saisie.addEventListener("submit", function (e) {
         e.preventDefault();
         var t = champ.value.trim();
-        if (!t) return;
+        if (!t && !jointeUrl) return;
         champ.value = "";
         envoyerMessage(t);
     });
