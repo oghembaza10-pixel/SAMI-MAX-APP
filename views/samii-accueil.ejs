@@ -163,6 +163,9 @@ a { color: inherit; text-decoration: none; }
 .sortie--ici .sortie__pic { background: linear-gradient(135deg, var(--cyan), var(--violet)); color: #0A0810; }
 .sortie__point { width: 6px; height: 6px; flex: none; border-radius: 50%; background: var(--vert); }
 .sortie--discret { color: var(--tres-doux); font-size: .84rem; }
+.sortie--recharge { color: var(--doux); }
+.sortie--recharge .sortie__pic { background: rgba(255,180,84,.14); color: var(--ambre); }
+.sortie--recharge .sortie__note { color: var(--ambre); }
 .sortie--discret .sortie__pic { background: none; font-size: 1rem; }
 .cote__bas {
     margin-top: auto; padding: 14px 11px 0; border-top: 1px solid var(--ligne);
@@ -424,6 +427,22 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                 </a>
             <% } %>
 
+            <%# RECHARGER SAMII — la place est prise, le branchement viendra.
+                Le paiement passera par Chargily (CIB / EDAHABIA), et le modèle
+                est la recharge, pas l'abonnement : on charge quand on veut, on
+                dépense comme on veut, les points ne s'effacent pas à la fin du
+                mois. L'entrée existe dès maintenant pour que les gens s'y
+                habituent — et pour qu'on mesure combien cliquent avant même
+                qu'il y ait quelque chose à vendre. Elle dit franchement qu'elle
+                n'est pas prête : une porte qui ne s'ouvre pas sans le dire est
+                pire qu'une porte absente. %>
+            <% if (loggedIn) { %>
+                <button class="sortie sortie--recharge" id="recharger">
+                    <span class="sortie__pic">⚡</span><%= L("Recharger SAMII") %>
+                    <span class="sortie__note"><%= L("bientôt") %></span>
+                </button>
+            <% } %>
+
             <% if (loggedIn && projets.length) { %>
                 <p class="cote__titre" style="margin-top:14px;"><%= L("Mes projets") %></p>
                 <% projets.forEach(function (p) { %>
@@ -448,13 +467,26 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                     <div class="ouverture" id="ouverture">
                         <div class="boule"></div>
                         <h1><%= L("Tu fais quoi, toi ?") %></h1>
-                        <p><%= L("Raconte-moi ton business en une phrase. Je connais le terrain ici — les prix, la livraison, le paiement à la réception, les retours colis.") %></p>
+                        <%# La question d'ouverture reste personnelle — les gens
+                            répondent volontiers quand on parle d'eux. Mais la
+                            phrase en dessous ne doit PAS réduire SAMII au
+                            commerce : quelqu'un qui ne vend rien doit se sentir
+                            à sa place dès la première ligne. %>
+                        <p><%= L("Ton travail, une question, ou juste parler. Je réponds à tout — et je connais le terrain ici : les prix, la livraison, le paiement à la réception.") %></p>
                     </div>
 
+                    <%# QUATRE AMORCES, ET ELLES NE DISENT PAS LA MÊME CHOSE.
+                        Trois questions de commerçant, c'était annoncer que SAMII
+                        ne sert qu'aux commerçants — et perdre tous les autres au
+                        premier coup d'œil. Quatre chemins volontairement
+                        différents : le commerce, un service utile à n'importe
+                        qui, la connaissance du terrain (là où aucun assistant
+                        généraliste ne suit), et la conversation pour elle-même. %>
                     <div class="amorces" id="amorces">
                         <button class="amorce"><%= L("Je vends des vêtements sur Instagram") %></button>
-                        <button class="amorce"><%= L("Je prends mes rendez-vous sur WhatsApp") %></button>
-                        <button class="amorce"><%= L("J'ai une boutique et je veux vendre en ligne") %></button>
+                        <button class="amorce"><%= L("Aide-moi à écrire un message difficile") %></button>
+                        <button class="amorce"><%= L("Combien coûte une livraison Alger → Oran ?") %></button>
+                        <button class="amorce"><%= L("Juste parler, j'ai eu une longue journée") %></button>
                     </div>
                 </div>
             </section>
@@ -522,6 +554,7 @@ window.SAMII_T = <%- JSON.stringify({
     envoiRate:  L("L'image n'est pas partie. Réessaie."),
     tropLourd:  L("Image trop lourde (10 Mo maximum)."),
     quota:      L("Tu as atteint ta limite de messages pour le moment."),
+    rechargeBientot: L("La recharge arrive bientôt : tu pourras charger SAMII comme une flexy, par Chargily (CIB / EDAHABIA), et dépenser tes points comme tu veux. Pas d'abonnement obligatoire, et les points ne s'effacent pas à la fin du mois."),
 }) %>;
 window.SAMII_LANG = "<%= lang %>";
 window.SAMII_CONNECTE = <%= loggedIn ? "true" : "false" %>;

@@ -417,6 +417,16 @@ const EN = {
     "Raconte-moi ton business en une phrase. Je connais le terrain ici — les prix, la livraison, le paiement à la réception, les retours colis.":
         "Tell me about your business in one sentence. I know the ground here — prices, delivery, cash on delivery, returned parcels.",
     "Je vends des vêtements sur Instagram": "I sell clothes on Instagram",
+    "Aide-moi à écrire un message difficile": "Help me write a difficult message",
+    "Combien coûte une livraison Alger → Oran ?": "What does delivery from Algiers to Oran cost?",
+    "Juste parler, j'ai eu une longue journée": "Just talk — it's been a long day",
+    "Ton travail, une question, ou juste parler. Je réponds à tout — et je connais le terrain ici : les prix, la livraison, le paiement à la réception.":
+        "Your work, a question, or just talk. I answer anything — and I know the ground here: prices, delivery, cash on delivery.",
+    "Recharger SAMII": "Top up SAMII",
+    "bientôt": "soon",
+    "Chat SAMII": "SAMII Chat",
+    "La recharge arrive bientôt : tu pourras charger SAMII comme une flexy, par Chargily (CIB / EDAHABIA), et dépenser tes points comme tu veux. Pas d'abonnement obligatoire, et les points ne s'effacent pas à la fin du mois.":
+        "Top-ups are coming: you'll load SAMII like phone credit, through Chargily (CIB / EDAHABIA), and spend your points however you like. No forced subscription, and points don't expire at month's end.",
     "Je prends mes rendez-vous sur WhatsApp": "I book my appointments over WhatsApp",
     "J'ai une boutique et je veux vendre en ligne": "I have a shop and I want to sell online",
     "Écris à SAMII…": "Write to SAMII…",
@@ -669,6 +679,16 @@ const AR = {
     "Raconte-moi ton business en une phrase. Je connais le terrain ici — les prix, la livraison, le paiement à la réception, les retours colis.":
         "احكِ لي عن نشاطك في جملة واحدة. أنا أعرف الميدان هنا — الأسعار، التوصيل، الدفع عند الاستلام، والطرود المرتجعة.",
     "Je vends des vêtements sur Instagram": "أبيع الملابس على إنستغرام",
+    "Aide-moi à écrire un message difficile": "ساعدني في كتابة رسالة صعبة",
+    "Combien coûte une livraison Alger → Oran ?": "كم تكلفة التوصيل من الجزائر إلى وهران؟",
+    "Juste parler, j'ai eu une longue journée": "فقط للحديث، كان يومي طويلًا",
+    "Ton travail, une question, ou juste parler. Je réponds à tout — et je connais le terrain ici : les prix, la livraison, le paiement à la réception.":
+        "عملك، سؤال، أو مجرّد حديث. أجيب عن كل شيء — وأعرف الميدان هنا: الأسعار، التوصيل، الدفع عند الاستلام.",
+    "Recharger SAMII": "اشحن SAMII",
+    "bientôt": "قريبًا",
+    "Chat SAMII": "محادثة SAMII",
+    "La recharge arrive bientôt : tu pourras charger SAMII comme une flexy, par Chargily (CIB / EDAHABIA), et dépenser tes points comme tu veux. Pas d'abonnement obligatoire, et les points ne s'effacent pas à la fin du mois.":
+        "الشحن قادم قريبًا: ستشحن SAMII مثل رصيد الهاتف، عبر Chargily (CIB / EDAHABIA)، وتنفق نقاطك كما تشاء. لا اشتراك إجباري، والنقاط لا تنتهي في آخر الشهر.",
     "Je prends mes rendez-vous sur WhatsApp": "أحدّد مواعيدي عبر واتساب",
     "J'ai une boutique et je veux vendre en ligne": "لديّ محل وأريد البيع عبر الإنترنت",
     "Écris à SAMII…": "اكتب إلى SAMII…",

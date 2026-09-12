@@ -49,6 +49,27 @@
 // Une seule liste à tenir, pas deux qui divergent.
 const MODULES = [
     // ── Le haut : ce qu'on voit sans déplier ─────────────────────────────
+    // ── LE CHEMIN DU RETOUR VERS LA CONVERSATION ─────────────────────────
+    //
+    // « Depuis le QG il n'y a rien pour revenir au chat avec SAMII. » C'était
+    // vrai : l'entrée « SAMII » plus bas mène à /samii, qui est un AUTRE
+    // SAMII — celui qui travaille, avec ses outils, ses radars et Jarvis.
+    // Le chat d'accueil, lui, n'était joignable qu'en effaçant l'adresse.
+    //
+    // LES DEUX NE SONT PAS EN DOUBLE, ILS NE FONT PAS LE MÊME MÉTIER :
+    //   - « Chat SAMII » (/)      : celui qui parle de tout et fait venir
+    //     les gens. C'est le visage, la porte d'entrée.
+    //   - « SAMII » (/samii)      : celui qui travaille dans le QG — trouve
+    //     des prospects, publie, relance. Les outils.
+    // Fusionner les deux reviendrait à mettre le vendeur et l'atelier dans
+    // la même pièce.
+    //
+    // En premier dans la colonne, parce qu'on doit pouvoir revenir parler
+    // depuis n'importe où, en un clic, sans chercher.
+    // `chemins` volontairement vide : « / » est toujours ouvert (voir
+    // chemineAutorise), donc rien à déclarer à la porte — et surtout rien
+    // qu'on puisse lui fermer par erreur chez une partenaire.
+    { id: "chat",        libelle: "Chat SAMII",          cle: "qg.nav.chat",         icone: "message-circle",  href: "/",               rang: "core", chemins: [] },
     { id: "hub",         libelle: "Hub",                 cle: "qg.nav.hub",          icone: "layout-grid",     href: "/hub",            rang: "core", chemins: ["/hub"] },
     { id: "marketplace", libelle: "Marketplace",         cle: "qg.nav.marketplace",  icone: "store",           href: "/marketplace",    rang: "core", chemins: ["/marketplace"] },
     // Sa communauté vit sous /c ; la nôtre sous /community. Une partenaire

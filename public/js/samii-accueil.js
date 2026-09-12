@@ -488,6 +488,20 @@
         });
     });
 
+    // ── RECHARGER SAMII ──────────────────────────────────────────────────
+    // Rien à brancher encore : Chargily viendra. En attendant, le bouton dit
+    // ce qui arrive au lieu de ne rien faire — un bouton muet, on le
+    // reclique, puis on conclut que le site est cassé.
+    var recharger = document.getElementById("recharger");
+    if (recharger) {
+        recharger.addEventListener("click", function () {
+            if (cote) cote.classList.remove("ouverte");
+            rangerOuverture();
+            var bulle = ouvrirBulle(attendre());
+            reveler(bulle, T.rechargeBientot || "", function () {});
+        });
+    }
+
     // ── BRANCHEMENTS ─────────────────────────────────────────────────────
     saisie.addEventListener("submit", function (e) {
         e.preventDefault();
