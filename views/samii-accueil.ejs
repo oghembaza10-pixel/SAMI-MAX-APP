@@ -61,7 +61,9 @@
     --ligne-viv: #3A2F55;
     --texte:     #ECE8F6;
     --doux:      #9089A8;
-    --tres-doux: #625B78;
+    --tres-doux: #837CA0;  /* 4,82:1 sur --panneau. C'était #625B78, soit 2,96:1 :
+                              en dessous du minimum lisible, et ça se voyait — les
+                              intitulés de la barre latérale disparaissaient dans le fond. */
     --violet:    #9D5CFF;
     --violet-pale:#C2A0FF;
     --cyan:      #5FD4FF;
@@ -171,6 +173,15 @@ a { color: inherit; text-decoration: none; }
 .scene { min-height: 0; display: flex; flex-direction: column; }
 .fil { flex: 1; min-height: 0; overflow-y: auto; padding: 32px 16px 8px; }
 .colonne { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+/* TANT QUE LA CONVERSATION EST VIDE, LE BLOC D'OUVERTURE EST CENTRÉ.
+   Sans ça, la question et les trois amorces se collent en haut et laissent un
+   grand vide jusqu'au champ de saisie, en bas — sur un écran d'ordinateur,
+   c'est la moitié de la page qui ne dit rien, et la page a l'air de ne pas
+   avoir fini de charger. Le centrage tombe dès le premier message : la
+   conversation, elle, se lit bien de haut en bas. */
+.fil--vide { display: flex; align-items: center; }
+.fil--vide .colonne { width: 100%; padding-bottom: 6vh; }
 
 .ouverture { text-align: center; padding: 8px 0 2px; }
 .boule {
@@ -432,7 +443,7 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
         </aside>
 
         <div class="scene">
-            <section class="fil" id="fil">
+            <section class="fil fil--vide" id="fil" aria-live="polite">
                 <div class="colonne" id="colonne">
                     <div class="ouverture" id="ouverture">
                         <div class="boule"></div>

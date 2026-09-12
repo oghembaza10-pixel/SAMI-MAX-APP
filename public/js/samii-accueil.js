@@ -58,6 +58,9 @@
     function rangerOuverture() {
         if (ouverture) { ouverture.remove(); ouverture = null; }
         if (amorces)   { amorces.remove();   amorces = null; }
+        // Le centrage vertical n'a de sens que sur une page vide : dès qu'il y
+        // a une conversation, elle se lit de haut en bas comme partout.
+        if (fil) fil.classList.remove("fil--vide");
     }
 
     function direMoi(texte, image) {
