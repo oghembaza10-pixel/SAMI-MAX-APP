@@ -1,0 +1,248 @@
+<%
+// ==========================================================================
+// SAMII OS — LA PAGE D'UN MÉTIER
+//
+// C'est la porte d'entrée Google. Le chat, lui, n'a presque rien à indexer :
+// un champ de saisie ne se classe sur aucune recherche. C'est donc ici que le
+// texte vit, et chaque chemin d'ici repart vers SAMII.
+//
+// DEUX SORTIES, PAS UNE. Le visiteur n'est pas au même endroit selon qui il
+// est :
+//   - celui qui découvre veut PARLER  → le chat, avec son métier déjà connu ;
+//   - celui qui est décidé veut OUVRIR → /workspace/create?metier=<id>, la
+//     route de création qui existait déjà et qui pré-remplit le métier.
+// Lui imposer le chat quand il est prêt à ouvrir, ce serait une étape de plus
+// entre lui et le produit.
+//
+// Tout le contenu vient de services/metiers.js — la source unique. Aucune
+// liste, aucune phrase n'est recopiée ici.
+%><!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title><%= titre %></title>
+<meta name="description" content="<%= description %>">
+<link rel="canonical" href="<%= canonique %>">
+
+<%# hreflang : la même page existe dans trois langues. Sans ces liens, Google
+    les prend pour trois pages concurrentes et n'en garde qu'une. %>
+<% languesDispo.forEach(function (code) { %>
+<link rel="alternate" hreflang="<%= code %>" href="<%= base %>/metiers/<%= metier.id %>?lang=<%= code %>">
+<% }); %>
+<link rel="alternate" hreflang="x-default" href="<%= canonique %>">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="<%= titre %>">
+<meta property="og:description" content="<%= description %>">
+<meta property="og:url" content="<%= canonique %>">
+<meta property="og:image" content="<%= base %>/og-hero.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<%# Données structurées : elles disent à Google ce qu'EST cette page, plutôt
+    que de le laisser le deviner à partir du texte. %>
+<script type="application/ld+json">
+<%- JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": titre,
+    "description": description,
+    "serviceType": metier.label,
+    "areaServed": ["DZ", "MA", "TN", "SN", "CI", "ML", "CM"],
+    "provider": { "@type": "Organization", "name": "SAMII", "url": base },
+    "url": canonique,
+}) %>
+</script>
+<script type="application/ld+json">
+<%- JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+        "@type": "Question",
+        "name": L("Qu'est-ce que SAMII change pour ce métier ?"),
+        "acceptedAnswer": { "@type": "Answer", "text": metier.reponse },
+    }, {
+        "@type": "Question",
+        "name": L("Faut-il installer quelque chose ?"),
+        "acceptedAnswer": { "@type": "Answer", "text": L("Non. SAMII fonctionne depuis une page web et depuis WhatsApp. Il n'y a rien à installer.") },
+    }],
+}) %>
+</script>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0A0810">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --nuit:#0A0810; --panneau:#120F1C; --releve:#191426;
+    --ligne:#262036; --ligne-viv:#3A2F55;
+    --texte:#ECE8F6; --doux:#9089A8; --tres-doux:#625B78;
+    --violet:#9D5CFF; --violet-pale:#C2A0FF; --cyan:#5FD4FF; --vert:#3DDC84;
+    --serif:"Cinzel",Georgia,serif;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--nuit); color: var(--texte); font-family: var(--sans); font-size: 15px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+
+.haut {
+    display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 16px;
+    border-bottom: 1px solid var(--ligne); position: sticky; top: 0; z-index: 10;
+    background: rgba(10,8,16,.93); backdrop-filter: blur(12px);
+}
+.marque {
+    font-family: var(--serif); font-weight: 700; font-size: 1.05rem; letter-spacing: .1em;
+    background: linear-gradient(92deg, var(--cyan), var(--violet-pale));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.btn-haut {
+    margin-inline-start: auto; padding: 7px 15px; border-radius: 999px;
+    border: 1px solid var(--ligne-viv); font-size: .85rem; font-weight: 500; white-space: nowrap;
+    transition: border-color .16s, background .16s;
+}
+.btn-haut:hover { border-color: var(--cyan); background: rgba(95,212,255,.1); }
+
+.enveloppe { max-width: 760px; margin: 0 auto; padding: 34px 16px 56px; }
+
+/* Le fil d'Ariane sert le visiteur ET Google : il dit où l'on est dans le
+   site, ce qu'un moteur ne peut pas déduire d'une URL seule. */
+.fil { font-size: .8rem; color: var(--tres-doux); margin-bottom: 22px; }
+.fil a:hover { color: var(--doux); }
+.fil span { margin: 0 6px; }
+
+.tete { margin-bottom: 30px; }
+.tete__pic { font-size: 2.1rem; display: block; margin-bottom: 12px; }
+.tete h1 {
+    margin: 0 0 12px; font-family: var(--serif); font-weight: 600;
+    font-size: clamp(1.5rem, 5.2vw, 2.15rem); line-height: 1.25; text-wrap: balance;
+}
+.tete__promesse { margin: 0; font-size: 1.05rem; color: var(--doux); text-wrap: balance; }
+.etiquette {
+    display: inline-block; margin-bottom: 14px;
+    font-family: var(--mono); font-size: .63rem; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--cyan); border: 1px solid rgba(95,212,255,.3); border-radius: 999px; padding: 4px 11px;
+}
+
+/* Le cœur de la page : perte → défaut → réponse. Trois phrases écrites pour
+   ce métier-là, pas un gabarit rempli avec son nom. */
+.constat { display: grid; gap: 2px; margin: 30px 0; border-radius: 16px; overflow: hidden; }
+.pave { padding: 20px 22px; background: var(--panneau); }
+.pave h2 {
+    margin: 0 0 8px; font-family: var(--mono); font-size: .64rem;
+    letter-spacing: .16em; text-transform: uppercase; font-weight: 500; color: var(--tres-doux);
+}
+.pave p { margin: 0; font-size: 1.02rem; }
+.pave--perte   { border-inline-start: 2px solid #E5657A; }
+.pave--defaut  { border-inline-start: 2px solid var(--tres-doux); }
+.pave--defaut p { color: var(--doux); }
+.pave--reponse {
+    border-inline-start: 2px solid var(--vert);
+    background: linear-gradient(110deg, rgba(61,220,132,.09), var(--panneau) 65%);
+}
+
+/* Les deux sorties. Elles ne s'adressent pas à la même personne. */
+.sorties { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin: 32px 0; }
+.sortie { display: block; padding: 20px 21px; border-radius: 16px; border: 1px solid var(--ligne); background: var(--panneau); transition: border-color .16s, transform .16s, background .16s; }
+.sortie:hover { border-color: var(--ligne-viv); background: var(--releve); transform: translateY(-2px); }
+.sortie--net { border-color: var(--ligne-viv); background: linear-gradient(150deg, rgba(157,92,255,.14), rgba(95,212,255,.05)); }
+.sortie--net:hover { border-color: var(--violet); }
+.sortie h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 600; }
+.sortie p { margin: 0 0 13px; color: var(--doux); font-size: .87rem; }
+.sortie__cta { font-size: .87rem; font-weight: 600; color: var(--cyan); }
+.sortie--net .sortie__cta { color: var(--violet-pale); }
+
+.aussi { margin-top: 40px; padding-top: 26px; border-top: 1px solid var(--ligne); }
+.aussi h2 { margin: 0 0 14px; font-family: var(--mono); font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; color: var(--tres-doux); font-weight: 500; }
+.voisins { display: flex; flex-wrap: wrap; gap: 8px; }
+.voisin { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--ligne); background: var(--panneau); font-size: .85rem; color: var(--doux); transition: color .16s, border-color .16s; }
+.voisin:hover { color: var(--texte); border-color: var(--ligne-viv); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="haut">
+    <a href="/" class="marque">SAMII</a>
+    <a class="btn-haut" href="/"><%= L("Parler à SAMII") %></a>
+</header>
+
+<main class="enveloppe">
+
+    <nav class="fil" aria-label="<%= L("Fil d'Ariane") %>">
+        <a href="/">SAMII</a><span>›</span><a href="/metiers"><%= L("Les métiers") %></a><span>›</span><%= L(metier.label) %>
+    </nav>
+
+    <div class="tete">
+        <span class="tete__pic" aria-hidden="true"><%= metier.icone %></span>
+        <span class="etiquette"><%= metier.parcours === "rdv" ? L("Métier à rendez-vous") : L("Métier à commandes") %></span>
+        <h1><%= titre %></h1>
+        <p class="tete__promesse"><%= metier.reponse %></p>
+    </div>
+
+    <div class="constat">
+        <div class="pave pave--perte">
+            <h2><%= L("Ce que ça coûte") %></h2>
+            <p><%= metier.perte %></p>
+        </div>
+        <div class="pave pave--defaut">
+            <h2><%= L("Pourquoi ça arrive") %></h2>
+            <p><%= metier.defaut %></p>
+        </div>
+        <div class="pave pave--reponse">
+            <h2><%= L("Ce que SAMII fait") %></h2>
+            <p><%= metier.reponse %></p>
+        </div>
+    </div>
+
+    <div class="sorties">
+        <%# Sortie 1 — celui qui découvre. Le métier part avec lui : SAMII sait
+            à qui il parle avant le premier message. %>
+        <a class="sortie" href="/?metier=<%= encodeURIComponent(L(metier.label)) %>">
+            <h3><%= L("Poser la question à SAMII") %></h3>
+            <p><%= L("Racontez votre situation. SAMII connaît déjà votre métier — les prix, la livraison, le paiement à la réception.") %></p>
+            <span class="sortie__cta"><%= L("Ouvrir la discussion") %> →</span>
+        </a>
+
+        <%# Sortie 2 — celui qui est décidé. /workspace/create?metier= existait
+            déjà et pré-remplit le métier : rien de nouveau n'est inventé ici. %>
+        <a class="sortie sortie--net" href="/workspace/create?metier=<%= encodeURIComponent(metier.id) %>">
+            <h3><%= L("Ouvrir mon QG") + " " + L(metier.label).toLowerCase() %></h3>
+            <p><%= metier.parcours === "rdv"
+                ? L("Créneaux en ligne, rappels automatiques, fiche client. Prêt pour votre activité.")
+                : L("Page de commande, confirmation automatique, suivi des colis. Prêt pour votre activité.") %></p>
+            <span class="sortie__cta"><%= L("Créer maintenant") %> →</span>
+        </a>
+    </div>
+
+    <% if (voisins.length) { %>
+    <section class="aussi">
+        <h2><%= L("Même famille") %> — <%= L(metier.groupe) %></h2>
+        <div class="voisins">
+            <% voisins.forEach(function (v) { %>
+                <a class="voisin" href="/metiers/<%= v.id %>"><%= v.icone %>&nbsp; <%= L(v.label) %></a>
+            <% }); %>
+        </div>
+    </section>
+    <% } %>
+
+</main>
+
+<%- include("partials/barre-langue", {
+    modeLangue: "serveur",
+    avecRetour: true,
+    retourUrl: "/metiers",
+    retourLibelle: L("Les métiers"),
+    retourCle: "nav.retour.metiers",
+}) %>
+
+</body>
+</html>

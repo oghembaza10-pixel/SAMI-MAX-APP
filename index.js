@@ -170,6 +170,51 @@ app.use("/billing/webhook", express.raw({ type: "application/json" }));
 app.use("/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// ── LE PLAN DU SITE, CALCULÉ ────────────────────────────
+//
+// Déclaré AVANT express.static, et c'est tout l'enjeu : un fichier
+// public/sitemap.xml serait servi en premier et cette route ne serait jamais
+// atteinte. Le plan statique qui existait ne contenait QU'UNE adresse — la
+// page d'accueil — pendant que trente-quatre pages métier attendaient d'être
+// découvertes. Un plan qui ne liste rien ne fait rien découvrir.
+//
+// Calculé depuis services/metiers.js : un métier ajouté là-bas apparaît ici
+// sans que personne n'ait à y penser. Un plan tenu à la main finit toujours
+// par annoncer des pages mortes et par taire les vivantes.
+app.get("/sitemap.xml", (req, res) => {
+    const metiersService = require("./services/metiers");
+    const langue = require("./services/langue");
+    const base = String(CONFIG.APP_URL || "").replace(/\/+$/, "");
+
+    const entree = (chemin, priorite, frequence) => {
+        // hreflang dans le plan lui-même : c'est la façon recommandée de
+        // déclarer des traductions sans alourdir chaque page.
+        const alternatives = langue.LANGUES.map((code) =>
+            `    <xhtml:link rel="alternate" hreflang="${code}" href="${base}${chemin}?lang=${code}"/>`
+        ).join("\n");
+        return `  <url>\n    <loc>${base}${chemin}</loc>\n${alternatives}\n    <changefreq>${frequence}</changefreq>\n    <priority>${priorite}</priority>\n  </url>`;
+    };
+
+    const urls = [
+        entree("/", "1.0", "daily"),
+        entree("/metiers", "0.9", "weekly"),
+        ...metiersService.avecFiche().map((m) => entree(`/metiers/${m.id}`, "0.8", "monthly")),
+        entree("/marketplace", "0.7", "daily"),
+        entree("/community", "0.7", "daily"),
+        entree("/academy", "0.6", "weekly"),
+        // L'ancienne vitrine : elle n'est plus à la racine, mais elle porte
+        // toujours la présentation complète et les tarifs. La taire
+        // reviendrait à effacer de Google tout ce qu'elle a déjà gagné.
+        entree("/accueil-classique", "0.5", "monthly"),
+    ];
+
+    res.type("application/xml").send(
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n` +
+        urls.join("\n") + `\n</urlset>\n`
+    );
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 // Un gabarit EJS n'a pas de `require` : ce dont les vues ont besoin doit
@@ -691,18 +736,10 @@ app.get("/accueil-classique", (req, res) => {
 
 // ── LES MÉTIERS ─────────────────────────────────────────
 //
-// La porte d'entrée Google : une page par métier viendra se ranger sous
-// /metiers/<id>, et chacune ramènera au chat. Ce hub est le premier étage —
-// il lit services/metiers.js, la source unique déjà utilisée par
-// l'onboarding, l'agence et l'API. Aucune liste n'est recopiée ici.
-app.get("/metiers", (req, res) => {
-    const metiersService = require("./services/metiers");
-    res.render("metiers", {
-        loggedIn: !!req.session?.loggedIn,
-        typeCompte: req.session?.typeCompte || "client",
-        groupes: metiersService.parGroupe(),
-    });
-});
+// La porte d'entrée Google : le hub public et une page par métier. Tout est
+// dans routes/metiers.js, qui lit services/metiers.js — la source unique déjà
+// utilisée par l'onboarding, l'agence et l'API. Aucune liste n'est recopiée.
+app.use("/metiers", require("./routes/metiers"));
 
 // ── QG — route universelle SOLDAT V1 ────────────────────
 app.get("/qg", requireAuth, async (req, res) => {

@@ -16,19 +16,24 @@ const communautes = require("../config/communautes");
 // Constantes Hub
 // ──────────────────────────────────────────────────────
 
-const METIERS = [
-    "E-commerce",
-    "Restaurant",
-    "Immobilier",
-    "Santé",
-    "Éducation",
-    "Finance",
-    "Industrie",
-    "Agriculture",
-    "Tourisme",
-    "Services",
-    "Technologie"
-];
+// LA LISTE QUI VIVAIT ICI A ÉTÉ RETIRÉE, PAS DÉPLACÉE.
+//
+// C'étaient onze chaînes écrites à la main — « Finance », « Industrie »,
+// « Agriculture », « Technologie »… — passées à la vue sous le nom `metiers`.
+// Deux choses à son sujet :
+//
+//   1. LA VUE NE LA LISAIT PAS. views/hub.ejs construit sa grille depuis son
+//      propre dictionnaire HUB_METIERS. Cette variable traversait donc le
+//      serveur pour être ignorée à l'arrivée.
+//   2. ELLE CONTREDISAIT LA SOURCE UNIQUE. services/metiers.js dit en toutes
+//      lettres avoir retiré « agriculture, industrie, technologie, finance —
+//      aucune de ces activités ne correspond au marché réellement visé ».
+//      La consolidation avait vu routes/workspace.js et routes/agence.js, et
+//      manqué ce fichier : les quatre secteurs abandonnés survivaient ici.
+//
+// On ne la remplace par rien : le Hub sert à CHOISIR un espace de travail
+// existant, pas à présenter des métiers. Les métiers ont leur maison, et
+// c'est services/metiers.js, servi publiquement par routes/metiers.js.
 
 const HUB_ACTIONS = [
     {
@@ -82,7 +87,7 @@ router.get("/", requireAuth, async (req, res) => {
             lastWorkspace: req.session?.lastWorkspace || "",
             hasWorkspace: workspaces.length > 0,
 
-            metiers: METIERS,
+            // `metiers` n'est plus passée : la vue ne l'a jamais lue (voir en-tête).
             actions: HUB_ACTIONS,
 
             modules: [],
@@ -99,7 +104,7 @@ router.get("/", requireAuth, async (req, res) => {
             lastWorkspace: "",
             hasWorkspace: false,
 
-            metiers: METIERS,
+            // `metiers` n'est plus passée : la vue ne l'a jamais lue (voir en-tête).
             actions: HUB_ACTIONS,
 
             modules: [],

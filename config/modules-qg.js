@@ -164,6 +164,12 @@ const SOCLE = [
     "/conditions", "/conditions-de-service", "/cgu", "/cgv", "/mentions-legales",
     "/suppression", "/suppression-des-donnees", "/data-deletion.html",
     "/favicon.ico", "/manifest.json", "/robots.txt", "/sw.js",
+    // Le plan du site. Il était un fichier statique tant qu'il ne listait
+    // qu'une adresse ; il est maintenant calculé, donc c'est une route, donc
+    // la porte le voit. Le fermer ne renverrait aucune erreur : les pages
+    // cesseraient simplement d'être découvertes par Google, et on mettrait
+    // des mois à s'en apercevoir.
+    "/sitemap.xml",
 ];
 
 function cheminsDe(m, COM) {

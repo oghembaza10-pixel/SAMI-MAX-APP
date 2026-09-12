@@ -162,8 +162,11 @@ for (const route of ["/academy", "/marketplace", "/community", "/connect"]) {
     verifier(index.includes(`app.use("${route}"`),
         `la barre latérale pointe vers ${route}, qui n'est monté nulle part dans index.js`);
 }
-verifier(/app\.get\("\/metiers"/.test(index),
-    "la barre latérale pointe vers /metiers, qui n'existe pas");
+// Monté par app.use (un routeur entier : le hub + une page par métier) ou
+// par app.get (une seule page). Les deux sont acceptables ; l'absence des
+// deux est un lien mort en page d'accueil.
+verifier(/app\.(use|get)\("\/metiers"/.test(index),
+    "la barre latérale pointe vers /metiers, qui n'est monté nulle part");
 
 // ── 6. L'ANCIENNE ACCUEIL EST TOUJOURS LÀ ────────────────────────────────
 // C'est LA vérification qui compte le plus. Elle doit hurler si quelqu'un

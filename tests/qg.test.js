@@ -589,6 +589,11 @@ function marque(html) {
         // le référencement. /metiers est le hub qui ramène au chat : c'est
         // une porte d'entrée Google, elle doit être ouverte à tout le monde.
         "/accueil-classique": true, "/metiers": true,
+        // Le plan du site : Google doit l'atteindre depuis n'importe quel
+        // domaine, y compris celui d'une communauté partenaire. Le fermer
+        // ne renverrait aucune erreur visible — les pages cesseraient
+        // simplement d'être découvertes.
+        "/sitemap.xml": true,
         "/webhook/chargily": true, "/webhook/meta": true, "/webhook/whatsapp": true,
         // Les commentaires Facebook et Instagram : Meta appelle, nous répondons.
         "/webhook/meta/commentaires": true,
