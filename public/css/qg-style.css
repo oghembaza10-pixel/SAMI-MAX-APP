@@ -580,8 +580,36 @@ body {
     .samii-orb { bottom: 78px; right: 16px; width: 46px; height: 46px; }
 }
 .qg-nav-overlay { display: none; }
+
+/* ── « PLUS » SUR ORDINATEUR ─────────────────────────────────────────────
+   Le bouton « Plus » du téléphone reste masqué ici — c'est le second,
+   `--avance-toggle`, qui prend le relais. Les deux mécaniques ne se croisent
+   jamais : chacune est éteinte là où l'autre travaille, ce qui évite qu'une
+   correction sur l'une casse l'autre six mois plus tard.
+
+   Ce qui se replie : API & Webhooks, Applications, Coffre OG, Ma Vitrine,
+   Abonnement. Rien n'est retiré — un clic, jamais deux. */
 @media (min-width: 901px) {
     .qg-nav__item--more-toggle, .qg-nav-overlay { display: none !important; }
+    .qg-nav__item--avance { display: none; }
+    .qg-sidebar--avance-ouvert .qg-nav__item--avance { display: flex; }
+    .qg-nav__item--avance-toggle {
+        background: none; border: none; cursor: pointer; font-family: inherit;
+        color: var(--text-muted);
+    }
+    .qg-nav__item--avance-toggle.active { color: var(--gold-og); }
+    /* Le chevron tourne : sans lui, rien ne dit que le repli est ouvert ou
+       fermé, et on reclique pour comprendre. */
+    .qg-nav__item--avance-toggle i { transition: transform .18s ease; }
+    .qg-nav__item--avance-toggle.active i { transform: rotate(90deg); }
+}
+/* Sur téléphone, ce second bouton n'a rien à faire là : le panneau « Plus »
+   d'origine sert déjà ces mêmes entrées, qui portent aussi `--more`. */
+@media (max-width: 900px) {
+    .qg-nav__item--avance-toggle { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .qg-nav__item--avance-toggle i { transition: none; }
 }
 /* TABLE */
 .qg-table-section { overflow-x: auto; margin-bottom: 2rem; }

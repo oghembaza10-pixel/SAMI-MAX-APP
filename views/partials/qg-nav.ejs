@@ -64,7 +64,12 @@ function _entree(m) {
     const href = modulesQg.lien(m, COM, _ctx);
     const classes = [
         "qg-nav__item",
-        m.rang === "core" ? "qg-nav__item--core" : (m.rang === "more" ? "qg-nav__item--more" : ""),
+        // `avance` porte AUSSI `--more` : sur téléphone, le panneau « Plus »
+        // existant continue donc de les servir sans une ligne de changement.
+        // Sur ordinateur, c'est `--avance` qui décide, et lui seul.
+        m.rang === "core" ? "qg-nav__item--core"
+            : (m.rang === "avance" ? "qg-nav__item--more qg-nav__item--avance"
+            : (m.rang === "more" ? "qg-nav__item--more" : "")),
         m.id === "assistant" ? "qg-nav__item--samii" : "",
         m.id === _actif ? "active" : "",
     ].filter(Boolean).join(" ");
@@ -99,6 +104,24 @@ function _entree(m) {
             <% if (m.separateurAvant) { %><div class="qg-nav__divider qg-nav__item--more"></div><% } %>
             <%- _entree(m) %>
         <% }); %>
+
+        <%# ── « PLUS » SUR ORDINATEUR ──────────────────────────────────────
+            Le bouton « Plus » n'existait que sur téléphone : sur un écran
+            large il est masqué, et la colonne affichait ses quatorze entrées
+            d'un bloc. Une colonne de quatorze lignes ne se lit plus, elle se
+            subit — et les lignes qu'on ne comprend pas (« API & Webhooks »,
+            « Applications ») apprennent au commerçant que ce produit n'est
+            pas pour lui.
+            Ce second bouton prend le relais sur grand écran, sans toucher au
+            premier : les deux mécaniques ne se croisent jamais, chacune est
+            masquée là où l'autre travaille. %>
+        <% if (_rang("avance").length) { %>
+        <button type="button" id="qg-avance-toggle" class="qg-nav__item qg-nav__item--avance-toggle"
+                aria-expanded="false">
+            <i data-lucide="more-horizontal"></i><span data-i18n="qg.nav.more">Plus</span>
+        </button>
+        <% } %>
+        <% _rang("avance").forEach((m) => { %><%- _entree(m) %><% }); %>
     </nav>
     <div class="qg-sidebar__bottom qg-nav__item--more">
         <% _rang("bas").forEach((m) => { %><%- _entree(m) %><% }); %>

@@ -76,6 +76,57 @@ function marque(html) {
     verifier(marque(maison) === "OG · TECHNOLOGY",
         `la maison affiche « ${marque(maison)} » au lieu de « OG · TECHNOLOGY »`);
 
+    // ── LES CINQ MODULES QUI SE REPLIENT SOUS « PLUS » ───────────────────
+    //
+    // « API & Webhooks, Applications, Coffre OG, Vitrine, Abonnement : tout ça
+    // tu le mets sous le Plus. »
+    //
+    // Le bouton « Plus » n'existait que sur téléphone : sur grand écran il est
+    // masqué, et la colonne alignait ses quatorze entrées d'un bloc. Une
+    // colonne de quatorze lignes ne se lit plus, elle se subit — et les lignes
+    // qu'un commerçant ne comprend pas (« webhook ») lui apprennent que ce
+    // produit n'est pas pour lui.
+    //
+    // CE QUI EST VÉRIFIÉ : les cinq sont repliés, ils sont TOUJOURS SERVIS
+    // (repliés ne veut pas dire retirés — c'est un clic, jamais deux), et le
+    // bouton qui les déplie existe.
+    {
+        const REPLIES = ["api", "apps", "coffre", "vitrine", "abonnement"];
+        for (const id of REPLIES) {
+            const mod = modulesQg.MODULES.find((m) => m.id === id);
+            verifier(mod && mod.rang === "avance",
+                `« ${id} » n'est pas replié sous « Plus » (rang « ${mod && mod.rang} »)`);
+        }
+        // Et rien d'autre ne s'y est glissé : le repli doit rester une
+        // décision, pas un débarras qui grossit tout seul.
+        const replies = modulesQg.MODULES.filter((m) => m.rang === "avance").map((m) => m.id);
+        verifier(replies.length === REPLIES.length,
+            `${replies.length} modules repliés au lieu de ${REPLIES.length} : ${replies.join(", ")}`);
+
+        // Servis quand même, et repérables : la classe qui les replie doit
+        // être sur chaque entrée, sinon le CSS ne peut rien masquer.
+        // On demande l'adresse au code qui la calcule (`lien`), pas à la
+        // configuration : « Ma Vitrine » a une adresse qui dépend de la
+        // personne, et la recalculer ici reviendrait à réécrire la règle —
+        // donc à ne plus tester celle qui tourne vraiment.
+        const ctx = { typeCompte: "marchand", userId: "u-demo" };
+        for (const id of REPLIES) {
+            const mod = modulesQg.MODULES.find((m) => m.id === id);
+            const attendu = modulesQg.lien(mod, communautes.get("samii"), ctx);
+            verifier(nav.includes(attendu),
+                `« ${id} » n'est plus servi du tout (${attendu}) — replié devait vouloir dire « un clic », pas « retiré »`);
+        }
+        verifier((maison.match(/qg-nav__item--avance"/g) || []).length >= REPLIES.length,
+            "les entrées repliées ne portent pas la classe qui les replie — le CSS ne masquera rien");
+        verifier(/id="qg-avance-toggle"/.test(maison),
+            "aucun bouton pour déplier : les cinq seraient invisibles sur ordinateur, pas repliés");
+
+        // Sur téléphone, le panneau « Plus » d'origine doit continuer de les
+        // servir : elles portent donc AUSSI --more.
+        verifier((maison.match(/qg-nav__item--more qg-nav__item--avance/g) || []).length >= REPLIES.length,
+            "les entrées repliées ne portent pas « --more » : sur téléphone elles sortiraient du panneau « Plus »");
+    }
+
     // Le QG Agence n'apparaît que pour un compte agence — comportement
     // d'origine, à ne pas perdre non plus.
     verifier(!nav.includes("/agence"), "le QG Agence s'affiche pour un marchand simple");

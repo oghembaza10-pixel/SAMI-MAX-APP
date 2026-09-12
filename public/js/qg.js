@@ -283,6 +283,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ── « PLUS » SUR ORDINATEUR ──────────────────────────────────────────
+    // Bouton distinct de celui du téléphone, et c'est volontaire : les deux
+    // ne sont jamais visibles en même temps, donc aucune des deux mécaniques
+    // ne peut casser l'autre. Le choix est retenu — quelqu'un qui déplie pour
+    // atteindre l'API ne doit pas le refaire à chaque page.
+    const avanceToggle = document.getElementById('qg-avance-toggle');
+    if (sidebar && avanceToggle) {
+        const CLE = 'qg_avance_ouvert';
+        let ouvert = false;
+        try { ouvert = localStorage.getItem(CLE) === '1'; } catch (e) { /* navigation privée */ }
+        sidebar.classList.toggle('qg-sidebar--avance-ouvert', ouvert);
+        avanceToggle.classList.toggle('active', ouvert);
+        avanceToggle.setAttribute('aria-expanded', String(ouvert));
+
+        avanceToggle.addEventListener('click', () => {
+            const estOuvert = sidebar.classList.toggle('qg-sidebar--avance-ouvert');
+            avanceToggle.classList.toggle('active', estOuvert);
+            avanceToggle.setAttribute('aria-expanded', String(estOuvert));
+            try { localStorage.setItem(CLE, estOuvert ? '1' : '0'); } catch (e) { /* idem */ }
+        });
+    }
+
     let canalActif  = null;
     let allData     = null;
     let parcoursActuel = 'produit';

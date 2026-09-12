@@ -95,10 +95,25 @@ const MODULES = [
     // laissées sur un profil ou sous une annonce. Les confondre dans la
     // colonne, c'est chercher sa question de client dans un salon public.
     { id: "messages",    libelle: "Mes messages",        cle: "qg.nav.messages",     icone: "mail",            href: "/messages",       rang: "more", badge: "badge-messages-non-lus", chemins: ["/messages"] },
-    { id: "api",         libelle: "API & Webhooks",      cle: "qg.nav.api",          icone: "terminal",        href: "/developpeurs",   rang: "more", chemins: ["/developpeurs", "/api/v1", "/api-docs"] },
-    { id: "apps",        libelle: "Applications",        cle: "qg.nav.apps",         icone: "blocks",          href: "/apps",           rang: "more", chemins: ["/apps"] },
+    // ── « PLUS » : CE QUI N'A PAS À ÊTRE SOUS LES YEUX D'UN COMMERÇANT ───
+    //
+    // Rang `avance`. Ces cinq-là ne sont pas moins importants, ils ne sont
+    // simplement pas quotidiens :
+    //   - API & Webhooks, Applications : c'est du développeur. Un commerçant
+    //     qui vend des robes n'a aucune raison de lire « webhook » chaque
+    //     matin, et chaque entrée qu'il ne comprend pas lui apprend un peu
+    //     plus que ce produit n'est pas pour lui ;
+    //   - Coffre OG, Ma Vitrine, Abonnement : on y va quand on en a besoin,
+    //     pas tous les jours.
+    //
+    // Ils restent à UN clic, jamais deux, et ne sont pas retirés : une colonne
+    // à quatorze entrées ne se lit plus, elle se subit. Sur téléphone ils
+    // portent aussi `--more`, donc le panneau « Plus » existant continue de
+    // les servir sans changement.
+    { id: "api",         libelle: "API & Webhooks",      cle: "qg.nav.api",          icone: "terminal",        href: "/developpeurs",   rang: "avance", chemins: ["/developpeurs", "/api/v1", "/api-docs"] },
+    { id: "apps",        libelle: "Applications",        cle: "qg.nav.apps",         icone: "blocks",          href: "/apps",           rang: "avance", chemins: ["/apps"] },
     { id: "arsenal",     libelle: "Arsenal",             cle: "qg.nav.arsenal",      icone: "sword",           href: "/arsenal",        rang: "more", chemins: ["/arsenal", "/guerre"] },
-    { id: "coffre",      libelle: "Coffre OG",           cle: "qg.nav.vault",        icone: "vault",           href: "/coffre",         rang: "more", chemins: ["/coffre"] },
+    { id: "coffre",      libelle: "Coffre OG",           cle: "qg.nav.vault",        icone: "vault",           href: "/coffre",         rang: "avance", chemins: ["/coffre"] },
     // L'assistant, c'est le moteur ET ses outils (Griot, Miroir, Oracle…),
     // tous montés sous /samii. C'est ce qu'on lui a promis : l'automatisation.
     { id: "assistant",   libelle: "SAMII",               cle: "qg.nav.samii",        icone: "bot",             href: "/samii",          rang: "more", separateurAvant: true, pastille: true, chemins: ["/samii", "/automatisations"] },
@@ -119,10 +134,10 @@ const MODULES = [
     { id: "jarvis",      libelle: "SAMII Jarvis",        cle: "qg.nav.jarvis",       icone: "orbit",           href: "/jarvis",         rang: "more", chemins: ["/jarvis"] },
 
     // ── Le bas de la colonne ─────────────────────────────────────────────
-    { id: "vitrine",     libelle: "Ma Vitrine",          cle: "qg.nav.vitrine",      icone: "user-circle",     href: (COM, ctx) => `/vitrine/${ctx.userId || ""}`, rang: "bas", nouvelOnglet: true, chemins: ["/vitrine"] },
+    { id: "vitrine",     libelle: "Ma Vitrine",          cle: "qg.nav.vitrine",      icone: "user-circle",     href: (COM, ctx) => `/vitrine/${ctx.userId || ""}`, rang: "avance", nouvelOnglet: true, chemins: ["/vitrine"] },
     { id: "parrainage",  libelle: "Parrainage",          cle: "qg.nav.parrainage",   icone: "handshake",       href: "/parrainage",     rang: "bas", badge: "badge-gains-parrainage", chemins: ["/parrainage"] },
     { id: "agence",      libelle: "QG Agence",           cle: "qg.nav.agence",       icone: "building-2",      href: "/agence",         rang: "bas", siAgence: true, chemins: ["/agence"] },
-    { id: "abonnement",  libelle: "Abonnement",          cle: "qg.nav.billing",      icone: "crown",           href: "/billing",        rang: "bas", chemins: ["/billing", "/cartes"] },
+    { id: "abonnement",  libelle: "Abonnement",          cle: "qg.nav.billing",      icone: "crown",           href: "/billing",        rang: "avance", chemins: ["/billing", "/cartes"] },
     { id: "reglages",    libelle: "Paramètres",          cle: "qg.nav.settings",     icone: "settings",        href: "/settings",       rang: "bas", chemins: ["/settings", "/profile"] },
 ];
 
