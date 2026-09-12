@@ -70,7 +70,7 @@ const MODULES = [
     // chemineAutorise), donc rien à déclarer à la porte — et surtout rien
     // qu'on puisse lui fermer par erreur chez une partenaire.
     { id: "chat",        libelle: "Chat SAMII",          cle: "qg.nav.chat",         icone: "message-circle",  href: "/",               rang: "core", chemins: [] },
-    { id: "hub",         libelle: "Hub",                 cle: "qg.nav.hub",          icone: "layout-grid",     href: "/hub",            rang: "core", chemins: ["/hub"] },
+    { id: "hub",         libelle: "Hub",                 cle: "qg.nav.hub",          icone: "layout-grid",     href: "/hub",            rang: "avance", chemins: ["/hub"] },
     { id: "marketplace", libelle: "Marketplace",         cle: "qg.nav.marketplace",  icone: "store",           href: "/marketplace",    rang: "core", chemins: ["/marketplace"] },
     // Sa communauté vit sous /c ; la nôtre sous /community. Une partenaire
     // qui a ce module reçoit /c, jamais /community.
@@ -97,14 +97,21 @@ const MODULES = [
     { id: "messages",    libelle: "Mes messages",        cle: "qg.nav.messages",     icone: "mail",            href: "/messages",       rang: "more", badge: "badge-messages-non-lus", chemins: ["/messages"] },
     // ── « PLUS » : CE QUI N'A PAS À ÊTRE SOUS LES YEUX D'UN COMMERÇANT ───
     //
-    // Rang `avance`. Ces cinq-là ne sont pas moins importants, ils ne sont
+    // Rang `avance`. Ces sept-là ne sont pas moins importants, ils ne sont
     // simplement pas quotidiens :
     //   - API & Webhooks, Applications : c'est du développeur. Un commerçant
     //     qui vend des robes n'a aucune raison de lire « webhook » chaque
     //     matin, et chaque entrée qu'il ne comprend pas lui apprend un peu
     //     plus que ce produit n'est pas pour lui ;
     //   - Coffre OG, Ma Vitrine, Abonnement : on y va quand on en a besoin,
-    //     pas tous les jours.
+    //     pas tous les jours ;
+    //   - Hub : c'est le sélecteur d'espace de travail. Il servait à choisir
+    //     entre plusieurs QG — la barre latérale du chat le fait maintenant,
+    //     et sans quitter la conversation ;
+    //   - SAMII (/samii) : l'assistant AU TRAVAIL, ses outils et ses radars.
+    //     Ce n'est pas le chat d'accueil, qui est en tête de colonne. Les
+    //     laisser côte à côte au même niveau rendait les deux illisibles :
+    //     deux entrées « SAMII » dont rien ne disait ce qui les sépare.
     //
     // Ils restent à UN clic, jamais deux, et ne sont pas retirés : une colonne
     // à quatorze entrées ne se lit plus, elle se subit. Sur téléphone ils
@@ -116,7 +123,7 @@ const MODULES = [
     { id: "coffre",      libelle: "Coffre OG",           cle: "qg.nav.vault",        icone: "vault",           href: "/coffre",         rang: "avance", chemins: ["/coffre"] },
     // L'assistant, c'est le moteur ET ses outils (Griot, Miroir, Oracle…),
     // tous montés sous /samii. C'est ce qu'on lui a promis : l'automatisation.
-    { id: "assistant",   libelle: "SAMII",               cle: "qg.nav.samii",        icone: "bot",             href: "/samii",          rang: "more", separateurAvant: true, pastille: true, chemins: ["/samii", "/automatisations"] },
+    { id: "assistant",   libelle: "SAMII",               cle: "qg.nav.samii",        icone: "bot",             href: "/samii",          rang: "avance", pastille: true, chemins: ["/samii", "/automatisations"] },
     // ── SAMII JARVIS — la bulle de cristal ───────────────────────────────
     //
     // Un module À PART, et pas une page de plus sous `assistant`. Deux
