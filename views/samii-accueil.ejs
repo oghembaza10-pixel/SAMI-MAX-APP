@@ -385,14 +385,28 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                     et un contrôle réécrit est un contrôle à retrouver le jour
                     où il manque. %>
                 <% qgs.forEach(function (q) { %>
-                    <form method="POST" action="/mes-qg" class="cote__forme">
-                        <input type="hidden" name="workspaceId" value="<%= q.id %>">
-                        <button type="submit" class="sortie <%= q.id === workspaceId ? 'sortie--ici' : '' %>">
+                    <% if (q.direct) { %>
+                        <%# Le QG de la session, absent de la liste des espaces
+                            possédés. On y va en LIEN DIRECT : POST /mes-qg
+                            refuserait, puisqu'il vérifie l'appartenance contre
+                            cette même liste. /qg, lui, lit le workspaceId déjà
+                            posé en session à la connexion — c'est le chemin
+                            juste, pas un contournement. %>
+                        <a class="sortie sortie--ici" href="/qg">
                             <span class="sortie__pic">🏢</span>
                             <span class="sortie__nom"><%= q.nom %></span>
-                            <% if (q.id === workspaceId) { %><span class="sortie__point" aria-hidden="true"></span><% } %>
-                        </button>
-                    </form>
+                            <span class="sortie__point" aria-hidden="true"></span>
+                        </a>
+                    <% } else { %>
+                        <form method="POST" action="/mes-qg" class="cote__forme">
+                            <input type="hidden" name="workspaceId" value="<%= q.id %>">
+                            <button type="submit" class="sortie <%= q.id === workspaceId ? 'sortie--ici' : '' %>">
+                                <span class="sortie__pic">🏢</span>
+                                <span class="sortie__nom"><%= q.nom %></span>
+                                <% if (q.id === workspaceId) { %><span class="sortie__point" aria-hidden="true"></span><% } %>
+                            </button>
+                        </form>
+                    <% } %>
                 <% }); %>
                 <a class="sortie sortie--discret" href="/workspace/create">
                     <span class="sortie__pic">＋</span><%= L("Ouvrir un QG") %>

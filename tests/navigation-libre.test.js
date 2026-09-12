@@ -149,6 +149,35 @@ const connecte = rendre({
     verifier(/data-projet="7"/.test(connecte),
         "les projets ne sont pas dans la barre latérale");
 
+    // ── LE QG DE LA SESSION PASSE TOUJOURS ───────────────────────────────
+    //
+    // getByOwner() cherche sur `owner` OU `owner_email`. Un marchand dont
+    // l'espace est rattaché autrement — collaborateur ajouté, adresse changée
+    // depuis la création — reçoit une liste vide alors que sa session porte
+    // bel et bien un workspaceId. La barre lui proposait « Ouvrir un QG »,
+    // comme s'il n'en avait aucun : depuis le chat, plus aucune porte vers
+    // SON PROPRE QG. La page s'affiche, rien n'échoue, et la personne conclut
+    // qu'elle a perdu sa boutique.
+    {
+        const orphelin = rendre({
+            loggedIn: true, typeCompte: "marchand", workspaceId: "w-seul",
+            qgs: [{ id: "w-seul", nom: "Mon QG", metier: "", direct: true }],
+            projets: [],
+        });
+        // LA CLASSE EST DANS LE MOTIF, ET CE N'EST PAS DU ZÈLE.
+        // La première version cherchait juste `href="/qg"` — et elle passait
+        // même après avoir cassé l'entrée, parce que le bouton « Mon QG » de
+        // la barre HAUTE porte la même adresse. Un test qui matche autre
+        // chose que ce qu'il croit surveiller ne surveille rien.
+        verifier(/class="sortie sortie--ici" href="\/qg"/.test(orphelin),
+            "un QG présent en session mais absent de la liste ne mène nulle part depuis la " +
+            "BARRE LATÉRALE — la personne n'a plus de porte vers sa propre boutique");
+        // Et surtout PAS par POST /mes-qg : cette route vérifie l'appartenance
+        // contre la même liste qui ne le connaît pas, donc elle le refuserait.
+        verifier(!/action="\/mes-qg"/.test(orphelin),
+            "on passe par POST /mes-qg pour un QG que cette route ne reconnaît pas — elle refusera");
+    }
+
     // Un compte agence garde son QG Agence, qui était une destination forcée
     // et devient un choix.
     const agence = rendre({ loggedIn: true, typeCompte: "agence", qgs: [], projets: [] });

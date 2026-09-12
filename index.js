@@ -747,10 +747,27 @@ async function espacesDe(req) {
             req.session.email ? workspaceService.getByOwner(req.session.email) : [],
             req.session.userId ? projetsService.lister(req.session.userId) : [],
         ]);
-        return {
-            qgs: (qgs || []).map((w) => ({ id: w.id, nom: w.nom || w.id, metier: w.metier || "" })),
-            projets: (projets || []).slice(0, 12),
-        };
+        const liste = (qgs || []).map((w) => ({ id: w.id, nom: w.nom || w.id, metier: w.metier || "" }));
+
+        // LE QG DE LA SESSION PASSE TOUJOURS, MÊME ABSENT DE LA LISTE.
+        //
+        // getByOwner() cherche sur `owner` OU `owner_email`. Un marchand dont
+        // l'espace est rattaché autrement — collaborateur ajouté, adresse
+        // changée depuis la création — reçoit une liste vide alors que sa
+        // session porte bel et bien un workspaceId. La barre latérale lui
+        // proposait alors « Ouvrir un QG », comme s'il n'en avait aucun :
+        // depuis le chat, plus aucune porte vers SON PROPRE QG.
+        //
+        // C'est le genre de panne qui ne ressemble à rien : la page s'affiche,
+        // rien n'échoue, et la personne conclut qu'elle a perdu sa boutique.
+        // /qg lit le workspaceId de la session, donc ce raccourci fonctionne
+        // exactement là où la liste se trompe.
+        const courant = req.session.workspaceId;
+        if (courant && !liste.some((q) => q.id === courant)) {
+            liste.unshift({ id: courant, nom: req.session.nomWorkspace || "Mon QG", metier: req.session.metier || "", direct: true });
+        }
+
+        return { qgs: liste, projets: (projets || []).slice(0, 12) };
     } catch (err) {
         console.error("❌ espacesDe :", err.message);
         return vide;
