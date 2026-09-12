@@ -1,0 +1,208 @@
+<%
+// ==========================================================================
+// SAMII OS — RECHARGER SAMII
+//
+// Le montant est annoncé DANS LA MONNAIE DE LA PERSONNE avant le clic, jamais
+// après. Un prix affiché en dollars puis débité en dinars, c'est une surprise
+// — et une surprise sur de l'argent ne se rattrape pas.
+//
+// Le nombre de MESSAGES est écrit plus gros que la somme : personne ne pense
+// en dollars quand il s'agit de parler. « 500 messages » se comprend tout de
+// suite, « 5 $ » demande une division.
+// ==========================================================================
+%><!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title><%= L("Recharger SAMII") %></title>
+<meta name="robots" content="noindex">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0A0810">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+    --nuit:#0A0810; --panneau:#120F1C; --releve:#191426;
+    --ligne:#262036; --ligne-viv:#3A2F55;
+    --texte:#ECE8F6; --doux:#9089A8; --tres-doux:#837CA0;
+    --violet:#9D5CFF; --violet-pale:#C2A0FF; --cyan:#5FD4FF; --vert:#3DDC84; --ambre:#FFB454;
+    --serif:"Cinzel",Georgia,serif;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--nuit); color: var(--texte); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; border: none; background: none; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+[hidden] { display: none !important; }
+
+.haut { display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 16px; border-bottom: 1px solid var(--ligne); }
+.marque {
+    font-family: var(--serif); font-weight: 700; font-size: 1.05rem; letter-spacing: .1em;
+    background: linear-gradient(92deg, var(--cyan), var(--violet-pale));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.btn-haut { margin-inline-start: auto; padding: 7px 15px; border-radius: 999px; border: 1px solid var(--ligne-viv); font-size: .85rem; }
+.btn-haut:hover { border-color: var(--cyan); }
+
+.enveloppe { max-width: 660px; margin: 0 auto; padding: 34px 16px 56px; }
+
+.solde { text-align: center; margin-bottom: 30px; }
+.solde__nombre { font-family: var(--mono); font-size: clamp(2.2rem, 9vw, 3.2rem); font-weight: 500; color: var(--cyan); line-height: 1.1; }
+.solde__quoi { color: var(--doux); font-size: .95rem; margin-top: 4px; }
+.solde__vide { color: var(--tres-doux); font-size: .86rem; margin-top: 8px; }
+
+.tete { text-align: center; margin-bottom: 26px; }
+.tete h1 { margin: 0 0 10px; font-family: var(--serif); font-weight: 600; font-size: clamp(1.4rem, 5vw, 1.9rem); text-wrap: balance; }
+.tete p { margin: 0 auto; max-width: 48ch; color: var(--doux); text-wrap: balance; }
+
+.montants { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; margin-bottom: 22px; }
+.montant {
+    text-align: start; padding: 16px 17px;
+    border: 1px solid var(--ligne); border-radius: 16px; background: var(--panneau);
+    transition: border-color .16s, transform .16s, background .16s;
+}
+.montant:hover { border-color: var(--cyan); background: var(--releve); transform: translateY(-2px); }
+.montant--net { border-color: var(--ligne-viv); background: linear-gradient(150deg, rgba(157,92,255,.13), rgba(95,212,255,.04)); }
+.montant:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+/* Les messages passent avant la somme : c'est ce qu'on achète. */
+.montant__messages { display: block; font-family: var(--mono); font-size: 1.25rem; font-weight: 500; }
+.montant__quoi { display: block; color: var(--doux); font-size: .78rem; margin-top: 2px; }
+.montant__prix { display: block; margin-top: 10px; font-family: var(--mono); font-size: .9rem; color: var(--cyan); }
+.montant__equiv { display: block; margin-top: 2px; font-family: var(--mono); font-size: .72rem; color: var(--tres-doux); }
+
+.note {
+    border: 1px solid var(--ligne); border-inline-start: 2px solid var(--vert);
+    border-radius: 12px; background: var(--panneau);
+    padding: 15px 17px; color: var(--doux); font-size: .87rem; margin-bottom: 14px;
+}
+.note b { color: var(--texte); font-weight: 600; }
+
+.alerte {
+    border: 1px solid rgba(255,180,84,.35); border-radius: 12px;
+    background: rgba(255,180,84,.07); color: var(--ambre);
+    padding: 14px 16px; font-size: .87rem; margin-bottom: 18px;
+}
+.alerte--vert { border-color: rgba(61,220,132,.35); background: rgba(61,220,132,.07); color: var(--vert); }
+
+.pied { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--ligne); color: var(--tres-doux); font-size: .78rem; line-height: 1.6; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="haut">
+    <a href="/" class="marque">SAMII</a>
+    <a class="btn-haut" href="/"><%= L("Retour au chat") %></a>
+</header>
+
+<main class="enveloppe">
+
+    <% if (typeof paye !== "undefined" && paye) { %>
+        <%# Le retour de paiement n'affirme RIEN sur le solde : c'est le
+            webhook qui crédite, et il peut arriver quelques secondes après.
+            Écrire « c'est crédité » ici serait mentir une fois sur dix. %>
+        <div class="alerte alerte--vert"><%= L("Paiement reçu. Ton solde se met à jour dans quelques secondes — recharge la page si tu ne le vois pas encore.") %></div>
+    <% } %>
+    <% if (typeof echec !== "undefined" && echec) { %>
+        <div class="alerte"><%= L("Le paiement n'a pas abouti. Rien n'a été débité.") %></div>
+    <% } %>
+
+    <div class="solde">
+        <div class="solde__nombre" id="solde-messages"><%= etat.messages %></div>
+        <div class="solde__quoi"><%= L("messages disponibles") %></div>
+        <% if (!etat.credite) { %>
+            <p class="solde__vide"><%= L("Tu n'as pas encore rechargé — et tu n'en as pas besoin tant qu'il te reste des messages gratuits.") %></p>
+        <% } %>
+    </div>
+
+    <div class="tete">
+        <h1><%= L("Recharger SAMII") %></h1>
+        <p><%= L("Comme une flexy : tu charges quand tu veux, tu dépenses comme tu veux.") %></p>
+    </div>
+
+    <% if (!chargilyPret) { %>
+        <div class="alerte"><%= L("Le paiement n'est pas encore branché sur ce service. Reviens bientôt.") %></div>
+    <% } %>
+
+    <div class="montants">
+        <% montants.forEach(function (m) { %>
+            <button class="montant <%= m.net ? 'montant--net' : '' %>"
+                    data-usd="<%= m.usd %>" <%= chargilyPret ? "" : "disabled" %>>
+                <span class="montant__messages"><%= m.messages %></span>
+                <span class="montant__quoi"><%= L("messages") %></span>
+                <% if (m.paiement) { %>
+                    <span class="montant__prix"><%= m.paiement.montant %> <%= m.paiement.devise %></span>
+                <% } %>
+                <% if (m.local && m.local.devise !== (m.paiement && m.paiement.devise)) { %>
+                    <span class="montant__equiv">≈ <%= m.local.montant %> <%= m.local.devise %></span>
+                <% } %>
+            </button>
+        <% }); %>
+    </div>
+
+    <p class="note">
+        <b><%= L("Ton solde ne s'efface jamais.") %></b>
+        <%= L("Ce n'est pas un abonnement : il n'y a rien à résilier, et ce qui reste à la fin du mois reste.") %>
+    </p>
+
+    <p class="pied">
+        <%= L("Un message à SAMII coûte") %> <%= prixMessage %> $.
+        <%= L("Minimum de recharge :") %> <%= minimum %> $.<br>
+        <%= L("Paiement par Chargily — carte CIB ou EDAHABIA. Le dinar est converti au taux réel du marché, pas au taux officiel.") %>
+    </p>
+</main>
+
+<script>
+(function () {
+    "use strict";
+    var occupe = false;
+    document.querySelectorAll(".montant").forEach(function (b) {
+        b.addEventListener("click", function () {
+            if (occupe || b.disabled) return;
+            occupe = true;
+            var avant = b.innerHTML;
+            b.innerHTML = "…";
+            fetch("/recharge/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ montantUsd: Number(b.dataset.usd) }),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (json) {
+                if (json && json.success && json.url) {
+                    // On quitte la page vers l'opérateur de paiement : pas de
+                    // remise en état, on ne reviendra pas sur cet écran.
+                    window.location.href = json.url;
+                    return;
+                }
+                throw new Error((json && json.error) || "");
+            })
+            .catch(function (err) {
+                b.innerHTML = avant;
+                occupe = false;
+                var boite = document.createElement("div");
+                boite.className = "alerte";
+                boite.textContent = err.message || <%- JSON.stringify(L("Le paiement n'a pas pu démarrer. Réessaie dans un instant.")) %>;
+                document.querySelector(".montants").before(boite);
+            });
+        });
+    });
+})();
+</script>
+
+<%- include("partials/barre-langue", {
+    modeLangue: "serveur",
+    avecRetour: true,
+    retourUrl: "/",
+    retourLibelle: L("Retour au chat"),
+    retourCle: "nav.retour.samii",
+}) %>
+
+</body>
+</html>

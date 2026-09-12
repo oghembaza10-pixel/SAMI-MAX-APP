@@ -58,6 +58,7 @@ const TYPES = {
     blocage: "Mise sous séquestre",
     liberation: "Libération au vendeur",
     commission: "Commission SAMII",
+    consommation: "Consommation SAMII",
     remboursement: "Remboursement à l'acheteur",
     retrait_demande: "Retrait demandé",
     retrait_paye: "Retrait payé",
@@ -68,6 +69,20 @@ function reference(prefixe) {
     return `${prefixe}-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`;
 }
 
+// ⚠️ ELLE NE CONVERTIT PAS EN CENTIMES, MALGRÉ SON NOM.
+//
+// Elle ARRONDIT à deux décimales et renvoie la MÊME unité : 12,345 → 12,35,
+// pas 1235. La colonne `montant` contient donc des unités monétaires, jamais
+// des centimes.
+//
+// L'avertissement est là parce que le piège s'est refermé une fois : une
+// fonction ajoutée à côté a lu « montant_centimes » et divisé par cent,
+// convaincue par le nom. Sur de l'argent, une erreur d'unité est un facteur
+// cent — dans un sens ou dans l'autre.
+//
+// Le nom n'est pas corrigé ici : il est appelé à plusieurs endroits d'un
+// module comptable, et un renommage à la volée sur du code qui manipule de
+// l'argent est précisément le genre de correction « évidente » qui casse.
 function centimes(montant) {
     const n = Math.round(Number(montant) * 100) / 100;
     return Number.isFinite(n) ? n : NaN;
@@ -162,6 +177,71 @@ async function deposer({ compte, montant, devise = "USD", rail = "virement", det
         });
         return { operation: op, solde: await soldePoche(q, compte, "disponible", devise) };
     });
+}
+
+// ── DÉPENSER CHEZ NOUS ───────────────────────────────────────────────────
+//
+// Un message à SAMII se paie au moment où il est envoyé. Pas de séquestre :
+// il n'y a pas de travail à valider, pas de vendeur à créditer, rien à
+// rembourser — le service est rendu dans la seconde. L'argent va donc
+// directement de la personne à la maison.
+//
+// C'est bien une écriture en partie double comme les autres : le solde de la
+// personne baisse, celui de SAMII monte, la somme reste nulle. Un compteur
+// « crédits » posé à côté du registre aurait dérivé au premier incident, et
+// on n'aurait plus jamais su reconstituer qui a payé quoi.
+//
+// `exigerSolde` est appelé DANS la transaction, juste avant d'écrire : deux
+// messages envoyés en même temps ne peuvent pas lire le même solde et le
+// dépenser deux fois.
+async function consommer({ compte, montant, devise = "USD", motif = "", transactionRef = null }) {
+    if (!compte) throw new Error("Compte manquant.");
+    if (!(Number(montant) > 0)) throw new Error("Montant invalide.");
+    const op = reference("CON");
+    return db.transaction(async (q) => {
+        // Idempotence quand un identifiant est fourni : un même message
+        // rejoué — navigateur qui réessaie, webhook qui repasse — ne doit
+        // pas être facturé deux fois.
+        if (transactionRef) {
+            const deja = await q(
+                `SELECT 1 FROM portefeuille_mouvements WHERE transaction_ref = $1 AND type = 'consommation' LIMIT 1`,
+                [transactionRef],
+            );
+            if (deja.length) return { operation: null, dejaCompte: true };
+        }
+        await exigerSolde(q, compte, "disponible", devise, montant);
+        await ecrire(q, {
+            operation: op, type: "consommation", devise, transactionRef, detail: motif,
+            lignes: [
+                { compte, poche: "disponible", sens: -1, montant },
+                { compte: MAISON, poche: "disponible", sens: +1, montant },
+            ],
+        });
+        return { operation: op, solde: await soldePoche(q, compte, "disponible", devise) };
+    });
+}
+
+// Ce qu'une personne peut dépenser tout de suite. Lu hors transaction : sert
+// à AFFICHER un solde, jamais à autoriser une dépense — l'autorisation passe
+// par `exigerSolde` à l'intérieur de la transaction qui écrit.
+async function soldeDisponible(compte, devise = "USD") {
+    if (!compte) return 0;
+    // MÊME REQUÊTE QUE `soldePoche`, à la lettre, y compris la poche en
+    // paramètre. Écrire une seconde forme — « poche » figée dans le texte
+    // SQL, deux paramètres au lieu de trois — c'est créer une deuxième façon
+    // de poser la même question, qui dérivera de la première. Elle l'a déjà
+    // fait une fois : la variante à deux paramètres renvoyait zéro en
+    // silence, donc un solde toujours vide et aucun message jamais payé.
+    const rows = await db.query(
+        `SELECT COALESCE(SUM(sens * montant), 0) AS solde
+           FROM portefeuille_mouvements
+          WHERE compte = $1 AND poche = $2 AND devise = $3`,
+        [compte, "disponible", devise],
+    );
+    // Pas de division : malgré son nom, `centimes()` n'a jamais converti en
+    // centimes — voir l'avertissement posé sur elle. La colonne contient des
+    // unités, arrondies à deux décimales.
+    return Number(rows[0]?.solde || 0);
 }
 
 // L'acheteur met la somme sous séquestre pour une transaction précise. Ni lui
@@ -400,7 +480,7 @@ async function controleEquilibre() {
 
 module.exports = {
     EXTERIEUR, MAISON, POCHES, TYPES, TAUX: academie.TAUX_COMMISSION,
-    deposer, bloquer, liberer, rembourser,
+    deposer, consommer, soldeDisponible, bloquer, liberer, rembourser,
     demanderRetrait, confirmerRetrait, annulerRetrait,
     soldes, releve, controleEquilibre,
 };

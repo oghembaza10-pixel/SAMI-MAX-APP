@@ -5,6 +5,7 @@
 // peut ne jamais arriver (mauvaise config dashboard, réseau...), donc on ne
 // s'y fie pas comme seule source de vérité.
 // ==========================================================================
+const creditsSamii = require("./creditsSamii");
 const chargily = require("./chargily");
 const db = require("./db");
 const socketService = require("./socketService");
@@ -87,6 +88,67 @@ async function confirmChargilyCartePurchase(checkoutId) {
 // de payer par carte qui marche vraiment en Algérie). Pas de prélèvement
 // récurrent possible côté Chargily : on pose une date_fin à 30 jours, et
 // c'est engines/abonnementEngine.js qui relance par lien avant expiration.
+// ── UNE RECHARGE DE CRÉDITS SAMII ────────────────────────────────────────
+//
+// LE SEUL ENDROIT QUI CRÉDITE UN SOLDE. Ni la page de retour, ni un paramètre
+// d'URL, ni ce que le navigateur raconte : tout ça se fabrique depuis la
+// barre d'adresse. Ici, le statut est relu CHEZ CHARGILY avant d'écrire quoi
+// que ce soit.
+//
+// LE REJEU EST LA NORME, PAS L'EXCEPTION. Chargily réessaie quand notre
+// réponse tarde, et il a raison. La protection tient en une ligne SQL : la
+// mise à jour ne prend QUE si le statut est encore « en_attente », et la base
+// garantit l'unicité du checkout. Deux webhooks simultanés ne peuvent donc
+// pas créditer deux fois — l'un des deux repart les mains vides, sans erreur.
+//
+// L'ordre compte : on marque « payée » AVANT de créditer. Si le crédit échoue
+// ensuite, on a une ligne payée sans solde — visible, réparable à la main.
+// L'inverse donnerait un solde crédité qu'un rejeu recréditerait.
+async function confirmChargilyRecharge(checkoutId) {
+    if (!checkoutId) return { updated: false };
+
+    const checkout = await chargily.getCheckout(checkoutId);
+    if (!checkout || checkout.status !== "paid") return { updated: false };
+    if ((checkout.metadata || {}).type !== "recharge_samii") return { updated: false };
+
+    const rows = await db.query(
+        `UPDATE recharges_samii SET statut = 'payee', credite_le = NOW()
+          WHERE checkout_id = $1 AND statut = 'en_attente'
+      RETURNING user_id, montant_usd`,
+        [checkoutId],
+    );
+    if (!rows[0]) return { updated: false };   // déjà crédité, ou inconnue
+
+    const userId = rows[0].user_id;
+    const montantUSD = Number(rows[0].montant_usd);
+
+    try {
+        const r = await creditsSamii.crediter(userId, montantUSD, {
+            rail: "chargily",
+            detail: `Recharge SAMII (${checkoutId})`,
+        });
+        await journalService.log({
+            action: "recharge.samii",
+            details: `Recharge de ${montantUSD} $ créditée — ${r.messages} messages disponibles (${checkoutId})`,
+            montant: montantUSD, refId: checkoutId,
+        });
+        console.log(`⚡ Recharge SAMII : ${montantUSD} $ pour ${userId} — ${r.messages} messages`);
+        return { updated: true, userId, montantUSD, messages: r.messages };
+    } catch (err) {
+        // La ligne reste marquée payée : c'est la vérité, l'argent EST
+        // encaissé. Le solde manquant se répare à la main, et ce journal dit
+        // exactement quoi réparer. Remettre « en_attente » ici rouvrirait la
+        // porte à un double crédit au prochain rejeu.
+        console.error(`❌ Recharge ${checkoutId} encaissée mais NON créditée :`, err.message);
+        await journalService.log({
+            action: "recharge.samii.echec",
+            details: `ENCAISSÉE MAIS NON CRÉDITÉE — ${montantUSD} $ pour ${userId} (${checkoutId}) : ${err.message}`,
+            montant: montantUSD, refId: checkoutId,
+        });
+        return { updated: false, aReparer: true };
+    }
+}
+
 async function confirmChargilyAbonnement(checkoutId) {
     if (!checkoutId) return { updated: false };
 
@@ -167,4 +229,5 @@ async function confirmCcpAbonnement(abonnementId) {
     return { updated: true, workspaceId, plan };
 }
 
-module.exports = { confirmChargilyPayment, confirmChargilyCartePurchase, confirmChargilyAbonnement, confirmCcpAbonnement };
+module.exports = { confirmChargilyPayment, confirmChargilyCartePurchase, confirmChargilyAbonnement,
+    confirmChargilyRecharge, confirmCcpAbonnement };

@@ -182,6 +182,12 @@ const SOCLE = [
     "/login", "/register", "/password-reset", "/logout",
     "/c",               // son inscription et sa connexion à sa marque vivent sous /c
     "/paiement",        // encaisser : c'est la raison d'être de tout le reste
+    // Recharger SAMII. « / » — le chat — est ouvert partout, et c'est lui qui
+    // consomme les crédits ; la porte du rechargement doit donc suivre celle
+    // du chat. La fermer chez une partenaire enverrait ses visiteurs sur une
+    // 404 au moment EXACT où ils veulent payer : le seul instant où un mur
+    // coûte de l'argent au lieu d'en protéger.
+    "/recharge",
     "/admin/communaute",// SON tableau de bord à elle
     "/verification",    // vérification d'e-mail
     // Le choix du QG quand on en a plusieurs. C'est une étape du parcours de

@@ -9,6 +9,8 @@ const planner = require("../brain/planner");
 const db = require("../services/db");
 const journalService = require("../services/journalService");
 const samiiQuota = require("../services/samiiQuota");
+const creditsSamii = require("../services/creditsSamii");
+const CREDITS = require("../config/credits");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const samiiMemoire = require("../services/samiiMemoire");
 const projetsService = require("../services/projetsService");
@@ -77,6 +79,10 @@ router.post("/chat", requireAuth, async (req, res) => {
         if (!message && !imageUrl && !documentUrl) return res.json({ success: false, reply: "Écris un message." });
 
         const userId = req.session?.userId;
+        // Vrai quand le quota gratuit est épuisé et qu'on avance sur des
+        // crédits achetés : le débit a lieu plus bas, une fois la réponse
+        // obtenue.
+        let surCredits = false;
 
         // Projet (à la Claude Projects) : fil de conversation isolé. On
         // vérifie l'appartenance avant de lire/écrire dedans — un ID de
@@ -100,14 +106,30 @@ router.post("/chat", requireAuth, async (req, res) => {
                     // le dépassement s'accumule et se règle au renouvellement —
                     // voir services/samiiQuota.js et engines/abonnementEngine.js.
                     await samiiQuota.enregistrerMessageDepassement(req.session.workspaceId);
+                } else if (await creditsSamii.peutPayer(userId)) {
+                    // ── LA RECHARGE PREND LE RELAIS DU GRATUIT ───────────
+                    //
+                    // Le quota est épuisé mais il reste des crédits achetés :
+                    // on continue, et on débitera APRÈS la réponse. C'est
+                    // volontairement dans cet ordre — débiter d'abord paraît
+                    // plus prudent comptablement, et c'est un très mauvais
+                    // marché : le jour où l'IA tombe, on facture un message
+                    // sans réponse. La personne paie pour une panne qui est
+                    // chez nous, et elle ne revient pas.
+                    surCredits = true;
                 } else {
                     return res.json({
                         success: true,
                         quotaExceeded: true,
+                        // On propose la RECHARGE, pas l'abonnement : elle ne
+                        // demande pas de confiance à l'avance, et ce qui est
+                        // payé ne s'efface pas à la fin du mois.
+                        rechargeUrl: "/recharge",
                         reply:
                             `Tu as atteint tes ${quota.total} messages gratuits pour les ${quota.fenetreHeures || 7} prochaines heures — ` +
                             `je garde tout ce qu'on s'est dit, on reprend bientôt. ` +
-                            `Passe en SAMII Premium (${samiiQuota.PRIX_PREMIUM_USD}$/mois) pour discuter sans limite et avancer sur tes projets sans attendre.`,
+                            `Si tu ne veux pas attendre : recharge à partir de ${CREDITS.MINIMUM_RECHARGE_USD} $ (${CREDITS.messagesPour(CREDITS.MINIMUM_RECHARGE_USD)} messages), ` +
+                            `ton solde ne s'efface jamais.`,
                     });
                 }
             }
@@ -176,7 +198,24 @@ router.post("/chat", requireAuth, async (req, res) => {
             memoireUtilisateur.extraireEtMemoriser(userId, goal, result.reply);
         }
 
-        res.json({ ...result, messageId });
+        // ── LE DÉBIT, APRÈS LA RÉPONSE ──────────────────────────────────
+        //
+        // On ne facture QUE si SAMII a réellement répondu. Un message sans
+        // réponse ne se paie pas : facturer une panne qui est chez nous est
+        // le plus court chemin pour qu'une personne ne recharge jamais plus.
+        //
+        // `messageId` sert de référence : le même message rejoué — navigateur
+        // qui réessaie, double clic — ne sera pas débité deux fois.
+        let credits = null;
+        if (surCredits && result.reply) {
+            const debit = await creditsSamii.debiterMessage(userId, {
+                ref: messageId ? `msg:${messageId}` : null,
+                motif: "message SAMII (quota gratuit épuisé)",
+            });
+            if (debit.ok) credits = { messages: debit.messages };
+        }
+
+        res.json({ ...result, messageId, surCredits, credits });
     } catch (err) {
         // ── NE PAS NOMMER UNE CAUSE QU'ON NE CONNAÎT PAS ────────────────
         //

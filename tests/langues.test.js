@@ -236,6 +236,41 @@ for (const m of modulesQg.MODULES) {
     );
 }
 
+// ── L'AUTRE SYSTÈME DE TRADUCTION : LE SERVEUR ───────────────────────────
+//
+// Tout ce qui précède surveille le système CLIENT : `data-i18n` dans le
+// balisage, dictionnaires dans public/i18n/*.json, appliqués par le
+// navigateur. Il en existe un SECOND, côté serveur : `L("…")` dans les
+// gabarits, servi par services/langue.js, où la phrase française EST la clé.
+//
+// Ce test avait un angle mort exactement de la taille du second système. Il
+// passait à 664 vérifications alors que la page de RECHARGE — la seule page
+// où quelqu'un sort son argent — n'avait AUCUNE traduction, ni anglaise ni
+// arabe : 14 phrases, plus 18 sur les pages métiers, soit 32 en tout. Et la
+// panne est silencieuse par construction : une clé absente retombe sur le
+// français, qui est du texte valide. Rien ne casse, rien ne s'affiche de
+// travers, personne ne le voit — sauf la personne arabophone devant le
+// bouton de paiement.
+//
+// On surveille donc la source des gabarits, comme pour les modules du QG :
+// chaque `L("…")` doit exister en anglais ET en arabe.
+const langue = require(path.join(RACINE, "services", "langue"));
+const SERVEUR = { en: langue.EN, ar: langue.AR };
+for (const fichier of fs.readdirSync(path.join(RACINE, "views")).filter((f) => f.endsWith(".ejs"))) {
+    const src = fs.readFileSync(path.join(RACINE, "views", fichier), "utf8");
+    // On ne lit que les littéraux : L(variable) ou L(`gabarit ${x}`) n'a pas
+    // de phrase à comparer, et prétendre le vérifier serait se mentir.
+    const phrases = new Set([...src.matchAll(/\bL\(\s*"((?:[^"\\]|\\.)*)"/g)]
+        .map((m) => m[1].replace(/\\"/g, '"')));
+    for (const phrase of phrases) {
+        const absentes = Object.keys(SERVEUR).filter((l) => !(phrase in SERVEUR[l]));
+        verifier(
+            absentes.length === 0,
+            `views/${fichier} écrit L("${phrase.slice(0, 60)}${phrase.length > 60 ? "…" : ""}") — absent de ${absentes.join(", ")} dans services/langue.js`
+        );
+    }
+}
+
 // ── Verdict ──────────────────────────────────────────────────────────────
 if (echecs.length) {
     console.error(`❌ langues : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);

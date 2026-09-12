@@ -48,6 +48,47 @@ const db = require("./db");
 // jouer dans l'ordre. Ajouter une table ici, c'est garantir qu'elle existera
 // partout — développement, essai, production — sans rien lancer à la main.
 const BLOCS = [
+    // ── LES RECHARGES DE CRÉDITS SAMII ───────────────────────────────────
+    //
+    // POURQUOI CETTE TABLE EXISTE, ALORS QUE LE SOLDE VIT AILLEURS.
+    //
+    // Le solde est une somme de mouvements dans portefeuille_mouvements, et
+    // il le reste : rien n'est recopié ici. Cette table ne sert qu'à une
+    // chose — savoir si un paiement a DÉJÀ été crédité.
+    //
+    // Un webhook de paiement se rejoue. Chargily réessaie quand notre réponse
+    // tarde, et il a raison de le faire. Sans une trace unique par paiement,
+    // le second passage recréditerait la somme entière : de l'argent qu'on
+    // donne sans l'avoir encaissé, et que rien ne signale.
+    //
+    // `checkout_id UNIQUE` porte cette garantie au niveau de la base, pas
+    // dans le code : deux webhooks simultanés ne peuvent pas passer tous les
+    // deux le contrôle, quelle que soit la façon dont le code est écrit.
+    {
+        nom: "recharges de crédits SAMII",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS recharges_samii (
+                id            BIGSERIAL PRIMARY KEY,
+                -- TEXT : un identifiant d'utilisateur est un UUID dans cette
+                -- base, pas un entier. La table apps a fait l'erreur inverse
+                -- et n'a jamais pu servir depuis sa création.
+                user_id       TEXT NOT NULL,
+                checkout_id   TEXT NOT NULL UNIQUE,
+                -- Le montant vendu, en dollars : c'est l'unité de compte.
+                montant_usd   NUMERIC(12,4) NOT NULL,
+                -- Et ce que la personne a réellement payé, dans SA monnaie,
+                -- au taux du jour. Gardé pour pouvoir expliquer une facture
+                -- six mois plus tard, quand le taux aura bougé.
+                montant_paye  NUMERIC(14,2),
+                devise_payee  TEXT,
+                taux_applique NUMERIC(14,6),
+                statut        TEXT NOT NULL DEFAULT 'en_attente',
+                created_at    TIMESTAMP DEFAULT NOW(),
+                credite_le    TIMESTAMP
+            )`,
+            `CREATE INDEX IF NOT EXISTS idx_recharges_samii_user ON recharges_samii(user_id, created_at DESC)`,
+        ],
+    },
     {
         nom: "applications tierces",
         sql: [

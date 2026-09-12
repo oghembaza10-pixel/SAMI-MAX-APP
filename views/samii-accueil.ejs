@@ -441,21 +441,17 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                 </a>
             <% } %>
 
-            <%# RECHARGER SAMII — la place est prise, le branchement viendra.
-                Le paiement passera par Chargily (CIB / EDAHABIA), et le modèle
-                est la recharge, pas l'abonnement : on charge quand on veut, on
-                dépense comme on veut, les points ne s'effacent pas à la fin du
-                mois. L'entrée existe dès maintenant pour que les gens s'y
-                habituent — et pour qu'on mesure combien cliquent avant même
-                qu'il y ait quelque chose à vendre. Elle dit franchement qu'elle
-                n'est pas prête : une porte qui ne s'ouvre pas sans le dire est
-                pire qu'une porte absente. %>
-            <% if (true) { %>
-                <button class="sortie sortie--recharge" id="recharger">
-                    <span class="sortie__pic">⚡</span><%= L("Recharger SAMII") %>
-                    <span class="sortie__note"><%= L("bientôt") %></span>
-                </button>
-            <% } %>
+            <%# RECHARGER SAMII. Le paiement passe par Chargily (CIB /
+                EDAHABIA) et le modèle est la recharge, pas l'abonnement : on
+                charge quand on veut, on dépense comme on veut, et le solde ne
+                s'efface pas à la fin du mois.
+                Montré à tout le monde, y compris sans compte : la page
+                demandera de s'identifier au moment d'encaisser, ce qui est le
+                bon moment — cacher l'entrée garantirait surtout que personne
+                ne sache qu'elle existe. %>
+            <a class="sortie sortie--recharge" href="/recharge">
+                <span class="sortie__pic">⚡</span><%= L("Recharger SAMII") %>
+            </a>
 
             <%# LES PROJETS SONT MONTRÉS À TOUT LE MONDE.
                 Sans compte ils ne peuvent pas être enregistrés — mais les

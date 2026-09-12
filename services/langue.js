@@ -495,6 +495,58 @@ const EN = {
     "rendez-vous": "appointments",
     "commandes": "orders",
     "Santé": "Health",
+
+    // ── Une page métier (l'entrée depuis Google) ─────────────────────────
+    "Fil d'Ariane": "Breadcrumb",
+    "Les métiers": "Trades",
+    "Métier à rendez-vous": "Appointment-based trade",
+    "Métier à commandes": "Order-based trade",
+    "Ce que ça coûte": "What it costs",
+    "Pourquoi ça arrive": "Why it happens",
+    "Ce que SAMII fait": "What SAMII does",
+    "Poser la question à SAMII": "Ask SAMII",
+    "Racontez votre situation. SAMII connaît déjà votre métier — les prix, la livraison, le paiement à la réception.":
+        "Tell it your situation. SAMII already knows your trade — the prices, the delivery, cash on delivery.",
+    "Ouvrir la discussion": "Start the conversation",
+    "Ouvrir mon QG": "Open my HQ",
+    "Créneaux en ligne, rappels automatiques, fiche client. Prêt pour votre activité.":
+        "Online slots, automatic reminders, customer records. Ready for your business.",
+    "Page de commande, confirmation automatique, suivi des colis. Prêt pour votre activité.":
+        "Order page, automatic confirmation, parcel tracking. Ready for your business.",
+    "Créer maintenant": "Create it now",
+    "Même famille": "Same family",
+    "Qu'est-ce que SAMII change pour ce métier ?": "What does SAMII change for this trade?",
+    "Faut-il installer quelque chose ?": "Is there anything to install?",
+    "Non. SAMII fonctionne depuis une page web et depuis WhatsApp. Il n'y a rien à installer.":
+        "No. SAMII runs from a web page and from WhatsApp. There is nothing to install.",
+
+    // ── Recharger SAMII ─────────────────────────────────────────────────
+    // On traduit CETTE page en priorité : c'est la seule où quelqu'un sort
+    // son argent. Une phrase en français devant un bouton de paiement, pour
+    // une personne qui lit l'arabe, c'est une hésitation — et une hésitation
+    // devant un paiement, c'est un paiement qui n'a pas lieu.
+    "Retour au chat": "Back to the chat",
+    "Un message à SAMII coûte": "One message to SAMII costs",
+    "Minimum de recharge :": "Minimum top-up:",
+    "messages": "messages",
+    "messages disponibles": "messages available",
+    "Ton solde ne s'efface jamais.": "Your balance never expires.",
+    "Tu n'as pas encore rechargé — et tu n'en as pas besoin tant qu'il te reste des messages gratuits.":
+        "You haven't topped up yet — and you don't need to while you still have free messages.",
+    "Comme une flexy : tu charges quand tu veux, tu dépenses comme tu veux.":
+        "Like phone credit: top up when you want, spend it how you want.",
+    "Ce n'est pas un abonnement : il n'y a rien à résilier, et ce qui reste à la fin du mois reste.":
+        "This is not a subscription: there is nothing to cancel, and whatever is left at month's end stays.",
+    "Paiement par Chargily — carte CIB ou EDAHABIA. Le dinar est converti au taux réel du marché, pas au taux officiel.":
+        "Payment through Chargily — CIB or EDAHABIA card. The dinar is converted at the real market rate, not the official one.",
+    "Paiement reçu. Ton solde se met à jour dans quelques secondes — recharge la page si tu ne le vois pas encore.":
+        "Payment received. Your balance updates within seconds — reload the page if you don't see it yet.",
+    "Le paiement n'a pas abouti. Rien n'a été débité.":
+        "The payment did not go through. Nothing was charged.",
+    "Le paiement n'est pas encore branché sur ce service. Reviens bientôt.":
+        "Payment isn't connected on this service yet. Come back soon.",
+    "Le paiement n'a pas pu démarrer. Réessaie dans un instant.":
+        "The payment couldn't start. Try again in a moment.",
 };
 
 // ── L'arabe ──────────────────────────────────────────────────────────────
@@ -760,6 +812,58 @@ const AR = {
     "rendez-vous": "مواعيد",
     "commandes": "طلبات",
     "Santé": "الصحة",
+
+    // ── Une page métier (l'entrée depuis Google) ─────────────────────────
+    "Fil d'Ariane": "مسار التنقّل",
+    "Les métiers": "المهن",
+    "Métier à rendez-vous": "مهنة بالمواعيد",
+    "Métier à commandes": "مهنة بالطلبات",
+    "Ce que ça coûte": "ما يكلّفه ذلك",
+    "Pourquoi ça arrive": "لماذا يحدث ذلك",
+    "Ce que SAMII fait": "ما يفعله SAMII",
+    "Poser la question à SAMII": "اسأل SAMII",
+    "Racontez votre situation. SAMII connaît déjà votre métier — les prix, la livraison, le paiement à la réception.":
+        "اشرح وضعك. SAMII يعرف مهنتك مسبقًا — الأسعار، التوصيل، الدفع عند الاستلام.",
+    "Ouvrir la discussion": "ابدأ المحادثة",
+    "Ouvrir mon QG": "افتح مقرّي",
+    "Créneaux en ligne, rappels automatiques, fiche client. Prêt pour votre activité.":
+        "مواعيد على الإنترنت، تنبيهات تلقائية، بطاقة زبون. جاهز لنشاطك.",
+    "Page de commande, confirmation automatique, suivi des colis. Prêt pour votre activité.":
+        "صفحة طلب، تأكيد تلقائي، تتبّع الشحنات. جاهز لنشاطك.",
+    "Créer maintenant": "أنشئه الآن",
+    "Même famille": "العائلة نفسها",
+    "Qu'est-ce que SAMII change pour ce métier ?": "ما الذي يغيّره SAMII في هذه المهنة؟",
+    "Faut-il installer quelque chose ?": "هل يجب تثبيت شيء؟",
+    "Non. SAMII fonctionne depuis une page web et depuis WhatsApp. Il n'y a rien à installer.":
+        "لا. يعمل SAMII من صفحة ويب ومن واتساب. لا شيء يُثبَّت.",
+
+    // ── Recharger SAMII ─────────────────────────────────────────────────
+    // La page du paiement est traduite en priorité : c'est la seule où
+    // quelqu'un sort son argent. Du français devant un bouton de paiement,
+    // pour une personne qui lit l'arabe, c'est une hésitation — et une
+    // hésitation devant un paiement, c'est un paiement qui n'a pas lieu.
+    "Retour au chat": "العودة إلى المحادثة",
+    "Un message à SAMII coûte": "رسالة واحدة إلى SAMII تكلّف",
+    "Minimum de recharge :": "الحد الأدنى للشحن:",
+    "messages": "رسائل",
+    "messages disponibles": "رسائل متاحة",
+    "Ton solde ne s'efface jamais.": "رصيدك لا ينتهي أبدًا.",
+    "Tu n'as pas encore rechargé — et tu n'en as pas besoin tant qu'il te reste des messages gratuits.":
+        "لم تشحن بعد — ولا تحتاج إلى ذلك ما دامت لديك رسائل مجانية.",
+    "Comme une flexy : tu charges quand tu veux, tu dépenses comme tu veux.":
+        "مثل الفليكسي: تشحن وقت ما تشاء، وتصرف كما تشاء.",
+    "Ce n'est pas un abonnement : il n'y a rien à résilier, et ce qui reste à la fin du mois reste.":
+        "هذا ليس اشتراكًا: لا شيء يُلغى، وما يتبقّى في آخر الشهر يبقى لك.",
+    "Paiement par Chargily — carte CIB ou EDAHABIA. Le dinar est converti au taux réel du marché, pas au taux officiel.":
+        "الدفع عبر Chargily — بطاقة CIB أو EDAHABIA. يُحوَّل الدينار بسعر السوق الحقيقي، لا بالسعر الرسمي.",
+    "Paiement reçu. Ton solde se met à jour dans quelques secondes — recharge la page si tu ne le vois pas encore.":
+        "تم استلام الدفع. سيُحدَّث رصيدك خلال ثوانٍ — أعد تحميل الصفحة إن لم تره بعد.",
+    "Le paiement n'a pas abouti. Rien n'a été débité.":
+        "لم تتم عملية الدفع. لم يُخصم أي مبلغ.",
+    "Le paiement n'est pas encore branché sur ce service. Reviens bientôt.":
+        "الدفع غير موصول بهذه الخدمة بعد. عد قريبًا.",
+    "Le paiement n'a pas pu démarrer. Réessaie dans un instant.":
+        "لم يتمكّن الدفع من البدء. أعد المحاولة بعد لحظة.",
 };
 
 const DICTIONNAIRES = { fr: null, en: EN, ar: AR };

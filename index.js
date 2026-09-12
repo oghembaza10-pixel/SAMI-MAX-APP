@@ -801,6 +801,12 @@ app.get("/accueil-classique", (req, res) => {
 // utilisée par l'onboarding, l'agence et l'API. Aucune liste n'est recopiée.
 app.use("/metiers", require("./routes/metiers"));
 
+// ── RECHARGER SAMII ─────────────────────────────────────
+// Le geste que tout le monde connaît ici : on charge, on dépense, et ce qui
+// reste reste. Le solde vit dans le registre en partie double
+// (services/portefeuille.js) ; seul le webhook Chargily le crédite.
+app.use("/recharge", require("./routes/recharge"));
+
 // ── QG — route universelle SOLDAT V1 ────────────────────
 app.get("/qg", requireAuth, async (req, res) => {
     try {

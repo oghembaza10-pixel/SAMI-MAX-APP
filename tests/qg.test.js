@@ -664,6 +664,10 @@ function marque(html) {
         "/billing/webhook": true, "/login": true, "/register": true,
         "/password-reset": true, "/logout": true, "/api": true, "/paiement": true,
         "/verification": true, "/telegram": true,
+        // Recharger SAMII : ouverte, comme le chat qui consomme les crédits.
+        // Fermée chez une partenaire, elle renverrait une 404 à l'instant du
+        // paiement — le seul moment où un mur coûte de l'argent.
+        "/recharge": true, "/recharge/checkout": true, "/recharge/solde": true,
         "/qg": true, "/qg/:metier": true, "/qg/:metier/connecter": true,
         "/workspace": true, "/connect": true,
         // Le choix du QG quand on en a plusieurs : une étape du parcours de
