@@ -1,0 +1,156 @@
+<%
+// ==========================================================================
+// SAMII OS — LE HUB DES MÉTIERS
+//
+// La flèche manquante du plan : Google amène les gens, le chat les convertit.
+// Une page de chat n'a presque pas de texte à indexer — c'est ici que le
+// contenu vit, et chaque chemin repart vers « Parler à SAMII ».
+//
+// La liste vient de services/metiers.js, la source unique déjà consommée par
+// l'onboarding, l'agence et l'API. Rien n'est recopié : un métier ajouté
+// là-bas apparaît ici sans toucher à ce fichier.
+//
+// Chaque métier prépare la première phrase du visiteur (?d=...) pour que SAMII
+// sache à qui il parle avant le premier message.
+// ==========================================================================
+%><!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title><%= L("Les métiers que SAMII connaît") %></title>
+<meta name="description" content="<%= L("Commerce, santé, beauté, restauration, artisanat : SAMII parle le vocabulaire de ton métier et connaît son rythme.") %>">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0A0810">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+    --nuit:#0A0810; --panneau:#120F1C; --releve:#191426;
+    --ligne:#262036; --ligne-viv:#3A2F55;
+    --texte:#ECE8F6; --doux:#9089A8; --tres-doux:#625B78;
+    --violet:#9D5CFF; --cyan:#5FD4FF;
+    --serif:"Cinzel",Georgia,serif;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--nuit); color: var(--texte); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+
+.haut {
+    display: flex; align-items: center; gap: 12px;
+    height: 56px; padding: 0 16px;
+    border-bottom: 1px solid var(--ligne);
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(10,8,16,.92); backdrop-filter: blur(12px);
+}
+.marque {
+    font-family: var(--serif); font-weight: 700; font-size: 1.05rem; letter-spacing: .1em;
+    background: linear-gradient(92deg, var(--cyan), #C2A0FF);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.btn-haut {
+    margin-inline-start: auto; padding: 7px 15px; border-radius: 999px;
+    border: 1px solid var(--ligne-viv); font-size: .85rem; font-weight: 500;
+    transition: border-color .16s, background .16s;
+}
+.btn-haut:hover { border-color: var(--cyan); background: rgba(95,212,255,.1); }
+
+.enveloppe { max-width: 900px; margin: 0 auto; padding: 40px 16px 56px; }
+
+.tete { text-align: center; margin-bottom: 34px; }
+.tete h1 {
+    margin: 0 0 12px; font-family: var(--serif); font-weight: 600;
+    font-size: clamp(1.5rem, 5vw, 2.1rem); text-wrap: balance;
+}
+.tete p { margin: 0 auto; max-width: 54ch; color: var(--doux); text-wrap: balance; }
+
+.groupe { margin-bottom: 30px; }
+.groupe h2 {
+    margin: 0 0 12px; font-family: var(--mono); font-size: .68rem;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--tres-doux); font-weight: 500;
+}
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 9px; }
+.metier {
+    display: flex; align-items: center; gap: 11px;
+    padding: 13px 15px; border: 1px solid var(--ligne);
+    border-radius: 14px; background: var(--panneau);
+    font-size: .9rem;
+    transition: border-color .16s, background .16s, transform .16s;
+}
+.metier:hover { border-color: var(--ligne-viv); background: var(--releve); transform: translateY(-2px); }
+.metier__pic { font-size: 1.05rem; flex: none; }
+.metier__quoi {
+    margin-inline-start: auto; font-family: var(--mono); font-size: .6rem;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--tres-doux);
+}
+
+.rien {
+    margin-top: 34px; padding: 20px;
+    border: 1px dashed var(--ligne-viv); border-radius: 16px;
+    background: var(--panneau); text-align: center;
+}
+.rien p { margin: 0 0 14px; color: var(--doux); }
+.btn-plein {
+    display: inline-block; padding: 10px 20px; border-radius: 999px;
+    background: linear-gradient(96deg, var(--cyan), var(--violet));
+    color: #0A0810; font-weight: 600; font-size: .9rem;
+    transition: filter .16s;
+}
+.btn-plein:hover { filter: brightness(1.12); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="haut">
+    <a href="/" class="marque">SAMII</a>
+    <a class="btn-haut" href="/"><%= L("Parler à SAMII") %></a>
+</header>
+
+<main class="enveloppe">
+    <div class="tete">
+        <h1><%= L("Les métiers que SAMII connaît") %></h1>
+        <p><%= L("Un métier n'entre dans cette liste que si SAMII sait en dire quelque chose de précis : son vocabulaire, son rythme, le genre de client qu'il reçoit.") %></p>
+    </div>
+
+    <% groupes.forEach(function (g) { %>
+        <section class="groupe">
+            <h2><%= L(g.nom) %></h2>
+            <div class="grille">
+                <% g.metiers.forEach(function (m) { %>
+                    <a class="metier" href="/?metier=<%= encodeURIComponent(L(m.label)) %>">
+                        <span class="metier__pic"><%= m.icone %></span>
+                        <span><%= L(m.label) %></span>
+                        <span class="metier__quoi"><%= m.parcours === "rdv" ? L("rendez-vous") : L("commandes") %></span>
+                    </a>
+                <% }); %>
+            </div>
+        </section>
+    <% }); %>
+
+    <div class="rien">
+        <p><%= L("Ton métier n'est pas dans la liste ? Ce n'est pas un problème — dis-le à SAMII, il s'adapte.") %></p>
+        <a class="btn-plein" href="/"><%= L("Parler à SAMII") %></a>
+    </div>
+</main>
+
+<%# Le sélecteur de langue partagé, en mode « serveur » : cette page est
+    traduite à l'avance par services/langue.js, donc changer de langue veut
+    dire redemander la page — pas réécrire le DOM. Le retour pointe vers le
+    chat, qui est désormais la base de tout le site. %>
+<%- include("partials/barre-langue", {
+    modeLangue: "serveur",
+    avecRetour: true,
+    retourUrl: "/",
+    retourLibelle: L("Parler à SAMII"),
+    retourCle: "nav.retour.samii",
+}) %>
+
+</body>
+</html>

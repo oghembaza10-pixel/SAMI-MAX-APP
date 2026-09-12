@@ -584,6 +584,11 @@ function marque(html) {
     const CLASSEES = {
         // à elle
         "/": true, "/c": true, "/health": true, "/webhook": true,
+        // « / » est devenu le chat SAMII. L'ancienne vitrine vit maintenant
+        // sur /accueil-classique — elle reste publique, elle resservira pour
+        // le référencement. /metiers est le hub qui ramène au chat : c'est
+        // une porte d'entrée Google, elle doit être ouverte à tout le monde.
+        "/accueil-classique": true, "/metiers": true,
         "/webhook/chargily": true, "/webhook/meta": true, "/webhook/whatsapp": true,
         // Les commentaires Facebook et Instagram : Meta appelle, nous répondons.
         "/webhook/meta/commentaires": true,

@@ -404,6 +404,64 @@ const EN = {
         "Joining is free — one page to read, one box to tick.",
     "Les premiers inscrits seront les premiers visibles.":
         "The first to join will be the first to be seen.",
+
+    // ── La page d'accueil : le chat SAMII ────────────────────────────────
+    // La question d'ouverture est volontairement personnelle : les gens
+    // répondent plus volontiers à « et toi, tu fais quoi » qu'à « comment
+    // puis-je vous aider ». Elle doit garder ce ton dans chaque langue —
+    // « What do you do? », pas « How may I assist you? ».
+    "SAMII — l'assistant qui connaît ton business": "SAMII — the assistant that knows your business",
+    "Parle à SAMII. Il connaît le commerce ici : les prix, la livraison, le paiement à la réception, les retours colis.":
+        "Talk to SAMII. It knows trade on the ground here: prices, delivery, cash on delivery, returned parcels.",
+    "Tu fais quoi, toi ?": "So what do you do?",
+    "Raconte-moi ton business en une phrase. Je connais le terrain ici — les prix, la livraison, le paiement à la réception, les retours colis.":
+        "Tell me about your business in one sentence. I know the ground here — prices, delivery, cash on delivery, returned parcels.",
+    "Je vends des vêtements sur Instagram": "I sell clothes on Instagram",
+    "Je prends mes rendez-vous sur WhatsApp": "I book my appointments over WhatsApp",
+    "J'ai une boutique et je veux vendre en ligne": "I have a shop and I want to sell online",
+    "Écris à SAMII…": "Write to SAMII…",
+    "Envoyer": "Send",
+    "Ouvrir le menu": "Open the menu",
+    "Langue": "Language",
+    "Mon QG": "My HQ",
+    "Se connecter": "Sign in",
+    "Aller plus loin": "Go further",
+    "Ouvrir un QG": "Open an HQ",
+    "Connecter mes outils": "Connect my tools",
+    "Voir les métiers": "Browse trades",
+    "Académie": "Academy",
+    "Marketplace": "Marketplace",
+    "Communauté": "Community",
+    "Le compte sert à une seule chose : que SAMII se souvienne de toi.":
+        "An account does one thing: it lets SAMII remember you.",
+    "SAMII réfléchit un peu plus longtemps que prévu. Réessaie dans une minute.":
+        "SAMII is taking longer than usual. Try again in a minute.",
+    "Connexion perdue. Vérifie ton réseau et réessaie.":
+        "Connection lost. Check your network and try again.",
+    "messages avant de créer un compte": "messages before you need an account",
+    "Tes messages reviennent dans 5 heures — ou crée ton compte pour continuer.":
+        "Your messages come back in 5 hours — or create an account to keep going.",
+    "Je peux continuer — mais je ne te connais pas encore.":
+        "I can keep going — but I don't know you yet.",
+    "Quand tu fermeras cette page, j'oublierai ton métier, tes chiffres et tout ce qu'on vient de se dire. Crée ton compte et je m'en souviendrai la prochaine fois.":
+        "When you close this page I'll forget your trade, your figures and everything we just said. Create an account and I'll remember next time.",
+    "Pas de mur : tu peux continuer sans compte.":
+        "No wall: you can keep going without an account.",
+    "Créer mon compte": "Create my account",
+    "J'ai déjà un compte": "I already have an account",
+
+    // ── Le hub des métiers ───────────────────────────────────────────────
+    "Les métiers que SAMII connaît": "The trades SAMII knows",
+    "Commerce, santé, beauté, restauration, artisanat : SAMII parle le vocabulaire de ton métier et connaît son rythme.":
+        "Retail, health, beauty, food, crafts: SAMII speaks your trade's vocabulary and knows its rhythm.",
+    "Un métier n'entre dans cette liste que si SAMII sait en dire quelque chose de précis : son vocabulaire, son rythme, le genre de client qu'il reçoit.":
+        "A trade only enters this list if SAMII has something specific to say about it: its vocabulary, its rhythm, the kind of customer it serves.",
+    "Ton métier n'est pas dans la liste ? Ce n'est pas un problème — dis-le à SAMII, il s'adapte.":
+        "Your trade isn't listed? Not a problem — tell SAMII, it adapts.",
+    "Parler à SAMII": "Talk to SAMII",
+    "rendez-vous": "appointments",
+    "commandes": "orders",
+    "Santé": "Health",
 };
 
 // ── L'arabe ──────────────────────────────────────────────────────────────
@@ -580,6 +638,63 @@ const AR = {
     "7 jours": "٧ أيام",
     "Votre flotte est vide.": "أسطولك فارغ.",
     "Vous pilotez, vos clients gardent la main.": "أنت تقود، وعملاؤك يحتفظون بالتحكم.",
+
+    // ── La page d'accueil : le chat SAMII ────────────────────────────────
+    // La page entière bascule en droite-à-gauche (dir="rtl" sur <html>), y
+    // compris la barre latérale et la bulle du visiteur : voir les règles
+    // [dir="rtl"] dans views/samii-accueil.ejs.
+    "SAMII — l'assistant qui connaît ton business": "SAMII — المساعد الذي يعرف تجارتك",
+    "Parle à SAMII. Il connaît le commerce ici : les prix, la livraison, le paiement à la réception, les retours colis.":
+        "تحدّث إلى SAMII. هو يعرف التجارة هنا: الأسعار، التوصيل، الدفع عند الاستلام، والطرود المرتجعة.",
+    "Tu fais quoi, toi ?": "وأنت، ماذا تعمل؟",
+    "Raconte-moi ton business en une phrase. Je connais le terrain ici — les prix, la livraison, le paiement à la réception, les retours colis.":
+        "احكِ لي عن نشاطك في جملة واحدة. أنا أعرف الميدان هنا — الأسعار، التوصيل، الدفع عند الاستلام، والطرود المرتجعة.",
+    "Je vends des vêtements sur Instagram": "أبيع الملابس على إنستغرام",
+    "Je prends mes rendez-vous sur WhatsApp": "أحدّد مواعيدي عبر واتساب",
+    "J'ai une boutique et je veux vendre en ligne": "لديّ محل وأريد البيع عبر الإنترنت",
+    "Écris à SAMII…": "اكتب إلى SAMII…",
+    "Envoyer": "إرسال",
+    "Ouvrir le menu": "فتح القائمة",
+    "Langue": "اللغة",
+    "Mon QG": "مقرّي",
+    "Se connecter": "تسجيل الدخول",
+    "Aller plus loin": "اذهب أبعد",
+    "Ouvrir un QG": "افتح مقرًّا",
+    "Connecter mes outils": "اربط أدواتي",
+    "Voir les métiers": "تصفّح المهن",
+    "Académie": "الأكاديمية",
+    "Marketplace": "المتجر",
+    "Communauté": "المجتمع",
+    "Le compte sert à une seule chose : que SAMII se souvienne de toi.":
+        "الحساب له غرض واحد: أن يتذكّرك SAMII.",
+    "SAMII réfléchit un peu plus longtemps que prévu. Réessaie dans une minute.":
+        "‏SAMII يأخذ وقتًا أطول من المعتاد. أعد المحاولة بعد دقيقة.",
+    "Connexion perdue. Vérifie ton réseau et réessaie.":
+        "انقطع الاتصال. تحقّق من شبكتك وأعد المحاولة.",
+    "messages avant de créer un compte": "رسائل قبل إنشاء حساب",
+    "Tes messages reviennent dans 5 heures — ou crée ton compte pour continuer.":
+        "ستعود رسائلك بعد ٥ ساعات — أو أنشئ حسابًا للمتابعة.",
+    "Je peux continuer — mais je ne te connais pas encore.":
+        "يمكنني المتابعة — لكنني لا أعرفك بعد.",
+    "Quand tu fermeras cette page, j'oublierai ton métier, tes chiffres et tout ce qu'on vient de se dire. Crée ton compte et je m'en souviendrai la prochaine fois.":
+        "عندما تغلق هذه الصفحة سأنسى مهنتك وأرقامك وكل ما قلناه للتو. أنشئ حسابك وسأتذكّر في المرة القادمة.",
+    "Pas de mur : tu peux continuer sans compte.":
+        "لا يوجد جدار: يمكنك المتابعة بدون حساب.",
+    "Créer mon compte": "إنشاء حسابي",
+    "J'ai déjà un compte": "لديّ حساب بالفعل",
+
+    // ── Le hub des métiers ───────────────────────────────────────────────
+    "Les métiers que SAMII connaît": "المهن التي يعرفها SAMII",
+    "Commerce, santé, beauté, restauration, artisanat : SAMII parle le vocabulaire de ton métier et connaît son rythme.":
+        "تجارة، صحة، تجميل، مطاعم، حِرف: يتحدّث SAMII بمصطلحات مهنتك ويعرف إيقاعها.",
+    "Un métier n'entre dans cette liste que si SAMII sait en dire quelque chose de précis : son vocabulaire, son rythme, le genre de client qu'il reçoit.":
+        "لا تدخل مهنة هذه القائمة إلا إذا كان لدى SAMII ما يقوله عنها بدقّة: مصطلحاتها، إيقاعها، ونوع الزبون الذي تستقبله.",
+    "Ton métier n'est pas dans la liste ? Ce n'est pas un problème — dis-le à SAMII, il s'adapte.":
+        "مهنتك ليست في القائمة؟ لا مشكلة — قل ذلك لـ SAMII، فهو يتكيّف.",
+    "Parler à SAMII": "تحدّث إلى SAMII",
+    "rendez-vous": "مواعيد",
+    "commandes": "طلبات",
+    "Santé": "الصحة",
 };
 
 const DICTIONNAIRES = { fr: null, en: EN, ar: AR };
@@ -600,12 +715,29 @@ function detecter(req) {
     const memorisee = req.session?.langue;
     if (LANGUES.includes(memorisee)) return memorisee;
 
+    // L'EN-TÊTE DU NAVIGATEUR, LU POUR DE VRAI.
+    //
+    // Cette fonction ne savait répondre que « fr » ou « en » : elle cherchait
+    // les deux chaînes dans l'en-tête et ignorait tout le reste. Un visiteur
+    // dont le navigateur annonce « ar-DZ » — c'est-à-dire une bonne part du
+    // marché visé — recevait donc le français, alors que le dictionnaire
+    // arabe existe et couvre déjà des centaines de phrases. La traduction
+    // était écrite, payée, et inatteignable.
+    //
+    // On lit maintenant les étiquettes dans l'ordre annoncé, et on retient la
+    // première que l'on sait parler. Deux raisons de découper plutôt que de
+    // chercher une sous-chaîne : « ar » apparaît dans des codes qui ne sont
+    // pas de l'arabe (« arn »), et une sous-chaîne ne dit rien de l'ORDRE de
+    // préférence, qui est justement toute l'information de cet en-tête.
+    //
+    // Le comportement français/anglais ne change pas : « fr-FR,en;q=0.9 »
+    // veut toujours dire « je préfère le français ».
     const entete = String(req.headers?.["accept-language"] || "").toLowerCase();
-    // On ne bascule en anglais que si l'anglais est demandé AVANT le français :
-    // « fr-FR,en;q=0.9 » veut dire « je préfère le français ».
-    const posFr = entete.indexOf("fr");
-    const posEn = entete.indexOf("en");
-    if (posEn !== -1 && (posFr === -1 || posEn < posFr)) return "en";
+    for (const morceau of entete.split(",")) {
+        const etiquette = morceau.split(";")[0].trim();
+        const principale = etiquette.split("-")[0];
+        if (LANGUES.includes(principale)) return principale;
+    }
     return DEFAUT;
 }
 

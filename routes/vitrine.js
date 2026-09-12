@@ -18,24 +18,40 @@ const geminiService = require("../services/geminiService");
 const SAMII_VITRINE_PROMPT = require("../brain/prompts/vitrine");
 const { renderVitrine } = require("./vitrine-page");
 
-// 15 messages / 30 min par IP. Un visiteur sincère qui pose des questions
-// n'en envoie jamais autant ; au-delà c'est du test de charge ou de l'abus,
-// et c'est nous qui payons les tokens.
+// 10 messages sur 5 heures par IP, pour un visiteur sans compte.
+//
+// Le chiffre n'est pas une limite technique, c'est une décision produit : le
+// chat est devenu la page d'accueil, donc la porte doit rester ouverte assez
+// longtemps pour que quelqu'un se fasse une opinion — mais chaque message
+// coûte de l'argent réel en tokens et n'est protégé par aucun compte.
+//
+// Les messages REVIENNENT au bout de 5 heures : ce n'est pas un mur définitif.
+// Le message de dépassement le dit, et ne culpabilise personne.
+const QUOTA_ANONYME = 10;
+const FENETRE_MS = 5 * 60 * 60 * 1000;
+
 const vitrineLimiter = rateLimit({
-    windowMs: 30 * 60 * 1000,
-    max: 15,
+    windowMs: FENETRE_MS,
+    max: QUOTA_ANONYME,
     standardHeaders: true,
     legacyHeaders: false,
     message: {
         success: true,
-        reply: "On a bien discuté ! Pour aller plus loin, laisse-moi ton email ou ton WhatsApp — Ouahid te montrera la plateforme en direct.",
+        reply: "On a bien avancé. Tes messages reviennent dans 5 heures — ou crée ton compte et je garde tout ce qu'on s'est dit.",
         limite: true,
+        restant: 0,
     },
 });
 
 const LANGUES = ["fr", "en", "ar", "zh"];
 const MAX_MESSAGE = 500;      // au-delà, c'est un copier-coller de document
-const MAX_HISTORIQUE = 6;     // 3 allers-retours de contexte, suffisant et borné
+
+// 16 tours, soit 8 allers-retours. C'était 6 (3 échanges) quand le chat était
+// un widget dans un coin de la vitrine : à ce niveau SAMII oublie le métier
+// annoncé trois messages plus tôt, ce qui est acceptable pour un gadget et
+// rédhibitoire pour la page d'accueil. Toujours borné, parce que l'historique
+// repart en entier à chaque appel et que c'est nous qui payons.
+const MAX_HISTORIQUE = 16;
 
 // Détecte un email ou un numéro de téléphone laissé par le visiteur dans son
 // message, pour l'enregistrer comme prospect. Volontairement simple : on ne
@@ -59,6 +75,45 @@ async function enregistrerProspect({ email, tel, message, langue, ip }) {
         // Un prospect non enregistré ne doit jamais casser la conversation en
         // cours — le visiteur, lui, ne doit rien voir de cet incident.
         console.error("❌ enregistrerProspect :", err.message);
+    }
+}
+
+// Combien de messages il reste au visiteur. express-rate-limit renseigne
+// req.rateLimit une fois la requête comptée — on lit ce compteur au lieu d'en
+// tenir un deuxième, qui finirait par diverger de celui qui décide vraiment.
+function resteAutorise(req) {
+    const n = req.rateLimit && typeof req.rateLimit.remaining === "number"
+        ? req.rateLimit.remaining
+        : null;
+    return n === null ? QUOTA_ANONYME : Math.max(0, n);
+}
+
+// JOURNALISER, PAS ROUTER.
+//
+// On n'écrit aucune règle « si le visiteur dit X, l'envoyer vers Y » : on ne
+// sait pas encore ce que les gens demandent. On enregistre donc les vraies
+// conversations, et on lira ce corpus plus tard pour décider des chemins.
+//
+// Même table que le SAMII connecté (samii_conversations) — `user_id` y est
+// TEXT et nullable, donc un visiteur anonyme s'y range sous « anon:<session> »
+// sans nouvelle table ni migration. La colonne `source` sépare les deux
+// mondes à l'analyse, et un identifiant « anon: » ne peut jamais entrer en
+// collision avec un identifiant de compte.
+//
+// Un échec d'écriture ne doit JAMAIS faire perdre sa réponse au visiteur :
+// la journalisation est utile pour nous, invisible pour lui.
+async function journaliserTour(req, message, reponse) {
+    try {
+        const userId = req.session?.userId
+            ? String(req.session.userId)
+            : "anon:" + String(req.sessionID || "sans-session").slice(0, 24);
+        await db.query(
+            `INSERT INTO samii_conversations (user_id, role, contenu, source, created_at)
+             VALUES ($1, 'user', $2, 'vitrine', NOW()), ($1, 'model', $3, 'vitrine', NOW())`,
+            [userId, message, String(reponse || "").slice(0, 4000)],
+        );
+    } catch (err) {
+        console.error("❌ journaliserTour (vitrine) :", err.message);
     }
 }
 
@@ -89,9 +144,14 @@ router.post("/chat", vitrineLimiter, async (req, res) => {
         const reponse = await geminiService.chatLibre({ systemPrompt, message, history: historique });
 
         if (!reponse.text) {
+            // Le compteur repart MÊME QUAND L'IA EST EN PANNE : le message a
+            // été décompté par le limiteur, donc le cacher ferait mentir la
+            // page. Sans ce champ, la jauge reste vide et le visiteur croit
+            // que ses messages sont infinis jusqu'au blocage sec.
             return res.json({
                 success: false,
                 reply: "SAMII est momentanément indisponible. Réessaie dans une minute, ou laisse-moi ton email pour qu'on te recontacte.",
+                restant: resteAutorise(req),
             });
         }
 
@@ -104,7 +164,14 @@ router.post("/chat", vitrineLimiter, async (req, res) => {
             ip: req.ip,
         });
 
-        res.json({ success: true, reply: reponse.text, contactCapture: Boolean(email || tel) });
+        await journaliserTour(req, message, reponse.text);
+
+        res.json({
+            success: true,
+            reply: reponse.text,
+            contactCapture: Boolean(email || tel),
+            restant: resteAutorise(req),
+        });
     } catch (err) {
         console.error("❌ POST /vitrine/chat :", err.message);
         res.json({

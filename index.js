@@ -657,8 +657,19 @@ app.get("/", async (req, res, next) => {
 });
 
 // ── PAGE ACCUEIL ────────────────────────────────────────
-app.get("/", (req, res) => {
-    res.render("index", {
+//
+// LE CHAT EST DEVENU LA PORTE D'ENTRÉE.
+//
+// L'ancienne page d'accueil expliquait SAMII sur 4 257 lignes : hero, preuves,
+// modules, tarifs, inscription. Elle demandait au visiteur de LIRE pour savoir
+// si le produit le concernait — et quelqu'un qui ne connaît pas la marque ne
+// lit pas. Le chat, lui, ne demande rien : il pose une question et écoute.
+//
+// L'ANCIENNE PAGE N'EST PAS SUPPRIMÉE. Elle est servie telle quelle sur
+// /accueil-classique, avec exactement les mêmes données, et resservira pour le
+// référencement et les pages métiers. views/index.ejs n'a pas été modifié.
+function donneesAccueil(req) {
+    return {
         loggedIn: !!req.session?.loggedIn,
         nom: req.session?.nom || "",
         typeCompte: req.session?.typeCompte || "client",
@@ -666,6 +677,30 @@ app.get("/", (req, res) => {
         // que ceux facturés (config/paliers.js) : impossible d'annoncer un
         // prix en vitrine et d'en encaisser un autre sur /billing.
         tarifs: paliers.PALIERS,
+    };
+}
+
+app.get("/", (req, res) => {
+    res.render("samii-accueil", donneesAccueil(req));
+});
+
+// L'ancienne vitrine, intacte, hors de la route « / ».
+app.get("/accueil-classique", (req, res) => {
+    res.render("index", donneesAccueil(req));
+});
+
+// ── LES MÉTIERS ─────────────────────────────────────────
+//
+// La porte d'entrée Google : une page par métier viendra se ranger sous
+// /metiers/<id>, et chacune ramènera au chat. Ce hub est le premier étage —
+// il lit services/metiers.js, la source unique déjà utilisée par
+// l'onboarding, l'agence et l'API. Aucune liste n'est recopiée ici.
+app.get("/metiers", (req, res) => {
+    const metiersService = require("./services/metiers");
+    res.render("metiers", {
+        loggedIn: !!req.session?.loggedIn,
+        typeCompte: req.session?.typeCompte || "client",
+        groupes: metiersService.parGroupe(),
     });
 });
 

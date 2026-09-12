@@ -151,6 +151,12 @@ const SOCLE = [
     // « Connecter mes outils » — qu'on lui a justement laissé — aussi.
     "/auth",
     "/langue",          // le sélecteur de langue de toutes ses pages
+    // Le hub des métiers et l'ancienne vitrine. « / » est devenu le chat
+    // SAMII ; ces deux adresses sont ses portes d'entrée depuis Google, et
+    // c'est exactement ce qui les rend obligatoires : une porte d'entrée
+    // fermée ne renvoie pas une erreur visible, elle disparaît simplement
+    // des résultats de recherche, et on met des mois à s'en apercevoir.
+    "/metiers", "/accueil-classique",
     // Les pages légales. On ne ferme pas ce que la loi oblige à publier, et
     // Meta comme Google vérifient que ces adresses répondent.
     "/privacy", "/privacy.html", "/terms", "/terms.html",

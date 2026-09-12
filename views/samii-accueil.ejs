@@ -1,0 +1,392 @@
+<%
+// ==========================================================================
+// SAMII OS — LA NOUVELLE PAGE D'ACCUEIL : LE CHAT
+//
+// POURQUOI CETTE PAGE EXISTE.
+//
+// L'ancienne page d'accueil (views/index.ejs, 4 257 lignes) expliquait SAMII :
+// hero, preuves, modules, tarifs, inscription. Elle demandait au visiteur de
+// LIRE pour comprendre si le produit était fait pour lui — et un visiteur qui
+// ne connaît pas la marque ne lit pas.
+//
+// Cette page ne demande rien. Elle pose une question et attend la réponse.
+// Le format (un champ, on parle, ça répond) est celui que tout le monde a déjà
+// compris avec ChatGPT : zéro coût d'explication.
+//
+// L'ancienne page N'EST PAS SUPPRIMÉE — elle est servie sur /accueil-classique
+// et resservira pour le SEO et les pages métiers.
+//
+// TOUT LE TEXTE PASSE PAR L(). La clé de traduction est la phrase française
+// elle-même (voir services/langue.js) : une langue manquante affiche le
+// français, jamais une clé nue.
+// ==========================================================================
+%><!-- le doctype et <html> sont fournis par la vue elle-même : cette page ne
+     passe par aucun layout, comme index.ejs -->
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title><%= L("SAMII — l'assistant qui connaît ton business") %></title>
+<meta name="description" content="<%= L("Parle à SAMII. Il connaît le commerce ici : les prix, la livraison, le paiement à la réception, les retours colis.") %>">
+
+<!-- PWA : on réutilise le manifeste et le service worker existants -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0A0810">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SAMII">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="<%= L("SAMII — l'assistant qui connaît ton business") %>">
+<meta property="og:description" content="<%= L("Parle à SAMII. Il connaît le commerce ici : les prix, la livraison, le paiement à la réception, les retours colis.") %>">
+<meta property="og:image" content="/og-hero.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ══ Palette reprise du QG et de l'ancienne vitrine ══════════════════════
+   Violet #9D5CFF et cyan #5FD4FF existaient déjà dans client-style.css :
+   la nouvelle façade ne crée pas une identité de plus, elle reprend celle
+   du produit. Le cyan porte l'accent (le « bleu technologique »), le violet
+   reste secondaire. Thème sombre assumé, comme tout le reste de SAMII. */
+:root {
+    --nuit:      #0A0810;
+    --panneau:   #120F1C;
+    --releve:    #191426;
+    --ligne:     #262036;
+    --ligne-viv: #3A2F55;
+    --texte:     #ECE8F6;
+    --doux:      #9089A8;
+    --tres-doux: #625B78;
+    --violet:    #9D5CFF;
+    --violet-pale:#C2A0FF;
+    --cyan:      #5FD4FF;
+    --vert:      #3DDC84;
+    --ambre:     #FFB454;
+    --r-s: 8px; --r-m: 14px; --r-l: 20px;
+    --serif: "Cinzel", Georgia, serif;
+    --sans:  "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:  "JetBrains Mono", ui-monospace, Menlo, monospace;
+    color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+    background: var(--nuit);
+    color: var(--texte);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: none; background: none; }
+a { color: inherit; text-decoration: none; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+[hidden] { display: none !important; }
+
+.app { display: flex; flex-direction: column; height: 100svh; min-height: 480px; }
+
+/* ══ BARRE HAUTE ══ */
+.haut {
+    flex: none; display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; height: 56px;
+    border-bottom: 1px solid var(--ligne);
+    background: rgba(10, 8, 16, .92);
+    backdrop-filter: blur(12px);
+    padding-top: env(safe-area-inset-top);
+}
+.marque {
+    font-family: var(--serif); font-weight: 700; font-size: 1.05rem; letter-spacing: .1em;
+    background: linear-gradient(92deg, var(--cyan), var(--violet-pale));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    white-space: nowrap;
+}
+.haut__fin { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
+.langues { display: flex; gap: 2px; }
+.langues a {
+    padding: 5px 8px; border-radius: var(--r-s);
+    font-family: var(--mono); font-size: .68rem; text-transform: uppercase;
+    color: var(--tres-doux); transition: color .16s, background .16s;
+}
+.langues a:hover { color: var(--texte); background: var(--releve); }
+.langues a.actif { color: var(--cyan); }
+.btn-haut {
+    padding: 7px 15px; border-radius: 999px; border: 1px solid var(--ligne-viv);
+    font-size: .85rem; font-weight: 500; white-space: nowrap;
+    transition: border-color .16s, background .16s;
+}
+.btn-haut:hover { border-color: var(--cyan); background: rgba(95, 212, 255, .1); }
+.burger {
+    width: 34px; height: 34px; border-radius: var(--r-s); border: 1px solid var(--ligne);
+    color: var(--doux); display: none; align-items: center; justify-content: center;
+}
+
+/* ══ CORPS ══ */
+.corps { flex: 1; min-height: 0; display: grid; grid-template-columns: 244px minmax(0, 1fr); }
+
+.cote {
+    border-inline-end: 1px solid var(--ligne); background: var(--panneau);
+    padding: 18px 12px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.cote__titre {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--tres-doux); padding: 0 10px 8px;
+}
+.sortie {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 11px; border-radius: var(--r-m);
+    color: var(--doux); font-size: .89rem;
+    transition: background .16s, color .16s;
+}
+.sortie:hover { background: var(--releve); color: var(--texte); }
+.sortie__pic {
+    width: 26px; height: 26px; flex: none; display: grid; place-items: center;
+    border-radius: 7px; background: var(--releve); font-size: .8rem;
+}
+.sortie--phare { color: var(--texte); font-weight: 500; }
+.sortie--phare .sortie__pic { background: linear-gradient(135deg, var(--cyan), var(--violet)); color: #0A0810; }
+.cote__bas {
+    margin-top: auto; padding: 14px 11px 0; border-top: 1px solid var(--ligne);
+    color: var(--tres-doux); font-size: .74rem; line-height: 1.55;
+}
+
+/* ══ LE CHAT ══ */
+.scene { min-height: 0; display: flex; flex-direction: column; }
+.fil { flex: 1; min-height: 0; overflow-y: auto; padding: 32px 16px 8px; }
+.colonne { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+.ouverture { text-align: center; padding: 8px 0 2px; }
+.boule {
+    width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, var(--cyan), var(--violet) 58%, #4A22A8);
+    box-shadow: 0 0 36px rgba(95, 212, 255, .35);
+    animation: respire 5s ease-in-out infinite;
+}
+@keyframes respire {
+    0%, 100% { transform: scale(1);     box-shadow: 0 0 36px rgba(95, 212, 255, .35); }
+    50%      { transform: scale(1.045); box-shadow: 0 0 48px rgba(157, 92, 255, .4); }
+}
+.ouverture h1 {
+    margin: 0 0 10px; font-family: var(--serif); font-weight: 600;
+    font-size: clamp(1.55rem, 5vw, 2.05rem); letter-spacing: .01em; text-wrap: balance;
+}
+.ouverture p { margin: 0 auto; max-width: 46ch; color: var(--doux); text-wrap: balance; }
+
+.amorces { display: grid; gap: 9px; }
+.amorce {
+    text-align: start; padding: 13px 16px;
+    border: 1px solid var(--ligne); border-radius: var(--r-m);
+    background: var(--panneau); font-size: .9rem;
+    transition: border-color .16s, background .16s, transform .16s;
+}
+.amorce:hover { border-color: var(--ligne-viv); background: var(--releve); transform: translateY(-1px); }
+
+.tour { display: flex; gap: 12px; align-items: flex-start; }
+.tour--moi { justify-content: flex-end; }
+.pastille {
+    width: 28px; height: 28px; flex: none; margin-top: 2px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, var(--cyan), var(--violet) 62%);
+}
+.bulle { white-space: pre-wrap; max-width: 100%; overflow-wrap: anywhere; }
+.tour--moi .bulle {
+    background: var(--releve); border: 1px solid var(--ligne);
+    border-radius: var(--r-m) var(--r-m) 4px var(--r-m);
+    padding: 11px 15px; max-width: 84%;
+}
+html[dir="rtl"] .tour--moi .bulle { border-radius: var(--r-m) var(--r-m) var(--r-m) 4px; }
+
+.curseur {
+    display: inline-block; width: 7px; height: 15px; margin-inline-start: 1px;
+    background: var(--cyan); vertical-align: -2px;
+    animation: bat 1s steps(2) infinite;
+}
+@keyframes bat { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+
+.points { display: flex; gap: 5px; padding: 6px 0; }
+.points i {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--tres-doux);
+    animation: sautille 1.3s ease-in-out infinite;
+}
+.points i:nth-child(2) { animation-delay: .18s; }
+.points i:nth-child(3) { animation-delay: .36s; }
+@keyframes sautille {
+    0%, 60%, 100% { opacity: .3; transform: translateY(0); }
+    30%           { opacity: 1;  transform: translateY(-4px); }
+}
+
+/* La carte mémoire : le compte est une promesse, jamais un mur. */
+.memoire {
+    border: 1px dashed var(--ligne-viv); border-radius: var(--r-m);
+    background: var(--panneau); padding: 17px 18px;
+}
+.memoire h2 { margin: 0 0 7px; font-size: .97rem; font-weight: 600; }
+.memoire p { margin: 0 0 14px; color: var(--doux); font-size: .87rem; }
+.memoire__fin { margin: 13px 0 0 !important; color: var(--tres-doux); font-size: .77rem; }
+.identites { display: flex; flex-wrap: wrap; gap: 8px; }
+.identite {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 16px; border-radius: 999px; border: 1px solid var(--ligne-viv);
+    font-size: .86rem; font-weight: 500;
+    transition: background .16s, border-color .16s;
+}
+.identite:hover { background: var(--releve); border-color: var(--doux); }
+.identite--net { background: linear-gradient(96deg, var(--cyan), var(--violet)); border-color: transparent; color: #0A0810; }
+
+/* ══ SAISIE ══ */
+.pied {
+    flex: none; padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--nuit) 70%, transparent);
+}
+.saisie {
+    max-width: 680px; margin: 0 auto;
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px; padding-inline-start: 18px;
+    border: 1px solid var(--ligne-viv); border-radius: 999px; background: var(--panneau);
+    transition: border-color .16s;
+}
+.saisie:focus-within { border-color: var(--cyan); }
+.saisie input { flex: 1; min-width: 0; background: none; border: none; outline: none; padding: 8px 0; }
+.saisie input::placeholder { color: var(--tres-doux); }
+.envoyer {
+    width: 36px; height: 36px; flex: none; border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    color: #0A0810; font-weight: 700;
+    display: grid; place-items: center;
+    transition: filter .16s, opacity .16s;
+}
+.envoyer:hover { filter: brightness(1.12); }
+.envoyer:disabled { opacity: .4; cursor: not-allowed; }
+html[dir="rtl"] .envoyer { transform: scaleX(-1); }
+
+.jauge {
+    max-width: 680px; margin: 9px auto 0; text-align: center;
+    font-family: var(--mono); font-size: .68rem; color: var(--tres-doux);
+}
+.jauge b { color: var(--doux); font-weight: 500; }
+.jauge.bas b { color: var(--ambre); }
+
+@media (max-width: 860px) {
+    .burger { display: flex; }
+    .corps { grid-template-columns: minmax(0, 1fr); }
+    .cote {
+        position: fixed; inset-block: 56px 0; inset-inline-start: 0;
+        width: 244px; z-index: 30;
+        transform: translateX(-102%); transition: transform .22s ease;
+    }
+    html[dir="rtl"] .cote { transform: translateX(102%); }
+    .cote.ouverte { transform: translateX(0); box-shadow: 0 0 60px rgba(0,0,0,.6); }
+    .fil { padding-top: 22px; }
+    .langues { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+    <header class="haut">
+        <button class="burger" id="burger" aria-label="<%= L("Ouvrir le menu") %>">☰</button>
+        <span class="marque">SAMII</span>
+        <div class="haut__fin">
+            <nav class="langues" aria-label="<%= L("Langue") %>">
+                <% languesDispo.forEach(function (code) { %>
+                    <a href="<%= lienLangue(code) %>" class="<%= code === lang ? 'actif' : '' %>"><%= code %></a>
+                <% }); %>
+            </nav>
+            <% if (loggedIn) { %>
+                <a class="btn-haut" href="<%= typeCompte === 'client' ? '/client-qg' : '/qg' %>"><%= L("Mon QG") %></a>
+            <% } else { %>
+                <a class="btn-haut" href="/login"><%= L("Se connecter") %></a>
+            <% } %>
+        </div>
+    </header>
+
+    <div class="corps">
+
+        <!-- La barre latérale reste COURTE et secondaire : ce sont les
+             sorties de conversion, pas un menu de toutes les fonctions. -->
+        <aside class="cote" id="cote">
+            <p class="cote__titre"><%= L("Aller plus loin") %></p>
+
+            <a class="sortie sortie--phare" href="<%= loggedIn ? '/qg' : '/register' %>">
+                <span class="sortie__pic">🏛</span><%= L("Ouvrir un QG") %>
+            </a>
+            <a class="sortie" href="<%= loggedIn ? '/connect/tools' : '/register' %>">
+                <span class="sortie__pic">🔌</span><%= L("Connecter mes outils") %>
+            </a>
+            <a class="sortie" href="/metiers">
+                <span class="sortie__pic">🧭</span><%= L("Voir les métiers") %>
+            </a>
+            <a class="sortie" href="/academy">
+                <span class="sortie__pic">🎓</span><%= L("Académie") %>
+            </a>
+            <a class="sortie" href="/marketplace">
+                <span class="sortie__pic">🛍</span><%= L("Marketplace") %>
+            </a>
+            <a class="sortie" href="/community">
+                <span class="sortie__pic">👥</span><%= L("Communauté") %>
+            </a>
+
+            <p class="cote__bas"><%= L("Le compte sert à une seule chose : que SAMII se souvienne de toi.") %></p>
+        </aside>
+
+        <div class="scene">
+            <section class="fil" id="fil">
+                <div class="colonne" id="colonne">
+                    <div class="ouverture" id="ouverture">
+                        <div class="boule"></div>
+                        <h1><%= L("Tu fais quoi, toi ?") %></h1>
+                        <p><%= L("Raconte-moi ton business en une phrase. Je connais le terrain ici — les prix, la livraison, le paiement à la réception, les retours colis.") %></p>
+                    </div>
+
+                    <div class="amorces" id="amorces">
+                        <button class="amorce"><%= L("Je vends des vêtements sur Instagram") %></button>
+                        <button class="amorce"><%= L("Je prends mes rendez-vous sur WhatsApp") %></button>
+                        <button class="amorce"><%= L("J'ai une boutique et je veux vendre en ligne") %></button>
+                    </div>
+                </div>
+            </section>
+
+            <div class="pied">
+                <form class="saisie" id="saisie">
+                    <input id="champ" autocomplete="off" enterkeyhint="send"
+                           placeholder="<%= L("Écris à SAMII…") %>"
+                           aria-label="<%= L("Écris à SAMII…") %>">
+                    <button class="envoyer" id="envoyer" type="submit" aria-label="<%= L("Envoyer") %>">↑</button>
+                </form>
+                <p class="jauge" id="jauge"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Les phrases écrites par le script passent aussi par L() : elles sont
+// traduites côté serveur et déposées ici, pour ne pas réintroduire du
+// français en dur dans le JavaScript.
+window.SAMII_T = <%- JSON.stringify({
+    panne:      L("SAMII réfléchit un peu plus longtemps que prévu. Réessaie dans une minute."),
+    reseau:     L("Connexion perdue. Vérifie ton réseau et réessaie."),
+    restants:   L("messages avant de créer un compte"),
+    epuise:     L("Tes messages reviennent dans 5 heures — ou crée ton compte pour continuer."),
+    memTitre:   L("Je peux continuer — mais je ne te connais pas encore."),
+    memTexte:   L("Quand tu fermeras cette page, j'oublierai ton métier, tes chiffres et tout ce qu'on vient de se dire. Crée ton compte et je m'en souviendrai la prochaine fois."),
+    memFin:     L("Pas de mur : tu peux continuer sans compte."),
+    creer:      L("Créer mon compte"),
+    connecter:  L("J'ai déjà un compte"),
+}) %>;
+window.SAMII_LANG = "<%= lang %>";
+window.SAMII_CONNECTE = <%= loggedIn ? "true" : "false" %>;
+</script>
+<script src="/js/samii-accueil.js?v=1"></script>
+<script src="/js/pwa-register.js" defer></script>
+</body>
+</html>
