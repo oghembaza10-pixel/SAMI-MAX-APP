@@ -87,6 +87,44 @@ for (const g of gabarits) {
     verifier(ok, `views/${g} ne compile pas : ${message}`);
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// AUCUNE VERSION D'ACTIF ÉCRITE À LA MAIN
+// ══════════════════════════════════════════════════════════════════════════
+//
+// LE DÉFAUT, VU EN PRODUCTION. Les feuilles portaient un numéro recopié dans
+// SEPT gabarits : `/css/qg-style.css?v=8`. Une règle ajoutée à la feuille sans
+// toucher aux sept numéros, et les navigateurs servent l'ancienne depuis leur
+// cache.
+//
+// Ce que ça donne : le repli « Plus » du QG était écrit, déployé, et sans
+// effet. Le gabarit — jamais mis en cache — affichait bien le nouveau bouton,
+// pendant que la feuille en cache n'avait pas la règle qui replie. Un
+// demi-déploiement, le pire cas : la page a l'air neuve et se comporte comme
+// l'ancienne, et on cherche le bug dans le code au lieu du cache.
+//
+// La version vient maintenant du contenu du fichier (services/actifs.js). Ce
+// contrôle existe pour qu'un numéro écrit à la main ne puisse pas revenir par
+// habitude dans un gabarit neuf.
+{
+    const aLaMain = [];
+    for (const rel of listerVues(VUES)) {
+        const src = fs.readFileSync(path.join(VUES, rel), "utf8");
+        for (const m of src.matchAll(/(?:src|href)="(\/(?:css|js)\/[^"]*\?v=\d+)"/g)) {
+            aLaMain.push(`${rel} → ${m[1]}`);
+        }
+    }
+    verifier(aLaMain.length === 0,
+        `version d'actif écrite à la main (elle sera oubliée le jour où le fichier change) :\n     ${aLaMain.join("\n     ")}\n     ⚠️  Utilise <%= v("/css/…") %> — services/actifs.js calcule l'empreinte du fichier.`);
+
+    // Et le helper doit exister et fonctionner, sinon la consigne ci-dessus
+    // renvoie vers un outil cassé.
+    const actifs = require(path.join(RACINE, "services", "actifs.js"));
+    verifier(/\?v=[0-9a-f]{8}$/.test(actifs.v("/css/qg-style.css")),
+        "services/actifs.js ne calcule pas d'empreinte pour une feuille qui existe");
+    verifier(actifs.v("/css/qg-style.css") !== actifs.v("/js/qg.js"),
+        "deux fichiers différents reçoivent la même version — l'empreinte ne dépend pas du contenu");
+}
+
 if (echecs.length) {
     console.error(`❌ gabarits : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
     for (const e of echecs) console.error("   • " + e);

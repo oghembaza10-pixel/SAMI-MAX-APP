@@ -30,6 +30,11 @@ const ejs = require(path.join(RACINE, "node_modules", "ejs"));
 
 const communautes = require(path.join(RACINE, "config", "communautes"));
 const modulesQg = require(path.join(RACINE, "config", "modules-qg"));
+// `v()` vient d'app.locals quand Express rend la page (services/actifs.js :
+// la version d'une feuille est l'empreinte de son contenu). Un test qui rend
+// une vue à la main doit poser les MÊMES locales que l'application, sinon il
+// échoue sur une absence qui n'existe pas en production.
+const V_ACTIFS = require(path.join(RACINE, "services", "actifs.js")).v;
 
 let verifs = 0;
 const echecs = [];
@@ -39,7 +44,7 @@ const VUE = path.join(RACINE, "views", "qg-template.ejs");
 
 function rendre(slug, typeCompte = "marchand") {
     return new Promise((resolve, reject) => {
-        ejs.renderFile(VUE, {
+        ejs.renderFile(VUE, { v: V_ACTIFS,
             workspaceId: "w1", nom: "Ma boutique", metier: "ecommerce", description: "",
             langue: "fr", pays: "CM", devise: "XAF", connecteurs: [], samii: { mode: "auto" },
             logo: "", shop: "", themeVisuel: "og", attente: false, vueAgence: false,
@@ -231,7 +236,7 @@ function marque(html) {
     const VUE_CLIENT = path.join(RACINE, "views", "client-qg.ejs");
     function rendreClient(slug) {
         return new Promise((resolve, reject) => {
-            ejs.renderFile(VUE_CLIENT, {
+            ejs.renderFile(VUE_CLIENT, { v: V_ACTIFS,
                 nom: "Test", codeParrainage: "X", telephone: "", commandes: [],
                 COM: communautes.get(slug), loggedIn: true, userId: "u1",
                 workspaceId: null, shop: null,
@@ -308,7 +313,7 @@ function marque(html) {
     const VUE_SAMII = path.join(RACINE, "views", "samii.ejs");
     function rendreSamii(slug) {
         return new Promise((resolve, reject) => {
-            ejs.renderFile(VUE_SAMII, {
+            ejs.renderFile(VUE_SAMII, { v: V_ACTIFS,
                 workspaceId: "w1", shop: "", estParticulier: false,
                 communaute: communautes.get(slug), typeCompte: "marchand",
                 userId: "u1", loggedIn: true, modulesQg,
@@ -360,7 +365,7 @@ function marque(html) {
             ? { COM: communautes.get(slug) }
             : { communaute: communautes.get(slug) };
         return new Promise((resolve, reject) => {
-            ejs.renderFile(VUE_BARRE, { ...donnees, modulesQg, userId: "u1", typeCompte: "marchand" },
+            ejs.renderFile(VUE_BARRE, { v: V_ACTIFS, ...donnees, modulesQg, userId: "u1", typeCompte: "marchand" },
                 { views: [path.join(RACINE, "views")] },
                 (err, html) => (err ? reject(err) : resolve(html)));
         });
@@ -521,7 +526,7 @@ function marque(html) {
     // Le service doit suffire.
     function rendreSansCommunaute(slug) {
         return new Promise((resolve, reject) => {
-            ejs.renderFile(VUE_SAMII, {
+            ejs.renderFile(VUE_SAMII, { v: V_ACTIFS,
                 workspaceId: "w1", shop: "", estParticulier: false,
                 COM: communautes.get(slug),   // res.locals, pas la route
                 typeCompte: "marchand", userId: "u1", loggedIn: true, modulesQg,

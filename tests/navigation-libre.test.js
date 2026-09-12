@@ -116,6 +116,12 @@ function rendre(extra) {
         autreLangue: "en", lienLangue: (v) => `/langue/${v}`,
         loggedIn: false, nom: "", typeCompte: "client", tarifs: paliers.PALIERS,
         qgs: [], projets: [], workspaceId: "", cloudinary,
+        // `v()` vient d'app.locals quand Express rend la page
+        // (services/actifs.js : la version d'une feuille est l'empreinte de son
+        // contenu). Un test qui rend la vue à la main doit poser les MÊMES
+        // locales que l'application, sinon il échoue sur une absence qui
+        // n'existe pas en production.
+        v: require(path.join(RACINE, "services", "actifs.js")).v,
     }, extra), { filename: f });
 }
 

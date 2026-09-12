@@ -11,7 +11,7 @@
     <%# On hérite du système de design du QG (couleurs, mode clair/sombre)
         plutôt que de redéfinir des couleurs en dur : sans ça, un marchand qui
         travaille en mode lumière basculait sur une page restée noire. %>
-    <link rel="stylesheet" href="/css/qg-style.css?v=8">
+    <link rel="stylesheet" href="<%= v("/css/qg-style.css") %>">
     <style>
         * { box-sizing: border-box; }
         body {

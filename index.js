@@ -217,6 +217,11 @@ app.get("/sitemap.xml", (req, res) => {
 
 app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
+// La version des feuilles et des scripts, calculée depuis leur contenu.
+// Elle était écrite à la main (« ?v=8 ») et recopiée dans sept gabarits :
+// modifier la feuille sans toucher aux sept numéros laissait les navigateurs
+// sur l'ancienne version. Voir services/actifs.js.
+app.locals.v = require("./services/actifs").v;
 // Un gabarit EJS n'a pas de `require` : ce dont les vues ont besoin doit
 // leur être posé ici. La colonne de gauche du QG se construit à partir de
 // cette liste, filtrée par la communauté du membre.

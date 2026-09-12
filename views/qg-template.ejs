@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/qg-style.css?v=8">
+    <link rel="stylesheet" href="<%= v("/css/qg-style.css") %>">
 </head>
 <body data-shop="<%= shop %>" data-workspace-id="<%= workspaceId %>" data-user-id="<%= userId %>" data-theme="<%= typeof themeVisuel !== 'undefined' ? themeVisuel : 'og' %>">
 <% if (typeof vueAgence !== 'undefined' && vueAgence) { %>
@@ -585,7 +585,7 @@
 
     applyLang(currentLang);
 </script>
-<script src="/js/qg.js?v=4"></script>
+<script src="<%= v("/js/qg.js") %>"></script>
 <script>
 document.getElementById("feedback-submit")?.addEventListener("click", async () => {
     const text = document.getElementById("feedback-text").value.trim();

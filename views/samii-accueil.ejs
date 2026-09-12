@@ -587,7 +587,7 @@ window.SAMII_CONNECTE = <%= loggedIn ? "true" : "false" %>;
     assistant de vitrine et un autre dedans qui s'ignorent. %>
 window.SAMII_CLOUDINARY = <%- JSON.stringify({ nuage: cloudinary.CLOUD_NAME, preset: cloudinary.UPLOAD_PRESET }) %>;
 </script>
-<script src="/js/samii-accueil.js?v=1"></script>
+<script src="<%= v("/js/samii-accueil.js") %>"></script>
 <script src="/js/pwa-register.js" defer></script>
 </body>
 </html>

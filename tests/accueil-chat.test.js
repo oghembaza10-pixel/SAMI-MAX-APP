@@ -69,6 +69,12 @@ function locales(lang, extra = {}) {
         // de navigation. Par défaut : un visiteur anonyme, sans QG ni projet.
         qgs: [], projets: [], workspaceId: "",
         cloudinary: require(path.join(RACINE, "config", "cloudinary.js")),
+        // `v()` vient d'app.locals quand Express rend la page
+        // (services/actifs.js : la version d'une feuille est l'empreinte de son
+        // contenu). Un test qui rend la vue à la main doit poser les MÊMES
+        // locales que l'application, sinon il échoue sur une absence qui
+        // n'existe pas en production.
+        v: require(path.join(RACINE, "services", "actifs.js")).v,
     }, extra);
 }
 
