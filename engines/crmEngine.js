@@ -111,7 +111,7 @@ class CRMEngine {
 
             if (action === "confirm") {
                 await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [orderId]);
-                if (shop) confirmationsQuota.enregistrerSiDepassement(shop).catch(() => {});
+                if (shop) confirmationsQuota.enregistrerSiDepassement(shop, orderId).catch(() => {});
                 await telegram.send(chatId, `✅ *Commande #${orderId} confirmée !*\nSAMII a mis à jour le statut.`);
             }
 

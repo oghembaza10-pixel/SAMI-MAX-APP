@@ -13,13 +13,29 @@
 // avec un forfait : ce qui est payé reste acquis, donc recharger n'est
 // jamais un pari.
 //
-// ── LES DEUX SEULS CHIFFRES QUI COMPTENT ──────────────────────────────────
+// ── CE QUE LE SOLDE PAIE : LE TRAVAIL DE SAMII, PAS SES PHRASES ───────────
 //
-// Un message coûte 1 centime de dollar. La recharge minimale est de 2 $,
-// soit 200 messages : assez pour que ça vaille le geste, assez peu pour
-// qu'on le fasse sans réfléchir.
+// Le solde ne sert pas qu'à parler. Il paie ce que SAMII FAIT : confirmer une
+// commande, prendre un rendez-vous, envoyer une facture. C'est là qu'est la
+// valeur pour un marchand — une conversation agréable ne remplit pas un
+// carnet de commandes.
 //
-// ── LE DINAR SE COMPTE AU MARCHÉ PARALLÈLE, ET C'EST OBLIGATOIRE ──────────
+// Donc deux prix, et un principe pour les départager :
+//
+//   CE QUI LIT est compris dans le message. Consulter son agenda, relire ses
+//   commandes, demander le résumé de la journée : SAMII regarde des données
+//   qui appartiennent déjà à la personne. Faire payer un supplément pour lire
+//   ses propres affaires serait un péage sur sa propre porte.
+//
+//   CE QUI CRÉE OU ENVOIE se paie. Une commande enregistrée, un rendez-vous
+//   posé, une facture partie : quelque chose existe maintenant qui n'existait
+//   pas avant, chez le marchand comme chez son client.
+//
+// Un message coûte 1 centime, un acte 5. La recharge minimale est de 2 $ :
+// assez pour que ça vaille le geste, assez peu pour qu'on le fasse sans
+// réfléchir.
+//
+// ── LE TAUX DU DINAR ──────────────────────────────────────────────────────
 //
 // Au taux officiel, 2 $ font environ 270 DZD. Mais personne ne peut acheter
 // des dollars à ce taux : pour se procurer les 2 $ qu'on doit ensuite à
@@ -47,6 +63,90 @@ const DEVISE_COMPTE = "USD";
 
 // Un message à SAMII. Le même prix pour tout le monde, partout.
 const PRIX_MESSAGE_USD = 0.01;
+
+// Un acte : quelque chose qui existe maintenant et n'existait pas avant.
+const PRIX_ACTE_USD = 0.05;
+
+// ── LE TARIF DES ACTES ────────────────────────────────────────────────────
+//
+// La liste est explicite des DEUX côtés. Ce qui se paie est nommé ; ce qui
+// est gratuit est nommé AUSSI, avec sa raison. Sans la seconde moitié, le
+// premier outil ajouté demain tomberait du côté gratuit par simple oubli, et
+// personne ne saurait dire si c'était voulu.
+//
+// Les noms sont ceux des outils de brain/planner.js. Un test vérifie que les
+// deux listes couvrent exactement les outils existants : un outil ajouté sans
+// décision de prix fait échouer la suite, et c'est le but.
+const ACTES = {
+    passer_commande:        { prix: PRIX_ACTE_USD, libelle: "commande enregistrée" },
+    prendre_rendez_vous:    { prix: PRIX_ACTE_USD, libelle: "rendez-vous pris" },
+    envoyer_facture:        { prix: PRIX_ACTE_USD, libelle: "facture envoyée" },
+    envoyer_email:          { prix: PRIX_ACTE_USD, libelle: "e-mail envoyé" },
+    creer_evenement_agenda: { prix: PRIX_ACTE_USD, libelle: "événement d'agenda" },
+    creer_rapport_sheets:   { prix: PRIX_ACTE_USD, libelle: "rapport créé" },
+    rechercher_prospects:   { prix: PRIX_ACTE_USD, libelle: "recherche de prospects" },
+};
+
+const GRATUITS = {
+    // ── LE PIÈGE ÉVITÉ DE JUSTESSE : NE PAS FACTURER DEUX FOIS ───────────
+    //
+    // Confirmer une commande EST payant — mais pas ici. Ça l'était déjà
+    // avant ce fichier : services/confirmationsQuota.js accorde un quota
+    // journalier gratuit puis compte chaque confirmation au-delà, au prix
+    // qu'il fixe (PRIX_DEPASSEMENT_USD). Ajouter un second prix ici aurait
+    // facturé la même confirmation deux fois, par deux systèmes qui
+    // s'ignorent — et personne ne l'aurait vu avant une réclamation.
+    //
+    // Ce que la recharge change pour les confirmations n'est donc pas le
+    // prix : c'est le MOYEN DE PAIEMENT. Au lieu d'une ardoise qu'il faut
+    // ensuite régulariser par un lien à part, la confirmation est réglée
+    // tout de suite sur le solde. L'ardoise ne sert plus que de filet quand
+    // le solde est vide.
+    confirmer_commande: "déjà facturée par services/confirmationsQuota.js — ne jamais compter deux fois",
+    // Annuler, c'est déjà une mauvaise nouvelle. Faire payer quelqu'un pour
+    // encaisser une annulation, c'est facturer la perte en plus de la subir.
+    annuler_commande: "une annulation ne se facture pas",
+    // L'étape AVANT le rendez-vous. La facturer ferait payer deux fois une
+    // seule prise de rendez-vous — une fois les créneaux, une fois le rendez-
+    // vous — et pénaliserait le client qui hésite entre deux horaires.
+    proposer_creneaux_rdv: "c'est l'étape avant le rendez-vous, qui est déjà payant",
+    // Lire ses propres affaires. Voir l'en-tête de ce fichier.
+    resume_journee: "lire ses propres données",
+    consulter_gmail: "lire ses propres données",
+    consulter_agenda: "lire ses propres données",
+    lister_fichiers_drive: "lire ses propres données",
+};
+
+// Ce que coûte un acte. Zéro pour tout ce qui n'est pas au tarif — y compris
+// un nom inconnu : on n'invente jamais un prix, on ne facture pas ce qu'on ne
+// sait pas nommer.
+function prixActe(nom) {
+    return ACTES[nom]?.prix || 0;
+}
+
+// ── LA FACTURE D'UN TOUR DE CONVERSATION ──────────────────────────────────
+//
+// Un message, plus les actes RÉUSSIS. Un acte qui a échoué ne se facture
+// pas : c'est la même règle que pour le message sans réponse — on ne fait
+// jamais payer une panne qui est chez nous.
+//
+// `avecMessage` à false pour les canaux où le marchand paie les actes de
+// SAMII sans payer chaque phrase échangée avec son client (Telegram,
+// WhatsApp) : sinon une boutique qui marche bien serait punie par le volume
+// de sa propre clientèle.
+function factureDuTour(actes = [], { avecMessage = true } = {}) {
+    const lignes = [];
+    if (avecMessage) lignes.push({ quoi: "message", montant: PRIX_MESSAGE_USD });
+    for (const acte of actes) {
+        const nom = typeof acte === "string" ? acte : acte?.nom;
+        const reussi = typeof acte === "string" ? true : acte?.reussi !== false;
+        if (!reussi) continue;
+        const prix = prixActe(nom);
+        if (prix > 0) lignes.push({ quoi: nom, montant: prix, libelle: ACTES[nom].libelle });
+    }
+    const montant = Math.round(lignes.reduce((s, l) => s + l.montant, 0) * 100) / 100;
+    return { montant, lignes };
+}
 
 // En dessous, le geste ne vaut pas les frais de transaction.
 const MINIMUM_RECHARGE_USD = 2;
@@ -86,6 +186,11 @@ function verifierMontant(montantUSD) {
 module.exports = {
     DEVISE_COMPTE,
     PRIX_MESSAGE_USD,
+    PRIX_ACTE_USD,
+    ACTES,
+    GRATUITS,
+    prixActe,
+    factureDuTour,
     MINIMUM_RECHARGE_USD,
     MONTANTS,
     messagesPour,

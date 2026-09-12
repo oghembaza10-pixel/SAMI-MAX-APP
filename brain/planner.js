@@ -221,7 +221,16 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         }
     }
 
-    async ask(message, context = {}, history = []) {
+    // `journal` est un tableau FACULTATIF où l'on note ce que SAMII a
+    // réellement exécuté pendant ce tour, et si ça a réussi.
+    //
+    // Pourquoi un paramètre en plus plutôt qu'un retour enrichi : huit
+    // appelants (Telegram, WhatsApp, Meta, discussions, communauté, Academy,
+    // admin) attendent une CHAÎNE de cette méthode. Changer ce qu'elle renvoie
+    // les aurait tous cassés d'un coup, pour un besoin qui ne concerne que la
+    // facturation. Le tableau se remplit sur place ; qui ne le passe pas ne
+    // voit aucune différence.
+    async ask(message, context = {}, history = [], journal = null) {
         try {
             // Les outils disponibles (confirmer/annuler une commande, prendre
             // RDV, passer commande) concernent exclusivement une conversation
@@ -236,6 +245,14 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
             if (result.type === "function_call") {
                 console.log(`⚙️ SAMII exécute : ${result.name}`, result.args);
                 const functionResult = await this.executeFunction(result.name, result.args, context);
+
+                // On note l'acte ET son issue. `success === false` est le seul
+                // échec franc que les moteurs renvoient ; tout le reste (un
+                // objet de données, undefined) est une réussite. Un acte raté
+                // ne sera pas facturé — même règle qu'un message sans réponse.
+                if (Array.isArray(journal)) {
+                    journal.push({ nom: result.name, reussi: functionResult?.success !== false });
+                }
 
                 const finalReply = await gemini.chatWithFunctionResult({
                     message,
@@ -262,10 +279,15 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
 
     async build(objective = {}, context = {}, history = []) {
         if (objective.goal) {
-            const reply = await this.ask(objective.goal, context, history);
-            return { success: true, reply };
+            // `actes` dit à l'appelant ce que SAMII a FAIT, pas seulement ce
+            // qu'il a répondu. Sans ça, une commande enregistrée et un
+            // « bonjour » coûtaient exactement pareil : le seul renseignement
+            // qui distingue les deux était jeté ici même.
+            const actes = [];
+            const reply = await this.ask(objective.goal, context, history, actes);
+            return { success: true, reply, actes };
         }
-        return { success: false, reply: "Objectif manquant." };
+        return { success: false, reply: "Objectif manquant.", actes: [] };
     }
 }
 

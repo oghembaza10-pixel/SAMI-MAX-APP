@@ -28,6 +28,7 @@
 const CREDITS = require("../config/credits");
 const portefeuille = require("./portefeuille");
 const devises = require("./devises");
+const db = require("./db");
 
 // L'identifiant de compte dans le registre. Préfixé, pour la même raison que
 // « anon: » dans samii_conversations : un identifiant d'utilisateur ne doit
@@ -76,25 +77,65 @@ async function peutPayer(userId) {
 // `ref` rend l'opération rejouable sans risque — deux envois du même message
 // ne le facturent qu'une fois.
 async function debiterMessage(userId, { ref = null, motif = "message SAMII" } = {}) {
+    return debiterTour(userId, { actes: [], ref, motif });
+}
+
+// ── LE TOUR COMPLET : LE MESSAGE ET CE QUE SAMII A FAIT ──────────────────
+//
+// Le solde ne paie pas que des phrases. Il paie une commande confirmée, un
+// rendez-vous posé, une facture partie — c'est là qu'est la valeur pour un
+// marchand. Un tour où SAMII enregistre une commande coûte donc plus qu'un
+// tour où il dit bonjour, et c'est la seule façon que ce soit juste dans les
+// deux sens.
+//
+// UN SEUL MOUVEMENT POUR TOUT LE TOUR. On additionne d'abord, on écrit
+// ensuite. Débiter le message puis chaque acte séparément ouvrirait une
+// fenêtre où le message est payé et l'acte non — et il faudrait alors
+// décider quoi rembourser. Une somme, une écriture, une référence.
+//
+// `avecMessage` à false sur les canaux clients (Telegram, WhatsApp) : le
+// marchand y paie ce que SAMII FAIT pour lui, pas chaque phrase que ses
+// clients échangent. Sinon une boutique qui marche bien serait punie par le
+// volume de sa propre clientèle.
+async function debiterTour(userId, { actes = [], ref = null, motif = "", avecMessage = true } = {}) {
     const compte = compteDe(userId);
     if (!compte) return { ok: false, raison: "aucun compte" };
+
+    const facture = CREDITS.factureDuTour(actes, { avecMessage });
+    // Rien à facturer : un tour sans message facturable et sans acte payant.
+    // Ce n'est pas un échec, c'est simplement gratuit.
+    if (facture.montant <= 0) return { ok: true, gratuit: true, montant: 0, lignes: [] };
+
+    // Le motif dit CE QUI a été payé, pas seulement combien. C'est ce qu'on
+    // relira le jour où quelqu'un demandera pourquoi son solde a baissé de
+    // 6 centimes d'un coup.
+    const detaille = facture.lignes
+        .map((l) => l.libelle || l.quoi)
+        .join(" + ");
+
     try {
         const r = await portefeuille.consommer({
             compte,
-            montant: CREDITS.PRIX_MESSAGE_USD,
+            montant: facture.montant,
             devise: CREDITS.DEVISE_COMPTE,
-            motif,
+            motif: motif ? `${motif} — ${detaille}` : detaille,
             transactionRef: ref,
         });
-        if (r.dejaCompte) return { ok: true, dejaCompte: true };
-        return { ok: true, solde: r.solde, messages: CREDITS.messagesPour(r.solde) };
+        if (r.dejaCompte) return { ok: true, dejaCompte: true, montant: facture.montant, lignes: facture.lignes };
+        return {
+            ok: true,
+            montant: facture.montant,
+            lignes: facture.lignes,
+            solde: r.solde,
+            messages: CREDITS.messagesPour(r.solde),
+        };
     } catch (err) {
         // SOLDE_INSUFFISANT est un cas normal, pas une panne : la personne a
         // simplement épuisé sa recharge. On le distingue pour que la page
         // propose de recharger au lieu d'afficher une erreur.
         const insuffisant = /solde|insuffis/i.test(err.message || "");
-        if (!insuffisant) console.error("❌ creditsSamii.debiterMessage :", err.message);
-        return { ok: false, raison: insuffisant ? "solde épuisé" : err.message };
+        if (!insuffisant) console.error("❌ creditsSamii.debiterTour :", err.message);
+        return { ok: false, raison: insuffisant ? "solde épuisé" : err.message, montant: facture.montant };
     }
 }
 
@@ -112,4 +153,96 @@ async function crediter(userId, montantUSD, { rail = "chargily", detail = "" } =
     return { ok: true, solde: r.solde, messages: CREDITS.messagesPour(r.solde) };
 }
 
-module.exports = { compteDe, etat, etatAffiche, peutPayer, debiterMessage, crediter };
+// ── QUI PAIE POUR UN QG ──────────────────────────────────────────────────
+//
+// Sur Telegram, WhatsApp ou Messenger, c'est le CLIENT du marchand qui parle
+// à SAMII. Ce client n'a pas de compte chez nous et n'a rien à payer : c'est
+// le marchand qui reçoit la commande, donc c'est lui qui règle l'acte.
+//
+// Le registre indexe les soldes par utilisateur, et un QG ne connaît que
+// l'e-mail de son propriétaire. La jointure est donc obligatoire — et elle
+// est faite ICI, une seule fois, pour qu'aucun canal ne la réinvente à sa
+// façon.
+async function proprietaireDuWorkspace(workspaceId) {
+    if (!workspaceId) return null;
+    try {
+        const rows = await db.query(
+            `SELECT u.id
+               FROM workspaces w
+               JOIN utilisateurs u ON u.email = w.owner_email
+              WHERE w.id = $1
+              LIMIT 1`,
+            [String(workspaceId)],
+        );
+        return rows[0]?.id || null;
+    } catch (err) {
+        console.error("❌ creditsSamii.proprietaireDuWorkspace :", err.message);
+        return null;
+    }
+}
+
+// ── FACTURER LES ACTES D'UN CANAL CLIENT ─────────────────────────────────
+//
+// ON NE BLOQUE JAMAIS LA CONVERSATION D'UN CLIENT. L'acte est déjà accompli
+// quand on arrive ici : la commande est enregistrée, le rendez-vous est
+// posé. Si le marchand n'a plus de solde, on ne défait rien et on ne coupe
+// personne — un client laissé sans réponse parce que son marchand est à sec,
+// c'est une vente perdue pour lui et un service qui a l'air cassé pour tout
+// le monde.
+//
+// On note simplement que l'acte n'a pas pu être payé. Une perte visible vaut
+// mieux qu'un client perdu.
+// Prélever une somme précise sur le solde d'un QG, pour un acte dont le prix
+// est fixé ailleurs — aujourd'hui la confirmation de commande, dont le tarif
+// vit dans services/confirmationsQuota.js depuis bien avant la recharge.
+//
+// On ne recopie surtout pas ce prix ici : deux copies d'un prix finissent
+// toujours par diverger, et c'est l'utilisateur qui découvre laquelle
+// s'applique. L'appelant apporte son montant.
+async function debiterMontantWorkspace(workspaceId, montantUSD, { ref = null, motif = "" } = {}) {
+    const n = Number(montantUSD);
+    if (!(n > 0)) return { ok: false, raison: "montant invalide" };
+
+    const userId = await proprietaireDuWorkspace(workspaceId);
+    if (!userId) return { ok: false, raison: "propriétaire introuvable" };
+
+    const compte = compteDe(userId);
+    try {
+        const r = await portefeuille.consommer({
+            compte, montant: n, devise: CREDITS.DEVISE_COMPTE,
+            motif, transactionRef: ref,
+        });
+        if (r.dejaCompte) return { ok: true, dejaCompte: true };
+        return { ok: true, solde: r.solde, messages: CREDITS.messagesPour(r.solde) };
+    } catch (err) {
+        // Solde vide : ce n'est pas une panne. L'appelant reprend son filet
+        // habituel (l'ardoise) — et surtout, il ne bloque rien.
+        const insuffisant = /solde|insuffis/i.test(err.message || "");
+        if (!insuffisant) console.error("❌ creditsSamii.debiterMontantWorkspace :", err.message);
+        return { ok: false, raison: insuffisant ? "solde épuisé" : err.message };
+    }
+}
+
+async function facturerActesWorkspace(workspaceId, actes, { ref = null, motif = "" } = {}) {
+    if (!Array.isArray(actes) || !actes.length) return { ok: true, gratuit: true };
+    const facture = CREDITS.factureDuTour(actes, { avecMessage: false });
+    if (facture.montant <= 0) return { ok: true, gratuit: true };
+
+    const userId = await proprietaireDuWorkspace(workspaceId);
+    if (!userId) return { ok: false, raison: "propriétaire introuvable", montant: facture.montant };
+
+    const r = await debiterTour(userId, { actes, ref, motif, avecMessage: false });
+    if (!r.ok) {
+        console.warn(
+            `⚠️ Acte non facturé (${facture.montant} $) pour le QG ${workspaceId} : ${r.raison}. ` +
+            "L'acte reste accompli — on ne coupe pas la conversation d'un client.",
+        );
+    }
+    return r;
+}
+
+module.exports = {
+    compteDe, etat, etatAffiche, peutPayer,
+    debiterMessage, debiterTour, crediter,
+    proprietaireDuWorkspace, facturerActesWorkspace, debiterMontantWorkspace,
+};

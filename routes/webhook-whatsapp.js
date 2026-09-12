@@ -50,7 +50,7 @@ async function traiterReponseConfirmation(sender, workspaceId, text) {
 
     if (REPONSES_OUI.includes(normalise)) {
         await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [orderId]);
-        confirmationsQuota.enregistrerSiDepassement(workspaceId).catch(() => {});
+        confirmationsQuota.enregistrerSiDepassement(workspaceId, orderId).catch(() => {});
         evenements.publier(workspaceId, "commande.confirmee", { id: orderId, source: "whatsapp" });
         await reply(sender, workspaceId, `✅ Commande ${orderId} confirmée ! Merci 🙏`);
     } else {

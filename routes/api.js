@@ -206,13 +206,23 @@ router.post("/chat", requireAuth, async (req, res) => {
         //
         // `messageId` sert de référence : le même message rejoué — navigateur
         // qui réessaie, double clic — ne sera pas débité deux fois.
+        //
+        // ── ET ON FACTURE CE QUE SAMII A FAIT, PAS SEULEMENT CE QU'IL A DIT ─
+        //
+        // `result.actes` dit si SAMII a enregistré une commande, posé un
+        // rendez-vous, envoyé une facture. Sans ça, une commande coûtait
+        // exactement le prix d'un « bonjour » — alors que c'est précisément
+        // ce pour quoi un marchand recharge. Seuls les actes RÉUSSIS sont
+        // comptés, et ce qui ne fait que LIRE ses propres données reste
+        // compris dans le message (voir config/credits.js).
         let credits = null;
         if (surCredits && result.reply) {
-            const debit = await creditsSamii.debiterMessage(userId, {
+            const debit = await creditsSamii.debiterTour(userId, {
+                actes: result.actes || [],
                 ref: messageId ? `msg:${messageId}` : null,
-                motif: "message SAMII (quota gratuit épuisé)",
+                motif: "SAMII (quota gratuit épuisé)",
             });
-            if (debit.ok) credits = { messages: debit.messages };
+            if (debit.ok) credits = { messages: debit.messages, montant: debit.montant, lignes: debit.lignes };
         }
 
         res.json({ ...result, messageId, surCredits, credits });
@@ -825,7 +835,7 @@ router.post("/commandes/:id/confirmer", requireAuth, async (req, res) => {
         );
         if (checkCmd.length) {
             await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1`, [req.params.id]);
-            confirmationsQuota.enregistrerSiDepassement(req.session.workspaceId).catch(() => {});
+            confirmationsQuota.enregistrerSiDepassement(req.session.workspaceId, req.params.id).catch(() => {});
             evenements.publier(req.session.workspaceId, "commande.confirmee", { id: req.params.id, source: "qg" }, { silencieux: true });
             return res.json({ success: true });
         }

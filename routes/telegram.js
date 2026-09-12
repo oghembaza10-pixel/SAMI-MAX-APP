@@ -10,6 +10,7 @@ const memory       = require("../brain/memory");
 const db           = require("../services/db");
 const evenements = require("../services/evenements");
 const confirmationsQuota = require("../services/confirmationsQuota");
+const creditsSamii = require("../services/creditsSamii");
 const telegramCommunity = require("../services/telegramCommunity");
 const transcription = require("../services/transcription");
 const produitsService = require("../services/produitsService");
@@ -225,7 +226,7 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
             if (data.startsWith("confirm_")) {
                 const orderId = data.replace("confirm_", "");
                 const rows = await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1 RETURNING workspace_id`, [orderId]);
-                if (rows[0]?.workspace_id) confirmationsQuota.enregistrerSiDepassement(rows[0].workspace_id).catch(() => {});
+                if (rows[0]?.workspace_id) confirmationsQuota.enregistrerSiDepassement(rows[0].workspace_id, orderId).catch(() => {});
                 await orchestrator.process({ type: "order.confirmed", shop: "", payload: { orderId, chatId } });
                 evenements.publier(rows[0]?.workspace_id, "commande.confirmee", { id: orderId, source: "telegram" });
                 await reply(chatId, tr(lang, "commandeConfirmee", orderId), base);
@@ -345,11 +346,29 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
         const conversation = session.history || [];
 
         await orchestrator.process({ type: "telegram.message", shop: "", payload: { chatId, text, message } });
+        // `actes` recueille ce que SAMII EXÉCUTE pendant ce tour : une
+        // commande enregistrée, un rendez-vous posé. Le client ne paie rien —
+        // il n'a même pas de compte ici. C'est le marchand qui reçoit la
+        // commande, donc c'est lui qui règle l'acte, et lui seul.
+        const actes = [];
         const geminiReply = await planner.ask(text, {
             source: "telegram", chatId, name, lang, audience: "client",
             workspaceId, metier, produits,
-        }, conversation);
+        }, conversation, actes);
         await reply(chatId, geminiReply, base);
+
+        // Après la réponse, jamais avant, et sans jamais bloquer : la
+        // conversation d'un client ne s'arrête pas parce que son marchand
+        // n'a plus de solde. Voir creditsSamii.facturerActesWorkspace.
+        await creditsSamii.facturerActesWorkspace(workspaceId, actes, {
+            // Le QG entre dans la référence. Un numéro de discussion plus un
+            // numéro de message ne distinguent RIEN entre deux marchands :
+            // deux bots produisent les mêmes. Sans le QG ici, deux actes
+            // différents se ressemblent — et l'un des deux passe pour un
+            // rejeu de l'autre.
+            ref: `tg:${workspaceId || "-"}:${chatId}:${message?.message_id || Date.now()}`,
+            motif: "SAMII sur Telegram",
+        });
 
         const nextHistory = [...conversation, { role: "user", message: text }, { role: "model", message: geminiReply }].slice(-60);
         await memory.set(memKey(chatId), { ...session, lang, history: nextHistory });

@@ -202,10 +202,30 @@ async function consommer({ compte, montant, devise = "USD", motif = "", transact
         // Idempotence quand un identifiant est fourni : un même message
         // rejoué — navigateur qui réessaie, webhook qui repasse — ne doit
         // pas être facturé deux fois.
+        //
+        // ── ET L'IDENTIFIANT APPARTIENT À UN COMPTE ─────────────────────
+        //
+        // Cette recherche était GLOBALE : elle ignorait le compte. Mesuré
+        // sur une vraie base — un marchand a payé « tg:1:42 », puis un
+        // AUTRE marchand n'a rien payé du tout pour son propre acte, parce
+        // qu'une ligne portant cette référence existait déjà quelque part
+        // dans la table. Silencieusement : la fonction renvoie « déjà
+        // compté », ce qui est un succès.
+        //
+        // Ça ne se voyait pas tant que les références étaient globalement
+        // uniques (un identifiant de message en base). Une référence de
+        // canal client — numéro de discussion Telegram plus numéro de
+        // message — ne l'est pas : deux bots de deux marchands produisent
+        // les mêmes numéros. Un travail rendu, jamais facturé, et personne
+        // pour s'en apercevoir.
+        //
+        // Une référence est un fait CHEZ QUELQU'UN. On la cherche donc chez
+        // lui.
         if (transactionRef) {
             const deja = await q(
-                `SELECT 1 FROM portefeuille_mouvements WHERE transaction_ref = $1 AND type = 'consommation' LIMIT 1`,
-                [transactionRef],
+                `SELECT 1 FROM portefeuille_mouvements
+                  WHERE transaction_ref = $1 AND compte = $2 AND type = 'consommation' LIMIT 1`,
+                [transactionRef, compte],
             );
             if (deja.length) return { operation: null, dejaCompte: true };
         }

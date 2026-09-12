@@ -38,7 +38,7 @@ async function compterConfirmationsJour(workspaceId) {
 // Appelé juste après avoir posé confirme_le sur une commande (routes/telegram.js,
 // routes/api.js, engines/commerceEngine.js, engines/crmEngine.js) — si ça fait
 // dépasser le seuil du jour, incrémente l'ardoise du mois. Jamais de blocage.
-async function enregistrerSiDepassement(workspaceId) {
+async function enregistrerSiDepassement(workspaceId, ref = null) {
     if (!workspaceId) return;
     try {
         const palier = await getPalierWorkspace(workspaceId);
@@ -46,6 +46,39 @@ async function enregistrerSiDepassement(workspaceId) {
         const total = QUOTA_PAR_PALIER[palier] ?? QUOTA_PAR_PALIER.free;
         const utilisesAujourdhui = await compterConfirmationsJour(workspaceId);
         if (utilisesAujourdhui <= total) return;
+
+        // ── LA RECHARGE PAIE D'ABORD ────────────────────────────────────
+        //
+        // Avant, une confirmation au-delà du quota ne faisait qu'une chose :
+        // grossir une ardoise. Sur le palier gratuit, cette ardoise n'a
+        // aucun cycle de renouvellement auquel s'accrocher — il faut
+        // demander un lien de régularisation et le payer à part. Autant
+        // dire que personne ne le fait, et que le travail est rendu sans
+        // être payé.
+        //
+        // Maintenant : si le marchand a un solde, la confirmation est réglée
+        // tout de suite dessus, au MÊME prix qu'à l'ardoise. Le solde est
+        // déjà rechargé, le geste est déjà fait, il n'y a plus rien à
+        // relancer.
+        //
+        // Le prix ne change pas selon qui paie. Une même confirmation ne
+        // peut pas coûter deux tarifs différents selon le rail — ce serait
+        // impossible à expliquer à quelqu'un qui compare.
+        //
+        // `ref` rend l'opération rejouable sans risque : une confirmation
+        // rejouée (Telegram qui répète une livraison) ne se facture qu'une
+        // fois. Sans `ref`, on ne peut pas garantir ça — alors on ne prend
+        // pas le risque de prélever, et l'ardoise reprend son rôle.
+        if (ref) {
+            const creditsSamii = require("./creditsSamii");
+            const paye = await creditsSamii.debiterMontantWorkspace(workspaceId, PRIX_DEPASSEMENT_USD, {
+                ref: `confirm:${ref}`,
+                motif: "confirmation de commande au-delà du quota",
+            });
+            // Payé sur le solde : l'ardoise ne bouge pas. C'est tout l'objet
+            // du changement — on ne peut pas prélever ET inscrire la dette.
+            if (paye.ok) return;
+        }
 
         await db.query(
             `UPDATE workspaces SET

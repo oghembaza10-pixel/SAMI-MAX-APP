@@ -223,7 +223,7 @@ const CONFIG = require(path.join(RACINE, "config.js"));
 
         // Le débit a lieu APRÈS la réponse, jamais avant.
         const api = fs.readFileSync(path.join(RACINE, "routes", "api.js"), "utf8");
-        const iDebit = api.indexOf("debiterMessage");
+        const iDebit = api.indexOf("creditsSamii.debiterTour");
         const iReponse = api.indexOf("const result = await planner.build");
         verifier(iDebit > iReponse && iReponse !== -1,
             "le message est débité AVANT d'avoir une réponse — une panne de l'IA serait facturée");
@@ -325,6 +325,176 @@ const CONFIG = require(path.join(RACINE, "config.js"));
         // ferait douter du chiffre au moment où il faut y croire.
         verifier(/m\.local\.devise !==/.test(vue),
             "la vue répète la monnaie locale même quand c'est la monnaie de paiement");
+    }
+
+    // ── 9. LE SOLDE PAIE LE TRAVAIL, PAS SEULEMENT LES PHRASES ───────────
+    //
+    // « La recharge, c'est pour les messages ET pour les confirmations de
+    // commande, prise de RDV, etc. Ça ne sert pas qu'au message. »
+    //
+    // Trois choses peuvent casser ici, et deux coûtent de l'argent réel.
+    {
+        const planner = fs.readFileSync(path.join(RACINE, "brain", "planner.js"), "utf8");
+
+        // (a) AUCUN OUTIL SANS DÉCISION DE PRIX. Le vrai risque n'est pas le
+        // tarif d'aujourd'hui : c'est l'outil ajouté dans six mois, qui
+        // tombera du côté gratuit par simple oubli. On relit donc la liste
+        // réelle des outils et on exige que chacun soit classé.
+        const outils = [...planner.matchAll(/case "([a-z_]+)":/g)].map((m) => m[1]);
+        verifier(outils.length >= 10,
+            `on ne lit que ${outils.length} outils dans planner.js — la liste a changé de forme, ce test ne mesure plus rien`);
+        for (const outil of outils) {
+            const classe = (outil in CREDITS.ACTES) || (outil in CREDITS.GRATUITS);
+            verifier(classe,
+                `l'outil « ${outil} » n'a pas de prix décidé : ajoute-le à ACTES ou à GRATUITS dans config/credits.js`);
+        }
+
+        // (b) NE JAMAIS FACTURER DEUX FOIS LA MÊME CONFIRMATION. Confirmer
+        // une commande était DÉJÀ payant avant la recharge
+        // (services/confirmationsQuota.js). Le remettre au tarif des actes
+        // ferait payer deux fois, par deux systèmes qui s'ignorent — et
+        // personne ne le verrait avant une réclamation.
+        verifier(!("confirmer_commande" in CREDITS.ACTES),
+            "confirmer_commande est facturé par le solde ALORS QU'IL L'EST DÉJÀ par " +
+            "confirmationsQuota.js : la même confirmation est prélevée deux fois");
+        verifier("confirmer_commande" in CREDITS.GRATUITS,
+            "confirmer_commande n'est plus classé : quelqu'un doit trancher, et la réponse " +
+            "est qu'il est facturé ailleurs");
+
+        // (c) LE PRIX D'UNE CONFIRMATION NE SE RECOPIE PAS. S'il existait en
+        // deux exemplaires, ils divergeraient, et le prix dépendrait du rail
+        // qui encaisse.
+        const credits = fs.readFileSync(path.join(RACINE, "config", "credits.js"), "utf8");
+        const quota = require(path.join(RACINE, "services", "confirmationsQuota.js"));
+        verifier(!new RegExp(String(quota.PRIX_DEPASSEMENT_USD).replace(".", "\\.")).test(credits)
+                 || quota.PRIX_DEPASSEMENT_USD === CREDITS.PRIX_ACTE_USD,
+            `le prix d'une confirmation (${quota.PRIX_DEPASSEMENT_USD} $) est recopié dans config/credits.js : ` +
+            "deux copies d'un prix finissent toujours par diverger");
+
+        // (d) LA FACTURE D'UN TOUR. Ce que ça coûte vraiment, calculé.
+        const seul = CREDITS.factureDuTour([]);
+        verifier(seul.montant === CREDITS.PRIX_MESSAGE_USD,
+            `un tour sans acte coûte ${seul.montant} $ au lieu du prix d'un message`);
+
+        const avecActe = CREDITS.factureDuTour([{ nom: "prendre_rendez_vous", reussi: true }]);
+        verifier(avecActe.montant > seul.montant,
+            "un rendez-vous pris coûte le même prix qu'un simple bonjour — " +
+            "c'est pourtant la seule des deux choses pour laquelle on recharge");
+
+        // Un acte RATÉ ne se facture pas : même règle que le message sans
+        // réponse. On ne fait jamais payer une panne qui est chez nous.
+        const rate = CREDITS.factureDuTour([{ nom: "prendre_rendez_vous", reussi: false }]);
+        verifier(rate.montant === CREDITS.PRIX_MESSAGE_USD,
+            "un rendez-vous qui a ÉCHOUÉ est quand même facturé");
+
+        // Lire ses propres données reste compris dans le message.
+        const lecture = CREDITS.factureDuTour([{ nom: "consulter_agenda", reussi: true }]);
+        verifier(lecture.montant === CREDITS.PRIX_MESSAGE_USD,
+            "consulter son propre agenda est facturé en supplément — " +
+            "c'est un péage sur sa propre porte");
+
+        // Un nom inconnu ne coûte rien : on n'invente pas un prix.
+        const inconnu = CREDITS.factureDuTour([{ nom: "outil_qui_nexiste_pas", reussi: true }]);
+        verifier(inconnu.montant === CREDITS.PRIX_MESSAGE_USD,
+            "un acte inconnu se voit attribuer un prix inventé");
+
+        // (e) LE PLANNER DOIT DIRE CE QU'IL A FAIT. Sans ça, rien de tout ce
+        // qui précède n'est atteignable : routes/api.js ne sait pas
+        // distinguer une commande enregistrée d'un bonjour.
+        verifier(/journal\.push\(/.test(planner) && /return \{ success: true, reply, actes \}/.test(planner),
+            "brain/planner.js ne rapporte plus les actes exécutés : la facturation " +
+            "retombe au prix d'un message quoi que SAMII fasse");
+
+        // Et il doit rapporter l'ÉCHEC honnêtement. Un `reussi: true` écrit
+        // en dur passerait tous les tests de tarif ci-dessus — ils calculent
+        // à partir de ce que le planner déclare — tout en facturant chaque
+        // acte raté. La mesure porte donc sur l'origine de la valeur.
+        verifier(/reussi:\s*functionResult\?\.success !== false/.test(planner),
+            "brain/planner.js déclare les actes réussis sans regarder le résultat : " +
+            "un rendez-vous qui a échoué serait facturé comme un rendez-vous pris");
+
+        // Et la signature de `ask` doit rester compatible : huit appelants
+        // attendent une CHAÎNE. Les casser pour facturer serait un très
+        // mauvais échange.
+        verifier(/async ask\(message, context = \{\}, history = \[\], journal = null\)/.test(planner),
+            "la signature de planner.ask a changé de forme — vérifie que Telegram, " +
+            "WhatsApp, Meta, discussions et communauté reçoivent toujours une chaîne");
+    }
+
+    // ── 10. LE CLIENT D'UN MARCHAND N'EST JAMAIS COUPÉ ───────────────────
+    //
+    // Sur Telegram et WhatsApp, c'est le CLIENT qui parle à SAMII. Il n'a pas
+    // de compte, il ne paie rien : c'est le marchand qui reçoit la commande
+    // qui règle l'acte.
+    //
+    // Et si ce marchand est à sec ? On ne défait rien et on ne coupe
+    // personne. L'acte est déjà accompli quand la facturation arrive ; un
+    // client laissé sans réponse parce que son marchand n'a plus de solde,
+    // c'est une vente perdue pour lui et un service qui a l'air cassé pour
+    // tout le monde. Une perte visible vaut mieux qu'un client perdu.
+    {
+        const svc = fs.readFileSync(path.join(RACINE, "services", "creditsSamii.js"), "utf8");
+        const tg = fs.readFileSync(path.join(RACINE, "routes", "telegram.js"), "utf8");
+
+        verifier(/async function facturerActesWorkspace/.test(svc),
+            "creditsSamii ne sait plus facturer les actes d'un canal client");
+
+        // La facturation ne doit RIEN renvoyer qui puisse interrompre le
+        // canal : pas de throw, pas de propagation.
+        const bloc = svc.slice(svc.indexOf("async function facturerActesWorkspace"));
+        verifier(!/throw /.test(bloc.slice(0, bloc.indexOf("module.exports"))),
+            "facturerActesWorkspace peut lever une erreur : une conversation client " +
+            "s'arrêterait parce que le marchand n'a plus de solde");
+
+        // Et le canal doit facturer APRÈS avoir répondu au client.
+        const iReponse = tg.indexOf("await reply(chatId, geminiReply, base)");
+        const iFacture = tg.indexOf("facturerActesWorkspace");
+        verifier(iReponse !== -1 && iFacture > iReponse,
+            "Telegram facture AVANT de répondre au client : un incident de facturation " +
+            "ferait perdre la réponse");
+
+        // Le lien QG → propriétaire est fait à UN seul endroit.
+        verifier(/JOIN utilisateurs u ON u\.email = w\.owner_email/.test(svc),
+            "le lien entre un QG et le compte qui paie n'est plus fait dans creditsSamii");
+
+        // Une confirmation SANS référence ne doit jamais être prélevée : sans
+        // référence, un rejeu facturerait deux fois.
+        const cq = fs.readFileSync(path.join(RACINE, "services", "confirmationsQuota.js"), "utf8");
+        verifier(/if \(ref\) \{/.test(cq),
+            "confirmationsQuota prélève sur le solde sans exiger de référence : " +
+            "une livraison rejouée facturerait la même confirmation deux fois");
+        verifier(/if \(paye\.ok\) return;/.test(cq),
+            "confirmationsQuota prélève sur le solde ET inscrit l'ardoise : " +
+            "la même confirmation est comptée deux fois");
+    }
+
+    // ── 11. UNE RÉFÉRENCE APPARTIENT À UN COMPTE ─────────────────────────
+    //
+    // SIXIÈME PANNE, TROUVÉE EN LANÇANT LA SONDE DEUX FOIS DE SUITE.
+    //
+    // L'idempotence de `consommer` cherchait la référence dans TOUTE la
+    // table, sans regarder le compte. Un marchand paie « tg:1:42 » ; un
+    // AUTRE marchand ne paie plus rien pour son propre acte, parce qu'une
+    // ligne portant cette référence existe déjà quelque part. La fonction
+    // répond « déjà compté » — c'est-à-dire un succès. Travail rendu,
+    // jamais facturé, aucune alerte.
+    //
+    // Ça dormait tant que les références venaient d'un identifiant de base,
+    // globalement unique. Une référence de canal client — discussion plus
+    // message — ne l'est pas : deux bots de deux marchands produisent les
+    // mêmes numéros. C'est le branchement de Telegram qui a réveillé le
+    // piège, pas qui l'a créé.
+    {
+        const pf = fs.readFileSync(path.join(RACINE, "services", "portefeuille.js"), "utf8");
+        const bloc = pf.slice(pf.indexOf("async function consommer"), pf.indexOf("async function soldeDisponible"));
+        verifier(/transaction_ref = \$1 AND compte = \$2/.test(bloc),
+            "l'idempotence de consommer() ignore le compte : la référence d'un marchand " +
+            "empêche de facturer un autre marchand, en silence et en renvoyant un succès");
+
+        const tg = fs.readFileSync(path.join(RACINE, "routes", "telegram.js"), "utf8");
+        verifier(/ref: `tg:\$\{workspaceId/.test(tg),
+            "la référence Telegram ne contient pas le QG : deux marchands produisent " +
+            "les mêmes numéros de discussion et de message");
     }
 
     if (echecs.length) {

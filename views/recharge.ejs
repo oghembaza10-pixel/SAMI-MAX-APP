@@ -81,6 +81,11 @@ button { font: inherit; color: inherit; cursor: pointer; border: none; backgroun
     border-radius: 12px; background: var(--panneau);
     padding: 15px 17px; color: var(--doux); font-size: .87rem; margin-bottom: 14px;
 }
+/* Ce que le solde paie VRAIMENT. Même cadre que la note du dessus, une
+   couleur d'accent différente : c'est un renseignement, pas une répétition. */
+.note--travail {
+    border-inline-start-color: var(--violet);
+}
 .note b { color: var(--texte); font-weight: 600; }
 
 .alerte {
@@ -151,10 +156,22 @@ button { font: inherit; color: inherit; cursor: pointer; border: none; backgroun
         <%= L("Ce n'est pas un abonnement : il n'y a rien à résilier, et ce qui reste à la fin du mois reste.") %>
     </p>
 
+    <%# Le gros chiffre reste en messages : c'est l'unité que tout le monde
+        comprend d'un coup d'œil. Mais le solde ne paie pas que des phrases —
+        il paie ce que SAMII FAIT, et c'est précisément ce qui vaut la
+        recharge pour un marchand. Le dire ici, une fois, sans tarif : une
+        grille de prix à cet endroit ferait hésiter au lieu de rassurer. %>
+    <p class="note note--travail">
+        <%= L("Ton solde ne sert pas qu'à discuter : il paie aussi ce que SAMII fait pour toi — confirmer tes commandes, prendre tes rendez-vous, envoyer tes factures.") %>
+    </p>
+
+    <%# On ne commente PAS le taux de change ici. Le prix en dinars est écrit
+        sur chaque bouton, c'est celui qui sera prélevé, et il se suffit à
+        lui-même. Expliquer d'où il sort attire l'attention sur la seule
+        chose qui pourrait faire hésiter au moment de payer. %>
     <p class="pied">
-        <%= L("Un message à SAMII coûte") %> <%= prixMessage %> $.
         <%= L("Minimum de recharge :") %> <%= minimum %> $.<br>
-        <%= L("Paiement par Chargily — carte CIB ou EDAHABIA. Le dinar est converti au taux réel du marché, pas au taux officiel.") %>
+        <%= L("Paiement par Chargily — carte CIB ou EDAHABIA.") %>
     </p>
 </main>
 

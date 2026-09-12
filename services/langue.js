@@ -537,8 +537,10 @@ const EN = {
         "Like phone credit: top up when you want, spend it how you want.",
     "Ce n'est pas un abonnement : il n'y a rien à résilier, et ce qui reste à la fin du mois reste.":
         "This is not a subscription: there is nothing to cancel, and whatever is left at month's end stays.",
-    "Paiement par Chargily — carte CIB ou EDAHABIA. Le dinar est converti au taux réel du marché, pas au taux officiel.":
-        "Payment through Chargily — CIB or EDAHABIA card. The dinar is converted at the real market rate, not the official one.",
+    "Paiement par Chargily — carte CIB ou EDAHABIA.":
+        "Payment through Chargily — CIB or EDAHABIA card.",
+    "Ton solde ne sert pas qu'à discuter : il paie aussi ce que SAMII fait pour toi — confirmer tes commandes, prendre tes rendez-vous, envoyer tes factures.":
+        "Your balance isn't just for chatting: it also pays for what SAMII does for you — confirming your orders, booking your appointments, sending your invoices.",
     "Paiement reçu. Ton solde se met à jour dans quelques secondes — recharge la page si tu ne le vois pas encore.":
         "Payment received. Your balance updates within seconds — reload the page if you don't see it yet.",
     "Le paiement n'a pas abouti. Rien n'a été débité.":
@@ -854,8 +856,10 @@ const AR = {
         "مثل الفليكسي: تشحن وقت ما تشاء، وتصرف كما تشاء.",
     "Ce n'est pas un abonnement : il n'y a rien à résilier, et ce qui reste à la fin du mois reste.":
         "هذا ليس اشتراكًا: لا شيء يُلغى، وما يتبقّى في آخر الشهر يبقى لك.",
-    "Paiement par Chargily — carte CIB ou EDAHABIA. Le dinar est converti au taux réel du marché, pas au taux officiel.":
-        "الدفع عبر Chargily — بطاقة CIB أو EDAHABIA. يُحوَّل الدينار بسعر السوق الحقيقي، لا بالسعر الرسمي.",
+    "Paiement par Chargily — carte CIB ou EDAHABIA.":
+        "الدفع عبر Chargily — بطاقة CIB أو EDAHABIA.",
+    "Ton solde ne sert pas qu'à discuter : il paie aussi ce que SAMII fait pour toi — confirmer tes commandes, prendre tes rendez-vous, envoyer tes factures.":
+        "رصيدك ليس للدردشة فقط: فهو يدفع أيضًا ثمن ما يفعله SAMII من أجلك — تأكيد طلباتك، حجز مواعيدك، إرسال فواتيرك.",
     "Paiement reçu. Ton solde se met à jour dans quelques secondes — recharge la page si tu ne le vois pas encore.":
         "تم استلام الدفع. سيُحدَّث رصيدك خلال ثوانٍ — أعد تحميل الصفحة إن لم تره بعد.",
     "Le paiement n'a pas abouti. Rien n'a été débité.":
