@@ -153,9 +153,22 @@ for (const [entete, attendu, quoi] of DETECTION) {
 
 // ── 5. LA BARRE LATÉRALE RESTE COURTE ────────────────────────────────────
 // Sept entrées ou plus et on a reconstruit le menu fourre-tout qu'on fuyait.
-// `class="sortie"` ou `class="sortie sortie--phare"`, mais PAS `sortie__pic`
-// (l'icône interne), sinon on compte chaque entrée deux fois.
-const sorties = rendus.fr.match(/class="sortie(?: sortie--[a-z]+)?"/g) || [];
+// ON COMPTE LES DESTINATIONS, PAS LES ACTIONS.
+//
+// La règle qu'on protège est « la barre latérale n'est pas un menu de toutes
+// les fonctionnalités » — elle porte sur les ENDROITS où l'on peut aller :
+// ouvrir un QG, connecter ses outils, les métiers, l'Académie, la
+// marketplace, la communauté. Six, et c'est la limite.
+//
+// « Recharger SAMII », « Nouveau projet » et les projets eux-mêmes ne sont
+// pas des destinations : ce sont des gestes qu'on fait sans quitter la
+// conversation. Les compter dans le même total ferait tomber ce test à chaque
+// outil ajouté au chat, et on finirait par relever le plafond — c'est-à-dire
+// par perdre la règle qu'il protège.
+//
+// `sortie__pic` (l'icône interne) est exclue d'office, sinon chaque entrée
+// serait comptée deux fois.
+const sorties = rendus.fr.match(/class="sortie(?: sortie--phare)?"/g) || [];
 verifier(sorties.length >= 5 && sorties.length <= 6,
     `la barre latérale a ${sorties.length} entrées — elle doit en garder 6 au maximum, sinon c'est redevenu un menu`);
 

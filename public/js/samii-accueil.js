@@ -215,9 +215,11 @@
         // ce qui se dit ici se retrouve dans le QG, et inversement. Faire
         // parler la page d'accueil à /vitrine/chat aurait créé un second
         // assistant, amnésique, sous le même nom.
-        if (CONNECTE) return envoyerConnecte(texte, cible);
+        if (CONNECTE) { var img = jointeUrl; viderJointe(); return envoyerConnecte(texte, cible, img); }
 
-        var corps = JSON.stringify({ message: texte, historique: historique, langue: LANG });
+        var image = jointeUrl;
+        viderJointe();
+        var corps = JSON.stringify({ message: texte, historique: historique, langue: LANG, imageUrl: image });
 
         // ── LE CHEMIN D'ABORD : LE FLUX ──────────────────────────────────
         // fetch + ReadableStream plutôt que EventSource, parce qu'EventSource
@@ -327,10 +329,7 @@
     // texte mot par mot à l'arrivée, comme sur le chemin de repli : la
     // sensation est la même, et le jour où /api/chat diffusera, seule cette
     // fonction changera.
-    function envoyerConnecte(texte, cible) {
-        var image = jointeUrl;
-        viderJointe();
-
+    function envoyerConnecte(texte, cible, image) {
         fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -453,7 +452,11 @@
 
                     var forme = new FormData();
                     forme.append("audio", new Blob(morceauxAudio, { type: "audio/webm" }), "audio.webm");
-                    fetch("/api/chat/transcribe", { method: "POST", body: forme })
+                    // Deux routes, une seule expérience : /vitrine/transcrire
+                    // est ouverte à tous, /api/chat/transcribe garde son quota
+                    // de membre. Le visiteur ne voit aucune différence — et
+                    // c'est le but : il faut avoir essayé pour avoir envie.
+                    fetch(CONNECTE ? "/api/chat/transcribe" : "/vitrine/transcrire", { method: "POST", body: forme })
                         .then(function (r) { return r.json(); })
                         .then(function (json) {
                             var t = (json && json.text || "").trim();
@@ -487,6 +490,38 @@
             champ.focus();
         });
     });
+
+    // ── NOUVEAU PROJET ───────────────────────────────────────────────────
+    // Connecté, on crée pour de vrai. Sans compte, on explique ce que ça fait
+    // et on propose le compte — montrer la fonction est ce qui donne envie de
+    // s'inscrire ; la cacher garantit que personne ne la réclame jamais.
+    var nouveauProjet = document.getElementById("nouveau-projet");
+    if (nouveauProjet) {
+        nouveauProjet.addEventListener("click", function () {
+            if (cote) cote.classList.remove("ouverte");
+            if (!CONNECTE) {
+                rangerOuverture();
+                var bulle = ouvrirBulle(attendre());
+                return reveler(bulle, T.projetSansCompte || "", function () { proposerMemoire(); });
+            }
+            var nom = window.prompt(T.projetNom || "");
+            if (!nom || !nom.trim()) return;
+            fetch("/api/projets", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nom: nom.trim() }),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (json) {
+                if (json && json.success) return window.location.reload();
+                throw new Error("refus");
+            })
+            .catch(function () {
+                var bulle = ouvrirBulle(attendre());
+                reveler(bulle, T.reseau || "", function () {});
+            });
+        });
+    }
 
     // ── RECHARGER SAMII ──────────────────────────────────────────────────
     // Rien à brancher encore : Chargily viendra. En attendant, le bouton dit

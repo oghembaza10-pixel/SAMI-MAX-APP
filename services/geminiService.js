@@ -702,12 +702,47 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
 // contenu interne. Cette fonction garde toute la chaîne de secours
 // (Gemini → Groq → OpenRouter → DeepSeek) mais avec un prompt maîtrisé et
 // aucun outil : impossible d'agir sur un compte depuis cette porte.
-async function chatLibre({ systemPrompt, message, history = [] }) {
+// RAPATRIE UNE IMAGE POUR LA MONTRER AU MODÈLE.
+//
+// Gemini ne va pas chercher une URL tout seul : il lui faut les octets. Le
+// navigateur a déjà déposé la photo sur Cloudinary, on la récupère donc ici.
+//
+// La transformation `w_1024,q_auto` est insérée dans l'URL : Cloudinary
+// redimensionne AVANT de nous envoyer quoi que ce soit. Sans elle, la photo
+// d'un téléphone moderne fait plusieurs mégaoctets, qu'on paierait deux fois
+// — en bande passante puis en jetons — pour une précision dont le modèle n'a
+// aucun usage.
+//
+// Renvoie null si quoi que ce soit échoue : une photo illisible ne doit pas
+// empêcher la question qui l'accompagne d'être posée.
+async function imageEnLigne(url) {
+    if (!url || !/^https:\/\//i.test(url)) return null;
+    try {
+        const allegee = url.replace(/\/image\/upload\//, "/image/upload/w_1024,q_auto/");
+        const r = await axios.get(allegee, { responseType: "arraybuffer", timeout: 15000, maxContentLength: 12 * 1024 * 1024 });
+        const mimeType = String(r.headers["content-type"] || "image/jpeg").split(";")[0];
+        if (!/^image\//.test(mimeType)) return null;
+        return { mimeType, data: Buffer.from(r.data).toString("base64") };
+    } catch (err) {
+        console.error("❌ imageEnLigne :", err.message);
+        return null;
+    }
+}
+
+async function chatLibre({ systemPrompt, message, history = [], imageUrl = null }) {
+    // La pièce jointe voyage avec le message COURANT seulement : l'historique
+    // ne rejoue jamais les images déjà analysées — c'est ce que fait déjà le
+    // chat du QG, pour le coût et parce que les API multimodales ne les
+    // gardent pas non plus d'une requête à l'autre.
+    const partsUtilisateur = [{ text: message }];
+    const image = await imageEnLigne(imageUrl);
+    if (image) partsUtilisateur.push({ inlineData: image });
+
     const contents = [
         { role: "user", parts: [{ text: systemPrompt }] },
         { role: "model", parts: [{ text: "Compris." }] },
         ...history.map(h => ({ role: h.role === "model" ? "model" : "user", parts: [{ text: h.message }] })),
-        { role: "user", parts: [{ text: message }] },
+        { role: "user", parts: partsUtilisateur },
     ];
 
     try {
@@ -724,7 +759,19 @@ async function chatLibre({ systemPrompt, message, history = [] }) {
         const messagesOpenAi = [
             { role: "system", content: systemPrompt },
             ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.message })),
-            { role: "user", content: message },
+            // LES RELAIS NE VOIENT PAS LES IMAGES.
+            //
+            // Groq, OpenRouter et DeepSeek reçoivent du texte seul ici. Si on
+            // leur passait la question sans rien dire, SAMII répondrait « je
+            // vois sur ta photo… » sans avoir rien vu — une réponse inventée,
+            // et c'est exactement le genre de mensonge qui détruit la
+            // confiance en une démonstration. On le lui dit donc en clair.
+            {
+                role: "user",
+                content: image
+                    ? `${message}\n\n[Note technique : une image accompagnait ce message mais tu ne peux pas la voir. Dis-le simplement et demande de la redécrire en mots, sans prétendre l'avoir regardée.]`
+                    : message,
+            },
         ];
         const relais = [
             { nom: "groq", model: GROQ_MODEL, poster: postGroq },

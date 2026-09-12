@@ -27,9 +27,10 @@
 //   4. La barre latérale liste les QG et permet d'en changer sans se
 //      reconnecter — via la route existante, qui vérifie l'appartenance.
 //   5. Connecté, le chat parle à /api/chat : la même mémoire que le QG.
-//   6. Micro et pièce jointe n'apparaissent QUE connecté — leurs routes sont
-//      derrière requireAuth, les montrer à un visiteur anonyme promettrait
-//      un bouton qui renvoie vers /login.
+//   6. Micro, pièce jointe et projets sont montrés À TOUT LE MONDE, et les
+//      routes publiques qui les font marcher existent. C'est l'inverse de ce
+//      que ce test exigeait au départ : cacher ces outils aux visiteurs, c'est
+//      cacher exactement ce qui donne envie de s'inscrire.
 //   7. Les valeurs Cloudinary ne sont plus recopiées dans chaque fichier.
 //
 // Lancer :  npm test
@@ -156,34 +157,83 @@ const connecte = rendre({
 }
 
 // ── 5. UN SEUL SAMII, UNE SEULE MÉMOIRE ──────────────────────────────────
+const js = fs.readFileSync(path.join(RACINE, "public", "js", "samii-accueil.js"), "utf8");
 {
-    const js = fs.readFileSync(path.join(RACINE, "public", "js", "samii-accueil.js"), "utf8");
+
     verifier(/fetch\("\/api\/chat"/.test(js),
         "connecté, le chat n'appelle pas /api/chat — c'est un second SAMII, amnésique, sous le même nom");
-    verifier(/if \(CONNECTE\) return envoyerConnecte/.test(js),
+    verifier(/if \(CONNECTE\)/.test(js),
         "rien ne distingue le visiteur anonyme du membre connecté — l'un des deux chemins est mort");
     verifier(/projetId/.test(js), "le projet actif n'est pas transmis — les projets ne servent à rien");
     verifier(/\/vitrine\/chat/.test(js),
         "le chemin anonyme a disparu — un visiteur sans compte ne peut plus parler à SAMII");
 }
 
-// ── 6. MICRO ET PIÈCE JOINTE : CONNECTÉ SEULEMENT ────────────────────────
+// ── 6. MICRO ET PIÈCE JOINTE : POUR TOUT LE MONDE ────────────────────────
+//
+// CE TEST A CHANGÉ DE RÈGLE, ET C'EST UNE CORRECTION, PAS UN ASSOUPLISSEMENT.
+//
+// Il exigeait l'inverse : micro et trombone cachés aux visiteurs sans compte,
+// au motif que les routes étaient derrière requireAuth. Le raisonnement était
+// techniquement juste et commercialement à l'envers — on cachait précisément
+// ce qui donne envie de s'inscrire. Quelqu'un qui a dicté une phrase à SAMII
+// et l'a vu l'écrire comprend le produit en trois secondes ; on ne lui
+// demande un compte qu'après.
+//
+// Et dicter n'est pas un confort ici : beaucoup de gens tapent lentement, ou
+// pas du tout. Exiger un clavier écarte une partie du marché visé avant la
+// première phrase.
+//
+// Ce qui est vérifié maintenant : les outils sont là POUR TOUS, et les routes
+// publiques qui les font marcher existent vraiment — sinon on afficherait des
+// boutons qui renvoient vers /login, ce qui serait pire que de les cacher.
 {
-    verifier(/id="micro"/.test(connecte), "le micro manque alors qu'/api/chat/transcribe existe");
-    verifier(/id="joindre"/.test(connecte), "la pièce jointe manque alors qu'/api/chat lit les images");
+    for (const [quoi, motif] of [["le micro", /id="micro"/], ["la pièce jointe", /id="joindre"/]]) {
+        verifier(motif.test(connecte), `${quoi} manque pour un membre connecté`);
+        verifier(motif.test(anonyme),
+            `${quoi} est caché aux visiteurs sans compte — c'est ce qui donne envie de s'inscrire`);
+    }
 
-    // Les deux routes sont derrière requireAuth : les montrer à un visiteur
-    // anonyme, c'est promettre un bouton qui renvoie vers /login.
-    verifier(!/id="micro"/.test(anonyme),
-        "le micro s'affiche pour un visiteur sans compte — /api/chat/transcribe le renverra vers /login");
-    verifier(!/id="joindre"/.test(anonyme),
-        "la pièce jointe s'affiche pour un visiteur sans compte — /api/chat le renverra vers /login");
+    // La route publique de dictée doit exister, et rester bornée : ouverte ne
+    // veut pas dire sans limite.
+    const vitrine = fs.readFileSync(path.join(RACINE, "routes", "vitrine.js"), "utf8");
+    verifier(/router\.post\("\/transcrire"/.test(vitrine),
+        "aucune route publique de dictée — le micro affiché à un visiteur ne marcherait pas");
+    verifier(/micLimiter/.test(vitrine),
+        "la dictée publique n'a pas de limite propre : ouverte ne veut pas dire sans plafond");
+    verifier(/fileSize: 8 \* 1024 \* 1024/.test(vitrine),
+        "aucune taille maximale sur l'audio public");
+
+    // L'image doit traverser toute la chaîne publique, sinon le trombone
+    // dépose une photo que personne ne regarde jamais.
+    verifier(/imageUrl/.test(vitrine),
+        "le chat public n'accepte pas d'image — le trombone serait un bouton décoratif");
+    const gemini = fs.readFileSync(path.join(RACINE, "services", "geminiService.js"), "utf8");
+    verifier(/async function imageEnLigne/.test(gemini),
+        "geminiService ne sait pas rapatrier une image : Gemini ne suit pas les URL tout seul");
+    verifier(/w_1024,q_auto/.test(gemini),
+        "l'image n'est pas redimensionnée avant d'être envoyée — on paierait la photo d'un téléphone en entier, deux fois");
+    verifier(/tu ne peux pas la voir/.test(gemini),
+        "quand le relais de secours ne voit pas l'image, rien ne le lui dit — SAMII décrirait une photo qu'il n'a jamais vue");
+
+    // Une photo sans un mot est une question valable.
+    verifier(/if \(!messageBrut && !req\.body\.imageUrl\) return null;/.test(vitrine),
+        "une image envoyée sans texte est refusée — c'est pourtant le geste le plus naturel");
+
+    // Les projets aussi sont montrés à tous : cachés, personne ne sait qu'ils
+    // existent, donc personne ne les réclame.
+    verifier(/id="nouveau-projet"/.test(anonyme) && /id="nouveau-projet"/.test(connecte),
+        "« Nouveau projet » n'est pas montré à tout le monde");
+    verifier(/projetSansCompte/.test(js),
+        "un visiteur qui clique sur « Nouveau projet » n'a aucune explication");
+
     verifier(!/name="workspaceId"/.test(anonyme),
         "des QG s'affichent pour un visiteur sans compte");
 
-    const js = fs.readFileSync(path.join(RACINE, "public", "js", "samii-accueil.js"), "utf8");
-    verifier(/MediaRecorder/.test(js) && /\/api\/chat\/transcribe/.test(js),
+    verifier(/MediaRecorder/.test(js) && /transcrire|transcribe/.test(js),
         "le micro n'enregistre pas ou n'envoie pas à la transcription");
+    verifier(/\/vitrine\/transcrire/.test(js),
+        "le micro n'appelle pas la route publique pour un visiteur sans compte");
     // La transcription se relit avant de partir : elle se trompe, et un
     // message envoyé de travers coûte un crédit et une explication.
     verifier(/champ\.value = champ\.value \? champ\.value \+ " " \+ t : t;/.test(js),

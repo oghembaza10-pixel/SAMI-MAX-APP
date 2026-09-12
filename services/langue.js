@@ -422,6 +422,10 @@ const EN = {
     "Juste parler, j'ai eu une longue journée": "Just talk — it's been a long day",
     "Ton travail, une question, ou juste parler. Je réponds à tout — et je connais le terrain ici : les prix, la livraison, le paiement à la réception.":
         "Your work, a question, or just talk. I answer anything — and I know the ground here: prices, delivery, cash on delivery.",
+    "Nouveau projet": "New project",
+    "Comment veux-tu appeler ce projet ?": "What do you want to call this project?",
+    "Un projet garde une conversation à part : tes produits d'un côté, tes rendez-vous de l'autre, et je ne mélange rien. Pour que je puisse en garder un, il me faut un compte — c'est gratuit et ça prend dix secondes.":
+        "A project keeps a conversation separate: your products on one side, your bookings on the other, and I never mix them up. To keep one for you I need an account — it's free and takes ten seconds.",
     "Recharger SAMII": "Top up SAMII",
     "bientôt": "soon",
     "Chat SAMII": "SAMII Chat",
@@ -684,6 +688,10 @@ const AR = {
     "Juste parler, j'ai eu une longue journée": "فقط للحديث، كان يومي طويلًا",
     "Ton travail, une question, ou juste parler. Je réponds à tout — et je connais le terrain ici : les prix, la livraison, le paiement à la réception.":
         "عملك، سؤال، أو مجرّد حديث. أجيب عن كل شيء — وأعرف الميدان هنا: الأسعار، التوصيل، الدفع عند الاستلام.",
+    "Nouveau projet": "مشروع جديد",
+    "Comment veux-tu appeler ce projet ?": "بماذا تريد تسمية هذا المشروع؟",
+    "Un projet garde une conversation à part : tes produits d'un côté, tes rendez-vous de l'autre, et je ne mélange rien. Pour que je puisse en garder un, il me faut un compte — c'est gratuit et ça prend dix secondes.":
+        "المشروع يحفظ محادثة على حدة: منتجاتك من جهة، ومواعيدك من جهة أخرى، ولا أخلط بينهما. ولكي أحتفظ بواحد لك أحتاج حسابًا — مجاني ويستغرق عشر ثوانٍ.",
     "Recharger SAMII": "اشحن SAMII",
     "bientôt": "قريبًا",
     "Chat SAMII": "محادثة SAMII",

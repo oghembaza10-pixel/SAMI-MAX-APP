@@ -11,11 +11,13 @@
 //   - le prospect capturé va dans sa propre table, jamais dans un workspace.
 // ==========================================================================
 const express = require("express");
+const multer = require("multer");
 const rateLimit = require("express-rate-limit");
 const router = express.Router();
 const db = require("../services/db");
 const geminiService = require("../services/geminiService");
 const SAMII_VITRINE_PROMPT = require("../brain/prompts/vitrine");
+const transcription = require("../services/transcription");
 const { renderVitrine } = require("./vitrine-page");
 
 // 10 messages sur 5 heures par IP, pour un visiteur sans compte.
@@ -123,9 +125,12 @@ async function journaliserTour(req, message, reponse) {
 // reviendrait à ouvrir sur l'une la porte qu'on ferme sur l'autre.
 function preparerEntree(req) {
     const messageBrut = String(req.body.message || "").trim();
-    if (!messageBrut) return null;
+    // Une photo SANS un mot est une question parfaitement valable — « c'est
+    // quoi ça ? ». Refuser le message vide aurait rendu le trombone inutile
+    // pour le geste le plus naturel qu'on puisse avoir avec.
+    if (!messageBrut && !req.body.imageUrl) return null;
 
-    const message = messageBrut.slice(0, MAX_MESSAGE);
+    const message = messageBrut.slice(0, MAX_MESSAGE) || "Regarde cette image et dis-moi ce que tu en penses.";
     const langue = LANGUES.includes(req.body.langue) ? req.body.langue : "fr";
 
     // L'historique vient du navigateur : on ne lui fait aucune confiance
@@ -140,9 +145,61 @@ function preparerEntree(req) {
             }))
         : [];
 
+    // L'image est une ADRESSE, jamais des octets : le navigateur l'a déposée
+    // sur Cloudinary et ne nous envoie que le lien. On n'accepte donc que du
+    // https, et c'est geminiService qui va la chercher, redimensionnée.
+    const imageUrl = /^https:\/\/[^\s"']{10,500}$/.test(String(req.body.imageUrl || ""))
+        ? String(req.body.imageUrl)
+        : null;
+
     const nbEchanges = Math.floor(historique.length / 2);
-    return { message, langue, historique, systemPrompt: SAMII_VITRINE_PROMPT({ langue, nbEchanges }) };
+    return { message, langue, historique, imageUrl, systemPrompt: SAMII_VITRINE_PROMPT({ langue, nbEchanges }) };
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// LE MICRO, SANS COMPTE
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Il était réservé aux membres connectés, et c'était l'erreur : on cachait
+// précisément ce qui donne envie de s'inscrire. Quelqu'un qui a parlé à SAMII
+// et l'a vu écrire ses mots comprend en trois secondes ce que vaut le produit
+// — bien mieux que n'importe quelle phrase de vente. On montre d'abord, on
+// invite ensuite.
+//
+// Et dicter n'est pas un confort ici : beaucoup de gens tapent lentement, ou
+// pas du tout, dans l'une ou l'autre de leurs langues. Un chat qui exige un
+// clavier exclut une partie du marché visé avant la première phrase.
+//
+// LE COÛT RESTE BORNÉ : 20 dictées par heure et par IP (une conversation
+// entière se dicte largement là-dedans), 8 Mo par envoi, et Groq Whisper
+// turbo coûte une fraction d'un message de chat.
+const uploadVocal = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+const micLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: "Trop de dictées d'un coup. Réessaie dans un moment." },
+});
+
+router.post("/transcrire", micLimiter, uploadVocal.single("audio"), async (req, res) => {
+    try {
+        if (!req.file?.buffer?.length) {
+            return res.json({ success: false, error: "Aucun audio reçu." });
+        }
+        const texte = await transcription.transcribeBuffer(
+            req.file.buffer,
+            req.file.originalname || "audio.webm",
+        );
+        // transcribeBuffer renvoie une chaîne vide plutôt que de lever : on
+        // distingue donc « rien entendu » d'une panne, pour que la page puisse
+        // dire l'un ou l'autre au lieu d'un « erreur » qui n'aide personne.
+        return res.json({ success: Boolean(texte), text: texte || "" });
+    } catch (err) {
+        console.error("❌ POST /vitrine/transcrire :", err.message);
+        return res.json({ success: false, error: "La dictée n'a pas abouti." });
+    }
+});
 
 router.post("/chat", vitrineLimiter, async (req, res) => {
     try {
@@ -150,9 +207,9 @@ router.post("/chat", vitrineLimiter, async (req, res) => {
         if (!entree) {
             return res.json({ success: false, reply: "Pose-moi ta question." });
         }
-        const { message, langue, historique, systemPrompt } = entree;
+        const { message, langue, historique, imageUrl, systemPrompt } = entree;
 
-        const reponse = await geminiService.chatLibre({ systemPrompt, message, history: historique });
+        const reponse = await geminiService.chatLibre({ systemPrompt, message, history: historique, imageUrl });
 
         if (!reponse.text) {
             // Le compteur repart MÊME QUAND L'IA EST EN PANNE : le message a
@@ -211,7 +268,7 @@ router.post("/chat/flux", vitrineLimiter, async (req, res) => {
     if (!entree) {
         return res.json({ success: false, reply: "Pose-moi ta question." });
     }
-    const { message, langue, historique, systemPrompt } = entree;
+    const { message, langue, historique, imageUrl, systemPrompt } = entree;
 
     // Content-Type SSE + désactivation explicite de la mise en tampon. Sans
     // X-Accel-Buffering, un proxy nginx garde la réponse jusqu'à la fin et
@@ -236,7 +293,7 @@ router.post("/chat/flux", vitrineLimiter, async (req, res) => {
 
     try {
         const reponse = await geminiService.chatLibreFlux(
-            { systemPrompt, message, history: historique },
+            { systemPrompt, message, history: historique, imageUrl },
             (morceau) => { if (vivant) envoyer("morceau", { t: morceau }); },
         );
 

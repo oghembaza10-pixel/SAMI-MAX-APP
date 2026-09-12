@@ -436,21 +436,29 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                 qu'il y ait quelque chose à vendre. Elle dit franchement qu'elle
                 n'est pas prête : une porte qui ne s'ouvre pas sans le dire est
                 pire qu'une porte absente. %>
-            <% if (loggedIn) { %>
+            <% if (true) { %>
                 <button class="sortie sortie--recharge" id="recharger">
                     <span class="sortie__pic">⚡</span><%= L("Recharger SAMII") %>
                     <span class="sortie__note"><%= L("bientôt") %></span>
                 </button>
             <% } %>
 
-            <% if (loggedIn && projets.length) { %>
-                <p class="cote__titre" style="margin-top:14px;"><%= L("Mes projets") %></p>
+            <%# LES PROJETS SONT MONTRÉS À TOUT LE MONDE.
+                Sans compte ils ne peuvent pas être enregistrés — mais les
+                cacher voudrait dire que personne ne sait qu'ils existent, donc
+                que personne ne les réclame. L'entrée explique ce qu'ils font et
+                propose le compte ; c'est une vitrine, pas une porte fermée. %>
+            <p class="cote__titre" style="margin-top:14px;"><%= L("Mes projets") %></p>
+            <% if (projets.length) { %>
                 <% projets.forEach(function (p) { %>
                     <button class="sortie sortie--projet" data-projet="<%= p.id %>">
                         <span class="sortie__pic">📁</span><span class="sortie__nom"><%= p.nom %></span>
                     </button>
                 <% }); %>
             <% } %>
+            <button class="sortie sortie--discret" id="nouveau-projet">
+                <span class="sortie__pic">＋</span><%= L("Nouveau projet") %>
+            </button>
 
             <p class="cote__bas">
                 <% if (loggedIn) { %>
@@ -502,29 +510,28 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                             aria-label="<%= L("Retirer la pièce jointe") %>">✕</button>
                 </div>
 
+                <%# MICRO ET PIÈCE JOINTE POUR TOUT LE MONDE, SANS COMPTE.
+                    Ils étaient réservés aux membres connectés — c'était cacher
+                    exactement ce qui donne envie de s'inscrire. Quelqu'un qui a
+                    parlé à SAMII et l'a vu écrire ses mots comprend le produit
+                    en trois secondes, mieux que n'importe quelle phrase de
+                    vente. On montre d'abord, on invite ensuite.
+                    Et dicter n'est pas un confort : beaucoup de gens tapent
+                    lentement, ou pas du tout. Un chat qui exige un clavier
+                    exclut une partie du marché avant la première phrase. %>
                 <form class="saisie" id="saisie">
-                    <% if (loggedIn) { %>
-                        <%# Micro et pièce jointe demandent un compte : la
-                            transcription et la lecture d'image coûtent bien
-                            plus cher qu'un message texte, et /api/chat comme
-                            /api/chat/transcribe sont déjà derrière requireAuth.
-                            Les afficher à un visiteur anonyme promettrait
-                            quelque chose qui répondrait 302 vers /login. %>
-                        <button class="outil" id="joindre" type="button"
-                                aria-label="<%= L("Joindre une image") %>"
-                                title="<%= L("Joindre une image") %>">🖇</button>
-                        <input type="file" id="fichier" accept="image/*" hidden>
-                    <% } %>
+                    <button class="outil" id="joindre" type="button"
+                            aria-label="<%= L("Joindre une image") %>"
+                            title="<%= L("Joindre une image") %>">🖇</button>
+                    <input type="file" id="fichier" accept="image/*" hidden>
 
                     <input id="champ" autocomplete="off" enterkeyhint="send"
                            placeholder="<%= L("Écris à SAMII…") %>"
                            aria-label="<%= L("Écris à SAMII…") %>">
 
-                    <% if (loggedIn) { %>
-                        <button class="outil" id="micro" type="button"
-                                aria-label="<%= L("Parler à SAMII") %>"
-                                title="<%= L("Parler plutôt qu'écrire") %>">🎙</button>
-                    <% } %>
+                    <button class="outil" id="micro" type="button"
+                            aria-label="<%= L("Parler à SAMII") %>"
+                            title="<%= L("Parler plutôt qu'écrire") %>">🎙</button>
 
                     <button class="envoyer" id="envoyer" type="submit" aria-label="<%= L("Envoyer") %>">↑</button>
                 </form>
@@ -554,6 +561,8 @@ window.SAMII_T = <%- JSON.stringify({
     envoiRate:  L("L'image n'est pas partie. Réessaie."),
     tropLourd:  L("Image trop lourde (10 Mo maximum)."),
     quota:      L("Tu as atteint ta limite de messages pour le moment."),
+    projetSansCompte: L("Un projet garde une conversation à part : tes produits d'un côté, tes rendez-vous de l'autre, et je ne mélange rien. Pour que je puisse en garder un, il me faut un compte — c'est gratuit et ça prend dix secondes."),
+    projetNom: L("Comment veux-tu appeler ce projet ?"),
     rechargeBientot: L("La recharge arrive bientôt : tu pourras charger SAMII comme une flexy, par Chargily (CIB / EDAHABIA), et dépenser tes points comme tu veux. Pas d'abonnement obligatoire, et les points ne s'effacent pas à la fin du mois."),
 }) %>;
 window.SAMII_LANG = "<%= lang %>";
