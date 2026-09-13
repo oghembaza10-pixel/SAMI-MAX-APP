@@ -22,6 +22,7 @@ const geminiService = require("../services/geminiService");
 const connectorService = require("../services/connectorService");
 const google = require("../services/google");
 const metiers = require("../services/metiers");
+const competences = require("../services/competences");
 const evenements = require("../services/evenements");
 
 // Notes vocales du chat QG : jamais plus de ~2 minutes d'audio en usage
@@ -208,6 +209,25 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
             // personne n'aura posé la posture ici. C'est le bon défaut : on
             // ne publie pas parce qu'on a oublié de demander.
             palier,
+
+            // ── LE MÉTIER, ENFIN UTILISÉ ────────────────────────────────
+            //
+            // CHANTIER 9. Les 34 métiers portaient chacun trois phrases
+            // écrites à la main — ce que le métier fait PERDRE, ce qui
+            // CLOCHE d'habitude, ce qui MARCHE. Mesuré : elles n'atteignaient
+            // jamais SAMII. Elles servaient à des pages SEO, à une liste
+            // déroulante et à des filtres SQL. Dans le QG, seul l'identifiant
+            // brut passait, noyé dans le `JSON.stringify(context)` du prompt.
+            //
+            // La session porte déjà le métier du QG actif (posée à la
+            // connexion, au changement de QG, à l'inscription) : on ne va pas
+            // le rechercher en base. La mémoire de l'utilisateur sert de
+            // repli pour les comptes sans QG.
+            metier: req.session?.metier || memoireActuelle?.profil?.metier || "",
+            competence: competences.pourLePrompt({
+                metier: req.session?.metier || memoireActuelle?.profil?.metier || "",
+                message: message || "",
+            }),
             memoireUtilisateur: memoireActuelle,
             // ── L'IDENTITÉ, RECOPIÉE DE LA SESSION ──────────────────────
             //

@@ -18,6 +18,7 @@ const db = require("../services/db");
 const geminiService = require("../services/geminiService");
 const niveauAuto = require("../services/niveauAuto");
 const SAMII_VITRINE_PROMPT = require("../brain/prompts/vitrine");
+const competences = require("../services/competences");
 const transcription = require("../services/transcription");
 const { renderVitrine } = require("./vitrine-page");
 
@@ -189,8 +190,47 @@ function preparerEntree(req) {
         ? String(req.body.imageUrl)
         : null;
 
+    // ══════════════════════════════════════════════════════════════════════
+    // LE MÉTIER, RECONNU ICI ET GARDÉ POUR PLUS TARD
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // CHANTIER 9. Le chat public ne connaissait AUCUN métier : mesuré,
+    // `grep -c metier routes/vitrine.js` rendait 0. Quelqu'un pouvait
+    // expliquer pendant dix messages qu'il vend des habits sur Instagram,
+    // SAMII lui répondait comme à n'importe qui, et tout était perdu à
+    // l'inscription.
+    //
+    // ── POURQUOI DANS LA SESSION, ET PAS AILLEURS ─────────────────────────
+    //
+    // `req.session.metier` existe déjà et sert déjà : sept routes l'écrivent
+    // (connexion, changement de QG, agence, inscription) et
+    // `routes/inscription.js` le LIT pour pré-remplir le métier du nouveau
+    // QG — `metier || req.session.metier || "ecommerce"`.
+    //
+    // Le chat public était le seul à ne rien y poser. En l'écrivant ici, ce
+    // que la personne a dit d'elle-même avant d'avoir un compte suit
+    // jusqu'au QG, par un canal qui existait déjà. Aucun nouveau stockage,
+    // aucune nouvelle table.
+    //
+    // ── ON N'ÉCRASE JAMAIS UN MÉTIER DÉJÀ CONNU ──────────────────────────
+    //
+    // Une personne connectée qui écrit depuis la page d'accueil a déjà son
+    // métier en session, posé par son QG. Une phrase mal lue ne doit pas
+    // remplacer ce qu'elle a réellement déclaré à l'inscription.
+    const vu = competences.deviner(message);
+    if (vu.metier && !req.session.metier) req.session.metier = vu.metier;
+
+    const metier = req.session?.metier || null;
+
     const nbEchanges = Math.floor(historique.length / 2);
-    return { message, langue, historique, imageUrl, systemPrompt: SAMII_VITRINE_PROMPT({ langue, nbEchanges }) };
+    return {
+        message, langue, historique, imageUrl,
+        metier,
+        // Le MÊME bloc que celui du QG, produit par la MÊME fonction. Deux
+        // lectures séparées du métier auraient fini par ne plus dire la même
+        // chose, et on aurait eu deux SAMII.
+        systemPrompt: SAMII_VITRINE_PROMPT({ langue, nbEchanges, competence: competences.pourLePrompt({ metier, message }) }),
+    };
 }
 
 // ══════════════════════════════════════════════════════════════════════════

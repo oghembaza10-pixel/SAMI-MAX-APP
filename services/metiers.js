@@ -149,6 +149,85 @@ function parGroupe() {
 //
 // La règle de sélection reste celle de la liste : si on ne sait rien dire de
 // spécifique à un métier, il n'a pas sa place ici — et sa page non plus.
+// ══════════════════════════════════════════════════════════════════════════
+// LE VOCABULAIRE — comment un marchand NOMME son activité
+// ══════════════════════════════════════════════════════════════════════════
+//
+// POURQUOI CE BLOC EXISTE, ET POURQUOI IL EST ICI.
+//
+// Personne n'écrit « je suis dans le prêt-à-porter ». On écrit « je vends des
+// habits », « je fais du bazin », « j'ai une boutique de fringues ». Le
+// libellé officiel d'un métier ne sert qu'aux menus déroulants ; il ne sert à
+// rien pour reconnaître quelqu'un qui se présente avec ses propres mots.
+//
+// ── CE QUE LA MESURE A DONNÉ ─────────────────────────────────────────────
+//
+// Premier essai : déduire les mots des libellés et des groupes déjà écrits.
+// Résultat mesuré sur de vraies phrases — « je suis coiffeur » et « j'ai un
+// restaurant » passaient, « je vends des vêtements sur Instagram », « je
+// répare des voitures » et « je fais des gâteaux » ne trouvaient rien.
+//
+// Deuxième essai : y ajouter le texte des fiches (perte/défaut/réponse).
+// Ça rattrapait le garage et la pâtisserie — et ça inventait un métier à
+// partir de n'importe quelle phrase. « J'ai 20 commandes en retard »
+// ressortait en `restaurant` ou `patisserie`. SAMII aurait décidé que
+// quelqu'un est pâtissier parce qu'il parle de commandes en retard. C'est
+// pire que ne rien deviner.
+//
+// D'où ce bloc, et la garde qui va avec (services/competences.js) : un métier
+// n'est reconnu QUE dans une phrase où la personne DÉCLARE son activité.
+// Un mot croisé ailleurs ne compte pas.
+//
+// ── POURQUOI DANS CE FICHIER ─────────────────────────────────────────────
+//
+// Parce que c'est la source unique des métiers. Un deuxième fichier de
+// vocabulaire aurait divergé de la liste au premier métier ajouté — c'est
+// exactement ce qui est arrivé trois fois dans ce projet. Un métier sans
+// vocabulaire est un cas normal : il ne sera simplement pas reconnu dans une
+// phrase libre, il reste choisissable dans le menu.
+const VOCABULAIRE = {
+    dentiste:    ["dentiste", "dentaire", "cabinet dentaire", "orthodontiste"],
+    medecin:     ["medecin", "docteur", "cabinet medical", "generaliste", "consultation"],
+    kine:        ["kine", "kinesitherapeute", "physiotherapie", "reeducation"],
+    laboratoire: ["laboratoire", "labo", "analyses", "prelevement"],
+    opticien:    ["opticien", "lunettes", "optique", "verres"],
+    pharmacie:   ["pharmacie", "pharmacien", "parapharmacie", "medicaments"],
+    veterinaire: ["veterinaire", "veto", "clinique animale"],
+
+    // « salon » seul est retiré : mesuré, « mon salon de thé » ressortait aussi
+    // en coiffeur. Un mot trop général range les gens dans le mauvais métier.
+    coiffeur:    ["coiffeur", "coiffeuse", "coiffure", "salon de coiffure", "tresses", "nattes"],
+    barbier:     ["barbier", "barbe", "barber"],
+    esthetique:  ["esthetique", "institut de beaute", "estheticienne", "soin visage", "onglerie", "manucure"],
+    spa:         ["spa", "hammam", "massage", "bien etre"],
+    salle_sport: ["salle de sport", "musculation", "fitness", "coach sportif", "gym"],
+
+    restaurant:  ["restaurant", "restauration", "resto", "maquis", "plats", "cuisine"],
+    fastfood:    ["fast food", "fastfood", "burger", "sandwich", "shawarma", "tacos", "pizzeria", "pizza"],
+    patisserie:  ["patisserie", "gateaux", "gateau", "patissier", "boulangerie", "viennoiserie"],
+    cafe:        ["cafe", "salon de the", "cafeteria", "coffee"],
+    traiteur:    ["traiteur", "buffet", "reception", "mariage"],
+
+    ecommerce:   ["ecommerce", "e commerce", "vente en ligne", "boutique en ligne", "vends en ligne", "shopify", "dropshipping"],
+    boutique:    ["boutique", "magasin", "commerce de detail", "epicerie", "superette"],
+    pretaporter: ["pret a porter", "vetements", "vetement", "habits", "fringues", "mode", "bazin", "tissu", "tissus", "wax", "pagne", "abaya", "hijab", "chaussures"],
+    electronique: ["electronique", "telephones", "smartphones", "informatique", "ordinateurs", "electromenager"],
+    ameublement: ["ameublement", "meubles", "meuble", "canape", "salon marocain", "decoration", "literie"],
+
+    immobilier:  ["immobilier", "agence immobiliere", "location appartement", "vente terrain", "agent immobilier"],
+    autoecole:   ["auto ecole", "autoecole", "permis de conduire", "moniteur"],
+    garage:      ["garage", "mecanicien", "mecanique", "repare des voitures", "reparation auto", "carrosserie", "tolerie", "vidange"],
+    avocat:      ["avocat", "cabinet d avocat", "juridique", "notaire"],
+    comptable:   ["comptable", "comptabilite", "expert comptable", "fiscaliste", "bilan"],
+    photographe: ["photographe", "photographie", "photo", "studio photo", "videaste"],
+    evenementiel: ["evenementiel", "organisation d evenements", "wedding planner", "decoration mariage"],
+    livreur:     ["livreur", "livraison", "coursier", "transporteur", "logistique"],
+
+    education:   ["ecole", "formation", "cours", "professeur", "enseignant", "soutien scolaire", "centre de formation"],
+    hotel:       ["hotel", "auberge", "maison d hote", "riad", "hebergement", "chambres"],
+    agence_voyage: ["agence de voyage", "voyages", "omra", "billets d avion", "tourisme"],
+};
+
 const DOULEURS = {
     // ── Santé ────────────────────────────────────────────────────────────
     dentiste:    { perte: "Un fauteuil vide à 14h ne se rattrape pas le soir.", defaut: "Les rendez-vous se prennent au téléphone, pendant que vous soignez.", reponse: "Prise de rendez-vous en ligne, rappel la veille, et la liste d'attente comble l'annulation sans que vous décrochiez." },
@@ -207,7 +286,12 @@ function fiche(id) {
     if (!m) return null;
     const d = DOULEURS[id];
     if (!d) return null;   // un métier sans contenu propre n'a pas de page
-    return { ...m, ...d };
+    // `mots` voyage AVEC la fiche : la couche de compétence n'a alors qu'une
+    // seule chose à demander pour tout savoir d'un métier. Un métier sans
+    // vocabulaire rend un tableau vide, jamais `undefined` — un appelant qui
+    // reçoit `undefined` finit toujours par écrire sa propre valeur de repli,
+    // et elle diverge.
+    return { ...m, ...d, mots: VOCABULAIRE[id] || [] };
 }
 
 // Les métiers qui ont une page publique. Sert au plan du site et au hub : un
@@ -217,4 +301,4 @@ function avecFiche() {
     return METIERS.filter(m => DOULEURS[m.id]);
 }
 
-module.exports = { METIERS, IDS, IDS_RDV, DOULEURS, estValide, estRdv, label, icone, parGroupe, fiche, avecFiche };
+module.exports = { METIERS, IDS, IDS_RDV, DOULEURS, VOCABULAIRE, estValide, estRdv, label, icone, parGroupe, fiche, avecFiche };

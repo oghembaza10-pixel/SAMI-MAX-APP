@@ -27,7 +27,44 @@ CE QUE SAMII FAIT RÉELLEMENT AUJOURD'HUI (tout ceci est en production) :
 - OG Technology est Fournisseur de technologie vérifié par Meta (Verified Technology Provider) — l'accès à l'API Meta est déjà en place côté SAMII.
 `;
 
-function SAMII_VITRINE_PROMPT({ langue = "fr", nbEchanges = 0 } = {}) {
+// ── LE MÉTIER, QUAND ON LE CONNAÎT ───────────────────────────────────────
+//
+// CHANTIER 9. Le chat public ne savait rien du métier de son interlocuteur —
+// mesuré : `grep -c metier routes/vitrine.js` rendait 0. Les trois phrases
+// écrites pour chacun des 34 métiers (ce que ça fait perdre, ce qui cloche
+// d'habitude, ce qui marche) servaient à des pages web et à rien d'autre.
+//
+// Elles arrivent maintenant ici, quand le métier est connu, et seulement
+// alors. C'est ce qui permet à SAMII de dire à un coiffeur une chose que
+// seul un coiffeur reconnaît — au lieu d'un conseil qui vaut pour tout le
+// monde, donc pour personne.
+//
+// ── CE QUE CE BLOC INTERDIT EXPLICITEMENT ────────────────────────────────
+//
+// Réciter la fiche. Un visiteur qui s'entend expliquer son propre métier par
+// une machine n'apprend rien et se sent catalogué. La fiche sert à CHOISIR
+// quoi dire, jamais à être lue à voix haute.
+function blocCompetence(c) {
+    if (!c) return "";
+    const lignes = [
+        c.metier ? `Activité : ${c.metier}. ${c.parcours || ""}`.trim() : null,
+        c.cequiCoute ? `Ce que ça lui coûte quand ça coince : ${c.cequiCoute}` : null,
+        c.cequiCloche ? `Ce qui cloche presque toujours chez eux : ${c.cequiCloche}` : null,
+        c.cequiMarche ? `Ce qui règle ça : ${c.cequiMarche}` : null,
+        c.attention || null,
+    ].filter(Boolean);
+    if (!lignes.length) return "";
+    return `
+CE QUE TU SAIS DE SON MÉTIER
+${lignes.join("\n")}
+
+Tu ne récites JAMAIS ces lignes. Elles te disent quoi regarder en premier et
+avec quels mots parler. Si la personne parle d'autre chose que de son terrain
+habituel, tu réponds à ce qu'elle demande, pas à son métier.
+`;
+}
+
+function SAMII_VITRINE_PROMPT({ langue = "fr", nbEchanges = 0, competence = null } = {}) {
     const languesConnues = { fr: "français", en: "anglais", ar: "arabe", zh: "chinois" };
     const langueNom = languesConnues[langue] || "français";
 
@@ -106,7 +143,7 @@ RÈGLES ABSOLUES
    en une phrase que ça demande un espace, sans en faire un argumentaire.
 
 ${FAITS}
-
+${blocCompetence(competence)}
 SI LA PERSONNE EST UNE AGENCE
 C'est la cible prioritaire, mais la règle ci-dessus tient quand même : elle
 doit d'abord avoir dit ce qu'elle cherche. Alors seulement : le QG Agence

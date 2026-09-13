@@ -60,6 +60,26 @@ const ROUTES = {
 
 function detect(message) {
     const m = message.toLowerCase();
+
+    // ── CE QUI EST EN PANNE PASSE AVANT CE QUI SE VEND ───────────────────
+    //
+    // MESURÉ, PAS SUPPOSÉ. « J'ai 20 commandes en retard » ressortait en
+    // `business`, parce que le mot « commande » est sur la ligne du dessous
+    // et que cette fonction rend à la première correspondance. SAMII
+    // répondait donc par une stratégie de vente à quelqu'un qui est en train
+    // de perdre ses clients par la livraison.
+    //
+    // Ce n'est pas un neuvième domaine : c'est un ORDRE. Une commande dont
+    // on dit qu'elle est en retard, bloquée, non livrée ou en rupture n'est
+    // pas un sujet commercial, c'est un sujet opérationnel — et l'urgence
+    // n'est pas la même.
+    //
+    // Les mots retenus sont ceux qui ne veulent dire que ça : on ne dit pas
+    // « en retard » d'une campagne publicitaire qui se vend bien.
+    if (m.match(/en retard|retards?\b|bloqu|pas (encore )?(livr|re[çc]u)|non livr|jamais (re[çc]u|arriv)|rupture|stock (vide|epuis|épuis)|plus de stock|annul[ée]e?s? (par|pour) (le |la )?(livr|transport)/)) {
+        return "logistique";
+    }
+
     if (m.match(/vente|client|commande|shopify|boutique|produit/))  return "business";
     if (m.match(/stratégie|plan|vision|empire|objectif|croissance/)) return "strategie";
     if (m.match(/code|programme|javascript|node|api|bug|erreur/))   return "programmation";

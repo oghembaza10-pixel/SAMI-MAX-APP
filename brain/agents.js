@@ -62,14 +62,28 @@ const socle = require("../engines/social/agents/base");
 // existant, la complexité du peseur existant. Ce fichier ne fait que les
 // croiser avec le registre.
 function choisir({ message = "", context = {} } = {}) {
-    const { detect } = require("./prompts/sovereign/tables");
     const niveauAuto = require("../services/niveauAuto");
+    const competences = require("../services/competences");
 
-    const domaine = detect(String(message || ""));
+    // ── LE MÉTIER ENTRE DANS LE CHOIX ────────────────────────────────────
+    //
+    // Chantier 9. Avant, le domaine venait du seul message. Il vient
+    // désormais de l'arbitrage métier × message, qui est la MÊME fonction que
+    // celle qui nourrit le prompt des deux chats — donc une seule lecture du
+    // métier dans tout le projet.
+    //
+    // Ce que ça change, concrètement : un e-commerçant qui écrit « j'ai 20
+    // commandes en retard » ne déclenche plus une mission marketing. Le
+    // message dit `logistique`, le métier tire vers `business`, et le message
+    // l'emporte — donc aucune chaîne de publication ne s'ouvre. Avant, le
+    // détecteur rendait `business` sur cette phrase (le mot « commande »),
+    // et le métier n'était pas lu du tout.
+    const lecture = competences.arbitrer({ metier: context.metier || null, message });
+    const domaine = lecture.domaine;
     const poids = niveauAuto.peser(message, { piece: context.piece || null, domaine });
 
     const candidates = AGENTS.missionsPourDomaine(domaine);
-    const raisons = [`domaine ${domaine}`, ...poids.raisons];
+    const raisons = [...lecture.raisons, ...poids.raisons];
 
     if (!candidates.length) {
         return { besoin: "reponse", missions: [], domaine, raisons, poids: poids.score };
