@@ -126,6 +126,9 @@ async function confirmChargilyRecharge(checkoutId) {
         const r = await creditsSamii.crediter(userId, montantUSD, {
             rail: "chargily",
             detail: `Recharge SAMII (${checkoutId})`,
+            // La référence rend ce crédit rejouable : si on repasse ici après
+            // un incident, la somme n'est pas ajoutée une seconde fois.
+            ref: `recharge:${checkoutId}`,
         });
         await journalService.log({
             action: "recharge.samii",
@@ -135,17 +138,38 @@ async function confirmChargilyRecharge(checkoutId) {
         console.log(`⚡ Recharge SAMII : ${montantUSD} $ pour ${userId} — ${r.messages} messages`);
         return { updated: true, userId, montantUSD, messages: r.messages };
     } catch (err) {
-        // La ligne reste marquée payée : c'est la vérité, l'argent EST
-        // encaissé. Le solde manquant se répare à la main, et ce journal dit
-        // exactement quoi réparer. Remettre « en_attente » ici rouvrirait la
-        // porte à un double crédit au prochain rejeu.
-        console.error(`❌ Recharge ${checkoutId} encaissée mais NON créditée :`, err.message);
+        // ── UN CRÉDIT RATÉ SE RÉPARE PAR LE REJEU, PLUS À LA MAIN ───────
+        //
+        // Avant : la ligne restait « payee » et on renvoyait un succès. Le
+        // rejeu de Chargily ne retrouvait alors plus rien à prendre (la
+        // clause « en_attente » ne matchait plus), donc il ne réparait
+        // jamais rien. L'argent était encaissé, le solde vide, et seule une
+        // intervention manuelle pouvait le voir.
+        //
+        // Le crédit porte désormais une référence, donc le rejouer est sans
+        // effet s'il avait en réalité abouti. On peut donc rendre la ligne au
+        // rejeu et laisser l'erreur remonter : le webhook répondra 500 et
+        // Chargily repassera jusqu'à ce que ça tienne.
+        console.error(`❌ Recharge ${checkoutId} : crédit en échec, on rend la ligne au rejeu —`, err.message);
+        try {
+            await db.query(
+                `UPDATE recharges_samii SET statut = 'en_attente', credite_le = NULL
+                  WHERE checkout_id = $1 AND statut = 'payee'`,
+                [checkoutId],
+            );
+        } catch (e2) {
+            // Si même ça échoue, on ne masque rien : le journal ci-dessous
+            // reste la trace, et l'erreur remonte quand même.
+            console.error(`❌ Recharge ${checkoutId} : remise en attente impossible —`, e2.message);
+        }
         await journalService.log({
             action: "recharge.samii.echec",
-            details: `ENCAISSÉE MAIS NON CRÉDITÉE — ${montantUSD} $ pour ${userId} (${checkoutId}) : ${err.message}`,
+            details: `ENCAISSÉE, CRÉDIT EN ÉCHEC (remise en attente pour rejeu) — ${montantUSD} $ pour ${userId} (${checkoutId}) : ${err.message}`,
             montant: montantUSD, refId: checkoutId,
         });
-        return { updated: false, aReparer: true };
+        // On LÈVE : c'est une panne technique, pas un état métier. Le webhook
+        // doit répondre 500 pour que Chargily rejoue.
+        throw err;
     }
 }
 

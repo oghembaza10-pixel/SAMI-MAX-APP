@@ -63,6 +63,11 @@ async function preparerSchema() {
     await db.query(`ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS confirmations_depassement_mois INT DEFAULT 0`);
     await db.query(`ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS confirmations_depassement_reset_le TIMESTAMP`);
     await db.query(`ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS theme_visuel TEXT`);
+    // Colonnes que le parcours réel utilise (tri des QG, propriétaire).
+    await db.query(`ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS owner TEXT`);
+    await db.query(`ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS est_bac_a_sable BOOLEAN DEFAULT false`);
+    await db.query(`ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS statut TEXT DEFAULT 'actif'`);
+    await db.query(`ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS qg_principal TEXT`);
 }
 
 (async () => {
@@ -193,7 +198,67 @@ async function preparerSchema() {
     verifier(!leve, "facturer un marchand à sec lève une erreur — la conversation de son " +
         "client s'arrêterait là");
 
-    // ── 7. L'INVARIANT, APRÈS TOUT ÇA ────────────────────────────────────
+    // ── 7. LE PAYS VIENT DU QG, ET LA MONNAIE DU PAYS ────────────────────
+    //
+    // LE DÉFAUT QUE CE TEST EMPÊCHE DE REVENIR.
+    //
+    // La page de recharge lisait `utilisateurs.pays`. Mesuré sur
+    // l'application qui tourne : cette colonne n'est JAMAIS écrite par le
+    // parcours normal — ni le formulaire d'inscription ni sa route ne la
+    // renseignent. Un marchand de Bamako voyait donc ses prix en dinars
+    // ALGÉRIENS avec « ≈ 2 USD » en dessous.
+    //
+    // Le pays réellement saisi est celui du QG : le formulaire le demande et
+    // la route le REFUSE s'il manque. On le prouve ici sur de vraies lignes,
+    // sans jamais modifier une colonne à la main pour faire passer le test.
+    const devises = require(path.join(RACINE, "services/devises"));
+    const workspaceService = require(path.join(RACINE, "services/workspaceService"));
+
+    for (const [pays, attendue] of [
+        ["Algérie", "DZD"], ["Mali", "XOF"], ["Maroc", "MAD"], ["Tunisie", "TND"],
+        ["Sénégal", "XOF"], ["Côte d'Ivoire", "XOF"], ["Cameroun", "XAF"], ["France", "EUR"],
+    ]) {
+        const e = `pays-${attendue}-${pays.replace(/[^a-z]/gi, "")}-${marque}@test.invalid`;
+        const w = `ws-pays-${attendue}-${pays.replace(/[^a-z]/gi, "")}-${marque}`;
+        await db.query(
+            `INSERT INTO utilisateurs (nom, prenom, email, password_hash, type_compte)
+             VALUES ('Essai','Pays',$1,'x','marchand')`, [e]);
+        // Exactement ce qu'écrit le parcours : un QG avec son pays. La devise
+        // du QG est volontairement laissée au défaut (« DZD » pour tout le
+        // monde) — c'est justement pourquoi on ne s'y fie pas.
+        await db.query(
+            `INSERT INTO workspaces (id, owner, owner_email, nom, metier, pays, devise)
+             VALUES ($1,$2,$2,'Boutique','boutique',$3,'DZD')`, [w, e, pays]);
+
+        const lu = await workspaceService.paysDuCompte({ workspaceId: w, email: e });
+        verifier(lu === pays, `le QG dit « ${pays} » et paysDuCompte répond « ${lu} »`);
+        const monnaie = devises.pourPays(lu);
+        verifier(monnaie === attendue,
+            `un marchand en ${pays} se verrait facturer en ${monnaie} au lieu de ${attendue}`);
+
+        // Et sans QG en session : on doit retrouver le même pays par son QG
+        // principal. C'est le cas réel de quelqu'un qui arrive sur /recharge
+        // depuis le chat, sans être entré dans sa boutique.
+        const sansSession = await workspaceService.paysDuCompte({ email: e });
+        verifier(sansSession === pays,
+            `sans QG en session, ${pays} devient « ${sansSession} » : la personne verrait ` +
+            "une autre monnaie selon la page d'où elle vient");
+
+        // Le montant affiché doit être convertible — un taux manquant
+        // ferait échouer la recharge d'un pays entier, en silence.
+        const conv = devises.convertir(2, "USD", monnaie);
+        verifier(conv.ok && conv.montant > 0,
+            `2 $ ne se convertissent pas en ${monnaie} (${pays}) : ${conv.raison || "montant nul"}`);
+    }
+
+    // Personne sans QG ni pays : on ne doit rien inventer. `pourPays("")`
+    // rend « USD », son repli documenté — et surtout pas un dinar au hasard.
+    const inconnu = await workspaceService.paysDuCompte({ email: `personne-${marque}@test.invalid` });
+    verifier(inconnu === "", `un compte sans QG rend « ${inconnu} » au lieu de rien`);
+    verifier(devises.pourPays(inconnu) === "USD",
+        "un pays inconnu ne retombe plus sur USD : on facturerait dans une monnaie inventée");
+
+    // ── 8. L'INVARIANT, APRÈS TOUT ÇA ────────────────────────────────────
     const somme = await db.query(`SELECT COALESCE(SUM(sens * montant),0) AS t FROM portefeuille_mouvements`);
     verifier(proche(somme[0].t, 0),
         `le grand livre n'est plus équilibré : somme signée = ${somme[0].t}`);

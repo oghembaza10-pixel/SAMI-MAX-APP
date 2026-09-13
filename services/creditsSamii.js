@@ -142,15 +142,22 @@ async function debiterTour(userId, { actes = [], ref = null, motif = "", avecMes
 // Crédite une recharge payée. Appelé UNIQUEMENT depuis la confirmation d'un
 // paiement réellement encaissé — jamais depuis une page, jamais sur la foi
 // de ce qu'un navigateur raconte.
-async function crediter(userId, montantUSD, { rail = "chargily", detail = "" } = {}) {
+// `ref` rend le crédit rejouable sans risque. Sans elle, il fallait consommer
+// la ligne « en_attente » AVANT de créditer, et un crédit qui échouait ensuite
+// devenait irrattrapable : le rejeu ne retrouvait plus de ligne à prendre.
+// Avec elle, créditer deux fois la même recharge ne fait rien la seconde fois.
+async function crediter(userId, montantUSD, { rail = "chargily", detail = "", ref = null } = {}) {
     const compte = compteDe(userId);
     if (!compte) throw new Error("Compte manquant.");
     const n = Number(montantUSD);
     if (!(n > 0)) throw new Error("Montant invalide.");
     const r = await portefeuille.deposer({
-        compte, montant: n, devise: CREDITS.DEVISE_COMPTE, rail, detail,
+        compte, montant: n, devise: CREDITS.DEVISE_COMPTE, rail, detail, transactionRef: ref,
     });
-    return { ok: true, solde: r.solde, messages: CREDITS.messagesPour(r.solde) };
+    return {
+        ok: true, dejaCompte: r.dejaCompte === true,
+        solde: r.solde, messages: CREDITS.messagesPour(r.solde),
+    };
 }
 
 // ── QUI PAIE POUR UN QG ──────────────────────────────────────────────────

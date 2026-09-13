@@ -26,6 +26,7 @@ const CREDITS = require("../config/credits");
 const chargily = require("../services/chargily");
 const devises = require("../services/devises");
 const creditsSamii = require("../services/creditsSamii");
+const workspaceService = require("../services/workspaceService");
 
 function exigeConnexion(req, res, next) {
     if (!req.session?.loggedIn || !req.session?.userId) {
@@ -47,32 +48,25 @@ function monnaieDePaiement() {
 }
 
 // ── LA PAGE ──────────────────────────────────────────────────────────────
-// Le pays de la personne, lu LÀ OÙ IL EST. Première version : je lisais
-// `req.session.pays`. Mesuré sur l'application qui tourne — cette clé n'est
-// écrite NULLE PART dans le code. Elle valait donc toujours undefined, la
-// devise retombait sur « USD » pour tout le monde, et la conversion en
-// monnaie locale que je venais d'écrire était du code mort : un marchand
-// malien voyait son prix en dinars algériens avec, en dessous, « ≈ 2 USD ».
 //
-// C'est exactement l'erreur facturée à Bourama Traoré, à Ségou (voir
-// routes/marketplace.js) : 200 dinars ALGÉRIENS pour un Malien. La leçon
-// tient en une ligne — le pays se lit en base, pas dans une clé de session
-// qu'on suppose remplie.
-async function paysDe(req) {
-    if (req.session?.pays) return req.session.pays;   // si un jour elle existe
-    try {
-        const rows = await db.query(`SELECT pays FROM utilisateurs WHERE id = $1`, [String(req.session.userId)]);
-        return rows[0]?.pays || "";
-    } catch (err) {
-        // Pays inconnu = on affiche le montant en dinars, celui qui sera
-        // réellement encaissé. Jamais un chiffre inventé.
-        console.error("❌ GET /recharge (pays) :", err.message);
-        return "";
-    }
-}
-
+// Le pays ne se devine pas ici : `workspaceService.paysDuCompte` répond pour
+// toute l'application, et `devises.pourPays` traduit ce pays en monnaie —
+// deux briques qui existaient déjà. Cette page n'a aucune règle de pays à
+// elle, sinon il y en aurait deux, et elles finiraient par diverger.
+//
+// Les deux versions précédentes lisaient au mauvais endroit : d'abord
+// `req.session.pays`, qui n'est écrite nulle part, puis `utilisateurs.pays`,
+// que le parcours d'inscription ne renseigne jamais. Dans les deux cas la
+// devise retombait sur « USD » pour TOUT LE MONDE et la conversion locale
+// était du code mort. Le pays réellement saisi est celui du QG — le
+// formulaire le demande et la route le refuse s'il manque.
 router.get("/", exigeConnexion, async (req, res) => {
-    const devisePref = devises.pourPays(await paysDe(req)) || "USD";
+    const pays = await workspaceService.paysDuCompte({
+        workspaceId: req.session?.workspaceId || null,
+        email: req.session?.email || "",
+        userId: req.session?.userId || null,
+    });
+    const devisePref = devises.pourPays(pays);
     let etat = { soldeUSD: 0, messages: 0, credite: false };
     try {
         etat = await creditsSamii.etat(req.session.userId);

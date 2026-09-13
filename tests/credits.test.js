@@ -136,8 +136,16 @@ const CONFIG = require(path.join(RACINE, "config.js"));
                 return [{ solde: total, total: total }];
             }
             if (/SELECT 1 FROM portefeuille_mouvements/i.test(sql)) {
-                const ref = params[0];
-                return lignes.filter((l) => l.transaction_ref === ref && l.type === "consommation").length
+                // Le TYPE et le COMPTE viennent de la requête, ils ne sont pas
+                // devinés : dépôts et consommations ont chacun leur
+                // idempotence, et une référence appartient à un compte. Une
+                // doublure qui ignorerait l'un ou l'autre dirait « déjà
+                // compté » à la place de la vraie base, ou l'inverse.
+                const type = /type = 'depot'/.test(sql) ? "depot" : "consommation";
+                const [ref, compte] = params;
+                return lignes.filter((l) =>
+                    l.transaction_ref === ref && l.type === type
+                    && (compte === undefined || l.compte === compte)).length
                     ? [{ "?column?": 1 }] : [];
             }
             return [];
@@ -297,20 +305,41 @@ const CONFIG = require(path.join(RACINE, "config.js"));
     {
         const route = fs.readFileSync(path.join(RACINE, "routes", "recharge.js"), "utf8");
 
-        // On ne doit PAS faire dépendre la devise d'une clé de session que
-        // personne ne remplit. Si quelqu'un se met un jour à écrire
-        // `req.session.pays` au login, ce test le verra et pourra être
-        // assoupli — en le prouvant, pas en le supposant.
-        const ecrite = ["login", "register"].some((f) => {
-            try {
-                return /req\.session\.pays\s*=/.test(
-                    fs.readFileSync(path.join(RACINE, "routes", `${f}.js`), "utf8"));
-            } catch { return false; }
-        });
-        const litLaBase = /FROM utilisateurs[\s\S]{0,80}pays|SELECT pays/.test(route);
-        verifier(ecrite || litLaBase,
-            "routes/recharge.js déduit la devise de req.session.pays, que personne n'écrit : " +
-            "tout le monde voit « USD » et la conversion en monnaie locale est du code mort");
+        // ── LA PAGE NE DOIT PAS AVOIR SA PROPRE RÈGLE DE PAYS ───────────
+        //
+        // Deux versions se sont trompées de source avant celle-ci :
+        // `req.session.pays` (jamais écrite nulle part) puis
+        // `utilisateurs.pays` (jamais renseignée par le parcours
+        // d'inscription). Dans les deux cas la devise retombait sur « USD »
+        // pour TOUT LE MONDE et la conversion locale était du code mort.
+        //
+        // La réponse vit maintenant dans workspaceService, une seule fois,
+        // pour toute l'application. On exige donc que la page la DEMANDE, et
+        // qu'elle n'aille surtout pas rechercher un pays elle-même : deux
+        // règles de pays finiraient par diverger, et c'est l'utilisateur qui
+        // découvrirait laquelle s'applique.
+        verifier(/workspaceService\.paysDuCompte\(/.test(route),
+            "routes/recharge.js ne demande pas le pays à workspaceService.paysDuCompte : " +
+            "soit elle a sa propre règle, soit elle n'en a plus du tout");
+        verifier(!/SELECT pays FROM utilisateurs/.test(route),
+            "routes/recharge.js relit elle-même utilisateurs.pays — la colonne que le parcours " +
+            "d'inscription ne remplit jamais, et une deuxième règle de pays en prime");
+        verifier(/devises\.pourPays\(/.test(route),
+            "routes/recharge.js n'utilise plus devises.pourPays : le lien pays → monnaie " +
+            "serait réécrit une deuxième fois");
+
+        // Et la source de vérité, elle, doit bien regarder le QG — le seul
+        // endroit où un pays est RÉELLEMENT saisi dans le parcours.
+        const ws = fs.readFileSync(path.join(RACINE, "services", "workspaceService.js"), "utf8");
+        const bloc = ws.slice(ws.indexOf("async function paysDuCompte"));
+        const corps = bloc.slice(0, bloc.indexOf("\n}\n") + 1);
+        verifier(/getById\(workspaceId\)/.test(corps) && /qgPrincipal\(email\)/.test(corps),
+            "paysDuCompte ne lit plus le pays du QG : c'est pourtant le seul que le parcours " +
+            "d'inscription remplit vraiment (le formulaire le demande, la route le refuse s'il manque)");
+        verifier(!/\.devise\b/.test(corps),
+            "paysDuCompte se fie à workspaces.devise : le formulaire de création ne la demande " +
+            "pas, donc create() y écrit « DZD » pour tout le monde — elle dirait « dinar " +
+            "algérien » d'un commerçant de Bamako");
 
         // Et le prix principal reste celui qui sera RÉELLEMENT encaissé : la
         // monnaie locale n'est qu'un repère, jamais le montant du bouton.

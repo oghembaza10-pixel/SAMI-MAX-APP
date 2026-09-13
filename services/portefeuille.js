@@ -164,12 +164,38 @@ async function exigerSolde(q, compte, poche, devise, montant) {
 // L'argent entre. `rail` dit par où (voir config/rails.js) ; il n'est pas
 // vérifié ici — on n'enregistre qu'un versement DÉJÀ constaté, par un
 // opérateur automatique ou par l'équipe.
-async function deposer({ compte, montant, devise = "USD", rail = "virement", detail = "" }) {
+async function deposer({ compte, montant, devise = "USD", rail = "virement", detail = "", transactionRef = null }) {
     if (!compte) throw new Error("Compte manquant.");
     const op = reference("DEP");
     return db.transaction(async (q) => {
+        // ── IDEMPOTENCE, QUAND L'APPELANT SAIT NOMMER SON DÉPÔT ─────────
+        //
+        // Un dépôt n'en avait aucune : seule la ligne SQL de l'appelant
+        // (« ne prends que si le statut est encore en_attente ») empêchait un
+        // double crédit. Ça marche, mais ça oblige à consommer cette ligne
+        // AVANT de créditer — et si le crédit échoue ensuite, plus rien ne
+        // peut le rattraper : le rejeu ne retrouve plus de ligne à prendre.
+        //
+        // Avec une référence, créditer deux fois est sans effet. Le rejeu
+        // devient donc une réparation possible au lieu d'un danger.
+        //
+        // La recherche est faite CHEZ LE TITULAIRE, comme pour `consommer` :
+        // une référence est un fait chez quelqu'un, pas une clé universelle.
+        if (transactionRef) {
+            const deja = await q(
+                `SELECT 1 FROM portefeuille_mouvements
+                  WHERE transaction_ref = $1 AND compte = $2 AND type = 'depot' LIMIT 1`,
+                [transactionRef, compte],
+            );
+            if (deja.length) {
+                return {
+                    operation: null, dejaCompte: true,
+                    solde: await soldePoche(q, compte, "disponible", devise),
+                };
+            }
+        }
         await ecrire(q, {
-            operation: op, type: "depot", devise, rail, detail,
+            operation: op, type: "depot", devise, rail, detail, transactionRef,
             lignes: [
                 { compte: EXTERIEUR, poche: "disponible", sens: -1, montant },
                 { compte, poche: "disponible", sens: +1, montant },

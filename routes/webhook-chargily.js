@@ -47,13 +47,23 @@ router.post("/", async (req, res) => {
             ["abonnement", confirmChargilyAbonnement],
             ["recharge", confirmChargilyRecharge],
         ];
+        //
+        // CE QUI COMPTE COMME UN ÉCHEC. Un confirmateur qui renvoie
+        // `{updated:false}` n'a pas échoué : il a constaté un état métier
+        // légitime — ce paiement n'est pas le sien, il n'est pas encore payé,
+        // ou il a déjà été traité. Rien à rejouer, on répondra 200.
+        //
+        // Un confirmateur qui LÈVE, lui, n'a pas pu savoir : Chargily
+        // injoignable, délai dépassé, base en carafe. Là on ignore si le
+        // client a payé, et c'est exactement le cas où il faut être rejoué.
         let tombes = [];
         for (const [nom, confirmer] of travaux) {
             try {
                 await confirmer(checkoutId);
             } catch (err) {
                 tombes.push(nom);
-                console.error(`❌ Webhook Chargily [${nom}] ${checkoutId} :`, err.message);
+                const genre = err?.technique ? "PANNE CHARGILY" : "erreur technique";
+                console.error(`❌ Webhook Chargily [${nom}] ${checkoutId} — ${genre} :`, err.message);
             }
         }
 
@@ -66,8 +76,17 @@ router.post("/", async (req, res) => {
 
         res.sendStatus(200);
     } catch (err) {
-        console.error("❌ Webhook Chargily :", err.message);
-        res.sendStatus(200);
+        // ── LE DERNIER ENDROIT OÙ UNE PANNE DEVENAIT « C'EST TRAITÉ » ───
+        //
+        // Ce filet répondait 200. Or tout ce qui arrive ICI est imprévu :
+        // chaque issue métier est déjà traitée plus haut par un retour
+        // explicite (403 signature invalide, 200 sans identifiant, 200 ou 500
+        // selon la boucle). Une erreur qui remonte jusqu'ici veut donc dire
+        // qu'on ne sait pas ce qui s'est passé — et répondre « c'est bon » à
+        // Chargily sur un paiement dont on ignore le sort est exactement la
+        // panne qu'on vient de corriger un étage plus bas.
+        console.error("❌ Webhook Chargily (imprévu, on demande un rejeu) :", err.message);
+        res.sendStatus(500);
     }
 });
 

@@ -310,6 +310,63 @@ async function exists(workspaceId) {
     return workspace !== null;
 }
 
+// ── OÙ SE TROUVE CETTE PERSONNE, COMMERCIALEMENT ? ───────────────────────
+//
+// UNE SEULE RÉPONSE, POUR TOUTE L'APPLICATION. La question « dans quel pays
+// est ce marchand » se posait déjà à trois endroits différents, et chacun
+// piochait où il pouvait. La page de recharge lisait `utilisateurs.pays` —
+// mesuré sur l'application qui tourne : cette colonne n'est JAMAIS écrite par
+// le parcours normal. Ni le formulaire d'inscription ni sa route ne la
+// renseignent ; seule la page « réglages », que presque personne n'ouvre, la
+// remplit. La devise retombait donc sur « USD » pour tout le monde, et un
+// marchand malien voyait ses prix en dinars ALGÉRIENS.
+//
+// Le pays réellement saisi dans le parcours est celui du QG : le formulaire
+// de création le demande et la route le REFUSE s'il manque
+// (« Le pays est requis »). C'est donc lui la source de vérité.
+//
+// L'ORDRE, DU PLUS SÛR AU PLUS FAIBLE :
+//   1. le QG ouvert en ce moment — c'est de CETTE boutique qu'on parle ;
+//   2. son QG principal, sinon le premier qu'il possède ;
+//   3. la fiche personnelle, renseignée depuis les réglages ;
+//   4. rien — et `devises.pourPays("")` rendra « USD », son repli habituel.
+//
+// On ne lit PAS `workspaces.devise` : le formulaire de création ne la demande
+// pas, donc `create()` y écrit « DZD » par défaut pour tout le monde. Elle
+// dirait « dinar algérien » d'un commerçant de Bamako.
+async function paysDuCompte({ workspaceId = null, email = "", userId = null } = {}) {
+    try {
+        if (workspaceId) {
+            const w = await getById(workspaceId);
+            if (w?.pays) return w.pays;
+        }
+        if (email) {
+            const principal = await qgPrincipal(email);
+            if (principal?.pays) return principal.pays;
+            // `qgPrincipal` trie sur plusieurs colonnes et rend `null` dès
+            // qu'une seule manque — il se tait, comme il doit, pour ne jamais
+            // empêcher quelqu'un d'entrer. Mais ici son silence changerait la
+            // MONNAIE affichée à quelqu'un qui vient payer. On redemande donc
+            // par le chemin le plus simple, celui qui ne trie rien.
+            const siens = await getByOwner(email);
+            const avecPays = siens.find((w) => w.pays);
+            if (avecPays) return avecPays.pays;
+        }
+        if (email || userId) {
+            const rows = await db.query(
+                `SELECT pays FROM utilisateurs WHERE ${userId ? "id" : "email"} = $1 LIMIT 1`,
+                [String(userId || email)],
+            );
+            if (rows[0]?.pays) return rows[0].pays;
+        }
+    } catch (err) {
+        // Un pays illisible ne doit jamais empêcher d'afficher une page — et
+        // surtout pas celle où quelqu'un vient payer. On retombe sur le repli.
+        console.error("❌ workspaceService.paysDuCompte :", err.message);
+    }
+    return "";
+}
+
 async function belongsToOwner(workspaceId, owner) {
     try {
         const rows = await db.query(
@@ -406,6 +463,7 @@ module.exports = {
     getActiveWorkspace,
     getByMetier,
     exists,
+    paysDuCompte,
     belongsToOwner,
     appartientA,
     promouvoirEnMarchand,
