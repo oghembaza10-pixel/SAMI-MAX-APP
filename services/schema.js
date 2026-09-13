@@ -48,6 +48,299 @@ const db = require("./db");
 // jouer dans l'ordre. Ajouter une table ici, c'est garantir qu'elle existera
 // partout — développement, essai, production — sans rien lancer à la main.
 const BLOCS = [
+    // ══════════════════════════════════════════════════════════════════════
+    // LES FONDATIONS — ce bloc doit rester le PREMIER
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // CE QU'IL CORRIGE, MESURÉ SUR UNE BASE VIERGE.
+    //
+    // Un démarrage sur base vide rendait **20 échecs de schéma** et créait
+    // 29 tables. Toutes les erreurs disaient la même chose sous des noms
+    // différents : « relation "utilisateurs" does not exist », « relation
+    // "workspaces" does not exist », « relation "samii_conversations" does
+    // not exist », « relation "publications" does not exist ».
+    //
+    // La cause était unique et bête : CE FICHIER ALTÉRAIT DES TABLES QU'IL NE
+    // CRÉAIT JAMAIS. Les tables de base vivaient dans huit scripts séparés
+    // (`init-utilisateurs`, `init-db`, `init-admin`, `init-memoire-samii`,
+    // `init-community`, `init-all`, `init-rendezvous`,
+    // `create-prospects-vitrine`) qu'il fallait lancer À LA MAIN, DANS UN
+    // ORDRE QUI N'ÉTAIT ÉCRIT NULLE PART.
+    //
+    // ── L'ORDRE N'ÉTAIT PAS UN DÉTAIL ─────────────────────────────────────
+    //
+    // Mesuré : lancés par ordre alphabétique, `init-all.js` passe AVANT
+    // `init-db.js`. Or `commandes` porte `REFERENCES workspaces(id)`, et
+    // `init-all.js` tient toute sa fondation dans un seul try/catch. La
+    // première erreur emportait les quinze tables suivantes — commandes,
+    // clients, annonces, avis, abonnements, transactions, journal — SANS
+    // qu'aucune trace ne dise ce qui venait d'être perdu.
+    //
+    // Résultat constaté : `commandes`, `clients`, `annonces`,
+    // `publications` et `samii_conversations` n'étaient créées par RIEN.
+    // Ni par le démarrage, ni par les scripts lancés dans l'ordre naturel.
+    //
+    // ── CE QUE ÇA COÛTAIT À QUELQU'UN ─────────────────────────────────────
+    //
+    // Un déploiement neuf sur Render ne lance que le démarrage. La création
+    // d'un QG répondait donc HTTP 200 et n'enregistrait rien — « column
+    // w.owner does not exist » partait dans un catch que personne ne lit.
+    // Le marchand voyait une page normale et n'avait pas de QG.
+    //
+    // ── LA RÈGLE, DÉSORMAIS ───────────────────────────────────────────────
+    //
+    //   UNE BASE VIDE + UN DÉMARRAGE = UNE APPLICATION QUI MARCHE.
+    //
+    // Aucun script à lancer à la main. Le DDL ci-dessous est repris MOT POUR
+    // MOT des scripts d'origine — on ne réécrit rien, on met au bon endroit
+    // ce qui existait déjà. Les scripts restent en place : ils sont
+    // idempotents (`IF NOT EXISTS`) et ne gênent personne. Mais plus rien ne
+    // dépend d'eux, et `tests/schema-neuf.test.js` crie si les deux
+    // divergent.
+    {
+        nom: "fondations",
+        sql: [
+            // ── LE COMPTE ────────────────────────────────────────────────
+            // Repris de scripts/init-utilisateurs.js. Tout part d'ici :
+            // `workspaces.agence_id`, `samii_conversations.user_id` et
+            // `publications.auteur_id` pointent dessus.
+            `CREATE TABLE IF NOT EXISTS utilisateurs (
+                id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+                nom TEXT, prenom TEXT,
+                email TEXT UNIQUE NOT NULL,
+                telephone TEXT,
+                password_hash TEXT NOT NULL,
+                type_compte TEXT DEFAULT 'client',
+                metier TEXT,
+                role TEXT DEFAULT 'owner',
+                statut_acces TEXT DEFAULT 'actif',
+                email_verifie BOOLEAN DEFAULT false,
+                token_verification TEXT, token_expire_le TIMESTAMP,
+                token_reset_password TEXT, token_reset_expire_le TIMESTAMP,
+                bio_vitrine TEXT, photo_profil_url TEXT,
+                langue_preferee TEXT DEFAULT 'fr',
+                pays TEXT,
+                abonnement TEXT DEFAULT 'gratuit',
+                grade_actuel TEXT DEFAULT 'Soldat',
+                score_grade INTEGER DEFAULT 0,
+                temps_total_minutes INTEGER DEFAULT 0,
+                nb_achats INTEGER DEFAULT 0,
+                nb_posts_valides INTEGER DEFAULT 0,
+                code_parrainage TEXT, parraine_par TEXT,
+                last_login DATE,
+                actif BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+
+            // ── LE QG ────────────────────────────────────────────────────
+            //
+            // ⚠️ LES COLONNES DE `scripts/alter-workspaces.js` SONT ICI, PAS
+            // AILLEURS. C'était le défaut le plus coûteux : `init-db.js` créait
+            // sept colonnes, le code en attendait vingt et une, et les quatorze
+            // autres n'arrivaient que si quelqu'un pensait à lancer un second
+            // script. Sans `owner`, la création d'un QG échouait en silence.
+            `CREATE TABLE IF NOT EXISTS workspaces (
+                id TEXT PRIMARY KEY,
+                nom TEXT NOT NULL,
+                owner_email TEXT NOT NULL,
+                owner TEXT,
+                metier TEXT, pays TEXT,
+                devise TEXT DEFAULT 'DZD',
+                description TEXT, logo TEXT,
+                statut TEXT DEFAULT 'actif',
+                langue TEXT DEFAULT 'fr',
+                timezone TEXT DEFAULT 'Africa/Algiers',
+                agence_id TEXT REFERENCES utilisateurs(id),
+                agence_statut TEXT DEFAULT 'actif',
+                samii TEXT, coffre TEXT, missions TEXT, automatisations TEXT,
+                meta_page_id TEXT, meta_access_token TEXT, meta_ad_account_id TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )`,
+
+            // Repris de scripts/init-db.js.
+            `CREATE TABLE IF NOT EXISTS produits (
+                id SERIAL PRIMARY KEY,
+                workspace_id TEXT REFERENCES workspaces(id),
+                nom TEXT NOT NULL, description TEXT,
+                prix NUMERIC NOT NULL,
+                stock INTEGER DEFAULT 0,
+                photo_url TEXT,
+                actif BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+
+            // ── LE FONDATEUR ─────────────────────────────────────────────
+            // Repris de scripts/init-admin.js. Sans elle, `/admin/setup`
+            // répondait « Erreur serveur » sur une base neuve : personne ne
+            // pouvait ouvrir l'administration d'un déploiement tout frais.
+            `CREATE TABLE IF NOT EXISTS admin_comptes (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+
+            // ── LA MÉMOIRE DES DEUX CHATS ────────────────────────────────
+            //
+            // Repris de scripts/init-memoire-samii.js. C'est la table que le
+            // chat public ET le chat du QG partagent — un seul SAMII, une
+            // seule mémoire. Absente, le chat répondait quand même et ne
+            // gardait rien : l'erreur partait dans un catch.
+            //
+            // `session_ref` et son index sont ajoutés plus bas par le bloc
+            // « mémoire de SAMII », qui échouait jusqu'ici faute de table.
+            `CREATE TABLE IF NOT EXISTS samii_conversations (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT REFERENCES utilisateurs(id),
+                role TEXT, contenu TEXT, source TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+
+            // Repris de scripts/create-prospects-vitrine.js — le chat public
+            // y dépose un email ou un téléphone laissé en conversation.
+            `CREATE TABLE IF NOT EXISTS prospects_vitrine (
+                id BIGSERIAL PRIMARY KEY,
+                email TEXT, telephone TEXT, message TEXT,
+                langue TEXT DEFAULT 'fr', ip TEXT,
+                traite BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )`,
+
+            // Repris de scripts/init-community.js. `publications_enregistrees`
+            // est créée plus bas par ce même fichier et la référence : sans
+            // celle-ci, les deux échouaient ensemble.
+            `CREATE TABLE IF NOT EXISTS publications (
+                id SERIAL PRIMARY KEY,
+                auteur_id TEXT REFERENCES utilisateurs(id),
+                contenu TEXT, image_url TEXT,
+                type TEXT DEFAULT 'texte',
+                epingle BOOLEAN DEFAULT false,
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+
+            // ── LE COMMERCE ──────────────────────────────────────────────
+            //
+            // Reprises de scripts/init-all.js — les trois que le QG et le chat
+            // lisent à chaque tour. Ce sont exactement celles que la panne
+            // d'ordre faisait disparaître en silence.
+            `CREATE TABLE IF NOT EXISTS commandes (
+                id TEXT PRIMARY KEY,
+                workspace_id TEXT REFERENCES workspaces(id),
+                nom_client TEXT, telephone TEXT, email TEXT,
+                adresse TEXT, pays TEXT, ville TEXT,
+                produit TEXT,
+                montant NUMERIC DEFAULT 0,
+                devise TEXT DEFAULT 'DZD',
+                statut TEXT DEFAULT 'en attente',
+                source TEXT DEFAULT 'telegram',
+                canal_origine TEXT, numero_suivi TEXT,
+                transporteur TEXT, dernier_statut_suivi TEXT,
+                date_commande TIMESTAMP DEFAULT NOW()
+            )`,
+            `CREATE TABLE IF NOT EXISTS clients (
+                id SERIAL PRIMARY KEY,
+                workspace_id TEXT REFERENCES workspaces(id),
+                nom TEXT, telephone TEXT, pays TEXT, ville TEXT,
+                total_commandes INTEGER DEFAULT 0,
+                total_depense NUMERIC DEFAULT 0,
+                devise TEXT DEFAULT 'DZD',
+                statut TEXT DEFAULT 'normal',
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+            `CREATE TABLE IF NOT EXISTS rendez_vous (
+                id SERIAL PRIMARY KEY,
+                workspace_id TEXT REFERENCES workspaces(id),
+                client_nom TEXT, client_telephone TEXT,
+                motif TEXT, date_rdv TIMESTAMP,
+                statut TEXT DEFAULT 'en_attente',
+                source TEXT DEFAULT 'telegram',
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+            // ── LES COLONNES DE COMPTE QUE PERSONNE N'AJOUTAIT ───────────
+            //
+            // Quatorze colonnes de `utilisateurs` que le code lit et qu'aucun
+            // script ne créait. Relevées en balayant le projet, puis vérifiées
+            // une par une contre une base neuve.
+            //
+            // Elles se répartissent en quatre familles, et chacune casse une
+            // page entière quand elle manque : la vitrine personnelle
+            // (sous-domaine, bannière, thème), la vérification de compte, les
+            // pixels publicitaires, et le suivi de l'académie.
+            `ALTER TABLE utilisateurs
+                ADD COLUMN IF NOT EXISTS sous_domaine TEXT,
+                ADD COLUMN IF NOT EXISTS banniere_url TEXT,
+                ADD COLUMN IF NOT EXISTS vitrine_theme TEXT,
+                ADD COLUMN IF NOT EXISTS vitrine_grille TEXT,
+                ADD COLUMN IF NOT EXISTS verification_statut TEXT,
+                ADD COLUMN IF NOT EXISTS verification_document_url TEXT,
+                ADD COLUMN IF NOT EXISTS verification_note_admin TEXT,
+                ADD COLUMN IF NOT EXISTS verification_soumis_le TIMESTAMP,
+                ADD COLUMN IF NOT EXISTS pixel_meta TEXT,
+                ADD COLUMN IF NOT EXISTS pixel_tiktok TEXT,
+                ADD COLUMN IF NOT EXISTS pixel_google TEXT,
+                ADD COLUMN IF NOT EXISTS parrainage_le TIMESTAMP,
+                ADD COLUMN IF NOT EXISTS lecons_ecommerce_faites TEXT,
+                ADD COLUMN IF NOT EXISTS statut_paiement_ccp TEXT`,
+
+            // ── LE JOURNAL ───────────────────────────────────────────────
+            // Repris de scripts/init-all.js. `workspaceService.listerParPertinence`
+            // le lit pour classer les QG : absent, la liste des QG d'un
+            // marchand tombait dans un catch et rendait vide.
+            `CREATE TABLE IF NOT EXISTS journal (
+                id SERIAL PRIMARY KEY,
+                action TEXT, details TEXT,
+                workspace_id TEXT, user_id TEXT,
+                montant NUMERIC, ref_id TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+
+            // ── LES COLONNES QUE PERSONNE N'AJOUTAIT ─────────────────────
+            //
+            // TREIZE COLONNES DE `workspaces` QUE LE CODE LIT ET QU'AUCUN
+            // SCRIPT NE CRÉAIT. Relevées en balayant tous les `SELECT … FROM
+            // workspaces` et `UPDATE workspaces SET …` du projet, puis
+            // vérifiées une par une contre une base neuve — pas devinées.
+            //
+            // La plus coûteuse est `palier_abonnement` : `abonnementService`
+            // l'écrit à chaque changement d'abonnement et la lit pour
+            // décider du palier. Sur une base neuve, toute la facturation
+            // répondait « column does not exist » dans un catch, et chaque
+            // compte retombait sur « free ». Quelqu'un aurait payé sans rien
+            // recevoir.
+            //
+            // Écrites en ALTER et non dans le CREATE au-dessus : une base
+            // existante a déjà sa table, et c'est elle qu'il faut rattraper.
+            `ALTER TABLE workspaces
+                ADD COLUMN IF NOT EXISTS palier_abonnement TEXT DEFAULT 'free',
+                ADD COLUMN IF NOT EXISTS messages_depassement_mois INTEGER DEFAULT 0,
+                ADD COLUMN IF NOT EXISTS messages_depassement_reset_le DATE,
+                ADD COLUMN IF NOT EXISTS confirmations_depassement_mois INTEGER DEFAULT 0,
+                ADD COLUMN IF NOT EXISTS confirmations_depassement_reset_le DATE,
+                ADD COLUMN IF NOT EXISTS griot_generation_du_mois INTEGER DEFAULT 0,
+                ADD COLUMN IF NOT EXISTS griot_generation_reset_le DATE,
+                ADD COLUMN IF NOT EXISTS latitude NUMERIC,
+                ADD COLUMN IF NOT EXISTS longitude NUMERIC,
+                ADD COLUMN IF NOT EXISTS rdv_config TEXT,
+                ADD COLUMN IF NOT EXISTS shopify_shop_url TEXT,
+                ADD COLUMN IF NOT EXISTS shopify_access_token TEXT,
+                ADD COLUMN IF NOT EXISTS shopify_webhooks_actifs BOOLEAN DEFAULT false`,
+
+            `CREATE TABLE IF NOT EXISTS annonces (
+                id SERIAL PRIMARY KEY,
+                titre TEXT NOT NULL, categorie TEXT,
+                region_fournisseur TEXT, description TEXT,
+                prix TEXT, devise TEXT DEFAULT 'DZD',
+                photo_url TEXT, photos_urls TEXT, caracteristiques TEXT,
+                type_vendeur TEXT, vendeur_id TEXT, vendeur_nom TEXT,
+                ville TEXT, pays TEXT,
+                vues INTEGER DEFAULT 0,
+                actif BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+        ],
+    },
+
     // ── LES RECHARGES DE CRÉDITS SAMII ───────────────────────────────────
     //
     // POURQUOI CETTE TABLE EXISTE, ALORS QUE LE SOLDE VIT AILLEURS.
