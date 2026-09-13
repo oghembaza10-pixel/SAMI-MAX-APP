@@ -10,6 +10,7 @@ const db = require("../services/db");
 const journalService = require("../services/journalService");
 const samiiQuota = require("../services/samiiQuota");
 const creditsSamii = require("../services/creditsSamii");
+const niveauAuto = require("../services/niveauAuto");
 const CREDITS = require("../config/credits");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const samiiMemoire = require("../services/samiiMemoire");
@@ -98,8 +99,13 @@ router.post("/chat", requireAuth, async (req, res) => {
         // (voir samiiMemoire) : un client gratuit qui revient plus tard doit
         // retrouver SAMII qui se souvient de tout, sinon aucune raison de
         // vouloir passer payant.
+        // Le palier sert deux fois : au quota ci-dessous, et au PLAFOND du
+        // niveau de réflexion juste après. On le lit une seule fois.
+        let palier = "free";
+
         if (userId) {
             const quota = await samiiQuota.getEtatQuota(userId, req.session?.workspaceId);
+            palier = quota.palier || "free";
             if (!quota.illimite && quota.restant <= 0) {
                 if (quota.depassementFacturable) {
                     // Workspace payant (moyen de paiement déjà lié) : jamais bloqué,
@@ -135,6 +141,23 @@ router.post("/chat", requireAuth, async (req, res) => {
             }
         }
 
+        // ── QUEL NIVEAU DE RÉFLEXION POUR CE MESSAGE ────────────────────
+        //
+        // Par défaut, SAMII choisit lui-même : « l'utilisateur ne devrait pas
+        // forcément avoir à choisir ». Le classement est local et gratuit
+        // (services/niveauAuto.js) — aucun appel d'IA, aucune attente ajoutée
+        // sur les questions simples.
+        //
+        // `req.body.niveau` n'est qu'une DEMANDE. Elle est toujours bornée
+        // par le palier : le plafond est une question d'argent, pas de goût,
+        // et il vaut aussi pour un choix explicite.
+        const choixNiveau = niveauAuto.choisir({
+            message: message || "",
+            demande: req.body.niveau || null,
+            palier,
+            piece: imageUrl || documentUrl || null,
+        });
+
         const grade = await getGrade(userId);
         const memoireActuelle = userId ? await memoireUtilisateur.get(userId) : null;
         const connaissancesTexte = userId ? await connaissances.texteAgrege(userId) : "";
@@ -149,6 +172,9 @@ router.post("/chat", requireAuth, async (req, res) => {
             prenom: grade.prenom,
             connaissances: connaissancesTexte,
             audience: "souverain",
+            // Lu par geminiService : décide des outils portés et de la
+            // profondeur de réflexion pour CE tour.
+            niveau: choixNiveau.niveau,
             memoireUtilisateur: memoireActuelle,
             // ── L'IDENTITÉ, RECOPIÉE DE LA SESSION ──────────────────────
             //
@@ -225,7 +251,19 @@ router.post("/chat", requireAuth, async (req, res) => {
             if (debit.ok) credits = { messages: debit.messages, montant: debit.montant, lignes: debit.lignes };
         }
 
-        res.json({ ...result, messageId, surCredits, credits });
+        // Le niveau part avec la réponse. Sans ça, impossible d'afficher
+        // « SAMII réfléchit plus profondément… », impossible de vérifier un
+        // choix qui paraît absurde, et impossible de proposer l'abonnement au
+        // bon moment — `borne` dit précisément quand le plafond a mordu.
+        res.json({
+            ...result, messageId, surCredits, credits,
+            niveau: {
+                id: choixNiveau.niveau,
+                auto: choixNiveau.auto,
+                borne: choixNiveau.borne,
+                raisons: choixNiveau.raisons,
+            },
+        });
     } catch (err) {
         // ── NE PAS NOMMER UNE CAUSE QU'ON NE CONNAÎT PAS ────────────────
         //

@@ -234,6 +234,44 @@ const choisir = (message, opts = {}) => A.choisir({ message, palier: "pro", ...o
     }
 }
 
+// ── 11. LE CHAT S'EN SERT VRAIMENT ───────────────────────────────────────
+//
+// Tout ce qui précède ne vaudrait rien si personne n'appelait ce classement.
+// SAMII portait déjà des capacités écrites, déployées, et que rien
+// n'appelait — cinq postures d'autonomie lues à un seul endroit, une liste
+// de métiers morte dans le Hub. On ne refait pas ça.
+{
+    const fs = require("fs");
+    const api = fs.readFileSync(path.join(RACINE, "routes", "api.js"), "utf8");
+
+    verifier(/niveauAuto\.choisir\(/.test(api),
+        "routes/api.js ne demande jamais son niveau : tout le classement est du code mort");
+    verifier(/niveau: choixNiveau\.niveau/.test(api),
+        "le niveau retenu n'entre pas dans le contexte : ni les outils ni la profondeur ne " +
+        "s'adapteront, quel que soit le message");
+
+    // Le plafond doit venir du palier RÉEL, pas d'une valeur en dur.
+    verifier(/palier,/.test(api) && /quota\.palier/.test(api),
+        "le plafond du niveau n'est pas relié au palier réel du compte : soit tout le monde " +
+        "est bridé, soit personne ne l'est");
+
+    // Et la réponse doit dire à quel niveau elle a été produite.
+    verifier(/niveau: \{\s*\n\s*id: choixNiveau\.niveau/.test(api),
+        "la réponse ne dit pas à quel niveau elle a été produite : impossible d'afficher " +
+        "« SAMII réfléchit plus profondément », ni de vérifier un choix qui paraît absurde");
+
+    // Le palier doit être rendu par le quota, sinon il faudrait le relire en
+    // base à chaque message — et deux lectures finissent par diverger.
+    const quota = fs.readFileSync(path.join(RACINE, "services", "samiiQuota.js"), "utf8");
+    const retours = [...quota.matchAll(/return \{[^}]*illimite[^}]*\}/g)].map((m) => m[0]);
+    verifier(retours.length >= 3, "la forme de getEtatQuota a changé, cette garde ne mesure plus rien");
+    for (const r of retours) {
+        verifier(/palier/.test(r),
+            `un retour de getEtatQuota ne porte pas le palier : ${r.slice(0, 70)}… — ` +
+            "le chat devrait le relire en base à chaque message");
+    }
+}
+
 // ── VERDICT ──────────────────────────────────────────────────────────────
 if (echecs.length) {
     console.log(`\n❌ niveau auto : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);

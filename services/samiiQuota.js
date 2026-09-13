@@ -68,23 +68,34 @@ async function compterMessagesFenetre(userId) {
 // depassementFacturable : true si ce compte a un moyen de paiement lié
 // (workspace standard/pro) donc peut continuer au-delà du quota moyennant
 // facturation, au lieu d'être bloqué net.
+// ── `palier` EST RENDU, ET C'EST VOLONTAIRE ──────────────────────────────
+//
+// Cette fonction lisait déjà le palier pour décider du quota, puis le
+// jetait. Le chat en a besoin juste après, pour plafonner le niveau de
+// réflexion (config/niveaux.js) : sans ce champ il aurait fallu relire la
+// même valeur en base à chaque message, et surtout accepter que les deux
+// lectures puissent un jour ne plus dire la même chose.
+//
+// Il vaut TOUJOURS quelque chose, y compris sur les chemins où le quota est
+// illimité — un appelant qui reçoit `undefined` finirait par inventer son
+// propre repli.
 async function getEtatQuota(userId, workspaceId) {
-    if (!userId) return { illimite: true, restant: null, total: null, utilises: 0 };
+    if (!userId) return { illimite: true, restant: null, total: null, utilises: 0, palier: "free" };
 
     const palier = await getPalierWorkspace(workspaceId);
-    if (palier === "societe") return { illimite: true, restant: null, total: null, utilises: 0 };
+    if (palier === "societe") return { illimite: true, restant: null, total: null, utilises: 0, palier };
     if (palier && QUOTA_PAR_PALIER[palier] && palier !== "free") {
         const utilises = await compterMessagesFenetre(userId);
         const total = QUOTA_PAR_PALIER[palier];
         return {
             illimite: false, total, utilises, restant: Math.max(0, total - utilises),
-            fenetreHeures: FENETRE_HEURES, depassementFacturable: true,
+            fenetreHeures: FENETRE_HEURES, depassementFacturable: true, palier,
         };
     }
 
     const abonnement = await getAbonnement(userId);
     if (abonnement !== "gratuit") {
-        return { illimite: true, restant: null, total: null, utilises: 0 };
+        return { illimite: true, restant: null, total: null, utilises: 0, palier: palier || "free" };
     }
 
     const utilises = await compterMessagesFenetre(userId);
@@ -95,6 +106,7 @@ async function getEtatQuota(userId, workspaceId) {
         restant: Math.max(0, QUOTA_GRATUIT_PAR_FENETRE - utilises),
         fenetreHeures: FENETRE_HEURES,
         depassementFacturable: false,
+        palier: palier || "free",
     };
 }
 
