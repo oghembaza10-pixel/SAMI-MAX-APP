@@ -557,14 +557,39 @@ th{color:#8a8f9e;font-weight:500;font-size:.76rem;text-transform:uppercase;lette
 ${sonde ? "" : `<a class="bouton" href="/jarvis/moteur?sonder=1">Demander à Google, clé par clé</a>
 <p class="petit">Cet appel liste les modèles — il ne consomme <b>aucun</b> quota de génération.</p>`}
 
-<h2>Si Gemini ne répond plus, qui prend le relais ?</h2>
-<p class="relais">
-    <span>Groq : <b style="color:${etat.relais.groq ? "#4caf50" : "#e05555"}">${etat.relais.groq ? "prêt" : "aucune clé"}</b></span>
-    <span>OpenRouter : <b style="color:${etat.relais.openrouter ? "#4caf50" : "#e05555"}">${etat.relais.openrouter ? "prêt" : "aucune clé"}</b></span>
-    <span>DeepSeek : <b style="color:${etat.relais.deepseek ? "#4caf50" : "#e05555"}">${etat.relais.deepseek ? "prêt" : "aucune clé"}</b></span>
-</p>
-<p class="petit">L'ordre est : Gemini (toutes les clés) → Groq → OpenRouter → DeepSeek.
-Si les trois relais sont sans clé, une saturation de Gemini laisse SAMII muet.</p>
+<h2>Les moteurs, et ce que chacun a le droit de porter</h2>
+<p class="petit">Un moteur de secours ne reçoit <b>que</b> les outils qu'il sait tenir. Une panne de
+Gemini ne rouvre jamais un outil qu'on a volontairement retiré.</p>
+<table>
+    <tr><th>Moteur</th><th>Modèle</th><th>Clé</th><th>Sait faire</th><th>Outils autorisés</th></tr>
+    ${etat.moteurs.map((m) => `
+    <tr>
+        <td>${escapeHtml(m.libelle)}${m.disponible ? "" : `<br><span class="petit" style="color:#e0a030">écarté — ${escapeHtml(m.indisponibilite)}</span>`}</td>
+        <td class="mono">${escapeHtml(m.modele || "—")}</td>
+        <td><b style="color:${m.cle ? "#4caf50" : "#e05555"}">${m.cle ? "présente" : "absente"}</b></td>
+        <td class="petit">${Object.entries(m.capacites).filter(([, v]) => v).map(([k]) => escapeHtml(k)).join(", ") || "—"}${m.donneesGoogle ? "<br>données Workspace : oui" : "<br>données Workspace : <b>non</b>"}</td>
+        <td class="petit">${m.familles.length ? escapeHtml(m.familles.join(", ")) : "<b>aucun</b>"} (${m.outils})</td>
+    </tr>`).join("")}
+</table>
+
+<h2>Ce que l'aiguilleur déciderait, maintenant</h2>
+<p class="petit">Ces trois lignes ne sont pas écrites à la main : elles appellent l'aiguilleur
+au moment où la page s'affiche. Ce qui est montré est ce qui partirait.</p>
+<table>
+    <tr><th>Le tour</th><th>Chaîne retenue</th><th>Écartés, et pourquoi</th></tr>
+    ${[
+        ["Message courant (Expert, avec outils)", etat.aiguillage.courant],
+        ["Envoyer une facture (famille écriture)", etat.aiguillage.ecriture],
+        ["Une photo est jointe", etat.aiguillage.image],
+    ].map(([titre, a]) => `
+    <tr>
+        <td>${escapeHtml(titre)}</td>
+        <td class="mono">${escapeHtml(a.chaine.join(" → ") || "aucun moteur")}</td>
+        <td class="petit">${a.ecartes.map((e) => `${escapeHtml(e.id)} : ${escapeHtml(e.raison)}`).join("<br>") || "—"}</td>
+    </tr>`).join("")}
+</table>
+<p class="petit">Si tous les relais sont sans clé, une saturation de Gemini laisse SAMII muet —
+c'est la seule raison pour laquelle ces clés existent.</p>
 
 </body></html>`);
 });

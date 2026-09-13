@@ -9,7 +9,19 @@ const SAMII_PROMPT = require("../brain/prompts/index");
 // SAMII proposait des valeurs qui étaient ensuite rejetées.
 const { METIERS } = require("./metiers");
 const LISTE_METIERS = METIERS.filter(m => m.id !== "autre").map(m => m.id).join(", ");
-const MODEL = "gemini-3.6-flash";
+// ── LE MOTEUR NE SE DÉCIDE PLUS ICI ──────────────────────────────────────
+//
+// C'était `const MODEL = "gemini-3.6-flash"` : une constante, un seul
+// moteur, choisi nulle part. config/niveaux.js demandait pourtant depuis le
+// début `moteur: "flash"` ou `moteur: "pro"` selon le niveau — un champ que
+// PERSONNE NE LISAIT. Le niveau Maître tournait donc sur exactement la même
+// machine que le niveau Rapide.
+//
+// Le nom du modèle vit désormais dans config/moteurs.js, avec ce que ce
+// modèle sait faire et ce qu'il a le droit de porter. On garde ici un repli
+// : si le registre devenait illisible, le chat ne doit pas s'arrêter.
+const MOTEURS = require("../config/moteurs");
+const MODEL = MOTEURS.MOTEURS["gemini-flash"].modele || "gemini-3.6-flash";
 // `.filter(Boolean)` : sans clé configurée du tout, GEMINI_API_KEY vaut
 // undefined et la liste contenait donc un trou. La rotation construisait
 // alors une URL « ?key=undefined », et l'état du moteur plantait en lisant
@@ -24,10 +36,13 @@ const KEYS = (CONFIG.GEMINI.API_KEYS.length > 0
 // réponse par morceaux au fur et à mesure qu'il l'écrit, au format SSE, au
 // lieu d'attendre la fin pour tout envoyer d'un coup. Même modèle, même clé,
 // même facture — seule la livraison change.
-function urlFor(key, flux) {
+function urlFor(key, flux, modele) {
     const methode = flux ? "streamGenerateContent" : "generateContent";
     const sse = flux ? "&alt=sse" : "";
-    return `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:${methode}?key=${key}${sse}`;
+    // `modele` vient de l'aiguilleur. Vide, on retombe sur le modèle de
+    // tous les jours : un nom manquant ne doit jamais fabriquer une URL
+    // « models/undefined: », qui répond 404 sans dire pourquoi.
+    return `https://generativelanguage.googleapis.com/v1beta/models/${modele || MODEL}:${methode}?key=${key}${sse}`;
 }
 
 // UN 429, D'OÙ QU'IL VIENNE, EST UN QUOTA.
@@ -190,7 +205,7 @@ async function postWithRotation(body, options = {}) {
         if (repos) saturees.delete(KEYS[i]);
 
         try {
-            const reponse = await axios.post(urlFor(KEYS[i], flux), body,
+            const reponse = await axios.post(urlFor(KEYS[i], flux, options.modele), body,
                 flux ? { responseType: "stream", timeout: 60000 } : undefined);
             // Celle-ci a répondu : c'est par elle qu'on commencera la
             // prochaine fois, plutôt que par celles qu'on vient d'écarter.
@@ -365,7 +380,20 @@ async function chatViaOpenAiCompatible({ provider, model, poster, message, conte
     const body = { model, messages };
     // Même règle que chez Gemini : pas d'outil, pas de champ. Les relais
     // refusent eux aussi un tableau `tools` vide.
-    const outils = toOpenAiTools(buildToolsPayload(useTools, context));
+    //
+    // ── LE TROISIÈME ARGUMENT EST TOUT LE CHANTIER 7 ─────────────────────
+    //
+    // Sans lui, cette ligne recopiait chez le relais les outils calculés
+    // pour Gemini. Une panne de Gemini remettait donc `consulter_gmail` et
+    // `envoyer_facture` entre les mains d'un moteur qui ne sait pas les
+    // tenir — le premier menant à une impasse (son résultat ne lui serait
+    // jamais transmis), le second à un e-mail réellement parti sous le nom
+    // du marchand.
+    //
+    // `provider` dit QUI va recevoir ce corps. config/moteurs.js dit ce que
+    // celui-là a le droit de porter. La bascule de secours ne peut plus
+    // rien rouvrir.
+    const outils = toOpenAiTools(buildToolsPayload(useTools, context, provider));
     if (outils.length) body.tools = outils;
 
     const response = await poster(body);
@@ -666,11 +694,24 @@ function configDeGeneration(context) {
     return Object.keys(config).length ? config : null;
 }
 
-function buildToolsPayload(useTools, context) {
+function buildToolsPayload(useTools, context, moteurId = "gemini") {
     if (context?.source === "onboarding") return ONBOARDING_TOOLS;
 
+    // ── LE TROISIÈME FILTRE : CE QUE LE MOTEUR SAIT TENIR ────────────────
+    //
+    // Il s'applique AVANT tout le reste, y compris avant le chemin
+    // historique sans niveau. C'est délibéré : un relais de secours atteint
+    // par `chatWithSearch` ou par un appelant ancien n'a pas de niveau dans
+    // son contexte, et c'est précisément ce chemin-là qui lui remettait des
+    // outils qu'il ne sait pas porter.
+    const fiables = new Set(MOTEURS.outilsFiablesDe(moteurId));
+    const garder = (liste) => {
+        const restant = liste.filter((fn) => fiables.has(fn.name));
+        return restant.length ? [{ functionDeclarations: restant }] : null;
+    };
+
     const idNiveau = context?.niveau;
-    if (!idNiveau) return useTools ? TOOLS : SEARCH_TOOLS;
+    if (!idNiveau) return garder((useTools ? TOOLS : SEARCH_TOOLS)[0].functionDeclarations);
 
     // Requis ici et pas en tête de fichier : config/niveaux.js lit
     // config/credits.js, qui n'a rien à faire dans le chemin d'un message
@@ -680,7 +721,9 @@ function buildToolsPayload(useTools, context) {
     const permis = new Set(NIVEAUX.outilsDe(idNiveau));
     if (useTools) for (const nom of NIVEAUX.FAMILLES.commerce) permis.add(nom);
 
-    const declarations = TOOLS[0].functionDeclarations.filter((fn) => permis.has(fn.name));
+    const declarations = TOOLS[0].functionDeclarations
+        .filter((fn) => permis.has(fn.name))
+        .filter((fn) => fiables.has(fn.name));
 
     // AUCUN OUTIL N'EST UN CAS NORMAL, pas une erreur — c'est même l'état du
     // niveau « Rapide ». On rend `null` plutôt qu'une liste vide : une liste
@@ -717,11 +760,74 @@ async function corpsDeChat({ message, context, useTools, history }) {
             { role: "user", parts: userParts },
         ],
     };
-    const outils = buildToolsPayload(useTools, context);
+    const outils = buildToolsPayload(useTools, context, moteurDuTour(context).id);
     if (outils) body.tools = outils;
     const config = configDeGeneration(context);
     if (config) body.generationConfig = config;
     return body;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// L'AIGUILLEUR, CÔTÉ CHAT
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Deux fonctions, et elles font deux choses différentes qu'il ne faut pas
+// confondre :
+//
+//   moteurDuTour()  — SUR QUOI on part. Le niveau demande un effort
+//                     ("flash" ou "pro"), le registre dit quelle machine le
+//                     rend, et si elle n'est pas disponible on redescend.
+//
+//   relaisDuTour()  — QUI a le droit de prendre la suite. Plus la cascade
+//                     fixe d'avant : seulement les moteurs capables de
+//                     servir CE tour-là.
+//
+// Les deux passent par config/moteurs.js. Aucune des deux ne décide quoi que
+// ce soit elle-même — sinon il y aurait deux tables de vérité, et elles
+// finiraient par ne plus dire la même chose.
+function moteurDuTour(context = {}) {
+    const { chaine } = MOTEURS.choisir({
+        niveau: context.niveau || null,
+        besoins: { /* ici on ne veut QUE le moteur préféré disponible */ },
+    });
+    // Le premier moteur Gemini de la chaîne. On ne part jamais d'un relais :
+    // un relais est un secours, pas un point de départ — c'est un choix
+    // produit, pas une contrainte technique (SAMII doit sa qualité et ses
+    // outils à Gemini).
+    const premierGemini = chaine.map((id) => MOTEURS.moteur(id))
+        .find((m) => m && m.fournisseur === "gemini");
+    return premierGemini || MOTEURS.moteur("gemini-flash");
+}
+
+// Les relais retenus pour ce tour, dans l'ordre, AVEC leur poster.
+//
+// CE QUE ÇA CHANGE. Avant : trois `try/catch` imbriqués, écrits en dur, deux
+// fois (dans `chat()` et dans `chatWithSearch()`). Chaque relais était
+// essayé quoi qu'il arrive, même quand il ne pouvait pas servir — une image
+// à regarder, une recherche web à faire, un outil qu'il ne sait pas tenir.
+//
+// Maintenant : un moteur incapable n'est pas dans la liste, et la raison est
+// rendue avec. Un tour peut donc légitimement n'avoir AUCUN relais — et
+// c'est mieux qu'un relais qui répond à côté.
+function relaisDuTour({ context = {}, useTools = false, flux = false, recherche = false } = {}) {
+    const besoins = MOTEURS.besoinsDuTour({ context, useTools, flux, recherche });
+    // Le transport n'entre pas dans le choix du SECOURS : un relais qui ne
+    // streame pas reste utile, on rend alors sa réponse d'un bloc plutôt que
+    // rien du tout (c'est déjà ce que fait chatLibreFlux aujourd'hui, et on
+    // ne retire pas cette capacité).
+    delete besoins.flux;
+    const { chaine, ecartes } = MOTEURS.choisir({ niveau: context.niveau || null, besoins });
+    const retenus = chaine
+        .map((id) => ({ id, moteur: MOTEURS.moteur(id) }))
+        .filter(({ moteur }) => moteur && moteur.fournisseur !== "gemini")
+        // `OPENAI_COMPATIBLE_PROVIDERS` (plus bas) tient déjà la table
+        // poster/modèle des trois relais. On ne la recopie pas : une
+        // deuxième table finirait par ne plus dire la même chose que la
+        // première, et c'est toujours celle qu'on ne regarde pas qui se
+        // trompe.
+        .map(({ id, moteur }) => ({ nom: id, model: moteur.modele, poster: OPENAI_COMPATIBLE_PROVIDERS[id]?.poster }))
+        .filter((r) => typeof r.poster === "function");
+    return { retenus, ecartes };
 }
 
 // ── LE CHAT EN FLUX, AVEC LES OUTILS ─────────────────────────────────────
@@ -748,7 +854,10 @@ async function corpsDeChat({ message, context, useTools, history }) {
 async function chatFlux({ message, context = {}, useTools = false, history = [] }, onMorceau, onReprise) {
     try {
         const body = await corpsDeChat({ message, context, useTools, history });
-        const reponse = await postWithRotation(body, { flux: true });
+        // Le modèle vient de l'aiguilleur, plus d'une constante. Un niveau
+        // Maître et un niveau Rapide ne tournent plus forcément sur la même
+        // machine — c'est ce que config/niveaux.js demandait depuis le début.
+        const reponse = await postWithRotation(body, { flux: true, modele: moteurDuTour(context).modele });
 
         let texte = "";
         let appelOutil = null;
@@ -829,7 +938,7 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
         // version en flux, outils et profondeur compris. Deux constructions
         // séparées auraient fini par ne plus envoyer la même requête.
         const body = await corpsDeChat({ message, context, useTools, history });
-        const response = await postWithRotation(body);
+        const response = await postWithRotation(body, { modele: moteurDuTour(context).modele });
         const candidate = response.data.candidates?.[0];
         const parts = candidate?.content?.parts || [];
         const functionCallPart = parts.find(p => p.functionCall);
@@ -872,27 +981,38 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
         // client sans réponse et sa commande/RDV non traité. Groq d'abord
         // (gratuit, très rapide), puis OpenRouter, puis DeepSeek (payant
         // mais très économique) en tout dernier recours.
-        try {
-            console.warn("🔀 Relais Groq (Gemini indisponible)...");
-            return await chatViaGroq({ message, context, useTools, history });
-        } catch (groqErr) {
-            console.error("❌ Groq (relais) :", groqErr.response?.data || groqErr.message);
+        // ── LA CHAÎNE EST CHOISIE, PLUS SUBIE ────────────────────────────
+        //
+        // C'étaient trois try/catch imbriqués, dans cet ordre, toujours.
+        // Désormais l'aiguilleur rend les relais CAPABLES de servir ce
+        // tour-là. Un tour avec une image jointe n'ira pas chez un moteur
+        // aveugle ; un tour qui exige la famille « écriture » n'ira pas chez
+        // un moteur à qui on l'a retirée.
+        const { retenus, ecartes } = relaisDuTour({ context, useTools });
+        for (const e of ecartes) console.warn(`↩︎ ${e.id} écarté : ${e.raison}`);
+
+        if (!retenus.length) {
+            // AUCUN SECOURS N'EST UNE RÉPONSE HONNÊTE. Avant, on aurait
+            // envoyé la demande à un moteur incapable et rendu sa réponse
+            // comme si de rien n'était.
+            return sansReponse("gemini", `Gemini indisponible (${err.message}) et aucun relais `
+                + `ne peut servir ce tour (${ecartes.map((e) => `${e.id}: ${e.raison}`).join(" | ") || "aucun relais configuré"})`);
+        }
+
+        const echecs = [`gemini: ${err.message}`];
+        for (const relais of retenus) {
             try {
-                console.warn("🔀 Relais OpenRouter (Groq indisponible aussi)...");
-                return await chatViaOpenRouter({ message, context, useTools, history });
-            } catch (fallbackErr) {
-                console.error("❌ OpenRouter (relais) :", fallbackErr.response?.data || fallbackErr.message);
-                try {
-                    console.warn("🔀 Relais DeepSeek (OpenRouter indisponible aussi)...");
-                    return await chatViaDeepSeek({ message, context, useTools, history });
-                } catch (deepseekErr) {
-                    console.error("❌ DeepSeek (relais) :", deepseekErr.response?.data || deepseekErr.message);
-                    return sansReponse("gemini", "les 4 fournisseurs ont échoué "
-                        + `(gemini: ${err.message} | groq: ${groqErr.message} `
-                        + `| openrouter: ${fallbackErr.message} | deepseek: ${deepseekErr.message})`);
-                }
+                console.warn(`🔀 Relais ${relais.nom} (Gemini indisponible)...`);
+                return await chatViaOpenAiCompatible({
+                    provider: relais.nom, model: relais.model, poster: relais.poster,
+                    message, context, useTools, history,
+                });
+            } catch (relaisErr) {
+                console.error(`❌ ${relais.nom} (relais) :`, relaisErr.response?.data || relaisErr.message);
+                echecs.push(`${relais.nom}: ${relaisErr.message}`);
             }
         }
+        return sansReponse("gemini", `les ${echecs.length} fournisseurs ont échoué (${echecs.join(" | ")})`);
     }
 }
 
@@ -981,12 +1101,15 @@ async function chatLibre({ systemPrompt, message, history = [], imageUrl = null,
                     : message,
             },
         ];
-        const relais = [
-            { nom: "groq", model: GROQ_MODEL, poster: postGroq },
-            { nom: "openrouter", model: OPENROUTER_MODEL, poster: postOpenRouter },
-            { nom: "deepseek", model: DEEPSEEK_MODEL, poster: postDeepSeek },
-        ];
-        for (const r of relais) {
+        // La liste était écrite en dur ici aussi — un troisième exemplaire de
+        // la même cascade. Elle vient maintenant de l'aiguilleur, comme les
+        // deux autres.
+        //
+        // Le chat public ne porte aucun outil (`useTools: false`, aucun
+        // niveau à outils) : la chaîne n'est donc filtrée que par les
+        // capacités, pas par les familles.
+        const { retenus } = relaisDuTour({ context: { niveau }, useTools: false });
+        for (const r of retenus) {
             try {
                 console.warn(`🔀 chatLibre — relais ${r.nom}...`);
                 const res = await r.poster({ model: r.model, messages: messagesOpenAi });
@@ -1101,28 +1224,27 @@ async function chatWithSearch({ message, context = {} }) {
         // "google_search" natif de Gemini — la réponse de secours n'aura donc pas de
         // vraies sources web, mais mieux vaut une réponse basée sur leur connaissance
         // générale qu'un échec total, même principe que le relais de chat() ci-dessus.
-        try {
-            console.warn("🔀 Relais Groq (Gemini search indisponible)...");
-            const fallback = await chatViaGroq({ message, context, useTools: false });
-            return { ...fallback, sources: [] };
-        } catch (groqErr) {
-            console.error("❌ Groq (relais search) :", groqErr.response?.data || groqErr.message);
+        // Même aiguilleur que chat(). `recherche: false` ici EXPRÈS : on sait
+        // déjà qu'aucun relais ne sait faire du grounding — l'exiger viderait
+        // la chaîne et rendrait une erreur là où une réponse sans sources
+        // vaut mieux que rien. C'est une dégradation assumée, déclarée, et
+        // signalée par `sources: []`.
+        const { retenus, ecartes } = relaisDuTour({ context, useTools: false });
+        for (const e of ecartes) console.warn(`↩︎ ${e.id} écarté (search) : ${e.raison}`);
+
+        for (const relais of retenus) {
             try {
-                console.warn("🔀 Relais OpenRouter (Groq search indisponible aussi)...");
-                const fallback = await chatViaOpenRouter({ message, context, useTools: false });
+                console.warn(`🔀 Relais ${relais.nom} (Gemini search indisponible)...`);
+                const fallback = await chatViaOpenAiCompatible({
+                    provider: relais.nom, model: relais.model, poster: relais.poster,
+                    message, context, useTools: false,
+                });
                 return { ...fallback, sources: [] };
-            } catch (openrouterErr) {
-                console.error("❌ OpenRouter (relais search) :", openrouterErr.response?.data || openrouterErr.message);
-                try {
-                    console.warn("🔀 Relais DeepSeek (OpenRouter search indisponible aussi)...");
-                    const fallback = await chatViaDeepSeek({ message, context, useTools: false });
-                    return { ...fallback, sources: [] };
-                } catch (deepseekErr) {
-                    console.error("❌ DeepSeek (relais search) :", deepseekErr.response?.data || deepseekErr.message);
-                    return { type: "text", text: "SAMII démarre actuellement. Réessaie dans quelques instants.", sources: [] };
-                }
+            } catch (relaisErr) {
+                console.error(`❌ ${relais.nom} (relais search) :`, relaisErr.response?.data || relaisErr.message);
             }
         }
+        return { type: "text", text: "SAMII démarre actuellement. Réessaie dans quelques instants.", sources: [] };
     }
 }
 
@@ -1155,7 +1277,14 @@ const OUTILS_DONNEES_GOOGLE = new Set([
 ]);
 
 async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult, thoughtSignature, provider = "gemini", toolCallId, assistantMessage, history = [] }) {
-    if (OUTILS_DONNEES_GOOGLE.has(functionName) && provider !== "gemini") {
+    // LE DROIT DE RECEVOIR CETTE DONNÉE EST DÉCLARÉ, PLUS DEVINÉ.
+    //
+    // C'était `provider !== "gemini"` : une chaîne comparée en dur. Le jour
+    // où un moteur Google de plus serait branché sous un autre nom, il
+    // aurait été traité comme un tiers et la donnée lui aurait été refusée à
+    // tort ; et le jour où un relais aurait été renommé "gemini-secours", la
+    // donnée serait partie chez lui. Le registre tranche, et une seule fois.
+    if (OUTILS_DONNEES_GOOGLE.has(functionName) && !MOTEURS.recoitDonneesGoogle(provider)) {
         console.warn(`🔒 ${functionName} : résultat non transmis à ${provider} (données Google Workspace, Limited Use).`);
         return "J'ai bien récupéré l'information, mais je ne peux pas la reformuler pour l'instant — réessaie dans un instant.";
     }
@@ -1274,6 +1403,40 @@ function etat() {
             groq: !!CONFIG.GROQ?.API_KEY,
             openrouter: !!CONFIG.OPENROUTER?.API_KEY,
             deepseek: !!CONFIG.DEEPSEEK?.API_KEY,
+        },
+
+        // ── CE QUE L'AIGUILLEUR DÉCIDERAIT, LÀ, MAINTENANT ───────────────
+        //
+        // La page disait « l'ordre est Gemini → Groq → OpenRouter →
+        // DeepSeek » — une PHRASE ÉCRITE À LA MAIN, qui serait restée juste
+        // même si le code s'était mis à faire autre chose. C'est le genre de
+        // certitude affichée qui fait perdre des heures.
+        //
+        // Elle lit désormais le registre et interroge l'aiguilleur pour de
+        // vrai, sur deux tours exemplaires. Ce qui est affiché EST ce qui
+        // partirait.
+        moteurs: MOTEURS.ORDRE.map((id) => {
+            const m = MOTEURS.moteur(id);
+            const cle = m.fournisseur === "gemini"
+                ? KEYS.length > 0
+                : !!CONFIG[m.fournisseur.toUpperCase()]?.API_KEY;
+            return {
+                id, libelle: m.libelle, modele: m.modele,
+                disponible: m.disponible, indisponibilite: m.indisponibilite || "",
+                cle,
+                capacites: m.capacites,
+                donneesGoogle: m.donneesGoogle,
+                familles: m.outilsFiables,
+                outils: MOTEURS.outilsFiablesDe(id).length,
+            };
+        }),
+        aiguillage: {
+            // Un tour ordinaire d'un marchand connecté.
+            courant: MOTEURS.choisir({ niveau: "expert", besoins: { outils: true } }),
+            // Un tour qui doit ÉCRIRE — celui où aucun relais ne doit suivre.
+            ecriture: MOTEURS.choisir({ niveau: "pro", besoins: { famille: "ecriture" } }),
+            // Un tour avec une image jointe.
+            image: MOTEURS.choisir({ niveau: "expert", besoins: { vision: true } }),
         },
     };
 }
