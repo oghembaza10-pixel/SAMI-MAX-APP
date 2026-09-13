@@ -224,14 +224,19 @@ const NIVEAUX = require(path.join(RACINE, "config", "niveaux.js"));
     // commander — mais JAMAIS la famille « agents » : un client n'a rien à
     // faire dans les comptes sociaux du marchand.
     const ancienChezGemini = noms(gemini.__test_buildToolsPayload(true, {}, "gemini"));
+    // Les familles qu'un client n'obtient JAMAIS. « agents » au chantier 8,
+    // « code » au chantier 10 — la liste se lit dans le registre, elle n'est
+    // pas recopiée, sinon la prochaine famille passerait sans bruit.
+    const RESERVEES = [...NIVEAUX.FAMILLES.agents, ...NIVEAUX.FAMILLES.code];
     const horsAgents = gemini.TOOLS[0].functionDeclarations
-        .filter((fn) => !NIVEAUX.FAMILLES.agents.includes(fn.name));
+        .filter((fn) => !RESERVEES.includes(fn.name));
     verifier(ancienChezGemini.length === horsAgents.length,
         `le chemin sans niveau porte ${ancienChezGemini.length} outils au lieu de ${horsAgents.length} : ` +
-        "soit un outil client a disparu, soit une chaîne d'agents est offerte à un client");
-    verifier(!ancienChezGemini.some((n) => NIVEAUX.FAMILLES.agents.includes(n)),
-        `un client de marchand se voit offrir une chaîne d'agents (${ancienChezGemini.join(", ")}) : ` +
-        "il pourrait faire préparer une publication sur les comptes sociaux du marchand");
+        "soit un outil client a disparu, soit une capacité réservée est offerte à un client");
+    verifier(!ancienChezGemini.some((n) => RESERVEES.includes(n)),
+        `un client de marchand se voit offrir une capacité réservée (${ancienChezGemini.join(", ")}) : ` +
+        "il pourrait faire préparer une publication sur les comptes du marchand — ou, bien pire, " +
+        "faire exécuter un programme sur notre machine");
 }
 
 // ══════════════════════════════════════════════════════════════════════════

@@ -91,6 +91,25 @@ const FAMILLES = {
     agents: [
         "preparer_publication",
     ],
+
+    // ── CODE : une famille à elle seule, et c'est voulu ──────────────────
+    //
+    // Exécuter du code écrit par un modèle est la capacité la plus dangereuse
+    // du projet. Un outil qui se trompe envoie un mauvais e-mail ; du code qui
+    // s'échappe lit la base, les clés, les commandes de tout le monde.
+    //
+    // Elle n'est donc PAS rangée avec « agents » : une famille commune aurait
+    // voulu dire qu'ouvrir la préparation de publications ouvre aussi
+    // l'exécution de code. Deux capacités qui n'ont rien à voir se seraient
+    // accordées d'un seul geste, et personne ne l'aurait vu venir.
+    //
+    // Accordée au seul niveau Maître, et `config/bacs.js` refuse en plus
+    // d'exécuter tant qu'aucun bac ne ferme le système de fichiers. Deux
+    // verrous indépendants : le droit de la personne, et la sûreté de la
+    // machine. Aucun des deux ne suffit seul.
+    code: [
+        "executer_code",
+    ],
 };
 
 // ── LE PRIX, AUJOURD'HUI ─────────────────────────────────────────────────
@@ -176,7 +195,7 @@ const NIVEAUX = {
         moteur: "pro",
         generationConfig: { temperature: 0.9, maxOutputTokens: 8192 },
         reflexionEtendue: false,
-        familles: ["lecture", "ecriture", "agents"],
+        familles: ["lecture", "ecriture", "agents", "code"],
         etapesMax: 8,
         prixUSD: PRIX_PROVISOIRE,
     },

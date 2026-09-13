@@ -110,6 +110,27 @@ const AGENTS = {
         interne: true, effet: "publie", outils: [],
         pourQuoi: "programme et envoie sur les vrais comptes",
     },
+    // ── LA FAMILLE « CODE » : la deuxième, et la place était faite ───────
+    //
+    // Le chantier 8 disait « on fait la place, on n'invente pas 20 agents ».
+    // Voici la première famille qui s'ajoute, et elle n'a demandé aucune
+    // modification de la couche d'orchestration : mêmes permissions, même
+    // trace, même vérification, même garde de double exécution.
+    executeur: {
+        id: "executeur", libelle: "Exécution en bac", famille: "code",
+        interne: true,
+        // `prepare` et non `publie` : le code tourne dans un dossier jetable,
+        // sans réseau, et rien n'en sort à part du texte. Ce n'est pas une
+        // lecture non plus — il consomme du calcul et peut échouer.
+        effet: "prepare", outils: [],
+        pourQuoi: "fait tourner le programme dans un bac isolé et rend sa sortie",
+    },
+    correcteur: {
+        id: "correcteur", libelle: "Correction après erreur", famille: "code",
+        interne: true, effet: "prepare", outils: [],
+        pourQuoi: "lit l'erreur, corrige le programme, et on réessaie",
+    },
+
     analytics: {
         id: "analytics", libelle: "Mesure", famille: "social",
         interne: true, effet: "lecture", outils: [],
@@ -221,6 +242,68 @@ const MISSIONS = {
                 if (Array.isArray(resultat.variantes) && resultat.variantes.length
                     && !resultat.variantes.some((v) => v.approuve)) {
                     manques.push("aucune variante n'a passé la relecture");
+                }
+                return manques;
+            },
+        },
+    },
+    // ══════════════════════════════════════════════════════════════════════
+    // EXÉCUTER DU CODE — comprendre, écrire, exécuter, corriger, retester
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // LA SÉPARATION EST LE CŒUR DE CETTE MISSION.
+    //
+    //   ÉCRIRE le code    c'est le modèle, avant d'arriver ici. Le programme
+    //                     est déjà dans les arguments de l'outil.
+    //   DÉCIDER du droit  c'est brain/agents.js, en amont.
+    //   EXÉCUTER          c'est services/bacDExecution.js, et lui seul.
+    //   CORRIGER          c'est le modèle à nouveau, avec l'erreur en main.
+    //   FACTURER          c'est config/credits.js, après.
+    //
+    // Cette mission ne fait qu'une chose : tenir la BOUCLE. Exécuter, lire
+    // l'erreur, demander une correction, réexécuter, et s'arrêter.
+    //
+    // ── POURQUOI LA BOUCLE EST BORNÉE À DEUX CORRECTIONS ─────────────────
+    //
+    // Chaque tour coûte un appel d'IA plus une exécution. Une boucle sans
+    // borne sur un bug que le modèle ne sait pas voir, c'est une facture qui
+    // monte sans fin pour un résultat qui n'arrivera pas. Deux essais
+    // rattrapent la faute d'inattention — une virgule, un nom de variable —
+    // qui est le cas courant. Au-delà, le problème n'est pas dans le code.
+    executer_code: {
+        id: "executer_code",
+        libelle: "Exécuter un programme",
+        // `programmation` est un des huit domaines existants
+        // (brain/prompts/sovereign/tables.js) : « code|programme|javascript|
+        // node|api|bug|erreur ». Aucun nouveau domaine.
+        domaines: ["programmation"],
+        agents: ["executeur", "correcteur"],
+        effet: "prepare",
+        outil: "executer_code",
+        // Maître seulement — même verrou que la famille d'outils. Les deux
+        // doivent dire la même chose, et un test le vérifie : deux tables qui
+        // se contredisent, c'est celle qui autorise le plus qui gagne dans un
+        // des deux chemins.
+        niveauMin: "maitre",
+        async executer(entree, contexte) {
+            return require("../services/boucleDeCode").resoudre(entree, contexte);
+        },
+        attendu: {
+            champs: ["execute", "sortie"],
+            verifier(resultat) {
+                const manques = [];
+                if (resultat.execute !== true) {
+                    manques.push(resultat.refuse
+                        ? `aucune exécution : ${resultat.raison || "refusée"}`
+                        : "le programme n'a jamais été exécuté");
+                }
+                // ── « ÇA A TOURNÉ » N'EST PAS « ÇA A MARCHÉ » ────────────
+                //
+                // Un programme peut se terminer proprement sans rien écrire.
+                // Le rendre comme une réussite ferait dire à SAMII « voilà le
+                // résultat » en montrant du vide.
+                if (resultat.execute === true && !String(resultat.sortie || "").trim()) {
+                    manques.push("le programme s'est exécuté sans rien produire");
                 }
                 return manques;
             },

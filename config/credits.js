@@ -105,6 +105,20 @@ const ACTES = {
     // de mission plus élevé. Tant que ce n'est pas fait, plus un marchand
     // vise de plateformes, moins la marge est bonne.
     preparer_publication:   { prix: PRIX_ACTE_USD, libelle: "publication préparée" },
+
+    // ── L'EXÉCUTION DE CODE ───────────────────────────────────────────────
+    //
+    // ⚠️ À REVOIR À LA PASSE TARIFAIRE, avec preparer_publication.
+    //
+    // Le coût ici n'est PAS le même que celui des autres actes : une boucle
+    // de correction, c'est jusqu'à trois exécutions et deux appels d'IA. Mais
+    // c'est aussi le seul acte qui consomme du CPU sur NOTRE machine, et on
+    // ne saura ce que ça coûte réellement qu'en le mesurant en service.
+    //
+    // On le pose au tarif ordinaire aujourd'hui pour la même raison que
+    // l'autre : un acte SANS prix est refusé par la suite crédits, et
+    // improviser un chiffre serait pire que de reporter la question.
+    executer_code:          { prix: PRIX_ACTE_USD, libelle: "programme exécuté" },
 };
 
 const GRATUITS = {

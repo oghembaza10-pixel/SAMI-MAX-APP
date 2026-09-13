@@ -620,6 +620,31 @@ const TOOLS = [
                     required: ["theme"],
                 },
             },
+            // ── EXÉCUTER DU CODE ─────────────────────────────────────────
+            //
+            // L'outil le plus dangereux du projet, et le plus verrouillé :
+            // famille « code » (niveau Maître seulement), jamais concédée
+            // aux relais, jamais au chemin sans niveau — donc jamais à un
+            // client de marchand ni au chat public.
+            //
+            // Et un quatrième verrou, indépendant des trois autres :
+            // `config/bacs.js` refuse d'exécuter tant qu'aucun bac ne ferme
+            // le système de fichiers. Le droit de la personne et la sûreté
+            // de la machine sont deux questions distinctes ; aucune des deux
+            // ne suffit seule.
+            {
+                name: "executer_code",
+                description: "Exécute un petit programme dans un bac isolé et jetable, puis rend sa sortie. Utilise cette fonction quand un calcul, une vérification de données ou une transformation demande d'exécuter du code plutôt que de raisonner à voix haute. Le programme n'a AUCUN accès au réseau, à la base de données ni aux fichiers du marchand : il ne voit que ce que tu lui donnes.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        code: { type: "STRING", description: "Le programme complet à exécuter. Il doit écrire son résultat avec console.log (JavaScript) ou print (Python)." },
+                        langage: { type: "STRING", description: "« javascript » ou « python ». Par défaut javascript." },
+                        but: { type: "STRING", description: "Ce que ce programme est censé produire, en une phrase. Sert à vérifier que le résultat répond bien à la demande." },
+                    },
+                    required: ["code"],
+                },
+            },
         ],
     },
 ];
@@ -764,7 +789,18 @@ function buildToolsPayload(useTools, context, moteurId = "gemini") {
     const idNiveau = context?.niveau;
     if (!idNiveau) {
         const NIVEAUX = require("../config/niveaux");
-        const reserves = new Set(NIVEAUX.FAMILLES.agents);
+        // ── LES FAMILLES QUI NE SONT JAMAIS CLIENTES ─────────────────────
+        //
+        // La liste est nommée ici plutôt qu'une famille citée en dur : au
+        // chantier 8 c'était « agents », au chantier 10 « code » s'est
+        // ajoutée, et la garde a crié à la seconde — « une conversation
+        // client reçoit 15 outils au lieu de 14 ». Elle criera encore pour la
+        // troisième.
+        //
+        // `code` est la plus grave des deux : un client d'une boutique qui
+        // pourrait faire exécuter un programme sur notre machine, ce n'est
+        // plus une question de permissions mais de sécurité.
+        const reserves = new Set([...NIVEAUX.FAMILLES.agents, ...NIVEAUX.FAMILLES.code]);
         return garder((useTools ? TOOLS : SEARCH_TOOLS)[0].functionDeclarations
             .filter((fn) => !reserves.has(fn.name)));
     }

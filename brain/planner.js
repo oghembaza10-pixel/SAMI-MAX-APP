@@ -55,6 +55,9 @@ class SamiiPlanner {
             case "preparer_publication":
                 return await this.confierAUneMission(name, args, context);
 
+            case "executer_code":
+                return await this.executerCode(args, context);
+
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
         }
@@ -302,6 +305,77 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         } catch (err) {
             console.error(`❌ Planner.confierAUneMission(${missionId}) :`, err.message);
             return { success: false, error: "La préparation n'a pas pu être lancée." };
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // EXÉCUTER UN PROGRAMME
+    // ══════════════════════════════════════════════════════════════════
+    //
+    // Le planner ne décide de rien et n'exécute rien. Il passe la main à la
+    // couche d'orchestration, qui vérifie les permissions, puis à la boucle,
+    // qui passe par le bac. Quatre responsabilités, quatre endroits — c'est
+    // ce qui empêche qu'une permission finisse vérifiée à l'endroit qui
+    // exécute, donc contournable au premier appelant de plus.
+    //
+    // ── CE QUI REMONTE AU MODÈLE ──────────────────────────────────────
+    //
+    // La sortie du programme, et la vérité sur le chemin parcouru. S'il a
+    // fallu corriger deux fois, SAMII doit le dire — « voilà le résultat »
+    // n'est pas « j'ai dû m'y reprendre à deux fois, voilà le résultat ».
+    //
+    // Et jamais le contenu du bac, ni son chemin sur le disque : ce sont des
+    // renseignements sur notre machine, pas sur le problème du marchand.
+    async executerCode(args, context) {
+        try {
+            const agents = require("./agents");
+            const r = await agents.executer({
+                missionId: "executer_code",
+                entree: {
+                    code: args?.code,
+                    langage: args?.langage || "javascript",
+                    but: args?.but || "",
+                },
+                context,
+                // La boucle de correction est DANS la mission. Un réessai de
+                // plus ici relancerait la boucle entière — donc jusqu'à six
+                // exécutions et quatre appels d'IA pour un seul message.
+                reessais: 1,
+            });
+
+            const res = r.resultat || {};
+
+            if (res.refuse) {
+                // On ne déguise pas une limite de notre machine en erreur du
+                // marchand. Son programme n'a peut-être aucun défaut.
+                return {
+                    success: false,
+                    error: `Je ne peux pas exécuter de code pour l'instant : ${res.raison}`,
+                    consigne: "Dis que l'exécution n'est pas disponible, sans laisser croire que "
+                        + "le programme est fautif. Propose de raisonner sans l'exécuter.",
+                };
+            }
+            if (!r.ok) {
+                return {
+                    success: false,
+                    error: res.raison || r.erreur || "le programme n'a pas abouti",
+                    sortie: String(res.sortie || "").slice(0, 2000),
+                    corrections: res.corrections || 0,
+                    consigne: res.consigne || "Dis ce qui bloque, sans prétendre avoir un résultat.",
+                };
+            }
+
+            return {
+                success: true,
+                sortie: String(res.sortie || "").slice(0, 4000),
+                erreur: String(res.erreur || "").slice(0, 1000),
+                corrections: res.corrections || 0,
+                langage: res.langage,
+                consigne: res.consigne,
+            };
+        } catch (err) {
+            console.error("❌ Planner.executerCode :", err.message);
+            return { success: false, error: "L'exécution n'a pas pu être lancée." };
         }
     }
 
