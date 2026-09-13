@@ -68,4 +68,59 @@ async function setFeedback(messageId, userId, feedback) {
     }
 }
 
-module.exports = { getHistorique, enregistrerTour, setFeedback };
+// ══════════════════════════════════════════════════════════════════════
+// LE PONT : CE QUI A ÉTÉ DIT AVANT LE COMPTE APPARTIENT À LA PERSONNE
+// ══════════════════════════════════════════════════════════════════════
+//
+// LE PROBLÈME, TEL QU'IL SE VIVAIT.
+//
+// Quelqu'un arrive sur la page d'accueil, raconte son commerce à SAMII
+// pendant dix messages, se décide, crée son compte — et SAMII ne sait plus
+// qui il est. Il redemande tout. C'est le pire moment possible pour paraître
+// amnésique : celui où la personne vient d'accorder sa confiance.
+//
+// CE QUI EXISTAIT DÉJÀ, ET QU'IL SUFFISAIT DE RELIER.
+//
+// Le chat public écrit DÉJÀ ces échanges dans `samii_conversations` — la
+// même table, la même forme, la même colonne — sous la clé
+// « anon:<identifiant de session> » (voir routes/vitrine.js). Rien n'était
+// perdu : personne n'allait le chercher.
+//
+// Rattacher, c'est donc une seule requête : changer la clé. Aucune copie,
+// aucune seconde table, aucun format de transfert.
+//
+// ── POURQUOI ON NE RATTACHE QUE SA PROPRE SESSION ────────────────────────
+//
+// L'identifiant de session vient du cookie de la personne, jamais du corps
+// de la requête. Accepter un identifiant fourni de l'extérieur reviendrait à
+// dire « donne-moi la conversation de ce visiteur-là » — on s'approprierait
+// l'historique de quelqu'un d'autre en une ligne de console.
+async function rattacherConversationAnonyme(sessionID, userId) {
+    if (!sessionID || !userId) return { rattachees: 0 };
+    const ref = String(sessionID).slice(0, 64);
+    try {
+        // On efface `session_ref` en même temps : ces messages appartiennent
+        // désormais à quelqu'un, et les laisser marqués « visiteur » les
+        // ferait réclamer une seconde fois par la prochaine session portant
+        // le même identifiant.
+        const rows = await db.query(
+            `UPDATE samii_conversations
+                SET user_id = $1, session_ref = NULL
+              WHERE session_ref = $2 AND user_id IS NULL
+          RETURNING id`,
+            [String(userId), ref],
+        );
+        if (rows.length) {
+            console.log(`🔗 ${rows.length} message(s) de la vitrine rattaché(s) au compte ${userId}`);
+        }
+        return { rattachees: rows.length };
+    } catch (err) {
+        // Un rattachement raté ne doit JAMAIS empêcher quelqu'un de se
+        // connecter ou de créer son compte. Il perdra le fil de sa
+        // conversation d'avant — c'est dommage, ce n'est pas bloquant.
+        console.error("❌ rattacherConversationAnonyme :", err.message);
+        return { rattachees: 0, erreur: err.message };
+    }
+}
+
+module.exports = { getHistorique, enregistrerTour, setFeedback, rattacherConversationAnonyme };

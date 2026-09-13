@@ -105,15 +105,46 @@ function resteAutorise(req) {
 //
 // Un échec d'écriture ne doit JAMAIS faire perdre sa réponse au visiteur :
 // la journalisation est utile pour nous, invisible pour lui.
+// ── DONNER UN FIL À UN VISITEUR ANONYME ──────────────────────────────────
+//
+// LE DÉFAUT QUE ÇA CORRIGE, TROUVÉ EN MESURANT.
+//
+// La session est configurée avec `saveUninitialized: false` — et c'est le bon
+// réglage : on ne crée pas une ligne en base pour chaque robot qui passe.
+// Mais une session à laquelle on n'écrit RIEN n'est jamais enregistrée, donc
+// aucun cookie n'est posé, donc `req.sessionID` est un identifiant NEUF à
+// chaque requête.
+//
+// Conséquence mesurée : les messages d'un même visiteur étaient déjà classés
+// sous une clé « anon:… » DIFFÉRENTE à chaque échange. Il n'y avait pas de
+// conversation anonyme — seulement des paires orphelines, impossibles à
+// relier entre elles et impossibles à rattacher à un compte ensuite.
+//
+// Une seule écriture suffit à rendre la session réelle. À partir de là le
+// visiteur a un fil, ses messages s'accumulent au même endroit, et le jour où
+// il crée son compte tout le suit (services/samiiMemoire.js).
+function marquerVisiteur(req) {
+    if (!req.session) return;
+    if (!req.session.vitrineDepuis) req.session.vitrineDepuis = Date.now();
+}
+
 async function journaliserTour(req, message, reponse) {
     try {
-        const userId = req.session?.userId
-            ? String(req.session.userId)
-            : "anon:" + String(req.sessionID || "sans-session").slice(0, 24);
+        // ── DEUX COLONNES, PAS UNE CLÉ DÉGUISÉE ─────────────────────────
+        //
+        // On écrivait « anon:<session> » dans `user_id`. Or cette colonne
+        // porte une clé étrangère vers `utilisateurs` : la base refusait
+        // CHAQUE insertion d'un visiteur, l'erreur partait dans le catch
+        // ci-dessous, et personne ne la lisait. Rien n'a jamais été gardé.
+        //
+        // Un visiteur a donc sa propre colonne. `user_id` reste NULL tant
+        // qu'aucun compte n'a réclamé ces messages.
+        const userId = req.session?.userId ? String(req.session.userId) : null;
+        const sessionRef = userId ? null : String(req.sessionID || "sans-session").slice(0, 64);
         await db.query(
-            `INSERT INTO samii_conversations (user_id, role, contenu, source, created_at)
-             VALUES ($1, 'user', $2, 'vitrine', NOW()), ($1, 'model', $3, 'vitrine', NOW())`,
-            [userId, message, String(reponse || "").slice(0, 4000)],
+            `INSERT INTO samii_conversations (user_id, session_ref, role, contenu, source, created_at)
+             VALUES ($1, $2, 'user', $3, 'vitrine', NOW()), ($1, $2, 'model', $4, 'vitrine', NOW())`,
+            [userId, sessionRef, message, String(reponse || "").slice(0, 4000)],
         );
     } catch (err) {
         console.error("❌ journaliserTour (vitrine) :", err.message);
@@ -125,6 +156,11 @@ async function journaliserTour(req, message, reponse) {
 // message, taille de l'historique, langue autorisée — et les laisser diverger
 // reviendrait à ouvrir sur l'une la porte qu'on ferme sur l'autre.
 function preparerEntree(req) {
+    // Avant tout le reste : sans ça, chaque message de ce visiteur sera
+    // classé sous un identifiant différent et sa conversation n'existera
+    // jamais comme un tout.
+    marquerVisiteur(req);
+
     const messageBrut = String(req.body.message || "").trim();
     // Une photo SANS un mot est une question parfaitement valable — « c'est
     // quoi ça ? ». Refuser le message vide aurait rendu le trombone inutile

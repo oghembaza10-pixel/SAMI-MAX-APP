@@ -235,14 +235,31 @@ verifier(!/(interdit|bloqué|refusé)/i.test(bloc),
 // sous l'identifiant d'un vrai compte.
 verifier(/INSERT INTO samii_conversations/.test(vitrineSrc),
     "les conversations de la vitrine ne sont pas enregistrées — on n'aura rien à analyser");
-verifier(/"anon:" \+/.test(vitrineSrc),
-    "les visiteurs anonymes n'ont pas de préfixe « anon: » — ils peuvent percuter un identifiant de compte");
+// ── LA GARANTIE EST PLUS FORTE QU'UN PRÉFIXE ────────────────────────────
+//
+// Cette garde exigeait un préfixe « anon: » dans `user_id`. L'intention était
+// juste — un visiteur ne doit jamais écrire sous l'identifiant d'un vrai
+// compte — mais le moyen était cassé : cette colonne porte une CLÉ ÉTRANGÈRE
+// vers `utilisateurs`, donc la base refusait chaque insertion d'un visiteur.
+// La garde passait, et rien n'était jamais enregistré.
+//
+// Un visiteur a maintenant sa propre colonne, et `user_id` reste NULL. La
+// collision n'est plus évitée par une convention de nommage : elle est
+// impossible, c'est la base qui l'arbitre.
+verifier(/session_ref/.test(vitrineSrc),
+    "les messages d'un visiteur n'ont pas de colonne à eux : soit ils percutent un compte, " +
+    "soit la clé étrangère les refuse et rien n'est enregistré");
+verifier(/req\.session\?\.userId \? String\(req\.session\.userId\) : null/.test(vitrineSrc),
+    "un visiteur écrit encore quelque chose dans user_id : la clé étrangère refusera l'insertion");
 verifier(/'vitrine'/.test(vitrineSrc),
     "la source « vitrine » n'est pas enregistrée — impossible de séparer les deux mondes à l'analyse");
 
 // Et qu'un échec d'écriture ne coûte pas sa réponse au visiteur.
 const journal = vitrineSrc.slice(vitrineSrc.indexOf("async function journaliserTour"));
-verifier(/try \{[\s\S]*?\} catch/.test(journal.slice(0, 900)),
+// La fenêtre couvre le commentaire d'en-tête : elle s'était refermée trop
+// tôt quand celui-ci s'est allongé, et la garde a crié pour une raison qui
+// n'était pas la bonne.
+verifier(/try \{[\s\S]*?\} catch/.test(journal.slice(0, 2500)),
     "journaliserTour n'attrape pas ses erreurs — une panne d'écriture ferait perdre la réponse au visiteur");
 
 // ── 9. LE HUB DES MÉTIERS ────────────────────────────────────────────────

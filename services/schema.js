@@ -563,6 +563,21 @@ const BLOCS = [
             // NULL = la conversation générale, hors projet. C'est ce que
             // `samiiMemoire` interroge avec `projet_id IS NULL`.
             `ALTER TABLE samii_conversations ADD COLUMN IF NOT EXISTS projet_id BIGINT`,
+            // ── LA CONVERSATION D'AVANT LE COMPTE ────────────────────────
+            //
+            // `user_id` porte une clé étrangère vers `utilisateurs`. Le chat
+            // public essayait d'y écrire « anon:<session> » : la base
+            // refusait CHAQUE insertion, l'erreur était attrapée et écrite au
+            // journal, et personne ne la lisait. Aucune conversation anonyme
+            // n'a donc jamais été enregistrée — alors que le message de quota
+            // promet « crée ton compte et je garde tout ce qu'on s'est dit ».
+            //
+            // On ne touche pas à la clé étrangère : elle protège les vraies
+            // conversations. Les messages d'un visiteur ont leur propre
+            // colonne, et `user_id` reste NULL jusqu'à ce qu'un compte les
+            // réclame (services/samiiMemoire.js, rattacherConversationAnonyme).
+            `ALTER TABLE samii_conversations ADD COLUMN IF NOT EXISTS session_ref TEXT`,
+            `CREATE INDEX IF NOT EXISTS idx_conv_session ON samii_conversations (session_ref)`,
             `CREATE INDEX IF NOT EXISTS idx_conv_projet ON samii_conversations (user_id, projet_id)`,
         ],
     },

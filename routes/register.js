@@ -7,6 +7,7 @@ const bcrypt  = require("bcrypt");
 const router  = express.Router();
 const gmail   = require("../services/gmail");
 const courriel = require("../services/emailTemplate");
+const samiiMemoire = require("../services/samiiMemoire");
 const CONFIG  = require("../config");
 const db      = require("../services/db");
 const gradeService = require("../services/gradeService");
@@ -360,6 +361,11 @@ router.get("/confirmer", async (req, res) => {
 
 // ── POST /register ───────────────────────────────────────────────
 router.post("/", async (req, res) => {
+    // Capturé AVANT la régénération de session : c'est sous cet identifiant
+    // que vivent les messages échangés avec SAMII sur la page d'accueil,
+    // juste avant que la personne ne se décide à créer son compte. C'est le
+    // moment où paraître amnésique coûte le plus cher.
+    const sessionAvantInscription = req.sessionID;
     const { nom, prenom, email, telephone, metier, password, type_compte, theme_visuel, ref } = req.body;
     // "agence" est un type d'inscription à part entière : l'agence entre
     // directement dans son QG Agence et crée les espaces de ses clients en
@@ -412,6 +418,7 @@ router.post("/", async (req, res) => {
                 req.session.loggedIn   = true;
                 req.session.email      = email;
                 req.session.userId     = user.id;
+                samiiMemoire.rattacherConversationAnonyme(sessionAvantInscription, user.id).catch(() => {});
                 req.session.nom        = `${user.prenom || ""} ${user.nom || ""}`.trim();
                 req.session.typeCompte = typeCompteExistant;
 
@@ -506,6 +513,7 @@ router.post("/", async (req, res) => {
             req.session.loggedIn    = true;
             req.session.email       = email;
             req.session.userId      = userId;
+            samiiMemoire.rattacherConversationAnonyme(sessionAvantInscription, userId).catch(() => {});
             req.session.nom         = `${prenom || ""} ${nom || ""}`.trim();
             req.session.typeCompte  = typeCompte;
             req.session.workspaceId = workspaceExistant?.workspaceId || null;

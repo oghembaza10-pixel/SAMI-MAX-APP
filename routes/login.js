@@ -7,6 +7,7 @@ const router  = express.Router();
 const db      = require("../services/db");
 const { suiteSure, apresConnexion } = require("../services/retour");
 const workspaceService = require("../services/workspaceService");
+const samiiMemoire = require("../services/samiiMemoire");
 const communautes = require("../config/communautes");
 
 // ── GET /login ────────────────────────────────────────────────
@@ -202,6 +203,14 @@ document.getElementById('form-login').addEventListener('submit', async (e) => {
 
 // ── POST /login ───────────────────────────────────────────────
 router.post("/", async (req, res) => {
+    // ── L'IDENTIFIANT DE SESSION, CAPTURÉ AVANT TOUT ────────────────────
+    //
+    // `req.session.regenerate()` plus bas en crée un NOUVEAU et jette
+    // l'ancien — c'est la bonne pratique contre la fixation de session, on
+    // n'y touche pas. Mais c'est sous l'ANCIEN que vivent les messages
+    // échangés avec SAMII avant la connexion. Lu après, il ne désignerait
+    // plus rien, et la conversation d'avant serait perdue pour toujours.
+    const sessionAvantConnexion = req.sessionID;
     const { email, password } = req.body;
     // Là où la personne allait AVANT qu'on lui demande de se connecter.
     // Elle prime sur la destination habituelle : quelqu'un qui clique sur
@@ -252,6 +261,11 @@ router.post("/", async (req, res) => {
                 req.session.typeCompte = "client";
                 req.session.workspaceId = null;
 
+                // Ce qui a été dit à SAMII avant le compte appartient à la
+                // personne. Sans attendre : un rattachement lent ou raté ne
+                // doit jamais retarder une connexion.
+                samiiMemoire.rattacherConversationAnonyme(sessionAvantConnexion, user.id).catch(() => {});
+
                 res.json({ success: true, redirect: apresConnexion(req, res, { suite, typeCompte: "client" }) });
             });
             return;
@@ -283,6 +297,10 @@ router.post("/", async (req, res) => {
             } else {
                 req.session.workspaceId = null;
             }
+
+            // Même règle que pour le compte client : la conversation d'avant
+            // la connexion suit la personne. Sans attendre.
+            samiiMemoire.rattacherConversationAnonyme(sessionAvantConnexion, user.id).catch(() => {});
 
             // Où l'on atterrit dépend de la communauté du service, pas d'une
             // page écrite en dur : chez une partenaire, « /hub » et
