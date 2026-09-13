@@ -216,10 +216,22 @@ const NIVEAUX = require(path.join(RACINE, "config", "niveaux.js"));
         `le chemin sans niveau donne à Groq ${ancienChezGroq.join(", ")} — ` +
         "c'est par là que les outils d'écriture et Workspace repassaient");
 
+    // ── ET CHEZ GEMINI, IL GARDE TOUT SAUF LES CHAÎNES D'AGENTS ──────────
+    //
+    // Un tour sans niveau est une conversation CLIENT (WhatsApp, Telegram,
+    // page publique d'une boutique). Il doit garder tous ses outils
+    // historiques — sinon les clients des marchands ne pourraient plus
+    // commander — mais JAMAIS la famille « agents » : un client n'a rien à
+    // faire dans les comptes sociaux du marchand.
     const ancienChezGemini = noms(gemini.__test_buildToolsPayload(true, {}, "gemini"));
-    verifier(ancienChezGemini.length === gemini.TOOLS[0].functionDeclarations.length,
-        `le chemin sans niveau a perdu des outils chez Gemini (${ancienChezGemini.length}) : ` +
-        "le comportement historique aurait été modifié");
+    const horsAgents = gemini.TOOLS[0].functionDeclarations
+        .filter((fn) => !NIVEAUX.FAMILLES.agents.includes(fn.name));
+    verifier(ancienChezGemini.length === horsAgents.length,
+        `le chemin sans niveau porte ${ancienChezGemini.length} outils au lieu de ${horsAgents.length} : ` +
+        "soit un outil client a disparu, soit une chaîne d'agents est offerte à un client");
+    verifier(!ancienChezGemini.some((n) => NIVEAUX.FAMILLES.agents.includes(n)),
+        `un client de marchand se voit offrir une chaîne d'agents (${ancienChezGemini.join(", ")}) : ` +
+        "il pourrait faire préparer une publication sur les comptes sociaux du marchand");
 }
 
 // ══════════════════════════════════════════════════════════════════════════

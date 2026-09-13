@@ -52,6 +52,9 @@ class SamiiPlanner {
             case "envoyer_facture":
                 return await this.envoyerFacture(context, args);
 
+            case "preparer_publication":
+                return await this.confierAUneMission(name, args, context);
+
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
         }
@@ -209,6 +212,96 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         } catch (err) {
             console.error("❌ Planner.creerRapportSheets :", err.message);
             return { success: false, error: "Erreur lors de la création du rapport." };
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // LE PONT VERS LES SPÉCIALISTES
+    // ══════════════════════════════════════════════════════════════════
+    //
+    // Un outil dont le travail n'est pas UN geste mais UNE CHAÎNE. Le
+    // planner ne l'exécute pas lui-même : il la confie à `brain/agents.js`,
+    // qui vérifie les permissions, déroule les maillons, et contrôle ce qui
+    // en sort.
+    //
+    // ── CE QUE LE PLANNER NE FAIT PAS ICI, ET POURQUOI ────────────────
+    //
+    // Il ne décide pas si la mission est autorisée. Il ne lit pas le
+    // niveau, ni la posture, ni le palier. S'il le faisait, il y aurait
+    // deux portes — celle-ci et celle de la couche agents — et le jour où
+    // l'une change, l'autre continue de laisser passer.
+    //
+    // ── CE QUI REMONTE AU MODÈLE ──────────────────────────────────────
+    //
+    // JAMAIS le nom d'un spécialiste. Un seul SAMII : la personne ne doit
+    // pas lire « mon Relecteur a refusé ». Elle doit lire ce qui a été
+    // préparé, et ce qui bloque. Les noms d'agents restent dans la trace.
+    async confierAUneMission(nomOutil, args, context) {
+        try {
+            const agents = require("./agents");
+            // ── L'OUTIL NOMME LA MISSION, IL N'EST PAS LA MISSION ────────
+            //
+            // CORRIGÉ PAR LE TEST. Premier jet : l'identifiant de l'outil
+            // était passé tel quel comme identifiant de mission. La porte
+            // répondait « mission inconnue », correctement — et le pont ne
+            // menait donc nulle part. Le test l'a dit en une ligne ; la
+            // relecture ne l'avait pas vu, parce que les deux noms se
+            // ressemblent.
+            //
+            // C'est aussi la bonne séparation : un outil est ce que le
+            // modèle appelle, une mission est ce que SAMII exécute. Demain,
+            // deux outils pourront ouvrir la même chaîne.
+            const mission = require("../config/agents").missionParOutil(nomOutil);
+            if (!mission) {
+                return { success: false, error: `Aucune chaîne de spécialistes n'est branchée sur « ${nomOutil} ».` };
+            }
+            const r = await agents.executer({
+                missionId: mission.id,
+                entree: {
+                    theme: args?.theme,
+                    objectif: args?.objectif,
+                    angle: args?.angle,
+                    plateformes: String(args?.plateformes || "")
+                        .split(",").map((s) => s.trim()).filter(Boolean),
+                },
+                context,
+            });
+
+            if (!r.ok) {
+                return {
+                    success: false,
+                    // Un refus de permission n'est pas une panne : on le dit
+                    // autrement, sinon SAMII s'excuse d'un incident
+                    // technique là où il devrait expliquer une limite.
+                    error: r.refuse
+                        ? r.erreur
+                        : `La préparation n'a pas abouti : ${r.erreur || "sans motif"}`,
+                    remarques: r.verification?.remarques || [],
+                };
+            }
+
+            const res = r.resultat || {};
+            return {
+                success: true,
+                postId: res.postId,
+                titre: res.titre,
+                contenu: res.contenu,
+                // Ce qui a été produit, plateforme par plateforme, avec ce
+                // qui bloque quand ça bloque. C'est ce que SAMII doit
+                // pouvoir raconter.
+                variantes: (res.variantes || []).map((v) => ({
+                    plateforme: v.plateforme,
+                    approuve: v.approuve,
+                    bloquants: v.bloquants || [],
+                })),
+                approuvees: res.approuvees || 0,
+                remarques: r.verification?.remarques || [],
+                consigne: "Rien n'est publié : ce contenu attend une validation. "
+                    + "Dis ce qui a été préparé pour chaque plateforme, et nomme ce qui bloque là où ça bloque.",
+            };
+        } catch (err) {
+            console.error(`❌ Planner.confierAUneMission(${missionId}) :`, err.message);
+            return { success: false, error: "La préparation n'a pas pu être lancée." };
         }
     }
 

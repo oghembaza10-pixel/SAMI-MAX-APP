@@ -107,7 +107,7 @@ const MOTEURS = {
             flux: true, recherche: true, vision: true,
         },
         donneesGoogle: true,
-        outilsFiables: ["lecture", "ecriture", "commerce"],
+        outilsFiables: ["lecture", "ecriture", "commerce", "agents"],
         rang: 0,
         // Repère relatif, PAS un prix. La passe tarifaire vient après ; on
         // ne met pas de chiffre en dinars ici pour qu'aucun code ne se mette
@@ -143,7 +143,7 @@ const MOTEURS = {
             flux: true, recherche: true, vision: true,
         },
         donneesGoogle: true,
-        outilsFiables: ["lecture", "ecriture", "commerce"],
+        outilsFiables: ["lecture", "ecriture", "commerce", "agents"],
         rang: 1,
         cout: 5,
     },

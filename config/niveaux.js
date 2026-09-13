@@ -71,6 +71,26 @@ const FAMILLES = {
         "prendre_rendez_vous",
         "proposer_creneaux_rdv",
     ],
+
+    // AGENTS ouvre une chaîne de spécialistes internes au lieu d'exécuter un
+    // geste unique. C'est une famille à part pour trois raisons, et chacune
+    // compte :
+    //
+    //   • LE COÛT. Un outil ordinaire, c'est un appel. Une mission, c'est
+    //     autant d'appels que de maillons. Mélangée à « lecture », elle
+    //     serait accordée dès le niveau Expert et un « bonjour » mal
+    //     interprété ferait tourner cinq agents.
+    //
+    //   • L'EFFET. Ces chaînes fabriquent quelque chose qui reste — un
+    //     brouillon enregistré, des variantes en attente. Ce n'est pas une
+    //     lecture, et ce n'est pas encore un envoi.
+    //
+    //   • LES RELAIS. `config/moteurs.js` ne concède aux relais que la
+    //     famille « commerce ». Isoler les agents ici suffit à ce qu'une
+    //     panne de Gemini ne les remette jamais entre leurs mains.
+    agents: [
+        "preparer_publication",
+    ],
 };
 
 // ── LE PRIX, AUJOURD'HUI ─────────────────────────────────────────────────
@@ -139,7 +159,11 @@ const NIVEAUX = {
         moteur: "pro",
         generationConfig: { temperature: 0.8, maxOutputTokens: 4096 },
         reflexionEtendue: false,
-        familles: ["lecture", "ecriture"],
+        // « Un plan, une stratégie, plusieurs étapes » : c'est exactement ce
+        // qu'une chaîne de spécialistes sait faire. Pro est le premier
+        // niveau où mobiliser plusieurs agents pour un seul message est une
+        // dépense honnête.
+        familles: ["lecture", "ecriture", "agents"],
         etapesMax: 4,
         prixUSD: PRIX_PROVISOIRE,
     },
@@ -152,7 +176,7 @@ const NIVEAUX = {
         moteur: "pro",
         generationConfig: { temperature: 0.9, maxOutputTokens: 8192 },
         reflexionEtendue: false,
-        familles: ["lecture", "ecriture"],
+        familles: ["lecture", "ecriture", "agents"],
         etapesMax: 8,
         prixUSD: PRIX_PROVISOIRE,
     },

@@ -85,6 +85,26 @@ const ACTES = {
     creer_evenement_agenda: { prix: PRIX_ACTE_USD, libelle: "événement d'agenda" },
     creer_rapport_sheets:   { prix: PRIX_ACTE_USD, libelle: "rapport créé" },
     rechercher_prospects:   { prix: PRIX_ACTE_USD, libelle: "recherche de prospects" },
+
+    // ── UN ACTE QUI N'EST PAS UN GESTE, MAIS UNE CHAÎNE ──────────────────
+    //
+    // ⚠️ À REVOIR À LA PASSE TARIFAIRE, ET C'EST LE CAS LE PLUS URGENT DE
+    // LA LISTE.
+    //
+    // Les autres actes coûtent UN aller-retour au fournisseur. Celui-ci en
+    // coûte plusieurs : rédaction, puis une adaptation par plateforme
+    // demandée, puis une relecture par variante. Trois plateformes, c'est
+    // déjà sept ou huit appels facturés au prix d'un seul.
+    //
+    // On le pose quand même au tarif ordinaire aujourd'hui, pour deux
+    // raisons : la passe tarifaire est reportée par décision produit, et un
+    // acte SANS prix serait pire — `factureDuTour` refuse de deviner, et la
+    // suite crédits refuse un outil dont personne n'a tranché le prix.
+    //
+    // Ce qu'il faudra trancher : un prix par variante produite, ou un prix
+    // de mission plus élevé. Tant que ce n'est pas fait, plus un marchand
+    // vise de plateformes, moins la marge est bonne.
+    preparer_publication:   { prix: PRIX_ACTE_USD, libelle: "publication préparée" },
 };
 
 const GRATUITS = {

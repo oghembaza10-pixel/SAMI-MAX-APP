@@ -191,6 +191,23 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
             // Lu par geminiService : décide des outils portés et de la
             // profondeur de réflexion pour CE tour.
             niveau: choixNiveau.niveau,
+            // ── CE QUE LA COUCHE AGENTS A BESOIN DE SAVOIR ──────────────
+            //
+            // `brain/agents.js` ouvre une chaîne de spécialistes quand SAMII
+            // appelle un outil de la famille « agents ». Sa porte croise le
+            // niveau, le palier et la posture d'autonomie.
+            //
+            // Le palier est déjà lu plus haut pour le quota : on le repose
+            // ici plutôt que d'interroger la base une seconde fois.
+            //
+            // La posture (`mode`) n'est PAS lue à chaque tour : aucune
+            // mission d'aujourd'hui ne publie pour de vrai, et ce serait une
+            // requête de plus sur chaque message. Son absence fait
+            // échouer FERMÉ — `canActAutonomously(undefined, …)` rend faux,
+            // donc une mission qui publierait serait refusée tant que
+            // personne n'aura posé la posture ici. C'est le bon défaut : on
+            // ne publie pas parce qu'on a oublié de demander.
+            palier,
             memoireUtilisateur: memoireActuelle,
             // ── L'IDENTITÉ, RECOPIÉE DE LA SESSION ──────────────────────
             //

@@ -583,6 +583,43 @@ const TOOLS = [
                     required: ["produit", "telephone", "adresse"],
                 },
             },
+            // ── LE PONT VERS LES SPÉCIALISTES ────────────────────────────
+            //
+            // Sept agents sociaux existaient, fonctionnaient, étaient
+            // testés — et personne ne pouvait les appeler. Mesuré :
+            // `brain/planner.js` ne nommait « agent » nulle part, et
+            // `engines/social` n'était atteignable que depuis le cron, les
+            // scripts, ou un écran marqué `requireFondateur`.
+            //
+            // Un marchand qui écrivait « fais-moi une publication Facebook »
+            // recevait un paragraphe. La chaîne complète — rédaction,
+            // adaptation par plateforme, relecture — restait hors de portée.
+            //
+            // Cet outil est la porte, et c'est VOLONTAIREMENT un outil
+            // ordinaire : il passe par le function calling comme les
+            // treize autres, donc par l'intersection niveau ∩ audience ∩
+            // moteur du chantier 7. Aucune conséquence à prévoir séparément.
+            //
+            // CE QUE ÇA VEUT DIRE POUR LES RELAIS : leurs `outilsFiables`
+            // valent ["commerce"]. Cet outil est de la famille « agents ».
+            // Il ne leur sera donc JAMAIS transmis — une panne de Gemini ne
+            // peut pas faire préparer une publication par un moteur qu'on
+            // sait moins discipliné. Le chantier 7 protège le chantier 8
+            // sans qu'une ligne soit à écrire pour ça.
+            {
+                name: "preparer_publication",
+                description: "Prépare une publication pour les réseaux sociaux du marchand : rédige le contenu, l'adapte au format de chaque plateforme demandée, et le fait relire. NE PUBLIE RIEN — le résultat reste en attente de validation. Utilise cette fonction quand le marchand demande un post, une publication, une story, une légende ou du contenu pour Facebook, Instagram, TikTok, LinkedIn ou une autre plateforme.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        theme: { type: "STRING", description: "Le sujet de la publication (ex: « nouvelle collection de tissus bazin »)." },
+                        objectif: { type: "STRING", description: "Ce que la publication doit obtenir : notoriété, vente, engagement, annonce." },
+                        angle: { type: "STRING", description: "L'angle ou le ton souhaité, si le marchand en a exprimé un." },
+                        plateformes: { type: "STRING", description: "Les plateformes visées, séparées par des virgules (ex: « facebook,instagram »). Vide si le marchand n'a rien précisé." },
+                    },
+                    required: ["theme"],
+                },
+            },
         ],
     },
 ];
@@ -710,8 +747,27 @@ function buildToolsPayload(useTools, context, moteurId = "gemini") {
         return restant.length ? [{ functionDeclarations: restant }] : null;
     };
 
+    // ── LE CHEMIN HISTORIQUE : AUCUNE CHAÎNE D'AGENTS ────────────────────
+    //
+    // TROUVÉ PAR LA SUITE `outils-niveaux`, PAS PAR LA RELECTURE.
+    //
+    // Un tour sans niveau, c'est une conversation CLIENT : quelqu'un qui
+    // parle à la boutique d'un marchand depuis WhatsApp, Telegram ou la page
+    // publique. Ce chemin recevait `TOOLS` en entier — donc, dès l'ajout de
+    // `preparer_publication`, un client se voyait offrir de faire préparer
+    // une publication sur les comptes sociaux DU MARCHAND.
+    //
+    // Ce n'est pas une question de niveau ni de moteur : c'est une question
+    // de personne. Un client n'a rien à faire dans les comptes de la
+    // boutique. La famille « agents » est donc retirée de ce chemin, à la
+    // source, pour tous ses appelants d'un coup.
     const idNiveau = context?.niveau;
-    if (!idNiveau) return garder((useTools ? TOOLS : SEARCH_TOOLS)[0].functionDeclarations);
+    if (!idNiveau) {
+        const NIVEAUX = require("../config/niveaux");
+        const reserves = new Set(NIVEAUX.FAMILLES.agents);
+        return garder((useTools ? TOOLS : SEARCH_TOOLS)[0].functionDeclarations
+            .filter((fn) => !reserves.has(fn.name)));
+    }
 
     // Requis ici et pas en tête de fichier : config/niveaux.js lit
     // config/credits.js, qui n'a rien à faire dans le chemin d'un message
