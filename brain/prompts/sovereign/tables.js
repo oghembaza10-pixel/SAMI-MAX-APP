@@ -104,4 +104,8 @@ async function getTables(message) {
         .join("\n\n");
 }
 
-module.exports = { getTables };
+// `detect` est exporté pour que le choix automatique du niveau de réflexion
+// (services/niveauAuto.js) réutilise CE routeur de domaine au lieu d'en
+// écrire un second. Deux routeurs finiraient par ne plus classer le même
+// message dans le même domaine, et personne ne saurait lequel fait foi.
+module.exports = { getTables, detect };
