@@ -184,6 +184,46 @@
 
                 <input type="text" id="samii-page-input" data-i18n-placeholder="samii.chat.placeholder" placeholder="Parler à SAMII…" autocomplete="off">
 
+                <%# ── LE SÉLECTEUR D'INTELLIGENCE ───────────────────────
+                    Rendu depuis config/niveaux.js, jamais recopié ici : une
+                    liste écrite en dur dans un gabarit finit toujours par ne
+                    plus correspondre aux niveaux réellement appliqués.
+
+                    « Auto » d'abord, et sélectionné par défaut — c'est le bon
+                    choix pour presque tout le monde, et l'idée même du mode :
+                    ne pas obliger à choisir.
+
+                    Ce n'est PAS le mode d'autonomie (Ombre → Souverain), qui
+                    a sa propre page. Celui-ci règle l'effort, jamais le droit
+                    d'agir. D'où le libellé « Intelligence » et pas « Mode ». %>
+                <%# Les valeurs par défaut ne sont pas de la coquetterie : une
+                    variable oubliée par un appelant ferait tomber la PAGE
+                    ENTIÈRE en 500, pour un sélecteur. La page survit ; c'est
+                    un test qui vérifie que la vraie route, elle, les passe. %>
+                <% var _niveaux = (typeof niveaux !== "undefined" && niveaux) || [];
+                   var _ordre = (typeof ordreNiveaux !== "undefined" && ordreNiveaux) || [];
+                   var _plafond = (typeof plafondNiveau !== "undefined" && plafondNiveau) || "expert"; %>
+                <% if (_niveaux.length) { %>
+                <div class="samii-niveau" style="position:relative;display:flex;align-items:center;">
+                    <label for="samii-niveau" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Niveau d'intelligence</label>
+                    <select id="samii-niveau" title="Niveau d'intelligence"
+                            style="background:transparent;border:1px solid var(--border,rgba(255,255,255,.14));
+                                   color:var(--text-muted);border-radius:999px;padding:5px 9px;
+                                   font-size:12px;cursor:pointer;max-width:132px;">
+                        <% _niveaux.forEach(function (n) { %>
+                            <%# Un niveau au-dessus du plafond reste VISIBLE mais
+                                désactivé : le cacher laisserait croire qu'il
+                                n'existe pas, alors que c'est l'abonnement qui
+                                l'ouvre. %>
+                            <% var auDela = n.id !== "auto" && _ordre.indexOf(n.id) > _ordre.indexOf(_plafond); %>
+                            <option value="<%= n.id %>"<%= n.id === "auto" ? " selected" : "" %><%= auDela ? " disabled" : "" %>>
+                                <%= n.icone %> <%= n.libelle %><%= auDela ? " · abonnement" : "" %>
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+                <% } %>
+
                 <button type="button" id="samii-mic-btn" aria-label="Parler" title="Message vocal" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
                     <i data-lucide="mic"></i>
                 </button>

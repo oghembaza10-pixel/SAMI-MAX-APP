@@ -696,42 +696,139 @@ async function send({ to, message }) {
     return { success: true };
 }
 
-async function chat({ message, context = {}, useTools = false, history = [] }, retryCount = 0) {
-    try {
-        const prompt = await SAMII_PROMPT(message, context);
+// ── LE CORPS D'UNE REQUÊTE DE CHAT, ÉCRIT UNE SEULE FOIS ─────────────────
+//
+// `chat()` et `chatFlux()` envoient EXACTEMENT la même chose — seul le
+// transport change. Deux constructions séparées auraient divergé au premier
+// ajout : un jour la version en flux aurait porté d'autres outils, ou une
+// autre profondeur de réflexion, que la version normale. Personne ne l'aurait
+// vu, parce que les deux auraient continué de répondre.
+async function corpsDeChat({ message, context, useTools, history }) {
+    const prompt = await SAMII_PROMPT(message, context);
 
-        // Pièce jointe (photo ou document) — envoyée en inlineData avec le
-        // message courant uniquement. L'historique ne rejoue jamais les
-        // fichiers déjà analysés (coût + les API multimodales ne les
-        // gardent pas non plus en mémoire d'une requête à l'autre).
-        const userParts = [{ text: prompt }];
-        if (context.piece?.base64 && context.piece?.mimeType) {
-            userParts.push({ inlineData: { mimeType: context.piece.mimeType, data: context.piece.base64 } });
+    const userParts = [{ text: prompt }];
+    if (context.piece?.base64 && context.piece?.mimeType) {
+        userParts.push({ inlineData: { mimeType: context.piece.mimeType, data: context.piece.base64 } });
+    }
+
+    const body = {
+        contents: [
+            ...history.map(h => ({ role: h.role, parts: [{ text: h.message }] })),
+            { role: "user", parts: userParts },
+        ],
+    };
+    const outils = buildToolsPayload(useTools, context);
+    if (outils) body.tools = outils;
+    const config = configDeGeneration(context);
+    if (config) body.generationConfig = config;
+    return body;
+}
+
+// ── LE CHAT EN FLUX, AVEC LES OUTILS ─────────────────────────────────────
+//
+// LE PROBLÈME QUE ÇA RÉSOUT. `chatLibreFlux` sait streamer, mais ne porte
+// aucun outil : il sert le chat public, où SAMII n'agit sur rien. Le chat du
+// QG, lui, porte des outils — et un outil peut arriver AU MILIEU du flux.
+//
+// La façon naïve serait d'appeler une première fois sans flux pour voir s'il
+// y a un outil, puis une seconde fois en flux pour le texte. Ce serait deux
+// appels d'IA là où il en faut un, donc deux fois le coût, sur chaque
+// message. On détecte donc l'outil DANS le flux.
+//
+// ── LE NOMBRE D'APPELS NE CHANGE PAS ─────────────────────────────────────
+//
+// Sans outil : un appel, comme avant, mais le texte arrive au fil.
+// Avec outil : deux appels — décider, puis formuler — exactement comme le
+// chemin sans flux le fait déjà aujourd'hui. Rien n'est ajouté.
+//
+// `onMorceau` n'est appelé QUE pour du texte. Tant qu'on ne sait pas si le
+// modèle va appeler un outil, rien n'est émis : afficher un début de phrase
+// puis le remplacer par « je consulte ton agenda… » donnerait l'impression
+// que SAMII se contredit.
+async function chatFlux({ message, context = {}, useTools = false, history = [] }, onMorceau, onReprise) {
+    try {
+        const body = await corpsDeChat({ message, context, useTools, history });
+        const reponse = await postWithRotation(body, { flux: true });
+
+        let texte = "";
+        let appelOutil = null;
+        let reste = "";
+
+        // Google envoie du SSE : des lignes « data: {…} ». Un morceau TCP ne
+        // s'arrête pas sur une frontière de ligne — on garde le fragment
+        // incomplet pour le recoller au suivant, sinon un JSON coupé en deux
+        // fait tout tomber. Même raison que dans chatLibreFlux.
+        for await (const bloc of reponse.data) {
+            reste += bloc.toString("utf8");
+            const lignes = reste.split("\n");
+            reste = lignes.pop();
+            for (const ligne of lignes) {
+                if (!ligne.startsWith("data:")) continue;
+                const charge = ligne.slice(5).trim();
+                if (!charge || charge === "[DONE]") continue;
+                let json;
+                try { json = JSON.parse(charge); } catch { continue; }
+
+                for (const part of json.candidates?.[0]?.content?.parts || []) {
+                    if (part.functionCall && !appelOutil) {
+                        // ── ON EFFACE CE QU'ON VENAIT D'ÉCRIRE ───────────
+                        //
+                        // Le modèle commence souvent par un préambule
+                        // (« Je regarde ça… ») AVANT d'émettre l'appel
+                        // d'outil. Ce texte-là n'est pas la réponse : la
+                        // vraie arrivera après l'outil et le remplacera.
+                        //
+                        // Attendre la fin pour le remplacer laisserait une
+                        // phrase à l'écran pendant tout le temps de l'outil,
+                        // puis la ferait disparaître d'un coup — SAMII
+                        // aurait l'air de se contredire. On demande donc
+                        // l'effacement TOUT DE SUITE.
+                        if (texte && typeof onReprise === "function") onReprise();
+                        texte = "";
+                        appelOutil = {
+                            name: part.functionCall.name,
+                            args: part.functionCall.args || {},
+                            // Requis par le modèle pour rejouer l'appel dans
+                            // l'historique — sans lui, l'appel suivant échoue
+                            // en 400 « missing a thought_signature ».
+                            thoughtSignature: part.thoughtSignature || part.thought_signature || null,
+                        };
+                    }
+                    if (part.text) {
+                        texte += part.text;
+                        // On n'émet rien tant qu'un outil a été demandé : ce
+                        // texte-là n'est qu'un préambule que la vraie réponse
+                        // remplacera.
+                        if (!appelOutil && typeof onMorceau === "function") onMorceau(part.text);
+                    }
+                }
+            }
         }
 
-        const body = {
-            contents: [
-                ...history.map(h => ({ role: h.role, parts: [{ text: h.message }] })),
-                { role: "user", parts: userParts },
-            ],
-        };
-        // Un niveau sans outil ne doit pas envoyer un champ `tools` vide :
-        // l'API le refuse. On n'envoie simplement pas le champ.
-        const outils = buildToolsPayload(useTools, context);
-        if (outils) body.tools = outils;
+        if (appelOutil) {
+            return { type: "function_call", provider: "gemini", ...appelOutil };
+        }
+        if (texte.trim()) return { type: "text", provider: "gemini", text: texte };
+        return sansReponse("gemini", "Flux Gemini vide.");
+    } catch (err) {
+        // Le repli est le chemin SANS flux, avec ses quatre fournisseurs. On
+        // rend la réponse d'un coup plutôt que rien du tout — et on n'a
+        // toujours pas dépensé deux appels réussis : le premier a échoué.
+        console.error("❌ chatFlux / Gemini :", err.response?.data?.error?.message || err.message);
+        const secours = await chat({ message, context, useTools, history });
+        if (secours?.type === "text" && secours.text && typeof onMorceau === "function") {
+            onMorceau(secours.text);
+        }
+        return secours;
+    }
+}
 
-        // ── LA PROFONDEUR DE RÉFLEXION ──────────────────────────────────
-        //
-        // Même règle que pour les outils : sans niveau déclaré, on n'envoie
-        // rien et le modèle garde ses valeurs par défaut — exactement le
-        // comportement d'avant.
-        //
-        // Ce que le niveau règle vraiment : la longueur maximale de la
-        // réponse et la liberté de formulation. Un « Rapide » répond court
-        // et droit ; un « Maître » a la place de dérouler un raisonnement.
-        const config = configDeGeneration(context);
-        if (config) body.generationConfig = config;
-
+async function chat({ message, context = {}, useTools = false, history = [] }, retryCount = 0) {
+    try {
+        // Le corps est construit par corpsDeChat : la MÊME chose que la
+        // version en flux, outils et profondeur compris. Deux constructions
+        // séparées auraient fini par ne plus envoyer la même requête.
+        const body = await corpsDeChat({ message, context, useTools, history });
         const response = await postWithRotation(body);
         const candidate = response.data.candidates?.[0];
         const parts = candidate?.content?.parts || [];
@@ -833,7 +930,11 @@ async function imageEnLigne(url) {
     }
 }
 
-async function chatLibre({ systemPrompt, message, history = [], imageUrl = null }) {
+// `niveau` : le chat public applique la MÊME échelle de réflexion que le QG.
+// Il ne porte aucun outil — c'est délibéré, un visiteur anonyme n'agit sur
+// rien — mais la profondeur, elle, doit suivre la même règle des deux côtés,
+// sinon « Expert » ne voudrait pas dire la même chose selon la page.
+async function chatLibre({ systemPrompt, message, history = [], imageUrl = null, niveau = null }) {
     // La pièce jointe voyage avec le message COURANT seulement : l'historique
     // ne rejoue jamais les images déjà analysées — c'est ce que fait déjà le
     // chat du QG, pour le coût et parce que les API multimodales ne les
@@ -850,7 +951,10 @@ async function chatLibre({ systemPrompt, message, history = [], imageUrl = null 
     ];
 
     try {
-        const response = await postWithRotation({ contents });
+        const corpsLibre = { contents };
+        const configLibre = configDeGeneration({ niveau });
+        if (configLibre) corpsLibre.generationConfig = configLibre;
+        const response = await postWithRotation(corpsLibre);
         const parts = response.data.candidates?.[0]?.content?.parts || [];
         const texte = parts.find(p => p.text)?.text;
         if (texte) return { text: texte, provider: "gemini" };
@@ -920,7 +1024,7 @@ async function chatLibre({ systemPrompt, message, history = [], imageUrl = null 
 // `onMorceau` est appelée à chaque fragment reçu. La valeur de retour a
 // exactement la forme de chatLibre() — { text, provider } — pour que l'appelant
 // n'ait pas à savoir par quel chemin la réponse est arrivée.
-async function chatLibreFlux({ systemPrompt, message, history = [] }, onMorceau) {
+async function chatLibreFlux({ systemPrompt, message, history = [], niveau = null }, onMorceau) {
     const contents = [
         { role: "user", parts: [{ text: systemPrompt }] },
         { role: "model", parts: [{ text: "Compris." }] },
@@ -929,7 +1033,10 @@ async function chatLibreFlux({ systemPrompt, message, history = [] }, onMorceau)
     ];
 
     try {
-        const reponse = await postWithRotation({ contents }, { flux: true });
+        const corps = { contents };
+        const config = configDeGeneration({ niveau });
+        if (config) corps.generationConfig = config;
+        const reponse = await postWithRotation(corps, { flux: true });
         let complet = "";
         let reste = "";
 
@@ -960,7 +1067,7 @@ async function chatLibreFlux({ systemPrompt, message, history = [] }, onMorceau)
         console.error("❌ chatLibreFlux / Gemini :", err.response?.data?.error?.message || err.message);
         // Le repli : chatLibre() et ses quatre fournisseurs. On renvoie tout
         // d'un coup au visiteur plutôt que rien du tout.
-        const secours = await chatLibre({ systemPrompt, message, history });
+        const secours = await chatLibre({ systemPrompt, message, history, niveau });
         if (secours.text && typeof onMorceau === "function") onMorceau(secours.text);
         return secours;
     }
@@ -1221,7 +1328,7 @@ async function sonder() {
 }
 
 module.exports = {
-    send, chat, chatLibre, chatLibreFlux, chatWithFunctionResult, chatWithSearch,
+    send, chat, chatFlux, chatLibre, chatLibreFlux, chatWithFunctionResult, chatWithSearch,
     chatViaOpenRouter, summarize, receive, TOOLS, etat, sonder,
     // Exposés aux tests seulement. Ces deux fonctions décident QUELS outils
     // SAMII porte à chaque tour — la vérifier en relisant le fichier ne

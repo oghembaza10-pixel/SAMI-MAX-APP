@@ -232,7 +232,15 @@ const CONFIG = require(path.join(RACINE, "config.js"));
         // Le débit a lieu APRÈS la réponse, jamais avant.
         const api = fs.readFileSync(path.join(RACINE, "routes", "api.js"), "utf8");
         const iDebit = api.indexOf("creditsSamii.debiterTour");
-        const iReponse = api.indexOf("const result = await planner.build");
+        // On repère l'appel au moteur par ce qu'il EST, pas par la forme
+        // exacte de sa ligne : elle a déjà changé une fois (l'arrivée du
+        // flux l'a transformée en ternaire), et la garde a crié pour une
+        // raison qui n'était pas la bonne. L'ordre, lui, n'avait pas bougé.
+        const iReponse = Math.min(
+            ...["planner.build(", "planner.buildFlux("]
+                .map((forme) => api.indexOf(forme))
+                .filter((i) => i !== -1),
+        );
         verifier(iDebit > iReponse && iReponse !== -1,
             "le message est débité AVANT d'avoir une réponse — une panne de l'IA serait facturée");
         verifier(/if \(surCredits && result\.reply\)/.test(api),

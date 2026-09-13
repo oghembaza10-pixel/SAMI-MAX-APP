@@ -277,6 +277,61 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         }
     }
 
+    // ── LA MÊME CHOSE, MAIS AU FIL ───────────────────────────────────────
+    //
+    // `askFlux` est `ask` avec un transport différent, et RIEN D'AUTRE. Même
+    // garde-fou sur les outils, même exécution, même journal des actes.
+    //
+    // LE NOMBRE D'APPELS D'IA NE CHANGE PAS. Sans outil : un appel, le texte
+    // arrive au fil. Avec outil : deux — décider, puis formuler — exactement
+    // comme `ask` le fait déjà. On ne paie rien de plus pour voir la réponse
+    // s'écrire.
+    //
+    // `onMorceau` ne reçoit QUE du texte destiné à la personne. Tant qu'on
+    // ignore si un outil va être appelé, rien n'est émis : afficher un début
+    // de phrase puis le remplacer donnerait l'impression que SAMII se
+    // contredit.
+    async askFlux(message, context = {}, history = [], journal = null, onMorceau = null, onReprise = null) {
+        try {
+            const useTools = context.allowActions !== false && context.audience !== "souverain";
+            const result = await gemini.chatFlux({ message, context, useTools, history }, onMorceau, onReprise);
+
+            if (result.type === "function_call") {
+                console.log(`⚙️ SAMII exécute : ${result.name}`, result.args);
+                const functionResult = await this.executeFunction(result.name, result.args, context);
+                if (Array.isArray(journal)) {
+                    journal.push({ nom: result.name, reussi: functionResult?.success !== false });
+                }
+
+                // Le second appel — le même que dans `ask`. Sa réponse arrive
+                // d'un bloc : elle est courte (« c'est fait ✅ », un récapitulatif),
+                // et la streamer demanderait un troisième aller-retour.
+                const finalReply = await gemini.chatWithFunctionResult({
+                    message, context,
+                    functionName: result.name, functionArgs: result.args, functionResult,
+                    thoughtSignature: result.thoughtSignature,
+                    provider: result.provider, toolCallId: result.toolCallId,
+                    assistantMessage: result.assistantMessage,
+                    history,
+                });
+                if (finalReply && typeof onMorceau === "function") onMorceau(finalReply);
+                return finalReply;
+            }
+
+            return result.text;
+        } catch (err) {
+            console.error("❌ Planner.askFlux :", err.message);
+            return "SAMII est momentanément indisponible. Réessaie dans quelques instants.";
+        }
+    }
+
+    async buildFlux(objective = {}, context = {}, history = [], onMorceau = null, onReprise = null) {
+        if (!objective.goal) return { success: false, reply: "Objectif manquant.", actes: [] };
+        const actes = [];
+        const reply = await this.askFlux(objective.goal, context, history, actes, onMorceau, onReprise);
+        return { success: true, reply, actes };
+    }
+
     async build(objective = {}, context = {}, history = []) {
         if (objective.goal) {
             // `actes` dit à l'appelant ce que SAMII a FAIT, pas seulement ce

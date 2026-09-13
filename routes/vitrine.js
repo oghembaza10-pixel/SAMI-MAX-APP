@@ -16,6 +16,7 @@ const rateLimit = require("express-rate-limit");
 const router = express.Router();
 const db = require("../services/db");
 const geminiService = require("../services/geminiService");
+const niveauAuto = require("../services/niveauAuto");
 const SAMII_VITRINE_PROMPT = require("../brain/prompts/vitrine");
 const transcription = require("../services/transcription");
 const { renderVitrine } = require("./vitrine-page");
@@ -209,7 +210,11 @@ router.post("/chat", vitrineLimiter, async (req, res) => {
         }
         const { message, langue, historique, imageUrl, systemPrompt } = entree;
 
-        const reponse = await geminiService.chatLibre({ systemPrompt, message, history: historique, imageUrl });
+        // Le chat public passe par la MÊME échelle que le QG. Un visiteur ne
+        // choisit pas son niveau (pas de sélecteur ici) : SAMII le décide,
+        // plafonné au palier gratuit — c'est déjà ce que borner() applique.
+        const niveauVisiteur = niveauAuto.choisir({ message, palier: "free", piece: imageUrl }).niveau;
+        const reponse = await geminiService.chatLibre({ systemPrompt, message, history: historique, imageUrl, niveau: niveauVisiteur });
 
         if (!reponse.text) {
             // Le compteur repart MÊME QUAND L'IA EST EN PANNE : le message a
@@ -292,8 +297,9 @@ router.post("/chat/flux", vitrineLimiter, async (req, res) => {
     req.on("close", () => { vivant = false; });
 
     try {
+        const niveauVisiteur = niveauAuto.choisir({ message, palier: "free", piece: imageUrl }).niveau;
         const reponse = await geminiService.chatLibreFlux(
-            { systemPrompt, message, history: historique, imageUrl },
+            { systemPrompt, message, history: historique, imageUrl, niveau: niveauVisiteur },
             (morceau) => { if (vivant) envoyer("morceau", { t: morceau }); },
         );
 

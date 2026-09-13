@@ -272,6 +272,72 @@ const choisir = (message, opts = {}) => A.choisir({ message, palier: "pro", ...o
     }
 }
 
+// ── 12. LE SÉLECTEUR EXISTE, ET IL LIT LE REGISTRE ───────────────────────
+//
+// La vue survit désormais à une variable absente — sans quoi un oubli aurait
+// mis toute la page en 500 pour un sélecteur. Mais cette tolérance a un
+// revers : si la route cessait de passer les niveaux, le sélecteur
+// DISPARAÎTRAIT sans une erreur, et personne ne le verrait avant longtemps.
+// C'est cette garde-là qui manque toujours quand une capacité s'endort.
+{
+    const fs = require("fs");
+    const index = fs.readFileSync(path.join(RACINE, "index.js"), "utf8");
+    const vue = fs.readFileSync(path.join(RACINE, "views", "samii.ejs"), "utf8");
+    const client = fs.readFileSync(path.join(RACINE, "public", "js", "samii-page.js"), "utf8");
+
+    // La fenêtre couvre AUSSI ce qui précède l'appel : le plafond est calculé
+    // avant le rendu, et une fenêtre qui ne regardait qu'après a fait crier
+    // cette garde pour une raison qui n'était pas la bonne.
+    const iRender = index.indexOf('res.render("samii"');
+    const bloc = index.slice(Math.max(0, iRender - 900), iRender + 700);
+    verifier(/niveaux\s*:\s*NIVEAUX\.pourAffichage\(\)/.test(bloc),
+        "la page SAMII ne reçoit plus la liste des niveaux : le sélecteur disparaît en silence");
+    verifier(/plafondNiveau/.test(bloc) && /NIVEAUX\.plafond\(/.test(bloc),
+        "la page SAMII ne reçoit plus le plafond : un compte gratuit se verrait proposer " +
+        "Maître, qu'il ne peut pas obtenir");
+
+    // La liste ne doit surtout pas être recopiée dans le gabarit.
+    verifier(!/Rapide[\s\S]{0,80}Expert[\s\S]{0,80}Pro[\s\S]{0,80}Ma[îi]tre/.test(vue),
+        "les niveaux sont écrits en dur dans views/samii.ejs : la page finira par proposer " +
+        "des niveaux qui ne correspondent plus à ceux appliqués");
+    verifier(/id="samii-niveau"/.test(vue), "le sélecteur d'intelligence n'est plus dans la page");
+
+    // « Auto » doit être le défaut — c'est l'idée même du mode.
+    verifier(/n\.id === "auto" \? " selected"/.test(vue),
+        "« Auto » n'est plus sélectionné par défaut alors que c'est le bon choix pour presque tout le monde");
+
+    // Et le client doit ENVOYER ce choix, sinon le sélecteur ne sert à rien.
+    verifier(/niveau: selNiveau \? selNiveau\.value : null/.test(client),
+        "public/js/samii-page.js n'envoie pas le niveau choisi : le sélecteur serait décoratif");
+    verifier(/\/api\/chat\/flux/.test(client),
+        "le QG n'appelle pas la route en flux : la réponse continuerait d'arriver d'un bloc");
+    verifier(/await fetch\('\/api\/chat'/.test(client),
+        "le QG n'a plus de repli sur la réponse d'un bloc : un proxy qui met en tampon " +
+        "laisserait la personne sans réponse du tout");
+}
+
+// ── 13. LE CHAT PUBLIC UTILISE LA MÊME ÉCHELLE ───────────────────────────
+//
+// « Expert » doit vouloir dire la même chose des deux côtés. Deux échelles
+// parallèles auraient divergé, et la même question aurait reçu deux
+// profondeurs de réflexion selon la page.
+{
+    const fs = require("fs");
+    const vitrine = fs.readFileSync(path.join(RACINE, "routes", "vitrine.js"), "utf8");
+    verifier(/niveauAuto\.choisir\(/.test(vitrine),
+        "le chat public n'utilise pas le même classement que le QG : deux échelles finiraient " +
+        "par ne plus dire la même chose");
+    verifier(/palier: "free"/.test(vitrine),
+        "le chat public ne plafonne pas au palier gratuit : un visiteur anonyme ferait tourner " +
+        "le moteur le plus cher");
+
+    const gemini = fs.readFileSync(path.join(RACINE, "services", "geminiService.js"), "utf8");
+    verifier(/async function chatLibre\(\{[^)]*niveau/.test(gemini),
+        "chatLibre n'accepte pas de niveau : la profondeur ne s'appliquerait pas au chat public");
+    verifier(/async function chatLibreFlux\(\{[^)]*niveau/.test(gemini),
+        "chatLibreFlux n'accepte pas de niveau");
+}
+
 // ── VERDICT ──────────────────────────────────────────────────────────────
 if (echecs.length) {
     console.log(`\n❌ niveau auto : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);

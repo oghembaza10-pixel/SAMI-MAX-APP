@@ -995,12 +995,30 @@ app.get("/samii", requireAuth, async (req, res) => {
         COM = communautes.pourLeQG(COMMUNAUTE_HOTE, communautes.DEFAUT);
     }
 
+    // Le sélecteur d'intelligence est rendu depuis le REGISTRE, jamais
+    // recopié dans la page : une liste écrite en dur dans un gabarit finit
+    // toujours par ne plus correspondre aux niveaux réellement appliqués.
+    const NIVEAUX = require("./config/niveaux");
+    let plafondNiveau = "expert";
+    try {
+        const palier = await require("./services/abonnementService").getPalier(req.session.workspaceId);
+        plafondNiveau = NIVEAUX.plafond(palier);
+    } catch (err) {
+        // Palier illisible : on garde le plafond le plus strict. Se tromper
+        // dans ce sens ne coûte qu'une réponse plus courte — l'inverse
+        // ouvrirait le moteur le plus cher à un compte gratuit.
+        console.error("❌ GET /samii (palier) :", err.message);
+    }
+
     res.render("samii", {
         workspaceId : req.session.workspaceId || "",
         shop        : req.session.shop        || "",
         estParticulier,
         communaute  : COM,
         typeCompte  : req.session.typeCompte || "marchand",
+        niveaux     : NIVEAUX.pourAffichage(),
+        plafondNiveau,
+        ordreNiveaux: NIVEAUX.ORDRE,
     });
 });
 

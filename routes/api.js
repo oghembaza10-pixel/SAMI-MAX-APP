@@ -71,13 +71,29 @@ function getMontant(c) {
 // des pages déjà protégées par requireAuth : personne de légitime ne
 // l'appelle sans session. Le chat public de la page d'accueil a sa propre
 // porte, volontairement bridée (routes/vitrine.js).
-router.post("/chat", requireAuth, async (req, res) => {
+// ══════════════════════════════════════════════════════════════════════
+// UN SEUL TOUR DE CONVERSATION, DEUX TRANSPORTS
+// ══════════════════════════════════════════════════════════════════════
+//
+// Quota, crédits, projets, mémoire, choix du niveau, facturation : tout ce
+// qui suit vaut AUTANT pour la réponse d'un bloc que pour la réponse au fil.
+// Écrire deux fois cette conduite aurait garanti qu'un jour l'une des deux
+// oublie de facturer, ou de vérifier le quota, ou d'enregistrer la mémoire —
+// et que personne ne le voie, parce que les deux continueraient de répondre.
+//
+// `onMorceau` est le SEUL paramètre qui distingue les deux chemins. Quand il
+// est fourni, la réponse arrive au fil ; sinon elle arrive d'un bloc. Le
+// nombre d'appels d'IA est identique dans les deux cas.
+//
+// Rend toujours `{ charge }` — jamais une réponse HTTP. C'est l'appelant qui
+// décide comment l'envoyer.
+async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
     try {
         const message = req.body.message;
         const imageUrl = req.body.imageUrl;
         const documentUrl = req.body.documentUrl;
         const documentName = req.body.documentName;
-        if (!message && !imageUrl && !documentUrl) return res.json({ success: false, reply: "Écris un message." });
+        if (!message && !imageUrl && !documentUrl) return { charge: { success: false, reply: "Écris un message." } };
 
         const userId = req.session?.userId;
         // Vrai quand le quota gratuit est épuisé et qu'on avance sur des
@@ -124,7 +140,7 @@ router.post("/chat", requireAuth, async (req, res) => {
                     // chez nous, et elle ne revient pas.
                     surCredits = true;
                 } else {
-                    return res.json({
+                    return { charge: {
                         success: true,
                         quotaExceeded: true,
                         // On propose la RECHARGE, pas l'abonnement : elle ne
@@ -136,7 +152,7 @@ router.post("/chat", requireAuth, async (req, res) => {
                             `je garde tout ce qu'on s'est dit, on reprend bientôt. ` +
                             `Si tu ne veux pas attendre : recharge à partir de ${CREDITS.MINIMUM_RECHARGE_USD} $ (${CREDITS.messagesPour(CREDITS.MINIMUM_RECHARGE_USD)} messages), ` +
                             `ton solde ne s'efface jamais.`,
-                    });
+                    } };
                 }
             }
         }
@@ -213,7 +229,11 @@ router.post("/chat", requireAuth, async (req, res) => {
         const goal = message || (imageUrl ? "Que vois-tu sur cette image ?" : "Voici un document, analyse-le.");
         const history = await samiiMemoire.getHistorique(userId, projetId);
 
-        const result = await planner.build({ goal }, context, history);
+        // LA SEULE DIFFÉRENCE ENTRE LES DEUX CHEMINS. Même contexte, mêmes
+        // outils, même profondeur, même nombre d'appels d'IA.
+        const result = onMorceau
+            ? await planner.buildFlux({ goal }, context, history, onMorceau, onReprise)
+            : await planner.build({ goal }, context, history);
 
         let messageId = null;
         if (userId) {
@@ -255,7 +275,7 @@ router.post("/chat", requireAuth, async (req, res) => {
         // « SAMII réfléchit plus profondément… », impossible de vérifier un
         // choix qui paraît absurde, et impossible de proposer l'abonnement au
         // bon moment — `borne` dit précisément quand le plafond a mordu.
-        res.json({
+        return { charge: {
             ...result, messageId, surCredits, credits,
             niveau: {
                 id: choixNiveau.niveau,
@@ -263,7 +283,7 @@ router.post("/chat", requireAuth, async (req, res) => {
                 borne: choixNiveau.borne,
                 raisons: choixNiveau.raisons,
             },
-        });
+        } };
     } catch (err) {
         // ── NE PAS NOMMER UNE CAUSE QU'ON NE CONNAÎT PAS ────────────────
         //
@@ -289,11 +309,81 @@ router.post("/chat", requireAuth, async (req, res) => {
                 userId: req.session?.userId || null,
             });
         } catch { /* le journal ne doit jamais aggraver une erreur */ }
-        res.json({
+        return { charge: {
             success: false,
             reply: "Je n'ai pas pu répondre à ce message. Réessaie ; si ça se répète, "
                  + "c'est de mon côté et c'est écrit dans le journal.",
-        });
+        } };
+    }
+}
+
+// ── LA RÉPONSE D'UN BLOC ─────────────────────────────────────────────────
+router.post("/chat", requireAuth, async (req, res) => {
+    const { charge } = await conduireLeTour(req, res);
+    res.json(charge);
+});
+
+// ── LA RÉPONSE AU FIL ────────────────────────────────────────────────────
+//
+// Exactement la même conduite, transportée en SSE. Le chat public l'avait
+// déjà (routes/vitrine.js) ; le QG attendait la réponse entière en silence,
+// alors que le code pour l'afficher au fil existait depuis des semaines.
+//
+// LE COÛT NE CHANGE PAS. Sans outil : un appel d'IA, comme avant. Avec
+// outil : deux — décider, puis formuler — exactement comme le chemin d'un
+// bloc le fait déjà. On ne paie rien de plus pour voir la réponse s'écrire.
+router.post("/chat/flux", requireAuth, async (req, res) => {
+    // Content-Type SSE + désactivation explicite de la mise en tampon. Sans
+    // X-Accel-Buffering, un proxy garde la réponse jusqu'à la fin et la
+    // renvoie d'un coup : on aurait fait tout ce travail pour rien, et en
+    // production seulement, là où le proxy existe.
+    res.set({
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    });
+    res.flushHeaders?.();
+
+    const envoyer = (evenement, donnees) => {
+        res.write(`event: ${evenement}\ndata: ${JSON.stringify(donnees)}\n\n`);
+    };
+
+    // La personne peut fermer l'onglet en plein milieu. On arrête alors
+    // d'écrire — sinon Node accumule des écritures sur une socket morte.
+    // Mais on NE COUPE PAS le tour : la mémoire et la facturation doivent
+    // aller au bout, sans quoi un message payé disparaîtrait sans trace.
+    let vivant = true;
+    req.on("close", () => { vivant = false; });
+
+    try {
+        const { charge } = await conduireLeTour(
+            req, res,
+            (morceau) => { if (vivant) envoyer("morceau", { t: morceau }); },
+            // SAMII a commencé une phrase puis a décidé d'appeler un outil :
+            // ce début n'était pas la réponse. On demande à la page de
+            // l'effacer tout de suite, plutôt que de la laisser à l'écran
+            // pendant tout le temps de l'outil.
+            () => { if (vivant) envoyer("reprise", {}); },
+        );
+
+        if (!vivant) return res.end();
+
+        // La charge complète part en dernier : elle porte le niveau retenu,
+        // l'état des crédits et l'identifiant du message. La page l'utilise
+        // pour remplacer proprement ce qu'elle a affiché au fil.
+        envoyer("fin", charge);
+        res.end();
+    } catch (err) {
+        console.error("❌ API chat/flux :", err.message);
+        if (vivant) {
+            envoyer("fin", {
+                success: false,
+                reply: "Je n'ai pas pu répondre à ce message. Réessaie ; si ça se répète, "
+                     + "c'est de mon côté et c'est écrit dans le journal.",
+            });
+        }
+        res.end();
     }
 });
 

@@ -119,6 +119,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
+    // ── DIRE À QUEL NIVEAU SAMII A RÉPONDU ───────────────────────────
+    //
+    // Discret, sous la réponse, et seulement quand il y a quelque chose à
+    // dire : un niveau élevé choisi tout seul, ou un plafond qui a mordu.
+    // Afficher « Rapide » sur chaque bonjour transformerait l'écran en
+    // tableau de bord technique — ce qu'on veut justement éviter.
+    function afficherNiveau(data) {
+        const n = data && data.niveau;
+        if (!n || !n.id) return;
+
+        const interessant = (n.auto && (n.id === 'pro' || n.id === 'maitre')) || n.borne;
+        if (!interessant) return;
+
+        const note = document.createElement('div');
+        note.className = 'samii-msg__niveau';
+        note.style.cssText = 'font-size:.72rem;color:var(--text-muted);opacity:.75;margin:2px 0 10px 4px;';
+        note.textContent = n.borne
+            ? "SAMII est resté en mode simplifié — un abonnement débloque la réflexion approfondie."
+            : "SAMII a réfléchi plus profondément.";
+        feed.appendChild(note);
+        feed.scrollTop = feed.scrollHeight;
+    }
+
     function addTypingIndicator() {
         const el = document.createElement('div');
         el.className = 'samii-msg samii-msg--bot samii-typing';
@@ -226,27 +249,120 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const typingEl = addTypingIndicator();
 
+        // Le niveau d'intelligence choisi dans le composeur. « auto » par
+        // défaut — le serveur le borne de toute façon selon l'abonnement, on
+        // ne lui fait pas confiance ici.
+        const selNiveau = document.getElementById('samii-niveau');
+        const charge = {
+            message: message || '',
+            imageUrl: attachment?.type === 'image' ? attachment.url : null,
+            documentUrl: attachment?.type === 'document' ? attachment.url : null,
+            documentName: attachment?.type === 'document' ? attachment.name : null,
+            projetId: projetActuel || null,
+            niveau: selNiveau ? selNiveau.value : null,
+        };
+
         try {
-            const res = await fetch('/api/chat', {
+            // ── LA RÉPONSE AU FIL ────────────────────────────────────────
+            //
+            // On lit le flux SSE et on écrit dans la bulle au fur et à
+            // mesure. Le serveur n'appelle pas l'IA plus souvent pour
+            // autant : c'est le même tour, transporté autrement.
+            const res = await fetch('/api/chat/flux', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: message || '',
-                    imageUrl: attachment?.type === 'image' ? attachment.url : null,
-                    documentUrl: attachment?.type === 'document' ? attachment.url : null,
-                    documentName: attachment?.type === 'document' ? attachment.name : null,
-                    projetId: projetActuel || null,
-                }),
+                body: JSON.stringify(charge),
             });
-            const data = await res.json();
+
+            if (!res.ok || !res.body) throw new Error('flux indisponible');
+
+            const lecteur = res.body.getReader();
+            const decodeur = new TextDecoder();
+            let reste = '';
+            let texte = '';
+            let bulle = null;
+            let final = null;
+            let typingEl2 = null;
+
+            // On écrit dans une bulle PROVISOIRE, pas via addMessage :
+            // celui-ci ne crée rien pour un texte vide, et il attache les
+            // boutons 👍/👎 qui ont besoin de l'identifiant du message —
+            // identifiant qu'on n'a qu'à la fin. La bulle provisoire est
+            // remplacée par la vraie une fois le flux terminé.
+            const ecrire = (morceau) => {
+                texte += morceau;
+                if (!bulle) {
+                    typingEl.remove();
+                    bulle = document.createElement('div');
+                    bulle.className = 'samii-msg samii-msg--bot';
+                    const corps = document.createElement('div');
+                    corps.className = 'samii-msg__bubble';
+                    bulle.appendChild(corps);
+                    feed.appendChild(bulle);
+                }
+                bulle.firstChild.textContent = texte;
+                feed.scrollTop = feed.scrollHeight;
+            };
+
+            for (;;) {
+                const { done, value } = await lecteur.read();
+                if (done) break;
+                reste += decodeur.decode(value, { stream: true });
+                const blocs = reste.split('\n\n');
+                reste = blocs.pop();
+                for (const bloc of blocs) {
+                    const ligneEvt = bloc.split('\n').find((l) => l.startsWith('event:'));
+                    const ligneData = bloc.split('\n').find((l) => l.startsWith('data:'));
+                    if (!ligneData) continue;
+                    let donnees;
+                    try { donnees = JSON.parse(ligneData.slice(5).trim()); } catch { continue; }
+                    const evt = ligneEvt ? ligneEvt.slice(6).trim() : 'morceau';
+                    if (evt === 'morceau' && donnees.t) ecrire(donnees.t);
+                    // SAMII a commencé une phrase puis a appelé un outil :
+                    // ce début n'était pas la réponse, on l'efface.
+                    if (evt === 'reprise') {
+                        texte = '';
+                        if (bulle) { bulle.remove(); bulle = null; }
+                        typingEl2 = typingEl2 || addTypingIndicator();
+                    }
+                    if (evt === 'fin') final = donnees;
+                }
+            }
+
             typingEl.remove();
-            const reply = data.reply || "Je n'ai pas de réponse pour l'instant.";
-            addMessage('bot', reply, null, null, data.messageId);
+            if (typingEl2) typingEl2.remove();
+
+            // La charge finale fait foi : elle porte le texte complet, le
+            // niveau retenu et l'identifiant du message. Si rien n'a été
+            // streamé (quota épuisé, outil appelé), c'est elle qui affiche.
+            const reply = (final && final.reply) || texte || "Je n'ai pas de réponse pour l'instant.";
+            // La bulle provisoire cède la place à la vraie : même texte, mais
+            // avec les boutons 👍/👎 et l'identifiant du message.
+            if (bulle) bulle.remove();
+            addMessage('bot', reply, null, null, final?.messageId);
+            afficherNiveau(final);
         } catch (err) {
             console.error(err);
             typingEl.remove();
-            const errMsg = 'SAMII réfléchit un peu plus longtemps que prévu. Réessaie dans un instant.';
-            addMessage('bot', errMsg);
+            // ── LE REPLI : LA RÉPONSE D'UN BLOC ──────────────────────────
+            //
+            // Un proxy qui met en tampon, un navigateur sans flux lisible :
+            // on retombe sur /api/chat, qui rend exactement la même chose
+            // d'un seul coup. Mieux vaut une réponse d'un bloc que pas de
+            // réponse.
+            try {
+                const res2 = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(charge),
+                });
+                const data = await res2.json();
+                addMessage('bot', data.reply || "Je n'ai pas de réponse pour l'instant.", null, null, data.messageId);
+                afficherNiveau(data);
+            } catch (err2) {
+                console.error(err2);
+                addMessage('bot', 'SAMII réfléchit un peu plus longtemps que prévu. Réessaie dans un instant.');
+            }
         }
     }
 
