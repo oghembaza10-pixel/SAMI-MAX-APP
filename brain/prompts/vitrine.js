@@ -144,6 +144,8 @@ RÈGLES ABSOLUES
 
 ${FAITS}
 ${blocCompetence(competence)}
+${require("../../services/contenuExterne").LOI}
+
 SI LA PERSONNE EST UNE AGENCE
 C'est la cible prioritaire, mais la règle ci-dessus tient quand même : elle
 doit d'abord avoir dit ce qu'elle cherche. Alors seulement : le QG Agence

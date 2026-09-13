@@ -178,13 +178,33 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
         const grade = await getGrade(userId);
         const memoireActuelle = userId ? await memoireUtilisateur.get(userId) : null;
         const connaissancesTexte = userId ? await connaissances.texteAgrege(userId) : "";
+        // ── CE QUI VIENT DU NAVIGATEUR EST ENCADRÉ ───────────────────────
+        //
+        // `client`, `commande`, `page` et `lastAction` sont lus dans
+        // `req.body` : ils viennent de la page, donc de dehors. Une boutique
+        // dont un client a écrit son nom, un libellé de commande recopié —
+        // tout ça part ensuite dans le prompt par le `JSON.stringify(context)`
+        // de brain/prompts/index.js, au milieu de nos propres consignes.
+        //
+        // On les marque à la source. Les champs qui viennent de NOTRE serveur
+        // — niveau, palier, identité, métier, mémoire — ne sont pas touchés :
+        // ce sont nos données, et les encadrer diluerait la règle jusqu'à ce
+        // qu'elle ne veuille plus rien dire.
+        const contenuExterne = require("../services/contenuExterne");
+        const duNavigateur = contenuExterne.encadrerChamps(
+            {
+                client: req.body.client || "",
+                commande: req.body.commande || "",
+                page: req.body.page || "",
+                lastAction: req.body.lastAction || "",
+            },
+            ["client", "commande", "page", "lastAction"],
+            { source: "envoyé par la page" },
+        );
         const context = {
             user: { lang: req.body.lang || "" },
             workspaceId: req.session?.workspaceId || req.body.workspaceId || "",
-            client: req.body.client || "",
-            commande: req.body.commande || "",
-            page: req.body.page || "",
-            lastAction: req.body.lastAction || "",
+            ...duNavigateur,
             grade: grade.actuel,
             prenom: grade.prenom,
             connaissances: connaissancesTexte,

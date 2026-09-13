@@ -97,6 +97,12 @@ CONSIGNES SPÉCIFIQUES À CETTE CONVERSATION
 ${context.instructions}
 ` : ""}
 -------------------------------------------------------
+CE QUI VIENT DU DEHORS
+-------------------------------------------------------
+
+${require("../../services/contenuExterne").LOI}
+
+-------------------------------------------------------
 CONTEXTE ACTUEL
 -------------------------------------------------------
 
