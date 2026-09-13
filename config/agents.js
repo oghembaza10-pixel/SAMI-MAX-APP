@@ -131,6 +131,68 @@ const AGENTS = {
         pourQuoi: "lit l'erreur, corrige le programme, et on réessaie",
     },
 
+    // ── LA FAMILLE « STRATÉGIE » : trois étapes qui prennent du temps ────
+    //
+    // C'est la première chaîne réellement LONGUE : chaque maillon appelle le
+    // modèle, et les trois bout à bout dépassent ce qu'une requête HTTP
+    // accepte d'attendre. Elle sert donc de cas d'usage au chantier 11 — et
+    // elle n'a demandé aucune modification de la couche d'orchestration.
+    analyste: {
+        id: "analyste", libelle: "Analyse", famille: "strategie",
+        interne: true, effet: "lecture", outils: [],
+        pourQuoi: "lit la situation et nomme ce qui bloque",
+        async executer(entree, contexte) {
+            const socle = require("../engines/social/agents/base");
+            const texte = await socle.demander(
+                `Analyse la situation de ce commerce et nomme les TROIS obstacles les plus
+coûteux, du plus grave au moins grave. Pas de conseils ici : seulement le constat.
+
+SITUATION : ${entree.situation || entree.demande || "non précisée"}
+${entree.metier ? `MÉTIER : ${entree.metier}` : ""}
+
+Réponds en trois phrases courtes, une par obstacle.`,
+                { workspaceId: contexte.workspaceId, source: "mission-strategie" });
+            return { analyse: texte };
+        },
+    },
+    stratege: {
+        id: "stratege", libelle: "Stratégie", famille: "strategie",
+        interne: true, effet: "prepare", outils: [],
+        pourQuoi: "transforme le constat en plan d'action",
+        async executer(entree, contexte) {
+            const socle = require("../engines/social/agents/base");
+            const texte = await socle.demander(
+                `Voici ce qui bloque ce commerce :
+
+${entree.analyse || "(analyse manquante)"}
+
+Écris un plan d'action en quatre étapes, dans l'ordre où il faut les faire.
+Chaque étape tient en une phrase et dit QUOI FAIRE, pas pourquoi c'est
+important. Reste dans les moyens d'un petit commerce.`,
+                { workspaceId: contexte.workspaceId, source: "mission-strategie" });
+            return { plan: texte };
+        },
+    },
+    verificateur: {
+        id: "verificateur", libelle: "Contrôle du plan", famille: "strategie",
+        interne: true, effet: "lecture", outils: [],
+        pourQuoi: "refuse un plan qui ne tient pas debout",
+        async executer(entree, contexte) {
+            const socle = require("../engines/social/agents/base");
+            const texte = await socle.demander(
+                `Relis ce plan d'action. Signale UNIQUEMENT ce qui est irréalisable pour un
+petit commerce : un budget qu'il n'a pas, un outil qu'il ne possède pas, un
+délai intenable. Ne réécris pas le plan.
+
+PLAN :
+${entree.plan || "(plan manquant)"}
+
+S'il tient debout, réponds exactement : RIEN À SIGNALER`,
+                { workspaceId: contexte.workspaceId, source: "mission-strategie" });
+            return { controle: texte };
+        },
+    },
+
     analytics: {
         id: "analytics", libelle: "Mesure", famille: "social",
         interne: true, effet: "lecture", outils: [],
@@ -305,6 +367,51 @@ const MISSIONS = {
                 if (resultat.execute === true && !String(resultat.sortie || "").trim()) {
                     manques.push("le programme s'est exécuté sans rien produire");
                 }
+                return manques;
+            },
+        },
+    },
+    // ══════════════════════════════════════════════════════════════════════
+    // UNE STRATÉGIE COMPLÈTE — la première mission qui prend du TEMPS
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // Trois étapes, trois appels au modèle. Bout à bout, ça dépasse ce qu'un
+    // navigateur accepte d'attendre — et c'est exactement le cas que le
+    // chantier 11 existe pour tenir.
+    //
+    // ── ELLE N'A PAS D'`executer` ────────────────────────────────────────
+    //
+    // C'est ce qui la rend éligible au temps long. Une mission qui délègue
+    // fait tout d'un bloc ; celle-ci déroule ses maillons, donc le runner
+    // peut s'arrêter entre deux et reprendre plus tard — y compris après un
+    // redémarrage.
+    strategie_complete: {
+        id: "strategie_complete",
+        libelle: "Préparer une stratégie complète",
+        domaines: ["strategie"],
+        agents: ["analyste", "stratege", "verificateur"],
+        effet: "prepare",
+        outil: "preparer_strategie",
+        // Pro comme la préparation de publication : trois appels de modèle,
+        // c'est trois fois le prix d'un message.
+        niveauMin: "pro",
+        // ── LE DRAPEAU QUI CHANGE TOUT ───────────────────────────────────
+        //
+        // `long: true` ne crée aucun mode, aucune personnalité, aucun
+        // niveau. Il dit une seule chose : cette mission a le droit d'être
+        // exécutée un maillon par battement au lieu d'un bloc. Les niveaux
+        // restent Rapide / Expert / Pro / Maître, l'autonomie reste un axe
+        // séparé.
+        long: true,
+        attendu: {
+            champs: ["analyse", "plan"],
+            verifier(resultat) {
+                const manques = [];
+                // « Les trois étapes sont passées » n'est pas « il y a un
+                // plan ». Un modèle peut rendre une phrase vide sans erreur,
+                // et la mission serait annoncée terminée avec du vide.
+                if (!String(resultat.plan || "").trim()) manques.push("aucun plan n'a été produit");
+                if (!String(resultat.analyse || "").trim()) manques.push("aucune analyse n'a été produite");
                 return manques;
             },
         },

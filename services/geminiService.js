@@ -632,6 +632,26 @@ const TOOLS = [
             // le système de fichiers. Le droit de la personne et la sûreté
             // de la machine sont deux questions distinctes ; aucune des deux
             // ne suffit seule.
+            // ── UNE MISSION QUI PREND DU TEMPS ───────────────────────────
+            //
+            // Le seul outil qui ne rend PAS un résultat : il rend un accusé
+            // de réception. SAMII répond « je m'y mets, je te préviens »,
+            // et le travail continue après la fin de la requête HTTP —
+            // y compris si le serveur redémarre entre-temps.
+            //
+            // C'est ce qui distingue une capacité longue d'une réponse lente :
+            // on ne fait pas attendre la personne devant un rond qui tourne.
+            {
+                name: "preparer_strategie",
+                description: "Lance une analyse stratégique complète du commerce : constat des obstacles, plan d'action en plusieurs étapes, puis contrôle de faisabilité. C'est un travail LONG qui continue en arrière-plan — tu reçois un accusé de réception, pas le résultat. Utilise cette fonction quand le marchand demande une stratégie, un plan complet, ou une analyse de fond de son activité.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        situation: { type: "STRING", description: "Ce que le marchand a décrit de sa situation, de ses chiffres et de ce qui le préoccupe." },
+                    },
+                    required: ["situation"],
+                },
+            },
             {
                 name: "executer_code",
                 description: "Exécute un petit programme dans un bac isolé et jetable, puis rend sa sortie. Utilise cette fonction quand un calcul, une vérification de données ou une transformation demande d'exécuter du code plutôt que de raisonner à voix haute. Le programme n'a AUCUN accès au réseau, à la base de données ni aux fichiers du marchand : il ne voit que ce que tu lui donnes.",

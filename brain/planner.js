@@ -58,6 +58,9 @@ class SamiiPlanner {
             case "executer_code":
                 return await this.executerCode(args, context);
 
+            case "preparer_strategie":
+                return await this.lancerMissionLongue(name, args, context);
+
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
         }
@@ -376,6 +379,73 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
         } catch (err) {
             console.error("❌ Planner.executerCode :", err.message);
             return { success: false, error: "L'exécution n'a pas pu être lancée." };
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // LANCER UNE MISSION QUI PREND DU TEMPS
+    // ══════════════════════════════════════════════════════════════════
+    //
+    // LE SEUL OUTIL QUI NE REND PAS DE RÉSULTAT.
+    //
+    // Il rend un ACCUSÉ DE RÉCEPTION. Le travail commence après, hors de
+    // cette requête, un maillon par battement — et il survit à un
+    // redémarrage du serveur puisque tout est en base.
+    //
+    // ── POURQUOI C'EST MIEUX QU'UNE RÉPONSE LENTE ─────────────────────
+    //
+    // Trois appels de modèle bout à bout dépassent ce qu'un navigateur
+    // accepte d'attendre. Sans ce chemin, on aurait le choix entre faire
+    // patienter la personne devant un rond qui tourne jusqu'à ce que la
+    // requête soit coupée, ou rendre un travail bâclé. Ici SAMII dit « je
+    // m'y mets », et la personne part faire autre chose.
+    //
+    // ── ON NE FACTURE RIEN ICI ────────────────────────────────────────
+    //
+    // Lancer n'est pas produire. Le prix se déclenche quand la mission
+    // atteint `terminee` — toutes les étapes passées ET le résultat
+    // vérifié. Facturer au lancement ferait payer une mission qui échouera
+    // trois minutes plus tard.
+    async lancerMissionLongue(nomOutil, args, context) {
+        try {
+            const mission = require("../config/agents").missionParOutil(nomOutil);
+            if (!mission) {
+                return { success: false, error: `Aucune mission n'est branchée sur « ${nomOutil} ».` };
+            }
+            const longues = require("../services/missionsLongues");
+            const r = await longues.creer({
+                missionId: mission.id,
+                entree: {
+                    situation: args?.situation || "",
+                    metier: context?.metier || "",
+                },
+                context,
+            });
+
+            if (!r.ok) {
+                return {
+                    success: false,
+                    error: r.erreur,
+                    consigne: r.refuse
+                        ? "Explique la limite sans t'excuser d'une panne : rien n'est cassé."
+                        : "Dis que le lancement n'a pas abouti.",
+                };
+            }
+
+            return {
+                success: true,
+                // Ce qu'on rend au modèle : de quoi dire la vérité, et rien
+                // sur notre plomberie. Pas de nom d'agent — un seul SAMII.
+                missionId: r.mission.id,
+                etapes: r.mission.etapes_total,
+                consigne: "Le travail a commencé et continue en arrière-plan. Dis-le simplement, "
+                    + "annonce le nombre d'étapes, et précise que tu préviendras quand ce sera prêt. "
+                    + "NE DONNE AUCUN RÉSULTAT : il n'y en a pas encore, et en inventer un serait "
+                    + "le pire moment pour le faire.",
+            };
+        } catch (err) {
+            console.error(`❌ Planner.lancerMissionLongue(${nomOutil}) :`, err.message);
+            return { success: false, error: "La mission n'a pas pu être lancée." };
         }
     }
 

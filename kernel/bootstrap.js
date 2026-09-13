@@ -107,6 +107,34 @@ scheduler.add("0 9 * * *", "Guerre - compte à rebours communauté", guerreEngin
     // Les statistiques, quand un collecteur existera.
     scheduler.add("0 */6 * * *", "Agents sociaux - relevé des statistiques", socialCycle.mesurer);
 
+    // ══════════════════════════════════════════════════════════════════════
+    // LE BATTEMENT DES MISSIONS LONGUES
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // AUCUN PROCESSUS DE PLUS, AUCUNE FILE D'ATTENTE. Le planificateur tourne
+    // déjà pour dix autres tâches ; les missions longues s'y branchent comme
+    // les autres.
+    //
+    // ── POURQUOI UNE MINUTE, ET PAS PLUS SOUVENT ──────────────────────────
+    //
+    // C'est le rythme le plus court que node-cron sache tenir, et il est
+    // suffisant : une mission avance d'un maillon par battement, et un
+    // maillon, c'est un appel de modèle — plusieurs secondes. Battre plus vite
+    // ne ferait qu'interroger la base pour rien.
+    //
+    // ── ET POURQUOI DEUX TÂCHES ET PAS UNE ────────────────────────────────
+    //
+    // La seconde ne fait PAS le même travail. Un processus tué au milieu
+    // d'une étape laisse une mission verrouillée : le bail expire seul et
+    // elle repart — mais son compteur d'essais n'a pas bougé. Si le processus
+    // meurt à chaque fois sur la même mission, elle relancerait la panne
+    // indéfiniment. Le balayage compte l'abandon comme un essai, et au
+    // troisième la mission échoue au lieu de tuer le serveur une fois par
+    // heure pour toujours.
+    const missionsLongues = require("../services/missionsLongues");
+    scheduler.add("* * * * *", "Missions longues - une étape par mission due", () => missionsLongues.battement({ limite: 3 }));
+    scheduler.add("*/5 * * * *", "Missions longues - reprise des abandonnées", missionsLongues.reprendreLesAbandonnees);
+
     scheduler.start();
 }
 

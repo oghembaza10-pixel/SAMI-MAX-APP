@@ -501,6 +501,84 @@ router.delete("/connaissances/:id", requireAuth, async (req, res) => {
 // 👍/👎 sur une réponse de SAMII — construit un historique de ce qui
 // marche/marche pas pendant qu'on entraîne SAMII, sans attendre le vrai
 // volume de clients.
+// ══════════════════════════════════════════════════════════════════════
+// LES MISSIONS LONGUES — les suivre, et pouvoir les arrêter
+// ══════════════════════════════════════════════════════════════════════
+//
+// Une mission qui dure n'a d'intérêt que si on peut savoir OÙ elle en est et
+// l'ARRÊTER. Sans ces deux routes, SAMII dirait « je m'y mets » et la
+// personne n'aurait plus jamais de nouvelles — c'est pire que de ne rien
+// lancer du tout.
+//
+// ── LE PROPRIÉTAIRE EST LU DANS LA SESSION, JAMAIS DANS LE CORPS ──────
+//
+// Même règle que `resume_journee` : un identifiant accepté depuis la page,
+// et n'importe qui lit — ou annule — les missions de n'importe qui.
+router.get("/missions", requireAuth, async (req, res) => {
+    try {
+        const longues = require("../services/missionsLongues");
+        const lignes = await longues.lister({
+            userId: req.session.userId,
+            workspaceId: req.session.workspaceId || null,
+        });
+        res.json({ success: true, missions: lignes });
+    } catch (err) {
+        console.error("❌ GET /api/missions :", err.message);
+        res.status(500).json({ success: false, error: "Impossible de lire tes missions." });
+    }
+});
+
+router.get("/missions/:id", requireAuth, async (req, res) => {
+    try {
+        const longues = require("../services/missionsLongues");
+        const ligne = await longues.lire(req.params.id);
+        // ── ON RÉPOND 404, PAS 403 ───────────────────────────────────────
+        //
+        // Pour quelqu'un qui n'en est pas propriétaire, cette mission
+        // n'existe pas. Un « accès refusé » confirmerait qu'elle existe, et
+        // suffirait à savoir combien de missions tourne le voisin.
+        if (!ligne || String(ligne.user_id || "") !== String(req.session.userId)) {
+            return res.status(404).json({ success: false, error: "Mission introuvable." });
+        }
+        res.json({
+            success: true,
+            mission: {
+                id: ligne.id, nom: ligne.mission, etat: ligne.etat,
+                etape: ligne.etape, etapes: ligne.etapes_total,
+                essais: ligne.essais, erreur: ligne.erreur,
+                // Le résultat n'est rendu QUE si la mission est terminée. Un
+                // résultat partiel ressemble à un résultat, et quelqu'un
+                // agirait dessus.
+                resultat: ligne.etat === "terminee" ? ligne.resultat : null,
+                creeLe: ligne.created_at, finLe: ligne.fin_le,
+            },
+        });
+    } catch (err) {
+        console.error("❌ GET /api/missions/:id :", err.message);
+        res.status(500).json({ success: false, error: "Impossible de lire cette mission." });
+    }
+});
+
+router.post("/missions/:id/annuler", requireAuth, async (req, res) => {
+    try {
+        const longues = require("../services/missionsLongues");
+        // Le propriétaire est passé au SQL, pas comparé après coup : la
+        // condition est dans le WHERE, donc un appelant qui oublierait la
+        // vérification ne peut pas annuler la mission d'un autre.
+        const arretee = await longues.annuler(req.params.id, { userId: req.session.userId });
+        if (!arretee) {
+            return res.status(404).json({
+                success: false,
+                error: "Mission introuvable, ou déjà terminée — une mission faite ne s'annule pas.",
+            });
+        }
+        res.json({ success: true, mission: { id: arretee.id, etat: arretee.etat } });
+    } catch (err) {
+        console.error("❌ POST /api/missions/:id/annuler :", err.message);
+        res.status(500).json({ success: false, error: "Impossible d'arrêter cette mission." });
+    }
+});
+
 router.post("/chat/feedback", requireAuth, async (req, res) => {
     try {
         const { messageId, feedback } = req.body;

@@ -90,6 +90,11 @@ const FAMILLES = {
     //     panne de Gemini ne les remette jamais entre leurs mains.
     agents: [
         "preparer_publication",
+        // Une mission longue est une façon d'exécuter, pas une capacité à
+        // part : elle reste dans la famille « agents », avec les mêmes
+        // permissions et le même plancher de niveau. Créer une cinquième
+        // famille aurait laissé croire que « long » est un droit séparé.
+        "preparer_strategie",
     ],
 
     // ── CODE : une famille à elle seule, et c'est voulu ──────────────────

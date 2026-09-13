@@ -341,6 +341,106 @@ const BLOCS = [
         ],
     },
 
+    // ══════════════════════════════════════════════════════════════════════
+    // LES MISSIONS LONGUES — ce qui survit à la requête et au redémarrage
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // CE QU'ON AVAIT, ET POURQUOI ÇA NE SUFFISAIT PAS.
+    //
+    // `kernel/scheduler.js` enregistre des tâches cron au démarrage — mais
+    // en MÉMOIRE, et sans notion d'instance : une tâche qui échoue est
+    // écrite dans le journal puis oubliée. `kernel/state.js` est un objet
+    // `{}` : tout disparaît au redémarrage. Aucune table de tâches.
+    //
+    // Le seul motif durable qui marchait déjà, c'est `social_publications` :
+    // une ligne avec un statut, une date d'échéance, un compteur d'essais et
+    // une erreur, qu'un cron reprend. La forme est juste. Elle ne savait
+    // faire qu'une chose : publier.
+    //
+    // Cette table est le MÊME motif, rendu générique — et elle ne remplace
+    // pas l'autre : les publications continuent sur leur rail éprouvé.
+    //
+    // ── CE QUI REND LA REPRISE RÉELLE ─────────────────────────────────────
+    //
+    // Trois colonnes, et chacune répond à une panne précise :
+    //
+    //   etape         où on en est. Une mission avance d'UN cran par
+    //                 battement, et le cran est écrit en base avant le
+    //                 suivant. Redémarrage entre deux crans : on reprend au
+    //                 bon endroit, sans refaire ce qui est fait.
+    //
+    //   verrou_jusqu  qui la tient, et jusqu'à quand. Deux processus ne
+    //                 peuvent pas prendre la même mission. Et un processus
+    //                 tué net ne la bloque pas pour toujours : le bail
+    //                 expire tout seul, quelqu'un d'autre reprend.
+    //
+    //   expire_le     la fin, quoi qu'il arrive. Sans elle, une mission qui
+    //                 se rate à chaque reprise tourne indéfiniment et
+    //                 consomme à chaque battement.
+    //
+    // ── CE QUI N'EST PAS ICI ──────────────────────────────────────────────
+    //
+    // Aucun montant. `cout_actes` compte les ACTES réussis, pas le temps
+    // passé : une mission qui tourne dix minutes sans rien produire ne doit
+    // rien coûter. Le prix de chaque acte vit dans config/credits.js, et lui
+    // seul le connaît.
+    {
+        nom: "missions longues",
+        sql: [
+            `CREATE TABLE IF NOT EXISTS missions_longues (
+                id            BIGSERIAL PRIMARY KEY,
+                -- Le propriétaire. Deux colonnes et pas une : le compte
+                -- possède la mission, le QG dit sur quoi elle travaille. Un
+                -- marchand avec deux QG ne doit pas voir les missions de
+                -- l'un depuis l'autre.
+                user_id       TEXT,
+                workspace_id  TEXT,
+                -- L'identifiant de la mission dans config/agents.js. On ne
+                -- recopie ni ses étapes ni ses permissions : elles vivent
+                -- là-bas, et une copie ici aurait divergé.
+                mission       TEXT NOT NULL,
+                entree        JSONB NOT NULL DEFAULT '{}'::jsonb,
+                -- Ce que le tour avait le droit de faire AU MOMENT DU
+                -- LANCEMENT. Gelé exprès : une mission lancée en Maître ne
+                -- doit pas continuer avec les droits d'aujourd'hui si
+                -- l'abonnement a changé entre-temps, ni dans un sens ni dans
+                -- l'autre.
+                niveau        TEXT,
+                palier        TEXT,
+                audience      TEXT,
+                etat          TEXT NOT NULL DEFAULT 'attente',
+                etape         INTEGER NOT NULL DEFAULT 0,
+                etapes_total  INTEGER NOT NULL DEFAULT 0,
+                -- Ce que l'étape précédente a produit, pour la suivante.
+                -- JAMAIS le contexte d'appel : un agent n'hérite pas des
+                -- droits ni des secrets de son voisin (règle du chantier 8).
+                passe         JSONB NOT NULL DEFAULT '{}'::jsonb,
+                essais        INTEGER NOT NULL DEFAULT 0,
+                erreur        TEXT,
+                resultat      JSONB,
+                -- Les actes RÉUSSIS, pour la facturation. Pas le temps passé.
+                cout_actes    JSONB NOT NULL DEFAULT '[]'::jsonb,
+                facturee      BOOLEAN NOT NULL DEFAULT false,
+                trace         JSONB NOT NULL DEFAULT '[]'::jsonb,
+                verrou_jusqu  TIMESTAMPTZ,
+                verrou_par    TEXT,
+                prochaine_le  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                expire_le     TIMESTAMPTZ,
+                created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                debut_le      TIMESTAMPTZ,
+                fin_le        TIMESTAMPTZ
+            )`,
+            // L'index que le battement interroge à chaque passage : les
+            // missions dues, non verrouillées. Sans lui, chaque battement
+            // balaierait toute la table, y compris les missions terminées.
+            `CREATE INDEX IF NOT EXISTS idx_ml_dues
+                ON missions_longues (etat, prochaine_le)
+                WHERE etat IN ('attente', 'en_cours')`,
+            `CREATE INDEX IF NOT EXISTS idx_ml_proprietaire
+                ON missions_longues (user_id, created_at DESC)`,
+        ],
+    },
+
     // ── LES RECHARGES DE CRÉDITS SAMII ───────────────────────────────────
     //
     // POURQUOI CETTE TABLE EXISTE, ALORS QUE LE SOLDE VIT AILLEURS.

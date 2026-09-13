@@ -119,6 +119,20 @@ const ACTES = {
     // l'autre : un acte SANS prix est refusé par la suite crédits, et
     // improviser un chiffre serait pire que de reporter la question.
     executer_code:          { prix: PRIX_ACTE_USD, libelle: "programme exécuté" },
+
+    // ── UNE MISSION LONGUE NE SE FACTURE PAS PARCE QU'ELLE TOURNE ────────
+    //
+    // ⚠️ À REVOIR À LA PASSE TARIFAIRE, avec les deux autres.
+    //
+    // Le piège de ce chantier serait de facturer le TEMPS. Une mission qui
+    // tourne dix minutes et rend du vide ne doit rien coûter à personne :
+    // c'est notre machine qui a peiné, pas le marchand qui a reçu quelque
+    // chose.
+    //
+    // Ce prix ne se déclenche donc QUE si la mission arrive à `terminee`,
+    // c'est-à-dire toutes les étapes passées ET le résultat vérifié. Une
+    // mission échouée, annulée ou expirée ne génère aucune ligne.
+    preparer_strategie:     { prix: PRIX_ACTE_USD, libelle: "stratégie préparée" },
 };
 
 const GRATUITS = {
