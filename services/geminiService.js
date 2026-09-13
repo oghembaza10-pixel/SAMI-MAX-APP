@@ -330,7 +330,11 @@ async function postDeepSeek(body) {
 // Convertit les déclarations d'outils au format Gemini (utilisées plus bas)
 // vers le format OpenAI/OpenRouter — une seule source de vérité (TOOLS),
 // jamais deux définitions à maintenir en double.
+// Rend un tableau VIDE quand il n'y a aucun outil — c'est l'état normal du
+// niveau « Rapide », pas un incident. Sans ce garde, lire
+// `[0].functionDeclarations` sur du vide ferait tomber l'appel entier.
 function toOpenAiTools(geminiTools) {
+    if (!geminiTools || !geminiTools[0]?.functionDeclarations?.length) return [];
     return geminiTools[0].functionDeclarations.map(fn => ({
         type: "function",
         function: {
@@ -359,7 +363,10 @@ async function chatViaOpenAiCompatible({ provider, model, poster, message, conte
         { role: "user", content: prompt },
     ];
     const body = { model, messages };
-    body.tools = toOpenAiTools(buildToolsPayload(useTools, context));
+    // Même règle que chez Gemini : pas d'outil, pas de champ. Les relais
+    // refusent eux aussi un tableau `tools` vide.
+    const outils = toOpenAiTools(buildToolsPayload(useTools, context));
+    if (outils.length) body.tools = outils;
 
     const response = await poster(body);
     const choice = response.data.choices?.[0];
@@ -598,9 +605,90 @@ const ONBOARDING_TOOLS = [
     },
 ];
 
+// ── QUELS OUTILS, POUR CE TOUR-CI ────────────────────────────────────────
+//
+// DEUX CADRANS INDÉPENDANTS, ET C'EST VOULU.
+//
+//   L'AUDIENCE décide de la famille « commerce » — confirmer une commande,
+//   prendre un rendez-vous. Ces outils touchent les données commerciales
+//   d'un CLIENT de marchand : ils n'existent que dans une conversation avec
+//   ce client. Le fondateur ne doit pas pouvoir confirmer la commande d'un
+//   marchand depuis son propre chat. C'est `useTools` qui porte ce garde, il
+//   est bien posé, et il ne bouge pas.
+//
+//   LE NIVEAU décide de l'effort — combien d'outils SAMII a le droit de
+//   porter pour ce tour. Un « Rapide » n'en porte aucun : un tour censé
+//   répondre tout de suite ne doit pas partir dans un appel réseau.
+//
+// Les deux s'additionnent au lieu de se commander. Un niveau élevé n'ouvre
+// jamais le commerce ; une conversation client ne donne jamais la lecture de
+// la boîte mail du marchand.
+//
+// ── SANS NIVEAU DÉCLARÉ, RIEN NE CHANGE ──────────────────────────────────
+//
+// Tant qu'un appelant ne dit pas à quel niveau il travaille, on rend
+// exactement ce qu'on rendait avant. Les canaux clients (Telegram, WhatsApp,
+// Messenger) passent par là et gardent leurs 14 outils, l'inscription
+// conversationnelle garde le sien. Ce fichier peut donc être livré sans que
+// personne ne le remarque, ce qui est le but.
+// ── COMBIEN DE RÉFLEXION, POUR CE TOUR-CI ────────────────────────────────
+//
+// Rend `null` quand aucun niveau n'est déclaré : le modèle garde alors ses
+// valeurs par défaut, comme avant que les niveaux existent. Aucun appelant
+// actuel ne change de comportement.
+//
+// ── POURQUOI ON NE RECOPIE QUE QUATRE CHAMPS ─────────────────────────────
+//
+// `generationConfig` n'accepte pas n'importe quoi : un champ que le modèle
+// ne connaît pas fait échouer l'appel ENTIER avec un 400 — pas un
+// avertissement, pas une dégradation, l'appel entier. Tous les messages de
+// ce niveau tomberaient d'un coup.
+//
+// On recopie donc seulement ce qui est universellement accepté, et on
+// IGNORE le reste même si quelqu'un l'écrit dans le registre. Le budget de
+// réflexion (thinkingConfig) serait le meilleur levier — il reste derrière
+// `reflexionEtendue`, qui vaut false partout tant qu'il n'a pas été mesuré
+// contre l'API réelle.
+const CHAMPS_ACCEPTES = ["temperature", "maxOutputTokens", "topP", "topK"];
+
+function configDeGeneration(context) {
+    const idNiveau = context?.niveau;
+    if (!idNiveau) return null;
+
+    const NIVEAUX = require("../config/niveaux");
+    const n = NIVEAUX.niveau(idNiveau);
+    const source = n.generationConfig || {};
+
+    const config = {};
+    for (const champ of CHAMPS_ACCEPTES) {
+        if (source[champ] !== undefined) config[champ] = source[champ];
+    }
+    return Object.keys(config).length ? config : null;
+}
+
 function buildToolsPayload(useTools, context) {
     if (context?.source === "onboarding") return ONBOARDING_TOOLS;
-    return useTools ? TOOLS : SEARCH_TOOLS;
+
+    const idNiveau = context?.niveau;
+    if (!idNiveau) return useTools ? TOOLS : SEARCH_TOOLS;
+
+    // Requis ici et pas en tête de fichier : config/niveaux.js lit
+    // config/credits.js, qui n'a rien à faire dans le chemin d'un message
+    // tant qu'aucun niveau n'est demandé.
+    const NIVEAUX = require("../config/niveaux");
+
+    const permis = new Set(NIVEAUX.outilsDe(idNiveau));
+    if (useTools) for (const nom of NIVEAUX.FAMILLES.commerce) permis.add(nom);
+
+    const declarations = TOOLS[0].functionDeclarations.filter((fn) => permis.has(fn.name));
+
+    // AUCUN OUTIL N'EST UN CAS NORMAL, pas une erreur — c'est même l'état du
+    // niveau « Rapide ». On rend `null` plutôt qu'une liste vide : une liste
+    // vide envoyée au modèle est refusée par l'API, et `toOpenAiTools`
+    // lirait `[0].functionDeclarations` sur du vide. Les deux appelants
+    // savent quoi faire d'un `null` — ils n'envoient pas de champ du tout.
+    if (!declarations.length) return null;
+    return [{ functionDeclarations: declarations }];
 }
 
 async function send({ to, message }) {
@@ -627,7 +715,23 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
                 { role: "user", parts: userParts },
             ],
         };
-        body.tools = buildToolsPayload(useTools, context);
+        // Un niveau sans outil ne doit pas envoyer un champ `tools` vide :
+        // l'API le refuse. On n'envoie simplement pas le champ.
+        const outils = buildToolsPayload(useTools, context);
+        if (outils) body.tools = outils;
+
+        // ── LA PROFONDEUR DE RÉFLEXION ──────────────────────────────────
+        //
+        // Même règle que pour les outils : sans niveau déclaré, on n'envoie
+        // rien et le modèle garde ses valeurs par défaut — exactement le
+        // comportement d'avant.
+        //
+        // Ce que le niveau règle vraiment : la longueur maximale de la
+        // réponse et la liberté de formulation. Un « Rapide » répond court
+        // et droit ; un « Maître » a la place de dérouler un raisonnement.
+        const config = configDeGeneration(context);
+        if (config) body.generationConfig = config;
+
         const response = await postWithRotation(body);
         const candidate = response.data.candidates?.[0];
         const parts = candidate?.content?.parts || [];
@@ -1116,4 +1220,13 @@ async function sonder() {
     return resultats;
 }
 
-module.exports = { send, chat, chatLibre, chatLibreFlux, chatWithFunctionResult, chatWithSearch, chatViaOpenRouter, summarize, receive, TOOLS, etat, sonder };
+module.exports = {
+    send, chat, chatLibre, chatLibreFlux, chatWithFunctionResult, chatWithSearch,
+    chatViaOpenRouter, summarize, receive, TOOLS, etat, sonder,
+    // Exposés aux tests seulement. Ces deux fonctions décident QUELS outils
+    // SAMII porte à chaque tour — la vérifier en relisant le fichier ne
+    // prouverait rien, il faut pouvoir l'appeler.
+    __test_buildToolsPayload: buildToolsPayload,
+    __test_toOpenAiTools: toOpenAiTools,
+    __test_configDeGeneration: configDeGeneration,
+};
