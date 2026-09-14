@@ -81,11 +81,76 @@ try {
     verifier(page.includes('id="fil"'), "le fil de conversation a disparu");
     verifier(/Tu fais quoi, toi/.test(page), "la question d'ouverture a disparu");
 
-    // Les quatre amorces, et la première doit porter une DEMANDE.
-    const amorces = (page.match(/class="amorce"/g) || []).length;
-    verifier(amorces === 4, `${amorces} amorces au lieu de 4`);
+    // ── LES QUATRE CHEMINS EXISTENT TOUJOURS, EN PETIT ───────────────────
+    //
+    // Ce garde exigeait quatre `.amorce` — des cartes pleine largeur. MESURÉ
+    // avant leur remplacement : elles pesaient 231 px sur bureau, 254 px sur
+    // mobile, et avec le reste du hero, 459 px / 494 px AVANT le premier
+    // message. Plus de la moitié de l'écran, sur une page dont le chat est
+    // censé être le sujet.
+    //
+    // Les quatre chemins n'ont pas disparu : ils sont devenus des puces
+    // d'une ligne, contre le champ. C'est donc l'INTENTION qu'on garde ici,
+    // pas la forme — quatre entrées distinctes, dont une qui porte une vraie
+    // demande d'action, et aucune carte pleine largeur.
+    const chips = (page.match(/class="chip"/g) || []).length;
+    verifier(chips === 4, `${chips} puces de démarrage au lieu de 4`);
+    verifier(!/class="amorce"/.test(page),
+        "les grosses cartes pleine largeur sont revenues : elles reprennent la moitié de l'écran");
     verifier(/aide-moi à développer ça/.test(page),
-        "la première amorce ne propose plus d'action : elle montre à quoi sert SAMII");
+        "la première puce ne porte plus de demande d'action : elle montre à quoi sert SAMII");
+
+    // Le libellé est COURT, la demande envoyée est ENTIÈRE. Envoyer le
+    // libellé ferait répondre SAMII à deux mots au lieu d'une personne.
+    // ⚠️ `page.includes('data-demande=')` NE SUFFIT PAS : il passe dès qu'UNE
+    // puce en porte une. Vérifié par mutation — retirer la demande d'une
+    // seule puce laissait le garde vert. On les compte.
+    const demandes = (page.match(/data-demande="[^"]{12,}"/g) || []).length;
+    verifier(demandes === chips,
+        `${demandes} puces sur ${chips} emportent une demande complète : les autres enverraient `
+        + "leur libellé court, et SAMII répondrait à un mot-clé au lieu d'une personne");
+
+    // ── ET LE COMPORTEMENT, QUI N'EST NI DANS LE HTML NI VISIBLE ICI ─────
+    //
+    // Les quatre gardes ci-dessous ont été ajoutés APRÈS des mutations qui
+    // ont survécu : on peut retirer l'effacement, le clic des puces ou la
+    // bascule du titre sans qu'un test de gabarit ne bronche. Un rendu EJS
+    // ne voit ni le CSS ni le script.
+    const feuille = fs.readFileSync(path.join(RACINE, "views/samii-accueil.ejs"), "utf8");
+    verifier(/\[data-ecrit="1"\]\s+\.demarrer/.test(feuille),
+        "l'invitation ne s'efface plus quand on écrit : quatre suggestions resteraient sous les yeux "
+        + "de quelqu'un qui sait déjà ce qu'il veut dire");
+    verifier(/\[data-commence="1"\]\s+\.demarrer/.test(feuille),
+        "l'invitation ne disparaît plus au premier message");
+    verifier(/\[data-commence="1"\]\s+#ouverture/.test(feuille),
+        "le titre ne s'efface plus quand la conversation commence : il resterait au-dessus des messages");
+
+    const script = fs.readFileSync(path.join(RACINE, "public/js/samii-accueil.js"), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+    verifier(/closest\(["']\.chip["']\)/.test(script),
+        "le script n'écoute plus les puces : elles seraient décoratives");
+    verifier(/getAttribute\(["']data-demande["']\)/.test(script),
+        "le script envoie le libellé de la puce au lieu de sa demande complète");
+    verifier(/setAttribute\(["']data-commence["'],\s*["']1["']\)/.test(script),
+        "rien ne bascule l'écran en mode conversation au premier message");
+    verifier(/setAttribute\(["']data-ecrit["']/.test(script),
+        "rien ne signale qu'on a commencé à écrire : l'invitation resterait affichée");
+    verifier(/Par o(ù|u) commencer aujourd/.test(page),
+        "l'invitation « Par où commencer aujourd'hui ? » n'est pas rendue");
+
+    // ── ET LE HERO NE REVIENT PAS ────────────────────────────────────────
+    //
+    // La grosse boule centrale et le paragraphe d'accroche pesaient 138 px à
+    // eux deux. SAMII est déjà nommé dans la barre du haut, et ce qu'il sait
+    // faire s'apprend en lui parlant.
+    const ouv = page.slice(page.indexOf('id="ouverture"'), page.indexOf("</div>", page.indexOf('id="ouverture"')));
+    verifier(ouv.length > 10, "le bloc d'ouverture a disparu de la page");
+    verifier(!/class="boule"/.test(ouv),
+        "la grosse boule est revenue au centre de l'écran vide — le branding est déjà dans la barre du haut");
+    verifier(!/<p>/.test(ouv),
+        "un paragraphe d'accroche est revenu sous le titre : il repousse le chat vers le bas");
+    verifier(page.includes('id="boule-mini"'),
+        "la boule de la barre haute a disparu : c'est elle qui porte les états « cherche » et « parle »");
 
     // Micro et pièce jointe restent offerts sans compte — c'est ce qui donne
     // envie de s'inscrire.

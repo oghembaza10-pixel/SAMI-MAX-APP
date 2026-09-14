@@ -29,13 +29,17 @@
     var fil       = document.getElementById("fil");
     var colonne   = document.getElementById("colonne");
     var ouverture = document.getElementById("ouverture");
-    var amorces   = document.getElementById("amorces");
+    var demarrer  = document.getElementById("demarrer");
     var saisie    = document.getElementById("saisie");
     var champ     = document.getElementById("champ");
     var envoyer   = document.getElementById("envoyer");
     var jauge     = document.getElementById("jauge");
     var cote      = document.getElementById("cote");
     var burger    = document.getElementById("burger");
+    // Déclarée ICI et pas 580 lignes plus bas, où elle l'était : elle est lue
+    // par `rangerOuverture`, tout en haut. Le hissage des `var` faisait que ça
+    // fonctionnait — jusqu'au jour où quelqu'un passe le fichier en `const`.
+    var scene     = document.getElementById("scene");
 
     if (!saisie || !champ || !colonne) return;   // page servie sans le chat
 
@@ -55,12 +59,33 @@
         return d;
     }
 
+    // ── LE PASSAGE ÉCRAN VIDE → CONVERSATION ─────────────────────────────
+    //
+    // Les deux blocs étaient RETIRÉS du document d'un coup. Le contenu
+    // sautait de plusieurs centaines de pixels au moment précis où l'on
+    // venait d'appuyer sur envoyer — on ne savait plus si son message était
+    // parti ou si la page avait rechargé.
+    //
+    // On pose donc un état sur la scène, le CSS fait la transition, et on ne
+    // retire les nœuds qu'APRÈS. Retirer tout de suite annulerait l'animation
+    // qu'on vient de lancer ; ne jamais retirer laisserait deux blocs vides
+    // dans le fil, avec leurs marges.
+    var range = false;
     function rangerOuverture() {
-        if (ouverture) { ouverture.remove(); ouverture = null; }
-        if (amorces)   { amorces.remove();   amorces = null; }
+        if (range) return;
+        range = true;
+        if (scene) scene.setAttribute("data-commence", "1");
         // Le centrage vertical n'a de sens que sur une page vide : dès qu'il y
         // a une conversation, elle se lit de haut en bas comme partout.
         if (fil) fil.classList.remove("fil--vide");
+        // 340 ms : la plus longue des deux transitions CSS, plus une marge.
+        // Un `transitionend` serait plus juste, mais il ne se déclenche jamais
+        // si l'utilisateur a demandé « moins d'animations » — et le bloc
+        // resterait alors pour toujours.
+        setTimeout(function () {
+            if (ouverture) { ouverture.remove(); ouverture = null; }
+            if (demarrer)  { demarrer.remove();  demarrer = null; }
+        }, 340);
     }
 
     function direMoi(texte, image) {
@@ -588,6 +613,22 @@
     }
 
     // ── BRANCHEMENTS ─────────────────────────────────────────────────────
+    // ── ELLE S'EFFACE DÈS QU'ON ÉCRIT ───────────────────────────────────
+    //
+    // Pas seulement au premier message : dès la PREMIÈRE LETTRE. Quelqu'un
+    // qui tape sait déjà ce qu'il veut dire — lui laisser quatre suggestions
+    // sous les yeux, c'est lui demander de vérifier qu'il n'a pas mieux à
+    // faire que ce qu'il est en train d'écrire.
+    //
+    // Réversible : si le champ est vidé, l'invitation revient. Elle n'est
+    // perdue pour de bon qu'au premier message envoyé (`data-commence`).
+    if (champ && scene) {
+        champ.addEventListener("input", function () {
+            if (scene.getAttribute("data-commence") === "1") return;
+            scene.setAttribute("data-ecrit", champ.value.trim() ? "1" : "0");
+        });
+    }
+
     saisie.addEventListener("submit", function (e) {
         e.preventDefault();
         var t = champ.value.trim();
@@ -596,10 +637,13 @@
         envoyerMessage(t);
     });
 
-    if (amorces) {
-        amorces.addEventListener("click", function (e) {
-            var b = e.target.closest(".amorce");
-            if (b) envoyerMessage(b.textContent.trim());
+    // Une puce porte un libellé COURT et une demande ENTIÈRE. On envoie la
+    // demande : envoyer « Juste parler » ferait répondre SAMII à deux mots au
+    // lieu d'une personne qui a eu une longue journée.
+    if (demarrer) {
+        demarrer.addEventListener("click", function (e) {
+            var b = e.target.closest(".chip");
+            if (b) envoyerMessage((b.getAttribute("data-demande") || b.textContent).trim());
         });
     }
 
@@ -629,7 +673,6 @@
     // divergé au premier ajustement.
     var espaces = document.getElementById("espaces");
     var appelEspaces = document.getElementById("appel-espaces");
-    var scene = document.getElementById("scene");
     if (espaces && appelEspaces && scene) {
         // Un SEUL porteur d'état : l'attribut sur la scène. Le CSS en tire
         // la visibilité, la position et la transition. Piloter `hidden` en

@@ -33,6 +33,14 @@ const DEFAUT = "fr";
 // réduits à un espace avant la recherche : une phrase coupée sur trois lignes
 // dans un gabarit reste la même phrase.
 const EN = {
+    // ── CHANTIER ACCUEIL SIMPLIFIÉ : L'INVITATION ET SES PUCES ───────────
+    "Par où commencer aujourd'hui ?": "Where do you want to start today?",
+    "Développer mon activité": "Grow my business",
+    "Organiser ma journée": "Plan my day",
+    "Trouver les bons mots": "Find the right words",
+    "Juste parler": "Just talk",
+    "Aide-moi à organiser ma journée de travail": "Help me plan my working day",
+
     // ── CHANTIER CHAT DU QG : LE COMPOSER ────────────────────────────────
     "Plus d'outils": "More tools",
     "Résumé de ma semaine": "My week in brief",
@@ -631,6 +639,14 @@ const EN = {
 // Arabe standard moderne, pas de dialecte : un marchand algérien, marocain ou
 // égyptien doit lire la même chose sans effort.
 const AR = {
+    // ── CHANTIER ACCUEIL SIMPLIFIÉ : L'INVITATION ET SES PUCES ───────────
+    "Par où commencer aujourd'hui ?": "من أين نبدأ اليوم؟",
+    "Développer mon activité": "تطوير نشاطي",
+    "Organiser ma journée": "تنظيم يومي",
+    "Trouver les bons mots": "إيجاد الكلمات المناسبة",
+    "Juste parler": "مجرّد حديث",
+    "Aide-moi à organiser ma journée de travail": "ساعدني في تنظيم يوم عملي",
+
     // ── CHANTIER CHAT DU QG : LE COMPOSER ────────────────────────────────
     "Plus d'outils": "أدوات أخرى",
     "Résumé de ma semaine": "ملخّص أسبوعي",

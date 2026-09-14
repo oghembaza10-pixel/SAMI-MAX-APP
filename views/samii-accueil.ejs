@@ -372,10 +372,41 @@ html[dir="rtl"] .espaces { transform: translateX(-100%); }
    c'est la moitié de la page qui ne dit rien, et la page a l'air de ne pas
    avoir fini de charger. Le centrage tombe dès le premier message : la
    conversation, elle, se lit bien de haut en bas. */
+/* Le bloc d'ouverture reste centré tant qu'on n'a rien dit — mais il ne
+   pèse plus que le titre, alors le centrage ne repousse plus rien. */
+/* ── OÙ SE POSE LE TITRE SUR UN ÉCRAN VIDE ───────────────────────────────
+   Il était centré verticalement. Avec un hero de 459 px c'était juste ; une
+   fois réduit au seul titre, le centrage le laissait flotter au milieu d'un
+   grand vide, à 320 px de l'invitation — on avait retiré les éléments et
+   gardé le trou.
+
+   Le `padding-bottom` le remonte dans le TIERS SUPÉRIEUR, là où on lit un
+   titre. Ce qui reste en dessous n'est plus un vide : c'est la place où la
+   conversation va s'écrire, et elle se lit comme telle parce que
+   l'invitation et le champ la referment juste en bas.
+
+   `clamp` et pas une valeur fixe : sur un écran court (téléphone en
+   paysage, petite fenêtre), 30 vh pousseraient le titre hors du cadre. */
 .fil--vide { display: flex; align-items: center; }
-.fil--vide .colonne { width: 100%; padding-bottom: 6vh; }
+.fil--vide .colonne { width: 100%; padding-bottom: clamp(0px, 26vh, 240px); }
 
 .ouverture { text-align: center; padding: 8px 0 2px; }
+
+/* ── LE TITRE S'EFFACE QUAND LA CONVERSATION COMMENCE ────────────────────
+   Il ne disparaît pas d'un coup : il se réduit et s'estompe. Un élément qui
+   s'évanouit sans transition donne l'impression d'un bug d'affichage, et on
+   cherche ce qu'on vient de casser. `grid-template-rows: 0fr` anime une
+   hauteur qu'on ne connaît pas d'avance — c'est le seul moyen de le faire
+   proprement sans écrire un nombre de pixels qui deviendra faux. */
+#ouverture {
+    display: grid; grid-template-rows: 1fr;
+    opacity: 1; transition: grid-template-rows .32s cubic-bezier(.22,1,.36,1), opacity .22s ease;
+}
+#ouverture > * { overflow: hidden; min-height: 0; }
+.scene[data-commence="1"] #ouverture { grid-template-rows: 0fr; opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+    #ouverture { transition: none; }
+}
 .boule {
     width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 50%;
     background: radial-gradient(circle at 32% 28%, var(--cyan), var(--violet) 58%, #4A22A8);
@@ -458,14 +489,45 @@ html[dir="rtl"] .espaces { transform: translateX(-100%); }
 }
 .ouverture p { margin: 0 auto; max-width: 46ch; color: var(--doux); text-wrap: balance; }
 
-.amorces { display: grid; gap: 9px; }
-.amorce {
-    text-align: start; padding: 13px 16px;
-    border: 1px solid var(--ligne); border-radius: var(--r-m);
-    background: var(--panneau); font-size: .9rem;
-    transition: border-color .16s, background .16s, transform .16s;
+/* ══ L'INVITATION ET SES PUCES ═══════════════════════════════════════════
+
+   Les quatre amorces étaient des cartes pleine largeur : 231 px sur bureau,
+   254 px sur mobile. Elles deviennent des puces d'une ligne.
+
+   `flex-wrap` et pas une grille à colonnes fixes : à 390 px elles passent à
+   la ligne toutes seules, sans qu'aucune largeur n'ait à être devinée. */
+.demarrer {
+    display: grid; grid-template-rows: 1fr;
+    transition: grid-template-rows .3s cubic-bezier(.22,1,.36,1), opacity .2s ease;
+    opacity: 1; margin-bottom: 10px;
 }
-.amorce:hover { border-color: var(--ligne-viv); background: var(--releve); transform: translateY(-1px); }
+.demarrer > * { overflow: hidden; min-height: 0; }
+/* Elle s'efface dès la première lettre, et pour de bon au premier message.
+   `pointer-events` coupé en même temps : une puce invisible mais cliquable
+   est un piège pour qui navigue au clavier. */
+.scene[data-ecrit="1"] .demarrer,
+.scene[data-commence="1"] .demarrer {
+    grid-template-rows: 0fr; opacity: 0; margin-bottom: 0; pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) { .demarrer { transition: none; } }
+
+.demarrer__titre {
+    margin: 0 0 8px; text-align: center;
+    color: var(--tres-doux); font-size: .82rem; letter-spacing: .01em;
+}
+.demarrer__chips {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 7px;
+    padding-bottom: 2px;
+}
+.chip {
+    padding: 7px 13px; border-radius: 999px;
+    border: 1px solid var(--ligne); background: var(--panneau);
+    color: var(--doux); font-size: .8rem; line-height: 1.2;
+    white-space: nowrap; cursor: pointer;
+    transition: border-color .16s, background .16s, color .16s;
+}
+.chip:hover { border-color: var(--ligne-viv); background: var(--releve); color: var(--texte); }
+.chip:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
 .tour { display: flex; gap: 12px; align-items: flex-start; }
 .tour--moi { justify-content: flex-end; }
@@ -913,44 +975,84 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
 
             <section class="fil fil--vide" id="fil" aria-live="polite">
                 <div class="colonne" id="colonne">
-                    <div class="ouverture" id="ouverture">
-                        <div class="boule"></div>
-                        <h1><%= L("Tu fais quoi, toi ?") %></h1>
-                        <%# La question d'ouverture reste personnelle — les gens
-                            répondent volontiers quand on parle d'eux. Mais la
-                            phrase en dessous ne doit PAS réduire SAMII au
-                            commerce : quelqu'un qui ne vend rien doit se sentir
-                            à sa place dès la première ligne. %>
-                        <%# La phrase d'accroche ne promet plus « je réponds à
-                            tout » — une promesse que personne ne croit, et qui
-                            range SAMII au rayon des moteurs de questions. Elle
-                            dit ce qu'il fait de différent : il ÉCOUTE, il tient
-                            compte du contexte, et il peut AGIR. C'est la
-                            dernière moitié qui vaut de l'argent. %>
-                        <p><%= L("Ton travail, une question, une idée, ou juste l'envie de parler. Je t'écoute, je comprends ton contexte — et quand il faut passer à l'action, je peux la faire avec toi.") %></p>
-                    </div>
+                    <%# ══ L'OUVERTURE, RÉDUITE À CE QU'ELLE DOIT DIRE ══════════
 
-                    <%# QUATRE AMORCES, ET ELLES NE DISENT PAS LA MÊME CHOSE.
-                        Trois questions de commerçant, c'était annoncer que SAMII
-                        ne sert qu'aux commerçants — et perdre tous les autres au
-                        premier coup d'œil. Quatre chemins volontairement
-                        différents : le commerce, un service utile à n'importe
-                        qui, la connaissance du terrain (là où aucun assistant
-                        généraliste ne suit), et la conversation pour elle-même. %>
-                    <div class="amorces" id="amorces">
-                        <%# La première amorce est la plus importante : c'est
-                            elle qu'on lit. Elle portait un CONSTAT (« je
-                            vends… ») ; elle porte maintenant une DEMANDE, donc
-                            elle montre qu'on peut demander quelque chose. %>
-                        <button class="amorce"><%= L("Je vends des vêtements sur Instagram, aide-moi à développer ça") %></button>
-                        <button class="amorce"><%= L("Aide-moi à écrire un message difficile") %></button>
-                        <button class="amorce"><%= L("Combien coûte une livraison Alger → Oran ?") %></button>
-                        <button class="amorce"><%= L("Juste parler, j'ai eu une longue journée") %></button>
+                        MESURÉ avant ce chantier, sur une fenêtre de 860 px :
+
+                            boule      66 px
+                            titre      52 px
+                            phrase     72 px
+                            4 amorces 231 px
+                            ─────────────────
+                            total     459 px  (494 px sur mobile)
+
+                        Plus de la moitié de l'écran occupée AVANT le premier
+                        message. Le chat n'était pas le héros de la page : il
+                        était ce qui restait en dessous.
+
+                        Ce qui part :
+
+                        · LA BOULE. SAMII est déjà nommé dans la barre du haut
+                          et signé par la boule mini qui y vit — celle-là reste,
+                          elle porte les états « cherche » et « parle ». Un
+                          second logo, quatre fois plus gros, au milieu du seul
+                          endroit où l'on veut écrire, ne dit rien de plus.
+
+                        · LA PHRASE D'ACCROCHE. Elle expliquait ce que SAMII
+                          sait faire. Mais on l'apprend en trois secondes en lui
+                          parlant, et le mieux placé pour le dire, c'est lui.
+
+                        · LES QUATRE GROSSES CARTES. Elles proposaient quatre
+                          chemins — l'intention était juste, la forme était un
+                          menu de landing page. Elles reviennent en bas, en
+                          petit, à portée du pouce et du curseur.
+
+                        Ce qui reste : la question. C'est l'entrée de SAMII. %>
+                    <div class="ouverture" id="ouverture">
+                        <h1><%= L("Tu fais quoi, toi ?") %></h1>
                     </div>
                 </div>
             </section>
 
             <div class="pied">
+                <%# ══ L'INVITATION, ET ELLE VIT ICI ═══════════════════════════
+
+                    Les quatre chemins existaient déjà : c'étaient les grosses
+                    cartes du haut. Ils descendent, et ils rétrécissent.
+
+                    ── POURQUOI CONTRE LE CHAMP, ET PAS AU MILIEU ────────────
+
+                    Une suggestion sert à DÉMARRER. Collée au champ, elle est
+                    sous le curseur au moment où l'on hésite ; au milieu de
+                    l'écran, elle est un menu qu'on lit avant de comprendre
+                    qu'on pouvait simplement écrire.
+
+                    ── ET ELLE S'EFFACE DÈS QU'ON N'EN A PLUS BESOIN ─────────
+
+                    Elle disparaît à la première lettre tapée, et au premier
+                    message envoyé. Une invitation qui reste après qu'on a
+                    commencé n'est plus une invitation : c'est un meuble.
+
+                    `aria-hidden` suit l'état : un lecteur d'écran ne doit pas
+                    annoncer quatre suggestions qui ne servent plus. %>
+                <div class="demarrer" id="demarrer">
+                    <p class="demarrer__titre"><%= L("Par où commencer aujourd'hui ?") %></p>
+                    <div class="demarrer__chips">
+                        <%# Le libellé est COURT, la demande envoyée est ENTIÈRE.
+                            Une puce doit tenir sur une ligne à 390 px ; ce qui
+                            part à SAMII, lui, doit être une vraie phrase —
+                            sinon il répond à un mot-clé au lieu d'une personne. %>
+                        <button class="chip" type="button"
+                                data-demande="<%= L("Je vends des vêtements sur Instagram, aide-moi à développer ça") %>"><%= L("Développer mon activité") %></button>
+                        <button class="chip" type="button"
+                                data-demande="<%= L("Aide-moi à organiser ma journée de travail") %>"><%= L("Organiser ma journée") %></button>
+                        <button class="chip" type="button"
+                                data-demande="<%= L("Aide-moi à écrire un message difficile") %>"><%= L("Trouver les bons mots") %></button>
+                        <button class="chip" type="button"
+                                data-demande="<%= L("Juste parler, j'ai eu une longue journée") %>"><%= L("Juste parler") %></button>
+                    </div>
+                </div>
+
                 <%# L'aperçu de la pièce jointe vit AU-DESSUS du champ : une
                     image qu'on a choisie doit se voir avant l'envoi, sinon on
                     ne sait pas laquelle part. %>
