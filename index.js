@@ -1102,6 +1102,10 @@ app.get("/samii", requireAuth, async (req, res) => {
         niveaux     : NIVEAUX.pourAffichage(),
         plafondNiveau,
         ordreNiveaux: NIVEAUX.ORDRE,
+        // Le même cran de départ que la vitrine, lu dans le même registre.
+        // Deux chats du même SAMII qui ne partent pas au même niveau, c'est
+        // la même question posée deux fois avec deux réponses différentes.
+        niveauParDefaut: NIVEAUX.PRESELECTION,
     });
 });
 

@@ -324,6 +324,14 @@ function marque(html) {
                 workspaceId: "w1", shop: "", estParticulier: false,
                 communaute: communautes.get(slug), typeCompte: "marchand",
                 userId: "u1", loggedIn: true, modulesQg,
+                // `L` est posé par services/langue.js sur res.locals à CHAQUE
+                // requête : la vue peut compter dessus, et elle le fait depuis
+                // que le composer traduit ses libellés. Le jeu d'essai était
+                // simplement plus pauvre que la production — c'est lui qu'on
+                // complète, pas la vue qu'on affaiblit.
+                // L'identité : cette suite vérifie la NAVIGATION et la marque,
+                // pas les traductions (tests/langues.test.js s'en charge).
+                L: (t) => t,
             }, { views: [path.join(RACINE, "views")] },
             (err, html) => (err ? reject(err) : resolve(html)));
         });
@@ -537,6 +545,7 @@ function marque(html) {
                 workspaceId: "w1", shop: "", estParticulier: false,
                 COM: communautes.get(slug),   // res.locals, pas la route
                 typeCompte: "marchand", userId: "u1", loggedIn: true, modulesQg,
+                L: (t) => t,   // posé par services/langue.js sur res.locals
             }, { views: [path.join(RACINE, "views")] },
             (err, html) => (err ? reject(err) : resolve(html)));
         });

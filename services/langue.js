@@ -33,6 +33,12 @@ const DEFAUT = "fr";
 // réduits à un espace avant la recherche : une phrase coupée sur trois lignes
 // dans un gabarit reste la même phrase.
 const EN = {
+    // ── CHANTIER CHAT DU QG : LE COMPOSER ────────────────────────────────
+    "Plus d'outils": "More tools",
+    "Résumé de ma semaine": "My week in brief",
+    "Directives permanentes": "Standing instructions",
+    "Base de connaissances": "Knowledge base",
+
     // ── CHANTIER CHAT V2 : ESPACES, RIDEAU, SÉLECTEUR D'INTELLIGENCE ─────
     "Aller plus loin avec SAMII": "Go further with SAMII",
     "Mes espaces": "My spaces",
@@ -625,6 +631,12 @@ const EN = {
 // Arabe standard moderne, pas de dialecte : un marchand algérien, marocain ou
 // égyptien doit lire la même chose sans effort.
 const AR = {
+    // ── CHANTIER CHAT DU QG : LE COMPOSER ────────────────────────────────
+    "Plus d'outils": "أدوات أخرى",
+    "Résumé de ma semaine": "ملخّص أسبوعي",
+    "Directives permanentes": "تعليمات دائمة",
+    "Base de connaissances": "قاعدة المعرفة",
+
     // ── CHANTIER CHAT V2 : ESPACES, RIDEAU, SÉLECTEUR D'INTELLIGENCE ─────
     "Aller plus loin avec SAMII": "اذهب أبعد مع سامي",
     "Mes espaces": "مساحاتي",

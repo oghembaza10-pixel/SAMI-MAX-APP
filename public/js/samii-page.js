@@ -28,6 +28,106 @@ document.addEventListener('DOMContentLoaded', () => {
     const connAjouter   = document.getElementById('samii-connaissance-ajouter');
     const connMsg       = document.getElementById('samii-connaissance-msg');
     const connListe     = document.getElementById('samii-connaissance-liste');
+    const sendBtn      = document.getElementById('samii-page-send');
+    const plusBtn      = document.getElementById('samii-plus-btn');
+    const plusMenu     = document.getElementById('samii-plus-menu');
+
+    // ══════════════════════════════════════════════════════════════════
+    // LE COMPOSER
+    // ══════════════════════════════════════════════════════════════════
+
+    // ── LE CHAMP GRANDIT AVEC LE TEXTE ────────────────────────────────
+    //
+    // C'était un <input type="text"> : une ligne, pour toujours. Écrire un
+    // paragraphe à SAMII revenait à taper dans une fente. Et Shift+Entrée
+    // ne pouvait rien vouloir dire, puisqu'il n'y avait pas de deuxième
+    // ligne possible.
+    //
+    // On remet la hauteur à zéro avant de la relire : sans ça, elle ne
+    // redescend jamais quand on efface du texte.
+    function ajusterHauteur() {
+        if (!input) return;
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 132) + 'px';
+    }
+
+    // ── LE BOUTON ENVOYER DIT S'IL PEUT SERVIR ────────────────────────
+    //
+    // Il était toujours allumé, y compris sur un champ vide : on cliquait,
+    // rien ne partait, rien ne l'expliquait. `occupe` le verrouille aussi
+    // pendant un envoi — sans quoi deux clics rapides font deux tours, et
+    // un tour se facture.
+    let occupe = false;
+    function rafraichirEnvoi() {
+        if (!sendBtn) return;
+        const rempli = !!(input && input.value.trim()) || !!pendingAttachment;
+        sendBtn.disabled = occupe || !rempli;
+    }
+    function marquerOccupe(etat) {
+        occupe = etat;
+        if (sendBtn) sendBtn.classList.toggle('composer__envoi--occupe', etat);
+        rafraichirEnvoi();
+    }
+
+    if (input) {
+        input.addEventListener('input', () => { ajusterHauteur(); rafraichirEnvoi(); });
+
+        // ── ENTRÉE ENVOIE, SHIFT+ENTRÉE VA À LA LIGNE ─────────────────
+        //
+        // `isComposing` : pendant la saisie d'un caractère composé (arabe,
+        // chinois, accents sur certains claviers), Entrée VALIDE le
+        // caractère. L'intercepter enverrait un message à moitié écrit, et
+        // seulement pour une partie des utilisateurs — le genre de bug
+        // qu'on ne reproduit jamais soi-même.
+        input.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' || e.shiftKey || e.isComposing || e.keyCode === 229) return;
+            e.preventDefault();
+            if (!sendBtn || !sendBtn.disabled) form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true }));
+        });
+    }
+
+    // ── « ⋯ » : LES OUTILS RARES ──────────────────────────────────────
+    function fermerPlus() {
+        if (!plusMenu) return;
+        plusMenu.classList.remove('samii-attach-menu--open');
+        if (plusBtn) plusBtn.setAttribute('aria-expanded', 'false');
+    }
+    if (plusBtn && plusMenu) {
+        plusBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const ouvert = plusMenu.classList.toggle('samii-attach-menu--open');
+            plusBtn.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+            if (ouvert && attachMenu) attachMenu.classList.remove('samii-attach-menu--open');
+        });
+        // Un menu qui ne se referme qu'en cliquant son propre bouton finit
+        // par rester ouvert par-dessus la conversation.
+        document.addEventListener('click', (e) => {
+            if (!plusMenu.contains(e.target) && e.target !== plusBtn) fermerPlus();
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fermerPlus(); });
+        plusMenu.addEventListener('click', () => fermerPlus());
+    }
+
+    // ── LE DÉFILEMENT D'UN VRAI CHAT ──────────────────────────────────
+    //
+    // C'était `feed.scrollTop = feed.scrollHeight` partout, sans condition.
+    // Deux défauts : le fil n'avait aucun `overflow`, donc cette ligne ne
+    // déplaçait rien du tout (c'est la PAGE qui bougeait) ; et une fois le
+    // fil rendu défilant, elle aurait ramené de force en bas quelqu'un en
+    // train de relire un message plus haut, à chaque morceau de flux.
+    //
+    // On ne suit donc que si la personne était DÉJÀ en bas. Sinon on la
+    // laisse lire — c'est elle qui décide de redescendre.
+    const PRES_DU_BAS = 120;
+    function estEnBas() {
+        if (!feed) return true;
+        return feed.scrollHeight - feed.scrollTop - feed.clientHeight < PRES_DU_BAS;
+    }
+    function suivre(force) {
+        if (!feed) return;
+        if (force || estEnBas()) feed.scrollTop = feed.scrollHeight;
+    }
+
 
     if (!form || !input || !feed) return;
 
@@ -115,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         feed.appendChild(wrapper);
-        feed.scrollTop = feed.scrollHeight;
+        suivre(false);
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
@@ -139,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? "SAMII est resté en mode simplifié — un abonnement débloque la réflexion approfondie."
             : "SAMII a réfléchi plus profondément.";
         feed.appendChild(note);
-        feed.scrollTop = feed.scrollHeight;
+        suivre(false);
     }
 
     function addTypingIndicator() {
@@ -150,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="samii-dot"></span><span class="samii-dot"></span><span class="samii-dot"></span>
             </div>`;
         feed.appendChild(el);
-        feed.scrollTop = feed.scrollHeight;
+        suivre(false);
         return el;
     }
 
@@ -236,6 +336,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sendMessage(message) {
         const attachment = pendingAttachment;
         if (!message && !attachment) return;
+        // Deux clics rapides, ou un Entrée pendant qu'un envoi court, font
+        // DEUX tours — et un tour se facture. Le verrou est ici, au seul
+        // endroit par lequel tout passe, plutôt qu'à chaque déclencheur.
+        if (occupe) return;
+        marquerOccupe(true);
 
         addMessage(
             'user',
@@ -245,7 +350,11 @@ document.addEventListener('DOMContentLoaded', () => {
         );
 
         input.value = '';
+        ajusterHauteur();
         clearAttachment();
+        // On redescend SANS condition : c'est la personne elle-même qui
+        // vient d'écrire, elle veut évidemment voir sa phrase partir.
+        suivre(true);
 
         const typingEl = addTypingIndicator();
 
@@ -301,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     feed.appendChild(bulle);
                 }
                 bulle.firstChild.textContent = texte;
-                feed.scrollTop = feed.scrollHeight;
+                suivre(false);
             };
 
             for (;;) {
@@ -363,6 +472,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(err2);
                 addMessage('bot', 'SAMII réfléchit un peu plus longtemps que prévu. Réessaie dans un instant.');
             }
+        } finally {
+            // `finally` et pas une ligne à la fin : une panne réseau, un flux
+            // coupé, une réponse illisible — chacun de ces chemins laissait
+            // sinon le bouton éteint pour toujours, et la conversation morte
+            // sans un mot. Le composer doit TOUJOURS revenir.
+            marquerOccupe(false);
+            if (input) input.focus();
         }
     }
 
@@ -407,6 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function clearAttachment() {
         pendingAttachment = null;
+        rafraichirEnvoi();
         if (attachPreview) { attachPreview.style.display = 'none'; attachPreview.innerHTML = ''; }
     }
 
@@ -450,6 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const url = await uploaderVersCloudinary(file);
                 pendingAttachment = { type: 'image', url, name: file.name };
+                rafraichirEnvoi();
                 showAttachmentPreview(pendingAttachment, previewLocal);
                 toast('📷 Image prête à envoyer');
             } catch {
@@ -471,6 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const url = await uploaderVersCloudinary(file);
                 pendingAttachment = { type: 'document', url, name: file.name };
+                rafraichirEnvoi();
                 showAttachmentPreview(pendingAttachment);
                 toast('📄 Document prêt à envoyer');
             } catch {
@@ -486,7 +605,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // l'audio à /api/chat/transcribe, et le texte revient prêt à envoyer.
     if (micBtn) {
         if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-            micBtn.style.display = 'none';
+            // ── IL ÉTAIT MIS EN `display:none` ────────────────────────────
+            //
+            // Un bouton qui DISPARAÎT ne laisse rien à comprendre : on
+            // cherche un micro qui n'est plus là, on conclut que le chat est
+            // mal fini, et personne ne saura jamais que c'est le navigateur
+            // qui refuse (page non sécurisée, Firefox sans MediaRecorder,
+            // permission coupée).
+            //
+            // Il reste donc en place, éteint, et il dit pourquoi — au
+            // survol comme au lecteur d'écran.
+            const raison = "Ton navigateur ne permet pas d'enregistrer ici. Écris ton message.";
+            micBtn.disabled = true;
+            micBtn.title = raison;
+            micBtn.setAttribute('aria-label', raison);
+            micBtn.setAttribute('aria-disabled', 'true');
         } else {
             let mediaRecorder = null;
             let chunks = [];

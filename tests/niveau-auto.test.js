@@ -302,9 +302,29 @@ const choisir = (message, opts = {}) => A.choisir({ message, palier: "pro", ...o
         "des niveaux qui ne correspondent plus à ceux appliqués");
     verifier(/id="samii-niveau"/.test(vue), "le sélecteur d'intelligence n'est plus dans la page");
 
-    // « Auto » doit être le défaut — c'est l'idée même du mode.
-    verifier(/n\.id === "auto" \? " selected"/.test(vue),
-        "« Auto » n'est plus sélectionné par défaut alors que c'est le bon choix pour presque tout le monde");
+    // ── LE CRAN DE DÉPART A CHANGÉ, ET CE TEST AVEC ──────────────────────
+    //
+    // Il exigeait « Auto », écrit en dur, avec ce commentaire : « c'est
+    // l'idée même du mode ». C'était vrai, et ce n'est plus la décision.
+    //
+    // Auto laisse SAMII MONTER d'un cran quand il juge la demande lourde, et
+    // ce cran coûte plus cher — décidé par la machine, pas par la personne.
+    // Le produit part donc du cran le plus léger : il répond tout de suite et
+    // ne surprend personne sur son solde.
+    //
+    // Ce qui est gardé ici n'est plus « Auto », c'est l'ACCORD entre les deux
+    // chats du même SAMII. Le registre déclare le cran de départ une fois
+    // (`PRESELECTION`), la vitrine et le QG le lisent tous les deux. Écrire
+    // à nouveau un identifiant en dur ici referait exactement le défaut qu'on
+    // vient de corriger : un test qui fige une valeur empêche de la changer,
+    // il ne protège pas l'utilisateur.
+    verifier(/n\.id === _depart \? " selected"/.test(vue),
+        "le cran de départ du QG est écrit en dur au lieu d'être lu : la vitrine et le QG " +
+        "finiront par ne plus partir au même niveau");
+    verifier(/niveauParDefaut/.test(bloc),
+        "la page SAMII ne reçoit plus le cran de départ : le QG repartirait sur sa propre idée");
+    verifier(N.existe(N.PRESELECTION) || N.PRESELECTION === N.AUTO,
+        `le cran de départ déclaré (« ${N.PRESELECTION} ») n'est pas un niveau connu`);
 
     // Et le client doit ENVOYER ce choix, sinon le sélecteur ne sert à rien.
     verifier(/niveau: selNiveau \? selNiveau\.value : null/.test(client),

@@ -40,8 +40,30 @@
                 <span class="qg-topbar__metier" data-i18n="samii.topbar">Stratège IA</span>
             </div>
         </header>
-        <% if (!estParticulier) { %>
-        <section class="samii-space">
+        <section class="samii-chat">
+            <div class="samii-projets-bar" id="samii-projets-bar">
+                <select id="samii-projet-select">
+                    <option value="">💬 Conversation générale</option>
+                </select>
+                <button type="button" id="samii-nouveau-projet-btn" title="Nouveau projet">
+                    <i data-lucide="folder-plus"></i> <span data-i18n="samii.projets.new">Nouveau projet</span>
+                </button>
+            </div>
+            <div class="samii-chat__feed" id="samii-page-feed">
+                <%# ══ LE BANDEAU EST DANS LE FIL, ET C'EST VOULU ═══════════
+                    Il était un bloc À CÔTÉ de la conversation. MESURÉ sur une
+                    fenêtre de 860 px : le bandeau occupait 753 px, et il
+                    restait 62 px pour le chat. Douze cartes de modules
+                    au-dessus, et la conversation réduite à une fente — c'est
+                    exactement « la structure générale du chat mal organisée ».
+
+                    Il n'est pas supprimé : aucune de ces douze portes ne
+                    disparaît. Il défile simplement AVEC le fil, comme l'en-tête
+                    d'une conversation. On le voit en arrivant, il s'efface dès
+                    le premier message, et la fenêtre entière revient à ce
+                    qu'on est venu faire : parler à SAMII. %>
+                <% if (!estParticulier) { %>
+                <section class="samii-space">
             <div class="samii-space__stars"></div>
             <div class="samii-space__intro">
                 <span class="qg-eyebrow" data-i18n="samii.status">SAMII · OPÉRATIONNEL</span>
@@ -138,107 +160,196 @@
                 </a>
             </div>
 
-        </section>
-        <% } else { %>
-        <section class="samii-space" style="padding-bottom:0;">
+                </section>
+                <% } else { %>
+                <section class="samii-space" style="padding-bottom:0;">
             <div class="samii-space__stars"></div>
             <div class="samii-space__intro">
                 <span class="qg-eyebrow" data-i18n="samii.status">SAMII · OPÉRATIONNEL</span>
                 <h1 data-i18n="samii.titleParticulier">Parle à SAMII.</h1>
             </div>
-        </section>
-        <% } %>
-        <section class="samii-chat">
-            <div class="samii-projets-bar" id="samii-projets-bar">
-                <select id="samii-projet-select">
-                    <option value="">💬 Conversation générale</option>
-                </select>
-                <button type="button" id="samii-nouveau-projet-btn" title="Nouveau projet">
-                    <i data-lucide="folder-plus"></i> <span data-i18n="samii.projets.new">Nouveau projet</span>
-                </button>
-            </div>
-            <div class="samii-chat__feed" id="samii-page-feed">
+                </section>
+                <% } %>
                 <div class="samii-msg samii-msg--bot">
                     <div class="samii-msg__bubble" data-i18n="samii.chat.welcome">
                         Wesh khoya 👋 Je suis <b>SAMII</b>. Comment je peux t'aider aujourd'hui ?
                     </div>
                 </div>
             </div>
-            <form class="samii-chat__form" id="samii-page-form" style="position:relative;">
-                <input type="file" id="samii-photo-input" accept="image/*" style="display:none;">
-                <input type="file" id="samii-doc-input" accept=".pdf,.doc,.docx,.txt" style="display:none;">
+            <%# ══ LE COMPOSER ══════════════════════════════════════════════
+                ── POURQUOI IL EST SUR DEUX RANGÉES ─────────────────────────
 
-                <div style="position:relative;">
-                    <button type="button" id="samii-attach-btn" aria-label="Ajouter un fichier" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
-                        <i data-lucide="paperclip"></i>
+                Il n'en avait qu'une, et TOUT s'y disputait la largeur : le
+                trombone, le champ, le sélecteur de niveau, le micro, le
+                résumé, les directives, les connaissances, envoyer. Huit
+                contrôles.
+
+                MESURÉ dans un navigateur à 390 px de large, avant ce
+                chantier :
+
+                    micro    x=402   HORS ÉCRAN
+                    envoyer  x=552   HORS ÉCRAN
+
+                Sur un écran de 390 px. Le bouton envoyer était 162 px au-delà
+                du bord droit : on ne pouvait PAS envoyer un message depuis un
+                téléphone. Et sans débordement horizontal signalé — le
+                composer coupait simplement ce qui dépassait.
+
+                ── CE CORRECTIF A DÉJÀ ÉTÉ FAIT UNE FOIS, ET IL A PÉRIMÉ ────
+
+                Une règle @media masquait #samii-lang-select et
+                #samii-resume-btn, avec exactement le même diagnostic écrit en
+                commentaire. Puis on a ajouté trois boutons, et le bug est
+                revenu. Masquer des identifiants un par un est un correctif
+                qui expire au prochain bouton.
+
+                On change donc la STRUCTURE, pas la liste :
+
+                  rangée 1  [🎤]  [ champ, il absorbe toute la place ]  [➤]
+                  rangée 2  [🖇] [niveau] ……………………………… [⋯ plus d'outils]
+
+                Micro et envoyer ne rétrécissent jamais (flex-shrink:0) ; le
+                champ prend tout le reste et se comprime seul (min-width:0).
+                Quoi qu'on ajoute demain, ça ira dans la rangée 2 ou dans le
+                menu « ⋯ » — l'essentiel ne peut plus sortir de l'écran.
+
+                ── ET LES ICÔNES NE VIENNENT PLUS D'UN CDN ──────────────────
+
+                Elles étaient toutes des <i data-lucide>, remplacées au
+                chargement par un script tiré d'unpkg. MESURÉ : quand ce
+                script ne répond pas, le composer rend 0 svg et 8 <i> VIDES —
+                huit boutons invisibles, micro et envoyer compris. Une barre
+                de saisie ne doit pas dépendre d'un serveur tiers pour
+                exister. Les icônes du composer sont donc écrites ici, en SVG.
+                Le reste de la page garde Lucide : là, une icône manquante
+                est un défaut d'apparence, pas une fonction perdue. %>
+            <form class="composer" id="samii-page-form">
+                <input type="file" id="samii-photo-input" accept="image/*" hidden>
+                <input type="file" id="samii-doc-input" accept=".pdf,.doc,.docx,.txt" hidden>
+
+                <%# ── RANGÉE 1 : CE QU'ON NE PEUT JAMAIS PERDRE ──────────── %>
+                <div class="composer__ligne">
+                    <button type="button" id="samii-mic-btn" class="composer__rond"
+                            aria-label="<%= L("Parler à SAMII") %>"
+                            title="<%= L("Parler plutôt qu'écrire") %>">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="22"/>
+                        </svg>
+                        <span class="composer__pastille" aria-hidden="true"></span>
                     </button>
-                    <div id="samii-attach-menu" class="samii-attach-menu">
-                        <button type="button" data-attach-type="image">
-                            <i data-lucide="image"></i> <span data-i18n="samii.chat.attachPhoto">Photo</span>
-                        </button>
-                        <button type="button" data-attach-type="document">
-                            <i data-lucide="file-text"></i> <span data-i18n="samii.chat.attachDoc">Document</span>
-                        </button>
-                    </div>
+
+                    <%# `rows="1"` et une hauteur pilotée par le script : le champ
+                        était un <input type="text">, donc une seule ligne, donc
+                        aucune façon d'écrire un paragraphe — et Shift+Entrée ne
+                        pouvait rien vouloir dire. %>
+                    <textarea id="samii-page-input" class="composer__champ" rows="1"
+                              data-i18n-placeholder="samii.chat.placeholder"
+                              placeholder="<%= L("Écris à SAMII…") %>"
+                              aria-label="<%= L("Écris à SAMII…") %>"
+                              enterkeyhint="send" autocomplete="off"></textarea>
+
+                    <%# Désactivé AU DÉPART, dans le HTML : si le script tarde ou
+                        casse, on voit un bouton éteint — pas un bouton actif qui
+                        n'envoie rien. Le script le rallume dès la première lettre. %>
+                    <button type="submit" id="samii-page-send" class="composer__envoi" disabled
+                            aria-label="<%= L("Envoyer") %>" title="<%= L("Envoyer") %>">
+                        <svg class="composer__envoi-fleche" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                             stroke-linejoin="round" aria-hidden="true">
+                            <line x1="12" y1="19" x2="12" y2="5"/>
+                            <polyline points="5 12 12 5 19 12"/>
+                        </svg>
+                        <span class="composer__envoi-rond" aria-hidden="true"></span>
+                    </button>
                 </div>
 
-                <input type="text" id="samii-page-input" data-i18n-placeholder="samii.chat.placeholder" placeholder="Parler à SAMII…" autocomplete="off">
+                <%# ── RANGÉE 2 : LES OUTILS, QUI PEUVENT S'EFFACER ────────── %>
+                <div class="composer__outils">
+                    <div class="composer__pochette">
+                        <button type="button" id="samii-attach-btn" class="composer__outil"
+                                aria-label="<%= L("Joindre une image") %>"
+                                title="<%= L("Joindre une image") %>" aria-expanded="false">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                            </svg>
+                        </button>
+                        <div id="samii-attach-menu" class="samii-attach-menu">
+                            <button type="button" data-attach-type="image">
+                                <i data-lucide="image"></i> <span data-i18n="samii.chat.attachPhoto">Photo</span>
+                            </button>
+                            <button type="button" data-attach-type="document">
+                                <i data-lucide="file-text"></i> <span data-i18n="samii.chat.attachDoc">Document</span>
+                            </button>
+                        </div>
+                    </div>
 
-                <%# ── LE SÉLECTEUR D'INTELLIGENCE ───────────────────────
-                    Rendu depuis config/niveaux.js, jamais recopié ici : une
-                    liste écrite en dur dans un gabarit finit toujours par ne
-                    plus correspondre aux niveaux réellement appliqués.
+                    <%# ── LE SÉLECTEUR D'INTELLIGENCE ───────────────────────
+                        Rendu depuis config/niveaux.js, jamais recopié ici : une
+                        liste écrite en dur dans un gabarit finit toujours par ne
+                        plus correspondre aux niveaux réellement appliqués.
 
-                    « Auto » d'abord, et sélectionné par défaut — c'est le bon
-                    choix pour presque tout le monde, et l'idée même du mode :
-                    ne pas obliger à choisir.
+                        Ce n'est PAS le mode d'autonomie (Ombre → Souverain), qui
+                        a sa propre page. Celui-ci règle l'effort, jamais le droit
+                        d'agir. D'où le libellé « Intelligence » et pas « Mode ».
 
-                    Ce n'est PAS le mode d'autonomie (Ombre → Souverain), qui
-                    a sa propre page. Celui-ci règle l'effort, jamais le droit
-                    d'agir. D'où le libellé « Intelligence » et pas « Mode ». %>
-                <%# Les valeurs par défaut ne sont pas de la coquetterie : une
-                    variable oubliée par un appelant ferait tomber la PAGE
-                    ENTIÈRE en 500, pour un sélecteur. La page survit ; c'est
-                    un test qui vérifie que la vraie route, elle, les passe. %>
-                <% var _niveaux = (typeof niveaux !== "undefined" && niveaux) || [];
-                   var _ordre = (typeof ordreNiveaux !== "undefined" && ordreNiveaux) || [];
-                   var _plafond = (typeof plafondNiveau !== "undefined" && plafondNiveau) || "expert"; %>
-                <% if (_niveaux.length) { %>
-                <div class="samii-niveau" style="position:relative;display:flex;align-items:center;">
-                    <label for="samii-niveau" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Niveau d'intelligence</label>
-                    <select id="samii-niveau" title="Niveau d'intelligence"
-                            style="background:transparent;border:1px solid var(--border,rgba(255,255,255,.14));
-                                   color:var(--text-muted);border-radius:999px;padding:5px 9px;
-                                   font-size:12px;cursor:pointer;max-width:132px;">
+                        Les valeurs par défaut ne sont pas de la coquetterie : une
+                        variable oubliée par un appelant ferait tomber la PAGE
+                        ENTIÈRE en 500, pour un sélecteur. %>
+                    <% var _niveaux = (typeof niveaux !== "undefined" && niveaux) || [];
+                       var _ordre = (typeof ordreNiveaux !== "undefined" && ordreNiveaux) || [];
+                       var _plafond = (typeof plafondNiveau !== "undefined" && plafondNiveau) || "expert";
+                       var _depart = (typeof niveauParDefaut !== "undefined" && niveauParDefaut) || "auto"; %>
+                    <% if (_niveaux.length) { %>
+                    <label for="samii-niveau" class="composer__sr"><%= L("Comment veux-tu que SAMII travaille ?") %></label>
+                    <select id="samii-niveau" class="composer__niveau"
+                            title="<%= L("Comment veux-tu que SAMII travaille ?") %>">
                         <% _niveaux.forEach(function (n) { %>
                             <%# Un niveau au-dessus du plafond reste VISIBLE mais
                                 désactivé : le cacher laisserait croire qu'il
                                 n'existe pas, alors que c'est l'abonnement qui
                                 l'ouvre. %>
                             <% var auDela = n.id !== "auto" && _ordre.indexOf(n.id) > _ordre.indexOf(_plafond); %>
-                            <option value="<%= n.id %>"<%= n.id === "auto" ? " selected" : "" %><%= auDela ? " disabled" : "" %>>
-                                <%= n.icone %> <%= n.libelle %><%= auDela ? " · abonnement" : "" %>
+                            <option value="<%= n.id %>"<%= n.id === _depart ? " selected" : "" %><%= auDela ? " disabled" : "" %>>
+                                <%= n.icone %> <%= L(n.libelle) %><%= auDela ? " · abonnement" : "" %>
                             </option>
                         <% }); %>
                     </select>
-                </div>
-                <% } %>
+                    <% } %>
 
-                <button type="button" id="samii-mic-btn" aria-label="Parler" title="Message vocal" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
-                    <i data-lucide="mic"></i>
-                </button>
-                <button type="button" id="samii-resume-btn" title="Résumé de ma semaine" aria-label="Résumé de ma semaine" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
-                    <i data-lucide="clipboard-list"></i>
-                </button>
-                <button type="button" id="samii-directives-btn" title="Directives permanentes" aria-label="Directives permanentes" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
-                    <i data-lucide="settings-2"></i>
-                </button>
-                <button type="button" id="samii-connaissances-btn" title="Base de connaissances" aria-label="Base de connaissances" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:0 8px;">
-                    <i data-lucide="brain-circuit"></i>
-                </button>
-                <button type="submit" aria-label="Envoyer">
-                    <i data-lucide="arrow-up"></i>
-                </button>
+                    <%# ── « ⋯ » : LÀ OÙ VONT LES OUTILS SUIVANTS ────────────
+                        Résumé, directives, connaissances étaient trois boutons
+                        de plus dans la rangée unique. Ils sont utiles et rares :
+                        exactement ce qui doit vivre derrière un menu plutôt que
+                        de pousser le bouton envoyer hors de l'écran. Et c'est
+                        ici que se rangera le quatrième, le jour où il arrive. %>
+                    <div class="composer__pochette composer__pochette--fin">
+                        <button type="button" id="samii-plus-btn" class="composer__outil"
+                                aria-label="<%= L("Plus d'outils") %>" title="<%= L("Plus d'outils") %>"
+                                aria-haspopup="true" aria-expanded="false" aria-controls="samii-plus-menu">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/>
+                            </svg>
+                        </button>
+                        <div id="samii-plus-menu" class="samii-attach-menu samii-attach-menu--fin" role="menu">
+                            <button type="button" id="samii-resume-btn" role="menuitem"
+                                    title="<%= L("Résumé de ma semaine") %>">
+                                <i data-lucide="clipboard-list"></i> <span><%= L("Résumé de ma semaine") %></span>
+                            </button>
+                            <button type="button" id="samii-directives-btn" role="menuitem"
+                                    title="<%= L("Directives permanentes") %>">
+                                <i data-lucide="settings-2"></i> <span><%= L("Directives permanentes") %></span>
+                            </button>
+                            <button type="button" id="samii-connaissances-btn" role="menuitem"
+                                    title="<%= L("Base de connaissances") %>">
+                                <i data-lucide="brain-circuit"></i> <span><%= L("Base de connaissances") %></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </form>
 
             <div id="samii-directives-panel" class="samii-directives-panel" style="display:none;">

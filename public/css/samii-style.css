@@ -3,7 +3,50 @@
    Fond "espace" bleu/violet + or, cartes flottantes discrètes, chat intégré.
    ========================================================================== */
 
-.samii-page { display: flex; flex-direction: column; }
+/* ── LA PAGE EST UNE APPLI, PAS UN DOCUMENT ──────────────────────────────
+   MESURÉ avant ce chantier, sur une conversation de trente messages :
+
+       le fil défile lui-même  : NON  (1813 px de contenu dans 1813 px)
+       composer dans la fenêtre : NON  (son bas à 2816 px, fenêtre : 860 px)
+
+   Rien ne bornait la hauteur : `html`, `body`, `.qg-shell` et `.qg-main`
+   grandissaient tous avec le contenu, donc `.samii-chat__feed` aussi, donc
+   `overflow-y: auto` ne s'activait jamais et `feed.scrollTop` ne déplaçait
+   rien. C'est la PAGE qui défilait, et le composer partait vers le haut
+   avec elle — « perdu au milieu du contenu », exactement.
+
+   On borne donc ici, et SEULEMENT ici. `.samii-page` n'existe que sur cette
+   page et `samii-style.css` n'est chargé que par elle : la coque `.qg-shell`
+   et `.qg-main`, partagées par tout le QG, ne sont pas touchées. Le
+   sélecteur double `.qg-main.samii-page` passe devant le `min-height: 100vh`
+   de `.qg-main` sans avoir besoin d'un !important.
+
+   `dvh` et pas `vh` : sur mobile, `100vh` compte la barre d'adresse du
+   navigateur comme si elle n'existait pas — le composer se retrouve
+   dessous, hors d'atteinte. `dvh` suit la fenêtre réellement visible, ce
+   qui règle du même coup le clavier qui monte. */
+.qg-main.samii-page {
+    display: flex; flex-direction: column;
+    height: 100dvh; min-height: 0; max-height: 100dvh;
+    overflow: hidden;
+}
+/* Repli pour les navigateurs sans `dvh` : mieux vaut `vh` que rien. */
+@supports not (height: 100dvh) {
+    .qg-main.samii-page { height: 100vh; max-height: 100vh; }
+}
+
+/* L'en-tête et le bandeau de titre ne défilent pas et ne s'écrasent pas —
+   c'est le fil qui absorbe toute la variation de hauteur. */
+.samii-page > .qg-topbar { flex-shrink: 0; }
+
+/* Le bandeau vit maintenant DANS le fil (voir views/samii.ejs) : il ne
+   dispute plus la hauteur à la conversation, il défile avec elle. Il ne doit
+   simplement pas s'écraser quand le fil se remplit. Les marges négatives
+   annulent le `padding` du fil, pour qu'il garde ses bords perdus. */
+.samii-chat__feed > .samii-space {
+    flex-shrink: 0;
+    margin: -4px -4px 8px; border-radius: 14px;
+}
 
 .samii-space {
     position: relative;
@@ -89,8 +132,15 @@
     transform: scale(1.08);
 }
 
+/* ── LA COLONNE DU CHAT ───────────────────────────────────────────────
+   Le fil ne défilait PAS : `.samii-chat__feed` n'avait aucun `overflow`,
+   donc c'est la page entière qui bougeait, et le composer partait vers le
+   haut avec elle. « Le composer se retrouve perdu au milieu du contenu » :
+   c'était ça, littéralement.
+   La colonne est donc bornée en hauteur, le fil défile à l'intérieur, et
+   le composer reste collé en bas. */
 .samii-chat {
-    flex: 1;
+    flex: 1; min-height: 0;
     display: flex; flex-direction: column;
     max-width: 680px; width: 100%; margin: 0 auto;
     padding: 30px 24px 32px;
@@ -118,8 +168,19 @@
 
 .samii-chat__feed {
     flex: 1; min-height: 220px;
+    /* `min-height: 0` en plus du `220px` : dans une colonne flex, un enfant
+       refuse de rétrécir sous son contenu sans ça, et `overflow-y` ne
+       s'active jamais. C'est la raison pour laquelle `feed.scrollTop` ne
+       faisait rien : il n'y avait pas de zone défilante à déplacer. */
+    max-height: 100%;
+    overflow-y: auto; overflow-x: hidden;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
     display: flex; flex-direction: column; gap: 12px;
-    padding: 4px;
+    padding: 4px 4px 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+    .samii-chat__feed { scroll-behavior: auto; }
 }
 
 .samii-msg--bot .samii-msg__bubble {
@@ -184,27 +245,166 @@
     font-size: .9rem; max-width: 80%;
 }
 
-.samii-chat__form {
-    display: flex; align-items: center; gap: 10px;
+/* ══ LE COMPOSER ══════════════════════════════════════════════════════
+   DEUX RANGÉES, ET C'EST LA CORRECTION ELLE-MÊME.
+
+   Il n'en avait qu'une, où huit contrôles se disputaient la largeur.
+   Mesuré à 390 px avant ce chantier : micro à x=402, envoyer à x=552 —
+   tous deux hors d'un écran de 390 px. On ne pouvait pas envoyer un
+   message depuis un téléphone.
+
+   Rangée 1 : micro · champ · envoyer. Les deux boutons ne rétrécissent
+   jamais (flex-shrink:0) et le champ absorbe toute la compression
+   (min-width:0). Cette rangée ne PEUT pas déborder, quelle que soit la
+   largeur — ce n'est pas un réglage, c'est la géométrie.
+
+   Rangée 2 : les outils. Ils peuvent se serrer, passer à la ligne, ou
+   disparaître derrière « ⋯ » sans que l'essentiel bouge. */
+.composer {
+    flex-shrink: 0;
+    display: flex; flex-direction: column; gap: 8px;
     background: var(--bg-panel); border: var(--border-gold);
-    border-radius: 16px; padding: 6px 6px 6px 20px;
+    border-radius: 18px; padding: 10px 12px;
     transition: border-color .3s ease, box-shadow .3s ease;
 }
-.samii-chat__form:focus-within { border-color: var(--cyan-tech); box-shadow: var(--cyan-glow); }
-.samii-chat__form input {
-    flex: 1; background: none; border: none; outline: none;
-    color: var(--text-main); font-family: var(--font-body); font-size: .92rem; padding: 12px 0;
+.composer:focus-within { border-color: var(--cyan-tech); box-shadow: var(--cyan-glow); }
+
+.composer__ligne {
+    display: flex; align-items: flex-end; gap: 10px;
 }
-.samii-chat__form input::placeholder { color: var(--text-muted); }
-.samii-chat__form button {
-    width: 40px; height: 40px; border-radius: 12px; border: none;
-    background: var(--cyan-tech); color: #001018;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; flex-shrink: 0;
-    transition: background .3s ease, transform .3s ease;
+
+/* Le champ. `min-width: 0` est ce qui autorise un enfant flex à passer
+   sous sa largeur de contenu : sans lui, un texte long pousse les voisins
+   dehors au lieu de se comprimer. C'est le mécanisme exact du bug. */
+.composer__champ {
+    flex: 1 1 auto; min-width: 0;
+    background: none; border: none; outline: none; resize: none;
+    color: var(--text-main); font-family: var(--font-body);
+    /* 16 px : en dessous, iOS zoome tout seul au premier appui et le
+       composer sort du cadre. Ce n'est pas une préférence de taille. */
+    font-size: 16px; line-height: 1.45;
+    padding: 10px 2px; margin: 0;
+    max-height: 132px; overflow-y: auto;
 }
-.samii-chat__form button:hover { background: #8fe6ff; transform: scale(1.05); }
-.samii-chat__form button i { width: 18px; height: 18px; }
+.composer__champ::placeholder { color: var(--text-muted); }
+
+/* Micro et envoyer : 44 px, la cible tactile en dessous de laquelle on
+   rate le bouton un doigt sur deux. */
+.composer__rond, .composer__envoi {
+    flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid transparent; cursor: pointer; position: relative;
+    transition: background .2s ease, color .2s ease, opacity .2s ease, transform .2s ease;
+}
+.composer__rond svg, .composer__envoi svg { width: 20px; height: 20px; }
+
+.composer__rond {
+    background: transparent; color: var(--text-muted);
+    border-color: rgba(255,255,255,0.12);
+}
+.composer__rond:hover:not(:disabled) { color: var(--cyan-tech); border-color: rgba(95,212,255,0.4); }
+.composer__rond:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── LE MICRO QUI ÉCOUTE SE VOIT DE LOIN ─────────────────────────────
+   Un enregistrement qu'on croit arrêté et qui tourne encore est le pire
+   défaut possible sur un micro. L'état est donc rouge, pulsé, et doublé
+   d'un point — la couleur seule ne suffit pas à qui la distingue mal. */
+.composer__rond.samii-mic-btn--active {
+    background: rgba(255,77,79,0.15); color: #ff6b6d; border-color: rgba(255,77,79,0.55);
+}
+.composer__pastille { display: none; }
+.composer__rond.samii-mic-btn--active .composer__pastille {
+    display: block; position: absolute; top: 5px; right: 5px;
+    width: 8px; height: 8px; border-radius: 50%; background: #ff4d4f;
+    animation: composer-pouls 1.1s ease-in-out infinite;
+}
+@keyframes composer-pouls { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+/* ── LE BOUTON ENVOYER DIT S'IL PEUT SERVIR ──────────────────────────
+   Il était TOUJOURS allumé, même sur un champ vide : on cliquait, rien
+   ne partait, et rien ne l'expliquait. Il est désormais éteint tant
+   qu'il n'y a rien à envoyer — et il l'est déjà dans le HTML, pour que
+   ce soit vrai avant même que le script tourne. */
+.composer__envoi {
+    background: var(--cyan-tech); color: #001018; border-color: transparent;
+}
+.composer__envoi:hover:not(:disabled) { background: #8fe6ff; transform: scale(1.06); }
+.composer__envoi:disabled {
+    background: rgba(255,255,255,0.07); color: var(--text-muted);
+    cursor: not-allowed; transform: none;
+}
+
+/* Pendant l'envoi : un anneau qui tourne à la place de la flèche. Sans
+   signe, on reclique — et on paie deux tours pour un message. */
+.composer__envoi-rond { display: none; }
+.composer__envoi--occupe .composer__envoi-fleche { display: none; }
+.composer__envoi--occupe .composer__envoi-rond {
+    display: block; width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid rgba(0,16,24,0.25); border-top-color: #001018;
+    animation: composer-tourne .7s linear infinite;
+}
+@keyframes composer-tourne { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .composer__envoi-rond, .composer__rond.samii-mic-btn--active .composer__pastille { animation: none; }
+}
+
+/* ── RANGÉE 2 ────────────────────────────────────────────────────────
+   `flex-wrap` : si un jour ça ne tient plus, ça passe à la ligne au lieu
+   de sortir de l'écran. La rangée 1 n'en a pas besoin — elle ne peut pas
+   déborder — et n'en veut pas : le champ doit rester entre les deux
+   boutons, jamais au-dessus. */
+.composer__outils {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+    padding-top: 2px; border-top: 1px solid rgba(255,255,255,0.06);
+}
+.composer__outil {
+    flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none; color: var(--text-muted);
+    cursor: pointer; transition: background .2s ease, color .2s ease;
+}
+.composer__outil svg { width: 18px; height: 18px; }
+.composer__outil:hover, .composer__outil[aria-expanded="true"] {
+    background: rgba(95,212,255,0.1); color: var(--cyan-tech);
+}
+.composer__pochette { position: relative; flex-shrink: 0; }
+/* Pousse « ⋯ » contre le bord droit, quoi qu'il y ait entre les deux. */
+.composer__pochette--fin { margin-inline-start: auto; }
+
+.composer__niveau {
+    flex: 0 1 auto; min-width: 0; max-width: 150px;
+    background: transparent; border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 999px; padding: 6px 10px;
+    color: var(--text-muted); font-family: var(--font-body); font-size: 12px;
+    cursor: pointer;
+}
+.composer__niveau:focus-visible { outline: 2px solid var(--cyan-tech); outline-offset: 2px; }
+
+.composer__sr {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* Le focus clavier doit se voir sur CHAQUE bouton du composer : on se
+   déplace à la tabulation, et un anneau invisible rend la barre
+   inutilisable sans souris. */
+/* ── OÙ L'ANNEAU DE FOCUS DOIT ÊTRE, ET OÙ IL NE DOIT PAS ────────────────
+   Sur les BOUTONS : indispensable. On se déplace à la tabulation, et sans
+   anneau la barre est inutilisable sans souris.
+
+   Sur le CHAMP : non. Chromium fait correspondre `:focus-visible` à un champ
+   texte même au simple clic — on obtenait donc un cadre gris de 2 px autour
+   du texte dès qu'on posait le curseur, alors que `.composer:focus-within`
+   illumine DÉJÀ le composer entier. Deux marques de focus pour un seul
+   focus, dont une qui ressemble à une bordure oubliée. Le contour du
+   composer suffit, et il se voit mieux. */
+.composer__rond:focus-visible, .composer__envoi:focus-visible,
+.composer__outil:focus-visible {
+    outline: 2px solid var(--cyan-tech); outline-offset: 2px;
+}
+.composer__champ:focus, .composer__champ:focus-visible { outline: none; }
 
 @media (max-width: 900px) {
     .samii-space { padding: 28px 20px 20px; }
@@ -222,17 +422,19 @@
         box-shadow: 0 12px 30px rgba(0,0,0,0.45);
     }
 
-    /* Sur mobile, 6 contrôles (pièce jointe, champ, langue du micro, micro,
-       résumé, envoyer) ne tiennent pas sur une largeur d'écran — ça poussait
-       le micro ET le bouton envoyer hors de l'écran visible (aucun moyen
-       d'envoyer un message). On garde l'essentiel visible et joignable
-       (pièce jointe, champ, micro, envoyer) ; la langue du micro retombe sur
-       le français par défaut, le résumé reste demandable directement en
-       tapant dans le chat. */
-    #samii-lang-select,
-    #samii-resume-btn {
-        display: none;
-    }
+    /* ── CE QUI ÉTAIT ICI, ET POURQUOI C'EST PARTI ───────────────────
+       Une règle masquait #samii-lang-select et #samii-resume-btn sur
+       mobile, avec ce commentaire : « 6 contrôles ne tiennent pas sur une
+       largeur d'écran — ça poussait le micro ET le bouton envoyer hors de
+       l'écran visible (aucun moyen d'envoyer un message) ».
+
+       Le diagnostic était juste. Le remède ne l'était pas : masquer des
+       identifiants un par un périme au prochain bouton ajouté. Trois
+       boutons ont été ajoutés depuis, et le bug est revenu — mesuré,
+       micro à x=402 et envoyer à x=552 sur un écran de 390 px.
+
+       La rangée 1 ne peut plus déborder par construction. Il n'y a donc
+       plus rien à masquer, et plus de liste à tenir à jour. */
 }
 .samii-mode-link {
     display: inline-flex; align-items: center; gap: 8px;
