@@ -351,7 +351,21 @@ try {
     // ── LE RIDEAU ────────────────────────────────────────────────────────
     verifier(connectee.includes('id="plus-loin"') && connectee.includes('id="rideau-plus"'),
         "le rideau « Aller plus loin » n'est pas rendu");
-    for (const route of ["/academy", "/metiers", "/connect/tools"]) {
+    // ── CE GARDE A CHANGÉ DE CIBLE, PAS D'INTENTION ──────────────────────
+    //
+    // Il exigeait « /metiers » dans le rideau. C'était juste tant que le
+    // rideau était la seule porte de ce service.
+    //
+    // Depuis, « Voir les métiers » mène au Hub — parce que quelqu'un qui
+    // clique là veut CHOISIR son métier et ouvrir son espace, pas lire une
+    // fiche. /metiers reste ce qu'il a toujours été : la porte Google, des
+    // pages de texte faites pour être indexées.
+    //
+    // Il n'est donc pas supprimé, il a déménagé : sa porte est maintenant
+    // DANS le Hub (« Lire les fiches métier »). L'intention du garde est
+    // inchangée — on change la visibilité d'un service, jamais son
+    // existence — et elle est vérifiée plus bas, sur le Hub lui-même.
+    for (const route of ["/academy", "/hub", "/connect/tools"]) {
         verifier(connectee.includes(`href="${route}"`),
             `« ${route} » n'est plus atteignable : on change la VISIBILITÉ des services, ` +
             "jamais leur existence");
@@ -624,6 +638,31 @@ try {
     verifier(/@media \(max-width: 560px\)[\s\S]{0,200}\.appel-espaces__nom\s*{\s*display:\s*none/.test(feuille),
         "le libellé ne s'efface plus sur écran étroit : mesuré, la barre du haut déborde alors "
         + "et « Mon QG » se retrouve coupé");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 8. LE CATALOGUE PUBLIC N'A PAS DISPARU, IL A DÉMÉNAGÉ
+// ══════════════════════════════════════════════════════════════════════════
+//
+// « Voir les métiers » menait à /metiers ; il mène au Hub. /metiers reste la
+// porte Google — et un service qu'on cesse de lier cesse d'exister pour un
+// moteur de recherche. Sa porte est maintenant dans le Hub.
+//
+// Ce garde est ici, dans la suite de l'accueil, parce que c'est ici que le
+// lien a été déplacé : c'est le même mouvement, il doit se vérifier d'un
+// seul endroit.
+{
+    const hub = fs.readFileSync(path.join(RACINE, "views/hub.ejs"), "utf8");
+    verifier(/href="\/metiers"/.test(hub),
+        "le Hub ne mène plus à /metiers : les fiches métier deviennent invisibles pour Google, "
+        + "alors qu'elles existent toujours");
+
+    // Et le Hub ne doit pas reconstruire sa propre liste de métiers.
+    verifier(!/const HUB_METIERS\s*=/.test(hub),
+        "le dictionnaire de métiers est revenu dans views/hub.ejs : douze entrées × quatre langues "
+        + "à tenir à jour à la main, à côté des 34 de services/metiers.js");
+    verifier(/window\.OG_METIERS/.test(hub),
+        "le Hub ne reçoit plus les métiers du serveur : sa grille viendrait d'ailleurs");
 }
 
 if (echecs.length) {

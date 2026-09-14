@@ -967,7 +967,20 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                     <a class="sortie" href="<%= loggedIn ? '/connect/tools' : '/register' %>">
                         <span class="sortie__pic">🔌</span><%= L("Connecter mes outils") %>
                     </a>
-                    <a class="sortie" href="/metiers">
+                    <%# ── « VOIR LES MÉTIERS » MÈNE AU HUB ────────────────────
+                        Elle pointait sur /metiers, qui est la porte GOOGLE : des
+                        pages de texte faites pour être indexées, sans recherche,
+                        sans création de QG. Elles restent en place — elles font
+                        leur travail de référencement et rien ne les remplace.
+
+                        Mais quelqu'un qui clique ici depuis le produit ne cherche
+                        pas une page à lire : il cherche à choisir son métier et à
+                        ouvrir son espace. C'est le Hub.
+
+                        Le Hub était fermé aux visiteurs (302 vers /login, mesuré).
+                        Sa consultation est désormais ouverte, ses actions restent
+                        protégées — voir routes/hub.js. %>
+                    <a class="sortie" href="/hub">
                         <span class="sortie__pic">🧭</span><%= L("Voir les métiers") %>
                     </a>
                     <a class="sortie" href="/academy">

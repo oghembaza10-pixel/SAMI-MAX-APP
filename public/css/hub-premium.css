@@ -715,3 +715,100 @@ body {
     color: var(--text-muted); font-size: .76rem; text-decoration: none;
 }
 .onboarding-chat-fallback:hover { color: var(--cyan-tech); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LA GRILLE DES MÉTIERS ET « CRÉER MON MÉTIER »
+   ══════════════════════════════════════════════════════════════════════════
+   Les cartes portaient une illustration Lucide en filigrane par métier
+   (`.metier-card__media` + `mood-*`). Douze métiers, douze humeurs écrites à
+   la main : impossible à tenir pour trente-quatre, et impossible pour le
+   trente-cinquième ajouté demain dans le registre.
+   L'icône du registre (un emoji, déjà là pour les 34) prend le relais. Elle
+   ne dépend d'aucun CDN — la leçon du composer du QG, où un script tiers qui
+   ne répond pas laissait huit boutons vides. */
+.metier-card__emoji {
+    font-size: 1.6rem; line-height: 1; flex: none;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .45));
+}
+.metier-card--creer { border-style: dashed; }
+
+/* Rien trouvé n'est pas une impasse : c'est le moment où « Créer mon métier »
+   sert, et il doit être là, pas trois écrans plus loin. */
+.metier-vide {
+    grid-column: 1 / -1;
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    padding: 28px 16px; text-align: center;
+}
+.metier-vide p { color: var(--text-muted, #8a8f9e); margin: 0; }
+
+/* ── LE QUESTIONNAIRE ─────────────────────────────────────────────────── */
+.creer-metier { position: fixed; inset: 0; z-index: 200; display: flex;
+    align-items: center; justify-content: center; padding: 16px; }
+.creer-metier[hidden] { display: none; }
+.creer-metier__voile { position: absolute; inset: 0; background: rgba(0, 0, 0, .72);
+    backdrop-filter: blur(3px); }
+.creer-metier__boite {
+    position: relative; width: 100%; max-width: 520px;
+    background: var(--bg-panel, #0a0d14);
+    border: 1px solid rgba(255, 255, 255, .12); border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .6);
+    display: flex; flex-direction: column; max-height: 88dvh; overflow: hidden;
+}
+.creer-metier__haut { display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; padding: 18px 20px 10px; }
+.creer-metier__eyebrow { margin: 0; font-family: var(--font-mono, monospace);
+    font-size: .68rem; letter-spacing: .14em; color: var(--cyan-tech, #5FD4FF); }
+.creer-metier__pas { margin: 4px 0 0; font-size: .76rem; color: var(--text-muted, #8a8f9e); }
+.creer-metier__fermer { width: 32px; height: 32px; flex: none; border-radius: 8px;
+    background: transparent; border: 1px solid rgba(255, 255, 255, .12);
+    color: var(--text-muted, #8a8f9e); cursor: pointer; }
+.creer-metier__jauge { height: 2px; background: rgba(255, 255, 255, .08); margin: 0 20px; }
+.creer-metier__jauge span { display: block; height: 100%; width: 0;
+    background: var(--cyan-tech, #5FD4FF); transition: width .3s ease; }
+.creer-metier__corps { padding: 18px 20px 22px; overflow-y: auto; }
+.creer-metier__question { margin: 0 0 6px; font-size: 1.12rem; font-weight: 600;
+    color: var(--text-main, #e8e6df); }
+.creer-metier__aide { margin: 0 0 14px; font-size: .84rem; line-height: 1.5;
+    color: var(--text-muted, #8a8f9e); }
+.creer-metier__champ {
+    width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 10px;
+    background: rgba(0, 0, 0, .35); border: 1px solid rgba(255, 255, 255, .14);
+    color: var(--text-main, #e8e6df);
+    /* 16 px : en dessous, iOS zoome au premier appui et sort la boîte du cadre. */
+    font-size: 16px; font-family: inherit; resize: vertical;
+}
+.creer-metier__champ:focus { outline: none; border-color: var(--cyan-tech, #5FD4FF); }
+.creer-metier__choix { display: flex; flex-wrap: wrap; gap: 8px; }
+.creer-metier__puce { padding: 9px 15px; border-radius: 999px;
+    background: transparent; border: 1px solid rgba(255, 255, 255, .14);
+    color: var(--text-muted, #8a8f9e); cursor: pointer; font-size: .88rem; }
+.creer-metier__puce.est-choisi { border-color: var(--cyan-tech, #5FD4FF);
+    color: var(--cyan-tech, #5FD4FF); background: rgba(95, 212, 255, .1); }
+.creer-metier__erreur { margin: 10px 0 0; font-size: .82rem; color: #ff6b6d; }
+.creer-metier__pieds { display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-top: 18px; }
+.creer-metier__retour { background: transparent; border: none; cursor: pointer;
+    color: var(--text-muted, #8a8f9e); font-size: .86rem; padding: 8px 4px; }
+.creer-metier__suivant {
+    padding: 11px 20px; border-radius: 999px; border: none; cursor: pointer;
+    background: var(--cyan-tech, #5FD4FF); color: #001018;
+    font-weight: 600; font-size: .9rem; text-decoration: none; display: inline-block;
+}
+.creer-metier__suivant:disabled { opacity: .6; cursor: progress; }
+.creer-metier__recap { list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: 9px; }
+.creer-metier__recap li { display: flex; gap: 12px; justify-content: space-between;
+    padding-bottom: 9px; border-bottom: 1px solid rgba(255, 255, 255, .07); }
+.creer-metier__recap b { color: var(--text-muted, #8a8f9e); font-weight: 500;
+    font-size: .8rem; flex: none; }
+.creer-metier__recap span { color: var(--text-main, #e8e6df); font-size: .86rem;
+    text-align: right; }
+.creer-metier__fin { text-align: center; padding: 18px 0 8px; }
+.creer-metier__bienvenue { margin: 0 0 8px; font-size: 1.35rem; font-weight: 600;
+    color: var(--text-main, #e8e6df); }
+
+@media (max-width: 560px) {
+    .creer-metier__boite { max-height: 92dvh; }
+    .creer-metier__recap li { flex-direction: column; gap: 2px; }
+    .creer-metier__recap span { text-align: start; }
+}

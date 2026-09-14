@@ -59,18 +59,29 @@
                                 <span data-i18n="hub.search.create.desc">Nouveau workspace pour votre activité</span>
                             </div>
                         </button>
-                        <button class="hero-search__option" data-action="invite">
-                            <i data-lucide="user-plus"></i>
+                        <%# « Inviter un collaborateur » a été RETIRÉ d'ici.
+                            Vérifié : aucune route d'invitation dans le dépôt. Il
+                            affichait « Bientôt disponible » — une promesse qu'on
+                            ne tient pas fait revenir vérifier, puis revenir encore.
+                            Il reviendra le jour où la fonction existera. %>
+                        <%# À sa place : le parcours pour qui ne trouve pas son
+                            métier. C'est la question qu'on se pose vraiment en
+                            arrivant ici. %>
+                        <button class="hero-search__option" data-creer-metier>
+                            <i data-lucide="sparkles"></i>
                             <div>
-                                <strong data-i18n="hub.search.invite.title">Inviter un collaborateur</strong>
-                                <span data-i18n="hub.search.comingSoon">Bientôt disponible</span>
+                                <strong data-i18n="hub.search.creerMetier.title">Créer mon métier</strong>
+                                <span data-i18n="hub.search.creerMetier.desc">Mon activité n'est pas dans la liste</span>
                             </div>
                         </button>
+                        <%# « Bientôt disponible » a été retiré d'ici : ce bouton
+                            fait maintenant quelque chose (voir public/js/hub.js).
+                            Une promesse qu'on ne tient pas fait revenir vérifier. %>
                         <button class="hero-search__option" data-action="find">
                             <i data-lucide="search"></i>
                             <div>
                                 <strong data-i18n="hub.search.find.title">Chercher un QG</strong>
-                                <span data-i18n="hub.search.comingSoon">Bientôt disponible</span>
+                                <span data-i18n="hub.search.find.desc">Retrouver un espace de travail</span>
                             </div>
                         </button>
                     </div>
@@ -89,6 +100,18 @@
         <section class="metier-grid" id="metier-grid">
             <!-- Rempli dynamiquement par hub.js -->
         </section>
+
+        <%# ── LE CATALOGUE PUBLIC GARDE SA PORTE ─────────────────────────
+            /metiers n'est pas supprimé : ce sont les fiches que Google lit, et
+            un service qu'on cesse de lier cesse d'exister pour un moteur de
+            recherche. Il n'est simplement plus le parcours PRODUIT — celui-ci
+            est la grille ci-dessus, qui lit le même registre.
+
+            Discret et en bas : quelqu'un qui est là pour ouvrir son QG a déjà
+            trouvé son métier au-dessus. %>
+        <p class="hub-fiches">
+            <a href="/metiers" data-i18n="hub.metiers.fiches">Lire les fiches métier</a>
+        </p>
 
         <!-- BANNIÈRE -->
         <section class="hub-banner" id="hub-banner">
@@ -119,6 +142,27 @@
 
     </main>
 
+</div>
+
+<%# ══ « CRÉER MON MÉTIER » ═══════════════════════════════════════════════
+    La coquille seulement : les étapes sont montées par public/js/hub.js, qui
+    a déjà les métiers et les pays dans `window.OG_METIERS` / `window.OG_PAYS`.
+    Les écrire ici en ferait une troisième copie. %>
+<div class="creer-metier" id="creer-metier" hidden role="dialog" aria-modal="true"
+     aria-labelledby="creer-metier-titre">
+    <div class="creer-metier__voile" data-fermer-creation></div>
+    <div class="creer-metier__boite">
+        <header class="creer-metier__haut">
+            <div>
+                <p class="creer-metier__eyebrow" id="creer-metier-titre">SAMII</p>
+                <p class="creer-metier__pas" id="creer-metier-pas"></p>
+            </div>
+            <button type="button" class="creer-metier__fermer" data-fermer-creation
+                    aria-label="Fermer">✕</button>
+        </header>
+        <div class="creer-metier__jauge"><span id="creer-metier-jauge"></span></div>
+        <div class="creer-metier__corps" id="creer-metier-corps"></div>
+    </div>
 </div>
 
 <!-- SAMII — sphère flottante -->
@@ -186,6 +230,25 @@
 <script>
     window.OG_WORKSPACES = <%- JSON.stringify(typeof workspaces !== "undefined" ? workspaces : []) %>;
     window.OG_WORKSPACE_ID = "<%= typeof workspaceId !== 'undefined' ? workspaceId : '' %>";
+    window.OG_CONNECTE = <%= typeof connecte !== "undefined" && connecte ? "true" : "false" %>;
+
+    // ══ LES MÉTIERS, DEPUIS LA SOURCE UNIQUE ═════════════════════════════
+    //
+    // Ils étaient écrits ICI, dans un dictionnaire `HUB_METIERS` de douze
+    // entrées répété en QUATRE langues. Quarante-huit chaînes à tenir à jour
+    // à la main, dans une vue — et quatre des douze (finance, technologie,
+    // agriculture, industrie) étaient des secteurs que services/metiers.js
+    // documente avoir retirés. Ils ont survécu des mois parce que personne
+    // ne relit un dictionnaire de gabarit.
+    //
+    // Ils viennent maintenant du registre, déjà traduits par le serveur (voir
+    // `metiersPourLAffichage` dans routes/hub.js). Ajouter un métier demain,
+    // c'est une ligne dans services/metiers.js — et il apparaît partout :
+    // ici, dans l'onboarding, dans l'agence, dans l'API.
+    window.OG_METIERS = <%- JSON.stringify(typeof metiersParGroupe !== "undefined" ? metiersParGroupe : []) %>;
+    // Les pays du questionnaire, depuis routes/workspace.js — la liste que la
+    // création VALIDE. Une seconde liste finirait par proposer un pays refusé.
+    window.OG_PAYS = <%- JSON.stringify(typeof pays !== "undefined" ? pays : []) %>;
 </script>
 
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -203,8 +266,7 @@
             'hub.hero.searchPlaceholder': 'Construisez votre prochain empire...',
             'hub.section.choose': 'Choisis ton métier',
             'hub.search.create.title': 'Créer mon QG', 'hub.search.create.desc': 'Nouveau workspace pour votre activité',
-            'hub.search.invite.title': 'Inviter un collaborateur', 'hub.search.find.title': 'Chercher un QG',
-            'hub.search.comingSoon': 'Bientôt disponible',
+            'hub.search.invite.title': 'Inviter un collaborateur', 'hub.search.find.title': 'Chercher un QG', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.metiers.fiches': 'Lire les fiches métier', 'hub.search.creerMetier.title': 'Créer mon métier', 'hub.search.creerMetier.desc': "Mon activité n'est pas dans la liste",
             'hub.banner.title': 'Construisez un empire mondial.', 'hub.banner.subtitle': 'Une seule plateforme. Des possibilités illimitées.',
             'hub.footer.quote': 'Chaque général commence soldat.', 'hub.footer.version': 'v1.0 · SOLDAT',
             'hub.status.operational': 'OPÉRATIONNEL',
@@ -213,8 +275,6 @@
             'hub.samii.inputPlaceholder': 'Parler à SAMII…',
             'hub.samii.openAria': 'Ouvrir SAMII', 'hub.samii.closeAria': 'Fermer',
             'hub.samii.dialogAria': 'Assistant SAMII', 'hub.samii.sendAria': 'Envoyer',
-            'hub.toast.inviteSoon': 'Inviter un collaborateur — bientôt disponible',
-            'hub.toast.searchSoon': 'Chercher un QG — bientôt disponible',
         },
         en: {
             'sidebar.hub': 'Home', 'sidebar.marketplace': 'Marketplace', 'sidebar.academy': 'Academy',
@@ -225,8 +285,7 @@
             'hub.hero.searchPlaceholder': 'Build your next empire...',
             'hub.section.choose': 'Choose your business',
             'hub.search.create.title': 'Create my HQ', 'hub.search.create.desc': 'New workspace for your business',
-            'hub.search.invite.title': 'Invite a collaborator', 'hub.search.find.title': 'Search for an HQ',
-            'hub.search.comingSoon': 'Coming soon',
+            'hub.search.invite.title': 'Invite a collaborator', 'hub.search.find.title': 'Search for an HQ', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.metiers.fiches': 'Read the business guides', 'hub.search.creerMetier.title': 'Create my business', 'hub.search.creerMetier.desc': "My activity isn't in the list",
             'hub.banner.title': 'Build a global empire.', 'hub.banner.subtitle': 'One platform. Unlimited possibilities.',
             'hub.footer.quote': 'Every general starts as a soldier.', 'hub.footer.version': 'v1.0 · SOLDIER',
             'hub.status.operational': 'OPERATIONAL',
@@ -235,8 +294,6 @@
             'hub.samii.inputPlaceholder': 'Talk to SAMII…',
             'hub.samii.openAria': 'Open SAMII', 'hub.samii.closeAria': 'Close',
             'hub.samii.dialogAria': 'SAMII Assistant', 'hub.samii.sendAria': 'Send',
-            'hub.toast.inviteSoon': 'Invite a collaborator — coming soon',
-            'hub.toast.searchSoon': 'Search for an HQ — coming soon',
         },
         ar: {
             'sidebar.hub': 'الرئيسية', 'sidebar.marketplace': 'Marketplace', 'sidebar.academy': 'الأكاديمية',
@@ -247,8 +304,7 @@
             'hub.hero.searchPlaceholder': 'ابنِ إمبراطوريتك القادمة...',
             'hub.section.choose': 'اختر مجالك',
             'hub.search.create.title': 'إنشاء مقري', 'hub.search.create.desc': 'مساحة عمل جديدة لنشاطك',
-            'hub.search.invite.title': 'دعوة متعاون', 'hub.search.find.title': 'البحث عن مقر',
-            'hub.search.comingSoon': 'قريبًا',
+            'hub.search.invite.title': 'دعوة متعاون', 'hub.search.find.title': 'البحث عن مقر', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.metiers.fiches': 'اقرأ بطاقات المهن', 'hub.search.creerMetier.title': 'أنشئ مهنتي', 'hub.search.creerMetier.desc': 'نشاطي ليس في القائمة',
             'hub.banner.title': 'ابنِ إمبراطورية عالمية.', 'hub.banner.subtitle': 'منصة واحدة. إمكانيات لا محدودة.',
             'hub.footer.quote': 'كل جنرال يبدأ جنديًا.', 'hub.footer.version': 'الإصدار 1.0 · جندي',
             'hub.status.operational': 'تعمل الآن',
@@ -257,8 +313,6 @@
             'hub.samii.inputPlaceholder': 'تحدث إلى SAMII…',
             'hub.samii.openAria': 'فتح SAMII', 'hub.samii.closeAria': 'إغلاق',
             'hub.samii.dialogAria': 'مساعد SAMII', 'hub.samii.sendAria': 'إرسال',
-            'hub.toast.inviteSoon': 'دعوة متعاون — قريبًا',
-            'hub.toast.searchSoon': 'البحث عن مقر — قريبًا',
         },
         zh: {
             'sidebar.hub': '首页', 'sidebar.marketplace': 'Marketplace', 'sidebar.academy': '学院',
@@ -269,8 +323,7 @@
             'hub.hero.searchPlaceholder': '打造你的下一个帝国...',
             'hub.section.choose': '选择你的行业',
             'hub.search.create.title': '创建我的总部', 'hub.search.create.desc': '为您的业务创建新工作区',
-            'hub.search.invite.title': '邀请协作者', 'hub.search.find.title': '搜索总部',
-            'hub.search.comingSoon': '即将推出',
+            'hub.search.invite.title': '邀请协作者', 'hub.search.find.title': '搜索总部', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.metiers.fiches': '阅读行业指南', 'hub.search.creerMetier.title': '创建我的行业', 'hub.search.creerMetier.desc': '列表中没有我的行业',
             'hub.banner.title': '打造一个全球帝国。', 'hub.banner.subtitle': '一个平台，无限可能。',
             'hub.footer.quote': '每位将军都始于士兵。', 'hub.footer.version': 'v1.0 · 士兵',
             'hub.status.operational': '运行中',
@@ -279,83 +332,13 @@
             'hub.samii.inputPlaceholder': '与 SAMII 对话…',
             'hub.samii.openAria': '打开 SAMII', 'hub.samii.closeAria': '关闭',
             'hub.samii.dialogAria': 'SAMII 助手', 'hub.samii.sendAria': '发送',
-            'hub.toast.inviteSoon': '邀请协作者 — 即将推出',
-            'hub.toast.searchSoon': '搜索总部 — 即将推出',
         },
     };
 
-    // Dictionnaire des métiers du Hub (utilisé par /js/hub.js pour construire
-    // dynamiquement la grille de cartes — pont de compatibilité "Language" ci-dessous).
-    const HUB_METIERS = {
-        fr: {
-            metiers: {
-                ecommerce: { label: 'E-commerce', desc: 'Commerce en ligne' },
-                restaurant: { label: 'Restaurant', desc: 'Restauration & food' },
-                immobilier: { label: 'Immobilier', desc: 'Biens & propriétés' },
-                livreur: { label: 'Livreur', desc: 'Livraison & logistique' },
-                sante: { label: 'Santé', desc: 'Santé & bien-être' },
-                finance: { label: 'Finance', desc: 'Finance & invest.' },
-                education: { label: 'Éducation', desc: 'Formation & savoir' },
-                technologie: { label: 'Technologie', desc: 'Tech & innovation' },
-                agriculture: { label: 'Agriculture', desc: 'Culture & agriculture' },
-                industrie: { label: 'Industrie', desc: 'Production & usine' },
-                services: { label: 'Services', desc: 'Services pro' },
-                tourisme: { label: 'Tourisme', desc: 'Voyage & tourisme' },
-            },
-            metierMore: 'Plus de métiers',
-        },
-        en: {
-            metiers: {
-                ecommerce: { label: 'E-commerce', desc: 'Online retail' },
-                restaurant: { label: 'Restaurant', desc: 'Food & dining' },
-                immobilier: { label: 'Real Estate', desc: 'Properties & assets' },
-                livreur: { label: 'Delivery', desc: 'Shipping & logistics' },
-                sante: { label: 'Health', desc: 'Health & wellness' },
-                finance: { label: 'Finance', desc: 'Finance & investing' },
-                education: { label: 'Education', desc: 'Training & knowledge' },
-                technologie: { label: 'Technology', desc: 'Tech & innovation' },
-                agriculture: { label: 'Agriculture', desc: 'Farming & crops' },
-                industrie: { label: 'Industry', desc: 'Production & factory' },
-                services: { label: 'Services', desc: 'Professional services' },
-                tourisme: { label: 'Tourism', desc: 'Travel & tourism' },
-            },
-            metierMore: 'More businesses',
-        },
-        ar: {
-            metiers: {
-                ecommerce: { label: 'التجارة الإلكترونية', desc: 'التجارة عبر الإنترنت' },
-                restaurant: { label: 'مطعم', desc: 'المطاعم والطعام' },
-                immobilier: { label: 'عقارات', desc: 'الممتلكات والأصول' },
-                livreur: { label: 'توصيل', desc: 'الشحن واللوجستيات' },
-                sante: { label: 'الصحة', desc: 'الصحة والعافية' },
-                finance: { label: 'المالية', desc: 'المالية والاستثمار' },
-                education: { label: 'التعليم', desc: 'التدريب والمعرفة' },
-                technologie: { label: 'التكنولوجيا', desc: 'التقنية والابتكار' },
-                agriculture: { label: 'الزراعة', desc: 'الزراعة والمحاصيل' },
-                industrie: { label: 'الصناعة', desc: 'الإنتاج والمصانع' },
-                services: { label: 'الخدمات', desc: 'الخدمات المهنية' },
-                tourisme: { label: 'السياحة', desc: 'السفر والسياحة' },
-            },
-            metierMore: 'المزيد من المجالات',
-        },
-        zh: {
-            metiers: {
-                ecommerce: { label: '电子商务', desc: '在线零售' },
-                restaurant: { label: '餐厅', desc: '餐饮' },
-                immobilier: { label: '房地产', desc: '物业资产' },
-                livreur: { label: '快递', desc: '物流配送' },
-                sante: { label: '健康', desc: '健康与养生' },
-                finance: { label: '金融', desc: '金融与投资' },
-                education: { label: '教育', desc: '培训与知识' },
-                technologie: { label: '科技', desc: '技术与创新' },
-                agriculture: { label: '农业', desc: '农作物种植' },
-                industrie: { label: '工业', desc: '生产制造' },
-                services: { label: '服务', desc: '专业服务' },
-                tourisme: { label: '旅游', desc: '旅行观光' },
-            },
-            metierMore: '更多行业',
-        },
-    };
+    // Le dictionnaire `HUB_METIERS` vivait ici : douze métiers × quatre
+    // langues, écrits à la main. Il est parti — les métiers arrivent
+    // désormais dans `window.OG_METIERS`, depuis services/metiers.js.
+    // Voir le bloc « Données serveur → frontend » plus haut.
 
     let currentLang = localStorage.getItem('samii_lang') || 'fr';
     function t(key) { return (I18N[currentLang] && I18N[currentLang][key]) || I18N.fr[key] || key; }
@@ -366,7 +349,9 @@
     // sur le nouveau moteur I18N ci-dessus).
     const languageListeners = [];
     window.Language = {
-        getDict: () => ({ hub: HUB_METIERS[currentLang] || HUB_METIERS.fr }),
+        // `getDict` ne sert plus aux métiers : ils ne sont plus dans ce
+        // fichier. Il reste pour le reste de l'interface, qui l'utilise.
+        getDict: () => ({}),
         onChange: (cb) => { languageListeners.push(cb); },
         getLang: () => currentLang,
     };

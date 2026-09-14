@@ -11,6 +11,9 @@ const router = express.Router();
 
 const workspaceService = require("../services/workspaceService");
 const communautes = require("../config/communautes");
+// LA SOURCE UNIQUE DES MÉTIERS. Elle était déjà consommée par l'onboarding,
+// l'agence et l'API ; le Hub est le dernier à la rejoindre.
+const metiers = require("../services/metiers");
 
 // ──────────────────────────────────────────────────────
 // Constantes Hub
@@ -67,50 +70,90 @@ function requireAuth(req, res, next) {
 // ──────────────────────────────────────────────────────
 // GET /hub
 // ──────────────────────────────────────────────────────
-router.get("/", requireAuth, async (req, res) => {
-    try {
-        // ✅ Un compte Client n'a rien à faire sur le Hub marchand — redirection directe
-        if (req.session?.typeCompte === "client") {
-            return res.redirect(communautes.accueilClient(res.locals.COM));
-        }
+// ── CONSULTER LE HUB ≠ AGIR DANS LE HUB ─────────────────────────────────
+//
+// `requireAuth` couvrait toute la page. MESURÉ : un visiteur recevait 302
+// vers /login. Or la grille des métiers ne lit AUCUNE donnée de compte —
+// elle vient du registre, la même pour tout le monde. La seule chose qui
+// demandait une session ici, c'est la liste des QG du visiteur.
+//
+// On sépare donc ce qui était confondu :
+//
+//     CONSULTER les métiers   → rien de personnel   → ouvert
+//     LISTER ses QG           → getByOwner(email)   → vide sans session
+//     SÉLECTIONNER un QG      → POST, requireAuth   → inchangé
+//     CRÉER un QG             → POST, requireAuth   → inchangé
+//
+// Ce n'est pas un affaiblissement : aucune donnée qui était protégée ne
+// devient visible. Un visiteur voit la grille et rien d'autre — `workspaces`
+// reste un tableau vide, et les deux POST gardent leur garde ET leur
+// contrôle de propriété (`belongsToOwner`, 403).
+//
+// Ça permet à quelqu'un qui n'a pas de compte de découvrir les métiers AVANT
+// qu'on lui demande d'en créer un, ce qui est l'ordre naturel.
+function metiersPourLAffichage(L) {
+    // Le registre porte les IDENTITÉS (id, groupe, icône, parcours) ; il est
+    // en français. `L` porte les TRADUCTIONS. On les marie ici plutôt que
+    // d'ajouter des langues au registre : deux sources, deux rôles, aucune
+    // taxonomie parallèle.
+    const traduire = typeof L === "function" ? L : (t) => t;
+    return metiers.parGroupe().map((g) => ({
+        nom: traduire(g.nom),
+        metiers: g.metiers.map((m) => ({
+            id: m.id,
+            label: traduire(m.label),
+            groupe: traduire(g.nom),
+            icone: m.icone,
+        })),
+    }));
+}
 
-        const email = req.session?.email || "";
-
-        const workspaces = email
-            ? await workspaceService.getByOwner(email)
-            : [];
-
-
-        res.render("hub", {
-            workspaces,
-            workspaceId: req.session?.workspaceId || "",
-            lastWorkspace: req.session?.lastWorkspace || "",
-            hasWorkspace: workspaces.length > 0,
-
-            // `metiers` n'est plus passée : la vue ne l'a jamais lue (voir en-tête).
-            actions: HUB_ACTIONS,
-
-            modules: [],
-            error: null,
-        });
-
-    } catch (err) {
-
-        console.error("❌ GET /hub :", err.message);
-
-        res.status(500).render("hub", {
-            workspaces: [],
-            workspaceId: "",
-            lastWorkspace: "",
-            hasWorkspace: false,
-
-            // `metiers` n'est plus passée : la vue ne l'a jamais lue (voir en-tête).
-            actions: HUB_ACTIONS,
-
-            modules: [],
-            error: "Impossible de charger vos QG.",
-        });
+router.get("/", async (req, res) => {
+    // Un compte Client n'a rien à faire sur le Hub marchand. La règle ne
+    // s'applique qu'à quelqu'un de CONNECTÉ : un visiteur n'a pas de type.
+    if (req.session?.loggedIn && req.session?.typeCompte === "client") {
+        return res.redirect(communautes.accueilClient(res.locals.COM));
     }
+
+    const email = req.session?.loggedIn ? (req.session.email || "") : "";
+    let workspaces = [];
+    let error = null;
+
+    try {
+        workspaces = email ? await workspaceService.getByOwner(email) : [];
+    } catch (err) {
+        // La liste des QG est illisible : on le dit, mais on rend quand même
+        // la page. Les métiers ne dépendent pas de la base — les cacher pour
+        // une panne qui ne les concerne pas priverait un visiteur de la seule
+        // chose qu'il venait voir.
+        console.error("❌ GET /hub (workspaces) :", err.message);
+        error = "Impossible de charger vos QG.";
+    }
+
+    res.render("hub", {
+        workspaces,
+        workspaceId: req.session?.workspaceId || "",
+        lastWorkspace: req.session?.lastWorkspace || "",
+        hasWorkspace: workspaces.length > 0,
+        connecte: !!req.session?.loggedIn,
+
+        // ── LES MÉTIERS VIENNENT DU REGISTRE, PLUS DE LA VUE ────────────
+        //
+        // `views/hub.ejs` en portait douze, écrits en dur, répétés en QUATRE
+        // langues — et quatre d'entre eux (finance, technologie, agriculture,
+        // industrie) étaient ceux que services/metiers.js documente avoir
+        // retirés comme ne correspondant pas au marché visé. Ils survivaient
+        // là parce que personne ne relit un dictionnaire de vue.
+        metiersParGroupe: metiersPourLAffichage(res.locals.L),
+        // Les pays du questionnaire viennent de routes/workspace.js, là où
+        // la création les valide déjà. Deux listes de pays finiraient par
+        // proposer un pays que la création refuse.
+        pays: Object.entries(require("./workspace").PAYS_DEVISE)
+            .map(([code, p]) => ({ code, label: p.label, devise: p.devise })),
+        actions: HUB_ACTIONS,
+        modules: [],
+        error,
+    });
 });
 
 // ──────────────────────────────────────────────────────

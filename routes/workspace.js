@@ -460,3 +460,10 @@ router.post("/onboarding-chat", requireAuth, async (req, res) => {
 });
 
 module.exports = router;
+// ── LES PAYS SORTENT D'ICI, ILS NE SE RECOPIENT PAS ─────────────────────
+//
+// Le questionnaire « Créer mon métier » du Hub a besoin de la même liste,
+// avec les mêmes devises. La recopier en ferait une seconde vérité — et
+// c'est précisément la duplication qu'on passe ce chantier à supprimer
+// pour les métiers. Un pays ajouté ici apparaît partout.
+module.exports.PAYS_DEVISE = PAYS_DEVISE;
