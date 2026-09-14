@@ -508,6 +508,128 @@ const ECHEC = {
 // chantier interdit d'y toucher. Il DÉCLARE les deux, pour qu'une simulation
 // dise toujours sur laquelle elle s'appuie — et un test vérifie que cette
 // déclaration suit le code, pas l'inverse.
+// ══════════════════════════════════════════════════════════════════════════
+// 11. LES CATÉGORIES D'USAGE — CE QUE LE CLIENT COMPREND
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ ON NE FACTURE PAS « UN NOMBRE D'APPELS GEMINI ».
+//
+// Personne n'achète des appels d'API. Les gens achètent « envoyer une
+// facture », « préparer une publication ». La grille doit donc être lisible
+// dans CES mots-là — mais adossée à ce que chaque chose coûte vraiment.
+//
+// `appels` est MESURÉ, en HTTP réel, lors des chantiers précédents. C'est la
+// seule colonne qui ne soit pas une estimation : les dollars dépendent d'un
+// ratio octets/token, les appels ont été comptés un par un.
+//
+// `credits` est une DÉCISION, pas un calcul. Elle vit dans
+// `config/credits.js`, qui reste la liste de prix faisant foi. Ce qui est
+// écrit ici est le prix RECOMMANDÉ par le modèle de coût ; un test vérifie
+// que la décision et la recommandation ne divergent pas silencieusement.
+const CATEGORIES = {
+    A_conversation: {
+        libelle: "Conversation avec un client",
+        exemple: "un client écrit à la boutique sur WhatsApp ou Telegram",
+        appels: 1, creditsRecommandes: 0,
+        // Gratuit, et c'est un choix commercial assumé : c'est le canal
+        // d'acquisition du marchand. Il ne paie que les ACTES que la
+        // conversation déclenche. Le coût est réel et absorbé.
+        pourquoi: "canal d'acquisition du marchand — il paie les actes, pas les mots",
+    },
+    B_qg: {
+        libelle: "Message dans le QG",
+        exemple: "le marchand parle à SAMII pour lui-même",
+        appels: 2, creditsRecommandes: 3,
+        pourquoi: "deux appels mesurés par message ; à 1 crédit il était vendu à perte dès 2027",
+    },
+    C_acte_simple: {
+        libelle: "Acte simple",
+        exemple: "enregistrer une commande, poser un rendez-vous, envoyer un e-mail",
+        appels: 3, creditsRecommandes: 5,
+        actes: ["passer_commande", "prendre_rendez_vous", "envoyer_email", "creer_evenement_agenda"],
+        pourquoi: "le prix ne bouge pas — c'est le geste le plus fréquent du produit",
+    },
+    D_acte_outil: {
+        libelle: "Acte outillé",
+        exemple: "envoyer une facture, créer un rapport",
+        appels: 4, creditsRecommandes: 6,
+        actes: ["envoyer_facture", "creer_rapport_sheets"],
+        pourquoi: "un appel de plus qu'un acte simple, mesuré",
+    },
+    E_acte_complexe: {
+        libelle: "Acte complexe",
+        exemple: "exécuter un programme",
+        appels: 4, creditsRecommandes: 7,
+        actes: ["executer_code"],
+        pourquoi: "même nombre d'appels qu'un acte outillé, plus le bac d'exécution",
+    },
+    F_chaine: {
+        libelle: "Chaîne d'agents / mission",
+        exemple: "préparer une publication, construire une stratégie",
+        appels: 7, creditsRecommandes: 11,
+        actes: ["preparer_publication", "preparer_strategie"],
+        pourquoi: "sept appels mesurés ; au prix d'un acte simple, c'était vendu à perte dès 2027",
+    },
+    G_recherche: {
+        libelle: "Recherche web",
+        exemple: "trouver des prospects",
+        appels: 3, horsTokensUSD: 0.014, creditsRecommandes: 8,
+        actes: ["rechercher_prospects"],
+        pourquoi: "porte en plus le grounding, facturé à la requête et non au token",
+    },
+    H_piece_jointe: {
+        libelle: "Image ou document",
+        exemple: "SAMII lit une photo ou un PDF",
+        appels: 2, creditsRecommandes: 4,
+        pourquoi: "deux appels, plus les octets de la pièce ; aucun outil sur ce tour par construction",
+    },
+    I_agent: {
+        libelle: "Étape d'agent",
+        exemple: "un maillon d'une mission longue",
+        appels: 3, creditsRecommandes: 5,
+        pourquoi: "facturé à l'étape, jamais au lancement : une mission qui échoue ne coûte pas tout",
+    },
+};
+
+function categorieDeLActe(nom) {
+    for (const [id, c] of Object.entries(CATEGORIES)) {
+        if ((c.actes || []).includes(nom)) return id;
+    }
+    return null;
+}
+
+// Ce qu'une catégorie coûte, au tarif d'aujourd'hui ou à celui de 2027.
+// ESTIMATION : le nombre d'appels est mesuré, les tokens par appel ne le
+// sont pas (aucune clé Gemini dans l'environnement de développement).
+const TOKENS_PAR_APPEL_ESTIMES = { entree: 4800, sortie: 180, reflexion: 120 };
+
+function coutCategorie(id, { apres2026 = false, modele = MODELE_PAR_DEFAUT } = {}) {
+    const c = CATEGORIES[id];
+    const base = TARIFS[modele];
+    if (!c || !base) return null;
+    const t = apres2026 ? base.apres2026 : base;
+    const A = TOKENS_PAR_APPEL_ESTIMES;
+    const parAppel = (A.entree / 1e6) * t.entree
+        + ((A.sortie + A.reflexion) / 1e6) * (t.sortie);
+    return {
+        usd: c.appels * parAppel + (c.horsTokensUSD || 0),
+        appels: c.appels,
+        estimation: true,
+        appelsMesures: true,
+    };
+}
+
+// La marge d'une catégorie, au prix décidé. Rend `null` plutôt qu'un nombre
+// quand le prix est nul : une marge sur un prix nul n'a pas de sens, et
+// zéro pour cent serait une réponse fausse à une question mal posée.
+function margeCategorie(id, creditsDecides, { apres2026 = false } = {}) {
+    const k = coutCategorie(id, { apres2026 });
+    if (!k) return null;
+    const prix = usdPourCredits(creditsDecides);
+    if (prix <= 0) return null;
+    return { prix, cout: k.usd, marge: prix - k.usd, taux: (prix - k.usd) / prix };
+}
+
 const GRATUIT = {
     messagesCible: 20, heuresCible: 5,      // ce qui est annoncé
     messagesCode: 30, heuresCode: 7,        // ce que le code applique
@@ -519,6 +641,7 @@ module.exports = {
     TARIFS, TARIFS_RELAIS, HORS_TOKENS, MODELE_PAR_DEFAUT,
     INFRASTRUCTURE, MARGE, CREDIT,
     COEFFICIENTS_NIVEAU, CLASSES_ACTION, AUTO, ECHEC, GRATUIT,
+    CATEGORIES, TOKENS_PAR_APPEL_ESTIMES, categorieDeLActe, coutCategorie, margeCategorie,
     tarifDe, coutAppel, coutAction, coutTechnique, seuilRentabiliteCache,
     prixClient, creditsPour, usdPourCredits, classeDeLActe,
 };

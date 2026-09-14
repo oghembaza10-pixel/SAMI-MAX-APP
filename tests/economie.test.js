@@ -559,11 +559,25 @@ const proche = (a, b, tol = 1e-9) => Math.abs(a - b) < tol;
     verifier(!/economie|compteurIA/.test(sansCommentaires("services/portefeuille.js")),
         "le portefeuille lit l'instrumentation économique");
 
-    // Les prix du produit n'ont pas bougé.
-    verifier(CREDITS.PRIX_MESSAGE_USD === 0.01,
-        `PRIX_MESSAGE_USD vaut ${CREDITS.PRIX_MESSAGE_USD} au lieu de 0.01 : un prix a été appliqué`);
-    verifier(CREDITS.prixActe("preparer_publication") === CREDITS.prixActe("passer_commande"),
-        "les prix des actes ont été différenciés alors que le rapport n'est pas validé");
+    // ── CE QUE CETTE GARDE PROTÈGE A CHANGÉ, ET C'EST DÉLIBÉRÉ ───────────
+    //
+    // Elle exigeait `PRIX_MESSAGE_USD === 0.01` et « tous les actes au même
+    // prix » : c'était la promesse du chantier de MESURE, où rien ne devait
+    // être appliqué. La grille a depuis été décidée et appliquée.
+    //
+    // La promesse n'est donc plus « rien ne bouge », mais « ce qui bouge
+    // reste adossé au modèle de coût ». Ce lien-là est vérifié en entier par
+    // `tests/grille.test.js` — marges plancher ET plafond, ordre des prix,
+    // cohérence des recharges.
+    //
+    // Ce qui reste ici, c'est ce que cette suite-ci doit garder : la
+    // FRONTIÈRE. La facturation ne lit pas la table économique, donc les
+    // prix du produit ne peuvent pas changer tout seuls le jour où Google
+    // bouge les siens. Les trois vérifications ci-dessus le disent déjà ;
+    // celle-ci empêche qu'on les contourne par le compteur.
+    verifier(!/require\(["'].*compteurIA/.test(sansCommentaires("config/credits.js")),
+        "config/credits.js lit le compteur : un prix de vente dépendrait de ce qu'un tour a " +
+        "consommé, et deux clients paieraient différemment le même geste");
 
     // Et l'instrument ne touche jamais au portefeuille.
     verifier(!/portefeuille|consommer|deposer/.test(sansCommentaires("services/compteurIA.js")),

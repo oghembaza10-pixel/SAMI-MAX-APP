@@ -62,10 +62,49 @@
 const DEVISE_COMPTE = "USD";
 
 // Un message à SAMII. Le même prix pour tout le monde, partout.
-const PRIX_MESSAGE_USD = 0.01;
+// ── LE PRIX D'UN MESSAGE DANS LE QG ──────────────────────────────────────
+//
+// 0,01 $ → 0,03 $, et c'est la seule hausse que ce chantier applique au
+// geste quotidien.
+//
+// MESURÉ en HTTP réel : un message du QG déclenche DEUX appels Gemini, pas
+// un. Le second est l'extraction de mémoire, que personne n'a demandée et
+// que personne ne payait. À 0,01 $, le message était vendu à perte dès que
+// Google double ses tarifs au 01/01/2027 — coût estimé 0,019 $ pour 0,01 $
+// encaissé.
+//
+// 3 crédits laissent 69 % de marge aujourd'hui et 37 % après le doublement.
+// La grille est dimensionnée sur 2027 EXPRÈS : annoncer une hausse en
+// janvier à des marchands qui viennent de s'habituer est le pire moment
+// possible pour en annoncer une.
+const PRIX_MESSAGE_USD = 0.03;
 
 // Un acte : quelque chose qui existe maintenant et n'existait pas avant.
-const PRIX_ACTE_USD = 0.05;
+// ── LES ACTES NE COÛTENT PLUS TOUS LE MÊME PRIX ──────────────────────────
+//
+// ⚠️ C'ÉTAIT LE DÉFAUT ÉCONOMIQUE CENTRAL DU PRODUIT.
+//
+// Dix actes, un seul prix — alors que leur consommation MESURÉE va de trois
+// appels Gemini à sept. Une `preparer_publication` (7 appels) était vendue
+// au prix d'un `passer_commande` (3 appels), donc à perte dès 2027.
+//
+// Les cinq prix ci-dessous suivent les catégories de `config/economie.js`,
+// elles-mêmes adossées aux appels comptés un par un en HTTP réel.
+//
+// CE QUI NE BOUGE PAS : l'acte simple. C'est le geste le plus fréquent du
+// produit — enregistrer une commande, poser un rendez-vous — et il reste à
+// 0,05 $. Un marchand qui vend et prend des rendez-vous ne voit aucune
+// hausse sur ce qu'il fait toute la journée.
+const PRIX_ACTE_SIMPLE_USD = 0.05;      //  5 crédits — 3 appels mesurés
+const PRIX_ACTE_OUTIL_USD = 0.06;       //  6 crédits — 4 appels mesurés
+const PRIX_ACTE_COMPLEXE_USD = 0.07;    //  7 crédits — 4 appels + bac d'exécution
+const PRIX_RECHERCHE_USD = 0.08;        //  8 crédits — 3 appels + grounding à la requête
+const PRIX_CHAINE_USD = 0.11;           // 11 crédits — 7 appels mesurés
+
+// Conservé : d'autres fichiers du projet le lisent encore, et le retirer
+// dépasserait le périmètre de ce chantier. Il vaut désormais le prix de
+// l'acte simple, qui est le cas le plus courant.
+const PRIX_ACTE_USD = PRIX_ACTE_SIMPLE_USD;
 
 // ── LE TARIF DES ACTES ────────────────────────────────────────────────────
 //
@@ -78,13 +117,13 @@ const PRIX_ACTE_USD = 0.05;
 // deux listes couvrent exactement les outils existants : un outil ajouté sans
 // décision de prix fait échouer la suite, et c'est le but.
 const ACTES = {
-    passer_commande:        { prix: PRIX_ACTE_USD, libelle: "commande enregistrée" },
-    prendre_rendez_vous:    { prix: PRIX_ACTE_USD, libelle: "rendez-vous pris" },
-    envoyer_facture:        { prix: PRIX_ACTE_USD, libelle: "facture envoyée" },
-    envoyer_email:          { prix: PRIX_ACTE_USD, libelle: "e-mail envoyé" },
-    creer_evenement_agenda: { prix: PRIX_ACTE_USD, libelle: "événement d'agenda" },
-    creer_rapport_sheets:   { prix: PRIX_ACTE_USD, libelle: "rapport créé" },
-    rechercher_prospects:   { prix: PRIX_ACTE_USD, libelle: "recherche de prospects" },
+    passer_commande:        { prix: PRIX_ACTE_SIMPLE_USD, libelle: "commande enregistrée" },
+    prendre_rendez_vous:    { prix: PRIX_ACTE_SIMPLE_USD, libelle: "rendez-vous pris" },
+    envoyer_facture:        { prix: PRIX_ACTE_OUTIL_USD, libelle: "facture envoyée" },
+    envoyer_email:          { prix: PRIX_ACTE_SIMPLE_USD, libelle: "e-mail envoyé" },
+    creer_evenement_agenda: { prix: PRIX_ACTE_SIMPLE_USD, libelle: "événement d'agenda" },
+    creer_rapport_sheets:   { prix: PRIX_ACTE_OUTIL_USD, libelle: "rapport créé" },
+    rechercher_prospects:   { prix: PRIX_RECHERCHE_USD, libelle: "recherche de prospects" },
 
     // ── UN ACTE QUI N'EST PAS UN GESTE, MAIS UNE CHAÎNE ──────────────────
     //
@@ -104,7 +143,7 @@ const ACTES = {
     // Ce qu'il faudra trancher : un prix par variante produite, ou un prix
     // de mission plus élevé. Tant que ce n'est pas fait, plus un marchand
     // vise de plateformes, moins la marge est bonne.
-    preparer_publication:   { prix: PRIX_ACTE_USD, libelle: "publication préparée" },
+    preparer_publication:   { prix: PRIX_CHAINE_USD, libelle: "publication préparée" },
 
     // ── L'EXÉCUTION DE CODE ───────────────────────────────────────────────
     //
@@ -118,7 +157,7 @@ const ACTES = {
     // On le pose au tarif ordinaire aujourd'hui pour la même raison que
     // l'autre : un acte SANS prix est refusé par la suite crédits, et
     // improviser un chiffre serait pire que de reporter la question.
-    executer_code:          { prix: PRIX_ACTE_USD, libelle: "programme exécuté" },
+    executer_code:          { prix: PRIX_ACTE_COMPLEXE_USD, libelle: "programme exécuté" },
 
     // ── UNE MISSION LONGUE NE SE FACTURE PAS PARCE QU'ELLE TOURNE ────────
     //
@@ -132,7 +171,7 @@ const ACTES = {
     // Ce prix ne se déclenche donc QUE si la mission arrive à `terminee`,
     // c'est-à-dire toutes les étapes passées ET le résultat vérifié. Une
     // mission échouée, annulée ou expirée ne génère aucune ligne.
-    preparer_strategie:     { prix: PRIX_ACTE_USD, libelle: "stratégie préparée" },
+    preparer_strategie:     { prix: PRIX_CHAINE_USD, libelle: "stratégie préparée" },
 };
 
 const GRATUITS = {
@@ -183,9 +222,19 @@ function prixActe(nom) {
 // WhatsApp) : sinon une boutique qui marche bien serait punie par le volume
 // de sa propre clientèle.
 function factureDuTour(actes = [], { avecMessage = true } = {}) {
+    // ⚠️ `= []` NE COUVRE QUE `undefined`, PAS `null`.
+    //
+    // `factureDuTour(null)` levait « actes is not iterable » — une exception
+    // au milieu du calcul d'une facture. Le seul appelant du projet se
+    // protège en amont (`Array.isArray`), donc la panne n'était pas visible ;
+    // mais la fonction est exportée, et le prochain appelant ne le saura pas.
+    //
+    // Une fonction de facturation ne doit jamais lever : dans le doute, elle
+    // ne facture rien. Trouvé par la suite `grille`, pas par la relecture.
+    const liste = Array.isArray(actes) ? actes : [];
     const lignes = [];
     if (avecMessage) lignes.push({ quoi: "message", montant: PRIX_MESSAGE_USD });
-    for (const acte of actes) {
+    for (const acte of liste) {
         const nom = typeof acte === "string" ? acte : acte?.nom;
         const reussi = typeof acte === "string" ? true : acte?.reussi !== false;
         if (!reussi) continue;
@@ -202,12 +251,34 @@ const MINIMUM_RECHARGE_USD = 2;
 // Les montants proposés. Le deuxième est mis en avant : c'est le palier où
 // la recharge cesse d'être un essai. Aucun bonus pour l'instant — en
 // promettre un qu'on n'a pas mesuré, c'est promettre une marge qu'on ignore.
+// ── LES MONTANTS DE RECHARGE ─────────────────────────────────────────────
+//
+// ⚠️ LE NOMBRE DE MESSAGES ÉTAIT ÉCRIT EN DUR, ET C'EST UN PIÈGE DISCRET.
+//
+// « 2 $ = 200 messages » était juste tant qu'un message valait 0,01 $. En le
+// passant à 0,03 $, la promesse devenait FAUSSE — sans qu'aucune ligne de
+// code ne change, et sans qu'aucun test ne le voie. Un chiffre recopié à
+// côté de sa source finit toujours par la contredire.
+//
+// Les équivalences se CALCULENT donc, à partir du seul prix qui fait foi.
+//
+// Les montants eux-mêmes ne bougent pas : 2 $ ≈ 270 DZD au taux officiel,
+// et c'est déjà le bon ordre de grandeur pour un premier geste au Maghreb.
+// Les changer est une décision commerciale, pas une conséquence de ce
+// chantier.
 const MONTANTS = [
-    { usd: 2,  messages: 200 },
-    { usd: 5,  messages: 500, net: true },
-    { usd: 10, messages: 1000 },
-    { usd: 20, messages: 2000 },
-];
+    { usd: 2 },
+    { usd: 5, net: true },
+    { usd: 10 },
+    { usd: 20 },
+].map((m) => ({
+    ...m,
+    // Ce que le solde vaut, dans l'unité que la personne voit.
+    credits: Math.round(m.usd / 0.01),
+    // Et ce que ça permet, dans les mots du produit. `Math.floor` : on
+    // n'annonce jamais un message qu'on ne peut pas tenir.
+    messages: Math.floor(m.usd / PRIX_MESSAGE_USD),
+}));
 
 // Combien de messages pour une somme en dollars. `Math.floor` : on ne vend
 // jamais un message qu'on n'a pas été payé, et le reste va au solde.

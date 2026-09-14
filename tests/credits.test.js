@@ -40,15 +40,30 @@ const CONFIG = require(path.join(RACINE, "config.js"));
 
 // ── 1. L'ÉCONOMIE ANNONCÉE EST CELLE QUI S'APPLIQUE ──────────────────────
 {
-    verifier(CREDITS.PRIX_MESSAGE_USD === 0.01,
-        `un message coûte ${CREDITS.PRIX_MESSAGE_USD} $ au lieu de 0,01 $`);
+    // ⚠️ CETTE GARDE ÉCRIVAIT « 0.01 » EN DUR, ET C'EST CE QU'ELLE GARDAIT.
+    //
+    // Elle vérifiait un NOMBRE, pas une propriété. Au premier changement de
+    // prix — décidé, documenté, justifié — elle est devenue rouge sans rien
+    // avoir protégé : elle disait seulement « le prix a changé », ce que le
+    // diff disait déjà.
+    //
+    // Ce qu'il faut garder, c'est que le prix soit UTILISABLE : un nombre
+    // fini, positif, et qui tombe sur un compte rond de crédits. La grille
+    // elle-même, ses marges et ses bornes, sont vérifiées par
+    // `tests/grille.test.js`, qui est fait pour ça.
+    verifier(Number.isFinite(CREDITS.PRIX_MESSAGE_USD) && CREDITS.PRIX_MESSAGE_USD > 0,
+        `un message coûte ${CREDITS.PRIX_MESSAGE_USD} $ — un prix nul ou illisible rendrait ` +
+        "le solde infini");
     verifier(CREDITS.MINIMUM_RECHARGE_USD === 2,
         `le minimum de recharge est de ${CREDITS.MINIMUM_RECHARGE_USD} $ au lieu de 2 $`);
 
-    // 2 $ doivent faire exactement 200 messages. Si ce calcul dérive, le prix
-    // affiché et le prix facturé ne disent plus la même chose.
-    verifier(CREDITS.messagesPour(2) === 200,
-        `2 $ donnent ${CREDITS.messagesPour(2)} messages au lieu de 200`);
+    // Le nombre de messages qu'un montant donne se DÉDUIT du prix, il ne se
+    // recopie pas. C'est la seule formulation qui survive à un changement de
+    // prix — et c'est exactement le piège dans lequel `MONTANTS` était tombé,
+    // avec ses « 200 messages » écrits en dur à côté de leur source.
+    verifier(CREDITS.messagesPour(2) === Math.floor(2 / CREDITS.PRIX_MESSAGE_USD),
+        `2 $ donnent ${CREDITS.messagesPour(2)} messages au lieu de ` +
+        `${Math.floor(2 / CREDITS.PRIX_MESSAGE_USD)}`);
     verifier(CREDITS.messagesPour(0.005) === 0,
         "un montant inférieur au prix d'un message donne quand même un message");
 
@@ -175,7 +190,9 @@ const CONFIG = require(path.join(RACINE, "config.js"));
     // On crédite 2 $.
     await credits.crediter(USER, 2, { detail: "test" });
     etat = await credits.etat(USER);
-    verifier(etat.messages === 200, `après 2 $, ${etat.messages} messages au lieu de 200`);
+    const MSG_POUR_2 = Math.floor(2 / CREDITS.PRIX_MESSAGE_USD);
+    verifier(etat.messages === MSG_POUR_2,
+        `après 2 $, ${etat.messages} messages au lieu de ${MSG_POUR_2}`);
 
     // ── L'ÉQUILIBRE DU REGISTRE ─────────────────────────────────────────
     // La somme signée de TOUTES les lignes doit être nulle, toujours. C'est
@@ -187,27 +204,29 @@ const CONFIG = require(path.join(RACINE, "config.js"));
     // On dépense un message.
     const d1 = await credits.debiterMessage(USER, { ref: "msg:1" });
     verifier(d1.ok, `le premier débit échoue : ${d1.raison}`);
-    verifier(d1.messages === 199, `après un message, ${d1.messages} restants au lieu de 199`);
+    verifier(d1.messages === MSG_POUR_2 - 1,
+        `après un message, ${d1.messages} restants au lieu de ${MSG_POUR_2 - 1}`);
     verifier(equilibre() === 0, "le registre est déséquilibré après une consommation");
 
     // La maison a bien reçu le centime — l'argent va quelque part, il ne
     // s'évapore pas.
     const maison = await portefeuille.soldeDisponible(portefeuille.MAISON, "USD");
-    verifier(Math.abs(maison - 0.01) < 0.0001,
+    verifier(Math.abs(maison - CREDITS.PRIX_MESSAGE_USD) < 0.0001,
         `la maison a reçu ${maison} $ au lieu de 0,01 $ — la dépense ne va nulle part`);
 
     // ── LE MÊME MESSAGE REJOUÉ N'EST PAS FACTURÉ DEUX FOIS ──────────────
     const d2 = await credits.debiterMessage(USER, { ref: "msg:1" });
     verifier(d2.ok && d2.dejaCompte, "un message rejoué est facturé une seconde fois");
     etat = await credits.etat(USER);
-    verifier(etat.messages === 199,
+    verifier(etat.messages === MSG_POUR_2 - 1,
         `après un rejeu, ${etat.messages} messages — le même message a été facturé deux fois`);
 
     // ── ON NE DÉPENSE PAS CE QU'ON N'A PAS ──────────────────────────────
     // 199 débits de plus doivent passer, le 200e doit être refusé.
-    for (let i = 2; i <= 200; i++) await credits.debiterMessage(USER, { ref: `msg:${i}` });
+    for (let i = 2; i <= MSG_POUR_2; i++) await credits.debiterMessage(USER, { ref: `msg:${i}` });
     etat = await credits.etat(USER);
-    verifier(etat.messages === 0, `il reste ${etat.messages} messages après en avoir dépensé 200`);
+    verifier(etat.messages === 0,
+        `il reste ${etat.messages} messages après avoir dépensé les ${MSG_POUR_2} d'une recharge de 2 $`);
 
     const trop = await credits.debiterMessage(USER, { ref: "msg:201" });
     verifier(!trop.ok, "on a pu envoyer un message sans solde — le compte passe en négatif");
