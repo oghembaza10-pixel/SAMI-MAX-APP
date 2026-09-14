@@ -73,6 +73,16 @@ function lireUsageGemini(data) {
     const u = data?.usageMetadata;
     if (!u) return null;
     return {
+        // ── QUI A RÉPONDU, PAS QUI ON A DEMANDÉ ──────────────────────────
+        //
+        // Google renvoie `modelVersion` : le modèle qui a EFFECTIVEMENT servi
+        // la requête. Il peut différer de celui qu'on a demandé — un alias
+        // qui pointe ailleurs, une bascule décidée côté Google. Et c'est
+        // celui-là qui détermine la facture.
+        //
+        // Sans ce champ, une facture plus élevée que prévu n'aurait aucune
+        // explication lisible dans nos propres journaux.
+        modeleServi: typeof data.modelVersion === "string" ? data.modelVersion : null,
         entree: Number(u.promptTokenCount) || 0,
         sortie: Number(u.candidatesTokenCount) || 0,
         reflexion: Number(u.thoughtsTokenCount) || 0,
@@ -129,6 +139,12 @@ function noter(entree) {
             mesure: Boolean(usage),
             ...(usage || { entree: 0, sortie: 0, reflexion: 0, cache: 0, outils: 0, total: 0 }),
         };
+        // Le modèle SERVI prime sur le modèle demandé pour la tarification :
+        // c'est lui que Google facture. On garde les deux — l'écart entre
+        // « demandé » et « servi » est exactement ce qu'on veut pouvoir lire
+        // le jour où une facture surprend.
+        appel.modeleDemande = modele || ECO.MODELE_PAR_DEFAUT;
+        if (appel.modeleServi) appel.modele = appel.modeleServi;
         const cout = ECO.coutAppel({
             modele: appel.modele,
             entree: appel.entree, sortie: appel.sortie,

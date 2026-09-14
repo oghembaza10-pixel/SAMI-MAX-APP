@@ -57,12 +57,43 @@ const TARIFS = {
         // pas un détail : sur un modèle qui réfléchit, ils peuvent peser plus
         // que la réponse elle-même, et ils sont invisibles pour l'utilisateur.
         reflexion: 3.75,
-        // Lecture d'un cache de contexte déjà constitué.
-        cache: 0.135,
+        // ── LECTURE D'UN CACHE DE CONTEXTE ───────────────────────────────
+        //
+        // ⚠️ CORRIGÉ. La table portait 0.135, ce qui n'est adossé à rien.
+        //
+        // La règle de Google est une REMISE DE 90 % sur le tarif d'entrée
+        // pour les modèles Gemini 2.5 et suivants. Donc :
+        //
+        //     0,75 × 10 %  =  0,075        (tarif d'introduction)
+        //     1,50 × 10 %  =  0,15         (à partir du 01/01/2027)
+        //
+        // 0,135 ne correspondait ni à 10 % ni à aucune valeur publiée : un
+        // chiffre inventé, qui surestimait le cache de 80 % et faussait donc
+        // toute comparaison « avec cache / sans cache ».
+        cache: 0.075,
+
+        // ── ET CE QUI MANQUAIT COMPLÈTEMENT : LE STOCKAGE ────────────────
+        //
+        // ⚠️ C'EST LE POSTE QUI RENVERSE LA CONCLUSION DU CHANTIER PRÉCÉDENT.
+        //
+        // Un cache de contexte ne se paie pas seulement à la lecture. Il se
+        // paie AUSSI à l'heure de conservation, sur la totalité des tokens
+        // gardés, que quelqu'un s'en serve ou non :
+        //
+        //     0,50 $ / 1M tokens / HEURE      (jusqu'au 31/12/2026)
+        //     1,00 $ / 1M tokens / HEURE      (à partir du 01/01/2027)
+        //
+        // Le rapport précédent recommandait le cache comme « le levier le
+        // plus rentable du projet » en ne comptant que la lecture. Avec le
+        // stockage, le cache n'est rentable QUE s'il est relu assez souvent
+        // dans l'heure pour amortir sa propre conservation — voir
+        // `seuilRentabiliteCache()` plus bas, qui calcule ce seuil au lieu de
+        // le supposer.
+        cacheStockageParHeure: 0.50,
         // Ce que devient le tarif au 01/01/2027. Gardé ICI, à côté du tarif
         // courant : une hausse de 100 % qui n'est écrite nulle part est une
         // hausse qu'on découvre sur la facture.
-        apres2026: { entree: 1.50, sortie: 7.50, reflexion: 7.50, cache: 0.27 },
+        apres2026: { entree: 1.50, sortie: 7.50, reflexion: 7.50, cache: 0.15, cacheStockageParHeure: 1.00 },
         source: "ai.google.dev/gemini-api/docs/pricing",
         releve: "2026-09-14",
         verifie: false,
@@ -100,10 +131,32 @@ const TARIFS_RELAIS = {
 // Une fonction pure. Elle ne lit rien, n'écrit rien, ne devine rien : on lui
 // donne les tokens RÉELLEMENT rendus par le fournisseur, elle rend des
 // dollars. Si les tokens manquent, elle le DIT — elle ne les invente pas.
+// ⚠️ LA RÉSOLUTION PAR PRÉFIXE EXISTE PARCE QU'UNE SONDE L'A EXIGÉE.
+//
+// Google ne renvoie pas le nom qu'on lui a donné. À « gemini-3.6-flash » il
+// répond `modelVersion: "gemini-3.6-flash-002"` — la révision qui a servi.
+// Or c'est ce nom-là qui détermine la facture, donc c'est lui qu'on doit
+// tarifer.
+//
+// Recherche exacte d'abord, puis le PLUS LONG identifiant déclaré qui soit un
+// préfixe. Le plus long, pas le premier : le jour où la table portera
+// « gemini-3.6-flash » ET « gemini-3.6-flash-lite », un premier-arrivé
+// tariferait le lite au prix du grand.
+//
+// Une révision inconnue d'un modèle connu est donc tarifée au prix du modèle.
+// C'est une approximation, et elle est déclarée : `parPrefixe: true` remonte
+// jusqu'au résultat de `coutAppel`.
 function tarifDe(modele) {
-    if (TARIFS[modele]) return TARIFS[modele];
-    if (TARIFS_RELAIS[modele]) return TARIFS_RELAIS[modele];
-    return null;
+    const nom = String(modele || "");
+    if (TARIFS[nom]) return TARIFS[nom];
+    if (TARIFS_RELAIS[nom]) return TARIFS_RELAIS[nom];
+
+    let meilleur = null;
+    for (const [id, t] of Object.entries({ ...TARIFS, ...TARIFS_RELAIS })) {
+        if (!nom.startsWith(id)) continue;
+        if (!meilleur || id.length > meilleur.id.length) meilleur = { id, tarif: t };
+    }
+    return meilleur ? { ...meilleur.tarif, parPrefixe: true, resoluVers: meilleur.id } : null;
 }
 
 function coutAppel({ modele, entree = 0, sortie = 0, reflexion = 0, cache = 0, grounding = 0 } = {}) {
@@ -124,7 +177,46 @@ function coutAppel({ modele, entree = 0, sortie = 0, reflexion = 0, cache = 0, g
         (sortie / M) * t.sortie +
         (reflexion / M) * (t.reflexion ?? t.sortie) +
         grounding * HORS_TOKENS.grounding.prixParRequete;
-    return { usd, connu: true, modele, verifie: t.verifie === true };
+    return { usd, connu: true, modele, verifie: t.verifie === true,
+        parPrefixe: t.parPrefixe === true, resoluVers: t.resoluVers || modele };
+}
+
+// ── LE CACHE EST-IL RENTABLE ? ───────────────────────────────────────────
+//
+// ⚠️ CETTE FONCTION EXISTE PARCE QUE J'AI RECOMMANDÉ LE CACHE SANS L'AVOIR
+// CALCULÉ, DANS LE RAPPORT PRÉCÉDENT.
+//
+// J'avais écrit : « aucun cache de contexte alors que ~17 Ko de prompt
+// système sont identiques à chaque appel — c'est le levier le plus rentable
+// du projet ». Je ne comptais que la LECTURE à tarif réduit. Le STOCKAGE,
+// facturé à l'heure sur la totalité des tokens gardés, ne figurait même pas
+// dans la table.
+//
+// Or un cache rarement relu coûte PLUS CHER que pas de cache du tout : on
+// paie sa conservation pendant que personne ne s'en sert.
+//
+// Le seuil se calcule, il ne se suppose pas :
+//
+//     économie par relecture = tokens × (tarif_entrée − tarif_cache) / 1M
+//     coût de conservation   = tokens × tarif_stockage × heures / 1M
+//     seuil = conservation / économie
+//
+// Rend le nombre MINIMAL de relectures par heure au-delà duquel le cache
+// devient gagnant. Ne dépend pas du nombre de tokens : il se simplifie.
+function seuilRentabiliteCache(modele = MODELE_PAR_DEFAUT, { apres2026 = false } = {}) {
+    const base = TARIFS[modele];
+    if (!base) return null;
+    const t = apres2026 ? base.apres2026 : base;
+    const stockage = t.cacheStockageParHeure;
+    if (!stockage) return null;
+    const economieParRelecture = t.entree - t.cache;
+    if (economieParRelecture <= 0) return null;
+    return {
+        relecturesParHeure: stockage / economieParRelecture,
+        economieParRelecture,
+        stockageParHeure: stockage,
+        modele,
+    };
 }
 
 // Le coût d'une ACTION, c'est la somme de TOUS ses appels — jamais « une
@@ -399,10 +491,34 @@ const ECHEC = {
     compterLeCoutTechnique: true,
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// 10. LE GRATUIT : CE QUI EST ANNONCÉ, ET CE QUE LE CODE FAIT
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ LES DEUX NE DISENT PAS LA MÊME CHOSE, ET L'ÉCART EST DE 50 %.
+//
+//   règle commerciale annoncée   20 messages / 5 heures
+//   code (services/samiiQuota)   30 messages / 7 heures
+//
+// Toute simulation du coût du gratuit se calcule sur ces deux nombres. Se
+// tromper de table, c'est se tromper d'un facteur 1,5 sur la facture du
+// poste le plus volumineux de la plateforme.
+//
+// CE FICHIER NE CORRIGE RIEN : le quota est une décision produit, et le
+// chantier interdit d'y toucher. Il DÉCLARE les deux, pour qu'une simulation
+// dise toujours sur laquelle elle s'appuie — et un test vérifie que cette
+// déclaration suit le code, pas l'inverse.
+const GRATUIT = {
+    messagesCible: 20, heuresCible: 5,      // ce qui est annoncé
+    messagesCode: 30, heuresCode: 7,        // ce que le code applique
+    aligne: false,
+    note: "Divergence signalée, non corrigée : le quota est une décision produit.",
+};
+
 module.exports = {
     TARIFS, TARIFS_RELAIS, HORS_TOKENS, MODELE_PAR_DEFAUT,
     INFRASTRUCTURE, MARGE, CREDIT,
-    COEFFICIENTS_NIVEAU, CLASSES_ACTION, AUTO, ECHEC,
-    tarifDe, coutAppel, coutAction, coutTechnique,
+    COEFFICIENTS_NIVEAU, CLASSES_ACTION, AUTO, ECHEC, GRATUIT,
+    tarifDe, coutAppel, coutAction, coutTechnique, seuilRentabiliteCache,
     prixClient, creditsPour, usdPourCredits, classeDeLActe,
 };

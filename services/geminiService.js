@@ -226,14 +226,27 @@ async function postWithRotation(body, options = {}) {
             //
             // `noter` ne lève jamais, n'attend rien et ne décide rien. Une
             // panne du compteur ne doit pas couper une conversation.
-            compteurIA.noter({
-                fournisseur: "gemini",
-                modele: options.modele || MODEL,
-                data: reponse?.data,
-                flux,
-                grounding: Array.isArray(body?.tools)
-                    && body.tools.some((t) => t.google_search || t.googleSearch) ? 1 : 0,
-            });
+            //
+            // ── SAUF EN FLUX, ET C'EST IMPORTANT ─────────────────────────
+            //
+            // En flux, `reponse.data` n'est qu'un en-tête : les tokens
+            // n'arrivent que dans le dernier morceau SSE. Noter ici ET à la
+            // fin du flux compterait le tour DEUX FOIS — une fois sans
+            // tokens, une fois avec. Le nombre d'appels serait faux, donc le
+            // coût par action aussi.
+            //
+            // Les chemins en flux notent eux-mêmes, à la fin de leur boucle,
+            // là où l'usage existe vraiment.
+            if (!flux) {
+                compteurIA.noter({
+                    fournisseur: "gemini",
+                    modele: reponse?.data?.modelVersion || options.modele || MODEL,
+                    data: reponse?.data,
+                    flux: false,
+                    grounding: Array.isArray(body?.tools)
+                        && body.tools.some((t) => t.google_search || t.googleSearch) ? 1 : 0,
+                });
+            }
             return reponse;
         } catch (err) {
             lastErr = err;
@@ -1060,6 +1073,11 @@ async function chatFlux({ message, context = {}, useTools = false, history = [] 
         let texte = "";
         let appelOutil = null;
         let reste = "";
+        // Voir plus bas : en flux, les tokens n'arrivent que dans le dernier
+        // morceau SSE. On les retient ici pour les noter une fois la boucle
+        // terminée.
+        let usageFlux = null;
+        let modeleServi = null;
 
         // Google envoie du SSE : des lignes « data: {…} ». Un morceau TCP ne
         // s'arrête pas sur une frontière de ligne — on garde le fragment
@@ -1075,6 +1093,24 @@ async function chatFlux({ message, context = {}, useTools = false, history = [] 
                 if (!charge || charge === "[DONE]") continue;
                 let json;
                 try { json = JSON.parse(charge); } catch { continue; }
+
+                // ── LES TOKENS DU FLUX ARRIVENT À LA FIN, PAS AU DÉBUT ───
+                //
+                // ⚠️ TROU D'INSTRUMENTATION TROUVÉ EN AUDITANT LE CHANTIER
+                // PRÉCÉDENT.
+                //
+                // `postWithRotation` note l'appel dès la réponse HTTP. En
+                // flux, cette réponse n'est qu'un en-tête : `usageMetadata`
+                // n'arrive que dans le DERNIER morceau SSE. Tous les tours en
+                // streaming étaient donc comptés `mesure: false`, coût
+                // inconnu — et le streaming est le chemin normal du QG.
+                //
+                // Google renvoie l'usage cumulé à chaque morceau qui le
+                // porte ; on garde le dernier vu, et on le note après la
+                // boucle. C'est de la lecture pure : aucun octet du flux
+                // destiné à la personne n'est touché.
+                if (json.usageMetadata) usageFlux = json.usageMetadata;
+                if (json.modelVersion) modeleServi = json.modelVersion;
 
                 for (const part of json.candidates?.[0]?.content?.parts || []) {
                     if (part.functionCall && !appelOutil) {
@@ -1111,6 +1147,19 @@ async function chatFlux({ message, context = {}, useTools = false, history = [] 
                 }
             }
         }
+
+        // Le flux est terminé : on note enfin ce qu'il a coûté. Sans cette
+        // ligne, tout le chemin du QG en streaming reste à coût inconnu.
+        //
+        // `modelVersion` dit quel modèle A RÉPONDU — pas celui qu'on a
+        // demandé. Les deux peuvent différer (alias, bascule côté Google), et
+        // c'est le premier qui détermine la facture.
+        compteurIA.noter({
+            fournisseur: "gemini",
+            modele: modeleServi || moteurDuTour(context).modele || MODEL,
+            data: usageFlux ? { usageMetadata: usageFlux } : null,
+            flux: true,
+        });
 
         if (appelOutil) {
             return { type: "function_call", provider: "gemini", ...appelOutil };
@@ -1360,6 +1409,8 @@ async function chatLibreFlux({ systemPrompt, message, history = [], niveau = nul
         const reponse = await postWithRotation(corps, { flux: true });
         let complet = "";
         let reste = "";
+        let usageFlux = null;
+        let modeleServi = null;
 
         // Google envoie du SSE : des lignes « data: {…} » séparées par des
         // lignes vides. Un morceau TCP ne s'arrête pas sur une frontière de
@@ -1375,6 +1426,10 @@ async function chatLibreFlux({ systemPrompt, message, history = [], niveau = nul
                 if (!charge || charge === "[DONE]") continue;
                 let json;
                 try { json = JSON.parse(charge); } catch { continue; }
+                // Même raison que dans chatFlux : en SSE, les tokens
+                // n'arrivent que dans le dernier morceau.
+                if (json.usageMetadata) usageFlux = json.usageMetadata;
+                if (json.modelVersion) modeleServi = json.modelVersion;
                 const morceau = json.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
                 if (!morceau) continue;
                 complet += morceau;
@@ -1382,6 +1437,12 @@ async function chatLibreFlux({ systemPrompt, message, history = [], niveau = nul
             }
         }
 
+        compteurIA.noter({
+            fournisseur: "gemini",
+            modele: modeleServi || MODEL,
+            data: usageFlux ? { usageMetadata: usageFlux } : null,
+            flux: true,
+        });
         if (complet.trim()) return { text: complet, provider: "gemini" };
         throw new Error("Flux Gemini vide.");
     } catch (err) {

@@ -87,6 +87,109 @@ const proche = (a, b, tol = 1e-9) => Math.abs(a - b) < tol;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// 1 bis. LES PRIX EUX-MÊMES — GARDE DE NON-RÉGRESSION
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ CE BLOC EXISTE PARCE QUE LA TABLE ÉTAIT FAUSSE SUR DEUX POSTES.
+//
+//   • `cache: 0.135` n'était adossé à rien. La règle de Google est une
+//     remise de 90 % sur le tarif d'entrée : 0,75 × 10 % = 0,075. La valeur
+//     surestimait le cache de 80 % et faussait toute comparaison
+//     « avec cache / sans cache ».
+//
+//   • Le STOCKAGE de cache — 0,50 $ / 1M tokens / HEURE — ne figurait pas du
+//     tout. Le rapport précédent recommandait donc le cache comme « le levier
+//     le plus rentable du projet » en ignorant ce qu'il coûte à conserver.
+//
+// Ces gardes ne vérifient pas que les prix sont VRAIS (seule la page de
+// Google le dit, et elle est injoignable d'ici). Elles vérifient qu'ils
+// restent COHÉRENTS entre eux : c'est l'incohérence qui a produit l'erreur.
+{
+    for (const [id, t] of Object.entries(ECO.TARIFS)) {
+        // La remise de cache doit être de 90 %, aujourd'hui comme en 2027.
+        verifier(proche(t.cache, t.entree * 0.10, 1e-9),
+            `${id} : cache à ${t.cache} alors que la remise de 90 % sur l'entrée (${t.entree}) ` +
+            `donne ${t.entree * 0.10} — c'est exactement l'erreur corrigée dans ce chantier`);
+        verifier(proche(t.apres2026.cache, t.apres2026.entree * 0.10, 1e-9),
+            `${id} (2027) : cache à ${t.apres2026.cache} au lieu de ${t.apres2026.entree * 0.10}`);
+
+        // Le stockage existe, et il n'est pas gratuit.
+        verifier(typeof t.cacheStockageParHeure === "number" && t.cacheStockageParHeure > 0,
+            `${id} : le STOCKAGE de cache est absent ou nul. Il se facture à l'heure sur la ` +
+            "totalité des tokens gardés, que quelqu'un les relise ou non — l'ignorer fait " +
+            "croire que le cache est gratuit à conserver");
+        verifier(typeof t.apres2026.cacheStockageParHeure === "number" && t.apres2026.cacheStockageParHeure > 0,
+            `${id} (2027) : le stockage de cache est absent`);
+
+        // La réflexion suit la sortie, l'entrée est moins chère que la sortie.
+        verifier(t.reflexion === t.sortie, `${id} : le tarif de réflexion ne suit plus la sortie`);
+        verifier(t.entree < t.sortie, `${id} : l'entrée coûte plus cher que la sortie`);
+        verifier(t.cache < t.entree, `${id} : lire depuis le cache coûte plus cher que l'entrée`);
+
+        // Le tarif 2027 est bien une HAUSSE, et le double.
+        verifier(t.apres2026.entree === t.entree * 2 && t.apres2026.sortie === t.sortie * 2,
+            `${id} : le tarif 2027 n'est plus le double du tarif d'introduction`);
+
+        // Et rien n'est déclaré vérifié tant que personne n'a ouvert la page.
+        verifier(t.verifie === false,
+            `${id} porte verifie: true alors que ai.google.dev est injoignable depuis ` +
+            "l'environnement — un prix non lu à la source ne doit pas se déclarer vérifié");
+    }
+
+    // ── LE SEUIL DE RENTABILITÉ DU CACHE SE CALCULE ──────────────────────
+    const s = ECO.seuilRentabiliteCache("gemini-3.6-flash") || { relecturesParHeure: Infinity };
+    verifier(Number.isFinite(s.relecturesParHeure) && s.relecturesParHeure > 0,
+        "le seuil de rentabilité du cache n'est pas calculable — le plus souvent parce que le " +
+        "stockage a disparu de la table. On recommanderait alors le cache sans savoir à partir " +
+        "de quand il rapporte, ce qui est exactement l'erreur du chantier précédent");
+    verifier(s.relecturesParHeure < 24,
+        `il faudrait ${s.relecturesParHeure} relectures par heure pour rentabiliser un cache : ` +
+        "à ce niveau le cache serait une perte, et la table dirait le contraire");
+
+    // Le seuil ne dépend pas du tarif : les deux termes doublent ensemble.
+    const s2027 = ECO.seuilRentabiliteCache("gemini-3.6-flash", { apres2026: true }) || { relecturesParHeure: Infinity };
+    verifier(proche(s.relecturesParHeure, s2027.relecturesParHeure, 1e-9),
+        "le seuil de rentabilité change entre 2026 et 2027 alors que les deux tarifs doublent " +
+        "ensemble — le calcul ne se simplifie plus comme il devrait");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 1 ter. LE MODÈLE QUI A RÉPONDU, PAS CELUI QU'ON A DEMANDÉ
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ TROUVÉ PAR UNE SONDE, PAS PAR LA RELECTURE.
+//
+// À « gemini-3.6-flash », Google répond `modelVersion: "gemini-3.6-flash-002"».
+// Tarifer le modèle SERVI est juste — mais la première version rendait alors
+// `coutUSD: null` sur TOUTES les vraies réponses, parce que la révision
+// n'était pas dans la table. Un instrument qui ne sait plus rien mesurer dès
+// qu'on le branche pour de vrai.
+{
+    const c = ECO.coutAppel({ modele: "gemini-3.6-flash-002", entree: 1_000_000 });
+    verifier(c.connu === true && c.usd > 0,
+        "une révision de modèle (« -002 ») n'est pas tarifée : toutes les vraies réponses de " +
+        "Google porteraient un coût inconnu");
+    verifier(c.parPrefixe === true && c.resoluVers === "gemini-3.6-flash",
+        "la résolution par préfixe ne se déclare pas : on prendrait une approximation pour " +
+        "un prix exact");
+
+    // Un modèle vraiment inconnu reste inconnu — le préfixe n'ouvre pas la porte.
+    verifier(ECO.coutAppel({ modele: "mistral-large", entree: 1_000_000 }).connu === false,
+        "un modèle d'un autre fournisseur est tarifé par préfixe : la garde « fermé par " +
+        "défaut » ne tient plus");
+    verifier(ECO.coutAppel({ modele: "gemini", entree: 1 }).connu === false,
+        "« gemini » tout court est tarifé : un préfixe TROP COURT ferait passer n'importe " +
+        "quel futur modèle pour celui-ci");
+
+    // Et le compteur retient les deux noms.
+    const a = compteur.noter({ fournisseur: "gemini", modele: "gemini-3.6-flash",
+        data: { modelVersion: "gemini-3.6-flash-002", usageMetadata: { promptTokenCount: 100 } } });
+    verifier(a && a.modeleDemande === "gemini-3.6-flash" && a.modeleServi === "gemini-3.6-flash-002",
+        `le compteur ne garde pas l'écart demandé/servi : ${JSON.stringify(a && { d: a.modeleDemande, s: a.modeleServi })}`);
+    verifier(a.coutUSD !== null, "un appel servi par une révision connue reste à coût nul");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // 2. UNE ACTION = TOUS SES APPELS, JAMAIS UN SEUL
 // ══════════════════════════════════════════════════════════════════════════
 //
@@ -193,6 +296,54 @@ const proche = (a, b, tol = 1e-9) => Math.abs(a - b) < tol;
     verifier(b.complet === false,
         "un tour dont aucun appel n'a rendu ses tokens se déclare COMPLET : " +
         "son coût inconnu passerait pour un coût nul dans toutes les moyennes");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 5 bis. LE STREAMING EST MESURÉ, ET COMPTÉ UNE SEULE FOIS
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ TROU TROUVÉ EN AUDITANT LE CHANTIER PRÉCÉDENT.
+//
+// `postWithRotation` notait l'appel dès la réponse HTTP. En flux, cette
+// réponse n'est qu'un en-tête : `usageMetadata` n'arrive que dans le DERNIER
+// morceau SSE. Tout le chemin du QG en streaming — le chemin NORMAL — était
+// donc compté « coût inconnu ».
+//
+// Et le piège de la correction : noter aux DEUX endroits compterait le tour
+// deux fois, une fois sans tokens et une fois avec. Le nombre d'appels
+// deviendrait faux, donc le coût par action aussi.
+{
+    const source = (f) => fs.readFileSync(path.join(__dirname, "..", f), "utf8")
+        .replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    const gem = source("services/geminiService.js");
+
+    verifier(/if\s*\(!flux\)\s*\{[\s\S]{0,400}?compteurIA\.noter/.test(gem),
+        "postWithRotation note AUSSI les appels en flux : chaque tour en streaming serait " +
+        "compté deux fois, une fois sans tokens et une fois avec");
+
+    // Les deux boucles SSE du projet retiennent l'usage et le notent.
+    const capture = (gem.match(/if\s*\(json\.usageMetadata\)\s*usageFlux\s*=/g) || []).length;
+    verifier(capture >= 2,
+        `seulement ${capture} boucle(s) SSE captent usageMetadata : il y en a deux ` +
+        "(chat du QG et chat public), et celle qu'on oublie reste à coût inconnu");
+
+    const notes = (gem.match(/compteurIA\.noter\(/g) || []).length;
+    verifier(notes >= 4,
+        `${notes} points de mesure dans geminiService : il en faut au moins quatre — ` +
+        "sans flux, relais, flux du QG, flux public");
+
+    // Le comportement, pas seulement la forme : un tour en flux dont le
+    // dernier morceau porte l'usage doit être MESURÉ, pas estimé.
+    const b = await compteur.tour({ etiquette: "flux-mesure" }, async (sac) => {
+        compteur.noter({ fournisseur: "gemini", modele: "gemini-3.6-flash", flux: true,
+            data: { usageMetadata: { promptTokenCount: 5000, candidatesTokenCount: 200, thoughtsTokenCount: 100 } } });
+        return compteur.bilan(sac);
+    });
+    verifier(b.appels === 1 && b.appelsMesures === 1,
+        `un tour en flux avec usage rend ${b.appels} appel(s) dont ${b.appelsMesures} mesuré(s)`);
+    verifier(b.tokens.reflexion === 100,
+        "les tokens de réflexion d'un tour en flux ne sont pas comptés");
+    verifier(b.coutGoogleUSD > 0, "un tour en flux mesuré reste à coût nul");
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -315,6 +466,49 @@ const proche = (a, b, tol = 1e-9) => Math.abs(a - b) < tol;
         "la table et le code ne disent plus la même chose");
     verifier(ECO.AUTO.prixOrchestrationUSD === 0 || ECO.AUTO.escaladeActive,
         "on facture une orchestration alors qu'aucune orchestration supplémentaire n'a lieu");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// 9 bis. LA RÈGLE COMMERCIALE DU GRATUIT, ET CE QUE LE CODE FAIT VRAIMENT
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ LE CODE ET LA RÈGLE COMMERCIALE NE DISENT PAS LA MÊME CHOSE.
+//
+// Règle annoncée : 20 messages gratuits / 5 heures.
+// Code : QUOTA_GRATUIT_PAR_FENETRE = 30, FENETRE_HEURES = 7.
+//
+// L'écart est de +50 % sur le nombre de messages. Toute la simulation du
+// coût du gratuit dépend de ces deux nombres, donc l'écart n'est pas un
+// détail de présentation : c'est un facteur 1,5 sur la facture.
+//
+// CE TEST NE CORRIGE RIEN — le chantier interdit de toucher au quota. Il
+// rend la divergence VISIBLE et la fige : le jour où quelqu'un aligne l'un
+// sur l'autre, ce test le dira, dans un sens comme dans l'autre.
+{
+    const src = fs.readFileSync(path.join(__dirname, "..", "services/samiiQuota.js"), "utf8")
+        .replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    const messages = Number((src.match(/QUOTA_GRATUIT_PAR_FENETRE\s*=\s*(\d+)/) || [])[1]);
+    const heures = Number((src.match(/FENETRE_HEURES\s*=\s*(\d+)/) || [])[1]);
+
+    verifier(Number.isFinite(messages) && Number.isFinite(heures),
+        "impossible de lire le quota gratuit dans services/samiiQuota.js — la sonde ne mesure rien");
+
+    const CIBLE = { messages: 20, heures: 5 };
+    const aligne = messages === CIBLE.messages && heures === CIBLE.heures;
+
+    // On ne fait PAS échouer la suite sur la divergence : elle est connue,
+    // documentée, et le chantier interdit de la corriger. Ce qu'on exige,
+    // c'est que la table économique DÉCLARE ce que le code fait réellement,
+    // pour qu'aucune simulation ne se calcule sur le mauvais nombre.
+    verifier(ECO.GRATUIT && ECO.GRATUIT.messagesCode === messages && ECO.GRATUIT.heuresCode === heures,
+        `config/economie.js déclare ${JSON.stringify(ECO.GRATUIT)} alors que le code applique ` +
+        `${messages} messages / ${heures} h — une simulation bâtie sur la table serait fausse`);
+    verifier(ECO.GRATUIT.messagesCible === CIBLE.messages && ECO.GRATUIT.heuresCible === CIBLE.heures,
+        "la règle commerciale cible (20 / 5 h) n'est pas déclarée : la divergence deviendrait " +
+        "invisible et personne ne saurait laquelle fait foi");
+    verifier(ECO.GRATUIT.aligne === aligne,
+        `la table dit aligne=${ECO.GRATUIT.aligne} alors que le code est ` +
+        `${aligne ? "aligné" : "divergent"} — il faut mettre la table à jour, pas ce test`);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
