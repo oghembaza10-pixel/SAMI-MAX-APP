@@ -162,9 +162,27 @@ const MOTEURS = {
     // partie.
     groq: {
         id: "groq",
-        libelle: "Groq (Llama 3.3 70B)",
+        libelle: "Groq (GPT-OSS 120B)",
         fournisseur: "groq",
-        modele: "llama-3.3-70b-versatile",
+        // ⚠️ UN NOM DE MODÈLE A UNE DATE DE PÉREMPTION.
+        //
+        // C'était `llama-3.3-70b-versatile`. Groq l'a DÉCOMMISSIONNÉ le
+        // 16 août 2026, et la production a répondu, à chaque tour de repli :
+        //
+        //     "The model `llama-3.3-70b-versatile` does not exist
+        //      or you do not have access to it."
+        //
+        // Personne ne l'a vu venir, parce qu'un relais ne sert que les jours
+        // où le moteur principal tombe — et ces jours-là, on croit que c'est
+        // le moteur principal le problème.
+        //
+        // `openai/gpt-oss-120b` est le remplaçant que Groq nomme lui-même
+        // pour ce modèle. `modelesDeSecours` liste ce vers quoi la découverte
+        // automatique peut basculer si celui-ci disparaît à son tour (voir
+        // `modeleVivant` dans services/geminiService.js) : on ne repart plus
+        // de zéro à chaque dépréciation.
+        modele: "openai/gpt-oss-120b",
+        modelesDeSecours: ["qwen/qwen3.6-27b", "openai/gpt-oss-20b"],
         disponible: true,
         capacites: {
             texte: true, outils: true, suiteDOutil: true,
@@ -188,7 +206,26 @@ const MOTEURS = {
         id: "openrouter",
         libelle: "OpenRouter (gpt-oss-20b)",
         fournisseur: "openrouter",
-        modele: "openai/gpt-oss-20b:free",
+        // ⚠️ « GRATUIT » EST UNE CONDITION, PAS UNE PROPRIÉTÉ DU MODÈLE.
+        //
+        // C'était `openai/gpt-oss-20b:free`. OpenRouter a retiré la variante
+        // gratuite le 22 août 2026 — six jours après la mort du modèle Groq —
+        // et a répondu en production :
+        //
+        //     "This model is unavailable for free. The paid version is
+        //      available now - use this slug instead: openai/gpt-oss-20b"
+        //
+        // Le fournisseur nomme lui-même le remplaçant. On le prend : c'est
+        // la source la plus fiable qui soit, plus sûre qu'un catalogue
+        // recopié à la main.
+        //
+        // ⚠️ ET CE MODÈLE EST PAYANT. Ce relais n'est atteint que si Gemini
+        // ET Groq ont tous deux échoué sur le même tour — rare. Mais le
+        // suffixe `:free` était aussi ce qui GARANTISSAIT qu'un repli ne
+        // coûte rien, et cette garantie n'existe plus. `cout: 1` le dit
+        // plutôt que de laisser croire le contraire.
+        modele: "openai/gpt-oss-20b",
+        modelesDeSecours: ["openai/gpt-oss-120b", "meta-llama/llama-3.3-70b-instruct"],
         disponible: true,
         capacites: {
             texte: true, outils: true, suiteDOutil: true,
@@ -197,7 +234,7 @@ const MOTEURS = {
         donneesGoogle: false,
         outilsFiables: ["commerce"],
         rang: 3,
-        cout: 0,
+        cout: 1,
     },
 
     // ── DEEPSEEK : le dernier recours ────────────────────────────────────
@@ -207,9 +244,21 @@ const MOTEURS = {
     // exister : ce jour-là, il n'y a plus rien derrière.
     deepseek: {
         id: "deepseek",
-        libelle: "DeepSeek Chat",
+        libelle: "DeepSeek (V4 Flash)",
         fournisseur: "deepseek",
-        modele: "deepseek-chat",
+        // ⚠️ LE TROISIÈME MODÈLE MORT, ET CELUI QUE PERSONNE N'AVAIT VU.
+        //
+        // C'était `deepseek-chat`, retiré de l'API le 24 juillet 2026 — soit
+        // AVANT les deux autres. Il n'est jamais apparu dans les journaux
+        // parce que la clé DeepSeek est absente : le relais échouait sur
+        // « Clé absente » bien avant d'atteindre le modèle.
+        //
+        // C'est le pire cas de tous : une panne cachée par une autre panne.
+        // Le jour où la clé aurait été posée — en urgence, un jour où tout le
+        // reste est déjà tombé — le dernier recours n'aurait pas répondu non
+        // plus, et on aurait cherché du côté de la clé toute neuve.
+        modele: "deepseek-v4-flash",
+        modelesDeSecours: ["deepseek-flash", "deepseek-v4-pro"],
         disponible: true,
         capacites: {
             texte: true, outils: true, suiteDOutil: true,

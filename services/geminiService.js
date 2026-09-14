@@ -400,8 +400,15 @@ function sansReponse(provider, motif) {
 // Modèle GRATUIT (":free") — ce relais ne se déclenche que dans de rares
 // pannes Gemini, un modèle gratuit avec support du function calling suffit
 // largement et évite de payer pour un chemin de secours peu utilisé.
-const OPENROUTER_MODEL = "openai/gpt-oss-20b:free";
+// ── LE NOM DU MODÈLE SE LIT, IL NE SE RECOPIE PAS ───────────────────────
+//
+// Il était écrit DEUX fois : ici, et dans config/moteurs.js. Les deux
+// disaient la même chose — jusqu'au jour où l'une aurait été corrigée sans
+// l'autre. Le registre est la source ; ces constantes le lisent.
 const OPENROUTER_URL   = "https://openrouter.ai/api/v1/chat/completions";
+// `/models` du fournisseur : c'est lui qui sait quels modèles existent
+// AUJOURD'HUI. Voir `modeleVivant()`.
+const OPENROUTER_MODELES = "https://openrouter.ai/api/v1/models";
 
 async function postOpenRouter(body) {
     if (!CONFIG.OPENROUTER?.API_KEY) throw new Error("Clé OpenRouter absente (relais indisponible).");
@@ -421,8 +428,8 @@ async function postOpenRouter(body) {
 // gratuite, ultra rapide, compatible format OpenAI (mêmes helpers que le
 // relais OpenRouter ci-dessus), donc un fournisseur de plus dans la chaîne
 // de secours pour qu'un client ne reste jamais sans réponse.
-const GROQ_MODEL = "llama-3.3-70b-versatile";
-const GROQ_URL    = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODELES = "https://api.groq.com/openai/v1/models";
 
 async function postGroq(body) {
     if (!CONFIG.GROQ?.API_KEY) throw new Error("Clé Groq absente (relais indisponible).");
@@ -443,8 +450,8 @@ async function postGroq(body) {
 // temps — cas rare mais possible si le trafic grossit). Payant mais très
 // économique, ça absorbe le débordement sans jamais laisser un client sans
 // réponse. Format compatible OpenAI, mêmes helpers que Groq/OpenRouter.
-const DEEPSEEK_MODEL = "deepseek-chat";
-const DEEPSEEK_URL   = "https://api.deepseek.com/chat/completions";
+const DEEPSEEK_URL     = "https://api.deepseek.com/chat/completions";
+const DEEPSEEK_MODELES = "https://api.deepseek.com/models";
 
 async function postDeepSeek(body) {
     if (!CONFIG.DEEPSEEK?.API_KEY) throw new Error("Clé DeepSeek absente (relais indisponible).");
@@ -540,16 +547,19 @@ async function chatViaOpenAiCompatible({ provider, model, poster, message, conte
     return { type: "text", provider, text: choice.message.content };
 }
 
+// `modeleDe()` et pas une constante : le modèle en service peut avoir changé
+// depuis le démarrage, si le fournisseur a refusé celui du registre et qu'on
+// en a trouvé un autre chez lui (voir `modeleVivant`).
 async function chatViaGroq(args) {
-    return chatViaOpenAiCompatible({ provider: "groq", model: GROQ_MODEL, poster: postGroq, ...args });
+    return chatViaOpenAiCompatible({ provider: "groq", model: modeleDe("groq"), poster: postGroq, ...args });
 }
 
 async function chatViaOpenRouter(args) {
-    return chatViaOpenAiCompatible({ provider: "openrouter", model: OPENROUTER_MODEL, poster: postOpenRouter, ...args });
+    return chatViaOpenAiCompatible({ provider: "openrouter", model: modeleDe("openrouter"), poster: postOpenRouter, ...args });
 }
 
 async function chatViaDeepSeek(args) {
-    return chatViaOpenAiCompatible({ provider: "deepseek", model: DEEPSEEK_MODEL, poster: postDeepSeek, ...args });
+    return chatViaOpenAiCompatible({ provider: "deepseek", model: modeleDe("deepseek"), poster: postDeepSeek, ...args });
 }
 
 const TOOLS = [
@@ -1120,9 +1130,38 @@ function relaisDuTour({ context = {}, useTools = false, flux = false, recherche 
         // deuxième table finirait par ne plus dire la même chose que la
         // première, et c'est toujours celle qu'on ne regarde pas qui se
         // trompe.
-        .map(({ id, moteur }) => ({ nom: id, model: moteur.modele, poster: OPENAI_COMPATIBLE_PROVIDERS[id]?.poster }))
+        .map(({ id, moteur }) => ({
+            nom: id,
+            // Le modèle EN SERVICE, pas celui du registre : il a pu changer
+            // si le fournisseur a refusé le premier.
+            model: modeleDe(id),
+            poster: OPENAI_COMPATIBLE_PROVIDERS[id]?.poster,
+        }))
         .filter((r) => typeof r.poster === "function");
-    return { retenus, ecartes };
+
+    // ── UN RELAIS SANS CLÉ N'EST PAS UN RELAIS ──────────────────────────
+    //
+    // Il était gardé dans la liste et appelé à chaque tour, pour lever
+    // aussitôt « Clé DeepSeek absente (relais indisponible) ». En
+    // production, cette ligne apparaissait à CHAQUE message de repli — un
+    // échec annoncé, répété, qui n'apprenait rien à personne et noyait les
+    // vraies erreurs juste à côté.
+    //
+    // Une clé absente est une décision de configuration, pas une panne : on
+    // l'écarte AVANT la boucle, avec sa raison, et elle rejoint la liste que
+    // `chat()` affiche déjà. Le relais revient tout seul le jour où la clé
+    // est posée — rien à redéployer.
+    const sansCle = [];
+    const avecCle = retenus.filter((r) => {
+        const fiche = OPENAI_COMPATIBLE_PROVIDERS[r.nom];
+        if (fiche && typeof fiche.cle === "function" && !fiche.cle()) {
+            sansCle.push({ id: r.nom, raison: "aucune clé configurée" });
+            return false;
+        }
+        return true;
+    });
+
+    return { retenus: avecCle, ecartes: [...ecartes, ...sansCle] };
 }
 
 // ── LE CHAT EN FLUX, AVEC LES OUTILS ─────────────────────────────────────
@@ -1347,16 +1386,14 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
 
         const echecs = [`gemini: ${err.message}`];
         for (const relais of retenus) {
-            try {
-                console.warn(`🔀 Relais ${relais.nom} (Gemini indisponible)...`);
-                return await chatViaOpenAiCompatible({
-                    provider: relais.nom, model: relais.model, poster: relais.poster,
-                    message, context, useTools, history,
-                });
-            } catch (relaisErr) {
-                console.error(`❌ ${relais.nom} (relais) :`, relaisErr.response?.data || relaisErr.message);
-                echecs.push(`${relais.nom}: ${relaisErr.message}`);
-            }
+            console.warn(`🔀 Relais ${relais.nom} (Gemini indisponible)...`);
+            const essai = await essayerRelais(relais, (model) => chatViaOpenAiCompatible({
+                provider: relais.nom, model, poster: relais.poster,
+                message, context, useTools, history,
+            }));
+            if (essai.ok) return essai.reponse;
+            direLEchec(relais.nom, essai.famille, essai.message, essai.remplaceAussiEchoue);
+            echecs.push(`${relais.nom} (${essai.famille}): ${essai.message}`);
         }
         return sansReponse("gemini", `les ${echecs.length} fournisseurs ont échoué (${echecs.join(" | ")})`);
     }
@@ -1455,15 +1492,23 @@ async function chatLibre({ systemPrompt, message, history = [], imageUrl = null,
         // niveau à outils) : la chaîne n'est donc filtrée que par les
         // capacités, pas par les familles.
         const { retenus } = relaisDuTour({ context: { niveau }, useTools: false });
+        // La TROISIÈME boucle de repli, celle du chat public. Elle attrapait
+        // ses erreurs à sa façon, sans jamais distinguer un modèle mort d'un
+        // pic de charge — et c'est la boucle que voient les VISITEURS, ceux
+        // qui n'ont pas encore de compte. Elle passe par le même essayeur.
         for (const r of retenus) {
-            try {
-                console.warn(`🔀 chatLibre — relais ${r.nom}...`);
-                const res = await r.poster({ model: r.model, messages: messagesOpenAi });
+            console.warn(`🔀 chatLibre — relais ${r.nom}...`);
+            const essai = await essayerRelais(r, async (model) => {
+                const res = await r.poster({ model, messages: messagesOpenAi });
                 const texte = res.data.choices?.[0]?.message?.content;
-                if (texte) return { text: texte, provider: r.nom };
-            } catch (relaisErr) {
-                console.error(`❌ chatLibre / ${r.nom} :`, relaisErr.response?.data || relaisErr.message);
-            }
+                // Une réponse sans texte n'est pas une réussite : sans ce
+                // garde, on rendait `{ text: undefined }` comme si de rien
+                // n'était et le visiteur voyait une bulle vide.
+                if (!texte) throw new Error(`${r.nom} a répondu sans texte`);
+                return { text: texte, provider: r.nom };
+            });
+            if (essai.ok) return essai.reponse;
+            direLEchec(`chatLibre/${r.nom}`, essai.famille, essai.message, essai.remplaceAussiEchoue);
         }
         return { text: null, provider: null };
     }
@@ -1591,28 +1636,247 @@ async function chatWithSearch({ message, context = {} }) {
         for (const e of ecartes) console.warn(`↩︎ ${e.id} écarté (search) : ${e.raison}`);
 
         for (const relais of retenus) {
-            try {
-                console.warn(`🔀 Relais ${relais.nom} (Gemini search indisponible)...`);
-                const fallback = await chatViaOpenAiCompatible({
-                    provider: relais.nom, model: relais.model, poster: relais.poster,
-                    message, context, useTools: false,
-                });
-                return { ...fallback, sources: [] };
-            } catch (relaisErr) {
-                console.error(`❌ ${relais.nom} (relais search) :`, relaisErr.response?.data || relaisErr.message);
-            }
+            console.warn(`🔀 Relais ${relais.nom} (Gemini search indisponible)...`);
+            const essai = await essayerRelais(relais, (model) => chatViaOpenAiCompatible({
+                provider: relais.nom, model, poster: relais.poster,
+                message, context, useTools: false,
+            }));
+            if (essai.ok) return { ...essai.reponse, sources: [] };
+            direLEchec(relais.nom, essai.famille, essai.message, essai.remplaceAussiEchoue);
         }
         return { type: "text", text: "SAMII démarre actuellement. Réessaie dans quelques instants.", sources: [] };
     }
 }
 
-// Les 3 relais de secours partagent le même format OpenAI (chat completions
-// + tool_calls) — une seule table à étendre si un nouveau relais s'ajoute.
+// ══════════════════════════════════════════════════════════════════════════
+// LES RELAIS : QUI PEUT SERVIR, ET AVEC QUEL MODÈLE AUJOURD'HUI
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Les 3 relais partagent le même format OpenAI (chat completions +
+// tool_calls) — une seule table à étendre si un nouveau relais s'ajoute.
+//
+// `model` n'est plus une constante : c'est une LECTURE du registre. Le nom
+// était écrit à deux endroits, et deux endroits finissent toujours par ne
+// plus dire la même chose.
 const OPENAI_COMPATIBLE_PROVIDERS = {
-    groq:       { poster: postGroq,       model: GROQ_MODEL },
-    openrouter: { poster: postOpenRouter, model: OPENROUTER_MODEL },
-    deepseek:   { poster: postDeepSeek,   model: DEEPSEEK_MODEL },
+    groq:       { poster: postGroq,       modeles: GROQ_MODELES,       cle: () => CONFIG.GROQ?.API_KEY },
+    openrouter: { poster: postOpenRouter, modeles: OPENROUTER_MODELES, cle: () => CONFIG.OPENROUTER?.API_KEY },
+    deepseek:   { poster: postDeepSeek,   modeles: DEEPSEEK_MODELES,   cle: () => CONFIG.DEEPSEEK?.API_KEY },
 };
+
+// ── ESSAYER UN RELAIS, UNE FOIS, ET COMPRENDRE SON REFUS ────────────────
+//
+// Trois boucles de repli existaient (chat, chatLibre, chatWithSearch) et
+// chacune attrapait les erreurs à sa façon. Elles font maintenant toutes
+// appel à celle-ci : une divergence entre trois boucles de secours ne se
+// voit que le jour où tout le reste est déjà tombé.
+//
+// Rend { ok, reponse } ou { ok: false, famille, message }.
+//
+// LE SEUL CAS QUI REJOUE : « modele ». Le fournisseur dit que ce nom n'est
+// plus servi ; on lui demande ce qu'il a, et on retente UNE fois avec le
+// remplaçant. Une seule, et seulement sur ce motif : rejouer un 429 ou un
+// 5xx ici doublerait l'attente du client pour rien, alors que le relais
+// suivant est prêt juste en dessous.
+async function essayerRelais(relais, appel) {
+    try {
+        return { ok: true, reponse: await appel(relais.model) };
+    } catch (err) {
+        const famille = classerEchec(err);
+        const message = String(err?.response?.data?.error?.message || err.message || "").slice(0, 200);
+
+        if (famille === "modele") {
+            const remplacant = await modeleVivant(relais.nom, err);
+            if (remplacant) {
+                try {
+                    return { ok: true, reponse: await appel(remplacant), remplace: remplacant };
+                } catch (err2) {
+                    // `remplaceAussiEchoue` : sans lui, le journal affichait
+                    // « aucun remplaçant trouvé » alors qu'on venait d'en
+                    // trouver un et de l'essayer. Un message de panne qui
+                    // décrit mal la panne envoie chercher au mauvais endroit
+                    // — c'est le défaut qu'on passe ce chantier à corriger,
+                    // il serait absurde de l'introduire dans sa propre trace.
+                    return { ok: false, famille: classerEchec(err2), remplaceAussiEchoue: remplacant,
+                             message: `${message} — puis « ${remplacant} » a échoué aussi : ${String(err2.message).slice(0, 120)}` };
+                }
+            }
+        }
+        return { ok: false, famille, message };
+    }
+}
+
+// Ce qu'on écrit dans le journal, selon ce qu'on a compris. Un « clé
+// absente » et un « modèle mort » ne se réparent pas du tout de la même
+// façon : les afficher pareil, c'est ce qui a laissé deux modèles morts en
+// production pendant des semaines.
+function direLEchec(nom, famille, message, remplaceAussiEchoue) {
+    if (famille === "config") {
+        console.error(`🔑 ${nom} : configuration à corriger — ${message}`);
+    } else if (remplaceAussiEchoue) {
+        console.error(`🧩 ${nom} : le modèle du registre est refusé, et « ${remplaceAussiEchoue} » `
+            + `n'a pas répondu non plus — ${message}`);
+    } else if (famille === "modele") {
+        console.error(`🧩 ${nom} : modèle refusé ET aucun remplaçant trouvé — ${message}`);
+    } else {
+        console.warn(`↪︎ ${nom} indisponible (passager) — ${message}`);
+    }
+}
+
+// ── LE MODÈLE RÉELLEMENT EN SERVICE, PAR FOURNISSEUR ────────────────────
+//
+// Vide au démarrage : on part de ce que dit le registre. Une entrée n'y
+// apparaît que si le fournisseur a REFUSÉ le modèle du registre et qu'on en
+// a trouvé un autre chez lui. En mémoire, sans persistance : au redémarrage
+// on repart du registre, ce qui est correct puisqu'on ne sait plus rien.
+const modelesVivants = new Map();
+
+function modeleDe(provider) {
+    return modelesVivants.get(provider) || MOTEURS.moteur(provider)?.modele || null;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// POURQUOI UN RELAIS A ÉCHOUÉ — ET CE QU'ON EN FAIT
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Tous les échecs se ressemblaient : on passait au suivant, et on
+// recommençait au tour d'après, indéfiniment. Deux modèles sont morts en
+// août 2026 à six jours d'écart, et SAMII a continué de les appeler sans
+// que rien ne le dise.
+//
+// Trois familles, trois conduites :
+//
+//   "passager"  — surcharge, quota, 5xx, temps dépassé, coupure réseau.
+//                 Le relais suivant, et on réessaiera celui-ci plus tard.
+//                 C'est le cas normal d'un failover.
+//
+//   "modele"    — le fournisseur dit que CE MODÈLE n'existe plus, ou n'est
+//                 plus accessible avec notre offre. Réessayer ne servira
+//                 jamais : c'est le nom qu'il faut changer. On demande donc
+//                 au fournisseur ce qu'il a, et on réessaie UNE fois.
+//
+//   "config"    — clé absente, refusée, sans permission. Réessayer est
+//                 inutile ET bruyant : un humain doit agir. On le dit une
+//                 fois, clairement, et on n'y revient pas dans ce tour.
+//
+// Cette distinction est la raison d'être de ce chantier : sans elle, une
+// erreur qui se répare en trente secondes et une erreur qui demande un
+// déploiement se ressemblent dans le journal.
+function classerEchec(err) {
+    const statut = err?.response?.status;
+    const brut = err?.response?.data;
+    const message = String(brut?.error?.message || brut?.message || err?.message || "");
+
+    // Aucune réponse HTTP du tout : temps dépassé, DNS, coupure. Passager.
+    if (!statut) {
+        if (/absente|indisponible \(relais/i.test(message)) return "config";
+        return "passager";
+    }
+
+    // ── LE FOURNISSEUR PARLE DU MODÈLE ──────────────────────────────────
+    //
+    // Chacun le dit à sa façon, et la première version de ce contrôle listait
+    // les tournures une par une. Elle ratait DeepSeek — « Model Not Exist »
+    // ne contient pas « does not exist » — et c'est un test qui l'a montré,
+    // pas une relecture.
+    //
+    // La règle est donc en DEUX morceaux : le message doit parler d'un
+    // « model », ET dire qu'il n'est pas utilisable. Les quatre formulations
+    // réellement reçues passent :
+    //
+    //   Groq       : "The model `…` does not exist or you do not have access to it."
+    //   OpenRouter : "This model is unavailable for free. … use this slug instead: …"
+    //   DeepSeek   : "Model Not Exist"
+    //   générique  : "model_not_found"
+    //
+    // Et ce qui NE doit pas passer ne passe pas : « This model is currently
+    // experiencing high demand » parle bien d'un modèle, mais ne dit pas
+    // qu'il a disparu — c'est une surcharge, donc un cas passager. C'est
+    // exactement la ligne à ne pas franchir : classer une surcharge en
+    // « modèle mort » ferait abandonner Gemini pour de bon au premier pic.
+    const parleDuModele = /\bmodels?\b|model_not_found/i.test(message);
+    const introuvable = /not exist|does ?n[o']t exist|not found|unavailable|no longer available|decommissioned|deprecated|invalid|not a valid|unknown|no access|not have access/i.test(message);
+    if (parleDuModele && introuvable) return "modele";
+
+    // 401 / 403 : la clé. Un humain doit intervenir.
+    if (statut === 401 || statut === 403) return "config";
+
+    // 400 : ambigu. Sans mention du modèle (déjà traitée au-dessus), c'est
+    // NOTRE requête qui est fautive — la relancer ailleurs ne la répare pas,
+    // mais un autre fournisseur peut l'accepter. On bascule, en le disant.
+    if (statut === 400) return "passager";
+
+    // 429 et 5xx : exactement ce pour quoi le failover existe.
+    return "passager";
+}
+
+// ── LE SLUG QUE LE FOURNISSEUR PROPOSE LUI-MÊME ─────────────────────────
+//
+// OpenRouter ne dit pas seulement « ce modèle n'est plus gratuit » : il
+// écrit « use this slug instead: openai/gpt-oss-20b ». C'est la source la
+// plus fiable qui existe — plus sûre qu'un catalogue, et disponible sans un
+// appel de plus. On la lit avant d'aller interroger /models.
+function slugSuggere(err) {
+    const brut = err?.response?.data;
+    const message = String(brut?.error?.message || brut?.message || "");
+    const m = /use this slug instead:\s*([A-Za-z0-9._\/:-]+)/i.exec(message);
+    return m ? m[1].replace(/[.,;]+$/, "") : null;
+}
+
+// ── DEMANDER AU FOURNISSEUR CE QU'IL A ──────────────────────────────────
+//
+// « Le système doit interroger /models plutôt que supposer éternellement
+// qu'un modèle existe. »
+//
+// On ne choisit PAS au hasard dans le catalogue : on prend, dans l'ordre,
+// le premier des `modelesDeSecours` déclarés au registre que le fournisseur
+// annonce réellement servir. Un nom choisi par nous et confirmé par lui —
+// jamais un nom trouvé par lui seul, qui pourrait être un modèle d'image,
+// un modèle de transcription, ou dix fois trop cher.
+//
+// Rend `null` si rien ne convient : mieux vaut passer au relais suivant que
+// d'envoyer une conversation à un modèle dont on ne sait rien.
+async function modeleVivant(provider, err) {
+    const fiche = OPENAI_COMPATIBLE_PROVIDERS[provider];
+    const moteur = MOTEURS.moteur(provider);
+    if (!fiche || !moteur) return null;
+
+    // 1. Ce que le fournisseur a lui-même proposé dans son message d'erreur.
+    const propose = slugSuggere(err);
+    const candidats = [
+        ...(propose ? [propose] : []),
+        ...(moteur.modelesDeSecours || []),
+    ].filter((c) => c && c !== modeleDe(provider));
+    if (!candidats.length) return null;
+
+    // 2. Le catalogue du fournisseur, pour CONFIRMER. S'il est injoignable,
+    //    on retient quand même la suggestion explicite du fournisseur — elle
+    //    vient de lui, elle ne peut pas être plus fausse que ce qu'on a.
+    let catalogue = null;
+    try {
+        const r = await axios.get(fiche.modeles, {
+            timeout: 8000,
+            headers: { "Authorization": `Bearer ${fiche.cle() || ""}` },
+        });
+        const liste = r?.data?.data || r?.data?.models || [];
+        catalogue = new Set(liste.map((m) => String(m?.id || m?.name || "")).filter(Boolean));
+    } catch (e) {
+        console.warn(`⚠️ ${provider} : catalogue /models injoignable (${e.message}).`);
+    }
+
+    const retenu = catalogue
+        ? candidats.find((c) => catalogue.has(c)) || (propose && catalogue.has(propose) ? propose : null)
+        : propose;
+
+    if (!retenu) return null;
+    modelesVivants.set(provider, retenu);
+    // BRUYANT, ET C'EST VOULU. Le produit continue de tourner, mais
+    // config/moteurs.js est désormais faux : quelqu'un doit le corriger,
+    // sinon chaque redémarrage recommencera cette découverte.
+    console.warn(`🔁 ${provider} : « ${moteur.modele} » n'est plus servi — bascule sur « ${retenu} ». `
+        + "À FIGER dans config/moteurs.js, sinon la découverte recommence à chaque redémarrage.");
+    return retenu;
+}
 
 // Outils qui rapportent des données Google Workspace (contenu de la boîte
 // mail, agenda, fichiers Drive). Le résultat de ces outils est réinjecté
@@ -1924,6 +2188,11 @@ module.exports = {
     // Exposés aux tests seulement. Ces deux fonctions décident QUELS outils
     // SAMII porte à chaque tour — la vérifier en relisant le fichier ne
     // prouverait rien, il faut pouvoir l'appeler.
+    // La classification d'un échec de relais décide s'il faut basculer,
+    // redemander un modèle, ou réveiller un humain. La vérifier en relisant
+    // le fichier ne prouverait rien — il faut pouvoir l'appeler.
+    __test_classerEchec: classerEchec,
+    __test_slugSuggere: slugSuggere,
     __test_buildToolsPayload: buildToolsPayload,
     __test_toOpenAiTools: toOpenAiTools,
     __test_configDeGeneration: configDeGeneration,
