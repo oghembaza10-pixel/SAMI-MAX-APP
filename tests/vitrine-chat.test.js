@@ -532,6 +532,75 @@ try {
         "le gabarit écrit un libellé de niveau en dur dans le bouton au lieu de le lire");
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// 7. « MES ESPACES » ET « MON QG » SONT DEUX BOUTONS, PAS DEUX STYLES
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Ils sont côte à côte dans la barre du haut et faisaient deux tailles
+// différentes. MESURÉ dans un navigateur, avant correction :
+//
+//     bureau   espaces 123×34  ·  QG 86×38    →  4 px plus bas
+//     mobile   espaces 110×54  ·  QG 86×38    → 16 px plus HAUT, sur 2 lignes
+//
+// Leurs mesures étaient écrites DEUX FOIS, avec des valeurs différentes :
+// police .78 vs .85 rem, graisse 400 vs 500, padding 6/11 vs 7/15, et
+// `nowrap` sur un seul des deux.
+//
+// Ce garde ne fige aucune valeur — il exige qu'elles soient déclarées au
+// même endroit. Deux règles séparées, même identiques aujourd'hui, finissent
+// par diverger : c'est précisément ce qui s'est passé.
+{
+    const feuille = fs.readFileSync(path.join(RACINE, "views/samii-accueil.ejs"), "utf8");
+
+    verifier(/\.btn-haut,\s*\.appel-espaces\s*{/.test(feuille),
+        "« Mes espaces » et « Mon QG » ne partagent plus une seule règle de forme : "
+        + "ils vont redevenir deux tailles différentes");
+
+    // La hauteur ne doit pas dépendre du contenu : sous 560 px le libellé de
+    // « Mes espaces » s'efface, et un bouton réduit à son icône retombait à
+    // 31 px contre 38.
+    verifier(/--h-bouton:\s*\d+px/.test(feuille) && /min-height:\s*var\(--h-bouton\)/.test(feuille),
+        "la hauteur des deux boutons est redevenue déduite du texte : celui qui perd son "
+        + "libellé sur mobile rétrécira");
+    // ⚠️ INSTRUMENT. Première version : `slice(debut, debut + 700)`. Le
+    // commentaire qui ouvre la règle fait à lui seul près de 600 caractères,
+    // et `box-sizing` tombait juste au-delà de la fenêtre — le garde criait
+    // sur une règle parfaitement correcte. On découpe sur l'accolade
+    // fermante, qui est là où la règle finit vraiment.
+    const iRegle = feuille.indexOf(".btn-haut, .appel-espaces");
+    const regle = feuille.slice(iRegle, feuille.indexOf("}", iRegle));
+    verifier(regle.length > 100, "la règle partagée est introuvable — l'instrument regarde à côté");
+    verifier(/box-sizing:\s*border-box/.test(regle),
+        "sans `border-box`, la hauteur déclarée n'est pas la hauteur rendue");
+
+    // Aucune des mesures partagées ne doit être redéclarée sur un seul des deux.
+    const propre = feuille.slice(feuille.indexOf(".appel-espaces { color"),
+                                 feuille.indexOf(".appel-espaces__pic"));
+    for (const mesure of ["font-size", "padding", "font-weight"]) {
+        verifier(!new RegExp(mesure + ":").test(propre),
+            `« ${mesure} » est redéclaré pour « Mes espaces » seul : les deux boutons vont diverger`);
+    }
+
+    // ── L'ICÔNE EST UN DESSIN, PAS UN CARACTÈRE ──────────────────────────
+    //
+    // C'était l'emoji « 🗂 ». Un emoji est un caractère : chaque système le
+    // dessine à sa façon, quand il le dessine — et il sortait méconnaissable.
+    const bouton = feuille.slice(feuille.indexOf('id="appel-espaces"') - 400,
+                                 feuille.indexOf('id="appel-espaces"') + 900);
+    verifier(/<svg[^>]*appel-espaces__pic/.test(bouton),
+        "l'icône du bouton n'est plus un SVG dans la page : un emoji ou un CDN peut ne pas s'afficher");
+    verifier(!/🗂|📁|📂/.test(bouton),
+        "un emoji est revenu comme icône : son dessin dépend du système qui l'affiche");
+
+    // Le nom reste lisible quand le libellé s'efface sous 560 px.
+    verifier(/aria-label="[^"]*"/.test(bouton) && /title="[^"]*"/.test(bouton),
+        "le bouton n'a plus d'aria-label ni de title : réduit à son icône sur mobile, "
+        + "il ne dirait plus rien à qui ne le voit pas");
+    verifier(/@media \(max-width: 560px\)[\s\S]{0,200}\.appel-espaces__nom\s*{\s*display:\s*none/.test(feuille),
+        "le libellé ne s'efface plus sur écran étroit : mesuré, la barre du haut déborde alors "
+        + "et « Mon QG » se retrouve coupé");
+}
+
 if (echecs.length) {
     console.log(`\n❌ page d'accueil : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
     echecs.forEach((e) => console.log(`   • ${e}`));

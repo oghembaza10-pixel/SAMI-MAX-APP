@@ -118,10 +118,43 @@ a { color: inherit; text-decoration: none; }
 }
 .langues a:hover { color: var(--texte); background: var(--releve); }
 .langues a.actif { color: var(--cyan); }
-.btn-haut {
+/* ══ LES DEUX BOUTONS DE LA BARRE DU HAUT ════════════════════════════════
+
+   « Mes espaces » et « Mon QG » sont côte à côte et faisaient deux tailles
+   différentes. MESURÉ avant correction :
+
+       bureau   espaces 123×34  ·  QG 86×38     →  4 px plus bas
+       mobile   espaces 110×54  ·  QG 86×38     → 16 px plus HAUT
+
+   Sur mobile c'était le pire des deux : le libellé passait à DEUX LIGNES,
+   et le bouton devenait un bloc irrégulier à côté d'un bouton net.
+
+   Les mesures étaient écrites deux fois, avec des valeurs différentes :
+   police .78 vs .85 rem, graisse 400 vs 500, padding 6/11 vs 7/15, et
+   `white-space: nowrap` sur un seul des deux. Les recopier à l'identique
+   aurait juste déplacé le problème au prochain ajustement.
+
+   Une seule règle porte donc la FORME des deux ; chacun n'ajoute plus que
+   ce qui lui est propre. Ils ne peuvent plus diverger. */
+.btn-haut, .appel-espaces {
+    /* ── LA HAUTEUR EST DÉCLARÉE, PLUS DÉDUITE DU CONTENU ────────────────
+       Elle venait de la ligne de texte. Ça marche tant que les deux boutons
+       portent du texte — et ça casse dès que l'un n'a plus qu'une icône :
+       mesuré à 31 px contre 38, sur mobile, après que le libellé se soit
+       effacé. Un bouton qui rétrécit parce qu'on lui a retiré son mot est
+       exactement ce qu'on essayait de corriger.
+       Une valeur, nommée, partagée par les deux. `border-box` pour que ce
+       soit la hauteur RENDUE, bordure comprise, et pas une hauteur interne
+       à laquelle il faudrait ajouter le reste de tête. */
+    --h-bouton: 38px;
+    min-height: var(--h-bouton); box-sizing: border-box;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
     padding: 7px 15px; border-radius: 999px; border: 1px solid var(--ligne-viv);
     font-size: .85rem; font-weight: 500; white-space: nowrap;
-    transition: border-color .16s, background .16s;
+    /* Pas de `line-height` ici : `.btn-haut` n'en avait pas, et en poser un
+       le faisait passer de 38 à 34 px. « Mes espaces » devait s'aligner SUR
+       « Mon QG » — pas l'inverse. */
+    transition: border-color .16s, background .16s, color .16s;
 }
 .btn-haut:hover { border-color: var(--cyan); background: rgba(95, 212, 255, .1); }
 .burger {
@@ -256,14 +289,47 @@ html[dir="rtl"] .espaces { transform: translateX(-100%); }
 
 /* Le bouton qui la rappelle. Il vit dans la barre du haut, donc il est
    toujours atteignable, y compris au milieu d'une longue conversation. */
-.appel-espaces {
-    display: flex; align-items: center; gap: 7px;
-    padding: 6px 11px; border-radius: 999px;
-    border: 1px solid var(--ligne-viv); color: var(--doux); font-size: .78rem;
-    transition: border-color .16s, color .16s, background .16s;
-}
+/* Sa forme vient de la règle partagée plus haut. Il ne garde ici que ce qui
+   le distingue : sa couleur au repos, et l'état « panneau ouvert ». */
+.appel-espaces { color: var(--doux); }
 .appel-espaces:hover { color: var(--texte); border-color: var(--violet); background: var(--releve); }
 .appel-espaces[aria-expanded="true"] { color: var(--cyan); border-color: var(--cyan); }
+
+/* ── L'ICÔNE EST UN DESSIN, PAS UN CARACTÈRE ─────────────────────────────
+   C'était l'emoji « 🗂 ». Un emoji n'est pas une image : c'est un caractère,
+   et chaque système le dessine à sa façon — quand il le dessine. Sur
+   Windows il sortait méconnaissable, et une icône qu'on ne reconnaît pas
+   n'aide personne à comprendre où mène le bouton.
+
+   Une chemise, en SVG, dans la page : le même dessin partout, et rien à
+   télécharger. `flex: none` pour qu'elle ne se comprime jamais — c'est
+   d'abord elle qu'un navigateur rétrécit quand la place manque. */
+.appel-espaces__pic { width: 15px; height: 15px; flex: none; }
+
+/* ── SUR ÉCRAN ÉTROIT, LA CHEMISE SUFFIT ─────────────────────────────────
+   RÉGRESSION QUE J'AI CRÉÉE, PUIS MESURÉE. En mettant le libellé sur une
+   seule ligne, le bouton est passé de 110 à 141 px — et la barre du haut
+   n'avait pas ces 31 px. Résultat à 390 px : « Mon QG » se terminait à
+   399 px, donc COUPÉ, et la page débordait à l'horizontale.
+
+       avant   espaces 110×54 (deux lignes)  ·  pas de débordement
+       après   espaces 141×38 (une ligne)    ·  « Mon QG » coupé
+
+   Le retour à la ligne était laid, mais c'est LUI qui faisait tenir la
+   barre. Le corriger sans rendre les 31 px, c'était échanger un défaut
+   contre un pire.
+
+   Sous 560 px, le libellé s'efface donc et la chemise reste seule. Le
+   bouton garde exactement la hauteur de « Mon QG », il ne se coupe plus, et
+   il ne dépasse plus. Le nom n'est pas perdu : `aria-label` le porte, et
+   `title` l'affiche au survol.
+
+   (Au passage, ça répare aussi le débordement à 320 px, qui existait AVANT
+   ce chantier — mesuré sur la version précédente.) */
+@media (max-width: 560px) {
+    .appel-espaces { padding: 7px 11px; }
+    .appel-espaces__nom { display: none; }
+}
 
 /* Quand la colonne est ouverte, le fil se décale au lieu de passer dessous :
    lire un texte à moitié caché est pire que de le lire plus étroit. */
@@ -772,9 +838,18 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
             <%# Rappeler ses espaces depuis n'importe où dans la conversation.
                 Sur mobile il ouvre un rideau, sur bureau il décale le fil —
                 même bouton, même état, deux mises en page. %>
+            <%# `aria-label` et `title` portent le nom en toutes circonstances :
+                sous 560 px le libellé visible s'efface (voir la feuille de
+                style), et un bouton réduit à une icône ne dit plus rien à qui
+                ne le voit pas. %>
             <button class="appel-espaces" id="appel-espaces" type="button"
-                    aria-expanded="false" aria-controls="espaces">
-                <span aria-hidden="true">🗂</span>
+                    aria-expanded="false" aria-controls="espaces"
+                    aria-label="<%= L("Mes espaces") %>" title="<%= L("Mes espaces") %>">
+                <svg class="appel-espaces__pic" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                </svg>
                 <span class="appel-espaces__nom"><%= L("Mes espaces") %></span>
             </button>
             <nav class="langues" aria-label="<%= L("Langue") %>">
