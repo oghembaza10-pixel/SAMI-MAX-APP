@@ -204,17 +204,38 @@ a { color: inherit; text-decoration: none; }
     </div>
 
     <div class="sorties">
-        <%# Sortie 1 — celui qui découvre. Le métier part avec lui : SAMII sait
-            à qui il parle avant le premier message. %>
-        <a class="sortie" href="/?metier=<%= encodeURIComponent(L(metier.label)) %>">
+        <%# Sortie 1 — celui qui découvre, celui qui veut d'abord parler.
+
+            Ce qui partait avec lui, c'était le mot nu : « Dentiste » déposé
+            seul dans la barre de saisie. Le commentaire d'ici prétendait que
+            « SAMII sait à qui il parle avant le premier message » — c'était
+            faux : rien n'est envoyé tant qu'on n'appuie pas, et ce qui part
+            alors est un mot isolé, qui coûte un crédit et ne demande rien.
+
+            Ce qui part maintenant est une vraie question. Le gabarit marche
+            pour les trente-quatre libellés, ceux qui désignent une personne
+            (« Dentiste ») comme ceux qui désignent un lieu (« Pharmacie ») —
+            « Je suis pharmacie » n'aurait pas tenu. %>
+        <a class="sortie" href="/?metier=<%= encodeURIComponent(
+            L("Mon activité") + " : " + L(metier.label) + ". " + L("Par où je commence ?")
+        ) %>">
             <h3><%= L("Poser la question à SAMII") %></h3>
             <p><%= L("Racontez votre situation. SAMII connaît déjà votre métier — les prix, la livraison, le paiement à la réception.") %></p>
             <span class="sortie__cta"><%= L("Ouvrir la discussion") %> →</span>
         </a>
 
-        <%# Sortie 2 — celui qui est décidé. /workspace/create?metier= existait
-            déjà et pré-remplit le métier : rien de nouveau n'est inventé ici. %>
-        <a class="sortie sortie--net" href="/workspace/create?metier=<%= encodeURIComponent(metier.id) %>">
+        <%# Sortie 2 — celui qui est décidé.
+
+            Elle pointait sur /workspace/create, qui est derrière requireAuth :
+            mesuré, un visiteur non connecté recevait un 302 vers /login. Or
+            cette fiche est faite POUR les visiteurs de Google, qui ne sont
+            jamais connectés. Le bouton « Créer maintenant » les déposait donc
+            sur un mur de connexion, sans leur métier.
+
+            /register?metier= est la même porte que le Hub : un visiteur reçoit
+            le formulaire d'inscription, quelqu'un de connecté est redirigé sur
+            /workspace/create?metier= — en gardant son métier. %>
+        <a class="sortie sortie--net" href="/register?metier=<%= encodeURIComponent(metier.id) %>">
             <h3><%= L("Ouvrir mon QG") + " " + L(metier.label).toLowerCase() %></h3>
             <p><%= metier.parcours === "rdv"
                 ? L("Créneaux en ligne, rappels automatiques, fiche client. Prêt pour votre activité.")

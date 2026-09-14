@@ -269,8 +269,23 @@ try {
     const premier = metiers.METIERS[0];
     verifier(hub.includes(premier.label),
         `le hub n'affiche pas « ${premier.label} » — il ne lit pas services/metiers.js`);
-    verifier(hub.includes("/?metier="),
-        "les métiers ne ramènent pas au chat");
+    // ── CE GARDE DÉFENDAIT LA MAUVAISE DESTINATION ───────────────────────
+    //
+    // Il exigeait que chaque métier ramène au chat : « /?metier=Dentiste ».
+    // C'est ce qui se passait, et voilà ce que ça donnait en vrai — choisir
+    // « Dentiste » déposait le mot « Dentiste » dans la barre de saisie du
+    // chat. Pas de QG. Pas de questionnaire. Rien. Et si on appuyait, un
+    // crédit partait pour envoyer un mot isolé.
+    //
+    // Choisir son métier doit OUVRIR UN ESPACE. C'est déjà ce que font les
+    // cartes du Hub, qui mènent à /register?metier=<id> ; la liste publique
+    // mène maintenant à la même porte. Une seule destination pour un seul
+    // geste.
+    verifier(hub.includes("/register?metier="),
+        "choisir un métier n'ouvre aucun espace : la liste ne mène plus à /register?metier=<id>");
+    verifier(!hub.includes("/?metier="),
+        "un métier ramène de nouveau au chat avec le mot posé dans la barre — "
+        + "ni QG, ni questionnaire, et un crédit dépensé pour un mot isolé");
 } catch (err) {
     verifier(false, `le hub des métiers ne se rend pas : ${err.message}`);
 }

@@ -252,6 +252,71 @@ const script = brut
         "une liste de pays est réapparue dans public/js/hub.js");
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// 8. CHOISIR UN MÉTIER MÈNE QUELQUE PART — ET AU MÊME ENDROIT PARTOUT
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Trois pages proposaient de choisir son métier. Mesuré, elles menaient à
+// trois endroits DIFFÉRENTS :
+//
+//   /hub          → /register?metier=dentiste      → le questionnaire ✅
+//   /metiers      → /?metier=Dentiste              → le chat, le mot « Dentiste »
+//                                                    posé dans la barre, rien d'autre
+//   /metiers/<id> → /workspace/create?metier=...   → 302 /login (requireAuth),
+//                                                    alors que cette fiche est
+//                                                    faite pour Google, donc pour
+//                                                    des gens jamais connectés
+//
+// Deux portes sur trois ne construisaient rien. C'est ce que « autant de rien
+// faire » décrivait.
+//
+// Une seule porte désormais : /register?metier=<id>. C'est la seule qui sait
+// répondre aux deux états d'un visiteur — pas connecté : le formulaire ;
+// connecté : /workspace/create en gardant le métier.
+{
+    const liste = fs.readFileSync(path.join(RACINE, "views/metiers.ejs"), "utf8");
+    const fiche = fs.readFileSync(path.join(RACINE, "views/metier.ejs"), "utf8");
+    const sansEjs = (t) => t.replace(/<%#[\s\S]*?%>/g, "");
+
+    // La grille du Hub — celle qui marchait déjà.
+    verifier(/href="\/register\?metier=\$\{encodeURIComponent\(m\.id\)\}"/.test(script),
+        "les cartes du Hub ne mènent plus à /register?metier=<id>");
+
+    // La liste publique doit mener à la MÊME porte…
+    verifier(/href="\/register\?metier=<%= encodeURIComponent\(m\.id\) %>"/.test(sansEjs(liste)),
+        "les cartes de /metiers ne mènent pas à /register?metier=<id> : choisir son métier "
+        + "n'ouvre aucun espace");
+
+    // …et surtout plus au chat avec un mot posé dans la barre.
+    verifier(!/href="\/\?metier=/.test(sansEjs(liste)),
+        "une carte de /metiers renvoie de nouveau sur le chat avec le métier pré-tapé : "
+        + "ni QG, ni questionnaire, et un crédit dépensé pour un mot isolé");
+
+    // La fiche ne doit pas déposer un visiteur de Google sur un mur de login.
+    verifier(!/href="\/workspace\/create\?metier=/.test(sansEjs(fiche)),
+        "la fiche métier pointe de nouveau sur /workspace/create, qui est derrière "
+        + "requireAuth : un visiteur non connecté reçoit un 302 vers /login");
+    verifier(/href="\/register\?metier=<%= encodeURIComponent\(metier\.id\) %>"/.test(sansEjs(fiche)),
+        "le bouton « Ouvrir mon QG » de la fiche ne mène plus à /register?metier=<id>");
+
+    // Et c'est l'ID qui voyage, jamais le libellé traduit : /workspace/create
+    // compare au registre, où « Dentist » n'existe pas.
+    verifier(!/metier=<%= encodeURIComponent\(L\(m\.label\)\)/.test(sansEjs(liste)),
+        "le libellé TRADUIT repart dans l'URL au lieu de l'id : en anglais, « Dentist » "
+        + "ne correspond à aucune entrée du registre");
+
+    // Reste la sortie « parler d'abord », qui elle a le droit d'aller au chat —
+    // mais avec une vraie question, pas un mot nu.
+    // On coupe sur « %> », pas sur le guillemet fermant : le premier
+    // guillemet rencontré est celui de L("Mon activité"), à l'INTÉRIEUR de
+    // l'expression. Couper là rendait la tranche vide et le garde criait sur
+    // un code correct.
+    const versLeChat = sansEjs(fiche).match(/href="\/\?metier=[\s\S]{0,300}?%>/);
+    verifier(versLeChat && /Mon activité|metier\.label/.test(versLeChat[0]),
+        "la sortie « parler à SAMII » de la fiche redépose un mot isolé dans la barre "
+        + "de saisie : envoyé tel quel, il coûte un crédit et ne demande rien");
+}
+
 if (echecs.length) {
     console.log(`\n❌ Hub / métiers : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
     for (const e of echecs) console.log(`   • ${e}`);

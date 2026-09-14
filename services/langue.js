@@ -587,6 +587,8 @@ const EN = {
         "Tell it your situation. SAMII already knows your trade — the prices, the delivery, cash on delivery.",
     "Ouvrir la discussion": "Start the conversation",
     "Ouvrir mon QG": "Open my HQ",
+    "Mon activité": "My business",
+    "Par où je commence ?": "Where do I start?",
     "Créneaux en ligne, rappels automatiques, fiche client. Prêt pour votre activité.":
         "Online slots, automatic reminders, customer records. Ready for your business.",
     "Page de commande, confirmation automatique, suivi des colis. Prêt pour votre activité.":
@@ -977,6 +979,8 @@ const AR = {
         "اشرح وضعك. SAMII يعرف مهنتك مسبقًا — الأسعار، التوصيل، الدفع عند الاستلام.",
     "Ouvrir la discussion": "ابدأ المحادثة",
     "Ouvrir mon QG": "افتح مقرّي",
+    "Mon activité": "نشاطي",
+    "Par où je commence ?": "من أين أبدأ؟",
     "Créneaux en ligne, rappels automatiques, fiche client. Prêt pour votre activité.":
         "مواعيد على الإنترنت، تنبيهات تلقائية، بطاقة زبون. جاهز لنشاطك.",
     "Page de commande, confirmation automatique, suivi des colis. Prêt pour votre activité.":

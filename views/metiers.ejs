@@ -123,8 +123,24 @@ a { color: inherit; text-decoration: none; }
         <section class="groupe">
             <h2><%= L(g.nom) %></h2>
             <div class="grille">
+                <%# ── CHOISIR UN MÉTIER OUVRE UN ESPACE ───────────────────
+                    Ces cartes menaient à « /?metier=Dentiste » : le chat, avec
+                    le mot « Dentiste » déjà tapé dans la barre de saisie. Et
+                    rien d'autre. Pas de QG, pas de questionnaire. Choisir son
+                    métier ne faisait donc rien du tout — au mieux ça coûtait
+                    un crédit pour envoyer un mot isolé à SAMII.
+
+                    Elles mènent maintenant là où mènent les cartes du Hub :
+                    /register?metier=<id>, qui est la SEULE porte qui sait
+                    répondre aux deux cas — un visiteur reçoit le formulaire
+                    d'inscription, quelqu'un de déjà connecté est conduit au
+                    questionnaire de création de son QG.
+
+                    Et c'est l'ID qui voyage, jamais le libellé traduit :
+                    /workspace/create compare au registre, et « Dentist » en
+                    anglais n'y correspondrait à rien. %>
                 <% g.metiers.forEach(function (m) { %>
-                    <a class="metier" href="/?metier=<%= encodeURIComponent(L(m.label)) %>">
+                    <a class="metier" href="/register?metier=<%= encodeURIComponent(m.id) %>">
                         <span class="metier__pic"><%= m.icone %></span>
                         <span><%= L(m.label) %></span>
                         <span class="metier__quoi"><%= m.parcours === "rdv" ? L("rendez-vous") : L("commandes") %></span>

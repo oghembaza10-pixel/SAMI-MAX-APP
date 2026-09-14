@@ -125,9 +125,26 @@ async function pret(essais = 40) {
             const html = await (await fetch(`${BASE}/metiers/coiffeur`)).text();
             verifier(/href="\/\?metier=/.test(html),
                 "la page ne ramène pas au chat — le visiteur qui découvre n'a nulle part où aller");
-            verifier(/href="\/workspace\/create\?metier=coiffeur"/.test(html),
+            // ── LA CIBLE CHANGE, L'INTENTION NON ─────────────────────────
+            //
+            // Ce garde exigeait /workspace/create?metier=coiffeur. Son but :
+            // que le visiteur DÉCIDÉ aille droit à la création, sans repasser
+            // par le chat. Le but est bon ; l'adresse ne l'était pas.
+            //
+            // Mesuré : /workspace/create est derrière requireAuth, et répond
+            // 302 vers /login. Or cette page est faite POUR les visiteurs de
+            // Google, qui ne sont jamais connectés. Le garde était donc vert
+            // pendant que le bouton déposait les gens sur un mur de connexion.
+            //
+            // /register?metier= est la porte du Hub : non connecté → le
+            // formulaire d'inscription ; connecté → /workspace/create en
+            // gardant le métier. Une seule étape, et elle aboutit.
+            verifier(/href="\/register\?metier=coiffeur"/.test(html),
                 "la page ne mène pas à la création du QG de ce métier — " +
                 "le visiteur décidé doit repasser par le chat, une étape de trop");
+            verifier(!/href="\/workspace\/create\?metier=/.test(html),
+                "le bouton repointe sur /workspace/create, qui est derrière requireAuth : " +
+                "un visiteur de Google y reçoit un 302 vers /login, sans son métier");
             verifier(/rel="canonical"/.test(html), "pas d'URL canonique");
             verifier(/hreflang=/.test(html), "pas de hreflang — les trois langues se feront concurrence");
             verifier(/application\/ld\+json/.test(html), "pas de données structurées");
