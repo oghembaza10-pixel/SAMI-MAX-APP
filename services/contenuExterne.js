@@ -219,7 +219,110 @@ function signaler(contenu, { source = "inconnue" } = {}) {
     return true;
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// LE CONTEXTE QUI PART DANS LE PROMPT
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ CE BLOC EXISTE PARCE QUE LA CARTOGRAPHIE A MONTRÉ UN TROU, PAS PARCE
+// QU'ON A IMAGINÉ UN RISQUE.
+//
+// `brain/prompts/index.js` sérialise le contexte ENTIER dans le prompt
+// (`JSON.stringify(context)`), au milieu de nos propres consignes. Mesuré :
+// un nom de profil WhatsApp de 120 caractères contenant « SYSTEME: ignore
+// les regles precedentes » atterrit tel quel dans la section CONTEXTE
+// ACTUEL, sans aucune borne autour.
+//
+// Or ce nom n'est pas une demande. Le message du client EST sa demande — il
+// doit pouvoir déclencher une commande, sinon le produit ne sert à rien. Son
+// nom de profil, lui, personne ne l'a demandé et personne ne l'a validé :
+// c'est du RAMENÉ, au sens exact de la distinction en tête de ce fichier.
+//
+// ── POURQUOI ICI ET PAS DANS CHAQUE ROUTE ────────────────────────────────
+//
+// Ces champs arrivent par CINQ portes différentes (Meta, WhatsApp Cloud,
+// WhatsApp Green API, Telegram, commentaires Facebook/Instagram) et par
+// autant d'appels à `planner.ask`. Encadrer à la source voudrait dire cinq
+// endroits à ne pas oublier — et la sixième route, écrite dans six mois,
+// n'aurait rien.
+//
+// Le seul endroit où le contexte DEVIENT un prompt, c'est la sérialisation.
+// La garde est donc posée là : une seule ligne à tenir, et elle couvre les
+// appelants d'aujourd'hui comme ceux de demain.
+//
+// `routes/api.js` continue d'encadrer à la source ce qui vient du navigateur
+// (client, commande, page, lastAction) : ce n'est pas un doublon, c'est le
+// même mur vu des deux côtés. `dejaEncadre` empêche le second passage de
+// réencadrer ce qui l'est déjà.
+const CHAMPS_TOUJOURS_EXTERNES = [
+    // Le nom d'affichage de l'interlocuteur. Choisi par lui, sur WhatsApp,
+    // Telegram, Facebook ou Instagram — donc du texte libre qu'un tiers écrit.
+    "name", "senderName", "auteur", "prenomClient",
+    // Ce que la page du navigateur a envoyé (déjà encadré par routes/api.js,
+    // nommé ici pour que la garde tienne même si un appelant l'oublie).
+    "client", "commande", "page", "lastAction",
+];
+
+// ── CE QUI NE DOIT PAS ÊTRE SÉRIALISÉ DU TOUT ────────────────────────────
+//
+// ⚠️ TROUVÉ EN MESURANT LE PROMPT, PAS EN LE RELISANT.
+//
+// `context.piece` porte les octets d'une image ou d'un document en base64.
+// Ces octets partent DÉJÀ correctement dans `inlineData` (le canal prévu par
+// l'API multimodale). Mais `JSON.stringify(context)` les recopiait EN PLUS
+// dans le texte du prompt.
+//
+// Mesuré : une image de 120 Ko donnait un prompt de 175 958 caractères, dont
+// ~160 000 de base64 illisible. La même image payée deux fois en jetons, et
+// une montagne de bruit au milieu des consignes.
+//
+// On ne le « nettoie » pas : on ne le sérialise jamais. Le modèle voit
+// l'image par le bon canal, et le prompt reste un texte.
+// `tourDeConversation` est une marque interne posée par brain/planner.js pour
+// distinguer une conversation d'une génération de texte (voir là-bas). Elle
+// commande les outils, pas la réponse : le modèle n'a rien à en faire, et la
+// lui montrer l'inviterait à raisonner sur sa propre plomberie.
+const HORS_DU_PROMPT = ["piece", "tourDeConversation"];
+
+function dejaEncadre(valeur) {
+    return typeof valeur === "string" && valeur.startsWith(OUVERTURE);
+}
+
+// Rend une COPIE du contexte prête à être sérialisée dans un prompt.
+// Ne modifie jamais l'objet reçu : le contexte continue de servir ailleurs
+// (permissions, facturation, mémoire) et doit y rester intact.
+function contextePourPrompt(context) {
+    if (!context || typeof context !== "object") return context;
+    const copie = { ...context };
+
+    for (const champ of HORS_DU_PROMPT) {
+        if (copie[champ] === undefined) continue;
+        // On ne fait pas disparaître l'information — le modèle doit savoir
+        // qu'une pièce est jointe, il la voit d'ailleurs. On remplace juste
+        // les octets par ce qui est réellement utile à lire.
+        const p = copie[champ];
+        copie[champ] = p && typeof p === "object" && p.mimeType
+            ? { type: p.mimeType, jointe: true }
+            : undefined;
+        if (copie[champ] === undefined) delete copie[champ];
+    }
+
+    for (const champ of CHAMPS_TOUJOURS_EXTERNES) {
+        // Une décision du serveur ne devient jamais un contenu externe, même
+        // si quelqu'un ajoute son nom à la liste ci-dessus. La garde est
+        // gardée.
+        if (JAMAIS_ENCADRES.includes(champ)) continue;
+        const v = copie[champ];
+        if (typeof v !== "string" || !v.trim()) continue;
+        if (dejaEncadre(v)) continue;
+        signaler(v, { source: `interlocuteur — ${champ}` });
+        copie[champ] = encadrer(v, { source: `écrit par l'interlocuteur — ${champ}`, max: 400 });
+    }
+    return copie;
+}
+
 module.exports = {
     LOI, OUVERTURE, FERMETURE, JAMAIS_ENCADRES,
+    CHAMPS_TOUJOURS_EXTERNES, HORS_DU_PROMPT,
     encadrer, encadrerChamps, paraitHostile, signaler,
+    dejaEncadre, contextePourPrompt,
 };

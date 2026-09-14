@@ -7,6 +7,40 @@ const google = require("../services/google");
 const commerceEngine = require("../engines/commerceEngine");
 const factureService = require("../services/factureService");
 
+// ── CONVERSATION OU GÉNÉRATION ? ─────────────────────────────────────────
+//
+// ⚠️ CETTE DISTINCTION EXISTE PARCE QUE LA PREUVE HTTP A MONTRÉ QU'ELLE
+// MANQUAIT, ET QUE `useTools: false` NE LA PORTAIT PAS.
+//
+// Deux choses très différentes appellent `gemini.chat()` :
+//
+//   UNE CONVERSATION  quelqu'un parle à SAMII et attend une réponse. C'est
+//                     ce que sert le planner, et lui seul. Le fondateur dans
+//                     son entraînement, un client sur WhatsApp, une leçon
+//                     d'Academy. Ces tours-là PEUVENT porter des outils :
+//                     c'est le sens même du produit.
+//
+//   UNE GÉNÉRATION    un moteur demande un texte : « résume ce document »,
+//                     « écris la réponse à ce commentaire », « extrais ce
+//                     qu'on apprend de cet échange ». Personne n'attend une
+//                     action, et ces tours lisent justement du contenu écrit
+//                     par des inconnus. Ils ne doivent porter AUCUN outil.
+//
+// Le drapeau `useTools` ne distinguait pas les deux : le fondateur et
+// l'extraction de mémoire l'ont tous les deux à `false`. D'où neuf outils,
+// `envoyer_email` compris, sur des tours qui n'attendaient que du texte.
+//
+// LA MARQUE EST POSÉE ICI, ET NULLE PART AILLEURS. C'est fermé par défaut :
+// un moteur écrit demain qui appellerait `gemini.chat()` directement n'aura
+// aucun outil — c'est le bon défaut. Une vraie conversation, elle, passe par
+// le planner, donc elle est couverte sans que personne y pense.
+//
+// Aucun contenu venu du dehors ne peut poser cette marque : elle n'est pas
+// lue d'un corps de requête, elle est écrite ici, en code.
+function tourDeConversation(context = {}) {
+    return { ...context, tourDeConversation: true };
+}
+
 class SamiiPlanner {
     async executeFunction(name, args, context = {}) {
         switch (name) {
@@ -491,7 +525,7 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
             // disciplinés que Gemini sur le function calling) peut déclencher
             // ces outils hors contexte, avec des valeurs inventées.
             const useTools = context.allowActions !== false && context.audience !== "souverain";
-            const result = await gemini.chat({ message, context, useTools, history });
+            const result = await gemini.chat({ message, context: tourDeConversation(context), useTools, history });
 
             if (result.type === "function_call") {
                 console.log(`⚙️ SAMII exécute : ${result.name}`, result.args);
@@ -545,7 +579,7 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
     async askFlux(message, context = {}, history = [], journal = null, onMorceau = null, onReprise = null) {
         try {
             const useTools = context.allowActions !== false && context.audience !== "souverain";
-            const result = await gemini.chatFlux({ message, context, useTools, history }, onMorceau, onReprise);
+            const result = await gemini.chatFlux({ message, context: tourDeConversation(context), useTools, history }, onMorceau, onReprise);
 
             if (result.type === "function_call") {
                 console.log(`⚙️ SAMII exécute : ${result.name}`, result.args);

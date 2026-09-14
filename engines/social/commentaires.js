@@ -135,11 +135,29 @@ async function marquer({ commentaireId, workspaceId, plateforme, texte }) {
 const LONGUEUR_MAX = 280;
 
 async function ecrireReponse({ commentaire, auteur, plateforme, workspaceId }) {
+    // ── LE COMMENTAIRE EST DU RAMENÉ, PAS UNE CONSIGNE ───────────────────
+    //
+    // Personne chez nous n'a validé ce texte : n'importe qui sur Facebook ou
+    // Instagram peut l'écrire sous une publication. Il est donc encadré, et
+    // la LOI (déjà dans le prompt SAMII) dit au modèle quoi en faire.
+    //
+    // Le vrai mur reste le `useTools: false` ci-dessous : ce tour n'a aucun
+    // outil sur la table, donc même un commentaire parfaitement tourné n'a
+    // rien à déclencher. L'encadrement rend la réponse honnête ; l'absence
+    // d'outils rend l'attaque inutile.
+    const externe = require("../../services/contenuExterne");
+    externe.signaler(commentaire, { source: `commentaire ${plateforme}` });
+    const bloc = externe.encadrer(String(commentaire).slice(0, 500), {
+        source: `commentaire public ${plateforme}`, max: 500,
+    });
+    const nom = externe.encadrer(auteur, { source: "nom de profil", max: 120 }) || "cette personne";
+
     const message = `${IDENTITE}
 
 Quelqu'un vient de commenter une publication de SAMII sur ${plateforme}.
 
-Commentaire de ${auteur || "cette personne"} : « ${String(commentaire).slice(0, 500)} »
+Commentaire de ${nom} :
+${bloc}
 
 Écris LA réponse de SAMII. Règles :
 - moins de ${LONGUEUR_MAX} caractères, une à deux phrases

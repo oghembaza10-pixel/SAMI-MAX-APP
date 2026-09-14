@@ -910,6 +910,52 @@ const BLOCS = [
             // tri par activité (voir workspaceService.ORDRE_QG), qui reste le
             // meilleur défaut pour qui n'a jamais choisi.
             `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS qg_principal TEXT`,
+
+            // ══════════════════════════════════════════════════════════════
+            // TROUVÉ EN FAISANT PASSER UNE VRAIE COMMANDE, PAS EN RELISANT
+            // ══════════════════════════════════════════════════════════════
+            //
+            // Base neuve, `npm run fondations`, serveur lancé, vrai webhook
+            // WhatsApp entrant, l'outil `passer_commande` réellement appelé.
+            // Résultat dans les journaux :
+            //
+            //   ❌ CommerceEngine.createOrderFromChat :
+            //      column "contact_id" of relation "commandes" does not exist
+            //
+            // AUCUN CLIENT NE POUVAIT COMMANDER SUR UNE INSTALLATION NEUVE.
+            // La suite de tests ne pouvait pas le voir : elle ne fait pas
+            // passer de commande à travers la vraie base.
+            //
+            // `contact_id` porte le numéro WhatsApp ou l'identifiant Telegram
+            // du client. Sans lui, `commerceEngine` échoue à l'écriture, et
+            // `webhook-whatsapp.js` ne retrouve jamais la commande en attente
+            // à confirmer — le « OUI » du client ne répond à rien.
+            `ALTER TABLE commandes ADD COLUMN IF NOT EXISTS contact_id TEXT`,
+            // Écrite par la confirmation client (webhook WhatsApp, boutons
+            // Telegram) et lue par le suivi des dépassements de quota.
+            `ALTER TABLE commandes ADD COLUMN IF NOT EXISTS confirme_le TIMESTAMP`,
+            // `date_commande` existe déjà, mais six requêtes du projet trient
+            // sur `created_at`. Deux noms pour la même idée, et c'est le
+            // second qui manquait.
+            `ALTER TABLE commandes ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()`,
+
+            // ── LA MÉMOIRE DE CONVERSATION N'AVAIT PAS DE TABLE ───────────
+            //
+            // Même preuve, mêmes journaux, à chaque message reçu :
+            //
+            //   ❌ memory.get : relation "memoire_sessions" does not exist
+            //   ❌ memory.set : relation "memoire_sessions" does not exist
+            //
+            // `brain/memory.js` la lit et l'écrit depuis toujours ; rien ne la
+            // créait. L'échec est attrapé et seulement journalisé, donc SAMII
+            // répondait quand même — en oubliant chaque phrase aussitôt dite.
+            // Une panne qui ne casse rien et qui abîme tout.
+            `CREATE TABLE IF NOT EXISTS memoire_sessions (
+                session_key TEXT PRIMARY KEY,
+                lang TEXT,
+                history JSONB DEFAULT '[]'::jsonb,
+                updated_at TIMESTAMP DEFAULT NOW()
+            )`,
         ],
     },
     {

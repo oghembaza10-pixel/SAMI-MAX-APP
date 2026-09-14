@@ -106,7 +106,7 @@ ${require("../../services/contenuExterne").LOI}
 CONTEXTE ACTUEL
 -------------------------------------------------------
 
-${JSON.stringify(context)}
+${JSON.stringify(require("../../services/contenuExterne").contextePourPrompt(context))}
 
 -------------------------------------------------------
 LOIS SOUVERAINES APPLICABLES (contexte interne uniquement)

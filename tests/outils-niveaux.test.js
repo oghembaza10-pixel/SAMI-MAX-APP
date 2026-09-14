@@ -70,9 +70,30 @@ function nomsRendus(useTools, context) {
             `une conversation client a perdu « ${outil} » : le client ne peut plus passer commande`);
     }
 
-    const marchandSansNiveau = nomsRendus(false, { audience: "souverain" });
+    // ⚠️ CE BLOC A ÉTÉ CORRIGÉ APRÈS UNE PREUVE HTTP, ET IL GARDE LA MÊME
+    // EXIGENCE — il la dit seulement au bon endroit.
+    //
+    // Il vérifiait : « le chat du marchand sans niveau reçoit 9 outils »,
+    // écrit `nomsRendus(false, { audience: "souverain" })`. Mais ce couple
+    // (pas d'outils demandés, pas de niveau) ne désignait plus seulement le
+    // chat du marchand : c'est aussi celui de SEIZE générations de texte —
+    // extraction de mémoire, réponse à un commentaire public, résumé d'un
+    // document versé dans la base de connaissances. Toutes recevaient les
+    // neuf outils, `envoyer_email` et `envoyer_facture` compris.
+    //
+    // Ce que le marchand doit garder est inchangé, et vérifié ci-dessous.
+    // Ce qui change, c'est qu'on le nomme : une CONVERSATION, pas un appel
+    // anonyme. La marque est posée par brain/planner.js, en code.
+    const marchandSansNiveau = nomsRendus(false, { audience: "souverain", tourDeConversation: true });
     verifier(marchandSansNiveau.length === 9,
         `le chat du marchand sans niveau reçoit ${marchandSansNiveau.length} outils au lieu de 9`);
+
+    // Et le revers, qui est la raison d'être de la correction.
+    const generation = nomsRendus(false, { source: "memoire" });
+    verifier(generation === null,
+        `une génération de texte (« lis ceci, rends-moi du texte ») reçoit ` +
+        `${JSON.stringify(generation)} : ces tours-là lisent justement ce que des inconnus ` +
+        "ont écrit, et ne doivent tenir aucun outil");
     for (const interdit of N.FAMILLES.commerce) {
         verifier(!marchandSansNiveau.includes(interdit),
             `le chat du marchand porte « ${interdit} » : il pourrait agir sur le carnet d'un client`);
@@ -160,7 +181,7 @@ function nomsRendus(useTools, context) {
             `toOpenAiTools(${JSON.stringify(vide)}) ${leve ? "lève une erreur" : "rend " + JSON.stringify(resultat)} — ` +
             "tout message d'un niveau sans outil échouerait sur les relais");
     }
-    const plein = convertir(construire(false, { audience: "souverain" }));
+    const plein = convertir(construire(false, { audience: "souverain", tourDeConversation: true }));
     verifier(plein.length === 9, `la conversion rend ${plein.length} outils au lieu de 9`);
     verifier(plein.every((o) => o.type === "function" && o.function?.name),
         "la conversion vers le format des relais a perdu sa forme");
