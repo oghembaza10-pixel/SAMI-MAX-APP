@@ -6,6 +6,7 @@ const googleSearch = require("../services/googleSearch");
 const google = require("../services/google");
 const commerceEngine = require("../engines/commerceEngine");
 const factureService = require("../services/factureService");
+const compteurIA = require("../services/compteurIA");
 
 // ── CONVERSATION OU GÉNÉRATION ? ─────────────────────────────────────────
 //
@@ -516,6 +517,34 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
     // facturation. Le tableau se remplit sur place ; qui ne le passe pas ne
     // voit aucune différence.
     async ask(message, context = {}, history = [], journal = null) {
+        // ── LE TOUR EST OUVERT ICI, ET NULLE PART AILLEURS ───────────────
+        //
+        // Un « tour », économiquement, c'est UN message de quelqu'un et tout
+        // ce que SAMII fait pour y répondre : décider, appeler un outil,
+        // dérouler une chaîne d'agents, reformuler. Mesuré, ça va de deux
+        // appels d'IA à sept pour le même geste apparent.
+        //
+        // Le compteur suit la chaîne de promesses tout seul (AsyncLocalStorage),
+        // donc aucune signature ne change et aucun appelant n'a rien à passer.
+        // Si le compteur tombe, `ask` continue exactement comme avant.
+        return compteurIA.tour({
+            etiquette: "chat", source: context.source || null,
+            workspaceId: context.workspaceId || null, userId: context.userId || null,
+            audience: context.audience || null, niveau: context.niveau || null,
+            auto: context.niveauDemande === "auto" || context.auto === true,
+            piecesJointes: context.piece ? 1 : 0,
+        }, async (sac) => {
+            try {
+                return await this.__ask(message, context, history, journal);
+            } finally {
+                // Jamais attendu : le bilan ne doit pas retarder la réponse
+                // d'une seule milliseconde.
+                compteurIA.enregistrer(sac).catch(() => {});
+            }
+        });
+    }
+
+    async __ask(message, context = {}, history = [], journal = null) {
         try {
             // Les outils disponibles (confirmer/annuler une commande, prendre
             // RDV, passer commande) concernent exclusivement une conversation

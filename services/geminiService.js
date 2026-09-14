@@ -21,6 +21,7 @@ const LISTE_METIERS = METIERS.filter(m => m.id !== "autre").map(m => m.id).join(
 // modèle sait faire et ce qu'il a le droit de porter. On garde ici un repli
 // : si le registre devenait illisible, le chat ne doit pas s'arrêter.
 const MOTEURS = require("../config/moteurs");
+const compteurIA = require("./compteurIA");
 const MODEL = MOTEURS.MOTEURS["gemini-flash"].modele || "gemini-3.6-flash";
 // `.filter(Boolean)` : sans clé configurée du tout, GEMINI_API_KEY vaut
 // undefined et la liste contenait donc un trou. La rotation construisait
@@ -213,6 +214,26 @@ async function postWithRotation(body, options = {}) {
             // requête suivante, quitte à re-payer un aller-retour perdu.
             if (!PAYANTES.has(KEYS[i])) depart = i;
             else depart = 0;
+            // ── LA SEULE LIGNE D'INSTRUMENTATION ÉCONOMIQUE ──────────────
+            //
+            // Google écrit dans CHAQUE réponse le compte exact des tokens
+            // consommés (`usageMetadata`). SAMII le jetait : mesuré avant ce
+            // chantier, ZÉRO occurrence dans tout le projet. La plateforme ne
+            // pouvait donc pas dire ce qu'un message lui coûtait.
+            //
+            // On le lit ici, et seulement ici : c'est l'entonnoir unique par
+            // lequel passent les huit sites d'appel Gemini du fichier.
+            //
+            // `noter` ne lève jamais, n'attend rien et ne décide rien. Une
+            // panne du compteur ne doit pas couper une conversation.
+            compteurIA.noter({
+                fournisseur: "gemini",
+                modele: options.modele || MODEL,
+                data: reponse?.data,
+                flux,
+                grounding: Array.isArray(body?.tools)
+                    && body.tools.some((t) => t.google_search || t.googleSearch) ? 1 : 0,
+            });
             return reponse;
         } catch (err) {
             lastErr = err;
@@ -397,6 +418,12 @@ async function chatViaOpenAiCompatible({ provider, model, poster, message, conte
     if (outils.length) body.tools = outils;
 
     const response = await poster(body);
+    // Les relais parlent le dialecte OpenAI (`usage.prompt_tokens`), Gemini
+    // le sien. Deux lectures, un seul compteur : sans ça, une bascule sur
+    // Groq ferait disparaître le tour des comptes — alors qu'un tour servi
+    // par un relais coûte justement BEAUCOUP moins cher, et qu'on veut
+    // pouvoir le prouver.
+    compteurIA.noter({ fournisseur: provider, modele: provider, data: response?.data });
     const choice = response.data.choices?.[0];
     const toolCall = choice?.message?.tool_calls?.[0];
 

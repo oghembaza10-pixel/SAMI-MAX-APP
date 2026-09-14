@@ -956,6 +956,47 @@ const BLOCS = [
                 history JSONB DEFAULT '[]'::jsonb,
                 updated_at TIMESTAMP DEFAULT NOW()
             )`,
+
+            // ── CE QU'UN TOUR A RÉELLEMENT COÛTÉ ─────────────────────────
+            //
+            // Une ligne par TOUR — un message et tout ce que SAMII fait pour
+            // y répondre — pas par appel. C'est le tour qui a un sens
+            // économique (« ce message a coûté tant ») ; une ligne par appel
+            // ferait grossir la table cinq fois plus vite pour la même
+            // information, et le détail part de toute façon dans `detail`.
+            //
+            // Cette table ne facture rien et n'est lue par aucun chemin
+            // métier. Elle existe pour qu'une décision tarifaire repose un
+            // jour sur des tokens réels plutôt que sur des tailles de prompt
+            // converties à la louche.
+            //
+            // `complet` dit si TOUS les appels du tour ont rendu leurs tokens
+            // ET si tous les modèles sont tarifés. Sans lui, une moyenne
+            // calculée sur des tours partiels passerait pour une mesure.
+            `CREATE TABLE IF NOT EXISTS consommation_ia (
+                tour_id TEXT PRIMARY KEY,
+                workspace_id TEXT,
+                user_id TEXT,
+                source TEXT,
+                audience TEXT,
+                niveau TEXT,
+                auto BOOLEAN DEFAULT false,
+                appels INTEGER DEFAULT 0,
+                appels_mesures INTEGER DEFAULT 0,
+                complet BOOLEAN DEFAULT false,
+                tokens_entree INTEGER DEFAULT 0,
+                tokens_sortie INTEGER DEFAULT 0,
+                tokens_reflexion INTEGER DEFAULT 0,
+                tokens_cache INTEGER DEFAULT 0,
+                cout_google_usd NUMERIC(12,8) DEFAULT 0,
+                cout_technique_usd NUMERIC(12,8) DEFAULT 0,
+                modeles JSONB,
+                detail JSONB,
+                duree_ms INTEGER,
+                created_at TIMESTAMP DEFAULT NOW()
+            )`,
+            `CREATE INDEX IF NOT EXISTS idx_conso_ia_quand ON consommation_ia (created_at DESC)`,
+            `CREATE INDEX IF NOT EXISTS idx_conso_ia_qg ON consommation_ia (workspace_id, created_at DESC)`,
         ],
     },
     {

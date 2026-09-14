@@ -212,6 +212,21 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
             // Lu par geminiService : décide des outils portés et de la
             // profondeur de réflexion pour CE tour.
             niveau: choixNiveau.niveau,
+            // ── UNE TRACE, PAS UNE DÉCISION ──────────────────────────────
+            //
+            // `choixNiveau.niveau` dit QUEL niveau a été retenu ; il ne dit
+            // pas QUI l'a choisi. Or Auto n'est pas un niveau : c'est une
+            // délégation. Quelqu'un qui choisit « Pro » achète une profondeur
+            // bornée ; quelqu'un qui laisse Auto délègue la décision, et son
+            // tour peut coûter d'un appel à sept sans qu'il l'ait demandé.
+            //
+            // Sans ce champ, les deux étaient indiscernables dans les
+            // comptes — vérifié : la colonne `auto` de consommation_ia
+            // restait fausse même sur un tour lancé en Auto.
+            //
+            // Ce champ n'est lu QUE par services/compteurIA.js. Il ne change
+            // ni les outils, ni le modèle, ni les permissions, ni le prix.
+            auto: choixNiveau.auto === true,
             // ── CE QUE LA COUCHE AGENTS A BESOIN DE SAVOIR ──────────────
             //
             // `brain/agents.js` ouvre une chaîne de spécialistes quand SAMII
