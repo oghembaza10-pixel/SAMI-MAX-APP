@@ -327,12 +327,12 @@ const IMPERATIFS_ORDINAIRES = [
         // Le texte hostile est placé PARTOUT où un contexte accepte du texte.
         for (const hostile of HOSTILES.slice(0, 3)) {
             const empoisonne = {
-                niveau: "expert", audience: "souverain",
+                niveau: "expert", audience: "souverain", tourDeConversation: true,
                 client: hostile, commande: hostile, page: hostile, lastAction: hostile,
                 connaissances: hostile, instructions: hostile,
             };
             const outils = noms(gemini.__test_buildToolsPayload(false, empoisonne, "gemini"));
-            const attendus = noms(gemini.__test_buildToolsPayload(false, { niveau: "expert", audience: "souverain" }, "gemini"));
+            const attendus = noms(gemini.__test_buildToolsPayload(false, { niveau: "expert", audience: "souverain", tourDeConversation: true }, "gemini"));
             verifier(outils.join(",") === attendus.join(","),
                 `un contenu hostile change les outils portés (${outils.join(", ")} au lieu de ` +
                 `${attendus.join(", ")}) : une page web pourrait s'accorder des outils`);
@@ -450,7 +450,7 @@ const IMPERATIFS_ORDINAIRES = [
     // en contenu suspect, un client ne pourrait plus commander.
     {
         const noms = (p) => (p?.[0]?.functionDeclarations || []).map((f) => f.name);
-        const clientQuiCommande = noms(gemini.__test_buildToolsPayload(true, {}, "gemini"));
+        const clientQuiCommande = noms(gemini.__test_buildToolsPayload(true, { audience: "client", workspaceId: "ws1", tourDeConversation: true }, "gemini"));
         verifier(clientQuiCommande.includes("passer_commande"),
             "un client de boutique ne peut plus commander : la protection aurait cassé le " +
             "produit qu'elle protège");

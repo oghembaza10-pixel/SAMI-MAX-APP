@@ -61,14 +61,35 @@ function nomsRendus(useTools, context) {
 // sans déclarer de niveau. Ils doivent recevoir exactement ce qu'ils
 // recevaient avant que les niveaux existent.
 {
-    const clientSansNiveau = nomsRendus(true, { source: "telegram", audience: "client" });
-    verifier(clientSansNiveau.length === 14,
-        `une conversation client sans niveau reçoit ${clientSansNiveau.length} outils au lieu de 14 : ` +
-        "les clients des marchands ne pourraient plus commander");
+    // ⚠️ CETTE GARDE EXIGEAIT QUATORZE OUTILS, ET C'ÉTAIT LE DÉFAUT.
+    //
+    // Elle disait : « les canaux clients doivent recevoir exactement ce
+    // qu'ils recevaient avant que les niveaux existent », soit les quatorze.
+    // Mesuré, ces quatorze contenaient les NEUF du marchand —
+    // consulter_gmail, envoyer_email, envoyer_facture, consulter_agenda,
+    // creer_evenement_agenda, lister_fichiers_drive, creer_rapport_sheets,
+    // resume_journee, rechercher_prospects.
+    //
+    // Un client de boutique pouvait donc demander à SAMII d'ouvrir la boîte
+    // Gmail DU MARCHAND. Aucune attaque n'était nécessaire, et ce test
+    // veillait à ce que rien ne change.
+    //
+    // Ce qu'il protégeait vraiment — « le client doit pouvoir commander » —
+    // est gardé mot pour mot ci-dessous. Ce qui disparaît, c'est le nombre.
+    const clientSansNiveau = nomsRendus(true, { source: "telegram", audience: "client", tourDeConversation: true });
+    verifier(clientSansNiveau !== null,
+        "une conversation client ne reçoit plus AUCUN outil : les clients des marchands ne " +
+        "pourraient plus commander");
     for (const outil of N.FAMILLES.commerce) {
         verifier(clientSansNiveau.includes(outil),
             `une conversation client a perdu « ${outil} » : le client ne peut plus passer commande`);
     }
+    const PRIVES = [...N.FAMILLES.lecture, ...N.FAMILLES.ecriture,
+        ...N.FAMILLES.agents, ...N.FAMILLES.code];
+    const fuites = clientSansNiveau.filter((n) => PRIVES.includes(n));
+    verifier(!fuites.length,
+        `une conversation client porte ${fuites.join(", ")} : ce sont les outils du MARCHAND, ` +
+        "sur SON compte, tendus à n'importe qui écrit à la boutique");
 
     // ⚠️ CE BLOC A ÉTÉ CORRIGÉ APRÈS UNE PREUVE HTTP, ET IL GARDE LA MÊME
     // EXIGENCE — il la dit seulement au bon endroit.
@@ -109,7 +130,7 @@ function nomsRendus(useTools, context) {
 {
     for (const id of N.ORDRE) {
         const attendus = N.outilsDe(id).sort();
-        const rendus = nomsRendus(false, { audience: "souverain", niveau: id });
+        const rendus = nomsRendus(false, { audience: "souverain", niveau: id, tourDeConversation: true });
 
         if (!attendus.length) {
             verifier(rendus === null,
@@ -129,7 +150,7 @@ function nomsRendus(useTools, context) {
 // conversation client, les outils de commerce restent fermés.
 {
     for (const id of N.ORDRE) {
-        const rendus = nomsRendus(false, { audience: "souverain", niveau: id }) || [];
+        const rendus = nomsRendus(false, { audience: "souverain", niveau: id, tourDeConversation: true }) || [];
         for (const interdit of N.FAMILLES.commerce) {
             verifier(!rendus.includes(interdit),
                 `au niveau « ${id} », le chat du marchand reçoit « ${interdit} » : réfléchir plus fort ` +
@@ -143,7 +164,7 @@ function nomsRendus(useTools, context) {
 // L'inverse compte autant. Le commerce vient de l'audience, pas du niveau :
 // même au niveau le plus léger, un client doit pouvoir commander.
 {
-    const rapideChezLeClient = nomsRendus(true, { audience: "client", niveau: "rapide" }) || [];
+    const rapideChezLeClient = nomsRendus(true, { audience: "client", niveau: "rapide", tourDeConversation: true }) || [];
     for (const outil of N.FAMILLES.commerce) {
         verifier(rapideChezLeClient.includes(outil),
             `au niveau Rapide, une conversation client perd « ${outil} » : le niveau déciderait ` +

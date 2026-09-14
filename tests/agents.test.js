@@ -621,14 +621,14 @@ const PRO = { niveau: "pro", palier: "pro", mode: "autonome", audience: "souvera
         //
         // Le chemin sans niveau est celui des conversations clients
         // (WhatsApp, Telegram, page publique d'une boutique).
-        const chezUnClient = noms(gemini.__test_buildToolsPayload(true, {}, "gemini"));
+        const chezUnClient = noms(gemini.__test_buildToolsPayload(true, { audience: "client", workspaceId: "ws1", tourDeConversation: true }, "gemini"));
         verifier(!chezUnClient.includes("preparer_publication"),
             `un client de marchand se voit offrir « preparer_publication » (${chezUnClient.length} outils) : ` +
             "il pourrait faire préparer du contenu sur les comptes sociaux du marchand");
 
         // ── ET AUCUN RELAIS NE REÇOIT LA FAMILLE AGENTS ──────────────────
         for (const relais of ["groq", "openrouter", "deepseek"]) {
-            const chez = noms(gemini.__test_buildToolsPayload(true, { niveau: "maitre" }, relais));
+            const chez = noms(gemini.__test_buildToolsPayload(false, { niveau: "maitre", audience: "souverain", tourDeConversation: true }, relais));
             verifier(!chez.includes("preparer_publication"),
                 `le relais ${relais} reçoit « preparer_publication » : une panne de Gemini ferait ` +
                 "préparer une publication par un moteur qu'on sait moins discipliné");
@@ -637,13 +637,13 @@ const PRO = { niveau: "pro", palier: "pro", mode: "autonome", audience: "souvera
         }
 
         // Et Gemini, lui, la porte bien — sinon la mission serait inatteignable.
-        const chezGemini = noms(gemini.__test_buildToolsPayload(true, { niveau: "pro" }, "gemini"));
+        const chezGemini = noms(gemini.__test_buildToolsPayload(false, { niveau: "pro", audience: "souverain", tourDeConversation: true }, "gemini"));
         verifier(chezGemini.includes("preparer_publication"),
             "Gemini ne porte pas « preparer_publication » au niveau Pro : la chaîne serait inatteignable " +
             "depuis le chat, exactement comme avant le chantier 8");
 
         // Et Expert ne l'a pas : une mission coûte plusieurs appels.
-        verifier(!noms(gemini.__test_buildToolsPayload(true, { niveau: "expert" }, "gemini"))
+        verifier(!noms(gemini.__test_buildToolsPayload(false, { niveau: "expert", audience: "souverain", tourDeConversation: true }, "gemini"))
             .includes("preparer_publication"),
             "le niveau Expert porte « preparer_publication » : un tour facturé au prix d'un message " +
             "en coûterait cinq");

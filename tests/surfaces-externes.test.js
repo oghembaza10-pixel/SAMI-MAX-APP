@@ -203,7 +203,7 @@ const noms = (p) => (p?.[0]?.functionDeclarations || []).map((f) => f.name);
     // permissions sont recalculées, la personne peut demander l'acte.
     {
         const pendant = gemini.__test_buildToolsPayload(true, { niveau: "pro", audience: "souverain", piece: { mimeType: "image/png" } }, "gemini");
-        const apres = noms(gemini.__test_buildToolsPayload(true, { niveau: "pro", audience: "souverain" }, "gemini"));
+        const apres = noms(gemini.__test_buildToolsPayload(false, { niveau: "pro", audience: "souverain", tourDeConversation: true }, "gemini"));
 
         verifier(pendant === null, "le tour d'analyse porte encore des outils");
         verifier(apres.length > 0,
@@ -262,7 +262,7 @@ const noms = (p) => (p?.[0]?.functionDeclarations || []).map((f) => f.name);
     {
         const client = noms(gemini.__test_buildToolsPayload(true, {
             source: "whatsapp", audience: "client", workspaceId: "ws1",
-            name: "Fatima", metier: "restaurant",
+            name: "Fatima", metier: "restaurant", tourDeConversation: true,
         }, "gemini"));
 
         verifier(client.includes("passer_commande"),
@@ -365,7 +365,7 @@ const noms = (p) => (p?.[0]?.functionDeclarations || []).map((f) => f.name);
         }
 
         // Et le fondateur, lui, garde les siens — ils viennent du niveau.
-        const fondateur = noms(gemini.__test_buildToolsPayload(false, { niveau: "pro", audience: "souverain" }, "gemini"));
+        const fondateur = noms(gemini.__test_buildToolsPayload(false, { niveau: "pro", audience: "souverain", tourDeConversation: true }, "gemini"));
         verifier(fondateur.length > 0,
             "le fondateur a perdu tous ses outils dans son QG : la correction aurait cassé " +
             "le produit au lieu de le protéger");

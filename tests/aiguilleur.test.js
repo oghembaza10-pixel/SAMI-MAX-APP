@@ -158,85 +158,93 @@ const NIVEAUX = require(path.join(RACINE, "config", "niveaux.js"));
     const gemini = require(path.join(RACINE, "services", "geminiService.js"));
     const noms = (payload) => (payload?.[0]?.functionDeclarations || []).map((f) => f.name);
 
-    // Un niveau Pro (lecture + écriture), audience marchande (commerce).
-    const ctx = { niveau: "pro" };
+    // ⚠️ CE BLOC A ÉTÉ RÉÉCRIT AU CHANTIER « SÉPARATION DES CAPACITÉS ».
+    //
+    // Il mesurait deux contextes qui N'EXISTENT DANS AUCUNE ROUTE :
+    //
+    //   { niveau: "pro" } avec useTools: true  — un niveau de réflexion ET la
+    //      famille commerce. Or un client de boutique n'a pas de niveau (il
+    //      n'a pas de compte), et un marchand n'a jamais eu la famille
+    //      commerce (elle agit sur le carnet d'un CLIENT). Le couple était
+    //      une invention du test.
+    //
+    //   {} tout court — et il exigeait que ce chemin garde « tous ses outils
+    //      historiques ». C'était vrai, et c'était le défaut : mesuré, un
+    //      client de boutique repartait avec QUATORZE outils, dont
+    //      consulter_gmail, envoyer_email et envoyer_facture — ceux du
+    //      marchand. Le test protégeait la fuite.
+    //
+    // On mesure maintenant les DEUX POSTURES RÉELLES, séparément, comme
+    // config/audiences.js les déclare.
 
-    const chezGemini = noms(gemini.__test_buildToolsPayload(true, ctx, "gemini"));
-    verifier(chezGemini.includes("envoyer_facture") && chezGemini.includes("consulter_gmail")
-        && chezGemini.includes("confirmer_commande"),
-        `Gemini au niveau Pro ne porte plus ses trois familles (${chezGemini.length} outils) : ` +
-        "le chantier aurait retiré une capacité existante");
+    // ── LE MARCHAND / LE FONDATEUR, CHEZ LUI ─────────────────────────────
+    const marchand = { niveau: "pro", audience: "souverain", tourDeConversation: true };
 
-    const chezGroq = noms(gemini.__test_buildToolsPayload(true, ctx, "groq"));
+    const chezGemini = noms(gemini.__test_buildToolsPayload(false, marchand, "gemini"));
+    verifier(chezGemini.includes("envoyer_facture") && chezGemini.includes("consulter_gmail"),
+        `Gemini au niveau Pro ne porte plus lecture et écriture (${chezGemini.length} outils) : ` +
+        "le chantier aurait retiré une capacité existante du marchand");
+    verifier(!chezGemini.some((n) => NIVEAUX.FAMILLES.commerce.includes(n)),
+        `le marchand porte des outils de commerce (${chezGemini.join(", ")}) : ceux-là agissent ` +
+        "sur le carnet d'un CLIENT, et ce garde-fou existait avant ce chantier");
+
+    const chezGroq = noms(gemini.__test_buildToolsPayload(false, marchand, "groq"));
     verifier(!chezGroq.includes("envoyer_facture") && !chezGroq.includes("envoyer_email"),
         `LA BASCULE DE SECOURS ROUVRE L'ÉCRITURE : Groq reçoit ${chezGroq.join(", ")} — ` +
         "une panne Gemini suffirait à faire partir une facture décidée par un moteur qui invente ses arguments");
     verifier(!chezGroq.includes("consulter_gmail") && !chezGroq.includes("lister_fichiers_drive"),
         `Groq reçoit des outils Workspace (${chezGroq.join(", ")}) dont le résultat lui sera refusé : ` +
         "on lui tend une impasse");
-    verifier(chezGroq.includes("confirmer_commande"),
-        "Groq ne peut plus confirmer une commande : la capacité de secours a été supprimée");
+
+    // ── LE CLIENT D'UN MARCHAND ──────────────────────────────────────────
+    //
+    // Pas de niveau : il n'a pas de compte chez nous. La famille commerce, et
+    // elle seule — c'est le produit, et c'est tout le produit.
+    const client = { audience: "client", workspaceId: "ws1", tourDeConversation: true };
+
+    const clientChezGemini = noms(gemini.__test_buildToolsPayload(true, client, "gemini"));
+    verifier(clientChezGemini.length === NIVEAUX.FAMILLES.commerce.length
+        && clientChezGemini.every((n) => NIVEAUX.FAMILLES.commerce.includes(n)),
+        `un client reçoit ${clientChezGemini.join(", ")} au lieu de la seule famille commerce`);
+
+    const clientChezGroq = noms(gemini.__test_buildToolsPayload(true, client, "groq"));
+    verifier(clientChezGroq.includes("confirmer_commande"),
+        "Groq ne peut plus confirmer une commande : la capacité de secours a été supprimée, " +
+        "et la commande de Fatima ne serait pas confirmée pendant une panne Gemini");
+    verifier(!clientChezGroq.includes("consulter_gmail"),
+        `le relais rouvre les outils du marchand à un client (${clientChezGroq.join(", ")})`);
 
     // ── LE NIVEAU RESTE SOUVERAIN SUR SES PROPRES FAMILLES ───────────────
     //
-    // ⚠️ CE QUE CETTE VÉRIFICATION A APPRIS. Première version : elle exigeait
-    // que « Rapide » ne porte AUCUN outil, avec `useTools: true`. Elle a
-    // crié. Le code avait raison, pas le test.
-    //
-    // La règle réelle, écrite dans config/niveaux.js et antérieure au
-    // chantier 7 : la famille « commerce » NE DÉPEND PAS DE L'EFFORT, elle
-    // dépend de l'AUDIENCE. Un marchand qui parle à SAMII en mode Rapide
-    // peut toujours faire confirmer une commande — c'est le métier, pas un
-    // supplément de réflexion.
-    //
-    // Ce que le niveau commande, ce sont SES familles : lecture et écriture.
-    // Rapide n'en porte aucune, et ça, aucun moteur ne peut le rouvrir.
-    const rapideChezGemini = noms(gemini.__test_buildToolsPayload(true, { niveau: "rapide" }, "gemini"));
-    verifier(rapideChezGemini.every((n) => NIVEAUX.FAMILLES.commerce.includes(n)),
-        `le niveau Rapide porte autre chose que du commerce (${rapideChezGemini.join(", ")}) : ` +
-        "le moteur aurait pris le pas sur le niveau, alors que les deux cadrans tournent indépendamment");
-    verifier(gemini.__test_buildToolsPayload(false, { niveau: "rapide" }, "gemini") === null,
-        "le niveau Rapide porte des outils hors audience marchande : un tour « rapide » " +
-        "déclencherait un appel réseau et ne serait plus rapide");
+    // Rapide ne porte ni lecture ni écriture, et aucun moteur ne peut le
+    // rouvrir. (La famille commerce ne dépend pas du niveau : elle dépend de
+    // l'audience — voir config/audiences.js.)
+    verifier(gemini.__test_buildToolsPayload(false, { niveau: "rapide", audience: "souverain", tourDeConversation: true }, "gemini") === null,
+        "le niveau Rapide porte des outils : un tour « rapide » déclencherait un appel réseau " +
+        "et ne serait plus rapide");
 
-    // L'audience reste souveraine : sans `useTools`, pas de commerce, même
-    // chez un moteur qui ne sait porter que ça.
-    const sansAudience = noms(gemini.__test_buildToolsPayload(false, ctx, "groq"));
-    verifier(!sansAudience.includes("confirmer_commande"),
-        "Groq porte « confirmer_commande » alors que l'audience ne l'autorise pas : le registre " +
-        "des moteurs aurait ANNULÉ le garde-fou d'audience au lieu de s'ajouter à lui");
+    // ── LE MOTEUR S'AJOUTE AU GARDE-FOU, IL NE L'ANNULE PAS ──────────────
+    verifier(!noms(gemini.__test_buildToolsPayload(false, marchand, "groq")).includes("confirmer_commande"),
+        "Groq porte « confirmer_commande » pour un souverain : le registre des moteurs aurait " +
+        "ANNULÉ le garde-fou d'audience au lieu de s'ajouter à lui");
 
-    // ── LE CHEMIN HISTORIQUE, SANS NIVEAU, EST FILTRÉ LUI AUSSI ──────────
+    // ── ET L'AUDIENCE ABSENTE NE DONNE PLUS TOUT ─────────────────────────
     //
-    // C'est LE chemin par lequel la fuite passait : `chatWithSearch` et les
-    // appelants anciens n'ont pas de niveau dans leur contexte, et
-    // recevaient donc `TOOLS` ou `SEARCH_TOOLS` en entier.
-    const ancienChezGroq = noms(gemini.__test_buildToolsPayload(true, {}, "groq"));
-    verifier(ancienChezGroq.length > 0 && ancienChezGroq.every((n) => NIVEAUX.FAMILLES.commerce.includes(n)),
-        `le chemin sans niveau donne à Groq ${ancienChezGroq.join(", ")} — ` +
-        "c'est par là que les outils d'écriture et Workspace repassaient");
-
-    // ── ET CHEZ GEMINI, IL GARDE TOUT SAUF LES CHAÎNES D'AGENTS ──────────
-    //
-    // Un tour sans niveau est une conversation CLIENT (WhatsApp, Telegram,
-    // page publique d'une boutique). Il doit garder tous ses outils
-    // historiques — sinon les clients des marchands ne pourraient plus
-    // commander — mais JAMAIS la famille « agents » : un client n'a rien à
-    // faire dans les comptes sociaux du marchand.
-    const ancienChezGemini = noms(gemini.__test_buildToolsPayload(true, {}, "gemini"));
-    // Les familles qu'un client n'obtient JAMAIS. « agents » au chantier 8,
-    // « code » au chantier 10 — la liste se lit dans le registre, elle n'est
-    // pas recopiée, sinon la prochaine famille passerait sans bruit.
-    const RESERVEES = [...NIVEAUX.FAMILLES.agents, ...NIVEAUX.FAMILLES.code];
-    const horsAgents = gemini.TOOLS[0].functionDeclarations
-        .filter((fn) => !RESERVEES.includes(fn.name));
-    verifier(ancienChezGemini.length === horsAgents.length,
-        `le chemin sans niveau porte ${ancienChezGemini.length} outils au lieu de ${horsAgents.length} : ` +
-        "soit un outil client a disparu, soit une capacité réservée est offerte à un client");
-    verifier(!ancienChezGemini.some((n) => RESERVEES.includes(n)),
-        `un client de marchand se voit offrir une capacité réservée (${ancienChezGemini.join(", ")}) : ` +
-        "il pourrait faire préparer une publication sur les comptes du marchand — ou, bien pire, " +
-        "faire exécuter un programme sur notre machine");
+    // Mesuré avant correction : DIX-SEPT outils, `executer_code` compris.
+    // Le calcul demandait « est-ce que ce n'est pas souverain ? », et
+    // « absente » n'est pas « souverain ».
+    verifier(gemini.__test_buildToolsPayload(true, { tourDeConversation: true, niveau: "maitre" }, "gemini") === null,
+        "un contexte SANS audience reçoit encore des outils : un oubli dans une route donnerait " +
+        "le maximum de pouvoir, en silence");
+    // Les familles qu'un client n'obtient JAMAIS. La liste se lit dans le
+    // registre, elle n'est pas recopiée : sinon la prochaine famille ajoutée
+    // passerait sans bruit, comme « code » a failli le faire au chantier 10.
+    const RESERVEES = [...NIVEAUX.FAMILLES.agents, ...NIVEAUX.FAMILLES.code,
+        ...NIVEAUX.FAMILLES.lecture, ...NIVEAUX.FAMILLES.ecriture];
+    verifier(!clientChezGemini.some((n) => RESERVEES.includes(n)),
+        `un client de marchand se voit offrir une capacité réservée (${clientChezGemini.join(", ")}) : ` +
+        "il pourrait lire la boîte mail du marchand, faire préparer une publication sur ses " +
+        "comptes — ou, bien pire, faire exécuter un programme sur notre machine");
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -371,8 +379,16 @@ const NIVEAUX = require(path.join(RACINE, "config", "niveaux.js"));
     appelsGemini = 0;
     const reponse = await gemini.chat({
         message: "Envoie la facture à Fatima et confirme sa commande",
-        context: { niveau: "pro", audience: "marchand" },
-        useTools: true,
+        // ⚠️ CE CONTEXTE DISAIT `audience: "marchand"`. Cette valeur n'existe
+        // dans AUCUNE route du projet — les trois vraies sont « client »,
+        // « community » et « souverain ». Elle tombait donc dans le
+        // fourre-tout « ce n'est pas souverain », c'est-à-dire le traitement
+        // client, et le test croyait mesurer un marchand.
+        //
+        // Ici : un marchand, chez lui, au niveau Pro. Le relais doit lui
+        // refuser lecture et écriture — c'est ce que ce bloc vérifie.
+        context: { niveau: "pro", audience: "souverain", tourDeConversation: true },
+        useTools: false,
         history: [],
     });
 
@@ -390,9 +406,24 @@ const NIVEAUX = require(path.join(RACINE, "config", "niveaux.js"));
     verifier(!outilsRecus.includes("consulter_gmail"),
         `le relais a reçu « consulter_gmail » (${outilsRecus.join(", ")}) — son résultat lui serait ` +
         "ensuite refusé : une impasse");
-    verifier(outilsRecus.includes("confirmer_commande"),
-        `le relais n'a pas reçu « confirmer_commande » (${outilsRecus.join(", ")}) : la commande de ` +
+    // ── ET LA COMMANDE DE FATIMA, ELLE, PASSE TOUJOURS ──────────────────
+    //
+    // C'est une CLIENTE qui écrit à la boutique, pas le marchand : c'est donc
+    // le tour client qu'il faut mesurer. Le commerce doit survivre à la
+    // panne, sinon le produit s'arrête dès que Gemini tousse.
+    envoyes.length = 0;
+    await gemini.chat({
+        message: "Confirme ma commande s'il te plaît",
+        context: { audience: "client", workspaceId: "ws1", tourDeConversation: true },
+        useTools: true,
+        history: [],
+    });
+    const outilsClient = (envoyes[0]?.body?.tools || []).map((t) => t.function?.name);
+    verifier(outilsClient.includes("confirmer_commande"),
+        `le relais n'a pas reçu « confirmer_commande » (${outilsClient.join(", ")}) : la commande de ` +
         "Fatima ne serait pas confirmée pendant la panne");
+    verifier(!outilsClient.includes("consulter_gmail") && !outilsClient.includes("envoyer_facture"),
+        `le relais donne les outils du marchand à une cliente (${outilsClient.join(", ")})`);
 
     verifier(reponse?.text === "Réponse du relais." || reponse?.type === "function_call",
         `la bascule n'a pas rendu la réponse du relais : ${JSON.stringify(reponse).slice(0, 120)}`);

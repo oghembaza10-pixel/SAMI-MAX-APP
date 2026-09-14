@@ -245,20 +245,20 @@ const MAITRE = { niveau: "maitre", palier: "pro", mode: "autonome", audience: "s
         "le chat public passe par le planner complet : il porterait les outils, dont celui-ci");
 
     // ── UN CLIENT DE MARCHAND ────────────────────────────────────────────
-    const chezUnClient = noms(gemini.__test_buildToolsPayload(true, {}, "gemini"));
+    const chezUnClient = noms(gemini.__test_buildToolsPayload(true, { audience: "client", workspaceId: "ws1", tourDeConversation: true }, "gemini"));
     verifier(!chezUnClient.includes("executer_code"),
         `un client de boutique se voit offrir « executer_code » (${chezUnClient.length} outils) : ` +
         "n'importe qui écrivant à une boutique pourrait exécuter un programme chez nous");
 
     // ── LES RELAIS ───────────────────────────────────────────────────────
     for (const relais of ["groq", "openrouter", "deepseek"]) {
-        verifier(!noms(gemini.__test_buildToolsPayload(true, { niveau: "maitre" }, relais)).includes("executer_code"),
+        verifier(!noms(gemini.__test_buildToolsPayload(false, { niveau: "maitre", audience: "souverain", tourDeConversation: true }, relais)).includes("executer_code"),
             `le relais ${relais} reçoit « executer_code » : une panne de Gemini confierait ` +
             "l'exécution de code à un moteur qu'on sait moins discipliné");
         verifier(!MOTEURS.moteur(relais).outilsFiables.includes("code"),
             `${relais} déclare porter la famille « code »`);
     }
-    verifier(noms(gemini.__test_buildToolsPayload(true, { niveau: "maitre" }, "gemini")).includes("executer_code"),
+    verifier(noms(gemini.__test_buildToolsPayload(false, { niveau: "maitre", audience: "souverain", tourDeConversation: true }, "gemini")).includes("executer_code"),
         "Gemini ne porte pas « executer_code » au niveau Maître : la capacité serait inatteignable");
 
     // ── LA FAMILLE EST SÉPARÉE D'« AGENTS » ──────────────────────────────
