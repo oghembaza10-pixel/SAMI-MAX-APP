@@ -389,6 +389,84 @@ try {
 }
 
 // ── VERDICT ──────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+// 6 ter. LE CRAN DE DÉPART DE LA BARRE : « RAPIDE », PAS « AUTO »
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Auto laisse SAMII monter d'un cran quand il juge la demande lourde, et ce
+// cran coûte plus cher — décidé par la machine, pas par la personne. En
+// préselection on veut le cran le plus léger : il répond tout de suite et il
+// ne surprend personne sur son solde.
+//
+// LE PIÈGE : ce cran est écrit à DEUX endroits — le gabarit l'affiche, le
+// script l'envoie. Recopié, il finit par différer, et la barre annonce un
+// niveau pendant que le navigateur en envoie un autre. On vérifie donc qu'il
+// n'est écrit NULLE PART : les deux le LISENT du registre.
+{
+    const NIV = require("../config/niveaux");
+
+    // Le registre déclare le cran de départ, et il est distinct de DEFAUT —
+    // qui est le filet de niveau(), côté serveur. Les confondre changerait
+    // la facturation en croyant changer un libellé.
+    verifier(NIV.PRESELECTION === "rapide",
+        `le cran de départ vaut « ${NIV.PRESELECTION} » au lieu de « rapide »`);
+    verifier(NIV.existe(NIV.PRESELECTION),
+        "le cran de départ n'est pas un niveau connu du registre");
+    verifier(NIV.PRESELECTION !== NIV.AUTO,
+        "le cran de départ est redevenu « auto »");
+    verifier(Object.prototype.hasOwnProperty.call(NIV, "DEFAUT"),
+        "DEFAUT a disparu du registre : niveau() n'a plus de filet");
+
+    // La page rendue affiche CE cran, lu du registre.
+    const attendu = NIV.pourAffichage().find((n) => n.id === NIV.PRESELECTION);
+    const page2 = rendre({
+        niveaux: NIV.pourAffichage(),
+        niveauParDefaut: attendu,
+    });
+    verifier(page2.includes(`data-defaut="${attendu.id}"`),
+        "le bouton ne dit pas au script quel cran est affiché : les deux vont diverger");
+    // ⚠️ INSTRUMENT. `indexOf('cerveau__fleche')` trouvait la RÈGLE CSS du
+    // même nom, définie bien plus haut dans la feuille de style : la tranche
+    // partait à l'envers et sortait vide, faisant échouer un bouton
+    // parfaitement rendu. On cherche donc la fermeture APRÈS le début.
+    const debutBouton = page2.indexOf('id="cerveau-pic"');
+    const bouton = page2.slice(debutBouton, page2.indexOf("cerveau__fleche", debutBouton));
+    verifier(bouton.length > 40,
+        "la tranche du bouton est vide — l'instrument ne regarde pas le bon endroit");
+    verifier(bouton.includes(echapper(attendu.libelle)),
+        `le bouton n'affiche pas « ${attendu.libelle} »`);
+    verifier(bouton.includes(attendu.icone),
+        `l'icône du cran de départ (${attendu.icone}) n'est pas rendue`);
+    verifier(!bouton.includes("Auto"),
+        "le bouton affiche encore « Auto » au départ");
+
+    // ── ET AUTO RESTE PROPOSÉ ────────────────────────────────────────────
+    //
+    // On change le point de départ, PAS l'offre. Auto reste dans le menu,
+    // intact : quelqu'un qui le veut le choisit d'un clic.
+    verifier(page2.includes('data-niveau="auto"'),
+        "« Auto » a disparu du menu — on devait déplacer le départ, pas retirer le choix");
+    verifier(NIV.pourAffichage().length === 5,
+        "le menu ne propose plus les cinq crans");
+
+    // Le script ne doit PAS porter le cran en dur.
+    const js2 = fs.readFileSync(path.join(RACINE, "public/js/samii-accueil.js"), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+    verifier(/getAttribute\("data-defaut"\)/.test(js2),
+        "le script n'écoute plus le cran annoncé par la page : il repart sur sa propre valeur");
+    verifier(!/niveauChoisi\s*=\s*["']auto["']/.test(js2),
+        "le script réinstalle « auto » en dur comme cran de départ");
+
+    // Le gabarit non plus : sinon il se désaccorderait du registre.
+    const gabarit = fs.readFileSync(path.join(RACINE, "views/samii-accueil.ejs"), "utf8");
+    const debutZone = gabarit.indexOf('id="cerveau-pic"');
+    const zone = gabarit.slice(debutZone, gabarit.indexOf("cerveau__fleche", debutZone));
+    verifier(zone.length > 40,
+        "la tranche du gabarit est vide — l'instrument ne regarde pas le bon endroit");
+    verifier(!/L\("(Auto|Rapide|Expert|Pro|Ma[iî]tre)"\)/.test(zone),
+        "le gabarit écrit un libellé de niveau en dur dans le bouton au lieu de le lire");
+}
+
 if (echecs.length) {
     console.log(`\n❌ page d'accueil : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
     echecs.forEach((e) => console.log(`   • ${e}`));

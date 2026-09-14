@@ -216,6 +216,24 @@ const ORDRE = ["rapide", "expert", "pro", "maitre"];
 const AUTO = "auto";
 const DEFAUT = "expert";
 
+// ── CE QUE LA BARRE DE SAISIE PROPOSE AVANT QU'ON CHOISISSE ──────────────
+//
+// À NE PAS CONFONDRE AVEC `DEFAUT` CI-DESSUS. `DEFAUT` est le filet de
+// `niveau()` : ce qu'on rend quand un identifiant est illisible, côté
+// serveur, pour ne jamais renvoyer `null`. `PRESELECTION` est un choix de
+// PRODUIT : le cran affiché dans le sélecteur à la première visite.
+//
+// Les mélanger changerait la facturation en croyant changer un libellé.
+// Ils sont donc déclarés séparément et n'ont pas à être égaux.
+//
+// « Rapide » plutôt qu'« Auto » : Auto laisse SAMII monter d'un cran quand
+// il juge la demande lourde, et ce cran coûte plus cher — décidé par la
+// machine, pas par la personne. En préselection, on préfère le cran le plus
+// léger : il répond tout de suite, il ne surprend personne sur son solde, et
+// celui qui veut plus le demande d'un clic. Auto reste proposé dans le menu,
+// inchangé et intact — c'est seulement le point de départ qui bouge.
+const PRESELECTION = "rapide";
+
 // ── LIRE UN NIVEAU ───────────────────────────────────────────────────────
 //
 // Rend TOUJOURS un niveau utilisable, jamais null ni undefined. Un appelant
@@ -303,7 +321,7 @@ function pourAffichage() {
 }
 
 module.exports = {
-    NIVEAUX, FAMILLES, ORDRE, AUTO, DEFAUT, PLAFOND_PAR_PALIER,
+    NIVEAUX, FAMILLES, ORDRE, AUTO, DEFAUT, PRESELECTION, PLAFOND_PAR_PALIER,
     niveau, existe, comparer, plafond, borner, monter,
     outilsDe, porteDesOutils, pourAffichage,
 };

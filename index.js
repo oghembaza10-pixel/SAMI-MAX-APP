@@ -771,6 +771,13 @@ function donneesAccueil(req) {
         // qui existait sans interface.
         niveaux: NIVEAUX.pourAffichage(),
 
+        // Le cran affiché avant qu'on choisisse. Il vient du registre, jamais
+        // du gabarit : écrit à la main dans le HTML, il se serait désaccordé
+        // du jour où on change d'avis, et la barre aurait annoncé un niveau
+        // pendant que le navigateur en envoyait un autre.
+        niveauParDefaut: NIVEAUX.pourAffichage()
+            .find((n) => n.id === NIVEAUX.PRESELECTION) || NIVEAUX.pourAffichage()[0],
+
         // ── ET LES POSTURES D'AUTONOMIE, QUI SONT UN AUTRE AXE ───────────
         //
         // L'INTELLIGENCE est une profondeur de raisonnement. L'AUTONOMIE est
@@ -1122,6 +1129,48 @@ io.on("connection", (socket) => {
 // Postgres) — plus vérifié ici, ça n'a jamais rien testé de toute façon.
 if (!CONFIG.GEMINI.API_KEY)   console.error("❌ GEMINI_API_KEY manquante");
 if (!process.env.DATABASE_URL) console.error("❌ DATABASE_URL manquante (sessions Supabase)");
+
+// ── LA FORME DES CLÉS GEMINI SE DIT AU DÉMARRAGE ─────────────────────────
+//
+// CE QUI A COÛTÉ UNE PANNE TOTALE. Google a changé le format de ses clés —
+// « AIzaSy… » hier, « AQ.… » aujourd'hui — et les deux ne se transmettent
+// pas de la même façon. Une clé du nouveau format envoyée à l'ancienne
+// manière est refusée par Google, et RIEN dans le produit ne le disait :
+// SAMII répondait « je réfléchis un peu plus longtemps que prévu » pendant
+// que dix-huit clés parfaitement valides étaient rejetées une par une.
+//
+// ── ON AVERTIT, ON NE REFUSE JAMAIS ──────────────────────────────────────
+//
+// Le réflexe serait d'écarter au démarrage toute clé d'un format inconnu.
+// Ce serait une erreur : le jour où Google sort un TROISIÈME format, ce
+// garde-fou couperait SAMII lui-même, pour des clés que Google accepte.
+// Une clé inconnue est donc ESSAYÉE — elle est seulement annoncée, pour que
+// la ligne existe dans le journal le jour où quelqu'un la cherche.
+(function direLaFormeDesCles() {
+    const cles = CONFIG.GEMINI.API_KEYS || [];
+    if (!cles.length) return;              // déjà signalé juste au-dessus
+    const FORMES = [
+        { nom: "AQ. (actuel)",     test: (c) => c.startsWith("AQ.") },
+        { nom: "AIzaSy (ancien)",  test: (c) => c.startsWith("AIza") },
+    ];
+    const compte = new Map();
+    for (const c of cles) {
+        const f = FORMES.find((f) => f.test(c));
+        const nom = f ? f.nom : "format inconnu";
+        compte.set(nom, (compte.get(nom) || 0) + 1);
+    }
+    const resume = [...compte].map(([nom, n]) => `${n} × ${nom}`).join(", ");
+    console.log(`🔑 ${cles.length} clé(s) Gemini chargée(s) : ${resume} — envoyées en en-tête x-goog-api-key.`);
+    if (compte.get("AIzaSy (ancien)")) {
+        console.warn("⚠️ Des clés Gemini sont à l'ancien format « AIzaSy ». Google a cessé de les "
+            + "émettre et les refuse progressivement depuis juin 2026 — à remplacer avant qu'elles tombent.");
+    }
+    if (compte.get("format inconnu")) {
+        console.warn(`⚠️ ${compte.get("format inconnu")} clé(s) Gemini d'un format que ce code ne `
+            + "connaît pas. Elles sont ESSAYÉES quand même — si Google les refuse, la raison sera "
+            + "dans les lignes « Clé Gemini #n … » ci-dessous.");
+    }
+})();
 
 // ── TEST TELEGRAM ─────────────────────────────────────────
 app.get("/test-telegram", async (req, res) => {

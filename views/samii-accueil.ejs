@@ -995,8 +995,14 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                     <button class="cerveau" id="cerveau" type="button"
                             aria-expanded="false" aria-haspopup="true" aria-controls="menu-cerveau"
                             title="<%= L("Comment veux-tu que SAMII travaille ?") %>">
-                        <span class="cerveau__pic" id="cerveau-pic" aria-hidden="true">⚙️</span>
-                        <span class="cerveau__nom" id="cerveau-nom"><%= L("Auto") %></span>
+                        <% /* Le cran de départ vient de config/niveaux.js (PRESELECTION), jamais
+                              écrit en dur ici : un libellé recopié finit par annoncer autre chose
+                              que ce que le navigateur envoie. `data-defaut` le redit au script,
+                              qui n'a donc pas à connaître le registre non plus. */ %>
+                        <% const nParDefaut = locals.niveauParDefaut || { id: "", libelle: "", icone: "⚙️" }; %>
+                        <span class="cerveau__pic" id="cerveau-pic" aria-hidden="true"><%= nParDefaut.icone %></span>
+                        <span class="cerveau__nom" id="cerveau-nom"
+                              data-defaut="<%= nParDefaut.id %>"><%= L(nParDefaut.libelle) %></span>
                         <span class="cerveau__fleche" aria-hidden="true">▾</span>
                     </button>
 

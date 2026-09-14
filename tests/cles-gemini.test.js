@@ -80,13 +80,35 @@ function erreur(forme) {
     return e;
 }
 
+// ── OÙ CETTE SUITE LIT LA CLÉ ENVOYÉE ───────────────────────────────────
+//
+// Elle la lisait dans l'URL : `String(url).split("key=")[1]`. C'était exact
+// tant que SAMII écrivait `?key=` — et ça a cessé de l'être le jour où les
+// clés sont passées en en-tête `x-goog-api-key`, parce que Google refuse
+// (401 ACCESS_TOKEN_TYPE_UNSUPPORTED) les clés du nouveau format « AQ. »
+// passées dans l'URL.
+//
+// Dix-sept contrôles sont alors tombés d'un coup en annonçant « la clé de
+// secours n'est jamais essayée ». La rotation allait parfaitement bien :
+// c'est la SONDE qui ne voyait plus rien. Un instrument aveugle accuse
+// toujours le code.
+//
+// Elle lit donc l'en-tête — et elle refuse net une clé qui reviendrait dans
+// l'URL, puisque c'est précisément ce qui avait mis SAMII à terre.
+function cleEnvoyee(url, config) {
+    if (/[?&]key=/.test(String(url))) {
+        throw new Error("RÉGRESSION : une clé Gemini est repartie dans l'URL (?key=). "
+            + "Google refuse les clés « AQ. » transmises ainsi.");
+    }
+    return (config && config.headers && config.headers["x-goog-api-key"]) || undefined;
+}
+
 const Module = require("module");
 const vraiRequire = Module.prototype.require;
 Module.prototype.require = function (nom) {
     if (nom === "axios") return {
-        post: async (url) => {
-            const cle = String(url).split("key=")[1];
-            APPELS.push(cle);
+        post: async (url, corps, config) => {
+            APPELS.push(cleEnvoyee(url, config));
             const suite = reponses.shift();
             if (suite instanceof Error) throw suite;
             return suite ?? { data: { candidates: [{ content: { parts: [{ text: "ok" }] } }] } };
@@ -102,9 +124,8 @@ function chargerService() {
     const vrai = Module.prototype.require;
     Module.prototype.require = function (nom) {
         if (nom === "axios") return {
-            post: async (url) => {
-                const cle = String(url).split("key=")[1];
-                APPELS.push(cle);
+            post: async (url, corps, config) => {
+                APPELS.push(cleEnvoyee(url, config));
                 const suite = reponses.shift();
                 if (suite instanceof Error) throw suite;
                 return suite ?? { data: { candidates: [{ content: { parts: [{ text: "ok" }] } }] } };

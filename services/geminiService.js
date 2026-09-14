@@ -33,17 +33,52 @@ const KEYS = (CONFIG.GEMINI.API_KEYS.length > 0
     ? CONFIG.GEMINI.API_KEYS
     : [CONFIG.GEMINI.API_KEY]).filter(Boolean);
 
+// ── LA CLÉ NE VOYAGE PLUS DANS L'URL ─────────────────────────────────────
+//
+// CE QUI A MIS SAMII À TERRE. Google a changé le format de ses clés : les
+// anciennes commençaient par « AIzaSy », les nouvelles commencent par
+// « AQ. ». Les anciennes ont commencé à être refusées le 19 juin 2026, et
+// depuis septembre 2026 Google n'émet plus que des nouvelles.
+//
+// ET LES DEUX NE S'ENVOIENT PAS PAREIL. Une clé « AQ. » passée en
+// `?key=` dans l'URL est refusée — Google croit qu'on lui tend un jeton
+// OAuth. Mesuré contre le vrai serveur :
+//
+//     HTTP 401  reason: ACCESS_TOKEN_TYPE_UNSUPPORTED
+//               status: UNAUTHENTICATED
+//
+// Elle s'envoie dans l'en-tête `x-goog-api-key`. Cet en-tête accepte AUSSI
+// les anciennes clés : il n'y a donc rien à choisir, rien à détecter, et
+// aucune raison de garder deux chemins. On envoie tout par l'en-tête.
+//
+// ── POURQUOI C'ÉTAIT UNE PANNE TOTALE, PAS UNE PANNE PARTIELLE ──────────
+//
+// Le 401 n'est ni un quota (429) ni ce que `estCleMorte` reconnaissait. La
+// rotation le jetait donc immédiatement — voir `postWithRotation`. Avec
+// dix-huit clés en service, UNE SEULE était essayée avant l'abandon, et la
+// clé payante rangée en dernier n'était jamais atteinte. « On a mis une clé
+// payante et SAMII tombe quand même » : c'était ça.
+//
+// `urlFor` ne reçoit donc plus de clé du tout. Ce n'est pas un détail de
+// style : tant que la signature acceptait une clé, un appel écrit demain
+// pouvait la remettre dans l'URL sans que rien ne s'y oppose.
+const ENTETE_CLE = "x-goog-api-key";
+
+function entetesAvec(key, autres) {
+    return { ...(autres || {}), "Content-Type": "application/json", [ENTETE_CLE]: key };
+}
+
 // `flux: true` demande la version en flux du même modèle : Google renvoie la
 // réponse par morceaux au fur et à mesure qu'il l'écrit, au format SSE, au
 // lieu d'attendre la fin pour tout envoyer d'un coup. Même modèle, même clé,
 // même facture — seule la livraison change.
-function urlFor(key, flux, modele) {
+function urlFor(flux, modele) {
     const methode = flux ? "streamGenerateContent" : "generateContent";
-    const sse = flux ? "&alt=sse" : "";
+    const sse = flux ? "?alt=sse" : "";
     // `modele` vient de l'aiguilleur. Vide, on retombe sur le modèle de
     // tous les jours : un nom manquant ne doit jamais fabriquer une URL
     // « models/undefined: », qui répond 404 sans dire pourquoi.
-    return `https://generativelanguage.googleapis.com/v1beta/models/${modele || MODEL}:${methode}?key=${key}${sse}`;
+    return `https://generativelanguage.googleapis.com/v1beta/models/${modele || MODEL}:${methode}${sse}`;
 }
 
 // UN 429, D'OÙ QU'IL VIENNE, EST UN QUOTA.
@@ -83,6 +118,20 @@ function estCleMorte(err) {
     const statut = err?.response?.status;
     const message = String(err?.response?.data?.error?.message || "");
     if (statut === 403) return true;                       // clé désactivée / API non activée
+    // ── LE 401 MANQUAIT, ET IL A COÛTÉ TOUTE LA ROTATION ────────────────
+    //
+    // Google répond 401 UNAUTHENTICATED quand la clé est refusée comme
+    // identité — clé au mauvais format, mal transmise, ou révoquée. Ce
+    // statut n'était nulle part : ni quota, ni clé morte. La boucle faisait
+    // donc `throw` au premier essai et n'allait JAMAIS voir les dix-sept
+    // clés suivantes, la payante comprise.
+    //
+    // Une clé qui ne parvient pas à s'authentifier est une clé morte, au
+    // même titre qu'une clé révoquée. On passe à la suivante. Si elles
+    // échouent toutes, on tombe sur les relais — ce qui est le bon
+    // comportement, et surtout ce qui se VOIT dans le journal, une ligne
+    // par clé, au lieu d'un abandon silencieux.
+    if (statut === 401) return true;
     if (statut !== 400) return false;
     // Un 400 n'est pas toujours une histoire de clé : ça peut être NOTRE
     // requête. On ne saute que si Google parle explicitement de la clé,
@@ -206,8 +255,25 @@ async function postWithRotation(body, options = {}) {
         if (repos) saturees.delete(KEYS[i]);
 
         try {
-            const reponse = await axios.post(urlFor(KEYS[i], flux, options.modele), body,
-                flux ? { responseType: "stream", timeout: 60000 } : undefined);
+            // ── ET UN TEMPS MAXIMUM, MÊME SANS FLUX ─────────────────────
+            //
+            // La configuration valait `undefined` hors flux : `axios` n'a
+            // AUCUN délai par défaut (`axios.defaults.timeout === 0`).
+            // Mesuré contre un serveur qui accepte la connexion et ne
+            // répond jamais : le chemin en flux abandonnait bien à 60,0 s,
+            // le chemin sans flux attendait encore après 20 s — sans fin.
+            //
+            // Une requête suspendue sans limite, c'est un client qui
+            // regarde un rond tourner pour toujours, et une clé qu'on ne
+            // saura jamais essayer après. 60 s des deux côtés : c'est long
+            // pour un humain, mais c'est le temps qu'un tour avec outils
+            // peut légitimement prendre, et on ne coupe pas une réponse
+            // qui allait arriver.
+            const reponse = await axios.post(urlFor(flux, options.modele), body, {
+                headers: entetesAvec(KEYS[i]),
+                timeout: 60000,
+                ...(flux ? { responseType: "stream" } : {}),
+            });
             // Celle-ci a répondu : c'est par elle qu'on commencera la
             // prochaine fois, plutôt que par celles qu'on vient d'écarter.
             // Sauf si elle est payante — on retourne alors au gratuit à la
@@ -285,8 +351,14 @@ async function postWithRotation(body, options = {}) {
     // relayer : on en fabrique une, sinon l'appelant recevrait `undefined` et
     // planterait au lieu de basculer sur Groq/OpenRouter/DeepSeek.
     if (!lastErr) {
-        const e = new Error(`Les ${ignorees} clés Gemini sont au repos (quota).`);
+        const e = new Error(KEYS.length === 0
+            ? "Aucune clé Gemini n'est configurée."
+            : `Les ${ignorees} clés Gemini sont au repos (quota).`);
         e.response = { status: 429, data: { error: { code: 429, status: "RESOURCE_EXHAUSTED" } } };
+        // Ce 429 n'est pas un refus de Google : c'est NOUS qui n'avons rien
+        // envoyé. Le marquer permet à `chat()` de ne pas dormir dix secondes
+        // en attendant qu'un serveur qu'on n'a pas appelé change d'avis.
+        e.__aucuneCleEssayee = true;
         throw e;
     }
     throw lastErr;
@@ -334,6 +406,10 @@ const OPENROUTER_URL   = "https://openrouter.ai/api/v1/chat/completions";
 async function postOpenRouter(body) {
     if (!CONFIG.OPENROUTER?.API_KEY) throw new Error("Clé OpenRouter absente (relais indisponible).");
     return await axios.post(OPENROUTER_URL, body, {
+        // Même raison que pour Gemini : sans délai, `axios` attend sans fin.
+        // Un relais muet ne doit pas suspendre la requête du marchand — il
+        // doit échouer vite pour laisser sa chance au relais suivant.
+        timeout: 60000,
         headers: {
             "Authorization": `Bearer ${CONFIG.OPENROUTER.API_KEY}`,
             "Content-Type": "application/json",
@@ -351,6 +427,10 @@ const GROQ_URL    = "https://api.groq.com/openai/v1/chat/completions";
 async function postGroq(body) {
     if (!CONFIG.GROQ?.API_KEY) throw new Error("Clé Groq absente (relais indisponible).");
     return await axios.post(GROQ_URL, body, {
+        // Même raison que pour Gemini : sans délai, `axios` attend sans fin.
+        // Un relais muet ne doit pas suspendre la requête du marchand — il
+        // doit échouer vite pour laisser sa chance au relais suivant.
+        timeout: 60000,
         headers: {
             "Authorization": `Bearer ${CONFIG.GROQ.API_KEY}`,
             "Content-Type": "application/json",
@@ -369,6 +449,10 @@ const DEEPSEEK_URL   = "https://api.deepseek.com/chat/completions";
 async function postDeepSeek(body) {
     if (!CONFIG.DEEPSEEK?.API_KEY) throw new Error("Clé DeepSeek absente (relais indisponible).");
     return await axios.post(DEEPSEEK_URL, body, {
+        // Même raison que pour Gemini : sans délai, `axios` attend sans fin.
+        // Un relais muet ne doit pas suspendre la requête du marchand — il
+        // doit échouer vite pour laisser sa chance au relais suivant.
+        timeout: 60000,
         headers: {
             "Authorization": `Bearer ${CONFIG.DEEPSEEK.API_KEY}`,
             "Content-Type": "application/json",
@@ -1216,7 +1300,22 @@ async function chat({ message, context = {}, useTools = false, history = [] }, r
         // retrouvait à absorber tout le trafic et s'épuisait en quelques
         // messages (prompt système volumineux = beaucoup de tokens par appel).
         const estSurcharge = err.response?.data?.error?.status === "UNAVAILABLE";
-        if ((isQuotaError || estSurcharge) && retryCount < 2) {
+        // ── ON N'ATTEND PAS CE QUI NE VIENDRA PAS ───────────────────────
+        //
+        // Ce réessai existe pour un vrai 429 de Google : le compteur se
+        // libère en quelques secondes, attendre a du sens.
+        //
+        // Mais `postWithRotation` FABRIQUE un 429 quand il n'a essayé
+        // AUCUNE clé — zéro clé configurée, ou toutes encore au repos. Il
+        // le marque, désormais, parce que ce 429-là ne guérit pas en cinq
+        // secondes : il n'y a rien derrière qui puisse changer d'avis.
+        //
+        // Sans ce garde, on dormait 5 s, deux fois, avant même d'essayer
+        // Groq. Mesuré sur le chat du QG, clés absentes : 10,13 s de vide
+        // à chaque message, sur les deux chemins (bloc et flux). C'est le
+        // marchand qui payait ces dix secondes, pas nous.
+        const rienAReessayer = err.__aucuneCleEssayee === true;
+        if ((isQuotaError || estSurcharge) && !rienAReessayer && retryCount < 2) {
             const delai = estSurcharge ? 2000 * (retryCount + 1) : 5000;
             console.warn(`⏳ Gemini ${estSurcharge ? "surchargé" : "quota atteint"}, nouvel essai dans ${delai / 1000}s...`);
             await new Promise(resolve => setTimeout(resolve, delai));
@@ -1789,9 +1888,14 @@ async function sonder() {
             classee: fiche?.rang || (PAYANTES.has(cle) ? "payante" : "gratuite"),
         };
         try {
+            // Même transport que les vrais appels : en-tête, jamais `?key=`.
+            // Une sonde qui s'authentifie autrement que le service mesurerait
+            // autre chose que le service — et c'est exactement ce qui est
+            // arrivé : elle aurait répondu « indéterminé » sur les dix-huit
+            // clés sans jamais nommer la cause.
             await axios.get(
-                `https://generativelanguage.googleapis.com/v1beta/models?key=${cle}&pageSize=1`,
-                { timeout: 8000 },
+                "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1",
+                { headers: entetesAvec(cle), timeout: 8000 },
             );
             resultats.push({ ...commun, verdict: "valide",
                 detail: "La clé est acceptée par Google." });

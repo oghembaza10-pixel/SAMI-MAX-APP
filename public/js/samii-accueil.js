@@ -413,11 +413,20 @@
     var jointeUrl = null;
     var projetActif = null;
 
-    // Le niveau choisi dans la barre. « auto » par défaut : SAMII décide, ce
-    // qui est le bon défaut pour quelqu'un qui n'a pas envie de choisir.
+    // Le niveau choisi dans la barre. Le cran de départ est LU sur le bouton
+    // (`data-defaut`), que le serveur remplit depuis config/niveaux.js — on ne
+    // l'écrit pas ici. Écrit aux deux endroits, il aurait fini par différer :
+    // la barre affichant un niveau pendant que le navigateur en envoie un
+    // autre, sans que rien ne le signale.
+    //
+    // `"rapide"` en dernier recours seulement, si le bouton n'existe pas
+    // encore dans le DOM — jamais comme source de vérité.
     // `/api/chat` le lit DÉJÀ et le borne au palier payé — on n'ajoute aucune
     // règle, on rend visible un réglage qui n'avait pas d'interface.
-    var niveauChoisi = "auto";
+    var niveauChoisi = (function () {
+        var n = document.getElementById("cerveau-nom");
+        return (n && n.getAttribute("data-defaut")) || "rapide";
+    })();
     var joindre = document.getElementById("joindre");
     var fichier = document.getElementById("fichier");
     var jointe = document.getElementById("jointe");
