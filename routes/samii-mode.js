@@ -294,4 +294,7 @@ function canActAutonomously(mode, palier) {
 
 module.exports = router;
 module.exports.canActAutonomously = canActAutonomously;
+// Les cinq postures sont AUSSI lues par la page d'accueil, qui les affiche
+// à côté des niveaux d'intelligence — deux axes voisins, jamais confondus.
+// Export en lecture seule : la page montre, elle ne change rien.
 module.exports.MODES = MODES;

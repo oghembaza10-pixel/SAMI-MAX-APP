@@ -161,6 +161,123 @@ a { color: inherit; text-decoration: none; }
    Une entrée discrète, jamais un argumentaire. Quelqu'un qui se demande
    « ça va me coûter combien ? » doit trouver la réponse en un clic ; les
    autres ne doivent pas la voir. */
+/* ══ ALLER PLUS LOIN — UN RIDEAU, PAS UNE LISTE ══════════════════════════
+   La barre montrait dix services d'un coup. Dix entrées de même poids, ce
+   n'est pas une navigation : c'est un inventaire, et on le parcourt au lieu
+   de le lire.
+   Cinq destinations restent visibles ; le reste vit derrière un rideau qui
+   s'ouvre. Les routes ne bougent pas — seule leur VISIBILITÉ change. */
+.plus {
+    display: flex; align-items: center; gap: 11px; width: 100%;
+    padding: 10px 11px; border-radius: var(--r-m);
+    color: var(--doux); font-size: .86rem; text-align: start;
+    transition: background .16s, color .16s;
+}
+.plus:hover { background: var(--releve); color: var(--texte); }
+.plus__signe {
+    width: 20px; flex: none; text-align: center; color: var(--violet-pale);
+    transition: transform .22s cubic-bezier(.22,1,.36,1);
+}
+.plus[aria-expanded="true"] .plus__signe { transform: rotate(45deg); }
+
+/* `grid-template-rows: 0fr → 1fr` anime une hauteur INCONNUE, ce qu'une
+   transition sur `height` ne sait pas faire. Pas de hauteur en dur, donc
+   rien à corriger le jour où une entrée s'ajoute. */
+.rideau {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows .26s cubic-bezier(.22,1,.36,1);
+}
+.rideau > div { overflow: hidden; }
+.rideau[data-ouvert="1"] { grid-template-rows: 1fr; }
+@media (prefers-reduced-motion: reduce) { .rideau { transition: none; } }
+
+/* ══ LE SOLDE, EN BAS, DISCRET ═══════════════════════════════════════════
+   Il doit être lisible sans transformer la conversation en boutique. Une
+   pastille en pied de barre : on la voit quand on la cherche. */
+.solde-pastille {
+    margin-top: auto; display: flex; align-items: center; gap: 10px;
+    padding: 11px 12px; border-radius: var(--r-m);
+    border: 1px solid var(--ligne); background: var(--panneau);
+}
+.solde-pastille__pic { font-size: 1rem; }
+.solde-pastille__n { font-family: var(--mono); font-size: .82rem; }
+.solde-pastille__a {
+    margin-inline-start: auto; font-size: .78rem; color: var(--cyan);
+    border-bottom: 1px solid transparent;
+}
+.solde-pastille__a:hover { border-color: var(--cyan); }
+
+/* ══ LES ESPACES, À CÔTÉ DU CHAT ═════════════════════════════════════════
+   Le point le plus important de ce chantier.
+
+   Un QG ne doit pas être « une autre page où l'on va ». C'est un CONTEXTE
+   qu'on active sans quitter la conversation : même SAMII, même mémoire, on
+   change seulement ce sur quoi il travaille.
+
+   D'où une colonne étroite À CÔTÉ du fil, jamais un écran de plus. Elle
+   n'apparaît que s'il y a quelque chose à montrer, et se replie. */
+/* `overflow: hidden` : la colonne des espaces est posée hors de l'écran au
+   repos (translateX(100%)). Sans cette ligne elle DÉBORDE — mesuré au
+   navigateur, barre de défilement horizontale sur bureau ET sur mobile. */
+.scene { position: relative; overflow: hidden; }
+.espaces {
+    position: absolute; inset-block: 0; inset-inline-end: 0; z-index: 20;
+    width: 252px; display: flex; flex-direction: column; gap: 4px;
+    padding: 14px 12px; overflow-y: auto;
+    border-inline-start: 1px solid var(--ligne);
+    background: rgba(18, 15, 28, .82); backdrop-filter: blur(14px);
+    /* ── L'ÉTAT VIENT DE `data-espaces`, PAS DE L'ATTRIBUT `hidden` ──
+       Première version : `hidden` + `display: flex !important` pour garder
+       l'élément animable. Mauvaise idée sur deux plans, et le navigateur l'a
+       dit tout de suite : l'élément restait dans la mise en page (donc
+       débordement horizontal), et `hidden` ne cachait plus rien — au point
+       qu'Échap « fermait » un panneau qui restait visible.
+       `visibility` fait le travail : elle sort l'élément du flux visuel ET
+       du parcours clavier, tout en laissant la transition se jouer. */
+    visibility: hidden; opacity: 0; pointer-events: none;
+    transform: translateX(100%);
+    transition: transform .28s cubic-bezier(.22,1,.36,1), opacity .2s, visibility .28s;
+}
+html[dir="rtl"] .espaces { transform: translateX(-100%); }
+.scene[data-espaces="1"] .espaces {
+    visibility: visible; opacity: 1; pointer-events: auto; transform: translateX(0);
+}
+.espaces__titre {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--tres-doux); padding: 0 6px 8px;
+}
+.espaces__titre--suite { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ligne); }
+.espaces__fermer {
+    position: absolute; inset-block-start: 8px; inset-inline-end: 8px;
+    width: 28px; height: 28px; border-radius: 50%; color: var(--doux);
+    display: grid; place-items: center;
+}
+.espaces__fermer:hover { background: var(--releve); color: var(--texte); }
+
+/* Le bouton qui la rappelle. Il vit dans la barre du haut, donc il est
+   toujours atteignable, y compris au milieu d'une longue conversation. */
+.appel-espaces {
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 11px; border-radius: 999px;
+    border: 1px solid var(--ligne-viv); color: var(--doux); font-size: .78rem;
+    transition: border-color .16s, color .16s, background .16s;
+}
+.appel-espaces:hover { color: var(--texte); border-color: var(--violet); background: var(--releve); }
+.appel-espaces[aria-expanded="true"] { color: var(--cyan); border-color: var(--cyan); }
+
+/* Quand la colonne est ouverte, le fil se décale au lieu de passer dessous :
+   lire un texte à moitié caché est pire que de le lire plus étroit. */
+@media (min-width: 981px) {
+    .scene[data-espaces="1"] .colonne,
+    .scene[data-espaces="1"] .pied { padding-inline-end: 264px; }
+    .colonne, .pied { transition: padding .28s cubic-bezier(.22,1,.36,1); }
+}
+/* Sous 980px, la colonne devient un rideau plein écran : sur un téléphone,
+   deux colonnes côte à côte ne laissent la place à aucune des deux. */
+@media (max-width: 980px) {
+    .espaces { width: min(320px, 86vw); box-shadow: -18px 0 50px rgba(0,0,0,.55); }
+}
+
 .sortie--aide { color: var(--tres-doux); font-size: .82rem; }
 .sortie--aide:hover { color: var(--cyan); }
 
@@ -269,6 +386,72 @@ a { color: inherit; text-decoration: none; }
     0%, 100% { transform: scale(1);     box-shadow: 0 0 36px rgba(95, 212, 255, .35); }
     50%      { transform: scale(1.045); box-shadow: 0 0 48px rgba(157, 92, 255, .4); }
 }
+
+/* ══ LA BOULE EST VIVANTE ════════════════════════════════════════════════
+   Elle respirait, point. Une respiration est un état de repos : elle dit
+   « je suis là », elle ne dit rien de ce qui se passe.
+
+   Trois états, trois choses différentes à dire :
+
+     au repos    elle respire lentement — présence, rien de plus
+     elle pense  elle s'accélère et se resserre — quelque chose se passe,
+                 et l'attente devient lisible au lieu d'être vide
+     elle parle  une onde part d'elle au rythme des mots qui arrivent
+
+   Pourquoi ça compte : entre l'envoi et la première lettre, il y a deux à
+   cinq secondes de silence. Sans signe, ce silence ressemble à une panne.
+
+   Tout est en `transform` et `opacity` — le compositeur s'en charge, sans
+   recalcul de mise en page. Une animation d'attente qui fait ramer la page
+   est pire que pas d'animation du tout. */
+.boule { position: relative; transition: transform .3s cubic-bezier(.22,1,.36,1); }
+
+.boule--pense {
+    animation: respire 1.15s ease-in-out infinite;
+}
+/* Deux ondes décalées : l'une part quand l'autre est à mi-chemin, ce qui
+   donne un pouls continu plutôt qu'un battement saccadé. */
+.boule--pense::before,
+.boule--pense::after {
+    content: ""; position: absolute; inset: -4px; border-radius: 50%;
+    border: 1px solid var(--cyan);
+    animation: onde 1.8s cubic-bezier(.22,1,.36,1) infinite;
+}
+.boule--pense::after { animation-delay: .9s; border-color: var(--violet); }
+@keyframes onde {
+    0%   { transform: scale(.92); opacity: .55; }
+    100% { transform: scale(1.9);  opacity: 0; }
+}
+
+/* Pendant qu'elle parle, la pulsation suit les mots : le JS pose la classe
+   à chaque groupe de lettres révélé. Courte et douce — un clignotement à
+   chaque syllabe serait insupportable sur un texte long. */
+.boule--parle { animation: respire 2.2s ease-in-out infinite; }
+.boule--mot { animation: souffle .42s ease-out; }
+@keyframes souffle {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.09); box-shadow: 0 0 54px rgba(157, 92, 255, .55); }
+    100% { transform: scale(1); }
+}
+
+/* La même boule, en petit, dans la barre du haut : elle reste visible même
+   quand la conversation a fait défiler l'ouverture hors de l'écran. C'est
+   elle qui porte l'état quand la grande n'est plus là. */
+.boule--mini {
+    width: 26px; height: 26px; margin: 0; flex: none;
+    box-shadow: 0 0 14px rgba(95, 212, 255, .3);
+}
+.boule--mini.boule--pense::before,
+.boule--mini.boule--pense::after { inset: -2px; }
+
+@media (prefers-reduced-motion: reduce) {
+    /* Quelqu'un qui a demandé moins de mouvement ne doit pas recevoir un
+       pouls permanent au centre de son écran. On garde une variation de
+       lueur : l'information passe, l'agitation non. */
+    .boule, .boule--pense, .boule--parle, .boule--mot { animation: none; }
+    .boule--pense::before, .boule--pense::after { animation: none; opacity: .3; }
+    .boule--pense { box-shadow: 0 0 52px rgba(157, 92, 255, .5); }
+}
 .ouverture h1 {
     margin: 0 0 10px; font-family: var(--serif); font-weight: 600;
     font-size: clamp(1.55rem, 5vw, 2.05rem); letter-spacing: .01em; text-wrap: balance;
@@ -369,6 +552,71 @@ html[dir="rtl"] .tour--moi .bulle { border-radius: var(--r-m) var(--r-m) var(--r
     padding: 9px 0; font-size: 16px;
 }
 .saisie input::placeholder { color: var(--tres-doux); }
+
+/* ══ COMMENT SAMII DOIT TRAVAILLER ═══════════════════════════════════════
+   Le réglage existait déjà — `/api/chat` lit `niveau` et le borne au palier
+   — mais rien ne le montrait. Un réglage invisible n'est pas un réglage :
+   c'est une option que personne n'utilise.
+
+   Il tient dans une pastille compacte, à droite du champ. Écrire reste
+   l'action principale ; choisir vient après. */
+.cerveau {
+    display: flex; align-items: center; gap: 6px; flex: none;
+    padding: 6px 10px; border-radius: 999px;
+    border: 1px solid var(--ligne-viv); background: var(--nuit);
+    font-size: .78rem; color: var(--doux);
+    transition: border-color .16s, color .16s;
+}
+.cerveau:hover { border-color: var(--violet); color: var(--texte); }
+.cerveau[aria-expanded="true"] { border-color: var(--cyan); color: var(--cyan); }
+.cerveau__pic { font-size: .9rem; }
+.cerveau__nom { max-width: 74px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cerveau__fleche { font-size: .6rem; opacity: .7; }
+/* Sur un écran étroit, le nom disparaît et l'icône suffit : il vaut mieux
+   une pastille lisible qu'un champ de saisie écrasé. */
+@media (max-width: 420px) { .cerveau__nom, .cerveau__fleche { display: none; } }
+
+.menu-cerveau {
+    position: absolute; inset-block-end: calc(100% + 10px); inset-inline-end: 0;
+    z-index: 40; width: min(310px, calc(100vw - 32px));
+    padding: 8px; border-radius: var(--r-l);
+    border: 1px solid var(--ligne-viv); background: var(--panneau);
+    box-shadow: 0 20px 54px rgba(0,0,0,.6);
+    animation: monte .18s cubic-bezier(.22,1,.36,1);
+}
+@keyframes monte { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .menu-cerveau { animation: none; } }
+
+.menu-cerveau__titre {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--tres-doux); padding: 8px 10px 6px;
+}
+.menu-cerveau__titre--suite { margin-top: 6px; border-top: 1px solid var(--ligne); }
+.choix {
+    display: flex; align-items: flex-start; gap: 10px; width: 100%;
+    padding: 9px 10px; border-radius: var(--r-m); text-align: start;
+    transition: background .14s;
+}
+.choix:hover { background: var(--releve); }
+.choix__pic { font-size: .95rem; width: 20px; flex: none; text-align: center; }
+.choix__txt { flex: 1; min-width: 0; }
+.choix__txt b { display: block; font-weight: 500; font-size: .85rem; }
+.choix__txt span { display: block; color: var(--tres-doux); font-size: .72rem; line-height: 1.4; }
+.choix__coche { flex: none; color: var(--cyan); opacity: 0; font-size: .8rem; }
+.choix[aria-pressed="true"] .choix__coche { opacity: 1; }
+.choix[aria-pressed="true"] .choix__txt b { color: var(--cyan); }
+
+/* La POSTURE est un autre axe, et le menu doit le dire visuellement.
+   L'intelligence est une profondeur de raisonnement ; l'autonomie est un
+   droit d'agir. Les mélanger ferait croire que « Maître » agit plus seul
+   que « Rapide » — c'est faux, et quelqu'un pourrait monter son niveau en
+   croyant lever une confirmation. */
+.posture {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: var(--r-m); color: var(--doux);
+}
+.posture:hover { background: var(--releve); color: var(--texte); }
+.posture__fleche { margin-inline-start: auto; color: var(--tres-doux); font-size: .75rem; }
 @media (prefers-reduced-motion: reduce) {
     .saisie { transition: none; }
 }
@@ -452,7 +700,21 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
     <header class="haut">
         <button class="burger" id="burger" aria-label="<%= L("Ouvrir le menu") %>">☰</button>
         <span class="marque">SAMII</span>
+        <%# La boule en petit, dans la barre : elle porte l'état de SAMII même
+            quand la conversation a fait défiler la grande hors de l'écran.
+            `aria-hidden` : c'est une information de présence, pas de contenu —
+            un lecteur d'écran n'a rien à lire ici, le texte arrive dans le fil. %>
+        <div class="boule boule--mini" id="boule-mini" aria-hidden="true"></div>
+
         <div class="haut__fin">
+            <%# Rappeler ses espaces depuis n'importe où dans la conversation.
+                Sur mobile il ouvre un rideau, sur bureau il décale le fil —
+                même bouton, même état, deux mises en page. %>
+            <button class="appel-espaces" id="appel-espaces" type="button"
+                    aria-expanded="false" aria-controls="espaces">
+                <span aria-hidden="true">🗂</span>
+                <span class="appel-espaces__nom"><%= L("Mes espaces") %></span>
+            </button>
             <nav class="langues" aria-label="<%= L("Langue") %>">
                 <% languesDispo.forEach(function (code) { %>
                     <a href="<%= lienLangue(code) %>" class="<%= code === lang ? 'actif' : '' %>"><%= code %></a>
@@ -477,70 +739,41 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
             en changer ne demande pas de se reconnecter. %>
         <aside class="cote" id="cote">
 
-            <% if (loggedIn && qgs.length) { %>
-                <p class="cote__titre"><%= qgs.length > 1 ? L("Mes QG") : L("Mon QG") %></p>
-                <%# Un formulaire vers POST /mes-qg, et pas un lien fabriqué :
-                    cette route existe déjà et VÉRIFIE que le QG appartient bien
-                    à la personne avant d'écrire quoi que ce soit en session.
-                    Inventer un raccourci ici, c'est réécrire ce contrôle —
-                    et un contrôle réécrit est un contrôle à retrouver le jour
-                    où il manque. %>
-                <% qgs.forEach(function (q) { %>
-                    <% if (q.direct) { %>
-                        <%# Le QG de la session, absent de la liste des espaces
-                            possédés. On y va en LIEN DIRECT : POST /mes-qg
-                            refuserait, puisqu'il vérifie l'appartenance contre
-                            cette même liste. /qg, lui, lit le workspaceId déjà
-                            posé en session à la connexion — c'est le chemin
-                            juste, pas un contournement. %>
-                        <a class="sortie sortie--ici" href="/qg">
-                            <span class="sortie__pic">🏢</span>
-                            <span class="sortie__nom"><%= q.nom %></span>
-                            <span class="sortie__point" aria-hidden="true"></span>
-                        </a>
-                    <% } else { %>
-                        <form method="POST" action="/mes-qg" class="cote__forme">
-                            <input type="hidden" name="workspaceId" value="<%= q.id %>">
-                            <button type="submit" class="sortie <%= q.id === workspaceId ? 'sortie--ici' : '' %>">
-                                <span class="sortie__pic">🏢</span>
-                                <span class="sortie__nom"><%= q.nom %></span>
-                                <% if (q.id === workspaceId) { %><span class="sortie__point" aria-hidden="true"></span><% } %>
-                            </button>
-                        </form>
-                    <% } %>
-                <% }); %>
-                <a class="sortie sortie--discret" href="/workspace/create">
-                    <span class="sortie__pic">＋</span><%= L("Ouvrir un QG") %>
-                </a>
-            <% } %>
+            <%# ── LES QG ONT DÉMÉNAGÉ, ILS N'ONT PAS DISPARU ──────────────
+                Ils vivaient ici, entre l'Académie et le Marketplace — ce qui
+                les rangeait parmi les DESTINATIONS. Un QG n'en est pas une :
+                c'est un CONTEXTE qu'on active sans quitter la conversation.
+                Ils sont maintenant dans le panneau « Mes espaces », à côté du
+                fil, avec les projets.
+                Le chemin d'accès ne change pas d'un octet : toujours
+                POST /mes-qg, la route qui VÉRIFIE l'appartenance avant
+                d'écrire quoi que ce soit en session. Un lien fabriqué
+                réécrirait ce contrôle, et un contrôle réécrit est un contrôle
+                à retrouver le jour où il manque.
 
-            <p class="cote__titre <%= (loggedIn && qgs.length) ? 'cote__titre--suite' : '' %>"><%= L("Aller plus loin") %></p>
+                ⚠️ Ce bloc était d'abord resté ICI en plus du panneau : les QG
+                étaient listés DEUX FOIS, donc deux formulaires par QG. La
+                garde de navigation a compté quatre `action="/mes-qg"` au lieu
+                de deux et l'a dit à la seconde. %>
 
+            <%# ── CINQ DESTINATIONS, PAS DIX ───────────────────────────────
+                La barre listait dix services à plat. Dix entrées de même
+                poids, ce n'est pas une navigation : c'est un inventaire.
+                Cinq restent visibles — celles qu'on ouvre vraiment — et le
+                reste passe derrière un rideau.
+                AUCUNE ROUTE N'EST SUPPRIMÉE : on change la visibilité, pas
+                l'existence. Tout reste atteignable en un clic de plus. %>
             <% if (!loggedIn || !qgs.length) { %>
                 <a class="sortie sortie--phare" href="<%= loggedIn ? '/workspace/create' : '/register' %>">
                     <span class="sortie__pic">🏛</span><%= L("Ouvrir un QG") %>
                 </a>
             <% } %>
-            <a class="sortie" href="<%= loggedIn ? '/connect/tools' : '/register' %>">
-                <span class="sortie__pic">🔌</span><%= L("Connecter mes outils") %>
-            </a>
-            <a class="sortie" href="/metiers">
-                <span class="sortie__pic">🧭</span><%= L("Voir les métiers") %>
-            </a>
-            <a class="sortie" href="/academy">
-                <span class="sortie__pic">🎓</span><%= L("Académie") %>
+            <a class="sortie" href="/community">
+                <span class="sortie__pic">👥</span><%= L("Communauté") %>
             </a>
             <a class="sortie" href="/marketplace">
                 <span class="sortie__pic">🛍</span><%= L("Marketplace") %>
             </a>
-            <a class="sortie" href="/community">
-                <span class="sortie__pic">👥</span><%= L("Communauté") %>
-            </a>
-            <% if (loggedIn && typeCompte === "agence") { %>
-                <a class="sortie" href="/agence">
-                    <span class="sortie__pic">🗂</span><%= L("QG Agence") %>
-                </a>
-            <% } %>
 
             <%# RECHARGER SAMII. Le paiement passe par Chargily (CIB /
                 EDAHABIA) et le modèle est la recharge, pas l'abonnement : on
@@ -562,22 +795,57 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                 <span class="sortie__pic">🪙</span><%= L("Comprendre les crédits") %>
             </button>
 
+            <%# ── LE RIDEAU ────────────────────────────────────────────────
+                Les services qu'on ouvre une fois puis plus jamais : les
+                outils, les métiers, l'Académie, l'espace agence. Ils
+                existent exactement comme avant — ils ne prennent simplement
+                plus la place de ce qu'on utilise tous les jours. %>
+            <button class="plus" id="plus-loin" type="button"
+                    aria-expanded="false" aria-controls="rideau-plus">
+                <span class="plus__signe" aria-hidden="true">＋</span>
+                <%= L("Aller plus loin avec SAMII") %>
+            </button>
+            <div class="rideau" id="rideau-plus" data-ouvert="0">
+                <div>
+                    <a class="sortie" href="<%= loggedIn ? '/connect/tools' : '/register' %>">
+                        <span class="sortie__pic">🔌</span><%= L("Connecter mes outils") %>
+                    </a>
+                    <a class="sortie" href="/metiers">
+                        <span class="sortie__pic">🧭</span><%= L("Voir les métiers") %>
+                    </a>
+                    <a class="sortie" href="/academy">
+                        <span class="sortie__pic">🎓</span><%= L("Académie") %>
+                    </a>
+                    <% if (loggedIn && typeCompte === "agence") { %>
+                        <a class="sortie" href="/agence">
+                            <span class="sortie__pic">🗂</span><%= L("QG Agence") %>
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+
             <%# LES PROJETS SONT MONTRÉS À TOUT LE MONDE.
                 Sans compte ils ne peuvent pas être enregistrés — mais les
                 cacher voudrait dire que personne ne sait qu'ils existent, donc
                 que personne ne les réclame. L'entrée explique ce qu'ils font et
                 propose le compte ; c'est une vitrine, pas une porte fermée. %>
-            <p class="cote__titre cote__titre--suite"><%= L("Mes projets") %></p>
-            <% if (projets.length) { %>
-                <% projets.forEach(function (p) { %>
-                    <button class="sortie sortie--projet" data-projet="<%= p.id %>">
-                        <span class="sortie__pic">📁</span><span class="sortie__nom"><%= p.nom %></span>
-                    </button>
-                <% }); %>
+            <%# LES PROJETS ONT DÉMÉNAGÉ, ILS N'ONT PAS DISPARU.
+                Ils vivent maintenant dans le panneau « Mes espaces », à côté
+                du fil — voir plus bas. Un projet n'est pas une destination de
+                navigation : c'est un CONTEXTE qu'on active sans quitter la
+                conversation. Le laisser dans la barre, à côté de l'Académie
+                et du Marketplace, disait le contraire. %>
+
+            <%# ── LE SOLDE, DISCRET, EN PIED DE BARRE ──────────────────────
+                Visible quand on le cherche, invisible le reste du temps. Le
+                chat ne doit pas se transformer en boutique. %>
+            <% if (loggedIn) { %>
+                <div class="solde-pastille">
+                    <span class="solde-pastille__pic" aria-hidden="true">🪙</span>
+                    <span class="solde-pastille__n" id="solde-credits"><%= locals.credits === null || locals.credits === undefined ? "—" : locals.credits + " " + L("crédits") %></span>
+                    <a class="solde-pastille__a" href="/recharge"><%= L("Recharger") %></a>
+                </div>
             <% } %>
-            <button class="sortie sortie--discret" id="nouveau-projet">
-                <span class="sortie__pic">＋</span><%= L("Nouveau projet") %>
-            </button>
 
             <p class="cote__bas">
                 <% if (loggedIn) { %>
@@ -588,7 +856,61 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
             </p>
         </aside>
 
-        <div class="scene">
+        <div class="scene" id="scene" data-espaces="0">
+
+            <%# ══ MES ESPACES — À CÔTÉ DU CHAT, JAMAIS À SA PLACE ══════════
+                Le point le plus important de ce chantier.
+
+                Un QG ou un projet n'est pas « une autre page où l'on va ».
+                C'est un CONTEXTE qu'on active : même SAMII, même mémoire,
+                même conversation — on change seulement ce sur quoi il
+                travaille. D'où une colonne étroite À CÔTÉ du fil.
+
+                Les projets s'activent déjà par `data-projet`, géré par le JS
+                existant : on ne recâble rien, on déplace. %>
+            <aside class="espaces" id="espaces" aria-hidden="true" aria-label="<%= L("Mes espaces") %>">
+                <button class="espaces__fermer" id="espaces-fermer" type="button"
+                        aria-label="<%= L("Fermer") %>">✕</button>
+
+                <% if (loggedIn && qgs.length) { %>
+                    <p class="espaces__titre"><%= qgs.length > 1 ? L("Mes QG") : L("Mon QG") %></p>
+                    <% qgs.forEach(function (q) { %>
+                        <% if (q.direct) { %>
+                            <a class="sortie sortie--ici" href="/qg">
+                                <span class="sortie__pic">🏢</span>
+                                <span class="sortie__nom"><%= q.nom %></span>
+                            </a>
+                        <% } else { %>
+                            <form method="POST" action="/mes-qg" class="cote__forme">
+                                <input type="hidden" name="workspaceId" value="<%= q.id %>">
+                                <button type="submit" class="sortie <%= q.id === workspaceId ? 'sortie--ici' : '' %>">
+                                    <span class="sortie__pic">🏢</span>
+                                    <span class="sortie__nom"><%= q.nom %></span>
+                                </button>
+                            </form>
+                        <% } %>
+                    <% }); %>
+                <% } %>
+
+                <p class="espaces__titre <%= (loggedIn && qgs.length) ? 'espaces__titre--suite' : '' %>">
+                    <%= L("Mes projets") %>
+                </p>
+                <% projets.forEach(function (p) { %>
+                    <button class="sortie sortie--projet" data-projet="<%= p.id %>">
+                        <span class="sortie__pic">📁</span><span class="sortie__nom"><%= p.nom %></span>
+                    </button>
+                <% }); %>
+                <button class="sortie sortie--discret" id="nouveau-projet">
+                    <span class="sortie__pic">＋</span><%= L("Nouveau projet") %>
+                </button>
+
+                <% if (!loggedIn || !qgs.length) { %>
+                    <a class="sortie sortie--discret" href="<%= loggedIn ? '/workspace/create' : '/register' %>">
+                        <span class="sortie__pic">🏛</span><%= L("Ouvrir un QG") %>
+                    </a>
+                <% } %>
+            </aside>
+
             <section class="fil fil--vide" id="fil" aria-live="polite">
                 <div class="colonne" id="colonne">
                     <div class="ouverture" id="ouverture">
@@ -657,6 +979,72 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                     <input id="champ" autocomplete="off" enterkeyhint="send"
                            placeholder="<%= L("Écris à SAMII…") %>"
                            aria-label="<%= L("Écris à SAMII…") %>">
+
+                    <%# ══ COMMENT SAMII DOIT TRAVAILLER ═══════════════════
+                        Le réglage EXISTAIT déjà : `/api/chat` lit `niveau` et
+                        le borne au palier payé. Rien ne le montrait — et un
+                        réglage invisible n'est pas un réglage, c'est une
+                        option que personne n'utilise.
+
+                        Les cinq entrées viennent de `config/niveaux.js`, le
+                        registre qui les déclare. Aucun libellé n'est recopié
+                        ici : un niveau ajouté demain apparaîtra tout seul, et
+                        aucun intitulé ne peut diverger de ce que le moteur
+                        applique. %>
+                    <% if ((locals.niveaux || []).length) { %>
+                    <button class="cerveau" id="cerveau" type="button"
+                            aria-expanded="false" aria-haspopup="true" aria-controls="menu-cerveau"
+                            title="<%= L("Comment veux-tu que SAMII travaille ?") %>">
+                        <span class="cerveau__pic" id="cerveau-pic" aria-hidden="true">⚙️</span>
+                        <span class="cerveau__nom" id="cerveau-nom"><%= L("Auto") %></span>
+                        <span class="cerveau__fleche" aria-hidden="true">▾</span>
+                    </button>
+
+                    <div class="menu-cerveau" id="menu-cerveau" hidden role="menu"
+                         aria-label="<%= L("Comment veux-tu que SAMII travaille ?") %>">
+                        <p class="menu-cerveau__titre"><%= L("Comment veux-tu que SAMII travaille ?") %></p>
+                        <%# `locals.` et pas l'accès direct : en EJS, lire une
+                            variable absente lève, et une page d'accueil qui
+                            lève est un 500 sur la porte d'entrée du produit.
+                            La leçon a été payée au chantier précédent — même
+                            trois suites, même ligne. %>
+                        <% (locals.niveaux || []).forEach(function (n) { %>
+                            <button class="choix" type="button" role="menuitemradio"
+                                    data-niveau="<%= n.id %>" data-pic="<%= n.icone %>"
+                                    data-nom="<%= L(n.libelle) %>"
+                                    aria-pressed="<%= n.id === 'auto' ? 'true' : 'false' %>">
+                                <span class="choix__pic" aria-hidden="true"><%= n.icone %></span>
+                                <span class="choix__txt">
+                                    <b><%= L(n.libelle) %></b>
+                                    <span><%= L(n.pourQuoi) %></span>
+                                </span>
+                                <span class="choix__coche" aria-hidden="true">✓</span>
+                            </button>
+                        <% }); %>
+
+                        <%# ── L'AUTONOMIE EST UN AUTRE AXE ─────────────────
+                            L'intelligence est une PROFONDEUR de raisonnement.
+                            L'autonomie est un DROIT D'AGIR. Les mélanger dans
+                            une seule liste ferait croire que « Maître » agit
+                            plus seul que « Rapide » — c'est faux, et quelqu'un
+                            monterait son niveau en croyant lever une
+                            confirmation.
+                            La posture reste donc à part, et en LECTURE SEULE
+                            ici : elle se change sur /mode, la page qui la
+                            possède et qui porte ses garde-fous. %>
+                        <% if (loggedIn && (locals.postures || []).length) { %>
+                            <p class="menu-cerveau__titre menu-cerveau__titre--suite"><%= L("Jusqu'où il peut agir seul") %></p>
+                            <%# /samii/mode, pas /mode : la route est montée sous « /samii »
+                                (index.js). Écrit /mode d'abord, et la preuve HTTP a
+                                répondu 404 — un lien inventé ne se voit qu'en cliquant. %>
+                            <a class="posture" href="/samii/mode">
+                                <span aria-hidden="true">🎚</span>
+                                <span><%= L("Choisir son mode d'action") %></span>
+                                <span class="posture__fleche" aria-hidden="true">→</span>
+                            </a>
+                        <% } %>
+                    </div>
+                    <% } %>
 
                     <button class="outil" id="micro" type="button"
                             aria-label="<%= L("Parler à SAMII") %>"

@@ -250,6 +250,130 @@ try {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// 6 bis. LE CHAT V2 : ESPACES, RIDEAU, INTELLIGENCE, BOULE VIVANTE
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Quatre ajouts de ce chantier, et chacun a un piège qu'un navigateur a
+// trouvé avant moi.
+{
+    const NIVEAUX = require("../config/niveaux");
+    const MODES = require("../routes/samii-mode").MODES || [];
+    const connectee = rendre({
+        loggedIn: true, nom: "Omar", typeCompte: "marchand",
+        qgs: [{ id: "w1", nom: "Ma Boutique" }, { id: "w2", nom: "Amel Couture" }],
+        projets: [{ id: "p1", nom: "Projet X" }],
+        workspaceId: "w1", credits: 200,
+        niveaux: NIVEAUX.pourAffichage(), postures: MODES,
+    });
+
+    // ── LES ESPACES SONT À CÔTÉ DU CHAT, PAS DANS LA NAVIGATION ─────────
+    //
+    // Un QG n'est pas une destination : c'est un contexte qu'on active sans
+    // quitter la conversation. Le laisser dans la barre, entre l'Académie et
+    // le Marketplace, disait le contraire.
+    verifier(connectee.includes('id="espaces"'), "le panneau des espaces n'est pas rendu");
+    verifier(connectee.includes('id="appel-espaces"'), "rien ne permet de rappeler ses espaces");
+
+    // ⚠️ LES QG ÉTAIENT LISTÉS DEUX FOIS au premier essai — le bloc d'origine
+    // était resté dans la barre en plus du panneau. Une garde de navigation
+    // a compté quatre formulaires au lieu de deux.
+    const formulaires = (connectee.match(/action="\/mes-qg"/g) || []).length;
+    verifier(formulaires === 2,
+        `${formulaires} formulaires POST /mes-qg pour deux QG : ils sont listés en double`);
+    verifier((connectee.match(/data-projet=/g) || []).length === 1,
+        "les projets ne sont pas dans le panneau, ou ils y sont en double");
+
+    // ── LE RIDEAU ────────────────────────────────────────────────────────
+    verifier(connectee.includes('id="plus-loin"') && connectee.includes('id="rideau-plus"'),
+        "le rideau « Aller plus loin » n'est pas rendu");
+    for (const route of ["/academy", "/metiers", "/connect/tools"]) {
+        verifier(connectee.includes(`href="${route}"`),
+            `« ${route} » n'est plus atteignable : on change la VISIBILITÉ des services, ` +
+            "jamais leur existence");
+    }
+
+    // ── L'INTELLIGENCE, LUE DANS SON REGISTRE ────────────────────────────
+    verifier(connectee.includes('id="menu-cerveau"'), "le sélecteur d'intelligence n'est pas rendu");
+    const choix = (connectee.match(/data-niveau="/g) || []).length;
+    verifier(choix === NIVEAUX.pourAffichage().length,
+        `${choix} niveaux proposés pour ${NIVEAUX.pourAffichage().length} déclarés dans ` +
+        "config/niveaux.js — un niveau ajouté demain n'apparaîtrait pas");
+    for (const n of NIVEAUX.pourAffichage()) {
+        verifier(connectee.includes(`data-niveau="${n.id}"`), `le niveau « ${n.id} » manque au menu`);
+    }
+
+    // ── ET L'AUTONOMIE RESTE UN AUTRE AXE ────────────────────────────────
+    //
+    // Les mélanger ferait croire que « Maître » agit plus seul que
+    // « Rapide » — c'est faux, et quelqu'un monterait son niveau en croyant
+    // lever une confirmation.
+    verifier(/Jusqu.{1,8}o(ù|u) il peut agir seul/.test(connectee),
+        "la posture d'autonomie n'est plus présentée à part : elle serait confondue avec " +
+        "la profondeur de raisonnement");
+    verifier(connectee.includes('href="/samii/mode"'),
+        "le lien vers la page des postures est absent ou faux — il pointait d'abord sur " +
+        "/mode, une route qui répond 404 (elle est montée sous /samii)");
+    verifier(!/data-niveau="(ombre|copilote|strategiste|autonome|souverain)"/.test(connectee),
+        "une posture d'autonomie est proposée comme un niveau d'intelligence");
+
+    // ── LE SOLDE VIENT DU SERVEUR, PAS D'UNE ROUTE IMAGINAIRE ────────────
+    //
+    // ⚠️ La pastille a d'abord été écrite comme un `fetch("/recharge/etat")`.
+    // Cette route N'EXISTE PAS : l'appel échouait en silence et la pastille
+    // gardait son tiret pour toujours.
+    verifier(connectee.includes("200 crédits") || connectee.includes("200 "),
+        "le solde n'est pas rendu par le serveur");
+    const js = fs.readFileSync(path.join(RACINE, "public/js/samii-accueil.js"), "utf8");
+    // ⚠️ INSTRUMENT — le garde ci-dessous lit le fichier brut, commentaires
+    // compris. La note qui explique la route morte contient forcément son nom :
+    // sans ce décapage, le garde se déclencherait sur sa propre documentation.
+    // (`//` précédé de « : » est laissé en place : c'est un https://, pas un
+    // commentaire.)
+    const jsCode = js
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+    verifier(!/fetch\(["']\/recharge\/etat/.test(jsCode),
+        "le navigateur appelle /recharge/etat, une route qui n'existe pas");
+
+    // ── LA BOULE EST VIVANTE ─────────────────────────────────────────────
+    //
+    // Entre l'envoi et la première lettre il y a deux à cinq secondes de
+    // silence. Sans signe, ce silence ressemble à une panne — et quelqu'un
+    // qui croit à une panne renvoie son message, ce qui coûte un tour.
+    verifier(/\.boule--pense/.test(connectee) && /\.boule--parle/.test(connectee),
+        "la boule n'a plus ses états « cherche » et « parle »");
+    verifier(connectee.includes('id="boule-mini"'),
+        "la boule de la barre haute a disparu : l'état ne serait plus visible dès que la " +
+        "conversation fait défiler la grande hors de l'écran");
+    verifier(/etatBoule\(["']pense["']\)/.test(jsCode),
+        "rien ne met la boule en recherche pendant l'attente");
+    verifier(/etatBoule\(["']parle["']\)/.test(jsCode) && /souffler\(\)/.test(jsCode),
+        "la boule ne réagit plus aux mots qui arrivent");
+    verifier(/prefers-reduced-motion/.test(connectee),
+        "les animations ne respectent pas « moins de mouvement » : quelqu'un qui l'a demandé " +
+        "recevrait un pouls permanent au centre de son écran");
+
+    // ── LE NIVEAU CHOISI PART AVEC LE MESSAGE ────────────────────────────
+    //
+    // `/api/chat` le lisait DÉJÀ et le borne au palier payé. On rend visible
+    // un réglage qui n'avait pas d'interface — on n'ajoute aucune règle.
+    verifier(/niveau:\s*niveauChoisi/.test(jsCode),
+        "le niveau choisi n'est pas envoyé : le sélecteur ne servirait à rien");
+
+    // ── ET LE PANNEAU NE DÉBORDE PAS ─────────────────────────────────────
+    //
+    // ⚠️ Première version : `hidden` + `display: flex !important`. L'élément
+    // restait dans la mise en page — barre de défilement horizontale sur
+    // bureau ET sur mobile — et `hidden` ne cachait plus rien.
+    verifier(/\.scene\s*\{[^}]*overflow:\s*hidden/.test(connectee),
+        "la scène ne masque pas ce qui dépasse : la colonne des espaces, posée hors écran " +
+        "au repos, fait déborder la page horizontalement");
+    verifier(!/\.espaces\[hidden\]/.test(connectee),
+        "le panneau est encore piloté par l'attribut `hidden` avec un display forcé — " +
+        "deux vérités possibles, et c'est la mauvaise qui gagne");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 // 7. L'ANCIENNE VITRINE N'A PAS ÉTÉ SUPPRIMÉE
 // ══════════════════════════════════════════════════════════════════════════
 //

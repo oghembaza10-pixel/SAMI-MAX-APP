@@ -81,6 +81,10 @@
 
     // Les trois points d'attente, remplacés par la réponse dès qu'elle arrive.
     function attendre() {
+        // SAMII cherche : la boule passe en pulsation. C'est le seul signe
+        // visible pendant les deux à cinq secondes où il ne se passe rien à
+        // l'écran — et c'est exactement là qu'on perd les gens.
+        etatBoule("pense");
         var t = bloc("tour");
         var p = document.createElement("div"); p.className = "pastille";
         var d = document.createElement("div"); d.className = "points";
@@ -128,13 +132,56 @@
     // d'un coup et on le révèle quand même mot par mot. Même sensation, sans
     // le vrai flux — c'est ce que voit un visiteur derrière un proxy qui met
     // les réponses en tampon.
+    // ══ LA BOULE EST VIVANTE ═════════════════════════════════════════════
+    //
+    // Entre l'envoi et la première lettre, il y a deux à cinq secondes de
+    // silence. Sans signe, ce silence ressemble à une panne — et quelqu'un
+    // qui croit à une panne renvoie son message, ce qui coûte un tour de
+    // plus pour rien.
+    //
+    // Trois états, trois choses différentes à dire : au repos elle respire,
+    // pendant qu'elle cherche elle pulse, pendant qu'elle parle une onde
+    // part à chaque mot. Les deux boules (la grande de l'ouverture, la
+    // petite de la barre) suivent le même état : la grande disparaît dès
+    // que la conversation défile, la petite reste.
+    var boules = function () {
+        return [].slice.call(document.querySelectorAll(".boule"));
+    };
+    function etatBoule(etat) {
+        boules().forEach(function (b) {
+            b.classList.remove("boule--pense", "boule--parle");
+            if (etat) b.classList.add("boule--" + etat);
+        });
+    }
+    // Un souffle par mot révélé. `void offsetWidth` force le navigateur à
+    // recalculer le style : sans ça, retirer puis remettre la classe dans le
+    // même tour ne rejoue pas l'animation — le navigateur ne voit aucun
+    // changement. C'est le piège classique des animations déclenchées en JS.
+    var dernierSouffle = 0;
+    function souffler() {
+        var t = Date.now();
+        if (t - dernierSouffle < 110) return;   // pas plus de ~9 par seconde
+        dernierSouffle = t;
+        boules().forEach(function (b) {
+            b.classList.remove("boule--mot");
+            void b.offsetWidth;
+            b.classList.add("boule--mot");
+        });
+    }
+
     function reveler(bulle, texte, fini) {
-        if (lent) { bulle.ecrire(texte); return fini && fini(); }
+        etatBoule("parle");
+        if (lent) { bulle.ecrire(texte); etatBoule(null); return fini && fini(); }
         var morceaux = texte.split(/(\s+)/);
         var i = 0;
         (function pas() {
-            if (i >= morceaux.length) { bulle.fermer(); return fini && fini(); }
+            if (i >= morceaux.length) {
+                bulle.fermer();
+                etatBoule(null);            // elle a fini de parler : repos
+                return fini && fini();
+            }
             bulle.ajouter(morceaux[i]);
+            if (morceaux[i].trim()) souffler();
             var pause = morceaux[i].indexOf("\n\n") !== -1 ? 170 : 14 + Math.random() * 30;
             i++;
             setTimeout(pas, pause);
@@ -337,6 +384,8 @@
                 message: texte,
                 imageUrl: image || null,
                 projetId: projetActif || null,
+                // Une DEMANDE, pas une décision : la route la borne au palier.
+                niveau: niveauChoisi,
             }),
         })
         .then(function (r) { return r.json(); })
@@ -363,6 +412,12 @@
     // désormais lu depuis config/cloudinary.js.
     var jointeUrl = null;
     var projetActif = null;
+
+    // Le niveau choisi dans la barre. « auto » par défaut : SAMII décide, ce
+    // qui est le bon défaut pour quelqu'un qui n'a pas envie de choisir.
+    // `/api/chat` le lit DÉJÀ et le borne au palier payé — on n'ajoute aucune
+    // règle, on rend visible un réglage qui n'avait pas d'interface.
+    var niveauChoisi = "auto";
     var joindre = document.getElementById("joindre");
     var fichier = document.getElementById("fichier");
     var jointe = document.getElementById("jointe");
@@ -556,6 +611,131 @@
             champ.focus();
         }
     } catch (e) { /* URL exotique : on ouvre la page normalement */ }
+
+    // ══ MES ESPACES — LE CONTEXTE, PAS UNE AUTRE PAGE ════════════════════
+    //
+    // Sur bureau la colonne décale le fil ; sous 980px elle glisse par-dessus
+    // comme un rideau. Un seul état, deux mises en page — c'est le CSS qui
+    // décide, pas le JS. Deux comportements écrits séparément auraient
+    // divergé au premier ajustement.
+    var espaces = document.getElementById("espaces");
+    var appelEspaces = document.getElementById("appel-espaces");
+    var scene = document.getElementById("scene");
+    if (espaces && appelEspaces && scene) {
+        // Un SEUL porteur d'état : l'attribut sur la scène. Le CSS en tire
+        // la visibilité, la position et la transition. Piloter `hidden` en
+        // plus donnait deux vérités possibles — et c'est la mauvaise qui
+        // gagnait.
+        function estOuvert() { return scene.getAttribute("data-espaces") === "1"; }
+        function montrerEspaces(oui) {
+            scene.setAttribute("data-espaces", oui ? "1" : "0");
+            espaces.setAttribute("aria-hidden", oui ? "false" : "true");
+            appelEspaces.setAttribute("aria-expanded", oui ? "true" : "false");
+            if (oui) {
+                var premier = espaces.querySelector(".sortie, .espaces__fermer");
+                if (premier) premier.focus();
+            }
+        }
+        appelEspaces.addEventListener("click", function () {
+            montrerEspaces(!estOuvert());
+        });
+        var fermerEspaces = document.getElementById("espaces-fermer");
+        if (fermerEspaces) fermerEspaces.addEventListener("click", function () {
+            montrerEspaces(false);
+            appelEspaces.focus();
+        });
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && estOuvert()) {
+                montrerEspaces(false);
+                appelEspaces.focus();
+            }
+        });
+        // Sur un écran étroit, choisir un espace referme le rideau : le laisser
+        // ouvert cacherait la réponse qu'on vient justement de demander.
+        espaces.addEventListener("click", function (e) {
+            if (window.innerWidth <= 980 && e.target.closest(".sortie--projet")) {
+                montrerEspaces(false);
+            }
+        });
+    }
+
+    // ══ ALLER PLUS LOIN — LE RIDEAU ══════════════════════════════════════
+    var plusLoin = document.getElementById("plus-loin");
+    var rideau = document.getElementById("rideau-plus");
+    if (plusLoin && rideau) {
+        plusLoin.addEventListener("click", function () {
+            var ouvert = rideau.getAttribute("data-ouvert") === "1";
+            rideau.setAttribute("data-ouvert", ouvert ? "0" : "1");
+            plusLoin.setAttribute("aria-expanded", ouvert ? "false" : "true");
+        });
+    }
+
+    // ══ COMMENT SAMII DOIT TRAVAILLER ════════════════════════════════════
+    //
+    // Le niveau part dans le corps de la requête, où `/api/chat` le lisait
+    // DÉJÀ et le bornait au palier payé. On ne change aucune règle : on rend
+    // visible un réglage qui n'avait pas d'interface.
+    //
+    // Le choix tient dans `localStorage` : quelqu'un qui travaille en Pro ne
+    // doit pas le redire à chaque rechargement. Et il est encadré d'un
+    // try/catch — en navigation privée, `localStorage` lève au lieu de
+    // rendre null, et une page d'accueil ne doit pas tomber pour ça.
+    var cerveau = document.getElementById("cerveau");
+    var menuCerveau = document.getElementById("menu-cerveau");
+    if (cerveau && menuCerveau) {
+        function fermerCerveau() {
+            menuCerveau.hidden = true;
+            cerveau.setAttribute("aria-expanded", "false");
+        }
+        function poserNiveau(bouton) {
+            niveauChoisi = bouton.getAttribute("data-niveau");
+            document.getElementById("cerveau-pic").textContent = bouton.getAttribute("data-pic");
+            document.getElementById("cerveau-nom").textContent = bouton.getAttribute("data-nom");
+            menuCerveau.querySelectorAll(".choix").forEach(function (c) {
+                c.setAttribute("aria-pressed", c === bouton ? "true" : "false");
+            });
+            try { localStorage.setItem("samii.niveau", niveauChoisi); } catch (e) {}
+        }
+
+        cerveau.addEventListener("click", function () {
+            var ouvert = !menuCerveau.hidden;
+            menuCerveau.hidden = ouvert;
+            cerveau.setAttribute("aria-expanded", ouvert ? "false" : "true");
+        });
+        menuCerveau.addEventListener("click", function (e) {
+            var b = e.target.closest(".choix");
+            if (!b) return;
+            poserNiveau(b);
+            fermerCerveau();
+            if (champ) champ.focus();
+        });
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && !menuCerveau.hidden) { fermerCerveau(); cerveau.focus(); }
+        });
+        document.addEventListener("mousedown", function (e) {
+            if (menuCerveau.hidden) return;
+            if (!menuCerveau.contains(e.target) && e.target !== cerveau && !cerveau.contains(e.target)) {
+                fermerCerveau();
+            }
+        });
+
+        // Le choix de la dernière fois, s'il existe encore dans le menu.
+        try {
+            var garde = localStorage.getItem("samii.niveau");
+            if (garde) {
+                var b = menuCerveau.querySelector('.choix[data-niveau="' + garde + '"]');
+                if (b) poserNiveau(b);
+            }
+        } catch (e) {}
+    }
+
+    // ⚠️ LA PASTILLE DU SOLDE EST RENDUE PAR LE SERVEUR, PAS PAR UN FETCH.
+    //
+    // Première version : un `fetch("/recharge/etat")`. Cette route N'EXISTE
+    // PAS. L'appel échouait en silence, la pastille gardait son tiret pour
+    // toujours, et rien n'aurait signalé qu'on appelait une API imaginaire.
+    // Le solde part maintenant avec les espaces, en une seule lecture — voir
+    // `espacesDe()` dans index.js.
 
     // ══ COMPRENDRE LES CRÉDITS ══════════════════════════════════════════
     //

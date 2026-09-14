@@ -85,6 +85,7 @@ const workspaceService = require("./services/workspaceService");
 const db                = require("./services/db");
 const paliers           = require("./config/paliers");
 const quota             = require("./services/samiiQuota");
+const NIVEAUX           = require("./config/niveaux");
 
 // ══════════════════════════════════════════════════════════════════════════
 // EXPRESS 4 NE SAIT PAS ATTRAPER UNE PROMESSE REJETÉE
@@ -756,6 +757,32 @@ function donneesAccueil(req) {
             messages: quota.QUOTA_GRATUIT_PAR_FENETRE,
             heures: quota.FENETRE_HEURES,
         },
+
+        // ── LES NIVEAUX D'INTELLIGENCE, LUS DANS LEUR REGISTRE ───────────
+        //
+        // `config/niveaux.js` les déclare déjà : identifiant, libellé, icône,
+        // et à quoi chacun sert. La barre de saisie les AFFICHE, elle ne les
+        // réinvente pas — sinon un niveau ajouté demain n'apparaîtrait nulle
+        // part, ou pire, un libellé divergerait entre le sélecteur et ce que
+        // le moteur applique vraiment.
+        //
+        // Ce n'est pas un changement de cerveau : `/api/chat` lit déjà
+        // `req.body.niveau` et le borne au palier. On rend visible un réglage
+        // qui existait sans interface.
+        niveaux: NIVEAUX.pourAffichage(),
+
+        // ── ET LES POSTURES D'AUTONOMIE, QUI SONT UN AUTRE AXE ───────────
+        //
+        // L'INTELLIGENCE est une profondeur de raisonnement. L'AUTONOMIE est
+        // un droit d'agir. Les confondre dans un seul menu donnerait à
+        // croire que « Maître » agit plus seul que « Rapide », ce qui est
+        // faux — et ce serait la porte ouverte à quelqu'un qui monte son
+        // niveau en croyant lever une confirmation.
+        //
+        // On les montre donc côte à côte mais SÉPARÉS, et la posture reste
+        // en lecture seule ici : elle se change sur /mode, la page qui la
+        // possède, avec ses garde-fous.
+        postures: require("./routes/samii-mode").MODES || [],
     };
 }
 
@@ -772,14 +799,29 @@ function donneesAccueil(req) {
 // empêcher de PARLER à SAMII, qui est la raison d'être de la page. On perd
 // alors la liste, pas la conversation.
 async function espacesDe(req) {
-    if (!req.session?.loggedIn) return { qgs: [], projets: [] };
-    const vide = { qgs: [], projets: [] };
+    if (!req.session?.loggedIn) return { qgs: [], projets: [], credits: null };
+    const vide = { qgs: [], projets: [], credits: null };
     try {
         const workspaceService = require("./services/workspaceService");
         const projetsService = require("./services/projetsService");
-        const [qgs, projets] = await Promise.all([
+        // ── LE SOLDE PART AVEC LE RESTE ──────────────────────────────
+        //
+        // Trois lectures en parallèle, pas trois allers-retours. Et surtout
+        // pas un appel depuis le navigateur vers une route qui n'existe pas :
+        // la pastille du solde a d'abord été écrite comme un `fetch` vers
+        // `/recharge/etat`, une route que personne n'a jamais créée. Une
+        // interface qui appelle une API imaginaire affiche un tiret pour
+        // toujours, sans que rien ne le signale.
+        //
+        // `.catch(() => null)` sur celle-ci seulement : un solde illisible ne
+        // doit pas emporter la liste des QG, qui est l'information utile.
+        const creditsSamii = require("./services/creditsSamii");
+        const [qgs, projets, solde] = await Promise.all([
             req.session.email ? workspaceService.getByOwner(req.session.email) : [],
             req.session.userId ? projetsService.lister(req.session.userId) : [],
+            req.session.userId
+                ? creditsSamii.etat(req.session.userId).catch(() => null)
+                : null,
         ]);
         const liste = (qgs || []).map((w) => ({ id: w.id, nom: w.nom || w.id, metier: w.metier || "" }));
 
@@ -801,7 +843,12 @@ async function espacesDe(req) {
             liste.unshift({ id: courant, nom: req.session.nomWorkspace || "Mon QG", metier: req.session.metier || "", direct: true });
         }
 
-        return { qgs: liste, projets: (projets || []).slice(0, 12) };
+        // Le solde est rendu EN CRÉDITS : c'est l'unité que la personne voit
+        // partout ailleurs. La conversion vit dans config/economie.js, pas ici.
+        const credits = solde && typeof solde.solde === "number"
+            ? require("./config/economie").creditsPour(solde.solde)
+            : null;
+        return { qgs: liste, projets: (projets || []).slice(0, 12), credits };
     } catch (err) {
         console.error("❌ espacesDe :", err.message);
         return vide;

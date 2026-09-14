@@ -33,6 +33,27 @@ const DEFAUT = "fr";
 // réduits à un espace avant la recherche : une phrase coupée sur trois lignes
 // dans un gabarit reste la même phrase.
 const EN = {
+    // ── CHANTIER CHAT V2 : ESPACES, RIDEAU, SÉLECTEUR D'INTELLIGENCE ─────
+    "Aller plus loin avec SAMII": "Go further with SAMII",
+    "Mes espaces": "My spaces",
+    "Comment veux-tu que SAMII travaille ?": "How should SAMII work?",
+    "Jusqu'où il peut agir seul": "How far it can act alone",
+    "Choisir son mode d'action": "Choose its action mode",
+    "Recharger": "Top up",
+    // Les cinq niveaux viennent de config/niveaux.js et sont affichés tels
+    // quels : libellé et raison d'être passent tous les deux par L().
+    "Auto": "Auto",
+    "SAMII choisit le niveau qu'il faut": "SAMII picks the right level",
+    "Rapide": "Quick",
+    "Traduire, reformuler, répondre tout de suite": "Translate, rephrase, answer right away",
+    "Expert": "Expert",
+    "Analyser, rédiger, lire tes propres données": "Analyse, write, read your own data",
+    "Pro": "Pro",
+    "Un plan, une stratégie, plusieurs étapes": "A plan, a strategy, several steps",
+    "Maître": "Master",
+    "Problème complexe, plusieurs agents, travail en profondeur":
+        "Complex problem, several agents, deep work",
+
     // ── CHANTIER APPARENCE : LA VITRINE-CHAT ET LES CRÉDITS ──────────────
     //
     // La page d'accueil est devenue la vitrine principale. Tout ce qu'elle
@@ -604,6 +625,25 @@ const EN = {
 // Arabe standard moderne, pas de dialecte : un marchand algérien, marocain ou
 // égyptien doit lire la même chose sans effort.
 const AR = {
+    // ── CHANTIER CHAT V2 : ESPACES, RIDEAU, SÉLECTEUR D'INTELLIGENCE ─────
+    "Aller plus loin avec SAMII": "اذهب أبعد مع سامي",
+    "Mes espaces": "مساحاتي",
+    "Comment veux-tu que SAMII travaille ?": "كيف تريد أن يعمل سامي؟",
+    "Jusqu'où il peut agir seul": "إلى أي حدّ يمكنه التصرّف وحده",
+    "Choisir son mode d'action": "اختر نمط تصرّفه",
+    "Recharger": "اشحن",
+    "Auto": "تلقائي",
+    "SAMII choisit le niveau qu'il faut": "سامي يختار المستوى المناسب",
+    "Rapide": "سريع",
+    "Traduire, reformuler, répondre tout de suite": "الترجمة، إعادة الصياغة، الردّ فورًا",
+    "Expert": "خبير",
+    "Analyser, rédiger, lire tes propres données": "التحليل، الكتابة، قراءة بياناتك",
+    "Pro": "محترف",
+    "Un plan, une stratégie, plusieurs étapes": "خطة، استراتيجية، عدّة مراحل",
+    "Maître": "أستاذ",
+    "Problème complexe, plusieurs agents, travail en profondeur":
+        "مشكلة معقّدة، عدّة وكلاء، عمل معمّق",
+
     // ── CHANTIER APPARENCE : LA VITRINE-CHAT ET LES CRÉDITS ──────────────
     "Ton travail, une question, une idée, ou juste l'envie de parler. Je t'écoute, je comprends ton contexte — et quand il faut passer à l'action, je peux la faire avec toi.":
         "عملك، سؤال، فكرة، أو مجرّد رغبة في الحديث. أنا أسمعك وأفهم سياقك — وعندما يحين وقت التنفيذ، أستطيع أن أنفّذ معك.",
