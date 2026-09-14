@@ -646,16 +646,38 @@ try {
 //
 // « Voir les métiers » menait à /metiers ; il mène au Hub. /metiers reste la
 // porte Google — et un service qu'on cesse de lier cesse d'exister pour un
-// moteur de recherche. Sa porte est maintenant dans le Hub.
+// moteur de recherche.
 //
-// Ce garde est ici, dans la suite de l'accueil, parce que c'est ici que le
-// lien a été déplacé : c'est le même mouvement, il doit se vérifier d'un
-// seul endroit.
+// CE GARDE S'EST TROMPÉ DE PORTE, ET LE PRODUIT A PAYÉ POUR.
+//
+// Il exigeait un href="/metiers" dans views/hub.ejs. J'y ai donc posé un
+// « Lire les fiches métier ». Personne ne l'avait demandé : il existait pour
+// tenir cette ligne verte. Résultat, le Hub — qui est le PARCOURS d'un
+// marchand qui ouvre son espace — gardait une sortie vers des pages de
+// texte, au milieu du choix de métier.
+//
+// L'intention du garde était bonne (ne pas rendre un service invisible) ;
+// sa cible était mauvaise. Un lien de catalogue se pose dans un PIED DE
+// PAGE, pas au milieu d'un parcours. Donc :
+//   • le pied de page public DOIT mener à /metiers ;
+//   • le Hub NE DOIT PAS. Sans cette seconde ligne, le lien reviendrait au
+//     premier qui trouve le Hub « un peu vide en bas ».
 {
     const hub = fs.readFileSync(path.join(RACINE, "views/hub.ejs"), "utf8");
-    verifier(/href="\/metiers"/.test(hub),
-        "le Hub ne mène plus à /metiers : les fiches métier deviennent invisibles pour Google, "
-        + "alors qu'elles existent toujours");
+    const vitrine = fs.readFileSync(path.join(RACINE, "views/index.ejs"), "utf8");
+
+    // La porte Google, dans le pied de page de la vitrine publique.
+    const pied = vitrine.slice(vitrine.indexOf('<footer class="site-footer"'));
+    verifier(/href="\/metiers"/.test(pied),
+        "le pied de page public ne mène plus à /metiers : les fiches métier deviennent "
+        + "invisibles pour Google, alors qu'elles existent toujours");
+
+    // Et surtout pas dans le parcours. On ignore les commentaires EJS : le
+    // mot « /metiers » y est expliqué, il ne doit pas compter comme un lien.
+    const hubSansCommentaires = hub.replace(/<%#[\s\S]*?%>/g, "");
+    verifier(!/href="\/metiers"/.test(hubSansCommentaires),
+        "le Hub mène de nouveau à /metiers : c'est exactement ce que « voir plus de métiers "
+        + "amène à la page des fiches » signalait — le marchand sort de son parcours");
 
     // Et le Hub ne doit pas reconstruire sa propre liste de métiers.
     verifier(!/const HUB_METIERS\s*=/.test(hub),

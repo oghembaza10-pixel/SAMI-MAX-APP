@@ -101,17 +101,19 @@
             <!-- Rempli dynamiquement par hub.js -->
         </section>
 
-        <%# ── LE CATALOGUE PUBLIC GARDE SA PORTE ─────────────────────────
-            /metiers n'est pas supprimé : ce sont les fiches que Google lit, et
-            un service qu'on cesse de lier cesse d'exister pour un moteur de
-            recherche. Il n'est simplement plus le parcours PRODUIT — celui-ci
-            est la grille ci-dessus, qui lit le même registre.
+        <%# ── LE HUB NE MÈNE PLUS À /metiers ──────────────────────────────
+            Un lien « Lire les fiches métier » a vécu ici. Il n'avait pas été
+            demandé : il était là pour qu'un garde de test reste vert.
 
-            Discret et en bas : quelqu'un qui est là pour ouvrir son QG a déjà
-            trouvé son métier au-dessus. %>
-        <p class="hub-fiches">
-            <a href="/metiers" data-i18n="hub.metiers.fiches">Lire les fiches métier</a>
-        </p>
+            Le Hub est le parcours d'un marchand qui ouvre son espace. Toute
+            porte vers /metiers posée sur ce chemin le sort de son parcours
+            pour le déposer sur des pages de texte — exactement ce que
+            « Voir plus de métiers » faisait, et exactement ce qu'on répare.
+
+            /metiers n'est pas supprimé pour autant : il est listé dans
+            /sitemap.xml (index.js) et lié depuis le pied de page public
+            (views/index.ejs). Google le trouve ; le marchand ne le croise
+            plus au milieu de son choix de métier. %>
 
         <!-- BANNIÈRE -->
         <section class="hub-banner" id="hub-banner">
@@ -266,7 +268,7 @@
             'hub.hero.searchPlaceholder': 'Construisez votre prochain empire...',
             'hub.section.choose': 'Choisis ton métier',
             'hub.search.create.title': 'Créer mon QG', 'hub.search.create.desc': 'Nouveau workspace pour votre activité',
-            'hub.search.invite.title': 'Inviter un collaborateur', 'hub.search.find.title': 'Chercher un QG', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.metiers.fiches': 'Lire les fiches métier', 'hub.search.creerMetier.title': 'Créer mon métier', 'hub.search.creerMetier.desc': "Mon activité n'est pas dans la liste",
+            'hub.search.invite.title': 'Inviter un collaborateur', 'hub.search.find.title': 'Chercher un QG', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.search.creerMetier.title': 'Créer mon métier', 'hub.search.creerMetier.desc': "Mon activité n'est pas dans la liste",
             'hub.banner.title': 'Construisez un empire mondial.', 'hub.banner.subtitle': 'Une seule plateforme. Des possibilités illimitées.',
             'hub.footer.quote': 'Chaque général commence soldat.', 'hub.footer.version': 'v1.0 · SOLDAT',
             'hub.status.operational': 'OPÉRATIONNEL',
@@ -285,7 +287,7 @@
             'hub.hero.searchPlaceholder': 'Build your next empire...',
             'hub.section.choose': 'Choose your business',
             'hub.search.create.title': 'Create my HQ', 'hub.search.create.desc': 'New workspace for your business',
-            'hub.search.invite.title': 'Invite a collaborator', 'hub.search.find.title': 'Search for an HQ', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.metiers.fiches': 'Read the business guides', 'hub.search.creerMetier.title': 'Create my business', 'hub.search.creerMetier.desc': "My activity isn't in the list",
+            'hub.search.invite.title': 'Invite a collaborator', 'hub.search.find.title': 'Search for an HQ', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.search.creerMetier.title': 'Create my business', 'hub.search.creerMetier.desc': "My activity isn't in the list",
             'hub.banner.title': 'Build a global empire.', 'hub.banner.subtitle': 'One platform. Unlimited possibilities.',
             'hub.footer.quote': 'Every general starts as a soldier.', 'hub.footer.version': 'v1.0 · SOLDIER',
             'hub.status.operational': 'OPERATIONAL',
@@ -304,7 +306,7 @@
             'hub.hero.searchPlaceholder': 'ابنِ إمبراطوريتك القادمة...',
             'hub.section.choose': 'اختر مجالك',
             'hub.search.create.title': 'إنشاء مقري', 'hub.search.create.desc': 'مساحة عمل جديدة لنشاطك',
-            'hub.search.invite.title': 'دعوة متعاون', 'hub.search.find.title': 'البحث عن مقر', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.metiers.fiches': 'اقرأ بطاقات المهن', 'hub.search.creerMetier.title': 'أنشئ مهنتي', 'hub.search.creerMetier.desc': 'نشاطي ليس في القائمة',
+            'hub.search.invite.title': 'دعوة متعاون', 'hub.search.find.title': 'البحث عن مقر', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.search.creerMetier.title': 'أنشئ مهنتي', 'hub.search.creerMetier.desc': 'نشاطي ليس في القائمة',
             'hub.banner.title': 'ابنِ إمبراطورية عالمية.', 'hub.banner.subtitle': 'منصة واحدة. إمكانيات لا محدودة.',
             'hub.footer.quote': 'كل جنرال يبدأ جنديًا.', 'hub.footer.version': 'الإصدار 1.0 · جندي',
             'hub.status.operational': 'تعمل الآن',
@@ -323,7 +325,7 @@
             'hub.hero.searchPlaceholder': '打造你的下一个帝国...',
             'hub.section.choose': '选择你的行业',
             'hub.search.create.title': '创建我的总部', 'hub.search.create.desc': '为您的业务创建新工作区',
-            'hub.search.invite.title': '邀请协作者', 'hub.search.find.title': '搜索总部', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.metiers.fiches': '阅读行业指南', 'hub.search.creerMetier.title': '创建我的行业', 'hub.search.creerMetier.desc': '列表中没有我的行业',
+            'hub.search.invite.title': '邀请协作者', 'hub.search.find.title': '搜索总部', 'hub.search.find.desc': 'Retrouver un espace de travail', 'hub.search.creerMetier.title': '创建我的行业', 'hub.search.creerMetier.desc': '列表中没有我的行业',
             'hub.banner.title': '打造一个全球帝国。', 'hub.banner.subtitle': '一个平台，无限可能。',
             'hub.footer.quote': '每位将军都始于士兵。', 'hub.footer.version': 'v1.0 · 士兵',
             'hub.status.operational': '运行中',
