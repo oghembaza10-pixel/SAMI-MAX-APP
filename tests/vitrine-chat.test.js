@@ -581,6 +581,31 @@ try {
             `« ${mesure} » est redéclaré pour « Mes espaces » seul : les deux boutons vont diverger`);
     }
 
+    // ── LE MOT « SAMII » ET LE LIBELLÉ NE S'EFFACENT PAS AU MÊME ENDROIT ─
+    //
+    // Décision de produit : sur ORDINATEUR le mot s'efface (la boule signe
+    // déjà la marque, et ses 59 px laissent « Mes espaces » afficher son
+    // libellé entier) ; sur TÉLÉPHONE il reste, parce que la colonne de
+    // navigation y est repliée derrière le ☰ et qu'il devient la seule
+    // identité visible.
+    //
+    // Ce qui est gardé ici n'est pas « lequel est visible » — c'est qu'ils
+    // basculent au MÊME seuil. Deux seuils voisins (par exemple 560 et 600)
+    // ouvriraient une bande de largeurs où les deux sont affichés en même
+    // temps : c'est précisément là que la barre déborde, et personne ne
+    // pense à tester à 580 px.
+    const seuilNom = /@media \(max-width:\s*(\d+)px\)[\s\S]{0,260}\.appel-espaces__nom\s*{\s*display:\s*none/.exec(feuille);
+    const seuilMarque = /@media \(min-width:\s*(\d+)px\)\s*{\s*\.marque\s*{\s*display:\s*none/.exec(feuille);
+    verifier(!!seuilNom, "le libellé de « Mes espaces » ne s'efface plus sur écran étroit");
+    verifier(!!seuilMarque, "le mot « SAMII » ne s'efface plus sur ordinateur : "
+        + "« Mes espaces » n'aura pas la place d'afficher son libellé");
+    if (seuilNom && seuilMarque) {
+        verifier(Number(seuilMarque[1]) === Number(seuilNom[1]) + 1,
+            `les deux bascules ne se touchent pas : libellé caché jusqu'à ${seuilNom[1]}px, mot caché `
+            + `à partir de ${seuilMarque[1]}px — il reste une bande de largeurs où les DEUX sont `
+            + "affichés, et c'est là que la barre déborde");
+    }
+
     // ── L'ICÔNE EST UN DESSIN, PAS UN CARACTÈRE ──────────────────────────
     //
     // C'était l'emoji « 🗂 ». Un emoji est un caractère : chaque système le

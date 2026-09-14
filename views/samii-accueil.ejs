@@ -109,6 +109,26 @@ a { color: inherit; text-decoration: none; }
     -webkit-background-clip: text; background-clip: text; color: transparent;
     white-space: nowrap;
 }
+
+/* ── LE MOT « SAMII » N'EST GARDÉ QUE LÀ OÙ IL SERT ──────────────────────
+   Sur ORDINATEUR il s'efface : la boule à côté signe déjà la marque, et les
+   59 px qu'il prenait reviennent à la barre — c'est ce qui laisse « Mes
+   espaces » afficher son libellé entier à côté de « Mon QG », sans que rien
+   ne soit coupé.
+
+   Sur TÉLÉPHONE il reste. La colonne de navigation y est repliée derrière
+   le ☰ : le mot est alors la SEULE identité visible à l'écran, et
+   l'effacer laisserait une boule seule au-dessus d'une conversation. C'est
+   aussi pourquoi le libellé du bouton, lui, s'efface de ce côté-là : sur
+   390 px il n'y a de la place que pour l'un des deux, et entre le nom du
+   produit et le nom d'un bouton qui porte déjà une chemise, c'est le nom du
+   produit qui compte.
+
+   Le seuil est le même que celui du libellé (560 px) : deux bascules au même
+   endroit, jamais deux seuils voisins qui se croisent. */
+@media (min-width: 561px) {
+    .marque { display: none; }
+}
 .haut__fin { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; }
 .langues { display: flex; gap: 2px; }
 .langues a {
