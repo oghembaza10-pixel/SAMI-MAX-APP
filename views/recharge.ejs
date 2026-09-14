@@ -139,8 +139,21 @@ button { font: inherit; color: inherit; cursor: pointer; border: none; backgroun
         <% montants.forEach(function (m) { %>
             <button class="montant <%= m.net ? 'montant--net' : '' %>"
                     data-usd="<%= m.usd %>" <%= chargilyPret ? "" : "disabled" %>>
-                <span class="montant__messages"><%= m.messages %></span>
-                <span class="montant__quoi"><%= L("messages") %></span>
+                <%# ── LE CRÉDIT PASSE DEVANT LE MESSAGE ───────────────────
+                    Le gros chiffre annonçait des MESSAGES. C'était juste tant
+                    que tout coûtait la même chose ; ça ne l'est plus : un
+                    message, une commande et une mission ne valent pas le même
+                    nombre de crédits.
+                    Annoncer « 66 messages » sur un bouton, c'est promettre une
+                    quantité d'actions qu'on ne peut pas tenir — quelqu'un qui
+                    prépare des publications en fera cinq fois moins. Le crédit,
+                    lui, est exact quoi qu'on en fasse.
+                    Les messages restent, en dessous et au conditionnel : c'est
+                    l'unité que tout le monde comprend d'un coup d'œil, et elle
+                    donne l'ordre de grandeur. %>
+                <span class="montant__messages"><%= m.credits %></span>
+                <span class="montant__quoi"><%= L("crédits") %></span>
+                <span class="montant__equiv">≈ <%= m.messages %> <%= L("messages") %></span>
                 <% if (m.paiement) { %>
                     <span class="montant__prix"><%= m.paiement.montant %> <%= m.paiement.devise %></span>
                 <% } %>

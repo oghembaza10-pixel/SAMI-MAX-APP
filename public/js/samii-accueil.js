@@ -556,4 +556,58 @@
             champ.focus();
         }
     } catch (e) { /* URL exotique : on ouvre la page normalement */ }
+
+    // ══ COMPRENDRE LES CRÉDITS ══════════════════════════════════════════
+    //
+    // « Ça va me coûter combien ? » est la question qui arrête les gens juste
+    // avant d'essayer. La réponse tient dans une feuille déjà rendue par le
+    // serveur : aucun appel réseau, aucune dépendance, rien à charger.
+    //
+    // Deux entrées mènent au même endroit — la barre latérale et le lien sous
+    // le champ — parce que la question se pose à deux moments différents :
+    // en explorant, et juste avant d'envoyer.
+    var voile = document.getElementById("voile-tarifs");
+    if (voile) {
+        var rendreLa = null;   // à qui rendre le focus en fermant
+
+        function ouvrirTarifs(e) {
+            if (e) e.preventDefault();
+            rendreLa = document.activeElement;
+            voile.hidden = false;
+            // Le fond ne défile plus derrière la feuille : sur mobile, deux
+            // zones qui défilent l'une sur l'autre donnent l'impression que
+            // la page est cassée.
+            document.body.style.overflow = "hidden";
+            var fermer = document.getElementById("fermer-tarifs");
+            if (fermer) fermer.focus();
+        }
+
+        function fermerTarifs() {
+            voile.hidden = true;
+            document.body.style.overflow = "";
+            // On RAMÈNE le focus d'où il venait. Sans ça, quelqu'un qui
+            // navigue au clavier se retrouve renvoyé en haut de page et doit
+            // tout reparcourir — c'est le genre de détail qui fait qu'une
+            // interface est utilisable ou non.
+            if (rendreLa && rendreLa.focus) rendreLa.focus();
+            rendreLa = null;
+        }
+
+        ["ouvrir-tarifs", "lien-tarifs"].forEach(function (id) {
+            var b = document.getElementById(id);
+            if (b) b.addEventListener("click", ouvrirTarifs);
+        });
+        var fermer = document.getElementById("fermer-tarifs");
+        if (fermer) fermer.addEventListener("click", fermerTarifs);
+
+        // Cliquer à côté ferme. Mais SEULEMENT à côté : un clic qui part sur
+        // le contenu et finit sur le voile (une sélection de texte, par
+        // exemple) ne doit pas fermer la feuille.
+        voile.addEventListener("mousedown", function (e) {
+            if (e.target === voile) fermerTarifs();
+        });
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && !voile.hidden) fermerTarifs();
+        });
+    }
 })();

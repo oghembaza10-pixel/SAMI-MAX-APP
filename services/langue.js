@@ -33,6 +33,49 @@ const DEFAUT = "fr";
 // réduits à un espace avant la recherche : une phrase coupée sur trois lignes
 // dans un gabarit reste la même phrase.
 const EN = {
+    // ── CHANTIER APPARENCE : LA VITRINE-CHAT ET LES CRÉDITS ──────────────
+    //
+    // La page d'accueil est devenue la vitrine principale. Tout ce qu'elle
+    // affiche passe par L() — y compris les libellés de la grille de
+    // crédits, qui viennent de config/credits.grilleVisible().
+    "Ton travail, une question, une idée, ou juste l'envie de parler. Je t'écoute, je comprends ton contexte — et quand il faut passer à l'action, je peux la faire avec toi.":
+        "Your work, a question, an idea, or simply the urge to talk. I listen, I understand your situation — and when it's time to act, I can do it with you.",
+    "Je vends des vêtements sur Instagram, aide-moi à développer ça":
+        "I sell clothes on Instagram, help me grow it",
+    "Comprendre les crédits": "How credits work",
+    "messages gratuits": "free messages",
+    "renouvelés toutes les": "renewed every",
+    "Fermer": "Close",
+    "Gratuit": "Free",
+    "crédit": "credit",
+    "crédits": "credits",
+    "Tu ne paies que ce que SAMII fait pour toi. Parler ne coûte rien.":
+        "You only pay for what SAMII does for you. Talking is free.",
+    "Tu recharges seulement quand tu en as besoin, et ton solde ne s'efface jamais.":
+        "You top up only when you need to, and your balance never expires.",
+    // Les neuf lignes de la grille, et ce qu'elles veulent dire.
+    "Parler avec SAMII": "Talking with SAMII",
+    "Les conversations avec tes clients ne coûtent rien": "Conversations with your customers cost nothing",
+    "Travailler dans ton QG": "Working in your HQ",
+    "Un message à SAMII dans ton espace de travail": "A message to SAMII in your workspace",
+    "Action simple": "Simple action",
+    "Enregistrer une commande, poser un rendez-vous, envoyer un e-mail":
+        "Recording an order, booking an appointment, sending an email",
+    "Image ou document": "Image or document",
+    "SAMII lit une photo, une facture, un PDF": "SAMII reads a photo, an invoice, a PDF",
+    "Action avec un outil": "Action with a tool",
+    "Envoyer une facture, créer un rapport": "Sending an invoice, creating a report",
+    "Étape d'agent": "Agent step",
+    "Un maillon d'une mission qui travaille pour toi": "One link in a mission working for you",
+    "Exécuter du code": "Running code",
+    "SAMII écrit un programme et le fait tourner": "SAMII writes a program and runs it",
+    "Recherche sur le web": "Web search",
+    "Trouver de vrais prospects, vérifier une information":
+        "Finding real leads, checking a fact",
+    "Mission complète": "Full mission",
+    "Plusieurs spécialistes qui se relaient sur un vrai travail":
+        "Several specialists taking turns on real work",
+
     // ── Le bouton de retour ──────────────────────────────────────────────
     // Composé par services/navigation.js : « Retour à » + la base du compte.
     // Les deux morceaux sont traduits séparément parce que la base change
@@ -561,6 +604,44 @@ const EN = {
 // Arabe standard moderne, pas de dialecte : un marchand algérien, marocain ou
 // égyptien doit lire la même chose sans effort.
 const AR = {
+    // ── CHANTIER APPARENCE : LA VITRINE-CHAT ET LES CRÉDITS ──────────────
+    "Ton travail, une question, une idée, ou juste l'envie de parler. Je t'écoute, je comprends ton contexte — et quand il faut passer à l'action, je peux la faire avec toi.":
+        "عملك، سؤال، فكرة، أو مجرّد رغبة في الحديث. أنا أسمعك وأفهم سياقك — وعندما يحين وقت التنفيذ، أستطيع أن أنفّذ معك.",
+    "Je vends des vêtements sur Instagram, aide-moi à développer ça":
+        "أبيع الملابس على إنستغرام، ساعدني على تطوير ذلك",
+    "Comprendre les crédits": "كيف تعمل الأرصدة",
+    "messages gratuits": "رسائل مجانية",
+    "renouvelés toutes les": "تتجدّد كل",
+    "Fermer": "إغلاق",
+    "Gratuit": "مجاني",
+    "crédit": "رصيد",
+    "crédits": "رصيد",
+    "Tu ne paies que ce que SAMII fait pour toi. Parler ne coûte rien.":
+        "لا تدفع إلا مقابل ما ينجزه سامي من أجلك. الحديث مجاني.",
+    "Tu recharges seulement quand tu en as besoin, et ton solde ne s'efface jamais.":
+        "تشحن فقط عند الحاجة، ورصيدك لا ينتهي أبدًا.",
+    "Parler avec SAMII": "التحدّث مع سامي",
+    "Les conversations avec tes clients ne coûtent rien": "محادثاتك مع زبائنك لا تكلّف شيئًا",
+    "Travailler dans ton QG": "العمل في مقرّك",
+    "Un message à SAMII dans ton espace de travail": "رسالة إلى سامي في مساحة عملك",
+    "Action simple": "إجراء بسيط",
+    "Enregistrer une commande, poser un rendez-vous, envoyer un e-mail":
+        "تسجيل طلبية، حجز موعد، إرسال بريد إلكتروني",
+    "Image ou document": "صورة أو مستند",
+    "SAMII lit une photo, une facture, un PDF": "سامي يقرأ صورة أو فاتورة أو ملف PDF",
+    "Action avec un outil": "إجراء بأداة",
+    "Envoyer une facture, créer un rapport": "إرسال فاتورة، إنشاء تقرير",
+    "Étape d'agent": "خطوة وكيل",
+    "Un maillon d'une mission qui travaille pour toi": "حلقة من مهمة تعمل من أجلك",
+    "Exécuter du code": "تشغيل برنامج",
+    "SAMII écrit un programme et le fait tourner": "سامي يكتب برنامجًا ويشغّله",
+    "Recherche sur le web": "بحث على الويب",
+    "Trouver de vrais prospects, vérifier une information":
+        "إيجاد عملاء محتملين حقيقيين، التحقّق من معلومة",
+    "Mission complète": "مهمة كاملة",
+    "Plusieurs spécialistes qui se relaient sur un vrai travail":
+        "عدّة مختصّين يتناوبون على عمل حقيقي",
+
     // ── Navigation, commun ───────────────────────────────────────────────
     "L'Académie — SAMII OS": "الأكاديمية — SAMII OS",
     "Le travail qui attend — L'Académie": "العمل في انتظارك — الأكاديمية",

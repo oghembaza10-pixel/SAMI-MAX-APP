@@ -84,6 +84,7 @@ const CONFIG           = require("./config");
 const workspaceService = require("./services/workspaceService");
 const db                = require("./services/db");
 const paliers           = require("./config/paliers");
+const quota             = require("./services/samiiQuota");
 
 // ══════════════════════════════════════════════════════════════════════════
 // EXPRESS 4 NE SAIT PAS ATTRAPER UNE PROMESSE REJETÉE
@@ -727,6 +728,34 @@ function donneesAccueil(req) {
         // que ceux facturés (config/paliers.js) : impossible d'annoncer un
         // prix en vitrine et d'en encaisser un autre sur /billing.
         tarifs: paliers.PALIERS,
+
+        // ── LA GRILLE DE CRÉDITS, LUE À LA SOURCE ────────────────────────
+        //
+        // Même principe, appliqué à la nouvelle grille : la page lit
+        // `config/credits.js`, le fichier qui FACTURE. Recopier neuf prix
+        // dans un gabarit, c'est se donner neuf occasions de mentir — et
+        // c'est exactement ce qui venait d'arriver avec les « 200 messages »
+        // écrits en dur sur les boutons de recharge.
+        grilleCredits: require("./config/credits").grilleVisible(),
+        creditEnUSD: 0.01,
+
+        // ── LE QUOTA GRATUIT, LU À LA SOURCE LUI AUSSI ───────────────────
+        //
+        // ⚠️ ET C'EST POURQUOI ON NE L'ÉCRIT PAS EN DUR.
+        //
+        // La règle commerciale annoncée est « 20 messages / 5 h ». Le code
+        // applique 30 / 7 h (services/samiiQuota.js). Écrire « 20 » sur la
+        // page en ferait une promesse fausse dans le sens le plus bête :
+        // annoncer MOINS que ce qu'on donne réellement.
+        //
+        // Ce chantier n'a pas le droit de toucher au quota — c'est une
+        // décision produit. Il a en revanche le devoir de ne pas mentir :
+        // la page affiche donc ce que le code applique, quel qu'il soit.
+        // Le jour où le quota sera aligné, la page suivra toute seule.
+        quotaGratuit: {
+            messages: quota.QUOTA_GRATUIT_PAR_FENETRE,
+            heures: quota.FENETRE_HEURES,
+        },
     };
 }
 

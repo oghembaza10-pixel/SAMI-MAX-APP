@@ -31,9 +31,10 @@
 //   posé, une facture partie : quelque chose existe maintenant qui n'existait
 //   pas avant, chez le marchand comme chez son client.
 //
-// Un message coûte 1 centime, un acte 5. La recharge minimale est de 2 $ :
-// assez pour que ça vaille le geste, assez peu pour qu'on le fasse sans
-// réfléchir.
+// Un message coûte 3 centimes, un acte de 5 à 11 selon ce qu'il mobilise —
+// voir la grille plus bas, et `config/economie.js` pour ce qui la justifie.
+// La recharge minimale reste de 2 $ : assez pour que ça vaille le geste,
+// assez peu pour qu'on le fasse sans réfléchir.
 //
 // ── LE TAUX DU DINAR ──────────────────────────────────────────────────────
 //
@@ -302,7 +303,59 @@ function verifierMontant(montantUSD) {
     return { ok: true, montant: n };
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// CE QUE LA PAGE MONTRE — LU ICI, JAMAIS RECOPIÉ
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ CETTE FONCTION EXISTE POUR QU'UNE PAGE NE PUISSE PAS MENTIR.
+//
+// `MONTANTS` portait « 2 $ = 200 messages », écrit en dur à côté de sa
+// source. Juste tant qu'un message valait 1 centime ; faux le jour où il en
+// a valu 3, sans qu'une seule ligne change. Le même piège attend n'importe
+// quel gabarit qui recopierait un prix : la page et la facture divergent, et
+// c'est le client qui découvre l'écart.
+//
+// Les vues lisent donc CETTE fonction, qui lit les mêmes constantes que
+// `factureDuTour`. Afficher et facturer deviennent physiquement le même
+// nombre.
+//
+// Les libellés sont en français et passent par `L()` dans le gabarit : la
+// clé de traduction est la phrase elle-même (voir services/langue.js).
+//
+// ── CE QUI N'EST PAS ICI, ET NE DOIT JAMAIS Y ÊTRE ───────────────────────
+//
+// Aucun appel Gemini, aucun token, aucun coût fournisseur, aucune marge.
+// Le client achète « envoyer une facture », pas « quatre requêtes d'API ».
+// Lui montrer la plomberie ne l'aide pas à décider — ça lui apprend à
+// comparer SAMII à une facture Google, ce qui n'est pas le même produit.
+function grilleVisible() {
+    const c = (usd) => Math.round(usd / 0.01);
+    return [
+        { icone: "💬", quoi: "Parler avec SAMII", credits: 0,
+          detail: "Les conversations avec tes clients ne coûtent rien" },
+        { icone: "🧠", quoi: "Travailler dans ton QG", credits: c(PRIX_MESSAGE_USD),
+          detail: "Un message à SAMII dans ton espace de travail" },
+        { icone: "⚡", quoi: "Action simple", credits: c(PRIX_ACTE_SIMPLE_USD),
+          detail: "Enregistrer une commande, poser un rendez-vous, envoyer un e-mail" },
+        { icone: "🖼", quoi: "Image ou document", credits: c(0.04),
+          detail: "SAMII lit une photo, une facture, un PDF" },
+        { icone: "🔧", quoi: "Action avec un outil", credits: c(PRIX_ACTE_OUTIL_USD),
+          detail: "Envoyer une facture, créer un rapport" },
+        { icone: "🤖", quoi: "Étape d'agent", credits: c(PRIX_ACTE_SIMPLE_USD),
+          detail: "Un maillon d'une mission qui travaille pour toi" },
+        { icone: "💻", quoi: "Exécuter du code", credits: c(PRIX_ACTE_COMPLEXE_USD),
+          detail: "SAMII écrit un programme et le fait tourner" },
+        { icone: "🔎", quoi: "Recherche sur le web", credits: c(PRIX_RECHERCHE_USD),
+          detail: "Trouver de vrais prospects, vérifier une information" },
+        { icone: "🚀", quoi: "Mission complète", credits: c(PRIX_CHAINE_USD),
+          detail: "Plusieurs spécialistes qui se relaient sur un vrai travail" },
+    ];
+}
+
 module.exports = {
+    grilleVisible,
+    PRIX_ACTE_SIMPLE_USD, PRIX_ACTE_OUTIL_USD, PRIX_ACTE_COMPLEXE_USD,
+    PRIX_RECHERCHE_USD, PRIX_CHAINE_USD,
     DEVISE_COMPTE,
     PRIX_MESSAGE_USD,
     PRIX_ACTE_USD,

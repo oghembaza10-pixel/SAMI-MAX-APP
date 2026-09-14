@@ -137,9 +137,81 @@ a { color: inherit; text-decoration: none; }
     padding: 18px 12px; overflow-y: auto;
     display: flex; flex-direction: column; gap: 4px;
 }
+/* ══ HIÉRARCHIE DE LA BARRE ══════════════════════════════════════════════
+   Elle listait tout à plat : espaces, connexions, apprentissage, achats,
+   entraide, recharge. Neuf entrées de même poids, c'est une liste
+   technique — on la parcourt au lieu de la lire.
+
+   (Les intitulés ne sont pas repris ici : un commentaire CSS PART au
+   navigateur, et une garde de traduction l'a justement attrapé quand il
+   citait les entrées en français sur une page servie en anglais.)
+   Un filet fin sépare les groupes, et le titre reprend au-dessus. Rien de
+   plus : la barre doit rester courte, le chat reste le centre. */
 .cote__titre {
     font-family: var(--mono); font-size: .62rem; letter-spacing: .16em;
     text-transform: uppercase; color: var(--tres-doux); padding: 0 10px 8px;
+}
+.cote__titre + .cote__titre,
+.cote__titre--suite {
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--ligne);
+}
+
+/* ══ COMPRENDRE LES CRÉDITS ══════════════════════════════════════════════
+   Une entrée discrète, jamais un argumentaire. Quelqu'un qui se demande
+   « ça va me coûter combien ? » doit trouver la réponse en un clic ; les
+   autres ne doivent pas la voir. */
+.sortie--aide { color: var(--tres-doux); font-size: .82rem; }
+.sortie--aide:hover { color: var(--cyan); }
+
+.voile {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(6, 4, 12, .78); backdrop-filter: blur(6px);
+    display: grid; place-items: center; padding: 20px;
+    animation: paraitre .18s ease-out;
+}
+@keyframes paraitre { from { opacity: 0 } to { opacity: 1 } }
+.tarifs {
+    width: min(520px, 100%); max-height: 86vh; overflow-y: auto;
+    background: var(--panneau); border: 1px solid var(--ligne-viv);
+    border-radius: var(--r-l); padding: 24px;
+    box-shadow: 0 24px 70px rgba(0,0,0,.6);
+}
+.tarifs__haut { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 4px; }
+.tarifs__titre { font-family: var(--serif); font-size: 1.15rem; margin: 0; }
+.tarifs__fermer {
+    margin-inline-start: auto; width: 32px; height: 32px; flex: none;
+    border-radius: 50%; color: var(--doux); display: grid; place-items: center;
+}
+.tarifs__fermer:hover { background: var(--releve); color: var(--texte); }
+.tarifs__chapeau { color: var(--doux); font-size: .86rem; margin: 0 0 18px; }
+.tarifs__ligne {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-top: 1px solid var(--ligne);
+}
+.tarifs__pic { font-size: 1.1rem; width: 26px; text-align: center; flex: none; }
+.tarifs__quoi { flex: 1; min-width: 0; }
+.tarifs__quoi b { display: block; font-weight: 500; font-size: .9rem; }
+.tarifs__quoi span { display: block; color: var(--tres-doux); font-size: .76rem; line-height: 1.45; }
+.tarifs__prix {
+    flex: none; font-family: var(--mono); font-size: .82rem; color: var(--violet-pale);
+    white-space: nowrap;
+}
+.tarifs__prix--libre { color: var(--vert); }
+.tarifs__bas {
+    margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--ligne-viv);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+}
+.tarifs__unite { font-family: var(--mono); font-size: .74rem; color: var(--tres-doux); }
+.tarifs__aller {
+    margin-inline-start: auto; padding: 9px 16px; border-radius: 999px;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    color: #0A0810; font-weight: 600; font-size: .85rem;
+}
+.tarifs__aller:hover { filter: brightness(1.12); }
+@media (max-width: 520px) {
+    .tarifs { padding: 18px; }
+    .tarifs__aller { margin-inline-start: 0; width: 100%; text-align: center; }
 }
 .sortie {
     display: flex; align-items: center; gap: 11px;
@@ -268,16 +340,38 @@ html[dir="rtl"] .tour--moi .bulle { border-radius: var(--r-m) var(--r-m) var(--r
     flex: none; padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
     background: linear-gradient(to top, var(--nuit) 70%, transparent);
 }
+/* ══ LE CHAMP — L'ÉLÉMENT LE PLUS IMPORTANT DE LA PAGE ══════════════════
+   Tout le reste de l'écran est là pour amener ici. Il doit donc se voir
+   sans crier : une bordure qui vit au survol, un halo au focus, et rien
+   d'autre. Un champ de chat qui clignote fatigue en trois minutes. */
 .saisie {
+    position: relative;
     max-width: 680px; margin: 0 auto;
     display: flex; align-items: center; gap: 10px;
-    padding: 7px; padding-inline-start: 18px;
-    border: 1px solid var(--ligne-viv); border-radius: 999px; background: var(--panneau);
-    transition: border-color .16s;
+    padding: 8px; padding-inline-start: 20px;
+    border: 1px solid var(--ligne-viv); border-radius: 999px;
+    background: linear-gradient(180deg, var(--releve), var(--panneau));
+    box-shadow: 0 2px 14px rgba(0,0,0,.35);
+    transition: border-color .18s, box-shadow .22s, transform .18s;
 }
-.saisie:focus-within { border-color: var(--cyan); }
-.saisie input { flex: 1; min-width: 0; background: none; border: none; outline: none; padding: 8px 0; }
+.saisie:hover { border-color: #4A3D6B; }
+/* Le halo au focus dit « c'est ici que ça se passe ». Deux couches : un
+   liseré net pour l'accessibilité, une lueur large pour la sensation.
+   `:focus-within` et pas `:focus` : le champ est un enfant du formulaire. */
+.saisie:focus-within {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 1px var(--cyan), 0 0 28px -6px rgba(95,212,255,.45), 0 4px 20px rgba(0,0,0,.4);
+}
+.saisie input {
+    flex: 1; min-width: 0; background: none; border: none; outline: none;
+    /* 16px minimum sur mobile : en dessous, iOS zoome tout seul au focus et
+       la page part de travers. Ce n'est pas un choix esthétique. */
+    padding: 9px 0; font-size: 16px;
+}
 .saisie input::placeholder { color: var(--tres-doux); }
+@media (prefers-reduced-motion: reduce) {
+    .saisie { transition: none; }
+}
 .envoyer {
     width: 36px; height: 36px; flex: none; border-radius: 50%;
     background: linear-gradient(135deg, var(--cyan), var(--violet));
@@ -327,6 +421,13 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
 }
 .jauge b { color: var(--doux); font-weight: 500; }
 .jauge.bas b { color: var(--ambre); }
+/* La règle du gratuit, affichée une fois, calmement. Elle disparaît dès
+   qu'un compteur réel la remplace — deux informations sur la même ligne
+   en feraient une alerte permanente, et une alerte permanente ne se lit
+   plus. */
+.jauge--regle { color: var(--tres-doux); }
+.jauge--regle a { color: var(--doux); border-bottom: 1px solid var(--ligne-viv); }
+.jauge--regle a:hover { color: var(--cyan); border-color: var(--cyan); }
 
 @media (max-width: 860px) {
     .burger { display: flex; }
@@ -413,7 +514,7 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                 </a>
             <% } %>
 
-            <p class="cote__titre"><%= L("Aller plus loin") %></p>
+            <p class="cote__titre <%= (loggedIn && qgs.length) ? 'cote__titre--suite' : '' %>"><%= L("Aller plus loin") %></p>
 
             <% if (!loggedIn || !qgs.length) { %>
                 <a class="sortie sortie--phare" href="<%= loggedIn ? '/workspace/create' : '/register' %>">
@@ -452,13 +553,21 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
             <a class="sortie sortie--recharge" href="/recharge">
                 <span class="sortie__pic">⚡</span><%= L("Recharger SAMII") %>
             </a>
+            <%# « Ça va me coûter combien ? » est la question qui arrête les
+                gens juste avant d'essayer. Y répondre en un clic, sans quitter
+                la page et sans argumentaire, lève l'objection au lieu de la
+                contourner. Discret : qui ne se pose pas la question ne doit
+                pas la voir. %>
+            <button class="sortie sortie--aide" id="ouvrir-tarifs" type="button">
+                <span class="sortie__pic">🪙</span><%= L("Comprendre les crédits") %>
+            </button>
 
             <%# LES PROJETS SONT MONTRÉS À TOUT LE MONDE.
                 Sans compte ils ne peuvent pas être enregistrés — mais les
                 cacher voudrait dire que personne ne sait qu'ils existent, donc
                 que personne ne les réclame. L'entrée explique ce qu'ils font et
                 propose le compte ; c'est une vitrine, pas une porte fermée. %>
-            <p class="cote__titre" style="margin-top:14px;"><%= L("Mes projets") %></p>
+            <p class="cote__titre cote__titre--suite"><%= L("Mes projets") %></p>
             <% if (projets.length) { %>
                 <% projets.forEach(function (p) { %>
                     <button class="sortie sortie--projet" data-projet="<%= p.id %>">
@@ -490,7 +599,13 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                             phrase en dessous ne doit PAS réduire SAMII au
                             commerce : quelqu'un qui ne vend rien doit se sentir
                             à sa place dès la première ligne. %>
-                        <p><%= L("Ton travail, une question, ou juste parler. Je réponds à tout — et je connais le terrain ici : les prix, la livraison, le paiement à la réception.") %></p>
+                        <%# La phrase d'accroche ne promet plus « je réponds à
+                            tout » — une promesse que personne ne croit, et qui
+                            range SAMII au rayon des moteurs de questions. Elle
+                            dit ce qu'il fait de différent : il ÉCOUTE, il tient
+                            compte du contexte, et il peut AGIR. C'est la
+                            dernière moitié qui vaut de l'argent. %>
+                        <p><%= L("Ton travail, une question, une idée, ou juste l'envie de parler. Je t'écoute, je comprends ton contexte — et quand il faut passer à l'action, je peux la faire avec toi.") %></p>
                     </div>
 
                     <%# QUATRE AMORCES, ET ELLES NE DISENT PAS LA MÊME CHOSE.
@@ -501,7 +616,11 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                         qui, la connaissance du terrain (là où aucun assistant
                         généraliste ne suit), et la conversation pour elle-même. %>
                     <div class="amorces" id="amorces">
-                        <button class="amorce"><%= L("Je vends des vêtements sur Instagram") %></button>
+                        <%# La première amorce est la plus importante : c'est
+                            elle qu'on lit. Elle portait un CONSTAT (« je
+                            vends… ») ; elle porte maintenant une DEMANDE, donc
+                            elle montre qu'on peut demander quelque chose. %>
+                        <button class="amorce"><%= L("Je vends des vêtements sur Instagram, aide-moi à développer ça") %></button>
                         <button class="amorce"><%= L("Aide-moi à écrire un message difficile") %></button>
                         <button class="amorce"><%= L("Combien coûte une livraison Alger → Oran ?") %></button>
                         <button class="amorce"><%= L("Juste parler, j'ai eu une longue journée") %></button>
@@ -545,6 +664,36 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
 
                     <button class="envoyer" id="envoyer" type="submit" aria-label="<%= L("Envoyer") %>">↑</button>
                 </form>
+                <%# LA RÈGLE DU GRATUIT, ET ELLE N'EST PAS ÉCRITE EN DUR.
+                    `quotaGratuit` vient de services/samiiQuota.js — le fichier
+                    qui APPLIQUE la limite. Écrire « 20 messages » dans ce
+                    gabarit aurait annoncé moins que ce que le code donne
+                    réellement (30), et une page qui se trompe sur sa propre
+                    offre est pire qu'une page qui se tait.
+                    Elle ne s'affiche que pour un visiteur non connecté et tant
+                    qu'aucun compteur réel ne l'a remplacée : deux chiffres sur
+                    la même ligne feraient une alerte permanente. %>
+                <%# ⚠️ `locals.` ET PAS L'ACCÈS DIRECT.
+                    En EJS, lire une variable absente lève — et une page
+                    d'accueil qui lève, c'est un 500 sur la porte d'entrée du
+                    produit. Trois suites existantes rendent ce gabarit avec
+                    leur propre liste de locals ; elles ont crié à la seconde,
+                    et elles avaient raison : le défaut n'était pas chez elles.
+                    Un local qui manque doit dégrader l'affichage, jamais
+                    casser la page. %>
+                <% const quotaVu = locals.quotaGratuit || null; %>
+                <% if (!loggedIn && quotaVu) { %>
+                    <p class="jauge jauge--regle" id="jauge-regle">
+                        <%# `L()` ne fait PAS d'interpolation — elle prend une
+                            phrase française et rend sa traduction. Les nombres
+                            restent donc hors des chaînes traduites : une clé
+                            comme « 30 messages gratuits » obligerait à écrire
+                            une entrée de dictionnaire par valeur possible. %>
+                        <b><%= quotaVu.messages %></b> <%= L("messages gratuits") %>
+                        · <%= L("renouvelés toutes les") %> <%= quotaVu.heures %> h
+                        · <a href="#" id="lien-tarifs"><%= L("Comprendre les crédits") %></a>
+                    </p>
+                <% } %>
                 <p class="jauge" id="jauge"></p>
             </div>
         </div>
@@ -583,6 +732,51 @@ window.SAMII_CONNECTE = <%= loggedIn ? "true" : "false" %>;
     assistant de vitrine et un autre dedans qui s'ignorent. %>
 window.SAMII_CLOUDINARY = <%- JSON.stringify({ nuage: cloudinary.CLOUD_NAME, preset: cloudinary.UPLOAD_PRESET }) %>;
 </script>
+<%# ══ COMPRENDRE LES CRÉDITS ══════════════════════════════════════════
+    Les prix viennent de `config/credits.grilleVisible()`, c'est-à-dire du
+    fichier qui FACTURE. Aucun nombre n'est recopié ici : la page et la
+    facture sont physiquement le même chiffre.
+
+    CE QU'ON NE MONTRE PAS, ET C'EST VOLONTAIRE : le nombre d'appels au
+    fournisseur, les tokens, le coût Google, la marge. Un marchand n'achète
+    pas des requêtes d'API — il achète « envoyer une facture ». Lui montrer
+    la plomberie ne l'aide pas à décider, ça lui apprend à comparer SAMII à
+    une facture Google, ce qui n'est pas le même produit. %>
+<% if ((locals.grilleCredits || []).length) { %>
+<div class="voile" id="voile-tarifs" hidden>
+    <div class="tarifs" role="dialog" aria-modal="true" aria-labelledby="tarifs-titre">
+        <div class="tarifs__haut">
+            <h2 class="tarifs__titre" id="tarifs-titre"><%= L("Comprendre les crédits") %></h2>
+            <button class="tarifs__fermer" id="fermer-tarifs" type="button"
+                    aria-label="<%= L("Fermer") %>">✕</button>
+        </div>
+        <p class="tarifs__chapeau"><%= L("Tu ne paies que ce que SAMII fait pour toi. Parler ne coûte rien.") %></p>
+
+        <% (locals.grilleCredits || []).forEach(function (r) { %>
+            <div class="tarifs__ligne">
+                <span class="tarifs__pic" aria-hidden="true"><%= r.icone %></span>
+                <span class="tarifs__quoi">
+                    <b><%= L(r.quoi) %></b>
+                    <span><%= L(r.detail) %></span>
+                </span>
+                <span class="tarifs__prix <%= r.credits === 0 ? 'tarifs__prix--libre' : '' %>">
+                    <%= r.credits === 0 ? L("Gratuit") : r.credits + " " + L("crédits") %>
+                </span>
+            </div>
+        <% }); %>
+
+        <div class="tarifs__bas">
+            <span class="tarifs__unite">1 <%= L("crédit") %> = <%= (locals.creditEnUSD || 0.01).toFixed(2) %> $</span>
+            <a class="tarifs__aller" href="/recharge"><%= L("Recharger SAMII") %></a>
+        </div>
+        <%# La phrase qui désamorce l'abonnement : on ne s'engage à rien. %>
+        <p class="tarifs__chapeau" style="margin:14px 0 0;">
+            <%= L("Tu recharges seulement quand tu en as besoin, et ton solde ne s'efface jamais.") %>
+        </p>
+    </div>
+</div>
+<% } %>
+
 <script src="<%= v("/js/samii-accueil.js") %>"></script>
 <script src="/js/pwa-register.js" defer></script>
 </body>
