@@ -1826,7 +1826,7 @@ function ecrireA(bouton) {
   .then(function (r) { return r.json(); })
   .then(function (rep) {
     if (!rep.success) throw new Error(rep.error || "refusé");
-    alert("✅ Message envoyé à " + nom + ".\nSa réponse arrivera dans « Mes messages ».");
+    alert("✅ Message envoyé à " + nom + ".\\nSa réponse arrivera dans « Mes messages ».");
   })
   .catch(function (err) { alert("Message non envoyé : " + err.message); });
 }
