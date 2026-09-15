@@ -122,10 +122,10 @@ const IMPERATIFS_ORDINAIRES = [
 (async () => {
     {
         const promptQG = require(path.join(RACINE, "brain", "prompts", "index.js"));
-        const promptPublic = require(path.join(RACINE, "brain", "prompts", "vitrine.js"));
-
         const qg = await promptQG("bonjour", { audience: "souverain", niveau: "expert" });
-        const pub = promptPublic({ langue: "fr", nbEchanges: 1 });
+        // Le chat public sort du MÊME constructeur depuis l'unification du
+        // cerveau : il n'y a plus qu'un endroit où la loi peut manquer.
+        const pub = await promptQG("bonjour", { audience: "public", langue: "fr", nbEchanges: 1 });
 
         verifier(qg.includes(externe.LOI),
             "la loi sur le contenu externe n'atteint pas le prompt du QG : un marchand connecté " +
@@ -138,10 +138,21 @@ const IMPERATIFS_ORDINAIRES = [
         //
         // Deux textes séparés auraient divergé au premier ajustement, et
         // c'est toujours celui qu'on ne relit pas qui devient faux.
-        for (const f of ["brain/prompts/index.js", "brain/prompts/vitrine.js"]) {
-            verifier(/contenuExterne"\)\.LOI/.test(fs.readFileSync(path.join(RACINE, f), "utf8")),
-                `${f} ne lit pas la loi depuis contenuExterne : il en aurait sa propre copie`);
-        }
+        // Ce garde exigeait la lecture dans les DEUX fichiers, du temps où
+        // chacun construisait une consigne complète. Depuis l'unification, un
+        // seul le fait — et vitrine.js a perdu sa lecture EXPRÈS : la garder
+        // aurait servi la loi deux fois au visiteur, qui la paie.
+        //
+        // La règle défendue n'a pas changé : personne ne recopie la loi. On la
+        // vérifie donc dans les deux sens — celui qui l'émet la LIT, et l'autre
+        // n'en garde AUCUNE copie en dur.
+        const sourceLoi = fs.readFileSync(path.join(RACINE, "brain/prompts/index.js"), "utf8");
+        verifier(/contenuExterne"\)\.LOI/.test(sourceLoi),
+            "brain/prompts/index.js ne lit plus la loi depuis contenuExterne : il en aurait sa propre copie");
+        const mission = fs.readFileSync(path.join(RACINE, "brain/prompts/vitrine.js"), "utf8");
+        verifier(!mission.includes(externe.LOI.split("\n").find((l) => l.trim().length > 30)),
+            "brain/prompts/vitrine.js contient une copie en dur de la loi : elle divergerait de " +
+            "celle de contenuExterne, et c'est toujours celle qu'on ne relit pas qui devient fausse");
 
         // Ce que la loi PERMET compte autant que ce qu'elle interdit : une
         // règle qui ne dit que des interdits fait un assistant qui n'ose plus

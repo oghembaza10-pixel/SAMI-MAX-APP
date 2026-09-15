@@ -17,7 +17,20 @@ const router = express.Router();
 const db = require("../services/db");
 const geminiService = require("../services/geminiService");
 const niveauAuto = require("../services/niveauAuto");
-const SAMII_VITRINE_PROMPT = require("../brain/prompts/vitrine");
+// ── LE MÊME CERVEAU QUE LE CHAT CONNECTÉ ET LE QG ────────────────────────
+//
+// Cette route construisait sa consigne avec brain/prompts/vitrine.js, qui
+// réécrivait « Tu es SAMII. » et sa propre personnalité. Le visiteur ne
+// rencontrait donc pas le même SAMII que celui qu'il retrouvait après
+// inscription, et les deux textes dérivaient à chaque modification de l'un.
+//
+// Elle lit maintenant le constructeur canonique, avec audience: "public" —
+// une audience que config/audiences.js déclarait déjà (zéro outil, zéro
+// famille, aucun niveau) mais que le constructeur ignorait.
+//
+// LE TRANSPORT NE CHANGE PAS : chatLibre / chatLibreFlux, sans outils, avec
+// le même limiteur, le même journal, le même streaming.
+const SAMII_PROMPT = require("../brain/prompts/index");
 const competences = require("../services/competences");
 const transcription = require("../services/transcription");
 const { renderVitrine } = require("./vitrine-page");
@@ -156,7 +169,7 @@ async function journaliserTour(req, message, reponse) {
 // deux routes (/chat et /chat/flux) : ce sont les MÊMES garde-fous — taille du
 // message, taille de l'historique, langue autorisée — et les laisser diverger
 // reviendrait à ouvrir sur l'une la porte qu'on ferme sur l'autre.
-function preparerEntree(req) {
+async function preparerEntree(req) {
     // Avant tout le reste : sans ça, chaque message de ce visiteur sera
     // classé sous un identifiant différent et sa conversation n'existera
     // jamais comme un tout.
@@ -229,7 +242,17 @@ function preparerEntree(req) {
         // Le MÊME bloc que celui du QG, produit par la MÊME fonction. Deux
         // lectures séparées du métier auraient fini par ne plus dire la même
         // chose, et on aurait eu deux SAMII.
-        systemPrompt: SAMII_VITRINE_PROMPT({ langue, nbEchanges, competence: competences.pourLePrompt({ metier, message }) }),
+        // `audience: "public"` est ce qui dit au constructeur à qui il parle :
+        // sans elle il retombe sur la branche « client du marchand » et
+        // annonce au visiteur qu'il est le client d'une boutique.
+        systemPrompt: await SAMII_PROMPT(message, {
+            audience: "public",
+            langue,
+            nbEchanges,
+            metier,
+            competence: competences.pourLePrompt({ metier, message }),
+            source: "vitrine",
+        }),
     };
 }
 
@@ -280,7 +303,7 @@ router.post("/transcrire", micLimiter, uploadVocal.single("audio"), async (req, 
 
 router.post("/chat", vitrineLimiter, async (req, res) => {
     try {
-        const entree = preparerEntree(req);
+        const entree = await preparerEntree(req);
         if (!entree) {
             return res.json({ success: false, reply: "Pose-moi ta question." });
         }
@@ -345,7 +368,7 @@ router.post("/chat", vitrineLimiter, async (req, res) => {
 // Le passage par le MÊME limiteur est volontaire : les deux routes partagent
 // le compteur, sinon il suffirait d'alterner entre elles pour doubler le quota.
 router.post("/chat/flux", vitrineLimiter, async (req, res) => {
-    const entree = preparerEntree(req);
+    const entree = await preparerEntree(req);
     if (!entree) {
         return res.json({ success: false, reply: "Pose-moi ta question." });
     }

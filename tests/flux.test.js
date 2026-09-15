@@ -223,7 +223,11 @@ function lancer() {
         // « = preparerEntree(req) » et pas « preparerEntree(req) » tout court :
         // sinon on compte aussi la ligne qui DÉCLARE la fonction, et le
         // compte est faux de un — ce qui a fait échouer la première version.
-        verifier((src.match(/=\s*preparerEntree\(req\)/g) || []).length === 2,
+        // `await` toléré : preparerEntree est devenue asynchrone le jour où la
+        // route est passée au constructeur canonique du cerveau. Ce que ce
+        // garde défend — UNE seule normalisation pour les deux routes — n'a
+        // pas bougé ; seule son écriture a changé.
+        verifier((src.match(/=\s*(await\s+)?preparerEntree\(req\)/g) || []).length === 2,
             "les deux routes ne passent pas par la même normalisation d'entrée");
 
         // Le tampon des proxys : sans cet en-tête, nginx garde tout jusqu'à

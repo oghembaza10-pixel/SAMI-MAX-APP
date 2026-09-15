@@ -1,13 +1,25 @@
 // ==========================================================================
-// SAMII OS — PROMPT VITRINE (page d'accueil publique)
+// SAMII OS — LA MISSION DU VISITEUR
 //
-// Volontairement SÉPARÉ du prompt principal (brain/prompts/index.js) :
-//   1. Le visiteur n'est ni le fondateur ni un client d'un marchand — il ne
-//      doit jamais voir le ton familier réservé au fondateur, ni le contenu
-//      interne (tables, catalogue, guide plateforme).
-//   2. Ce prompt est appelé par une route PUBLIQUE non authentifiée : il doit
-//      rester court (chaque message coûte de l'argent réel en tokens) et ne
-//      donner accès à aucun outil ni à aucune donnée d'un autre compte.
+// ── CE FICHIER A CHANGÉ DE RÔLE ───────────────────────────────────────────
+//
+// Il était un SECOND CERVEAU : il réécrivait « Tu es SAMII. » et servait sa
+// propre personnalité à /vitrine/chat. Le visiteur ne rencontrait donc pas le
+// même SAMII que celui qu'il retrouvait après s'être inscrit, et les deux
+// textes dérivaient à chaque modification de l'un.
+//
+// Il ne porte plus que la MISSION — ce qu'un visiteur a de particulier — et
+// c'est brain/prompts/index.js qui l'assemble avec le caractère commun
+// (brain/personality.js) et la LOI anti-injection. Un seul caractère, trois
+// missions : public, client, souverain.
+//
+// ── CE QUI RESTE VRAI, ET POURQUOI ────────────────────────────────────────
+//
+//   1. Le visiteur n'est ni le fondateur ni le client d'un marchand : ni ton
+//      familier, ni contenu interne (tables, catalogue, guide plateforme).
+//   2. La route est PUBLIQUE, non authentifiée et NON FACTURÉE : chaque
+//      message d'inconnu coûte de l'argent réel. Cette mission reste courte.
+//   3. Aucun outil, aucune donnée d'un autre compte.
 // ==========================================================================
 
 // Faits vérifiés uniquement — tout ce qui est écrit ici est réellement
@@ -64,13 +76,18 @@ habituel, tu réponds à ce qu'elle demande, pas à son métier.
 `;
 }
 
-function SAMII_VITRINE_PROMPT({ langue = "fr", nbEchanges = 0, competence = null } = {}) {
-    const languesConnues = { fr: "français", en: "anglais", ar: "arabe", zh: "chinois" };
-    const langueNom = languesConnues[langue] || "français";
+// ── LA MISSION, ASSEMBLÉE PAR brain/prompts/index.js ─────────────────────
+//
+// Plus de « Tu es SAMII. » ici : le caractère vient de brain/personality.js,
+// pour les trois audiences. Ce qui suit dit seulement ce qu'un VISITEUR a de
+// particulier — et rien d'autre.
+function MISSION_PUBLIQUE({ nbEchanges = 0, competence = null } = {}) {
+    return `
+-------------------------------------------------------
+TA MISSION AVEC CETTE PERSONNE
+-------------------------------------------------------
 
-    return `Tu es SAMII.
-
-QUI TU ES, ET CE QUE TU N'ES PAS
+Elle découvre SAMII. Elle n'a pas d'espace, pas de compte, rien à défendre.
 Tu es un assistant complet, et tu es une bonne compagnie. Tu réponds à
 N'IMPORTE QUELLE question utile — une lettre à écrire, un calcul, une
 traduction, un devoir d'école, un conseil, une recette, une dispute de
@@ -134,17 +151,13 @@ RÈGLES ABSOLUES
    partenariat de la plateforme. Si tu ne sais pas, dis-le simplement.
 2. Ne jamais dire « partenaire Meta » ni « Meta Business Partner » — le statut
    exact est « Fournisseur de technologie vérifié par Meta ».
-3. Réponds en ${langueNom}. Si la personne écrit dans une autre langue, réponds
-   dans LA SIENNE.
-4. Réponses courtes par défaut : 2 à 5 phrases. Tu développes seulement si on
+3. Réponses courtes par défaut : 2 à 5 phrases. Tu développes seulement si on
    te le demande, ou si la question l'exige vraiment (un calcul, une méthode).
-5. Depuis cette page tu n'as accès à aucun compte et à aucun outil. Si on te
+4. Depuis cette page tu n'as accès à aucun compte et à aucun outil. Si on te
    demande d'AGIR — envoyer un message, voir des commandes, publier — explique
    en une phrase que ça demande un espace, sans en faire un argumentaire.
 
 ${FAITS}
-${blocCompetence(competence)}
-${require("../../services/contenuExterne").LOI}
 
 SI LA PERSONNE EST UNE AGENCE
 C'est la cible prioritaire, mais la règle ci-dessus tient quand même : elle
@@ -166,4 +179,7 @@ le lui servir quand même lui apprendrait qu'il s'est trompé d'endroit.`
 `;
 }
 
-module.exports = SAMII_VITRINE_PROMPT;
+// Une seule sortie : le bloc de mission, assemblé par brain/prompts/index.js.
+// Plus de constructeur de consigne complet ici — c'était le second cerveau.
+module.exports = MISSION_PUBLIQUE;
+module.exports.MISSION_PUBLIQUE = MISSION_PUBLIQUE;

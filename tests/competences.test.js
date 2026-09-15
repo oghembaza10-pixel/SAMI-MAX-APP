@@ -409,8 +409,17 @@ const { detect } = require(path.join(RACINE, "brain", "prompts", "sovereign", "t
     const bloc = C.pourLePrompt({ metier: "coiffeur", message: "comment remplir mes heures creuses" });
 
     // ── LE CHAT PUBLIC ───────────────────────────────────────────────────
-    const promptVitrine = require(path.join(RACINE, "brain", "prompts", "vitrine.js"));
-    const texteVitrine = promptVitrine({ langue: "fr", nbEchanges: 1, competence: bloc });
+    //
+    // On rend la consigne du VISITEUR par le constructeur canonique, avec
+    // audience "public". Ce garde interrogeait brain/prompts/vitrine.js, qui
+    // était un second cerveau complet ; ce fichier ne porte plus que la
+    // mission, et c'est brain/prompts/index.js qui assemble. L'intention du
+    // garde n'a pas bougé : la connaissance métier doit atteindre le texte
+    // qui part au modèle pour un visiteur.
+    const SAMII_PROMPT = require(path.join(RACINE, "brain", "prompts", "index.js"));
+    const texteVitrine = await SAMII_PROMPT("comment remplir mes heures creuses", {
+        audience: "public", langue: "fr", nbEchanges: 1, competence: bloc,
+    });
 
     verifier(texteVitrine.includes(fiche.perte),
         "le chat public n'envoie PAS à SAMII ce que ce métier fait perdre : la connaissance " +
@@ -423,7 +432,9 @@ const { detect } = require(path.join(RACINE, "brain", "prompts", "sovereign", "t
 
     // Sans métier connu, rien ne doit être ajouté — le prompt public part à
     // chaque message et chaque ligne est payée.
-    const texteNu = promptVitrine({ langue: "fr", nbEchanges: 1, competence: null });
+    const texteNu = await SAMII_PROMPT("comment remplir mes heures creuses", {
+        audience: "public", langue: "fr", nbEchanges: 1, competence: null,
+    });
     verifier(!texteNu.includes("CE QUE TU SAIS DE SON MÉTIER"),
         "le chat public ajoute un bloc métier vide quand il ne connaît personne");
     verifier(texteVitrine.length > texteNu.length,

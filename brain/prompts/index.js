@@ -3,6 +3,9 @@
 // Fusionne la vraie personnalité SAMII + les lois souveraines
 // ======================================================
 const PERSONALITY = require("../personality");
+// La mission du visiteur vit dans son fichier, mais elle est ASSEMBLÉE ici :
+// c'est ce qui fait qu'il n'y a plus qu'un seul constructeur de consigne.
+const MISSION_PUBLIQUE = require("./vitrine");
 const { getTables } = require("./sovereign/tables");
 const { getCatalogue } = require("./sovereign/catalogue");
 const { getGuidePlateforme } = require("./sovereign/plateforme");
@@ -15,28 +18,68 @@ function dateDuJour() {
 }
 
 async function SAMII_PROMPT(message, context = {}) {
-    const tables = await getTables(message);
     const { jour, iso } = dateDuJour();
     // "souverain" = le fondateur/marchand qui possède le compte (QG, page /samii) —
     // ton familier, darija, par son prénom (voir PERSONALITY, section "TON AVEC
     // LE FONDATEUR"). "client" = un client du marchand (Telegram, WhatsApp...) —
     // toujours vouvoiement poli, jamais le ton familier réservé au fondateur.
+    // ── TROIS AUDIENCES, UN SEUL CARACTÈRE ──────────────────────────────
+    //
+    // "souverain" = le fondateur/marchand chez lui (QG, /samii) — ton
+    //               familier, darija, par son prénom.
+    // "client"    = un client DU MARCHAND (Telegram, WhatsApp) — vouvoiement.
+    // "public"    = un visiteur de la page d'accueil. Il n'est le client de
+    //               personne et n'a pas encore d'espace.
+    //
+    // "public" existait déjà dans config/audiences.js (zéro outil, zéro
+    // famille, aucun niveau) mais ce constructeur ne le connaissait pas : il
+    // tombait dans la branche « client » et annonçait au visiteur qu'il était
+    // le client d'un marchand. Il recevait aussi la mémoire, les directives
+    // et les connaissances de quelqu'un d'autre si l'appelant les passait.
     const audience = context.audience || "souverain";
+    const estPublic = audience === "public";
     const prenom = (context.prenom || "").trim();
     const addressSection = audience === "souverain"
         ? (prenom
             ? `Son prénom est ${prenom} — utilise-le pour t'adresser à lui, avec le ton familier/darija décrit dans PERSONALITY (section "TON AVEC LE FONDATEUR").`
             : `Son prénom n'est pas connu ici — utilise "khoya"/"sahby" avec le ton familier/darija décrit dans PERSONALITY, sans inventer de prénom.`)
-        : `Tu t'adresses à ce client normalement et poliment (vouvoiement, ou son prénom si connu). Tu n'utilises jamais le ton familier ("khoya", "sahby"...) réservé exclusivement au fondateur du compte, jamais à ses clients.`;
+        : estPublic
+            ? `Tu ne sais pas encore qui est cette personne, et tu ne le lui demandes pas d'entrée. Tu la tutoies, simplement, comme quelqu'un qu'on rencontre. Tu n'emploies jamais le ton familier ("khoya", "sahby"...) : il est réservé au fondateur d'un compte, et cette personne n'en a pas.`
+            : `Tu t'adresses à ce client normalement et poliment (vouvoiement, ou son prénom si connu). Tu n'utilises jamais le ton familier ("khoya", "sahby"...) réservé exclusivement au fondateur du compte, jamais à ses clients.`;
+
+    // ── CE QU'UN VISITEUR VOIT DE SON PROPRE CONTEXTE : UNE LISTE BLANCHE ─
+    //
+    // Le bloc CONTEXTE ACTUEL sérialise le contexte reçu. Mesuré : en passant
+    // au constructeur une mémoire, des connaissances et un prénom, TOUT
+    // ressortait dans la consigne d'un visiteur anonyme — le cloisonnement
+    // des blocs nommés ne servait à rien, puisque le JSON les reversait plus
+    // bas.
+    //
+    // C'est une LISTE BLANCHE, pas une liste noire. Une liste noire serait
+    // juste aujourd'hui et fausse au premier champ ajouté au contexte, sans
+    // que personne ne s'en aperçoive — et ce jour-là la fuite serait
+    // silencieuse.
+    const VISIBLE_DU_PUBLIC = ["audience", "langue", "metier", "source", "nbEchanges"];
+    const contexteVisible = !estPublic ? context : Object.fromEntries(
+        Object.entries(context).filter(([cle]) => VISIBLE_DU_PUBLIC.includes(cle))
+    );
+
+    // Les lois ne sont chargées que si elles sont servies : les interroger pour
+    // un visiteur coûtait une requête en base par message, et le résultat
+    // était jeté.
+    const tables = estPublic ? "" : await getTables(message);
 
     return `
 ${PERSONALITY}
 
 -------------------------------------------------------
-${audience === "souverain" ? "FONDATEUR — COMMENT S'ADRESSER À LUI" : "INTERLOCUTEUR : CLIENT DU MARCHAND"}
+${audience === "souverain" ? "FONDATEUR — COMMENT S'ADRESSER À LUI"
+        : estPublic ? "INTERLOCUTEUR : QUELQU'UN QUI DÉCOUVRE SAMII"
+        : "INTERLOCUTEUR : CLIENT DU MARCHAND"}
 -------------------------------------------------------
 
 ${addressSection}
+${estPublic ? MISSION_PUBLIQUE({ competence: context.competence, nbEchanges: context.nbEchanges || 0 }) : ""}
 ${audience === "souverain" && context.memoireUtilisateur?.directives_permanentes ? `
 -------------------------------------------------------
 DIRECTIVES PERMANENTES DU FONDATEUR (priorité haute)
@@ -106,8 +149,9 @@ ${require("../../services/contenuExterne").LOI}
 CONTEXTE ACTUEL
 -------------------------------------------------------
 
-${JSON.stringify(require("../../services/contenuExterne").contextePourPrompt(context))}
+${JSON.stringify(require("../../services/contenuExterne").contextePourPrompt(contexteVisible))}
 
+${audience === "public" ? "" : `
 -------------------------------------------------------
 LOIS SOUVERAINES APPLICABLES (contexte interne uniquement)
 -------------------------------------------------------
@@ -119,6 +163,7 @@ tu suis strictement la consigne d'adresse donnée ci-dessus, jamais autrement.
 Ta réponse reste courte, précise, professionnelle — jamais un discours.
 
 ${tables}
+`}
 ${audience === "souverain" ? `
 -------------------------------------------------------
 CATALOGUE PLATEFORME (uniquement pour le fondateur — jamais pour un client)
@@ -150,7 +195,7 @@ prête pas. Ne mens jamais sur un détail qui n'y figure pas.
 
 ${context.connaissances}
 ` : ""}
-${context.memoireUtilisateur ? `
+${!estPublic && context.memoireUtilisateur ? `
 -------------------------------------------------------
 CE QUE TU SAIS DÉJÀ SUR CETTE PERSONNE (mémoire construite au fil du temps)
 -------------------------------------------------------
