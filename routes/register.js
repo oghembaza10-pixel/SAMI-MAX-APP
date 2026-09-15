@@ -81,7 +81,30 @@ router.get("/", (req, res) => {
         .msg.ok{ color:#4caf50; }
         small{ display:block; margin-top:18px; text-align:center; color:#666; font-size:.8rem; }
         a{ color:#d4af37; text-decoration:none; }
-        .type-choice{ display:flex; gap:10px; margin-top:8px; }
+        /* ── LES TROIS CARTES PASSENT À LA LIGNE PLUTÔT QUE DE SORTIR ─────
+           Mesuré à 390×844 : la page faisait 459px, soit 69px hors écran, et
+           la carte « Agence » commençait à 341 pour finir à 459.
+
+           La cause n'est pas flex:1 : c'est le min-width:auto que tout
+           élément flex porte par défaut. Il interdit de rétrécir sous la
+           largeur du mot le plus long — « Particulier » — et trois de ces
+           mots, plus les bordures et les espaces, ne tiennent pas dans 390px.
+
+           min-width:0 aurait suffi à supprimer le débordement. Éprouvé dans
+           le navigateur : les cartes tombent alors à 86px et LE TEXTE DES
+           TROIS EST COUPÉ. On échange un défaut visible contre un défaut
+           qu'on ne voit qu'en lisant.
+
+           flex-wrap laisse la troisième carte descendre d'une ligne : rien
+           ne dépasse, rien n'est tronqué. Sur ordinateur les trois tiennent
+           sur une ligne, donc rien ne change — pas besoin d'un point de
+           rupture, qui serait une valeur de plus à tenir à jour.
+
+           (Aucun accent grave dans ce commentaire : il est À L'INTÉRIEUR du
+           littéral de gabarit qui fabrique la page, et un accent grave le
+           terminerait — le fichier entier cesserait de se charger. C'est la
+           même mécanique que le \n de /community, corrigé en ae1d579.) */
+        .type-choice{ display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
         .type-choice label{ flex:1; display:flex; align-items:center; gap:8px; padding:12px; border:1px solid #333; border-radius:8px; cursor:pointer; font-size:.85rem; }
         .type-choice input{ width:auto; margin:0; }
         .type-label{ display:block; margin-top:14px; font-size:.78rem; color:#888; }
