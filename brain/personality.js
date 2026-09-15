@@ -3,7 +3,32 @@
 // PERSONNALITÉ OFFICIELLE V1
 // ======================================================
 
-module.exports = `
+// ══ LE CARACTÈRE, ET LA MISSION QUI SUPPOSE UN QG ════════════════════════
+//
+// Ce fichier exportait UNE chaîne, servie telle quelle aux trois audiences.
+// Un visiteur de la page d'accueil recevait donc « Ta mission est de gérer
+// entièrement le Quartier Général », « TON AVEC LE FONDATEUR » et ses
+// exemples (« Wesh khoya [prénom]… »), MODE SHADOW, TEMPS SOUVERAIN et
+// ABONNEMENTS PREMIUM — puis, plus bas, l'interdiction d'employer ce ton et
+// la consigne de ne PAS ramener la conversation à la plateforme.
+//
+// Il recevait un objectif qu'il n'a pas, en même temps que l'interdiction
+// d'en parler. Ce n'était pas une fuite de données : c'était une consigne qui
+// se contredit, et 4 000 caractères payés à chaque message d'inconnu sur une
+// route publique non facturée.
+//
+// LE TEXTE N'EST PAS RÉÉCRIT. Il est coupé en deux, exactement là où il cesse
+// de parler à tout le monde pour ne plus parler qu'au fondateur : au
+// séparateur qui précède « QUI T'A CRÉÉ », dont la première phrase est
+// « Quand tu parles au fondateur (le "Souverain", audience "souverain"…) ».
+//
+// L'export par défaut reste la CONCATÉNATION des deux, octet pour octet
+// identique à ce qu'il était : tout ce qui lisait ce fichier continue de
+// recevoir exactement la même chose. Seul brain/prompts/index.js choisit, et
+// seulement pour l'audience « public ».
+
+// Vrai pour un visiteur, pour le client d'un marchand et pour le fondateur.
+const CARACTERE = `
 
 Tu es SAMII.
 
@@ -68,7 +93,10 @@ Tu réponds toujours dans la langue (ou le dialecte) utilisé par l'utilisateur.
 
 Tu peux changer instantanément si la conversation change de langue.
 
--------------------------------------------------------
+`;
+
+// Ne vaut que si la personne possède un QG. Jamais servi à « public ».
+const MISSION_SOUVERAINE = `-------------------------------------------------------
 QUI T'A CRÉÉ
 -------------------------------------------------------
 
@@ -349,3 +377,16 @@ Ton objectif est de faire évoluer le Quartier Général de l'utilisateur.
 Chaque réponse doit l'aider à prendre une meilleure décision.
 
 `;
+
+// ── TROIS SORTIES NOMMÉES, ET PAS UNE CHAÎNE NUE ────────────────────────
+//
+// Première tentative : exporter la concaténation et y accrocher les deux
+// morceaux en propriétés. Ça ne marche pas — une chaîne PRIMITIVE ne porte
+// aucune propriété, et l'affectation échoue en silence. Le piège est
+// discret : rien ne lève, `PERSONALITY.CARACTERE` vaut simplement undefined,
+// et le visiteur aurait reçu « undefined » à la place du caractère.
+//
+// `TOUT` reste la concaténation EXACTE d'avant, vérifiée octet pour octet :
+// qui veut l'intégralité la demande, et ne perd rien.
+module.exports = { TOUT: CARACTERE + MISSION_SOUVERAINE, CARACTERE, MISSION_SOUVERAINE };
+

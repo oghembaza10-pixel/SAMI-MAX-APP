@@ -2,7 +2,12 @@
 // SAMII OS — SYSTEM PROMPT V3
 // Fusionne la vraie personnalité SAMII + les lois souveraines
 // ======================================================
-const PERSONALITY = require("../personality");
+// ── LE CARACTÈRE POUR TOUS, LA MISSION DU QG POUR CEUX QUI EN ONT UN ─────
+//
+// `TOUT` est la concaténation exacte d'avant (vérifiée octet pour octet) :
+// le client et le fondateur reçoivent EXACTEMENT ce qu'ils recevaient.
+// `CARACTERE` s'arrête là où le texte cesse de parler à tout le monde.
+const PERSONNALITE = require("../personality");
 // La mission du visiteur vit dans son fichier, mais elle est ASSEMBLÉE ici :
 // c'est ce qui fait qu'il n'y a plus qu'un seul constructeur de consigne.
 const MISSION_PUBLIQUE = require("./vitrine");
@@ -68,6 +73,11 @@ async function SAMII_PROMPT(message, context = {}) {
     // un visiteur coûtait une requête en base par message, et le résultat
     // était jeté.
     const tables = estPublic ? "" : await getTables(message);
+
+    // Un visiteur ne reçoit pas « Ta mission est de gérer entièrement le
+    // Quartier Général » : il n'en a pas, et la ligne suivante lui interdirait
+    // d'en parler. Le CARACTÈRE, lui, est le même pour les trois.
+    const PERSONALITY = estPublic ? PERSONNALITE.CARACTERE : PERSONNALITE.TOUT;
 
     return `
 ${PERSONALITY}
