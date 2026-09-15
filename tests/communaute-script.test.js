@@ -29,7 +29,11 @@
 const fs = require("fs");
 
 function extraire() {
-    const src = fs.readFileSync("/home/user/SAMI-MAX-APP/routes/community.js", "utf8").split("\n");
+    // Chemin calculé depuis ce fichier, jamais écrit en dur : un chemin absolu
+    // ne vaut que sur la machine où il a été tapé, et ailleurs la suite meurt
+    // sur ENOENT avant sa première vérification.
+    const src = fs.readFileSync(
+        require("path").join(__dirname, "..", "routes", "community.js"), "utf8").split("\n");
     const debut = src.findIndex((l) => l.trim() === "<script>");
     const fin   = src.findIndex((l, i) => i > debut && l.trim() === "</script>");
     let bloc = src.slice(debut + 1, fin).join("\n");

@@ -18,8 +18,14 @@
 // Ce test CAPTURE le vrai gestionnaire du fichier livré et le DÉCLENCHE
 // avec un refus de Cloudinary. Lire le code aurait dit que le message est
 // écrit, pas qu'il arrive à l'écran.
-const fs = require("fs"), vm = require("vm");
-const src = fs.readFileSync("/home/user/SAMI-MAX-APP/routes/community.js","utf8").split("\n");
+const fs = require("fs"), vm = require("vm"), path = require("path");
+// Le chemin de ce fichier était écrit en dur, en absolu, depuis la racine du
+// poste où il avait été tapé. Il n'y valait que là. Ailleurs — GitHub Actions,
+// Render, un autre poste — readFileSync lève ENOENT et la suite MEURT avant
+// sa première vérification : elle ne dit alors ni oui ni non, elle se tait.
+// `__dirname` est le dossier de ce fichier ; il ne dépend ni du répertoire
+// courant ni de l'endroit où le dépôt est cloné.
+const src = fs.readFileSync(path.join(__dirname, "..", "routes", "community.js"),"utf8").split("\n");
 const d = src.findIndex(l=>l.trim()==="<script>"), f = src.findIndex((l,i)=>i>d && l.trim()==="</script>");
 let bloc = src.slice(d+1,f).join("\n");
 for(let i=0;i<12;i++) bloc = bloc.replace(/\$\{[^{}]*\}/g,'"x"');

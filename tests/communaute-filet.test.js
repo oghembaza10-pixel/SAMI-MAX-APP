@@ -17,8 +17,11 @@
 // Ce test installe le vrai script, déclenche l'événement que le navigateur
 // enverrait sur une erreur réelle, et vérifie que le message ARRIVE à
 // l'écran — pas qu'il soit écrit dans le code.
-const fs=require("fs"), vm=require("vm");
-const src=fs.readFileSync("/home/user/SAMI-MAX-APP/routes/community.js","utf8").split("\n");
+const fs=require("fs"), vm=require("vm"), path=require("path");
+// Chemin calculé depuis ce fichier, jamais écrit en dur : un chemin absolu ne
+// vaut que sur la machine où il a été tapé, et ailleurs la suite meurt sur
+// ENOENT avant sa première vérification — elle ne dit alors ni oui ni non.
+const src=fs.readFileSync(path.join(__dirname,"..","routes","community.js"),"utf8").split("\n");
 const d=src.findIndex(l=>l.trim()==="<script>"), f=src.findIndex((l,i)=>i>d&&l.trim()==="</script>");
 let bloc=src.slice(d+1,f).join("\n");
 for(let i=0;i<12;i++) bloc=bloc.replace(/\$\{[^{}]*\}/g,'"x"');
