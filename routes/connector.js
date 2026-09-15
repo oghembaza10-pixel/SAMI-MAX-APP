@@ -270,8 +270,28 @@ router.post("/telegram/bot", requireAuth, async (req, res) => {
         if (!meRes.data?.ok) throw new Error("Token invalide");
         const botUsername = meRes.data.result.username;
 
+        // ── LE SECRET EST POSÉ ICI, ET LU DANS routes/telegram.js ────────
+        //
+        // Sans lui, l'adresse /telegram/<workspaceId> accepte n'importe quel
+        // POST — et chaque POST fait répondre le modèle et DÉBITE le
+        // marchand. Telegram renvoie ce jeton dans l'en-tête
+        // X-Telegram-Bot-Api-Secret-Token de chaque mise à jour.
+        //
+        // La formule vient de routes/telegram.js, jamais recopiée : deux
+        // copies finiraient par diverger, et ce jour-là tous les bots
+        // tombent d'un coup.
+        //
+        // ⚠️ MIGRATION : les bots enregistrés AVANT ce changement n'ont pas
+        // de secret côté Telegram et seront refusés. Il suffit de repasser
+        // ici (le QG → Connecter Telegram → recoller le token) : ce même
+        // appel réenregistre le webhook avec le secret.
         const webhookUrl = `${CONFIG.APP_URL}/telegram/${workspaceId}`;
-        await axios.get(`https://api.telegram.org/bot${botToken}/setWebhook`, { params: { url: webhookUrl } });
+        await axios.get(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+            params: {
+                url: webhookUrl,
+                secret_token: require("./telegram").secretPour(botToken),
+            },
+        });
 
         await connectorService.save(workspaceId, "telegram_bot", {
             botToken, botUsername, connectedAt: new Date().toISOString(),

@@ -503,8 +503,22 @@ const CONFIG = require(path.join(RACINE, "config.js"));
             "s'arrêterait parce que le marchand n'a plus de solde");
 
         // Et le canal doit facturer APRÈS avoir répondu au client.
-        const iReponse = tg.indexOf("await reply(chatId, geminiReply, base)");
-        const iFacture = tg.indexOf("facturerActesWorkspace");
+        //
+        // ⚠️ ON LIT LE CODE, PAS LES COMMENTAIRES.
+        //
+        // `indexOf` prenait la PREMIÈRE occurrence dans le fichier brut. Le
+        // jour où un commentaire d'en-tête a mentionné
+        // `creditsSamii.facturerActesWorkspace` pour expliquer le débit, ce
+        // garde est devenu rouge — alors que l'ordre du code n'avait pas
+        // bougé d'une ligne. Il annonçait une facturation prématurée qui
+        // n'existait pas.
+        //
+        // Un garde qui accuse à tort finit par être désactivé, et c'est là
+        // qu'on perd la règle qu'il protégeait. Il mesure donc maintenant ce
+        // qu'il prétend mesurer : l'ordre des appels EXÉCUTÉS.
+        const tgCode = tg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+        const iReponse = tgCode.indexOf("await reply(chatId, geminiReply, base)");
+        const iFacture = tgCode.indexOf("facturerActesWorkspace");
         verifier(iReponse !== -1 && iFacture > iReponse,
             "Telegram facture AVANT de répondre au client : un incident de facturation " +
             "ferait perdre la réponse");

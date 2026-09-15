@@ -23,19 +23,110 @@ const BASE   = `https://api.telegram.org/bot${TOKEN}`;
 // Chaque bot perso a son propre webhook dédié (/telegram/:workspaceId, voir
 // plus bas) — contrairement à WhatsApp, aucune ambiguïté de routage : c'est
 // justement Telegram qui indique par QUELLE URL le message arrive.
-async function resolveBotBase(workspaceId) {
-    if (!workspaceId) return BASE;
+async function resolveBotToken(workspaceId) {
+    if (!workspaceId) return TOKEN;
     try {
         const rows = await db.query(
             `SELECT config FROM connecteurs WHERE type = 'telegram_bot' AND actif = true AND workspace_id = $1`,
             [workspaceId]
         );
         const config = rows[0] ? JSON.parse(rows[0].config || "{}") : null;
-        if (config?.botToken) return `https://api.telegram.org/bot${config.botToken}`;
+        if (config?.botToken) return config.botToken;
     } catch (err) {
-        console.error("❌ Telegram resolveBotBase :", err.message);
+        console.error("❌ Telegram resolveBotToken :", err.message);
     }
-    return BASE;
+    return TOKEN;
+}
+
+async function resolveBotBase(workspaceId) {
+    const token = await resolveBotToken(workspaceId);
+    return token ? `https://api.telegram.org/bot${token}` : BASE;
+}
+
+// ══ LE WEBHOOK PROUVE QU'IL VIENT DE TELEGRAM ═══════════════════════════
+//
+// ── CE QUI SE PASSAIT AVANT ──────────────────────────────────────────────
+//
+// POST /telegram/:workspaceId n'avait aucune authentification. Mesuré :
+//
+//     POST /telegram/ws-dun-autre-marchand
+//     {"message":{"message_id":1,"chat":{"id":424242},"text":"bonjour"}}
+//     → HTTP 200, traité, et FACTURÉ
+//
+// La réponse part dans le vide (l'attaquant ne lit pas le chat Telegram),
+// mais l'appel au modèle a lieu et `creditsSamii.facturerActesWorkspace`
+// débite le marchand. Qui connaît un workspaceId vide un solde à volonté.
+// La référence d'idempotence `tg:<ws>:<chat>:<message_id>` ne protège rien :
+// c'est l'attaquant qui choisit `message_id`.
+//
+// ── POURQUOI LE SECRET EST DÉRIVÉ DU TOKEN, ET PAS UNE VARIABLE DE PLUS ──
+//
+// Telegram accepte un `secret_token` à `setWebhook` et le renvoie ensuite
+// dans l'en-tête `X-Telegram-Bot-Api-Secret-Token` de chaque mise à jour.
+// Il reste à décider D'OÙ vient ce secret.
+//
+// Une variable d'environnement par marchand serait ingérable : chaque bot
+// perso est créé depuis le QG, sans accès à la configuration du serveur.
+//
+// Le token du bot, lui, est déjà là — et il est déjà le secret partagé
+// entre Telegram et nous. Qui le connaît contrôle DÉJÀ le bot entièrement :
+// en dériver le secret n'affaiblit donc rien, et se dérive aussi bien pour
+// le bot partagé que pour les bots persos, sans une ligne de configuration.
+//
+// Le sel fixe empêche que le secret envoyé à Telegram soit un condensé nu
+// du token, réutilisable ailleurs.
+const crypto = require("crypto");
+
+function secretPour(token) {
+    if (!token) return null;
+    return crypto.createHash("sha256")
+        .update(`samii-telegram-webhook:${token}`)
+        .digest("hex");                 // 64 caractères, dans l'alphabet accepté
+}
+
+// Comparaison à temps constant. `timingSafeEqual` EXIGE deux tampons de même
+// longueur — sinon il lève, et l'exception elle-même trahirait la longueur.
+// On condense donc les deux côtés avant de comparer : deux condensés font
+// toujours 32 octets.
+function memeSecret(a, b) {
+    if (!a || !b) return false;
+    const ha = crypto.createHash("sha256").update(String(a)).digest();
+    const hb = crypto.createHash("sha256").update(String(b)).digest();
+    return crypto.timingSafeEqual(ha, hb);
+}
+
+// Le garde. Il s'exécute AVANT tout traitement : avant le modèle, avant la
+// mémoire, avant la facturation. Un rejet ne coûte rien à personne.
+//
+// ⚠️ IL REFUSE AUSSI QUAND AUCUN SECRET N'EST CALCULABLE (bot inconnu, token
+// absent). Un webhook qui traite sans pouvoir vérifier est exactement le
+// trou qu'on vient de fermer : il échoue FERMÉ, jamais ouvert.
+//
+// 401 et pas 403 : c'est un défaut d'authentification, et Telegram cesse de
+// réessayer sur un 4xx — on ne veut pas qu'il rejoue une requête refusée.
+async function verifierSecret(req, res, workspaceId) {
+    const token = await resolveBotToken(workspaceId);
+    const attendu = secretPour(token);
+    const recu = req.get("X-Telegram-Bot-Api-Secret-Token");
+
+    if (!attendu) {
+        // Jamais le token ni le secret dans le journal — seulement l'état.
+        console.error(
+            `❌ Telegram : aucun token pour « ${workspaceId || "bot partagé"} », ` +
+            "webhook refusé (il ne peut pas être vérifié).");
+        res.sendStatus(401);
+        return false;
+    }
+    if (!memeSecret(recu, attendu)) {
+        console.warn(
+            `⚠️ Telegram : mise à jour refusée pour « ${workspaceId || "bot partagé"} » — ` +
+            (recu ? "secret invalide." : "aucun en-tête de secret.") +
+            " Si c'est un bot légitime, son webhook doit être réenregistré " +
+            "(POST /connect/telegram/bot depuis le QG).");
+        res.sendStatus(401);
+        return false;
+    }
+    return true;
 }
 
 // ── MULTI-LANGUE ───────────────────────────────────────────────
@@ -377,15 +468,26 @@ async function handleUpdate(body, base, forcedWorkspaceId) {
     }
 }
 
-router.post("/", (req, res) => {
+// Le 200 est envoyé APRÈS la vérification, plus avant. Il partait en premier
+// pour que Telegram ne réessaie pas pendant que le modèle réfléchit — c'est
+// juste, mais ça acquittait aussi les requêtes forgées. Vérifier d'abord ne
+// coûte rien : aucun appel réseau, un condensé.
+router.post("/", async (req, res) => {
+    if (!await verifierSecret(req, res, null)) return;
     res.sendStatus(200);
     handleUpdate(req.body, BASE, null);
 });
 
 router.post("/:workspaceId", async (req, res) => {
+    if (!await verifierSecret(req, res, req.params.workspaceId)) return;
     res.sendStatus(200);
     const base = await resolveBotBase(req.params.workspaceId);
     handleUpdate(req.body, base, req.params.workspaceId);
 });
 
+// Exporté pour que routes/connector.js pose le MÊME secret à setWebhook, et
+// pour que la suite de tests le recalcule sans recopier la formule. Deux
+// copies de cette dérivation finiraient par diverger, et le jour où elles
+// divergent tous les bots tombent d'un coup.
 module.exports = router;
+module.exports.secretPour = secretPour;   // APRÈS l'affectation, sinon elle l'écrase
