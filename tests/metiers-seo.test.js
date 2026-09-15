@@ -146,7 +146,50 @@ async function pret(essais = 40) {
                 "le bouton repointe sur /workspace/create, qui est derrière requireAuth : " +
                 "un visiteur de Google y reçoit un 302 vers /login, sans son métier");
             verifier(/rel="canonical"/.test(html), "pas d'URL canonique");
-            verifier(/hreflang=/.test(html), "pas de hreflang — les trois langues se feront concurrence");
+            // ── ON NE DÉCLARE PAS UNE LANGUE QU'ON NE SERT PAS ───────────
+            //
+            // Ce garde exigeait hreflang, pour empêcher trois versions de se
+            // concurrencer. Le raisonnement vaut quand les trois versions
+            // EXISTENT. Mesuré sur les trente-quatre fiches, elles n'existent
+            // pas : la version « anglaise » garde 45 à 63 % du vocabulaire
+            // français (médiane 53 %), l'arabe 44 à 61 %. Les intertitres sont
+            // traduits, la substance vient de services/metiers.js, qui est en
+            // français.
+            //
+            // Et le canonical de ces variantes pointait déjà sur l'URL
+            // française : hreflang disait « voici l'anglais », canonical
+            // répondait « non ». Devant ce conflit, Google ignore le hreflang.
+            // La déclaration n'a donc jamais rien protégé.
+            //
+            // Le garde défend maintenant la règle vraie : UNE page, en
+            // français, avec un canonical ferme. Le jour où une fiche sera
+            // réellement traduite, on redéclarera — pour elle seule.
+            verifier(!/hreflang=/.test(html),
+                "hreflang est revenu sur les fiches : il annonce un anglais et un arabe qui "
+                + "n'existent pas (53 % du texte reste français), et le canonical le contredit");
+            // ── ET ?lang= NE DOIT PAS FABRIQUER UNE PAGE CONCURRENTE ─────
+            //
+            // Vérifié SUR LES SOURCES, pas par une requête, et c'est délibéré.
+            // Une requête vers ?lang=en fait écrire une SESSION (le choix de
+            // langue s'y range, Set-Cookie: connect.sid). Cette suite lance
+            // son propre serveur SANS base : l'écriture échoue, la connexion
+            // se ferme, et la requête suivante meurt sur UND_ERR_SOCKET.
+            // Mesuré : 1 réussite sur 10 sans base, 9 sur 10 avec.
+            //
+            // Le garde aurait donc été rouge une fois sur deux pour une
+            // raison qui n'a rien à voir avec ce qu'il surveille — et un
+            // garde qui clignote finit par être ignoré, puis supprimé.
+            //
+            // La règle se lit très bien dans les sources : la route calcule
+            // le canonical à partir de l'ID seul, jamais du paramètre de
+            // langue, et le gabarit ne sert que celui-là.
+            const srcRoute = fs.readFileSync(path.join(RACINE, "routes/metiers.js"), "utf8");
+            const srcVue = fs.readFileSync(path.join(RACINE, "views/metier.ejs"), "utf8");
+            verifier(/canonique:\s*`\$\{BASE\}\/metiers\/\$\{fiche\.id\}`/.test(srcRoute),
+                "le canonical d'une fiche n'est plus calculé depuis le seul identifiant : "
+                + "?lang=en fabriquerait une page concurrente, à moitié française");
+            verifier(/<link rel="canonical" href="<%= canonique %>">/.test(srcVue),
+                "la fiche ne sert plus `canonique` comme canonical");
             verifier(/application\/ld\+json/.test(html), "pas de données structurées");
             verifier(/href="\/metiers"/.test(html), "pas de retour vers le hub — la page est isolée");
 

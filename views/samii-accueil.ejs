@@ -30,6 +30,39 @@
 <title><%= L("SAMII — l'assistant qui connaît ton business") %></title>
 <meta name="description" content="<%= L("Parle à SAMII. Il connaît le commerce ici : les prix, la livraison, le paiement à la réception, les retours colis.") %>">
 
+<%# ── UNE ADRESSE, QUATRE CONTENUS : IL FALLAIT LE DIRE ───────────────────
+    Mesuré avec l'User-Agent de Googlebot : « / » servait le français sans
+    en-tête, l'anglais avec Accept-Language: en, l'arabe avec ar — sur la
+    MÊME URL, sans canonical et sans hreflang. Google ne peut en indexer
+    qu'une et n'a aucun moyen d'apprendre que les autres existent. Observé
+    dans l'index public : c'est le titre ANGLAIS qui a été retenu, pour un
+    produit destiné à l'Afrique francophone.
+
+    Contrairement aux fiches métier, cette page est VRAIMENT traduite — 9 %
+    de français résiduel en arabe, 23 % en anglais, et ce résidu est la
+    marque et les chiffres. Elle a donc le droit de déclarer ses langues.
+
+    Deux règles tenues ici :
+      • le canonical est AUTO-RÉFÉRENT : sur /?lang=en il pointe sur
+        /?lang=en, pas sur /. Un canonical qui renvoie ailleurs annulerait
+        le hreflang qu'on vient d'écrire — c'est l'erreur qui a coûté leur
+        déclaration aux fiches ;
+      • les hreflang sont RÉCIPROQUES : la liste complète est servie sur
+        CHAQUE variante, sinon Google les ignore. %>
+<%# Les gardes `typeof` ne sont pas décoratifs : sans eux, cette vue EXIGE
+    trois variables, et tout rendu qui ne les fournit pas meurt en 500 — ce
+    qui est arrivé à l'instant dans la suite de tests. Le gabarit ne doit pas
+    tomber ; mais s'il ne sait pas quelle est son adresse, il se TAIT plutôt
+    que d'annoncer un canonical faux. Un mauvais canonical désindexe. %>
+<% if (typeof canonique !== "undefined" && canonique) { %>
+<link rel="canonical" href="<%= canonique %>">
+<% } %>
+<% if (typeof languesSEO !== "undefined" && typeof baseSEO !== "undefined") { languesSEO.forEach(function (code) { %>
+<link rel="alternate" hreflang="<%= code %>" href="<%= baseSEO %>/?lang=<%= code %>">
+<% }); %>
+<link rel="alternate" hreflang="x-default" href="<%= baseSEO %>/">
+<% } %>
+
 <!-- PWA : on réutilise le manifeste et le service worker existants -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0A0810">
@@ -423,6 +456,16 @@ html[dir="rtl"] .espaces { transform: translateX(-100%); }
     transition: background .16s, color .16s;
 }
 .sortie:hover { background: var(--releve); color: var(--texte); }
+/* Deux pages à lire, pas deux destinations : volontairement plus petit et
+   sans icône, pour qu'on voie au premier coup d'œil que ce n'est pas la
+   même chose que les entrées au-dessus. */
+.lectures {
+    margin: 10px 0 2px; padding: 0 12px;
+    font-size: .74rem; line-height: 1.7; color: var(--tres-doux, #837CA0);
+}
+.lectures a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.lectures a:hover { color: var(--texte); }
+.lectures span { opacity: .5; margin: 0 5px; }
 .sortie__pic {
     width: 26px; height: 26px; flex: none; display: grid; place-items: center;
     border-radius: 7px; background: var(--releve); font-size: .8rem;
@@ -983,6 +1026,22 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                     <a class="sortie" href="/hub">
                         <span class="sortie__pic">🧭</span><%= L("Voir les métiers") %>
                     </a>
+                    <%# ── DEUX PORTES REMISES, POUR GOOGLE ET POUR LES CURIEUX
+                        Mesuré : /metiers n'était plus lié que depuis
+                        /accueil-classique, et /accueil-classique n'était lié
+                        par PERSONNE — alors que c'est la seule page du site
+                        qui réponde aux six questions (qu'est-ce que SAMII,
+                        pour qui, quoi, quels métiers, qu'est-ce qu'un QG,
+                        pourquoi), 1 184 mots, et la seule à porter le
+                        JSON-LD Organization + SoftwareApplication.
+
+                        C'est moi qui avais déplacé le lien /metiers hors de
+                        cette page, en réparant le parcours marchand. Le
+                        parcours y avait gagné, le référencement y avait
+                        perdu. Les deux se réconcilient ici : ces liens sont
+                        DANS LE TIROIR « aller plus loin », replié par
+                        défaut. Le chemin principal reste chat → Hub → QG,
+                        intact ; Google, lui, suit les liens repliés. %>
                     <a class="sortie" href="/academy">
                         <span class="sortie__pic">🎓</span><%= L("Académie") %>
                     </a>
@@ -991,6 +1050,35 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                             <span class="sortie__pic">🗂</span><%= L("QG Agence") %>
                         </a>
                     <% } %>
+
+                    <%# ── DEUX LIENS DE LECTURE, PAS DEUX DESTINATIONS ─────
+                        Mesuré : /metiers n'était plus lié que depuis
+                        /accueil-classique, et /accueil-classique n'était lié
+                        par PERSONNE — alors que c'est la seule page du site
+                        qui réponde aux six questions (qu'est-ce que SAMII,
+                        pour qui, quoi, quels métiers, qu'est-ce qu'un QG,
+                        pourquoi), 1 184 mots, et la seule à porter le
+                        JSON-LD Organization + SoftwareApplication. C'est moi
+                        qui avais déplacé /metiers hors d'ici en réparant le
+                        parcours marchand : le parcours y a gagné, le
+                        référencement y a perdu.
+
+                        ILS NE PORTENT PAS LA CLASSE `sortie`, ET C'EST LE
+                        POINT. La barre latérale tient six DESTINATIONS, pas
+                        une de plus — un garde le vérifie, et cette règle est
+                        juste : sept entrées et on a reconstruit le menu
+                        fourre-tout qu'on fuyait. Ces deux-là ne sont pas des
+                        destinations du parcours, ce sont deux pages à LIRE.
+                        Elles ont donc leur propre ligne, en petit, tout en
+                        bas du tiroir déjà replié.
+
+                        Pour Google, c'est un vrai <a href> dans le HTML
+                        servi — c'est tout ce qu'il lui faut. %>
+                    <p class="lectures">
+                        <a href="/metiers"><%= L("Les fiches métier") %></a>
+                        <span aria-hidden="true">·</span>
+                        <a href="/accueil-classique"><%= L("Découvrir SAMII en détail") %></a>
+                    </p>
                 </div>
             </div>
 

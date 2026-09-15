@@ -188,17 +188,29 @@ app.get("/sitemap.xml", (req, res) => {
     const langue = require("./services/langue");
     const base = String(CONFIG.APP_URL || "").replace(/\/+$/, "");
 
-    const entree = (chemin, priorite, frequence) => {
-        // hreflang dans le plan lui-même : c'est la façon recommandée de
-        // déclarer des traductions sans alourdir chaque page.
-        const alternatives = langue.LANGUES.map((code) =>
+    // ── LE hreflang N'EST PLUS DONNÉ À TOUT LE MONDE ────────────────────
+    //
+    // Il l'était : chaque entrée annonçait fr/en/ar. Mesuré, c'était faux
+    // pour la quasi-totalité d'entre elles — les trente-quatre fiches
+    // gardent 45 à 63 % de vocabulaire français dans leur version
+    // « anglaise », /metiers 70 %, /hub 100 %. Le plan du site promettait
+    // donc des traductions inexistantes, et il les promettait vers des URLs
+    // qui canonisent ailleurs : Google ignore un hreflang contredit par un
+    // canonical.
+    //
+    // Seul « / » est réellement traduit (9 % de français résiduel en arabe,
+    // 23 % en anglais, et ce résidu est la marque et les chiffres). Le
+    // paramètre `traduite` porte cette distinction, page par page, au lieu
+    // de l'appliquer en bloc.
+    const entree = (chemin, priorite, frequence, traduite) => {
+        const alternatives = !traduite ? "" : langue.LANGUES.map((code) =>
             `    <xhtml:link rel="alternate" hreflang="${code}" href="${base}${chemin}?lang=${code}"/>`
-        ).join("\n");
-        return `  <url>\n    <loc>${base}${chemin}</loc>\n${alternatives}\n    <changefreq>${frequence}</changefreq>\n    <priority>${priorite}</priority>\n  </url>`;
+        ).join("\n") + "\n";
+        return `  <url>\n    <loc>${base}${chemin}</loc>\n${alternatives}    <changefreq>${frequence}</changefreq>\n    <priority>${priorite}</priority>\n  </url>`;
     };
 
     const urls = [
-        entree("/", "1.0", "daily"),
+        entree("/", "1.0", "daily", true),
         entree("/metiers", "0.9", "weekly"),
         ...metiersService.avecFiche().map((m) => entree(`/metiers/${m.id}`, "0.8", "monthly")),
         entree("/marketplace", "0.7", "daily"),
@@ -862,11 +874,45 @@ async function espacesDe(req) {
     }
 }
 
+// ── L'IDENTITÉ SEO DE L'ACCUEIL, CALCULÉE ICI ───────────────────────────
+//
+// « / » sert quatre langues sur une seule adresse, par négociation
+// Accept-Language. Sans canonical ni hreflang, Google n'en indexe qu'une et
+// ignore les autres — c'est ce qui s'est passé : le titre retenu dans l'index
+// public est l'anglais, pour un produit francophone.
+//
+// Le canonical est auto-référent : /?lang=en canonise vers /?lang=en. Il
+// pointerait sur « / » que le hreflang serait annulé — chaque variante
+// dirait « ma vraie page est l'autre ».
+//
+// Seules les langues RÉELLEMENT servies sont déclarées : services/langue.js
+// expose fr/en/ar (le chinois est traduit dans les dictionnaires mais absent
+// de LANGUES, donc jamais servi — on ne l'annonce pas).
+function seoAccueil(req) {
+    const base = String(CONFIG.APP_URL || "").replace(/\/+$/, "");
+    const langue = require("./services/langue");
+
+    // ⚠️ On BORNE au registre, on ne fait pas confiance au paramètre.
+    // `normaliser()` ne valide pas : il rend « zz » pour ?lang=zz. Bâtir le
+    // canonical dessus donnerait à chaque adresse inventée son propre
+    // canonical auto-référent — une surface infinie d'URLs que Google serait
+    // invité à indexer. Exactement le mal qu'on vient réparer.
+    const demandee = String(req.query.lang || "").toLowerCase();
+    const langueURL = langue.LANGUES.includes(demandee) ? demandee : null;
+
+    return {
+        baseSEO: base,
+        languesSEO: langue.LANGUES,
+        canonique: langueURL ? `${base}/?lang=${langueURL}` : `${base}/`,
+    };
+}
+
 app.get("/", async (req, res) => {
     const espaces = await espacesDe(req);
     res.render("samii-accueil", {
         ...donneesAccueil(req),
         ...espaces,
+        ...seoAccueil(req),
         workspaceId: req.session?.workspaceId || "",
         cloudinary: require("./config/cloudinary"),
     });

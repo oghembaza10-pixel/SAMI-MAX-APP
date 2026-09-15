@@ -26,12 +26,34 @@
 <meta name="description" content="<%= description %>">
 <link rel="canonical" href="<%= canonique %>">
 
-<%# hreflang : la même page existe dans trois langues. Sans ces liens, Google
-    les prend pour trois pages concurrentes et n'en garde qu'une. %>
-<% languesDispo.forEach(function (code) { %>
-<link rel="alternate" hreflang="<%= code %>" href="<%= base %>/metiers/<%= metier.id %>?lang=<%= code %>">
-<% }); %>
-<link rel="alternate" hreflang="x-default" href="<%= canonique %>">
+<%# ── PAS DE hreflang ICI, ET C'EST VOULU ─────────────────────────────────
+    Il y en avait : fr, en, ar, x-default, pointant sur ?lang=<code>. Deux
+    choses rendaient cette déclaration fausse.
+
+    1. LE CONTENU N'EST PAS TRADUIT. Mesuré sur les trente-quatre fiches : la
+       version « anglaise » garde 45 à 63 % du vocabulaire français (médiane
+       53 %), l'arabe 44 à 61 %. Les intertitres sont traduits, la substance
+       non — elle vient de services/metiers.js, qui est en français. Un
+       extrait réel de la version anglaise :
+           « What it costs — Un fauteuil vide à 14h ne se rattrape pas le
+             soir. Why it happens — Les rendez-vous se prennent… »
+       Déclarer hreflang="en" pour ça, c'est promettre une page anglaise qui
+       n'existe pas.
+
+    2. LE canonical LA CONTREDISAIT. Les trois variantes canonisent vers
+       l'URL propre ci-dessus. hreflang disait « voici l'anglais », canonical
+       répondait « non, la vraie page est la française ». Devant ce conflit,
+       Google ignore le hreflang — la déclaration ne servait donc à rien,
+       sauf à affaiblir la page.
+
+    Le signal est maintenant cohérent : UNE page, en français, avec un
+    sélecteur de langue qui ne crée pas de nouvelle page. Le jour où une
+    fiche sera vraiment traduite, on redéclarera — pour elle, et seulement
+    pour elle.
+
+    /  (l'accueil) est le cas inverse : il est réellement traduit (9 à 23 %
+    de français résiduel, et ce résidu est la marque et les chiffres), donc
+    il porte bien ses hreflang. %>
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="<%= titre %>">

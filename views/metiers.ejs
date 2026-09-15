@@ -89,6 +89,16 @@ a { color: inherit; text-decoration: none; }
     margin-inline-start: auto; font-family: var(--mono); font-size: .6rem;
     letter-spacing: .08em; text-transform: uppercase; color: var(--tres-doux);
 }
+/* La carte et le lien vers la fiche, empilés : la case devient l'élément de
+   grille, la carte garde exactement l'allure qu'elle avait. */
+.case { display: flex; flex-direction: column; gap: 2px; }
+.metier__fiche {
+    padding: 2px 15px 0; font-size: .69rem; color: var(--tres-doux);
+    text-decoration: underline; text-underline-offset: 2px;
+    text-decoration-color: var(--ligne-viv);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.metier__fiche:hover { color: var(--doux); text-decoration-color: var(--doux); }
 
 .rien {
     margin-top: 34px; padding: 20px;
@@ -139,12 +149,27 @@ a { color: inherit; text-decoration: none; }
                     Et c'est l'ID qui voyage, jamais le libellé traduit :
                     /workspace/create compare au registre, et « Dentist » en
                     anglais n'y correspondrait à rien. %>
+                <%# ── ET UN VRAI LIEN VERS LA FICHE ───────────────────────
+                    Mesuré : AUCUNE page du site ne liait /metiers/<id>. Les
+                    trente-quatre fiches n'étaient atteignables que par le
+                    sitemap — un sitemap fait découvrir, ce sont les liens qui
+                    font valoir. Elles formaient une île fermée : on circulait
+                    entre elles une fois dedans, rien n'y entrait.
+
+                    La carte garde son geste (ouvrir un espace). La fiche est
+                    un second lien, discret, à côté — et non pas imbriqué :
+                    un <a> dans un <a> est invalide, et les navigateurs le
+                    défont en silence, ce qui perdrait justement le lien qu'on
+                    vient d'ajouter. %>
                 <% g.metiers.forEach(function (m) { %>
-                    <a class="metier" href="/register?metier=<%= encodeURIComponent(m.id) %>">
-                        <span class="metier__pic"><%= m.icone %></span>
-                        <span><%= L(m.label) %></span>
-                        <span class="metier__quoi"><%= m.parcours === "rdv" ? L("rendez-vous") : L("commandes") %></span>
-                    </a>
+                    <div class="case">
+                        <a class="metier" href="/register?metier=<%= encodeURIComponent(m.id) %>">
+                            <span class="metier__pic"><%= m.icone %></span>
+                            <span><%= L(m.label) %></span>
+                            <span class="metier__quoi"><%= m.parcours === "rdv" ? L("rendez-vous") : L("commandes") %></span>
+                        </a>
+                        <a class="metier__fiche" href="/metiers/<%= m.id %>"><%= L("Lire la fiche") %> <%= L(m.label) %></a>
+                    </div>
                 <% }); %>
             </div>
         </section>

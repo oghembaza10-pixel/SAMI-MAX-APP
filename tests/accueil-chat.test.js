@@ -75,6 +75,15 @@ function locales(lang, extra = {}) {
         // locales que l'application, sinon il échoue sur une absence qui
         // n'existe pas en production.
         v: require(path.join(RACINE, "services", "actifs.js")).v,
+        // ── L'IDENTITÉ SEO, POSÉE COMME L'APPLIQUE index.js ─────────────
+        // « / » sert trois langues sur une adresse ; sans canonical ni
+        // hreflang, Google n'en indexe qu'une. Ces trois locales viennent de
+        // seoAccueil() dans index.js — même règle que ci-dessus : le test
+        // doit poser ce que l'application pose, sinon il échoue (ou passe)
+        // pour une raison qui n'existe pas en production.
+        baseSEO: "https://samii.souverain-store.com",
+        languesSEO: langue.LANGUES,
+        canonique: "https://samii.souverain-store.com/",
     }, extra);
 }
 
@@ -283,6 +292,17 @@ try {
     // geste.
     verifier(hub.includes("/register?metier="),
         "choisir un métier n'ouvre aucun espace : la liste ne mène plus à /register?metier=<id>");
+
+    // ── ET LA LISTE DOIT LIER SES PROPRES FICHES ─────────────────────────
+    //
+    // Mesuré à l'audit : AUCUNE page du site ne liait /metiers/<id>. Les
+    // trente-quatre fiches n'étaient atteignables que par le sitemap — or un
+    // sitemap fait découvrir, ce sont les liens qui font valoir. Elles
+    // formaient une île fermée.
+    const versFiches = new Set((hub.match(/href="\/metiers\/[a-z0-9_-]+"/g) || []));
+    verifier(versFiches.size === metiers.avecFiche().length,
+        `${versFiches.size} liens vers des fiches pour ${metiers.avecFiche().length} fiches existantes — `
+        + "des pages métier redeviennent orphelines");
     verifier(!hub.includes("/?metier="),
         "un métier ramène de nouveau au chat avec le mot posé dans la barre — "
         + "ni QG, ni questionnaire, et un crédit dépensé pour un mot isolé");

@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OG Technology — Le Hub</title>
+    <%# Sans description, Google compose l'extrait avec ce qu'il trouve — et
+        ce qu'il trouvait ici, c'étaient 114 mots d'interface. %>
+    <meta name="description" content="Choisis ton métier et ouvre ton espace de travail SAMII : 34 métiers, du commerce à la santé, chacun avec ses outils, son vocabulaire et son rythme.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -97,8 +100,39 @@
             <span data-i18n="hub.section.choose">Choisis ton métier</span>
         </div>
 
+        <%# ── LES MÉTIERS SONT DANS LE HTML, PAS SEULEMENT DANS LE JS ─────
+            Mesuré avec l'User-Agent de Googlebot : cette page servait 114 mots
+            et ZÉRO lien de métier. La grille était vide, remplie ensuite par
+            hub.js, et le mot « Dentiste » n'apparaissait qu'une fois dans le
+            HTML — à l'intérieur du JSON window.OG_METIERS, pas dans le corps.
+            Google sait exécuter du JavaScript, mais en seconde vague et sans
+            garantie : le Hub n'apportait donc aucun texte et aucun lien.
+
+            Les trente-quatre cartes sont maintenant rendues ici, par le
+            serveur, avec exactement les mêmes classes que celles que hub.js
+            fabrique — sinon la page sauterait au chargement.
+
+            hub.js garde tout le reste : la recherche, « voir plus », la
+            création de métier. Il remplace ce contenu au premier rendu. C'est
+            de l'amélioration progressive : le robot et quelqu'un sans
+            JavaScript voient la même chose, en moins interactif.
+
+            Pas de lien vers /metiers ici : le Hub est le parcours de qui ouvre
+            un espace. Les fiches ont leur catalogue, et c'est /metiers. %>
         <section class="metier-grid" id="metier-grid">
-            <!-- Rempli dynamiquement par hub.js -->
+            <% (typeof metiersParGroupe !== "undefined" ? metiersParGroupe : []).forEach(function (g) { %>
+                <% (g.metiers || []).forEach(function (m) { %>
+            <a class="metier-card" href="/register?metier=<%= encodeURIComponent(m.id) %>" data-metier="<%= m.id %>">
+                <div class="metier-card__body">
+                    <span class="metier-card__emoji" aria-hidden="true"><%= m.icone %></span>
+                    <div>
+                        <h3><%= m.label %></h3>
+                        <span><%= m.groupe %></span>
+                    </div>
+                </div>
+            </a>
+                <% }); %>
+            <% }); %>
         </section>
 
         <%# ── LE HUB NE MÈNE PLUS À /metiers ──────────────────────────────

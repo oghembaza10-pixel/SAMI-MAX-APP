@@ -587,6 +587,10 @@ const EN = {
         "Tell it your situation. SAMII already knows your trade — the prices, the delivery, cash on delivery.",
     "Ouvrir la discussion": "Start the conversation",
     "Ouvrir mon QG": "Open my HQ",
+    "Les fiches métier": "Business guides",
+    "Découvrir SAMII en détail": "Discover SAMII in detail",
+    "Apprends à faire tourner ton commerce avec SAMII : trouver des clients, tenir ses stocks, se faire payer. Des parcours courts, écrits pour le terrain.": "Learn to run your business with SAMII: finding customers, keeping stock, getting paid. Short paths, written for the field.",
+    "Lire la fiche": "Read the guide for",
     "Mon activité": "My business",
     "Par où je commence ?": "Where do I start?",
     "Créneaux en ligne, rappels automatiques, fiche client. Prêt pour votre activité.":
@@ -979,6 +983,10 @@ const AR = {
         "اشرح وضعك. SAMII يعرف مهنتك مسبقًا — الأسعار، التوصيل، الدفع عند الاستلام.",
     "Ouvrir la discussion": "ابدأ المحادثة",
     "Ouvrir mon QG": "افتح مقرّي",
+    "Les fiches métier": "بطاقات المهن",
+    "Découvrir SAMII en détail": "اكتشف SAMII بالتفصيل",
+    "Apprends à faire tourner ton commerce avec SAMII : trouver des clients, tenir ses stocks, se faire payer. Des parcours courts, écrits pour le terrain.": "تعلّم إدارة تجارتك مع SAMII: إيجاد العملاء، متابعة المخزون، تحصيل المدفوعات. مسارات قصيرة مكتوبة للواقع الميداني.",
+    "Lire la fiche": "اقرأ بطاقة",
     "Mon activité": "نشاطي",
     "Par où je commence ?": "من أين أبدأ؟",
     "Créneaux en ligne, rappels automatiques, fiche client. Prêt pour votre activité.":
