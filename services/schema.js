@@ -1487,6 +1487,45 @@ const A_VERROUILLER = [
     // jamais être lisible avec la clé publiable. Le cache l'accompagne, il
     // n'y a aucune raison d'exposer nos relevés.
     "tendances_video_cache", "tendances_video_sources",
+
+    // ── LES SIX QUI PORTENT DES DONNÉES DE PERSONNES ────────────────────
+    //
+    // Treize tables étaient verrouillées, six ne l'étaient pas — alors
+    // qu'elles portent des clients, leurs commandes, leurs paiements et
+    // leurs messages privés. L'incohérence ressemblait à une liste qu'on
+    // n'a jamais fini d'écrire, pas à un choix.
+    //
+    // ── CE QUE ÇA CHANGE POUR LE SERVEUR : RIEN ─────────────────────────
+    //
+    // Il se connecte avec un rôle qui POSSÈDE ces tables, et un
+    // propriétaire contourne RLS par défaut. Mesuré sur une vraie base :
+    // avant comme après, il lit et écrit les six.
+    //
+    // La preuve que ça ne casse rien était déjà là, d'ailleurs : les treize
+    // du dessus sont toutes lues et écrites par l'application, elles ont
+    // RLS depuis longtemps, et la production tourne.
+    //
+    // ── CE QUE ÇA CHANGE POUR LES AUTRES : TOUT ─────────────────────────
+    //
+    // Démontré sur une table de démonstration, avec un rôle non
+    // propriétaire à qui on avait donné SELECT :
+    //
+    //     sans RLS   propriétaire 1 ligne | ce rôle 1 ligne  ⚠️ il lit tout
+    //     avec RLS   propriétaire 1 ligne | ce rôle 0 ligne  ✅
+    //
+    // C'est la clé publiable, l'API REST du projet, ou une chaîne de
+    // connexion limitée qui fuiterait un jour.
+    //
+    // ⚠️ AUCUNE POLITIQUE N'EST CRÉÉE, ET C'EST LE POINT. RLS sans
+    // politique = personne d'autre que le propriétaire ne voit une ligne.
+    // Une politique mal écrite ouvrirait plus qu'elle ne fermerait.
+    //
+    // ⚠️ ET SURTOUT PAS « FORCE ROW LEVEL SECURITY » : cela appliquerait RLS
+    // AU SERVEUR LUI-MÊME. Sans politique, il ne verrait plus une seule
+    // ligne — il répondrait 200 partout en n'affichant rien. C'est la panne
+    // la plus silencieuse possible, et elle tient à un mot.
+    "clients", "commandes", "discussion_messages", "messages_prives",
+    "paiements", "workspaces",
 ];
 
 async function preparer() {
