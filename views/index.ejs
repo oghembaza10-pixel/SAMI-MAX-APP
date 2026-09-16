@@ -2794,6 +2794,63 @@
             }
         }
 
+        /* ── LA BARRE DU HAUT SUR UN TÉLÉPHONE ────────────────────────────
+           Mesuré à 390 px : la marque prend 128 px, le bloc de droite 310
+           (drapeaux 117 + Menu 80 + Se connecter 93, gouttières comprises).
+           128 + 310 + 40 de marges = 478 pour une vue de 390. Le document
+           partait à scrollWidth 458 — la MÊME valeur à 320, 375 et 390,
+           parce qu'un élément flex ne descend jamais sous la largeur de son
+           contenu (min-width:auto) : la barre ne rétrécissait pas, elle
+           dépassait, et toute la page glissait latéralement avec elle.
+
+           Ce n'était pas un choix : le reste de la page a ses règles mobiles
+           (le bouton WhatsApp perd son libellé sous 560 px, les boutons du
+           hero s'empilent sous 520) — la barre du haut n'en avait aucune.
+
+           On ne retire AUCUNE commande. Le mot « Menu » disparaît à côté de
+           son icône à trois traits, qui dit déjà la même chose et garde son
+           aria-label ; le reste est du resserrement.
+
+           ⚠️ LE RESSERREMENT SEUL NE SUFFIT PAS, et c'est mesuré : sans
+           flex-wrap, le document tombe à 385 px. Ça tient à 390 — la largeur
+           d'où le défaut a été signalé — mais ça déborde ENCORE de 10 px à
+           375 et de 65 px à 320. flex-wrap n'est pas un filet, c'est ce qui
+           porte la correction : en dessous de ~460 px les quatre commandes
+           réclament plus que l'écran, et la seule issue qui ne coupe rien est
+           une deuxième ligne. Elle sert aussi le jour où une traduction
+           rallonge un libellé. */
+        @media (max-width: 560px) {
+            .top-bar {
+                flex-wrap: wrap;
+                row-gap: 10px;
+                padding: 13px 14px;
+            }
+
+            .top-bar__right {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+
+            .rideau-btn {
+                padding: 8px 11px;
+            }
+
+            /* L'icône reste, le mot part : le bouton garde son aria-label
+               « Menu » et son libellé traduit dans le rideau. */
+            .rideau-btn > span[data-i18n="nav.menu"] {
+                display: none;
+            }
+
+            .lang-switch span {
+                padding: 5px 5px;
+            }
+
+            .btn-login-top {
+                padding: 8px 13px;
+            }
+        }
+
         @media (max-width: 520px) {
             .hero {
                 padding-top: 52px;

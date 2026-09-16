@@ -99,6 +99,75 @@ console.log("── WhatsApp, sur le bon numéro ──");
     verifier(autres.length === 0, `un autre numéro WhatsApp traîne dans la page : ${autres.join(", ")}`);
 }
 
+console.log("── La barre du haut tient dans un téléphone ──");
+{
+    // ── CE QUI S'EST PASSÉ ────────────────────────────────────────────────
+    //
+    // Mesuré au navigateur sur /accueil-classique, à 320, 375 et 390 px :
+    // document.scrollWidth valait 458 — LA MÊME VALEUR aux trois largeurs.
+    // La barre ne rétrécissait pas, elle dépassait, et toute la page glissait
+    // latéralement avec elle. « Se connecter » sortait de l'écran : il en
+    // restait deux lettres, et personne ne pouvait s'inscrire depuis un
+    // téléphone sans faire défiler la page de côté pour attraper le bouton.
+    //
+    // La cause : la marque (128 px) et le bloc de droite (310 px) sont des
+    // éléments flex, et un élément flex a min-width:auto — il ne descend
+    // jamais sous la largeur de son contenu. 128 + 310 + 40 de marges = 478
+    // à réclamer dans une vue de 390.
+    //
+    // ── CE QUE CE GARDE PEUT, ET NE PEUT PAS ──────────────────────────────
+    //
+    // Il lit du texte, donc il ne remesure pas une mise en page : seul un
+    // navigateur le ferait, et la suite n'en embarque pas. Il tient les deux
+    // choses dont dépend la correction — la barre a le droit de se replier,
+    // et AUCUNE commande n'a disparu au passage. C'est la deuxième qui
+    // compte le plus : la façon la plus tentante de « régler » un
+    // débordement est de supprimer ce qui dépasse.
+    const barre = /<header class="top-bar">[\s\S]*?<\/header>/.exec(page);
+    verifier(barre !== null, "la barre du haut est lisible dans la page");
+    const dedans = barre ? barre[0] : "";
+
+    // 1. Les quatre commandes sont toujours là.
+    verifier(/class="lang-switch"/.test(dedans), "le choix de langue est encore dans la barre");
+    const langues = (dedans.match(/data-lang="[a-z]+"/g) || []).length;
+    verifier(langues === 4,
+        `${langues} langue(s) dans la barre au lieu de 4 — on n'élargit pas un téléphone en ` +
+        "retirant l'arabe ou le chinois");
+    verifier(/id="rideau-btn"/.test(dedans), "le bouton Menu est encore dans la barre");
+    verifier(/class="btn-login-top"/.test(dedans),
+        "« Se connecter » a disparu de la barre — c'est le bouton qui débordait, " +
+        "le supprimer réglerait le débordement et rien d'autre");
+
+    // 2. Le mot « Menu » est masqué sur petit écran : l'icône à trois traits
+    //    dit la même chose. Le bouton doit donc garder son nom accessible,
+    //    sinon un lecteur d'écran n'annonce plus qu'« un bouton ».
+    verifier(/aria-label="Menu"/.test(dedans),
+        "le bouton Menu n'a plus d'aria-label alors que son libellé visible est masqué " +
+        "sous 560 px : il ne s'annoncerait plus à un lecteur d'écran");
+
+    // 3. La règle mobile existe et porte ce qui empêche la poussée.
+    const gabarit = fs.readFileSync(GABARIT, "utf8");
+    // Il y a PLUSIEURS blocs « max-width: 560px » dans ce gabarit — un autre
+    // masque le libellé du bouton WhatsApp flottant. Prendre le premier venu
+    // faisait crier ce garde sur une règle qui n'a rien à voir : on cherche
+    // celui qui parle de la barre.
+    const blocs560 = [...gabarit.matchAll(/@media \(max-width: 560px\) \{([\s\S]*?)\n        \}/g)];
+    const mobile = blocs560.find((b) => /\.top-bar/.test(b[1])) || null;
+    verifier(mobile !== null,
+        "la règle mobile de la barre du haut a disparu : la barre redeviendrait plus large " +
+        "que l'écran et repousserait toute la page");
+    const regle = mobile ? mobile[1] : "";
+    verifier(/\.top-bar \{[^}]*flex-wrap:\s*wrap/.test(regle),
+        "la barre ne peut plus se replier sur deux lignes : elle n'a alors aucun moyen de " +
+        "tenir dans 320 px, où ses commandes réclament 438 px à elles seules");
+    verifier(/\.top-bar__right \{[^}]*flex-wrap:\s*wrap/.test(regle),
+        "le bloc de droite ne peut plus se replier — c'est lui qui portait le débordement");
+
+    // 4. Et le desktop n'a pas été emporté au passage.
+    verifier(/@media \(min-width: 768px\) \{\s*\.top-bar \{\s*padding: 17px 32px;/.test(gabarit),
+        "la règle desktop de la barre a changé — ce chantier ne corrige que le téléphone");
+}
+
 console.log("── Marketplace et Communauté sont montrées ──");
 {
     // Mesuré : les deux sont DÉJÀ publiques dans le code (aucun requireAuth
