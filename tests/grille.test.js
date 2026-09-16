@@ -280,10 +280,32 @@ const proche = (a, b, tol = 1e-9) => Math.abs(a - b) < tol;
         "le quota gratuit lit le système de crédits : les 20 messages deviendraient " +
         "débitables, alors que ce sont deux mécaniques séparées");
 
-    // La divergence connue reste déclarée, et non corrigée (décision produit).
-    verifier(ECO.GRATUIT.aligne === false && ECO.GRATUIT.messagesCible === 20,
-        "la divergence entre la règle annoncée (20 / 5 h) et le code (30 / 7 h) n'est plus " +
-        "déclarée : elle redeviendrait invisible");
+    // ── CE GARDE EXIGEAIT QUE LA DIVERGENCE EXISTE ──────────────────────
+    //
+    // Il vérifiait `aligne === false` : la règle annoncée disait 20 / 5 h, le
+    // code appliquait 30 / 7 h, et le chantier de l'époque interdisait d'y
+    // toucher. Le garde tenait la divergence VISIBLE, ce qui était juste.
+    //
+    // Elle est corrigée. Exiger qu'elle persiste ferait échouer la suite pour
+    // avoir fait exactement ce qu'il fallait faire.
+    //
+    // La règle durable n'a jamais été « il y a un écart » mais « la table dit
+    // la vérité sur le code ». On la vérifie donc contre les constantes
+    // réelles, alignées ou non : le jour où l'une des deux rebouge seule, la
+    // table redeviendra fausse et ce garde le dira.
+    const Q = require("../services/samiiQuota");
+    verifier(ECO.GRATUIT.messagesCode === Q.QUOTA_GRATUIT_PAR_FENETRE
+        && ECO.GRATUIT.heuresCode === Q.FENETRE_HEURES,
+        `config/economie.js déclare ${ECO.GRATUIT.messagesCode} messages / ${ECO.GRATUIT.heuresCode} h ` +
+        `alors que le code applique ${Q.QUOTA_GRATUIT_PAR_FENETRE} / ${Q.FENETRE_HEURES} h — ` +
+        "une simulation bâtie sur la table serait fausse");
+    verifier(ECO.GRATUIT.messagesCible === 20 && ECO.GRATUIT.heuresCible === 5,
+        "la règle commerciale cible n'est plus déclarée : on ne saurait plus par rapport à quoi " +
+        "mesurer un écart futur");
+    verifier(ECO.GRATUIT.aligne === (ECO.GRATUIT.messagesCode === ECO.GRATUIT.messagesCible
+        && ECO.GRATUIT.heuresCode === ECO.GRATUIT.heuresCible),
+        `la table annonce aligne=${ECO.GRATUIT.aligne} alors que ses propres nombres disent le ` +
+        "contraire — un booléen optimiste cacherait l'écart qu'il est censé montrer");
 }
 
 // ══════════════════════════════════════════════════════════════════════════

@@ -250,7 +250,7 @@ router.get("/", requireAuth, async (req, res) => {
                 <li data-i18n="billing.free.creatif">Scripts, photos et vidéos réelles — sans limite</li>
                 <li data-i18n="billing.free.li1">150 confirmations & suivi / mois</li>
                 <li data-i18n="billing.free.li2">SAMII te propose chaque action, tu valides avant qu'elle parte</li>
-                <li data-i18n="billing.free.li3">30 messages SAMII toutes les 7h</li>
+                <li data-i18n="billing.free.li3">20 messages SAMII toutes les 5h</li>
                 <li data-i18n="billing.free.li4">Suivi de colis basique</li>
                 <li>🃏 ${NB_CARTES_PAR_PALIER.free} <span data-i18n="billing.cards.unlocked">fonctionnalités bonus débloquées</span></li>
             </ul>
@@ -354,7 +354,7 @@ const I18N = {
         'billing.free.title': '🌑 Découverte', 'billing.free.price': 'Gratuit',
         'billing.free.li1': '150 confirmations & suivi / mois',
         'billing.free.li2': "SAMII te propose chaque action, tu valides avant qu'elle parte",
-        'billing.free.li3': '30 messages SAMII toutes les 7h',
+        'billing.free.li3': '20 messages SAMII toutes les 5h',
         'billing.free.li4': 'Suivi de colis basique',
         'billing.free.btn': 'Plan actuel',
         'billing.cards.unlocked': 'fonctionnalités bonus débloquées',
@@ -427,7 +427,7 @@ const I18N = {
         'billing.free.title': '🌑 Discovery', 'billing.free.price': 'Free',
         'billing.free.li1': '150 confirmations & tracking / month',
         'billing.free.li2': "SAMII suggests every action, you approve before it's sent",
-        'billing.free.li3': '30 SAMII messages every 7h',
+        'billing.free.li3': '20 SAMII messages every 5h',
         'billing.free.li4': 'Basic package tracking',
         'billing.free.btn': 'Current plan',
         'billing.cards.unlocked': 'bonus features unlocked',
@@ -500,7 +500,7 @@ const I18N = {
         'billing.free.title': '🌑 الاكتشاف', 'billing.free.price': 'مجاني',
         'billing.free.li1': '150 تأكيد وتتبع / شهريًا',
         'billing.free.li2': 'SAMII يقترح كل إجراء، وأنت توافق قبل تنفيذه',
-        'billing.free.li3': '30 رسالة SAMII كل 7 ساعات',
+        'billing.free.li3': '20 رسالة SAMII كل 5 ساعات',
         'billing.free.li4': 'تتبع أساسي للطرود',
         'billing.free.btn': 'الباقة الحالية',
         'billing.cards.unlocked': 'ميزة إضافية مفتوحة',
@@ -573,7 +573,7 @@ const I18N = {
         'billing.free.title': '🌑 探索版', 'billing.free.price': '免费',
         'billing.free.li1': '每月150次确认与跟踪',
         'billing.free.li2': 'SAMII 会为每个操作先给出建议，你确认后才会发送',
-        'billing.free.li3': '每7小时30条 SAMII 消息',
+        'billing.free.li3': '每5小时20条 SAMII 消息',
         'billing.free.li4': '基础包裹跟踪',
         'billing.free.btn': '当前方案',
         'billing.cards.unlocked': '解锁的额外功能',

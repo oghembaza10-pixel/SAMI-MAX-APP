@@ -8,8 +8,26 @@
 // c'est le volume de messages autorisés par jour, pas la mémoire.
 const db = require("../services/db");
 
-const QUOTA_GRATUIT_PAR_FENETRE = 30;
-const FENETRE_HEURES = 7;
+// ── LA RÈGLE COMMERCIALE ET LE CODE DISENT ENFIN LA MÊME CHOSE ──────────
+//
+// Le code appliquait 30 messages / 7 heures, la règle annoncée 20 / 5. Un
+// écart de +50 % sur le nombre et de +40 % sur la durée, connu, documenté
+// dans config/economie.js et laissé tel quel parce que le quota est une
+// décision produit qu'aucun chantier n'avait le droit de prendre. Elle est
+// prise.
+const QUOTA_GRATUIT_PAR_FENETRE = 20;
+const FENETRE_HEURES = 5;
+
+// ⚠️ LA FENÊTRE DES PALIERS PAYANTS EST UN AUTRE NOMBRE, ET C'EST TOUT
+//    L'ENJEU DE CE CHANGEMENT.
+//
+// Une seule constante servait aux trois paliers. La faire passer de 7 à 5
+// aurait rafraîchi AUSSI les 50 messages du standard et les 150 du pro 40 %
+// plus souvent — un cadeau que personne n'a demandé à des clients payants,
+// et trois lignes de la page de tarifs (« toutes les 7h ») fausses d'un coup.
+//
+// Le gratuit change, les paliers payants ne bougent pas.
+const FENETRE_PAYANTE_HEURES = 7;
 const PRIX_PREMIUM_USD = 5; // déjà le montant réel facturé par /client-qg/premium (Stripe)
 // Dépassement du quota messages sur un workspace payant (standard/pro) :
 // jamais bloqué, mais facturé — même principe que confirmationsQuota.js.
@@ -46,11 +64,15 @@ async function getPalierWorkspace(workspaceId) {
     return require("./abonnementService").getPalier(workspaceId);
 }
 
-async function compterMessagesFenetre(userId) {
+// La fenêtre est un PARAMÈTRE : le gratuit et les paliers payants n'ont plus
+// la même, et la valeur par défaut reste celle du gratuit — c'est le cas de
+// loin le plus fréquent, et un oubli d'appelant retombe ainsi sur la règle la
+// plus stricte, jamais sur la plus généreuse.
+async function compterMessagesFenetre(userId, heures = FENETRE_HEURES) {
     try {
         const rows = await db.query(
             `SELECT count(*)::int AS n FROM samii_conversations
-             WHERE user_id = $1 AND role = 'user' AND created_at > now() - interval '${FENETRE_HEURES} hours'`,
+             WHERE user_id = $1 AND role = 'user' AND created_at > now() - interval '${Number(heures)} hours'`,
             [userId]
         );
         return rows[0]?.n || 0;
@@ -85,11 +107,11 @@ async function getEtatQuota(userId, workspaceId) {
     const palier = await getPalierWorkspace(workspaceId);
     if (palier === "societe") return { illimite: true, restant: null, total: null, utilises: 0, palier };
     if (palier && QUOTA_PAR_PALIER[palier] && palier !== "free") {
-        const utilises = await compterMessagesFenetre(userId);
+        const utilises = await compterMessagesFenetre(userId, FENETRE_PAYANTE_HEURES);
         const total = QUOTA_PAR_PALIER[palier];
         return {
             illimite: false, total, utilises, restant: Math.max(0, total - utilises),
-            fenetreHeures: FENETRE_HEURES, depassementFacturable: true, palier,
+            fenetreHeures: FENETRE_PAYANTE_HEURES, depassementFacturable: true, palier,
         };
     }
 
@@ -155,7 +177,8 @@ async function getDepassementMessagesMois(workspaceId) {
 
 module.exports = {
     QUOTA_GRATUIT_PAR_JOUR: QUOTA_GRATUIT_PAR_FENETRE, // alias conservé pour compat (routes existantes)
-    QUOTA_GRATUIT_PAR_FENETRE, QUOTA_PAR_PALIER, FENETRE_HEURES, PRIX_PREMIUM_USD, PRIX_DEPASSEMENT_MESSAGE_USD,
+    QUOTA_GRATUIT_PAR_FENETRE, QUOTA_PAR_PALIER, FENETRE_HEURES, FENETRE_PAYANTE_HEURES,
+    PRIX_PREMIUM_USD, PRIX_DEPASSEMENT_MESSAGE_USD,
     getAbonnement, getPalierWorkspace, compterMessagesFenetre, getEtatQuota,
     enregistrerMessageDepassement, getDepassementMessagesMois,
 };

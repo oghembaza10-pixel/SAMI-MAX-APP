@@ -498,16 +498,22 @@ const ECHEC = {
 // ⚠️ LES DEUX NE DISENT PAS LA MÊME CHOSE, ET L'ÉCART EST DE 50 %.
 //
 //   règle commerciale annoncée   20 messages / 5 heures
-//   code (services/samiiQuota)   30 messages / 7 heures
+//   code (services/samiiQuota)   20 messages / 5 heures  ← ALIGNÉ
 //
 // Toute simulation du coût du gratuit se calcule sur ces deux nombres. Se
 // tromper de table, c'est se tromper d'un facteur 1,5 sur la facture du
 // poste le plus volumineux de la plateforme.
 //
-// CE FICHIER NE CORRIGE RIEN : le quota est une décision produit, et le
-// chantier interdit d'y toucher. Il DÉCLARE les deux, pour qu'une simulation
-// dise toujours sur laquelle elle s'appuie — et un test vérifie que cette
-// déclaration suit le code, pas l'inverse.
+// L'écart a été corrigé dans services/samiiQuota.js : le code applique
+// désormais la règle annoncée. Les deux nombres restent DÉCLARÉS SÉPARÉMENT,
+// et `aligne` reste calculé plutôt qu'écrit en dur : le jour où l'un des deux
+// bouge sans l'autre, la divergence redevient visible au lieu de se cacher
+// derrière un booléen optimiste. Un test vérifie que cette déclaration suit
+// le code, pas l'inverse.
+//
+// ⚠️ La fenêtre des PALIERS PAYANTS est restée à 7 heures (voir
+// FENETRE_PAYANTE_HEURES). Une simulation qui utiliserait heuresCode pour le
+// standard ou le pro se tromperait.
 // ══════════════════════════════════════════════════════════════════════════
 // 11. LES CATÉGORIES D'USAGE — CE QUE LE CLIENT COMPREND
 // ══════════════════════════════════════════════════════════════════════════
@@ -632,9 +638,9 @@ function margeCategorie(id, creditsDecides, { apres2026 = false } = {}) {
 
 const GRATUIT = {
     messagesCible: 20, heuresCible: 5,      // ce qui est annoncé
-    messagesCode: 30, heuresCode: 7,        // ce que le code applique
-    aligne: false,
-    note: "Divergence signalée, non corrigée : le quota est une décision produit.",
+    messagesCode: 20, heuresCode: 5,        // ce que le code applique
+    aligne: true,
+    note: "Aligné : le code applique la règle annoncée (20 / 5 h). Les paliers payants gardent leur fenêtre de 7 h — voir FENETRE_PAYANTE_HEURES.",
 };
 
 module.exports = {
