@@ -54,6 +54,32 @@ const niveaux = require(path.join(RACINE, "config", "niveaux.js"));
 // d'industrialiser les 28 autres un par un, sans big bang.
 const PILOTES = ["ecommerce", "restaurant", "grossiste", "location_voitures", "avocat", "comptable"];
 
+// ── 9c-bis : LA COUVERTURE S'ÉTEND AUX TRENTE AUTRES ─────────────────────
+//
+// Le chantier 9c disait « un métier sans spécialisation est un cas normal ».
+// Il l'était tant que six métiers sur trente-six en avaient une. Maintenant
+// que les trente-six en ont, l'absence redevient ce qu'elle était au départ :
+// un oubli. Le garde change donc de sens — il exigeait que les non-pilotes
+// rendent `null`, il exige maintenant qu'ils rendent un contexte.
+//
+// Les six pilotes gardent le contrat COMPLET de 9c : c'est ce qui empêche de
+// « couvrir » les trente autres en rabotant les six premiers pour que tout le
+// monde rentre dans le même moule.
+//
+// ── CE QUE LES TRENTE REÇOIVENT, ET POURQUOI PAS PLUS ────────────────────
+//
+// Les quatre dimensions qui atteignent réellement le cerveau : `objets`,
+// `donnees`, `actions`, `expertise` — ce sont elles que la projection de
+// services/competences.js envoie dans la consigne. Elles doivent être vraies
+// partout, sinon la couverture n'est qu'une déclaration.
+//
+// Les six autres (description, contexte, problemes, workflows,
+// outilsDuSecteur, memoire) enrichissent le produit sans partir dans le
+// prompt : elles sont exigées, mais avec un plancher plus bas. Remplir à
+// marche forcée trente listes de cinq problèmes aurait donné trente listes
+// vraies pour trois métiers et fausses pour vingt-sept.
+const TOUS = require(path.join(RACINE, "services", "metiers.js")).METIERS.map((m) => m.id);
+
 // ══════════════════════════════════════════════════════════════════════════
 // 1. UN SEUL REGISTRE — pas de taxonomie parallèle
 // ══════════════════════════════════════════════════════════════════════════
@@ -118,6 +144,43 @@ const PILOTES = ["ecommerce", "restaurant", "grossiste", "location_voitures", "a
                 `${id}.${cle} n'est pas une liste d'au moins ${mini} entrées`);
         }
     }
+
+    // ── 9c-bis : LES TRENTE-SIX, SANS EXCEPTION ──────────────────────────
+    const sansContexte = TOUS.filter((id) => !S[id]);
+    verifier(sansContexte.length === 0,
+        `${sansContexte.length} métier(s) sans contexte : ${sansContexte.slice(0, 6).join(", ")} — ` +
+        "ils reçoivent le SAMII générique pendant que leurs voisins ont un univers");
+
+    // Les quatre dimensions qui atteignent vraiment le cerveau. Elles sont
+    // exigées partout, au même niveau : c'est ce qui fait la différence entre
+    // une couverture et une case cochée.
+    const maigres = [];
+    for (const id of TOUS) {
+        const s = S[id];
+        if (!s) continue;
+        if (!Array.isArray(s.objets) || s.objets.length < 4) maigres.push(`${id}.objets`);
+        if (!Array.isArray(s.donnees) || s.donnees.length < 4) maigres.push(`${id}.donnees`);
+        if (!Array.isArray(s.actions) || s.actions.length < 3) maigres.push(`${id}.actions`);
+        if (typeof s.expertise !== "string" || s.expertise.trim().length < 40) maigres.push(`${id}.expertise`);
+    }
+    verifier(maigres.length === 0,
+        `dimension(s) qui atteignent le cerveau mais restent vides : ${maigres.slice(0, 8).join(", ")}`);
+
+    // Les six autres dimensions, exigées partout avec un plancher plus bas.
+    const trous = [];
+    for (const id of TOUS) {
+        const s = S[id];
+        if (!s) continue;
+        for (const cle of ["description", "contexte"]) {
+            if (typeof s[cle] !== "string" || s[cle].trim().length < 40) trous.push(`${id}.${cle}`);
+        }
+        for (const cle of ["problemes", "workflows", "memoire", "outilsDuSecteur"]) {
+            if (!Array.isArray(s[cle]) || s[cle].length < 2) trous.push(`${id}.${cle}`);
+        }
+        if (!Array.isArray(s.integrations)) trous.push(`${id}.integrations`);
+    }
+    verifier(trous.length === 0,
+        `dimension(s) manquante(s) ou trop courte(s) : ${trous.slice(0, 8).join(", ")}`);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -204,14 +267,82 @@ const PILOTES = ["ecommerce", "restaurant", "grossiste", "location_voitures", "a
     verifier(dit("grossiste", "quantit") || dit("grossiste", "palier") || dit("grossiste", "volume"),
         "le secteur grossiste ne parle ni de quantité, ni de palier, ni de volume");
 
-    // Et aucun secteur ne doit être la copie d'un autre.
+    // Et aucun secteur ne doit être la copie d'un autre — sur les 36.
     const empreintes = new Map();
-    for (const id of PILOTES) {
+    for (const id of TOUS) {
         const e = JSON.stringify([(S[id] || {}).objets, (S[id] || {}).donnees, (S[id] || {}).problemes]);
         if (empreintes.has(e)) verifier(false, `« ${id} » et « ${empreintes.get(e)} » ont exactement les mêmes objets, données et problèmes`);
         empreintes.set(e, id);
     }
-    verifier(empreintes.size === PILOTES.length, "deux secteurs pilotes sont identiques");
+    verifier(empreintes.size === TOUS.length, "deux métiers ont exactement le même contexte");
+
+    // ── 9c-bis : LE PIÈGE DE LA COUVERTURE — L'UNIVERS GÉNÉRIQUE ─────────
+    //
+    // C'est la façon la plus naturelle d'échouer ce chantier : donner aux
+    // trente le même « client, commande, paiement » et déclarer la couverture
+    // faite. Trente contextes identiques ne valent pas mieux qu'aucun — ils
+    // coûtent en plus des jetons à chaque message.
+    //
+    // Le garde mesure donc ce qui est PROPRE à chaque univers.
+    {
+        const compte = new Map();
+        for (const id of TOUS) for (const o of new Set((S[id] || {}).objets || [])) {
+            compte.set(o, (compte.get(o) || 0) + 1);
+        }
+        // ── DEUX SEUILS, ET ILS SORTENT D'UNE MESURE ─────────────────────
+        //
+        // Première version : « au moins deux objets présents dans trois
+        // métiers ou moins ». Mutation faite pour de vrai — le café reçoit
+        // l'univers le plus générique qui soit, « client, commande, paiement,
+        // produit » — et le garde est resté VERT : « paiement » et
+        // « produit » ne figurent que dans trois métiers chacun, ils
+        // passaient donc pour propres. Le garde mesurait la RARETÉ, pas la
+        // spécificité, et un mot peut être rare par accident.
+        //
+        // Mesuré sur les trente-six, puis sur l'univers générique :
+        //
+        //                          objets uniques (=1)   objets rares (<=3)
+        //     les 36 métiers             min 1                 min 4
+        //     univers générique            0                     2
+        //
+        // Les deux seuils séparent donc franchement, et il faut les DEUX :
+        // « unique » attrape la copie générique, « rare » attrape l'univers
+        // bricolé avec les mots des voisins.
+        const fades = [];
+        for (const id of TOUS) {
+            const objets = (S[id] || {}).objets || [];
+            const aLui = objets.filter((o) => compte.get(o) === 1).length;
+            const rares = objets.filter((o) => compte.get(o) <= 3).length;
+            if (aLui < 1 || rares < 4) fades.push(`${id} (${aLui} propre(s), ${rares} rare(s))`);
+        }
+        verifier(fades.length === 0,
+            `${fades.length} métier(s) n'ont pas d'univers à eux : ${fades.slice(0, 6).join(", ")} — ` +
+            "il leur faut au moins un objet que personne d'autre n'a, et quatre qui ne traînent pas partout");
+
+        // Et aucun mot ne doit se retrouver partout : un objet présent sur
+        // les trente-six ne distingue rien, il ne fait que peser.
+        const partout = [...compte.entries()].filter(([, n]) => n >= TOUS.length - 2).map(([o]) => o);
+        verifier(partout.length === 0,
+            `objet(s) présent(s) dans presque tous les univers : ${partout.join(", ")} — ` +
+            "ils ne distinguent rien et coûtent des jetons à chaque message");
+    }
+
+    // ── DES VOISINS PROCHES, MAIS PAS LES MÊMES ──────────────────────────
+    //
+    // Un médecin et un dentiste partagent le patient et le rendez-vous ; ils
+    // ne doivent pas pour autant recevoir le même contexte. Idem coiffeur et
+    // institut de beauté. Le garde vérifie les deux sens : un recouvrement
+    // réel, et une différence réelle.
+    for (const [a, b] of [["medecin", "dentiste"], ["coiffeur", "esthetique"], ["fastfood", "patisserie"], ["boutique", "pretaporter"]]) {
+        const oa = new Set((S[a] || {}).objets || []);
+        const ob = new Set((S[b] || {}).objets || []);
+        const communs = [...oa].filter((x) => ob.has(x)).length;
+        const propresA = [...oa].filter((x) => !ob.has(x)).length;
+        const propresB = [...ob].filter((x) => !oa.has(x)).length;
+        verifier(propresA >= 2 && propresB >= 2,
+            `« ${a} » et « ${b} » ont des univers trop semblables (${propresA} et ${propresB} objets propres, ` +
+            `${communs} communs) — deux métiers voisins ne sont pas le même métier`);
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -223,9 +354,20 @@ const PILOTES = ["ecommerce", "restaurant", "grossiste", "location_voitures", "a
     verifier(f && f.secteur && Array.isArray(f.secteur.objets),
         "fiche(\"restaurant\").secteur ne rend pas la spécialisation — un appelant devrait " +
         "aller la chercher lui-même dans une deuxième table");
-    verifier(metiers.fiche("coiffeur") && metiers.fiche("coiffeur").secteur === null,
-        "un métier sans spécialisation ne rend pas `secteur: null` — un appelant qui reçoit " +
-        "undefined finit toujours par écrire sa propre valeur de repli, et elle diverge");
+    // ── CE GARDE A CHANGÉ DE SENS AU CHANTIER 9c-BIS ─────────────────────
+    //
+    // Il exigeait que « coiffeur » rende `secteur: null` — c'était juste tant
+    // que six métiers sur trente-six étaient spécialisés. Les trente-six le
+    // sont désormais : `null` ne veut plus dire « pas encore », il veut dire
+    // « oublié ». Le repli reste écrit dans services/metiers.js pour un métier
+    // futur, mais aucun métier du registre ne doit y tomber.
+    const orphelins = metiers.METIERS.filter((m) => !metiers.fiche(m.id) || metiers.fiche(m.id).secteur === null);
+    verifier(orphelins.length === 0,
+        `${orphelins.length} métier(s) rendent encore secteur:null : ${orphelins.slice(0, 5).map((m) => m.id).join(", ")}`);
+    verifier(/secteur: SECTEURS\[id\] \|\| null/.test(
+        fs.readFileSync(path.join(RACINE, "services", "metiers.js"), "utf8")),
+        "fiche() n'a plus de repli `null` pour un métier sans contexte — un métier ajouté demain " +
+        "rendrait `undefined`, et un appelant qui reçoit undefined finit par écrire sa propre valeur");
 
     // ── CE QUI PART DANS LE PROMPT ───────────────────────────────────────
     //
@@ -237,10 +379,11 @@ const PILOTES = ["ecommerce", "restaurant", "grossiste", "location_voitures", "a
     verifier(bloc && bloc.metier && bloc.cequiCoute,
         "pourLePrompt a perdu ce qu'il transmettait déjà — les trois phrases du métier");
 
-    const sansSecteur = competences.pourLePrompt({ metier: "coiffeur", message: "bonjour" });
-    verifier(sansSecteur && !sansSecteur.secteur,
-        "un métier non spécialisé reçoit quand même un bloc secteur — il serait vide et coûterait " +
-        "des jetons à chaque message");
+    // Et un métier inconnu du registre n'invente rien : c'est le cas qui
+    // reste, et il doit rester silencieux.
+    const inconnu = competences.pourLePrompt({ metier: "ce-metier-nexiste-pas", message: "bonjour" });
+    verifier(!inconnu || !inconnu.secteur,
+        "un métier inconnu du registre reçoit quand même un bloc secteur");
 
     // ── LE PLAFOND, POSÉ SUR UNE MESURE ET NON SUR UNE INTUITION ─────────
     //
@@ -263,9 +406,11 @@ const PILOTES = ["ecommerce", "restaurant", "grossiste", "location_voitures", "a
         `le bloc envoyé à SAMII pèse ${taille} caractères (plafond ${PLAFOND}) — il est sérialisé ` +
         "dans le prompt à chaque message, dans les deux chats");
 
-    // Et aucun secteur ne doit déborder seul.
+    // Et aucun secteur ne doit déborder seul — sur les 36, pas seulement sur
+    // les six : la couverture multiplie par six le nombre de contextes qui
+    // peuvent grossir sans qu'on regarde.
     const gros = [];
-    for (const id of PILOTES) {
+    for (const id of TOUS) {
         const b = competences.pourLePrompt({ metier: id, message: "bonjour" });
         const t = JSON.stringify(b || {}).length;
         if (t > PLAFOND) gros.push(`${id} (${t})`);
@@ -340,10 +485,29 @@ const PILOTES = ["ecommerce", "restaurant", "grossiste", "location_voitures", "a
     for (const m of nonPilotes) {
         const f = metiers.fiche(m.id);
         if (!f || !f.perte || !f.defaut || !f.reponse || !Array.isArray(f.mots)) casses.push(m.id);
-        if (f && f.secteur !== null) casses.push(`${m.id} (secteur inattendu)`);
     }
     verifier(casses.length === 0,
         `métier(s) hors pilotes abîmés : ${casses.slice(0, 5).join(", ")}`);
+
+    // ── LES SIX PILOTES NE SONT PAS RABOTÉS POUR FAIRE ENTRER LES TRENTE ──
+    //
+    // La façon la plus discrète d'échouer 9c-bis : aligner tout le monde par
+    // le bas. Les pilotes gardent donc un contexte NETTEMENT plus fourni —
+    // mesuré, pas espéré.
+    const S = metiers.SECTEURS || {};
+    const poids = (id) => JSON.stringify(S[id] || {}).length;
+    const minPilote = Math.min(...PILOTES.map(poids));
+    const medianeAutres = (() => {
+        const t = nonPilotes.map((m) => poids(m.id)).sort((a, b) => a - b);
+        return t[Math.floor(t.length / 2)];
+    })();
+    verifier(minPilote > medianeAutres,
+        `le plus léger des six pilotes (${minPilote} caractères) n'est pas plus fourni que la médiane ` +
+        `des trente autres (${medianeAutres}) — les pilotes ont été alignés vers le bas`);
+    for (const id of PILOTES) {
+        verifier((S[id].problemes || []).length >= 3 && (S[id].workflows || []).length >= 3,
+            `« ${id} » a perdu la profondeur que 9c lui avait donnée`);
+    }
 
     // Et le seul aiguillage comportemental du projet tient toujours.
     verifier(metiers.estRdv("avocat") && !metiers.estRdv("ecommerce"),
@@ -441,11 +605,30 @@ const PILOTES = ["ecommerce", "restaurant", "grossiste", "location_voitures", "a
         "une action que SAMII ne sait PAS exécuter est annoncée dans la consigne — " +
         "il promettrait un geste qu'il ne peut pas faire");
 
-    // Et un métier non spécialisé reçoit exactement ce qu'il recevait avant.
+    // ── CE GARDE AUSSI A CHANGÉ DE SENS AU CHANTIER 9c-BIS ───────────────
+    //
+    // Il prenait « coiffeur » comme exemple de métier SANS spécialisation.
+    // Coiffeur en a une maintenant, comme les trente-cinq autres : le garde
+    // vérifiait donc l'absence d'une chose désormais présente, et il serait
+    // devenu un garde qui EMPÊCHE la couverture.
+    //
+    // Ce qu'on garde de lui : un métier couvert n'a rien perdu de ce qu'il
+    // avait avant, et son univers est bien le SIEN.
     verifier(/Ce que ça lui coûte/.test(coiffeur),
-        "un métier sans spécialisation a perdu ses trois phrases");
-    verifier(!/les choses s'appellent/.test(coiffeur),
-        "un métier sans spécialisation reçoit quand même un bloc d'univers — il serait vide");
+        "un métier couvert a perdu les trois phrases qu'il avait déjà");
+    verifier(/les choses s'appellent/.test(coiffeur),
+        "« coiffeur » ne reçoit pas d'univers alors que les trente-six sont couverts");
+    verifier(/coloration|fauteuil/.test(coiffeur) && !/ingrédient|variante/.test(coiffeur),
+        "l'univers servi à un coiffeur n'est pas le sien — il a reçu celui d'un autre métier");
+
+    // Le cas qui reste vraiment sans contexte : un métier hors registre. Il
+    // doit recevoir le SAMII générique, sans bloc vide et sans invention.
+    const horsRegistre = await SAMII_PROMPT("test", {
+        audience: "client", metier: "ce-metier-nexiste-pas",
+        competence: competences.pourLePrompt({ metier: "ce-metier-nexiste-pas", message: "bonjour" }),
+    });
+    verifier(!/les choses s'appellent/.test(horsRegistre),
+        "un métier inconnu du registre reçoit quand même un bloc d'univers — il serait vide");
 
     // UN SEUL bloc métier dans la consigne, pas un par secteur. On compte
     // sur la consigne ENTIÈRE : l'en-tête n'est évidemment pas à l'intérieur

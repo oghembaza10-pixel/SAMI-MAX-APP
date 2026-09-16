@@ -326,15 +326,31 @@ const { detect } = require(path.join(RACINE, "brain", "prompts", "sovereign", "t
     verifier(bloc.cequiCoute === metiers.fiche("coiffeur").perte,
         "le bloc recopie une phrase au lieu de la lire dans la source unique");
 
-    // ── LE BLOC RESTE COMPACT ────────────────────────────────────────────
+    // ── LE BLOC RESTE UNE PROJECTION ─────────────────────────────────────
     //
     // `brain/prompts/index.js` sérialise le contexte ENTIER dans le prompt.
     // Tout ce qu'on pose ici est payé en jetons à chaque message, dans les
     // deux chats. Une fiche recopiée en entier, c'est la facture qui monte
     // sans que rien ne le dise.
+    //
+    // ⚠️ LE PLAFOND CHIFFRÉ A DÉMÉNAGÉ, ET C'EST VOLONTAIRE. Il valait 900
+    // ici, posé quand « coiffeur » n'avait pas de contexte métier et que son
+    // bloc pesait 409 caractères. Depuis 9c-bis les trente-six en ont un, et
+    // ce garde est devenu rouge sur une croissance voulue.
+    //
+    // Le maintenir aurait laissé DEUX plafonds pour une même propriété, dans
+    // deux suites, avec deux chiffres — ils auraient divergé au premier
+    // ajustement. Le plafond vit maintenant dans tests/secteurs.test.js, où
+    // il est mesuré sur les trente-six et accompagné de la liste de ce qui ne
+    // doit PAS partir.
+    //
+    // Ce qui reste ici est la propriété que ce fichier est seul à pouvoir
+    // dire : le bloc est une PROJECTION de la fiche, pas la fiche.
     const taille = JSON.stringify(bloc).length;
-    verifier(taille < 900,
-        `le bloc métier pèse ${taille} caractères : il part dans CHAQUE message des deux chats`);
+    const fiche = JSON.stringify(metiers.fiche("coiffeur")).length;
+    verifier(taille < fiche / 2,
+        `le bloc métier pèse ${taille} caractères pour une fiche de ${fiche} : ce n'est plus une ` +
+        "projection, c'est une recopie — et elle part dans CHAQUE message des deux chats");
 
     // ── LA TENSION EST DITE À SAMII ──────────────────────────────────────
     const tendu = C.pourLePrompt({ metier: "ecommerce", message: "j'ai 20 commandes en retard" });
