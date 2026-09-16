@@ -582,6 +582,17 @@ const EN = {
     "Ce que ça coûte": "What it costs",
     "Pourquoi ça arrive": "Why it happens",
     "Ce que SAMII fait": "What SAMII does",
+    // Les intertitres du bloc commun des fiches métier. Seuls les TITRES sont
+    // traduits ici, comme les trois du dessus : le corps du bloc reste en
+    // français, comme le reste de la substance de ces pages. C'est pour ça
+    // qu'elles ne déclarent aucun hreflang — on ne promet pas une traduction
+    // qui n'existe pas.
+    "Comment ça se passe, concrètement": "How it works, concretely",
+    "Comment une commande se passe, concrètement": "How an order works, concretely",
+    "On cherche ce métier sous ces mots": "People search for this trade with these words",
+    "SAMII les reconnaît quand un client écrit avec ses mots à lui, pas avec les vôtres.":
+        "SAMII recognises them when a customer writes in their own words, not yours.",
+    "Questions fréquentes": "Frequently asked questions",
     "Poser la question à SAMII": "Ask SAMII",
     "Racontez votre situation. SAMII connaît déjà votre métier — les prix, la livraison, le paiement à la réception.":
         "Tell it your situation. SAMII already knows your trade — the prices, the delivery, cash on delivery.",
@@ -978,6 +989,13 @@ const AR = {
     "Ce que ça coûte": "ما يكلّفه ذلك",
     "Pourquoi ça arrive": "لماذا يحدث ذلك",
     "Ce que SAMII fait": "ما يفعله SAMII",
+    // Voir la note côté anglais : seuls les intertitres sont traduits.
+    "Comment ça se passe, concrètement": "كيف يجري الأمر عمليًا",
+    "Comment une commande se passe, concrètement": "كيف يجري الطلب عمليًا",
+    "On cherche ce métier sous ces mots": "يبحث الناس عن هذه المهنة بهذه الكلمات",
+    "SAMII les reconnaît quand un client écrit avec ses mots à lui, pas avec les vôtres.":
+        "يتعرّف SAMII عليها عندما يكتب الزبون بكلماته هو، لا بكلماتك.",
+    "Questions fréquentes": "أسئلة شائعة",
     "Poser la question à SAMII": "اسأل SAMII",
     "Racontez votre situation. SAMII connaît déjà votre métier — les prix, la livraison, le paiement à la réception.":
         "اشرح وضعك. SAMII يعرف مهنتك مسبقًا — الأسعار، التوصيل، الدفع عند الاستلام.",

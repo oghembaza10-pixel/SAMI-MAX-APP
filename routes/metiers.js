@@ -104,6 +104,141 @@ function titreEtH1(fiche, L) {
     };
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// LE BLOC COMMUN — DEUX VARIANTES, PAS TRENTE-QUATRE
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ── LE PROBLÈME QU'IL RÉSOUT ─────────────────────────────────────────────
+//
+// Mesuré sur les trente-quatre fiches : 136 à 184 mots de texte visible,
+// médiane 154, dont près de la moitié de décor commun. Une page qui tient en
+// trois phrases ne se classe pas, même quand ces trois phrases sont justes.
+//
+// ── POURQUOI DEUX VARIANTES ET NON TRENTE-QUATRE ─────────────────────────
+//
+// Parce que trente-quatre textes écrits pour remplir seraient trente-quatre
+// mensonges polis. La différence réelle entre ces métiers n'est pas
+// trente-quatre façons de fonctionner : c'est DEUX. Un dentiste et un avocat
+// vendent un créneau ; un restaurant et une boutique vendent un objet qui
+// part. `parcours` porte déjà cette distinction, et le QG s'en sert depuis
+// longtemps pour afficher un calendrier ou des commandes.
+//
+// Écrire deux fois la vérité vaut mieux que trente-quatre fois une variation.
+// Ce que chaque métier a de PROPRE reste ce qu'il a toujours eu : ses trois
+// phrases dans services/metiers.js, et ses mots à lui.
+//
+// ── CE QUI EST ÉCRIT ICI EST DÉJÀ EN PRODUCTION ──────────────────────────
+//
+// Aucune capacité annoncée qui n'existe pas : les canaux, le calendrier, la
+// confirmation avant expédition et le QG sont ceux que brain/prompts/vitrine
+// déclare déjà comme réellement livrés. Un visiteur qui teste doit trouver
+// exactement ce qu'on lui a promis.
+const ETAPES = {
+    rdv: [
+        "Votre page montre vos créneaux libres. Le client choisit le sien, à l'heure qui l'arrange, même la nuit.",
+        "SAMII confirme tout de suite, inscrit le rendez-vous au calendrier et envoie un rappel la veille.",
+        "Une annulation libère le créneau, et SAMII le repropose aux personnes en attente sans que vous fassiez rien.",
+        "Vous retrouvez chaque client, son historique et ses prochains rendez-vous dans votre QG, en un seul endroit.",
+    ],
+    produit: [
+        "Le client commande depuis votre page, ou simplement en écrivant sur WhatsApp, Instagram, Telegram ou Messenger.",
+        "SAMII répond, note l'article et l'adresse, et fait confirmer la commande avant qu'elle parte.",
+        "Le colis part avec son suivi. Le client est prévenu à l'expédition et à l'approche de la livraison.",
+        "Vous retrouvez commandes, clients et chiffre d'affaires dans votre QG, en un seul endroit.",
+    ],
+};
+
+// ── LA FAQ — VISIBLE, ET C'EST TOUT L'INTÉRÊT ────────────────────────────
+//
+// Elle existait déjà, mais UNIQUEMENT en données structurées : deux questions
+// déclarées à Google, jamais montrées au visiteur. C'est exactement ce qu'on
+// vient de refuser pour le fil d'Ariane — déclarer un contenu qu'on
+// n'affiche pas est du balisage trompeur, et Google le sanctionne.
+//
+// Elle est donc affichée, et le JSON-LD est construit à partir de CE tableau :
+// une seule source, impossible que les deux divergent.
+//
+// L'ancienne première question — « qu'est-ce que SAMII change pour ce
+// métier ? », dont la réponse était `metier.reponse` — a disparu. Affichée,
+// elle aurait réimprimé une troisième fois la phrase que l'étape 9a venait
+// de dédoubler, et le pavé « Ce que SAMII fait » la dit déjà.
+const FAQ_COMMUNE = [{
+    q: "Faut-il installer quelque chose ?",
+    r: "Non. SAMII fonctionne depuis une page web et depuis WhatsApp. Vos clients n'ont aucune application à télécharger, et vous non plus.",
+}];
+
+const FAQ = {
+    rdv: [
+        {
+            q: "Comment les rendez-vous arrivent-ils dans mon agenda ?",
+            r: "Le client choisit un créneau que vous avez ouvert. Il s'inscrit au calendrier au moment où il est pris, et vous le voyez arriver en direct dans votre QG.",
+        },
+        {
+            q: "Et si un client annule au dernier moment ?",
+            r: "Le créneau redevient libre et SAMII le propose aux personnes en attente. C'est ce qui transforme une annulation en rendez-vous au lieu d'une heure perdue.",
+        },
+        {
+            q: "Est-ce que je garde la main sur mon agenda ?",
+            r: "Oui. Vous décidez des horaires ouverts, de la durée des rendez-vous et de ce qui reste fermé. SAMII ne place jamais rien en dehors de ce que vous avez ouvert.",
+        },
+        ...FAQ_COMMUNE,
+    ],
+    produit: [
+        {
+            q: "Comment une commande arrive-t-elle jusqu'à moi ?",
+            r: "Depuis votre page, ou depuis un message sur WhatsApp, Instagram, Telegram ou Messenger. SAMII répond, note l'article et l'adresse, et vous la retrouvez écrite dans votre QG.",
+        },
+        {
+            q: "Et si le client ne confirme pas sa commande ?",
+            r: "Elle ne part pas. En paiement à la livraison, c'est ce qui évite les colis qui reviennent : SAMII relance, et un colis non confirmé n'est jamais expédié.",
+        },
+        {
+            q: "Je vends déjà sur Instagram, faut-il tout refaire ?",
+            r: "Non. Vous connectez le compte que vous avez déjà. Vos messages continuent d'arriver au même endroit, SAMII y répond et range les commandes pour vous.",
+        },
+        ...FAQ_COMMUNE,
+    ],
+};
+
+// ── LES MOTS SOUS LESQUELS ON CHERCHE CE MÉTIER ──────────────────────────
+//
+// `VOCABULAIRE` existe depuis longtemps dans services/metiers.js : ce sont
+// les mots avec lesquels un marchand NOMME son activité — « bazin », « wax »,
+// « maquis », « shawarma », « riad », « omra », « tresses », « vidange ». Ils
+// servaient à reconnaître une phrase libre dans le chat, et n'apparaissaient
+// nulle part sur les pages publiques. Or ce sont exactement les mots que les
+// gens tapent dans Google.
+//
+// ── CE QUI EST FAIT, ET CE QUI NE L'EST PAS ──────────────────────────────
+//
+// Ils sont affichés dans une ligne nommée, courte et bornée. Ce n'est pas du
+// bourrage de mots-clés : la liste dit ce qu'elle est, elle est visible, et
+// elle est limitée. Un empilement invisible ou une énumération sans fin
+// serait précisément ce que Google sanctionne.
+//
+//   - le mot égal au libellé est retiré : « Dentiste » suivi de
+//     « dentiste » n'apprend rien à personne ;
+//   - la liste est plafonnée, parce que « prêt-à-porter » en porte quatorze
+//     et qu'une ligne de quatorze mots cesse d'être une information ;
+//   - « autre » n'a aucun mot, et sa page n'affichera simplement pas ce bloc.
+//     Un métier sans vocabulaire est un cas normal, pas une panne.
+const MOTS_AFFICHES_MAX = 8;
+
+function motsAffichables(fiche, L) {
+    // Le trait d'union compte comme une espace ICI — contrairement à
+    // `normaliser()` de services/competences.js, qui le conserve parce qu'il
+    // compare des saisies. On compare des LIBELLÉS : « Prêt-à-porter » et
+    // « prêt à porter » sont le même mot, et l'afficher sous son propre titre
+    // n'apprend rien à personne.
+    const sansAccents = (s) => String(s || "").toLowerCase()
+        .normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/['’-]/g, " ")
+        .replace(/\s+/g, " ").trim();
+    const libelle = sansAccents(L(fiche.label));
+    return (fiche.mots || [])
+        .filter((mot) => sansAccents(mot) !== libelle)
+        .slice(0, MOTS_AFFICHES_MAX);
+}
+
 // ── LA META DESCRIPTION, TAILLÉE POUR CE QUE GOOGLE AFFICHE ──────────────
 //
 // Elle était `perte + reponse` coupée à 300 caractères — huit fiches sur
@@ -149,6 +284,11 @@ router.get("/:id", (req, res, next) => {
         .filter((m) => m.groupe === fiche.groupe && m.id !== fiche.id)
         .slice(0, 8);
 
+    // Le parcours décide de la variante. Une valeur inattendue retombe sur
+    // « produit », comme partout ailleurs dans l'application : une page sans
+    // bloc serait plus grave qu'une page avec le mauvais des deux.
+    const parcours = fiche.parcours === "rdv" ? "rdv" : "produit";
+
     res.render("metier", {
         metier: fiche,
         voisins,
@@ -158,6 +298,10 @@ router.get("/:id", (req, res, next) => {
         canonique: `${BASE}/metiers/${fiche.id}`,
         base: BASE,
         loggedIn: !!req.session?.loggedIn,
+        parcours,
+        etapes: ETAPES[parcours].map((e) => L(e)),
+        faq: FAQ[parcours].map((x) => ({ q: L(x.q), r: L(x.r) })),
+        mots: motsAffichables(fiche, L),
     });
 });
 

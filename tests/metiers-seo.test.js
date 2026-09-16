@@ -234,6 +234,194 @@ async function pret(essais = 40) {
             `${repetees.slice(0, 5).join(", ")} — c'est la seule phrase qui distingue la page de ses ` +
             "voisines, la répéter divise par deux ce qui la rend unique");
 
+        // ── 3 quinquies. LE BLOC COMMUN, ET SES DEUX VARIANTES ───────────
+        //
+        // Il porte « comment ça se passe » et la FAQ. Deux variantes, une par
+        // parcours : un dentiste et un avocat vendent un créneau, un
+        // restaurant et une boutique vendent un objet qui part. Servir la
+        // mauvaise variante ne casse rien — la page s'affiche, elle raconte
+        // simplement la vie de quelqu'un d'autre.
+        {
+            const parcoursDe = new Map(fiches.map((m) => [m.id, m.parcours === "rdv" ? "rdv" : "produit"]));
+            const sansBloc = [];
+            const mauvaiseVariante = [];
+            const faqInvisible = [];
+            const sansMots = [];
+
+            // Signatures : une phrase qui n'existe QUE dans une variante.
+            const SIGNE = {
+                rdv: "Une annulation libère le créneau",
+                produit: "SAMII répond, note l'article et l'adresse",
+            };
+            const oppose = { rdv: "produit", produit: "rdv" };
+
+            // Deux fiches par parcours suffisent à prouver l'aiguillage ; on
+            // passe quand même les trente-quatre, la boucle est bon marché et
+            // c'est le genre d'erreur qui ne touche qu'un métier.
+            for (const m of fiches) {
+                const html = await (await fetch(`${BASE}/metiers/${m.id}`)).text();
+                const p = parcoursDe.get(m.id);
+                const lu = lire(html);
+
+                if (!/class="marche"/.test(html) || !/class="questions"/.test(html)) { sansBloc.push(m.id); continue; }
+                if (!lu.includes(SIGNE[p]) || lu.includes(SIGNE[oppose[p]])) mauvaiseVariante.push(`${m.id} (${p})`);
+
+                // ── LA FAQ DÉCLARÉE EST LA FAQ AFFICHÉE ──────────────────
+                //
+                // Elle ne vivait QUE dans le JSON-LD : deux questions
+                // annoncées à Google, jamais montrées. C'est du balisage
+                // trompeur, la même faute que le fil d'Ariane refusée plus
+                // haut. Le garde compare les deux, question ET réponse.
+                const blocsLd = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((b) => b[1]);
+                let faq = null;
+                try { faq = blocsLd.map((b) => JSON.parse(b)).find((o) => o && o["@type"] === "FAQPage"); } catch { /* signalé ailleurs */ }
+                // Les apostrophes s'écrivent &#39; dans la page et « ' » dans
+                // le JSON : sans cette mise à plat, aucune des deux ne se
+                // retrouve, et le garde crie pour une raison typographique.
+                const plat = (s) => String(s || "").replace(/[’\x27]/g, "'").replace(/\s+/g, " ").trim();
+                const visible = plat(lu.replace(/<head[\s\S]*?<\/head>/i, " ")
+                    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+                    .replace(/<[^>]+>/g, " ").replace(/&[a-z]+;|&#\d+;/gi, " "));
+                const questions = (faq && faq.mainEntity) || [];
+                if (questions.length < 3) faqInvisible.push(`${m.id} : ${questions.length} question(s) déclarée(s)`);
+                for (const q of questions) {
+                    if (!visible.includes(plat(q.name)) ||
+                        !visible.includes(plat(q.acceptedAnswer && q.acceptedAnswer.text))) {
+                        faqInvisible.push(`${m.id} : « ${String(q.name).slice(0, 40)} » déclarée mais pas affichée`);
+                    }
+                }
+
+                // ── LE VOCABULAIRE EST VRAIMENT EXPLOITÉ ─────────────────
+                //
+                // Il vit dans services/metiers.js depuis longtemps — bazin,
+                // wax, maquis, shawarma, riad, omra, tresses, vidange — et
+                // n'apparaissait sur aucune page publique. Ce sont pourtant
+                // les mots que les gens tapent dans Google.
+                // ⚠️ ON REGARDE DANS LE BLOC, PAS DANS LA PAGE. Première
+                // version de ce garde : il cherchait les mots n'importe où
+                // dans le texte visible. Mesuré en supprimant le bloc pour de
+                // vrai, il n'a crié que sur 3 fiches sur 33 — parce que
+                // « consultation », « coiffure » ou « livraison » figurent
+                // déjà dans les phrases du métier. Un garde qui passe quand la
+                // chose qu'il surveille a disparu ne surveille rien.
+                const dispo = (metiers.fiche(m.id).mots || []);
+                if (dispo.length > 1) {
+                    const bloc = plat(((html.match(/<section class="motsdits">([\s\S]*?)<\/section>/) || [])[1] || "")
+                        .replace(/<[^>]+>/g, " ").replace(/&#39;/g, "'").replace(/&[a-z]+;|&#\d+;/gi, " "));
+                    const montres = dispo.filter((mot) => bloc.includes(plat(mot)));
+                    if (montres.length === 0) sansMots.push(m.id);
+                }
+            }
+
+            verifier(sansBloc.length === 0,
+                `le bloc commun (« comment ça se passe » + questions) manque sur : ${sansBloc.join(", ")}`);
+            verifier(mauvaiseVariante.length === 0,
+                `mauvaise variante de parcours sur ${mauvaiseVariante.length} fiche(s) : ${mauvaiseVariante.slice(0, 5).join(", ")} — ` +
+                "la page s'affiche quand même, elle raconte simplement la vie de quelqu'un d'autre");
+            verifier(faqInvisible.length === 0,
+                `${faqInvisible.length} problème(s) de FAQ : ${faqInvisible.slice(0, 3).join(" ; ")} — ` +
+                "déclarer à Google des questions qu'on ne montre pas est du balisage trompeur");
+            verifier(sansMots.length === 0,
+                `le vocabulaire n'est affiché sur aucune de ces fiches : ${sansMots.join(", ")} — ` +
+                "les mots que les gens tapent restent enfermés dans le code");
+
+            // ── ET PAS DE BOURRAGE ───────────────────────────────────────
+            //
+            // Une liste de mots-clés sans fin est exactement ce que Google
+            // sanctionne. Elle est bornée dans routes/metiers.js ; le garde
+            // vérifie que la borne tient sur la fiche qui en a le plus.
+            const htmlPap = lire(await (await fetch(`${BASE}/metiers/pretaporter`)).text());
+            const liste = (htmlPap.match(/class="motsdits__liste"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || "";
+            const combien = (liste.match(/<span>/g) || []).length;
+            verifier(combien > 0 && combien <= 8,
+                `« prêt-à-porter » affiche ${combien} mots (elle en a 14 en réserve) — au-delà de 8 ` +
+                "la ligne cesse d'être une information et devient un empilement de mots-clés");
+
+            // Le mot qui répète le libellé n'apprend rien : « Dentiste » suivi
+            // de « dentiste ».
+            const htmlDent = lire(await (await fetch(`${BASE}/metiers/dentiste`)).text());
+            const listeD = (htmlDent.match(/class="motsdits__liste"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || "";
+            verifier(!/<span>dentiste<\/span>/i.test(listeD),
+                "la liste de mots répète le libellé du métier — « Dentiste » suivi de « dentiste »");
+
+            // ── ET LE CAS QUI SE CACHE DERRIÈRE UN TRAIT D'UNION ─────────
+            //
+            // « Prêt-à-porter » et « prêt à porter » sont le même mot. Le
+            // premier filtre ne le voyait pas : il mettait l'apostrophe à
+            // plat mais pas le tiret, et la fiche affichait son propre titre
+            // en tête de sa liste de mots. Le garde sur « dentiste » ne
+            // pouvait pas l'attraper — ce libellé-là n'a pas de tiret.
+            const listeP = (htmlPap.match(/class="motsdits__liste"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || "";
+            verifier(!/<span>pr[êe]t [àa] porter<\/span>/i.test(listeP),
+                "« prêt à porter » est affiché dans la liste de mots de « Prêt-à-porter » — " +
+                "le trait d'union du libellé cache la répétition");
+
+            // ── UN MÉTIER SANS VOCABULAIRE N'EST PAS UNE PANNE ───────────
+            //
+            // « autre » n'en a aucun. Le bloc doit disparaître, pas s'afficher
+            // vide. On regarde le CORPS : les règles CSS portent les mêmes
+            // noms de classe et feraient passer un garde trop naïf.
+            const corpsAutre = lire(await (await fetch(`${BASE}/metiers/autre`)).text())
+                .replace(/<style[\s\S]*?<\/style>/gi, " ");
+            verifier(!/<section class="motsdits">/.test(corpsAutre),
+                "« autre » n'a aucun vocabulaire et affiche quand même le bloc — une liste vide sous un titre");
+            verifier(/class="marche"/.test(corpsAutre) && /class="questions"/.test(corpsAutre),
+                "« autre » a perdu le bloc commun : l'absence de vocabulaire ne doit emporter que la liste de mots");
+        }
+
+        // ── 3 sexies. LE BLOC COMMUN NE DOIT PAS NOYER LE PROPRE ─────────
+        //
+        // C'est le risque de ce chantier, et il faut le mesurer plutôt que
+        // l'espérer. Mesure avant/après, en 5-grammes :
+        //
+        //   avant 9a   154 mots, 53 % propre  → ≈ 82 mots vraiment à elle
+        //   après 9a   140 mots, 47 % propre  → ≈ 66
+        //   après 9b   389 mots, 20 % propre  → ≈ 78
+        //
+        // La page a triplé, la PART propre a chuté, et la QUANTITÉ propre a
+        // à peine bougé : le bloc commun règle le contenu trop mince, il ne
+        // différencie pas. C'est 9c qui différenciera.
+        //
+        // Le garde porte donc sur l'ABSOLU, pas sur la proportion : chaque
+        // fiche doit garder une quantité de texte qui n'appartient qu'à elle.
+        // Un garde sur la proportion tomberait au premier mot ajouté au bloc
+        // commun, ce qui est un choix, pas une régression. Un garde sur
+        // l'absolu tombe si on rogne ce qui fait la page — ce qui est bien une
+        // régression.
+        {
+            const cinqGrammes = (t) => {
+                const mots = t.toLowerCase().split(/\s+/).filter(Boolean);
+                const out = [];
+                for (let i = 0; i + 5 <= mots.length; i++) out.push(mots.slice(i, i + 5).join(" "));
+                return out;
+            };
+            const nu = (html) => html
+                .replace(/<head[\s\S]*?<\/head>/i, " ").replace(/<script[\s\S]*?<\/script>/gi, " ")
+                .replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<!--[\s\S]*?-->/g, " ")
+                .replace(/<[^>]+>/g, " ").replace(/&[a-z]+;|&#\d+;/gi, " ").replace(/\s+/g, " ").trim();
+
+            const parPage = new Map();
+            const combien = new Map();
+            for (const m of fiches) {
+                const s = cinqGrammes(nu(await (await fetch(`${BASE}/metiers/${m.id}`)).text()));
+                parPage.set(m.id, s);
+                for (const g of new Set(s)) combien.set(g, (combien.get(g) || 0) + 1);
+            }
+            // Mesuré à 66 au plus bas (opticien), 77 en médiane. Le plancher
+            // est posé sous le minimum : calé au ras de la mesure du jour, il
+            // deviendrait rouge pour une reformulation anodine.
+            const PLANCHER_PROPRE = 45;
+            const noyees = [];
+            for (const m of fiches) {
+                const s = parPage.get(m.id);
+                const propres = s.filter((g) => combien.get(g) === 1).length;
+                if (propres < PLANCHER_PROPRE) noyees.push(`${m.id} (${propres})`);
+            }
+            verifier(noyees.length === 0,
+                `${noyees.length} fiche(s) gardent moins de ${PLANCHER_PROPRE} suites de mots qui n'appartiennent ` +
+                `qu'à elles : ${noyees.slice(0, 5).join(", ")} — le bloc commun a noyé ce qui distingue la page`);
+        }
+
         // ── 4. LES DEUX SORTIES ──────────────────────────────────────────
         {
             const html = await (await fetch(`${BASE}/metiers/coiffeur`)).text();

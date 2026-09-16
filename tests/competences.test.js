@@ -72,6 +72,53 @@ const { detect } = require(path.join(RACINE, "brain", "prompts", "sovereign", "t
     const inconnus = Object.keys(metiers.VOCABULAIRE).filter((id) => !metiers.estValide(id));
     verifier(!inconnus.length,
         `le vocabulaire nomme des métiers qui n'existent pas : ${inconnus.join(", ")}`);
+
+    // ── CES MOTS SONT MAINTENANT LUS, PAS SEULEMENT COMPARÉS ─────────────
+    //
+    // Ils étaient écrits sans accents ni apostrophes — « medecin »,
+    // « cabinet d avocat » — parce qu'ils ne servaient qu'à reconnaître ce
+    // qu'on tape. Ils sont désormais AFFICHÉS sur les fiches publiques : ce
+    // sont les mots sous lesquels les clients cherchent le métier. On les a
+    // donc écrits en français correct.
+    //
+    // C'est sûr parce que `normaliser()` s'applique aux deux côtés de la
+    // comparaison : elle met en minuscules, retire les accents et remplace
+    // l'apostrophe par une espace. « médecin » et « medecin » deviennent la
+    // même clé.
+    //
+    // ⚠️ MAIS ELLE NE TOUCHE PAS AU TRAIT D'UNION. Écrire « bien-être » au
+    // lieu de « bien être » donnerait la clé « bien-etre », et le mot ne
+    // serait plus jamais reconnu — sans erreur, sans trace, juste un métier
+    // qu'on ne devine plus. C'est la seule façon dont une correction
+    // d'orthographe peut casser la reconnaissance, donc c'est ce qu'on garde.
+    const avecTiret = [];
+    let motsVus = 0;
+    for (const [id, mots] of Object.entries(metiers.VOCABULAIRE)) {
+        for (const mot of mots) {
+            motsVus++;
+            if (C.normaliser(mot).includes("-")) avecTiret.push(`${id} : « ${mot} »`);
+        }
+    }
+    verifier(avecTiret.length === 0,
+        `${avecTiret.length} mot(s) de vocabulaire gardent un trait d'union une fois normalisés : ` +
+        `${avecTiret.slice(0, 4).join(", ")} — normaliser() ne le remplace pas, contrairement à ` +
+        "l'apostrophe ; ces mots ne seraient plus jamais reconnus dans une phrase libre");
+
+    // Le volume, pour qu'une disparition se voie. Mesuré : 177 mots.
+    verifier(motsVus >= 170,
+        `le vocabulaire ne compte plus que ${motsVus} mots — des entrées ont disparu`);
+
+    // Et chaque mot doit rester utilisable comme clé : normalisé, il ne doit
+    // ni être vide ni garder d'accent.
+    const abimes = [];
+    for (const [id, mots] of Object.entries(metiers.VOCABULAIRE)) {
+        for (const mot of mots) {
+            const n = C.normaliser(mot);
+            if (!n || /[À-ɏ]/.test(n)) abimes.push(`${id} : « ${mot} » → « ${n} »`);
+        }
+    }
+    verifier(abimes.length === 0,
+        `mot(s) inutilisables après normalisation : ${abimes.slice(0, 4).join(", ")}`);
 }
 
 // ══════════════════════════════════════════════════════════════════════════

@@ -76,19 +76,25 @@
     "url": canonique,
 }) %>
 </script>
+<%# La FAQ déclarée est construite depuis LE MÊME tableau que celle qui
+    s'affiche plus bas (`faq`, fourni par la route). Elles ne peuvent donc pas
+    diverger.
+
+    Avant, elle ne vivait QU'ICI : deux questions annoncées à Google, jamais
+    montrées au visiteur. C'est ce que Google appelle du balisage trompeur —
+    la même faute que le fil d'Ariane déclaré sans être affiché, refusée à
+    l'étape 9a. %>
 <script type="application/ld+json">
 <%- JSON.stringify({
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": [{
-        "@type": "Question",
-        "name": L("Qu'est-ce que SAMII change pour ce métier ?"),
-        "acceptedAnswer": { "@type": "Answer", "text": metier.reponse },
-    }, {
-        "@type": "Question",
-        "name": L("Faut-il installer quelque chose ?"),
-        "acceptedAnswer": { "@type": "Answer", "text": L("Non. SAMII fonctionne depuis une page web et depuis WhatsApp. Il n'y a rien à installer.") },
-    }],
+    "mainEntity": faq.map(function (x) {
+        return {
+            "@type": "Question",
+            "name": x.q,
+            "acceptedAnswer": { "@type": "Answer", "text": x.r },
+        };
+    }),
 }) %>
 </script>
 <%# Le fil d'Ariane existait déjà À L'ÉCRAN (<nav class="fil">) mais Google
@@ -190,6 +196,33 @@ a { color: inherit; text-decoration: none; }
     background: linear-gradient(110deg, rgba(61,220,132,.09), var(--panneau) 65%);
 }
 
+/* Le bloc commun. Il réutilise les jetons déjà posés en haut de ce fichier —
+   aucune couleur, aucune police nouvelle : la page doit rester la même page. */
+.marche, .motsdits, .questions { margin: 34px 0; }
+.marche h2, .motsdits h2, .questions h2 {
+    margin: 0 0 14px; font-family: var(--mono); font-size: .66rem;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--tres-doux); font-weight: 500;
+}
+.marche__pas { margin: 0; padding: 0; list-style: none; counter-reset: pas; display: grid; gap: 2px; border-radius: 16px; overflow: hidden; }
+.marche__pas li {
+    counter-increment: pas; position: relative; padding: 17px 22px 17px 54px;
+    background: var(--panneau); font-size: .98rem;
+}
+.marche__pas li::before {
+    content: counter(pas); position: absolute; inset-inline-start: 22px; top: 17px;
+    font-family: var(--mono); font-size: .8rem; color: var(--cyan);
+}
+
+.motsdits__liste { margin: 0 0 10px; font-size: 1rem; line-height: 1.9; color: var(--texte); }
+.motsdits__liste span { color: var(--doux); }
+.motsdits__note { margin: 0; font-size: .85rem; color: var(--tres-doux); }
+
+.questions { display: grid; gap: 2px; border-radius: 16px; }
+.questions h2 { margin-bottom: 14px; }
+.question { padding: 18px 22px; background: var(--panneau); border-radius: 12px; }
+.question h3 { margin: 0 0 6px; font-size: .97rem; font-weight: 600; }
+.question p { margin: 0; font-size: .92rem; color: var(--doux); }
+
 /* Les deux sorties. Elles ne s'adressent pas à la même personne. */
 .sorties { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin: 32px 0; }
 .sortie { display: block; padding: 20px 21px; border-radius: 16px; border: 1px solid var(--ligne); background: var(--panneau); transition: border-color .16s, transform .16s, background .16s; }
@@ -253,6 +286,49 @@ a { color: inherit; text-decoration: none; }
             <p><%= metier.reponse %></p>
         </div>
     </div>
+
+    <%# ── COMMENT ÇA MARCHE — DEUX VARIANTES, PAS TRENTE-QUATRE ──────────
+        Le parcours décide : un dentiste et un avocat vendent un créneau, un
+        restaurant et une boutique vendent un objet qui part. La distinction
+        existait déjà dans services/metiers.js et le QG s'en sert depuis
+        longtemps ; elle sert ici à dire la vérité deux fois plutôt qu'une
+        variation trente-quatre fois. %>
+    <section class="marche">
+        <h2><%= parcours === "rdv"
+            ? L("Comment ça se passe, concrètement")
+            : L("Comment une commande se passe, concrètement") %></h2>
+        <ol class="marche__pas">
+            <% etapes.forEach(function (pas) { %>
+                <li><%= pas %></li>
+            <% }); %>
+        </ol>
+    </section>
+
+    <%# ── LES MOTS SOUS LESQUELS ON CHERCHE CE MÉTIER ────────────────────
+        Ils viennent de VOCABULAIRE, dans services/metiers.js — la table qui
+        sert déjà au chat à reconnaître une activité dans une phrase libre.
+        Rien n'est inventé ici : ce sont les mots que les gens emploient.
+        Le bloc disparaît entièrement pour un métier qui n'en a pas. %>
+    <% if (mots.length) { %>
+    <section class="motsdits">
+        <h2><%= L("On cherche ce métier sous ces mots") %></h2>
+        <p class="motsdits__liste"><% mots.forEach(function (m, i) { %><%= i ? " · " : "" %><span><%= m %></span><% }); %></p>
+        <p class="motsdits__note"><%= L("SAMII les reconnaît quand un client écrit avec ses mots à lui, pas avec les vôtres.") %></p>
+    </section>
+    <% } %>
+
+    <%# ── LA FAQ, AFFICHÉE ───────────────────────────────────────────────
+        Même tableau que le JSON-LD du <head> : ce qui est déclaré est ce qui
+        est montré. %>
+    <section class="questions">
+        <h2><%= L("Questions fréquentes") %></h2>
+        <% faq.forEach(function (x) { %>
+            <div class="question">
+                <h3><%= x.q %></h3>
+                <p><%= x.r %></p>
+            </div>
+        <% }); %>
+    </section>
 
     <div class="sorties">
         <%# Sortie 1 — celui qui découvre, celui qui veut d'abord parler.

@@ -185,47 +185,79 @@ function parGroupe() {
 // exactement ce qui est arrivé trois fois dans ce projet. Un métier sans
 // vocabulaire est un cas normal : il ne sera simplement pas reconnu dans une
 // phrase libre, il reste choisissable dans le menu.
+// ── POURQUOI CES MOTS SONT MAINTENANT ÉCRITS EN FRANÇAIS CORRECT ─────────
+//
+// Ils étaient sans accents et sans apostrophes — « medecin », « patisserie »,
+// « cabinet d avocat » — parce qu'ils ne servaient qu'à RECONNAÎTRE ce qu'on
+// tape, jamais à être lus.
+//
+// Ils sont maintenant lus : la fiche publique de chaque métier les affiche,
+// puisque ce sont les mots sous lesquels ses clients le cherchent. Et
+// « salon de thé » écrit « salon de the » sur une page de vente ne se lit pas
+// comme un choix technique, il se lit comme une faute.
+//
+// ── CE QUE ÇA NE CHANGE PAS, ET POURQUOI C'EST SÛR ───────────────────────
+//
+// services/competences.js est le SEUL consommateur de cette table, et il
+// passe chaque mot par sa fonction `normaliser()` avant de l'indexer — elle
+// met en minuscules, retire les accents (NFD) et remplace les apostrophes par
+// une espace, des deux côtés de la comparaison. « médecin » et « medecin » y
+// deviennent donc la même clé.
+//
+// L'équivalence a été VÉRIFIÉE au moment du changement, mot par mot : les 177
+// entrées normalisent exactement comme avant, aucune exception. Ce que
+// tests/competences.test.js garde ensuite, c'est ce qui pourrait la rompre —
+// voir le piège du trait d'union juste en dessous — et les 211 vérifications
+// de reconnaissance qui passaient déjà passent toujours.
+//
+// ⚠️ DEUX PIÈGES, ÉVITÉS EXPRÈS :
+//   - le TRAIT D'UNION n'est pas une apostrophe. `normaliser` ne le touche
+//     pas : « bien-être » donnerait « bien-etre » au lieu de « bien etre »,
+//     et le mot ne serait plus reconnu. On écrit donc « bien être »,
+//     « prêt à porter », « auto école » — avec des espaces.
+//   - « ecommerce » et « e commerce » restent tels quels : ce sont deux
+//     graphies de saisie, pas une faute à corriger.
 const VOCABULAIRE = {
     dentiste:    ["dentiste", "dentaire", "cabinet dentaire", "orthodontiste"],
-    medecin:     ["medecin", "docteur", "cabinet medical", "generaliste", "consultation"],
-    kine:        ["kine", "kinesitherapeute", "physiotherapie", "reeducation"],
-    laboratoire: ["laboratoire", "labo", "analyses", "prelevement"],
+    medecin:     ["médecin", "docteur", "cabinet médical", "généraliste", "consultation"],
+    kine:        ["kiné", "kinésithérapeute", "physiothérapie", "rééducation"],
+    laboratoire: ["laboratoire", "labo", "analyses", "prélèvement"],
     opticien:    ["opticien", "lunettes", "optique", "verres"],
-    pharmacie:   ["pharmacie", "pharmacien", "parapharmacie", "medicaments"],
-    veterinaire: ["veterinaire", "veto", "clinique animale"],
+    pharmacie:   ["pharmacie", "pharmacien", "parapharmacie", "médicaments"],
+    veterinaire: ["vétérinaire", "véto", "clinique animale"],
 
     // « salon » seul est retiré : mesuré, « mon salon de thé » ressortait aussi
     // en coiffeur. Un mot trop général range les gens dans le mauvais métier.
     coiffeur:    ["coiffeur", "coiffeuse", "coiffure", "salon de coiffure", "tresses", "nattes"],
     barbier:     ["barbier", "barbe", "barber"],
-    esthetique:  ["esthetique", "institut de beaute", "estheticienne", "soin visage", "onglerie", "manucure"],
-    spa:         ["spa", "hammam", "massage", "bien etre"],
+    esthetique:  ["esthétique", "institut de beauté", "esthéticienne", "soin visage", "onglerie", "manucure"],
+    spa:         ["spa", "hammam", "massage", "bien être"],
     salle_sport: ["salle de sport", "musculation", "fitness", "coach sportif", "gym"],
 
     restaurant:  ["restaurant", "restauration", "resto", "maquis", "plats", "cuisine"],
     fastfood:    ["fast food", "fastfood", "burger", "sandwich", "shawarma", "tacos", "pizzeria", "pizza"],
-    patisserie:  ["patisserie", "gateaux", "gateau", "patissier", "boulangerie", "viennoiserie"],
-    cafe:        ["cafe", "salon de the", "cafeteria", "coffee"],
-    traiteur:    ["traiteur", "buffet", "reception", "mariage"],
+    patisserie:  ["pâtisserie", "gâteaux", "gâteau", "pâtissier", "boulangerie", "viennoiserie"],
+    cafe:        ["café", "salon de thé", "cafétéria", "coffee"],
+    traiteur:    ["traiteur", "buffet", "réception", "mariage"],
 
     ecommerce:   ["ecommerce", "e commerce", "vente en ligne", "boutique en ligne", "vends en ligne", "shopify", "dropshipping"],
-    boutique:    ["boutique", "magasin", "commerce de detail", "epicerie", "superette"],
-    pretaporter: ["pret a porter", "vetements", "vetement", "habits", "fringues", "mode", "bazin", "tissu", "tissus", "wax", "pagne", "abaya", "hijab", "chaussures"],
-    electronique: ["electronique", "telephones", "smartphones", "informatique", "ordinateurs", "electromenager"],
-    ameublement: ["ameublement", "meubles", "meuble", "canape", "salon marocain", "decoration", "literie"],
+    boutique:    ["boutique", "magasin", "commerce de détail", "épicerie", "supérette"],
+    pretaporter: ["prêt à porter", "vêtements", "vêtement", "habits", "fringues", "mode", "bazin", "tissu", "tissus", "wax", "pagne", "abaya", "hijab", "chaussures"],
+    electronique: ["électronique", "téléphones", "smartphones", "informatique", "ordinateurs", "électroménager"],
+    ameublement: ["ameublement", "meubles", "meuble", "canapé", "salon marocain", "décoration", "literie"],
 
-    immobilier:  ["immobilier", "agence immobiliere", "location appartement", "vente terrain", "agent immobilier"],
-    autoecole:   ["auto ecole", "autoecole", "permis de conduire", "moniteur"],
-    garage:      ["garage", "mecanicien", "mecanique", "repare des voitures", "reparation auto", "carrosserie", "tolerie", "vidange"],
-    avocat:      ["avocat", "cabinet d avocat", "juridique", "notaire"],
-    comptable:   ["comptable", "comptabilite", "expert comptable", "fiscaliste", "bilan"],
-    photographe: ["photographe", "photographie", "photo", "studio photo", "videaste"],
-    evenementiel: ["evenementiel", "organisation d evenements", "wedding planner", "decoration mariage"],
+    immobilier:  ["immobilier", "agence immobilière", "location appartement", "vente terrain", "agent immobilier"],
+    autoecole:   ["auto école", "autoécole", "permis de conduire", "moniteur"],
+    garage:      ["garage", "mécanicien", "mécanique", "répare des voitures", "réparation auto", "carrosserie", "tôlerie", "vidange"],
+    avocat:      ["avocat", "cabinet d'avocat", "juridique", "notaire"],
+    comptable:   ["comptable", "comptabilité", "expert comptable", "fiscaliste", "bilan"],
+    photographe: ["photographe", "photographie", "photo", "studio photo", "vidéaste"],
+    evenementiel: ["événementiel", "organisation d'événements", "wedding planner", "décoration mariage"],
     livreur:     ["livreur", "livraison", "coursier", "transporteur", "logistique"],
 
-    education:   ["ecole", "formation", "cours", "professeur", "enseignant", "soutien scolaire", "centre de formation"],
-    hotel:       ["hotel", "auberge", "maison d hote", "riad", "hebergement", "chambres"],
-    agence_voyage: ["agence de voyage", "voyages", "omra", "billets d avion", "tourisme"],
+    education:   ["école", "formation", "cours", "professeur", "enseignant", "soutien scolaire", "centre de formation"],
+    hotel:       ["hôtel", "auberge", "maison d'hôte", "riad", "hébergement", "chambres"],
+    agence_voyage: ["agence de voyage", "voyages", "omra", "billets d'avion", "tourisme"],
 };
 
 const DOULEURS = {
