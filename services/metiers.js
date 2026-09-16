@@ -53,11 +53,20 @@ const METIERS = [
     { id: "pretaporter", label: "Prêt-à-porter",         groupe: "Commerce",        icone: "👗", parcours: "produit" },
     { id: "electronique", label: "Électronique / Téléphonie", groupe: "Commerce",   icone: "📱", parcours: "produit" },
     { id: "ameublement", label: "Ameublement / Déco",    groupe: "Commerce",        icone: "🛋️", parcours: "produit" },
+    // Ajouté au chantier 9c : c'est l'un des six secteurs approfondis, et il
+    // n'existait pas. On ne peut pas spécialiser un métier absent, et le
+    // créer ailleurs aurait fabriqué le registre parallèle qu'on refuse.
+    { id: "grossiste",   label: "Grossiste",             groupe: "Commerce",        icone: "📦", parcours: "produit" },
 
     // ── Services ─────────────────────────────────────────────────────────
     { id: "immobilier",  label: "Agence immobilière",    groupe: "Services",        icone: "🏘️", parcours: "rdv" },
     { id: "autoecole",   label: "Auto-école",            groupe: "Services",        icone: "🚗", parcours: "rdv" },
     { id: "garage",      label: "Garage / Mécanique",    groupe: "Services",        icone: "🔧", parcours: "rdv" },
+    // Ajouté au chantier 9c, même raison que « grossiste ». Parcours « rdv » :
+    // ce qui se vend est une PÉRIODE pendant laquelle un véhicule précis est
+    // bloqué. Traité en « produit », son QG afficherait des commandes à
+    // livrer au lieu du planning qui fait tout le métier.
+    { id: "location_voitures", label: "Location de voitures", groupe: "Services",   icone: "🚙", parcours: "rdv" },
     { id: "avocat",      label: "Avocat",                groupe: "Services",        icone: "⚖️", parcours: "rdv" },
     { id: "comptable",   label: "Comptable",             groupe: "Services",        icone: "📊", parcours: "rdv" },
     { id: "photographe", label: "Photographe",           groupe: "Services",        icone: "📷", parcours: "rdv" },
@@ -245,10 +254,16 @@ const VOCABULAIRE = {
     pretaporter: ["prêt à porter", "vêtements", "vêtement", "habits", "fringues", "mode", "bazin", "tissu", "tissus", "wax", "pagne", "abaya", "hijab", "chaussures"],
     electronique: ["électronique", "téléphones", "smartphones", "informatique", "ordinateurs", "électroménager"],
     ameublement: ["ameublement", "meubles", "meuble", "canapé", "salon marocain", "décoration", "literie"],
+    // « gros » seul est écarté, pour la même raison que « salon » plus haut :
+    // un mot trop général range les gens dans le mauvais métier.
+    grossiste:   ["grossiste", "vente en gros", "demi gros", "revendeur", "revendeurs", "dépôt de marchandise", "importateur"],
 
     immobilier:  ["immobilier", "agence immobilière", "location appartement", "vente terrain", "agent immobilier"],
     autoecole:   ["auto école", "autoécole", "permis de conduire", "moniteur"],
     garage:      ["garage", "mécanicien", "mécanique", "répare des voitures", "réparation auto", "carrosserie", "tôlerie", "vidange"],
+    // Aucun mot ne contient « voiture » tout court : « répare des voitures »
+    // appartient au garage, et les deux métiers se confondraient.
+    location_voitures: ["location de voiture", "location de voitures", "louer une voiture", "loue des voitures", "agence de location", "rent a car", "location auto"],
     avocat:      ["avocat", "cabinet d'avocat", "juridique", "notaire"],
     comptable:   ["comptable", "comptabilité", "expert comptable", "fiscaliste", "bilan"],
     photographe: ["photographe", "photographie", "photo", "studio photo", "vidéaste"],
@@ -290,11 +305,13 @@ const DOULEURS = {
     pretaporter: { perte: "Les retours pour taille représentent l'essentiel des colis qui reviennent.", defaut: "La cliente commande sans savoir si ça lui ira.", reponse: "Guide des tailles rattaché à chaque article, et SAMII répond aux questions de taille avant la commande." },
     electronique:{ perte: "Les questions techniques avant achat partent en discussions sans fin.", defaut: "Chaque client repose les mêmes questions en message privé.", reponse: "SAMII connaît vos fiches produit et répond, avec le stock et la garantie." },
     ameublement: { perte: "Une livraison volumineuse ratée se repaie en entier.", defaut: "Les créneaux de livraison se conviennent au téléphone.", reponse: "Créneau choisi par le client, confirmé la veille, avec l'adresse et l'étage." },
+    grossiste:   { perte: "Un prix accordé de tête sur un gros volume mange la marge de tout le lot.", defaut: "Les tarifs par quantité vivent dans la tête du patron et dans d'anciens bons.", reponse: "Chaque client professionnel a sa grille, et le bon prix s'applique au bon volume." },
 
     // ── Services ─────────────────────────────────────────────────────────
     immobilier:  { perte: "Les visites qui ne mènent nulle part mangent les journées.", defaut: "Tout le monde visite, y compris ceux qui ne peuvent pas acheter.", reponse: "SAMII qualifie budget et financement avant de poser une visite au calendrier." },
     autoecole:   { perte: "Une heure de conduite annulée le matin même est une heure perdue.", defaut: "Les annulations arrivent par appel, trop tard pour remplacer.", reponse: "Annulation en ligne et créneau reproposé automatiquement aux élèves en attente." },
     garage:      { perte: "Les clients rappellent dix fois pour savoir si la voiture est prête.", defaut: "L'avancement ne se sait qu'en appelant l'atelier.", reponse: "Le client suit l'état de sa réparation et reçoit le devis à valider." },
+    location_voitures: { perte: "Une voiture promise deux fois le même week-end, c'est un client perdu et une réputation avec.", defaut: "Les réservations se notent sur un cahier, et personne ne voit le planning des autres véhicules.", reponse: "Le planning de chaque véhicule est à jour en direct, et une date déjà prise ne peut plus être promise." },
     avocat:      { perte: "Les premiers rendez-vous sans dossier sérieux occupent les créneaux utiles.", defaut: "Toute demande devient un rendez-vous.", reponse: "SAMII recueille la nature du litige et les pièces avant de proposer un créneau." },
     comptable:   { perte: "Courir après les pièces de chaque client coûte plus que la saisie.", defaut: "Les relances se font une par une, à la main.", reponse: "Relance automatique par client, avec la liste de ce qui manque." },
     photographe: { perte: "Les dates se réservent sans acompte et s'annulent sans coût.", defaut: "La date est bloquée sur une simple promesse.", reponse: "Devis, acompte en ligne et date confirmée seulement une fois payée." },
@@ -310,6 +327,214 @@ const DOULEURS = {
     autre:       { perte: "Le temps passé à répéter les mêmes réponses ne se facture jamais.", defaut: "Chaque client pose les mêmes questions, une par une.", reponse: "SAMII apprend votre activité et répond à votre place, avec vos mots." },
 };
 
+// ══════════════════════════════════════════════════════════════════════════
+// LA SPÉCIALISATION — LE MÉTIER DEVIENT UN CONTEXTE OPÉRATIONNEL
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ── CE QUE LE MÉTIER FAISAIT, MESURÉ AVANT D'ÉCRIRE UNE LIGNE ────────────
+//
+//   • trois phrases (perte / défaut / réponse) poussées dans le prompt par
+//     services/competences.js ;
+//   • UN aiguillage à deux valeurs — `parcours`, rdv ou produit — et c'est
+//     le seul usage comportemental du métier dans tout le projet ;
+//   • une liste de mots, pour le reconnaître dans une phrase libre.
+//
+// C'est réel, et ça ne fait pas un contexte opérationnel. Un e-commerçant et
+// un restaurateur recevaient le même SAMII à deux phrases près, alors que
+// « stock » ne désigne pas la même chose chez eux : des références en rayon
+// d'un côté, des matières premières périssables de l'autre. C'est CETTE
+// différence-là que cette table porte.
+//
+// ── POURQUOI ICI, ET NULLE PART AILLEURS ─────────────────────────────────
+//
+// Parce que ce fichier est la source unique des métiers. Un second fichier
+// de spécialisation aurait divergé de la liste au premier métier ajouté —
+// c'est exactement ce qui est arrivé trois fois dans ce projet (la liste des
+// métiers en double, le vocabulaire, les métiers du Hub).
+//
+// La table ne redéclare donc NI le libellé, NI le parcours, NI les mots :
+// tout ça est déjà au-dessus, et `fiche()` assemble. Deux endroits qui
+// portent le nom d'un métier, c'est un endroit qu'on oubliera de corriger.
+//
+// ── SIX SECTEURS, PAS TRENTE-QUATRE, ET C'EST VOULU ──────────────────────
+//
+// Six secteurs réellement approfondis valent mieux que trente-quatre
+// remplis à moitié. Un métier sans spécialisation est un cas NORMAL :
+// `fiche()` rend `secteur: null`, tout continue comme avant, et les
+// vingt-huit autres s'industrialisent un par un sans big bang.
+//
+// ── LA DISTINCTION QUI COMPTE LE PLUS : COMPRENDRE ≠ FAIRE ───────────────
+//
+// Chaque action porte `fait` : le nom de l'outil qui l'exécute VRAIMENT
+// (ceux de config/niveaux.js), ou `null`. « Vérifie mon stock » se comprend
+// et se discute ; aucun outil ne le fait aujourd'hui, et l'écrire `null` est
+// la seule façon honnête de le dire. Le jour où l'outil existera, une seule
+// ligne changera ici.
+//
+// Même règle pour les outils : `outilsDuSecteur` sont ceux que le métier
+// CONNAÎT (il peut nous en parler), `integrations` ceux que SAMII branche
+// vraiment — les identifiants de routes/connector.js, et rien d'autre.
+// Annoncer un branchement qu'on n'a pas est la promesse la plus chère du
+// produit.
+const SECTEURS = {
+    // ── 1. E-COMMERCE ───────────────────────────────────────────────────
+    ecommerce: {
+        description: "Vente en ligne de produits physiques, expédiés au client, très souvent payés à la livraison.",
+        contexte: "Le paiement à la livraison domine : la marge ne se joue pas à la vente mais au taux de colis qui reviennent. Un colis refusé coûte l'aller, le retour, et le produit immobilisé.",
+        objets: ["produit", "variante", "référence", "commande", "client", "fournisseur", "colis", "paiement"],
+        donnees: ["quantité disponible par variante", "prix d'achat et prix de vente", "marge unitaire", "frais de livraison par wilaya", "taux de colis retournés", "délai du transporteur", "source de la commande"],
+        problemes: ["les colis qui reviennent non payés", "les commandes non confirmées expédiées quand même", "les ruptures sur les références qui tournent", "la marge mangée par les frais de retour", "les questions de taille et de disponibilité répétées en message privé"],
+        actions: [
+            { dire: "confirme cette commande", fait: "confirmer_commande" },
+            { dire: "annule cette commande", fait: "annuler_commande" },
+            { dire: "fais-moi le point de la journée", fait: "resume_journee" },
+            { dire: "prépare un post pour ce produit", fait: "preparer_publication" },
+            { dire: "vérifie mon stock sur cette référence", fait: null },
+            { dire: "calcule ma marge réelle sur ce produit", fait: null },
+            { dire: "relance les paniers abandonnés", fait: null },
+        ],
+        workflows: [
+            "produit → commande reçue → confirmation du client → expédition → suivi du colis → encaissement",
+            "colis retourné → motif → recontact du client → remise en stock",
+            "rupture annoncée → commande fournisseur → réception → remise en ligne",
+        ],
+        outilsDuSecteur: ["Shopify", "WooCommerce", "Instagram", "Facebook", "WhatsApp", "Yalidine", "tableur de stock"],
+        integrations: ["shopify", "woocommerce", "instagram", "facebook", "whatsapp", "telegram", "yalidine"],
+        memoire: ["ce qu'il vend et à quel prix", "son transporteur habituel et ses délais", "les wilayas où il livre", "son taux de retour", "ses fournisseurs"],
+        expertise: "Ramène toujours la conversation au colis qui revient : c'est là que part l'argent. Avant de parler publicité ou de nouveaux produits, demande le taux de confirmation et le taux de retour. Chiffre en dinars ou en francs CFA, jamais en pourcentages seuls.",
+    },
+
+    // ── 2. RESTAURANT ───────────────────────────────────────────────────
+    restaurant: {
+        description: "Préparation et vente de plats sur place, à emporter ou en livraison, à partir de matières premières périssables.",
+        contexte: "Ici le stock est vivant : il se périme. Le coût d'un plat n'est pas son prix d'achat mais la somme de ses ingrédients, et il bouge chaque semaine avec le marché.",
+        objets: ["plat", "carte", "recette", "ingrédient", "matière première", "fournisseur", "commande", "service", "perte"],
+        donnees: ["coût matière par plat", "quantité d'ingrédients restante", "date de péremption", "prix d'achat au marché", "pertes de la semaine", "plats les plus vendus", "affluence par service"],
+        problemes: ["les commandes prises au téléphone pendant le coup de feu", "les matières premières jetées en fin de semaine", "un plat vendu moins cher que ce qu'il coûte", "les ruptures en plein service", "les prix fournisseurs qui montent sans que la carte bouge"],
+        actions: [
+            { dire: "fais-moi le point de la journée", fait: "resume_journee" },
+            { dire: "confirme cette commande", fait: "confirmer_commande" },
+            { dire: "prépare un post pour le plat du jour", fait: "preparer_publication" },
+            { dire: "combien me coûte ce plat ?", fait: null },
+            { dire: "qu'est-ce qu'il me manque pour demain ?", fait: null },
+            { dire: "combien j'ai perdu cette semaine ?", fait: null },
+        ],
+        workflows: [
+            "recette → ingrédients → coût matière → prix de vente → marge du plat",
+            "commande reçue → préparation → service ou livraison → encaissement",
+            "achat au marché → entrée en matière première → consommation par les recettes → perte ou vente",
+        ],
+        outilsDuSecteur: ["carte papier ou QR", "cahier de marché", "caisse", "Instagram", "WhatsApp", "plateformes de livraison"],
+        integrations: ["instagram", "facebook", "whatsapp", "telegram"],
+        memoire: ["sa carte et ses plats", "ses fournisseurs et leurs jours de livraison", "ses heures de rush", "ce qu'il jette le plus souvent", "ses prix d'achat habituels"],
+        expertise: "Quand il dit « stock », il parle d'ingrédients qui se périment, jamais de références en rayon. Raisonne en coût matière avant de parler de prix de vente, et en jours avant péremption avant de parler de quantité. Ne propose jamais d'augmenter le volume sans avoir regardé les pertes.",
+    },
+
+    // ── 3. GROSSISTE ────────────────────────────────────────────────────
+    grossiste: {
+        description: "Vente de marchandise en volume à des clients professionnels — revendeurs, boutiques, restaurants — à des tarifs qui dépendent de la quantité.",
+        contexte: "Le client n'est pas un particulier mais un commerce, qui revend derrière. Le prix n'est pas un prix : c'est une grille par palier de quantité, souvent négociée client par client, et un point de marge se paie sur tout le lot.",
+        objets: ["article", "lot", "palier de quantité", "client professionnel", "commande en volume", "fournisseur", "dépôt", "facture", "encours"],
+        donnees: ["prix par palier de quantité", "quantité en dépôt", "minimum de commande", "encours et impayés par client", "délai de paiement accordé", "rotation par article", "prix d'achat à l'import"],
+        problemes: ["un prix accordé de tête qui mange la marge du lot", "les clients qui paient en retard pendant qu'on avance la marchandise", "le dépôt qui dort sur des références qui ne tournent pas", "les commandes en dessous du minimum acceptées quand même", "les grilles de prix qui vivent dans la tête du patron"],
+        actions: [
+            { dire: "confirme cette commande", fait: "confirmer_commande" },
+            { dire: "envoie la facture à ce client", fait: "envoyer_facture" },
+            { dire: "fais-moi le point de la journée", fait: "resume_journee" },
+            { dire: "quel prix pour ce client à cette quantité ?", fait: null },
+            { dire: "qui me doit de l'argent ?", fait: null },
+            { dire: "qu'est-ce qui dort dans mon dépôt ?", fait: null },
+        ],
+        workflows: [
+            "client professionnel → grille de prix → commande en volume → facture → livraison → encaissement",
+            "palier de quantité franchi → prix unitaire qui baisse → marge à revérifier sur le lot entier",
+            "encours qui monte → relance → blocage des nouvelles commandes",
+        ],
+        outilsDuSecteur: ["catalogue tarifaire", "bons de commande", "logiciel de facturation", "WhatsApp", "tableur d'encours"],
+        integrations: ["whatsapp", "telegram", "gmail"],
+        memoire: ["ses paliers de quantité", "les conditions accordées à chaque client professionnel", "ses délais de paiement", "ses articles qui tournent", "ses fournisseurs à l'import"],
+        expertise: "Ne parle jamais d'un prix sans demander la quantité et le client : les deux ensemble donnent le prix, séparément ils ne veulent rien dire. Traite l'encours comme de l'argent déjà sorti. Un client professionnel se garde par la régularité des conditions, pas par une remise ponctuelle.",
+    },
+
+    // ── 4. LOCATION DE VOITURES ─────────────────────────────────────────
+    location_voitures: {
+        description: "Mise à disposition de véhicules sur une période — un départ, un retour, un état des lieux des deux côtés.",
+        contexte: "Ce qui se vend n'est pas un objet mais une PÉRIODE pendant laquelle un véhicule précis est bloqué. Le même véhicule promis deux fois sur les mêmes dates est la faute qui coûte le plus cher, et elle ne se voit qu'au moment du départ.",
+        objets: ["véhicule", "disponibilité", "réservation", "contrat", "caution", "état des lieux", "client", "entretien"],
+        donnees: ["date de départ et date de retour", "tarif par jour et dégressif", "kilométrage au départ et au retour", "montant de la caution", "franchise d'assurance", "carburant au départ", "prochaine échéance d'entretien", "papiers du véhicule"],
+        problemes: ["le même véhicule réservé deux fois sur les mêmes dates", "les retours en retard qui décalent la réservation suivante", "les dégâts constatés après coup, sans état des lieux au départ", "les cautions qu'on rend ou qu'on garde sans preuve", "l'entretien qui tombe pendant une location"],
+        actions: [
+            { dire: "propose-lui des créneaux", fait: "proposer_creneaux_rdv" },
+            { dire: "bloque cette réservation", fait: "prendre_rendez_vous" },
+            { dire: "fais-moi le point de la journée", fait: "resume_journee" },
+            { dire: "quelles voitures sont libres ce week-end ?", fait: null },
+            { dire: "combien pour cinq jours sur ce modèle ?", fait: null },
+            { dire: "quel véhicule doit passer à l'entretien ?", fait: null },
+        ],
+        workflows: [
+            "demande → véhicule disponible sur la période → devis → réservation → contrat → état des lieux de départ → retour → état des lieux → caution rendue",
+            "retour en retard → réservation suivante menacée → véhicule de remplacement ou décalage",
+            "kilométrage franchi → entretien dû → véhicule retiré du planning",
+        ],
+        outilsDuSecteur: ["planning des véhicules", "contrat de location papier", "état des lieux photo", "WhatsApp", "Facebook"],
+        integrations: ["whatsapp", "facebook", "instagram", "telegram", "google"],
+        memoire: ["sa flotte et les modèles", "ses tarifs par jour et par durée", "ses cautions habituelles", "ses conditions de kilométrage", "ses périodes de forte demande"],
+        expertise: "Pense toujours en PÉRIODE, jamais en quantité : la première question est « du quand au quand », la deuxième « quel véhicule ». Ne confirme jamais une date sans avoir vérifié le retour de la réservation précédente. Rappelle l'état des lieux et la caution avant le départ, pas après le retour.",
+    },
+
+    // ── 5. AVOCAT ───────────────────────────────────────────────────────
+    avocat: {
+        description: "Défense et conseil juridique, organisés autour de dossiers qui avancent au rythme d'échéances imposées de l'extérieur.",
+        contexte: "Le temps n'appartient pas au cabinet : les dates viennent du tribunal et de la loi. Une échéance manquée n'est pas un retard, c'est un droit perdu — et elle ne se rattrape pas.",
+        objets: ["client", "dossier", "affaire", "audience", "échéance", "acte", "pièce", "juridiction", "adversaire"],
+        donnees: ["date d'audience", "délai de recours", "nature du litige", "pièces reçues et pièces manquantes", "juridiction saisie", "étape de la procédure", "honoraires convenus"],
+        problemes: ["les premiers rendez-vous sans dossier sérieux qui occupent les créneaux utiles", "les pièces que le client n'envoie jamais", "deux audiences le même matin dans deux tribunaux", "les délais de recours qui courent pendant qu'on attend une pièce", "les clients qui appellent pour savoir où en est leur dossier"],
+        actions: [
+            { dire: "propose-lui des créneaux", fait: "proposer_creneaux_rdv" },
+            { dire: "prends ce rendez-vous", fait: "prendre_rendez_vous" },
+            { dire: "écris-lui pour réclamer les pièces", fait: "envoyer_email" },
+            { dire: "mets cette audience à mon agenda", fait: "creer_evenement_agenda" },
+            { dire: "quelles échéances tombent cette semaine ?", fait: null },
+            { dire: "qu'est-ce qui manque dans ce dossier ?", fait: null },
+        ],
+        workflows: [
+            "client → dossier ouvert → pièces réclamées → acte rédigé → juridiction saisie → audience → décision → suivi",
+            "échéance identifiée → pièces manquantes → relance du client → dépôt avant la date",
+            "demande entrante → nature du litige qualifiée → rendez-vous ou refus argumenté",
+        ],
+        outilsDuSecteur: ["logiciel de gestion de cabinet", "agenda des audiences", "dossier papier", "e-mail", "Gmail", "Google Agenda"],
+        integrations: ["gmail", "google", "whatsapp"],
+        memoire: ["ses domaines de droit", "les juridictions où il plaide", "ses échéances récurrentes", "ses honoraires habituels", "la liste de pièces qu'il demande à chaque type d'affaire"],
+        expertise: "La date commande tout : avant de parler du fond, demande l'échéance et la juridiction. Distingue toujours ce qui manque au dossier de ce qui est en attente chez un tiers. Ne donne jamais d'avis juridique à la place de l'avocat — organise son dossier, ne le plaide pas.",
+    },
+
+    // ── 6. COMPTABLE ────────────────────────────────────────────────────
+    comptable: {
+        description: "Tenue de comptabilité et déclarations pour des clients professionnels, au rythme d'échéances fiscales fixes.",
+        contexte: "Le calendrier est le même pour tous les clients en même temps : les échéances déclaratives tombent groupées, et c'est la course aux pièces qui coûte, pas la saisie.",
+        objets: ["client", "dossier", "pièce comptable", "facture", "écriture", "échéance", "déclaration", "rapprochement", "bilan"],
+        donnees: ["date limite de déclaration", "pièces reçues et pièces manquantes par client", "régime fiscal du client", "période comptable", "écarts de rapprochement bancaire", "chiffre d'affaires déclaré", "acomptes versés"],
+        problemes: ["courir après les pièces de chaque client, une par une", "les échéances qui tombent toutes la même semaine", "les relevés bancaires qui ne tombent pas juste", "les clients qui envoient des photos illisibles à la dernière minute", "les régimes fiscaux différents d'un client à l'autre"],
+        actions: [
+            { dire: "écris-lui pour réclamer les pièces", fait: "envoyer_email" },
+            { dire: "prépare-moi un tableau de suivi", fait: "creer_rapport_sheets" },
+            { dire: "envoie la facture à ce client", fait: "envoyer_facture" },
+            { dire: "mets cette échéance à mon agenda", fait: "creer_evenement_agenda" },
+            { dire: "quels clients n'ont pas encore envoyé leurs pièces ?", fait: null },
+            { dire: "quelles déclarations tombent ce mois-ci ?", fait: null },
+        ],
+        workflows: [
+            "pièce reçue → dossier client → écriture → rapprochement → déclaration → dépôt → archivage",
+            "échéance approchante → liste des pièces manquantes → relance par client → dépôt avant la date",
+            "écart de rapprochement → pièce manquante ou double → correction → clôture de la période",
+        ],
+        outilsDuSecteur: ["logiciel comptable", "portail de déclaration", "relevés bancaires", "tableur de suivi", "Gmail", "Google Drive"],
+        integrations: ["gmail", "google", "whatsapp"],
+        memoire: ["ses clients et leur régime fiscal", "ses échéances récurrentes", "la liste de pièces attendue par type de client", "ses logiciels", "ses périodes de rush"],
+        expertise: "Raisonne par ÉCHÉANCE et par CLIENT, dans cet ordre : une date qui approche, puis la liste de ce qui manque chez chacun. Ne parle jamais de saisie sans avoir d'abord réglé la collecte des pièces, qui est le vrai coût. Ne donne aucun conseil fiscal à la place du comptable.",
+    },
+};
+
 // Le contenu d'un métier, prêt pour sa page. `null` quand le métier n'existe
 // pas — l'appelant doit répondre 404 plutôt que de servir une page à moitié
 // vide, qui serait indexée par Google telle quelle.
@@ -323,7 +548,11 @@ function fiche(id) {
     // vocabulaire rend un tableau vide, jamais `undefined` — un appelant qui
     // reçoit `undefined` finit toujours par écrire sa propre valeur de repli,
     // et elle diverge.
-    return { ...m, ...d, mots: VOCABULAIRE[id] || [] };
+    // `secteur` voyage AVEC la fiche, comme `mots` : un appelant qui a la
+    // fiche a TOUT le métier, et n'a jamais à connaître une deuxième table.
+    // `null` explicite plutôt qu'absent — un appelant qui reçoit `undefined`
+    // finit toujours par écrire sa propre valeur de repli, et elle diverge.
+    return { ...m, ...d, mots: VOCABULAIRE[id] || [], secteur: SECTEURS[id] || null };
 }
 
 // Les métiers qui ont une page publique. Sert au plan du site et au hub : un
@@ -333,4 +562,4 @@ function avecFiche() {
     return METIERS.filter(m => DOULEURS[m.id]);
 }
 
-module.exports = { METIERS, IDS, IDS_RDV, DOULEURS, VOCABULAIRE, estValide, estRdv, label, icone, parGroupe, fiche, avecFiche };
+module.exports = { METIERS, IDS, IDS_RDV, DOULEURS, VOCABULAIRE, SECTEURS, estValide, estRdv, label, icone, parGroupe, fiche, avecFiche };

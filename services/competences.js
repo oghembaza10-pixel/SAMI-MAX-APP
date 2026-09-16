@@ -266,6 +266,41 @@ function pourLePrompt({ metier = null, message = "" } = {}) {
         bloc.cequiCloche = a.fiche.defaut;
         bloc.cequiMarche = a.fiche.reponse;
     }
+    // ── LE SECTEUR, EN PROJECTION — JAMAIS EN ENTIER ─────────────────────
+    //
+    // Six métiers portent maintenant un contexte opérationnel complet dans
+    // services/metiers.js : objets, données, problèmes, actions, workflows,
+    // outils, mémoire, expertise. Recopié tel quel, ce bloc pèse plusieurs
+    // milliers de caractères — payés à CHAQUE message, dans les deux chats,
+    // pour une information dont l'essentiel ne sert pas au tour en cours.
+    //
+    // On envoie donc ce qui change la RÉPONSE, et rien d'autre :
+    //
+    //   • `univers`   : les objets du métier. C'est eux qui font que
+    //                   « stock » veut dire ingrédients chez un restaurateur
+    //                   et références chez un e-commerçant. C'est le cœur.
+    //   • `regarder`  : les données à demander avant de conclure.
+    //   • `façon`     : comment raisonner — la ligne d'expertise.
+    //   • `sait_faire`: les actions que SAMII exécute VRAIMENT ici, nommées
+    //                   par leur outil. Ce qu'il ne sait que comprendre n'a
+    //                   pas besoin d'être annoncé : il en parlera très bien
+    //                   sans qu'on le lui dise, et l'annoncer ferait croire
+    //                   qu'il sait le faire.
+    //
+    // Les problèmes, les workflows et la mémoire restent lisibles par le
+    // reste du produit via `metiers.fiche(id).secteur` — ils ne partent pas
+    // dans le prompt tant qu'aucun tour de conversation n'en a besoin.
+    const s = a.fiche && a.fiche.secteur;
+    if (s) {
+        bloc.secteur = {
+            univers: s.objets,
+            regarder: (s.donnees || []).slice(0, 5),
+            façon: s.expertise,
+        };
+        const faisables = (s.actions || []).filter((x) => x && x.fait).map((x) => x.fait);
+        if (faisables.length) bloc.secteur.sait_faire = [...new Set(faisables)];
+    }
+
     // La tension, quand il y en a une. C'est l'information la plus utile du
     // bloc : elle dit à SAMII de ne pas répondre au métier mais à la
     // question.

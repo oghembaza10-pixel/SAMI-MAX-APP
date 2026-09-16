@@ -49,10 +49,18 @@ const { detect } = require(path.join(RACINE, "brain", "prompts", "sovereign", "t
 // 1. AUCUNE RÉGRESSION SUR LES 34 MÉTIERS
 // ══════════════════════════════════════════════════════════════════════════
 {
-    verifier(metiers.METIERS.length === 34,
-        `${metiers.METIERS.length} métiers au lieu de 34 : le chantier 9 en aurait perdu ou inventé`);
-    verifier(metiers.avecFiche().length === 34,
-        `${metiers.avecFiche().length} métiers ont une fiche sur 34 : une page publique tomberait`);
+    // 34 au chantier 9, puis 36 : le chantier 9c a ajouté « grossiste » et
+    // « location_voitures », deux des six secteurs qu'il approfondit et qui
+    // n'existaient pas. Les créer ailleurs aurait fabriqué le registre
+    // parallèle que ce projet a déjà payé trois fois.
+    //
+    // Le nombre est FIGÉ, pas « au moins » : c'est ce qui fait crier quand
+    // quelqu'un en perd un ou en ajoute un sans y penser.
+    verifier(metiers.METIERS.length === 36,
+        `${metiers.METIERS.length} métiers au lieu de 36 : le registre en aurait perdu ou inventé`);
+    verifier(metiers.avecFiche().length === metiers.METIERS.length,
+        `${metiers.avecFiche().length} fiches pour ${metiers.METIERS.length} métiers : un métier ` +
+        "listé sans fiche répond 404 sur sa page publique");
 
     for (const m of metiers.METIERS) {
         const f = metiers.fiche(m.id);

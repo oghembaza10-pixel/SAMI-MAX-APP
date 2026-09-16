@@ -131,6 +131,34 @@ ${[
         context.competence.cequiCoute ? `Ce que ça lui coûte quand ça coince : ${context.competence.cequiCoute}` : "",
         context.competence.cequiCloche ? `Ce qui cloche presque toujours chez eux : ${context.competence.cequiCloche}` : "",
         context.competence.cequiMarche ? `Ce qui règle ça : ${context.competence.cequiMarche}` : "",
+        // ── LE CONTEXTE OPÉRATIONNEL, QUAND LE SECTEUR EN A UN ───────────
+        //
+        // Six métiers en portent un (chantier 9c). Il arrive PAR LE CONTEXTE,
+        // déjà projeté par services/competences.js — ce fichier ne recharge
+        // aucune table de secteurs, sinon le cerveau se mettrait à connaître
+        // le registre des métiers et on aurait deux sources.
+        //
+        // `univers` est la ligne qui fait tout le travail : elle dit que
+        // « stock » veut dire ingrédients chez un restaurateur et références
+        // chez un e-commerçant. Sans elle, le même mot recevrait la même
+        // réponse dans les deux bouches.
+        context.competence.secteur?.univers?.length
+            ? `Dans ce métier, les choses s'appellent : ${context.competence.secteur.univers.join(", ")}. `
+              + "Emploie CES mots-là, et comprends les siens dans ce sens-là."
+            : "",
+        context.competence.secteur?.regarder?.length
+            ? `Ce qu'il faut regarder avant de conclure : ${context.competence.secteur.regarder.join(" ; ")}.`
+            : "",
+        context.competence.secteur?.façon
+            ? `Comment raisonner ici : ${context.competence.secteur.façon}`
+            : "",
+        // Ce que tu sais FAIRE ici, par opposition à ce dont tu sais parler.
+        // La liste ne contient que des outils réellement disponibles :
+        // annoncer un geste qu'on ne sait pas faire est pire que se taire.
+        context.competence.secteur?.sait_faire?.length
+            ? `Dans ce métier, tu sais faire toi-même : ${context.competence.secteur.sait_faire.join(", ")}. `
+              + "Pour le reste, tu aides à réfléchir — tu ne promets aucun geste que tu ne peux pas exécuter."
+            : "",
         context.competence.attention || "",
     ].filter(Boolean).join("\n")}
 
