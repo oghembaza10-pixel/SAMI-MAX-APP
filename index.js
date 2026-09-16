@@ -202,24 +202,60 @@ app.get("/sitemap.xml", (req, res) => {
     // 23 % en anglais, et ce résidu est la marque et les chiffres). Le
     // paramètre `traduite` porte cette distinction, page par page, au lieu
     // de l'appliquer en bloc.
-    const entree = (chemin, priorite, frequence, traduite) => {
+    // ── lastmod — CE QU'IL DIT, ET CE QU'IL NE PEUT PAS DIRE ────────────
+    //
+    // Il manquait : le plan ne donnait que changefreq et priority, deux
+    // indications que Google déclare ignorer. lastmod est la seule des trois
+    // qu'il lit vraiment, et elle sert à ne pas faire recharger trente-quatre
+    // pages qui n'ont pas bougé.
+    //
+    // Il est CALCULÉ, jamais tenu à la main — même règle que le reste de ce
+    // plan : une date saisie à la main devient fausse au premier oubli, et
+    // une date fausse apprend à Google à ne plus lire ce champ du tout.
+    // Chaque page rend la date du fichier qui porte SON contenu.
+    //
+    // ⚠️ CE QU'IL FAUT SAVOIR : sur un hébergement qui reclone le dépôt à
+    // chaque déploiement, tous les fichiers reçoivent la date du déploiement.
+    // La date annoncée est alors « au plus tard le jour du déploiement », pas
+    // « le jour où cette page a changé ». C'est imprécis dans un sens sans
+    // danger — on n'annonce jamais un changement POSTÉRIEUR au vrai — et ça
+    // reste plus utile que rien. Le jour où ça gênera, la vraie source est
+    // la date du dernier commit touchant le fichier.
+    const dateDe = (fichier) => {
+        try {
+            return require("fs").statSync(require("path").join(__dirname, fichier))
+                .mtime.toISOString().slice(0, 10);
+        } catch {
+            // Un fichier renommé ne doit pas faire tomber le plan du site :
+            // sans date, l'entrée reste valide, elle est juste moins utile.
+            return null;
+        }
+    };
+    const DATE_METIERS = dateDe("services/metiers.js");
+
+    const entree = (chemin, priorite, frequence, traduite, lastmod) => {
         const alternatives = !traduite ? "" : langue.LANGUES.map((code) =>
             `    <xhtml:link rel="alternate" hreflang="${code}" href="${base}${chemin}?lang=${code}"/>`
         ).join("\n") + "\n";
-        return `  <url>\n    <loc>${base}${chemin}</loc>\n${alternatives}    <changefreq>${frequence}</changefreq>\n    <priority>${priorite}</priority>\n  </url>`;
+        // L'ordre compte : le schéma du plan de site décrit une séquence
+        // loc → lastmod → changefreq → priority. Les liens alternés sont une
+        // extension d'un autre espace de noms ; on les laisse où ils étaient,
+        // mais lastmod se place juste après loc, là où le schéma l'attend.
+        const date = lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : "";
+        return `  <url>\n    <loc>${base}${chemin}</loc>\n${date}${alternatives}    <changefreq>${frequence}</changefreq>\n    <priority>${priorite}</priority>\n  </url>`;
     };
 
     const urls = [
-        entree("/", "1.0", "daily", true),
-        entree("/metiers", "0.9", "weekly"),
-        ...metiersService.avecFiche().map((m) => entree(`/metiers/${m.id}`, "0.8", "monthly")),
+        entree("/", "1.0", "daily", true, dateDe("views/samii-accueil.ejs")),
+        entree("/metiers", "0.9", "weekly", false, DATE_METIERS),
+        ...metiersService.avecFiche().map((m) => entree(`/metiers/${m.id}`, "0.8", "monthly", false, DATE_METIERS)),
         entree("/marketplace", "0.7", "daily"),
         entree("/community", "0.7", "daily"),
         entree("/academy", "0.6", "weekly"),
         // L'ancienne vitrine : elle n'est plus à la racine, mais elle porte
         // toujours la présentation complète et les tarifs. La taire
         // reviendrait à effacer de Google tout ce qu'elle a déjà gagné.
-        entree("/accueil-classique", "0.5", "monthly"),
+        entree("/accueil-classique", "0.5", "monthly", false, dateDe("views/index.ejs")),
     ];
 
     res.type("application/xml").send(

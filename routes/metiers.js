@@ -46,8 +46,85 @@ router.get("/", (req, res) => {
         typeCompte: req.session?.typeCompte || "client",
         groupes: metiers.parGroupe(),
         base: BASE,
+        // Le hub n'en avait pas, alors que ses trente-quatre fiches en ont
+        // une. Mesuré : /metiers, /metiers?lang=en et /metiers?lang=ar
+        // répondaient 200 avec le même contenu et aucune canonique — trois
+        // adresses indexables pour une seule page, et c'est celle qui porte
+        // la priorité la plus haute du plan du site après l'accueil.
+        canonique: `${BASE}/metiers`,
     });
 });
+
+// ── LE TITRE, LE H1, ET POURQUOI CE SONT DEUX CHOSES ─────────────────────
+//
+// Ils étaient la même chaîne, servie aux deux endroits. Deux conséquences
+// mesurées sur les trente-quatre fiches :
+//
+//   1. Le <h1> affiché se terminait par « — SAMII ». C'est un suffixe de
+//      balise title ; dans un titre de page, ça se lit comme une coquille.
+//   2. Trente titres sur trente-quatre dépassaient 60 caractères (médiane
+//      67, maximum 83) : Google les coupait dans ses résultats.
+//
+// Les deux ne servent pas la même personne. Le <title> s'adresse à quelqu'un
+// qui lit une liste de résultats et doit choisir en une seconde : il doit
+// tenir. Le <h1> s'adresse à quelqu'un qui vient d'arriver sur la page : il
+// peut respirer.
+//
+// Aucune phrase de métier n'est touchée ici — perte, défaut et réponse
+// restent mot pour mot ce que services/metiers.js déclare. Ce qui change est
+// la formule de l'enrobage, et elle vit déjà dans ce fichier.
+const PROMESSE_LONGUE = {
+    rdv: "remplir son agenda sans décrocher le téléphone",
+    produit: "vendre en ligne sans perdre ses colis",
+};
+const PROMESSE_COURTE = {
+    rdv: "agenda rempli sans téléphone",
+    produit: "vendre sans perdre ses colis",
+};
+// Trois libellés sont trop longs pour la formule courte — « Électronique /
+// Téléphonie » (25 caractères), « Laboratoire d'analyses » et « Hôtel /
+// Maison d'hôtes » (22). Plutôt que de raboter le libellé du métier, qui est
+// son nom, on raccourcit la promesse pour eux seuls.
+const PROMESSE_BREVE = {
+    rdv: "agenda en ligne",
+    produit: "vendre en ligne",
+};
+const LIMITE_TITRE = 60;
+
+function titreEtH1(fiche, L) {
+    const label = L(fiche.label);
+    const parcours = fiche.parcours === "rdv" ? "rdv" : "produit";
+    const court = `${label} : ${L(PROMESSE_COURTE[parcours])} — SAMII`;
+    return {
+        titre: court.length <= LIMITE_TITRE
+            ? court
+            : `${label} : ${L(PROMESSE_BREVE[parcours])} — SAMII`,
+        // Le H1 garde la phrase complète, et perd « — SAMII ».
+        h1: `${label} : ${L(PROMESSE_LONGUE[parcours])}`,
+    };
+}
+
+// ── LA META DESCRIPTION, TAILLÉE POUR CE QUE GOOGLE AFFICHE ──────────────
+//
+// Elle était `perte + reponse` coupée à 300 caractères — huit fiches sur
+// trente-quatre dépassaient 155, jusqu'à 204. Au-delà, Google coupe et
+// choisit lui-même la fin, souvent au milieu d'un mot.
+//
+// On garde la même matière, dans le même ordre. « perte » passe toujours en
+// entier : c'est la phrase qui fait se reconnaître le lecteur. « reponse »
+// suit tant qu'elle tient ; sinon elle s'arrête au dernier mot complet.
+// Rien n'est réécrit, rien n'est inventé.
+const LIMITE_DESCRIPTION = 155;
+
+function descriptionDe(fiche) {
+    const complet = `${fiche.perte} ${fiche.reponse}`;
+    if (complet.length <= LIMITE_DESCRIPTION) return complet;
+    // −1 pour l'espace qui suit `perte`, −1 pour le caractère de suite.
+    const place = LIMITE_DESCRIPTION - fiche.perte.length - 2;
+    const bout = fiche.reponse.slice(0, place);
+    const coupe = bout.lastIndexOf(" ");
+    return `${fiche.perte} ${coupe > 0 ? bout.slice(0, coupe) : bout}…`;
+}
 
 // ── LA PAGE D'UN MÉTIER ──────────────────────────────────────────────────
 router.get("/:id", (req, res, next) => {
@@ -63,9 +140,7 @@ router.get("/:id", (req, res, next) => {
     if (!fiche) return next();
 
     const L = res.locals.L || ((s) => s);
-    const titre = fiche.parcours === "rdv"
-        ? `${L(fiche.label)} : ${L("remplir son agenda sans décrocher le téléphone")} — SAMII`
-        : `${L(fiche.label)} : ${L("vendre en ligne sans perdre ses colis")} — SAMII`;
+    const { titre, h1 } = titreEtH1(fiche, L);
 
     // Les voisins du même groupe : ils donnent à Google un maillage interne
     // réel (une page isolée se classe mal) et au visiteur un moyen de
@@ -78,7 +153,8 @@ router.get("/:id", (req, res, next) => {
         metier: fiche,
         voisins,
         titre,
-        description: `${fiche.perte} ${fiche.reponse}`.slice(0, 300),
+        h1,
+        description: descriptionDe(fiche),
         canonique: `${BASE}/metiers/${fiche.id}`,
         base: BASE,
         loggedIn: !!req.session?.loggedIn,

@@ -91,6 +91,26 @@
     }],
 }) %>
 </script>
+<%# Le fil d'Ariane existait déjà À L'ÉCRAN (<nav class="fil">) mais Google
+    n'avait aucun moyen de savoir que c'en était un : il ne voyait que trois
+    liens à la suite. Déclaré ici, il devient le chemin affiché sous le titre
+    dans les résultats — SAMII › Les métiers › Dentiste — au lieu de l'URL
+    brute. Les trois échelons sont les MÊMES que ceux du <nav>, dans le même
+    ordre : une donnée structurée qui décrit une page qu'on ne voit pas est
+    une fausse déclaration. %>
+<script type="application/ld+json">
+<%- JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "SAMII", "item": base + "/" },
+        { "@type": "ListItem", "position": 2, "name": L("Les métiers"), "item": base + "/metiers" },
+        // Le dernier échelon est la page courante : son `item` est sa propre
+        // adresse canonique, jamais une autre.
+        { "@type": "ListItem", "position": 3, "name": L(metier.label), "item": canonique },
+    ],
+}) %>
+</script>
 
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0A0810">
@@ -146,7 +166,7 @@ a { color: inherit; text-decoration: none; }
     margin: 0 0 12px; font-family: var(--serif); font-weight: 600;
     font-size: clamp(1.5rem, 5.2vw, 2.15rem); line-height: 1.25; text-wrap: balance;
 }
-.tete__promesse { margin: 0; font-size: 1.05rem; color: var(--doux); text-wrap: balance; }
+<%# .tete__promesse a disparu avec le paragraphe qu'elle habillait. %>
 .etiquette {
     display: inline-block; margin-bottom: 14px;
     font-family: var(--mono); font-size: .63rem; letter-spacing: .15em; text-transform: uppercase;
@@ -206,8 +226,17 @@ a { color: inherit; text-decoration: none; }
     <div class="tete">
         <span class="tete__pic" aria-hidden="true"><%= metier.icone %></span>
         <span class="etiquette"><%= metier.parcours === "rdv" ? L("Métier à rendez-vous") : L("Métier à commandes") %></span>
-        <h1><%= titre %></h1>
-        <p class="tete__promesse"><%= metier.reponse %></p>
+        <%# Le H1 est celui de la route : la phrase complète, SANS « — SAMII ».
+            Le <title> est plus court et vit dans le <head> ; les deux ne
+            s'adressent pas à la même personne.
+
+            La promesse qui suivait ici a été retirée : elle imprimait
+            `metier.reponse` mot pour mot, et le pavé « Ce que SAMII fait »
+            deux blocs plus bas l'imprime déjà. Vérifié sur les trente-quatre
+            fiches : la phrase la plus spécifique de la page apparaissait deux
+            fois dans un texte de 154 mots, et une troisième fois dans le
+            JSON-LD de la FAQ. %>
+        <h1><%= h1 %></h1>
     </div>
 
     <div class="constat">

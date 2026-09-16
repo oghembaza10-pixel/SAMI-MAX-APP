@@ -76,8 +76,17 @@ async function pret(essais = 40) {
         verifier(fiches.length >= 30,
             `seulement ${fiches.length} métiers ont une fiche — la source s'est vidée`);
 
+        // Les longueurs se comptent sur le texte DÉCODÉ. Dans la source, une
+        // apostrophe s'écrit « &#39; » — cinq caractères pour un seul à
+        // l'écran. Compter la source ferait croire qu'une description de 151
+        // caractères en fait 163, et ferait crier un garde pour rien.
+        const lire = (s) => String(s || "")
+            .replace(/&#39;/g, "’").replace(/&quot;/g, "\"")
+            .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+
         const titres = new Map();
         const descriptions = new Map();
+        const h1s = new Map();
         let manquantes = [];
 
         for (const m of fiches) {
@@ -85,10 +94,12 @@ async function pret(essais = 40) {
             if (r.status !== 200) { manquantes.push(`${m.id} (${r.status})`); continue; }
             const html = await r.text();
 
-            const titre = (html.match(/<title>([^<]*)<\/title>/) || [])[1] || "";
-            const desc = (html.match(/name="description" content="([^"]*)"/) || [])[1] || "";
+            const titre = lire((html.match(/<title>([^<]*)<\/title>/) || [])[1]);
+            const desc = lire((html.match(/name="description" content="([^"]*)"/) || [])[1]);
+            const h1 = lire((html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1]).replace(/<[^>]+>/g, "").trim();
             titres.set(m.id, titre);
             descriptions.set(m.id, desc);
+            h1s.set(m.id, h1);
         }
 
         verifier(manquantes.length === 0,
@@ -119,6 +130,109 @@ async function pret(essais = 40) {
         const tropCourtes = [...descriptions.entries()].filter(([, d]) => d.length < 80).map(([id]) => id);
         verifier(tropCourtes.length === 0,
             `descriptions trop courtes pour ${tropCourtes.join(", ")} — Google les remplacera par ce qu'il voudra`);
+
+        // ── 3 bis. LE TITRE ET LE H1 NE SONT PAS LA MÊME CHOSE ───────────
+        //
+        // Ils l'ont été : une seule chaîne servie aux deux endroits, sur les
+        // trente-quatre fiches. Deux dégâts, mesurés avant correction.
+        //
+        //   1. Le <h1> affiché se terminait par « — SAMII ». C'est un suffixe
+        //      de balise title ; dans un titre de page, ça se lit comme une
+        //      coquille laissée par mégarde.
+        //   2. Trente titres sur trente-quatre dépassaient 60 caractères
+        //      (médiane 67, maximum 83) : Google les coupait dans ses
+        //      résultats, et ce qui disparaissait était la fin de la promesse.
+        //
+        // Ces deux gardes existent parce que la régression est invisible : une
+        // page dont le titre est trop long s'affiche parfaitement, se teste
+        // parfaitement, et perd des clics sans que rien ne le signale.
+        const memes = [...titres.entries()].filter(([id, t]) => t === h1s.get(id)).map(([id]) => id);
+        verifier(memes.length === 0,
+            `<title> et <h1> sont identiques sur ${memes.length} fiche(s) (${memes.slice(0, 4).join(", ")}) — ` +
+            "le titre sert une liste de résultats, le H1 sert quelqu'un qui vient d'arriver ; " +
+            "les confondre donne un H1 qui se termine par « — SAMII »");
+
+        const h1Suffixes = [...h1s.entries()].filter(([, h]) => /—\s*SAMII\s*$/.test(h)).map(([id]) => id);
+        verifier(h1Suffixes.length === 0,
+            `le H1 se termine par « — SAMII » sur ${h1Suffixes.length} fiche(s) (${h1Suffixes.slice(0, 4).join(", ")}) — ` +
+            "c'est un suffixe de balise title, pas un titre de page");
+
+        const h1Manquants = [...h1s.entries()].filter(([, h]) => !h || h.length < 10).map(([id]) => id);
+        verifier(h1Manquants.length === 0,
+            `H1 absent ou vide sur : ${h1Manquants.join(", ")}`);
+
+        // ── 3 ter. LES LONGUEURS QUE GOOGLE AFFICHE ──────────────────────
+        const LIMITE_TITRE = 60;
+        const tropLongs = [...titres.entries()].filter(([, t]) => t.length > LIMITE_TITRE)
+            .map(([id, t]) => `${id} (${t.length})`);
+        verifier(tropLongs.length === 0,
+            `${tropLongs.length} titre(s) dépassent ${LIMITE_TITRE} caractères : ${tropLongs.slice(0, 5).join(", ")} — ` +
+            "Google les coupe, et c'est la fin de la promesse qui disparaît");
+
+        const LIMITE_DESC = 155;
+        const descLongues = [...descriptions.entries()].filter(([, d]) => d.length > LIMITE_DESC)
+            .map(([id, d]) => `${id} (${d.length})`);
+        verifier(descLongues.length === 0,
+            `${descLongues.length} description(s) dépassent ${LIMITE_DESC} caractères : ${descLongues.slice(0, 5).join(", ")} — ` +
+            "au-delà, Google coupe et choisit lui-même la fin, souvent au milieu d'un mot");
+
+        // ── 3 quater. LE PLANCHER DE SUBSTANCE ───────────────────────────
+        //
+        // C'est la vérification qui dit si ces pages méritent d'exister. Une
+        // fiche mesurait 136 à 184 mots de texte visible (médiane 154), dont
+        // près de la moitié de décor commun aux trente-quatre. Le plancher ne
+        // fixe pas un objectif — il empêche de DESCENDRE. Quelqu'un qui
+        // « nettoie » un gabarit peut vider une page sans s'en apercevoir :
+        // elle répondra toujours 200.
+        //
+        // Il est volontairement placé sous le minimum actuel : un garde calé
+        // au ras de la mesure du jour devient rouge au premier mot retiré,
+        // pour une raison qui n'est pas une régression.
+        const PLANCHER_MOTS = 110;
+        const maigres = [];
+        // ── ET LA PHRASE LA PLUS SPÉCIFIQUE N'EST IMPRIMÉE QU'UNE FOIS ───
+        //
+        // Elle l'était deux fois sur les trente-quatre fiches : une fois en
+        // promesse sous le titre, une fois dans le pavé « Ce que SAMII fait ».
+        // Sur 154 mots dont la moitié est du décor commun, répéter la seule
+        // phrase qui distingue la page de ses trente-trois voisines, c'est
+        // diviser par deux ce qui la rend unique.
+        //
+        // Le plancher de mots ci-dessus ne protège PAS de ça — une répétition
+        // AJOUTE des mots, elle en fait donc monter le compte. Vérifié en
+        // remettant la ligne : le plancher restait vert. Il faut ce garde-ci.
+        //
+        // On ne compte que le texte VISIBLE : la réponse figure aussi dans le
+        // JSON-LD de la FAQ, où c'est légitime — c'en est la réponse.
+        const repetees = [];
+        for (const m of fiches) {
+            const html = await (await fetch(`${BASE}/metiers/${m.id}`)).text();
+            const texte = html
+                .replace(/<head[\s\S]*?<\/head>/i, " ")
+                .replace(/<script[\s\S]*?<\/script>/gi, " ")
+                .replace(/<style[\s\S]*?<\/style>/gi, " ")
+                .replace(/<!--[\s\S]*?-->/g, " ")
+                .replace(/<[^>]+>/g, " ")
+                .replace(/&[a-z]+;|&#\d+;/gi, " ")
+                .replace(/\s+/g, " ").trim();
+            const mots = texte.split(" ").filter(Boolean).length;
+            if (mots < PLANCHER_MOTS) maigres.push(`${m.id} (${mots})`);
+
+            // Les entités deviennent une espace dans `texte` (« l&#39;attente »
+            // → « l attente ») : on applique la même transformation à la
+            // phrase d'origine, sinon aucune des deux ne se retrouve.
+            const memeForme = (s) => String(s).replace(/['’]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+            const reponse = memeForme(metiers.fiche(m.id).reponse);
+            const fois = memeForme(texte).split(reponse).length - 1;
+            if (fois > 1) repetees.push(`${m.id} (${fois}×)`);
+        }
+        verifier(maigres.length === 0,
+            `${maigres.length} fiche(s) sous ${PLANCHER_MOTS} mots de texte visible : ${maigres.slice(0, 5).join(", ")} — ` +
+            "une page vide répond 200 comme les autres, et Google l'ignore sans rien dire");
+        verifier(repetees.length === 0,
+            `la phrase « ce que SAMII fait » est imprimée plusieurs fois sur ${repetees.length} fiche(s) : ` +
+            `${repetees.slice(0, 5).join(", ")} — c'est la seule phrase qui distingue la page de ses ` +
+            "voisines, la répéter divise par deux ce qui la rend unique");
 
         // ── 4. LES DEUX SORTIES ──────────────────────────────────────────
         {
@@ -193,6 +307,52 @@ async function pret(essais = 40) {
             verifier(/application\/ld\+json/.test(html), "pas de données structurées");
             verifier(/href="\/metiers"/.test(html), "pas de retour vers le hub — la page est isolée");
 
+            // ── LE FIL D'ARIANE, DÉCLARÉ ET NON SEULEMENT DESSINÉ ────────
+            //
+            // Il existait à l'écran depuis le début — <nav class="fil"> —
+            // mais Google n'y voyait que trois liens à la suite. Déclaré, il
+            // devient le chemin affiché sous le titre dans les résultats
+            // (SAMII › Les métiers › Dentiste) au lieu de l'URL brute.
+            //
+            // Le garde ne se contente pas de trouver le mot BreadcrumbList :
+            // il LIT le JSON et vérifie que chaque échelon est complet. Une
+            // donnée structurée à moitié écrite n'affiche rien du tout, et
+            // ne lève aucune erreur.
+            const blocs = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+                .map((b) => b[1]);
+            let objets = [];
+            let lisible = true;
+            try { objets = blocs.map((b) => JSON.parse(b)); } catch { lisible = false; }
+            verifier(lisible, "un bloc de données structurées n'est pas du JSON valide — Google l'ignore en entier");
+
+            const fil = objets.find((o) => o && o["@type"] === "BreadcrumbList");
+            verifier(!!fil, "pas de BreadcrumbList : le fil d'Ariane est dessiné mais jamais déclaré");
+
+            const echelons = (fil && fil.itemListElement) || [];
+            verifier(echelons.length === 3,
+                `le fil déclaré compte ${echelons.length} échelon(s) au lieu de 3 (SAMII › Les métiers › le métier)`);
+            const malFormes = echelons.filter((e, i) =>
+                !e || e["@type"] !== "ListItem" || e.position !== i + 1 || !e.name || !/^https?:\/\//.test(e.item || ""));
+            verifier(malFormes.length === 0,
+                `${malFormes.length} échelon(s) du fil sont incomplets — il faut @type, position, name et une adresse absolue`);
+
+            // Le dernier échelon EST la page : s'il pointe ailleurs, le fil
+            // décrit un chemin qui n'existe pas.
+            const canon = (html.match(/<link rel="canonical" href="([^"]*)"/) || [])[1];
+            verifier(echelons[2] && echelons[2].item === canon,
+                `le dernier échelon du fil (${echelons[2] && echelons[2].item}) n'est pas l'adresse canonique de la page (${canon})`);
+
+            // Et il doit décrire le fil VISIBLE. Déclarer un chemin que le
+            // visiteur ne voit pas, c'est ce que Google appelle du balisage
+            // trompeur — et ça se sanctionne.
+            const filVisible = ((html.match(/<nav class="fil"[\s\S]*?<\/nav>/) || [""])[0])
+                .replace(/<[^>]+>/g, " ").replace(/&[a-z]+;|&#\d+;/gi, "’").replace(/\s+/g, " ").trim();
+            const absents = echelons.filter((e) => e && e.name &&
+                !filVisible.includes(String(e.name).replace(/['’]/g, "’"))).map((e) => e.name);
+            verifier(absents.length === 0,
+                `le fil déclaré nomme « ${absents.join(", ")} », qu'on ne trouve pas dans le fil affiché ` +
+                `(« ${filVisible} ») — déclarer un chemin qu'on ne montre pas est du balisage trompeur`);
+
             // Le maillage interne : une page seule se classe mal.
             const voisins = (html.match(/class="voisin"/g) || []).length;
             verifier(voisins >= 1,
@@ -221,6 +381,63 @@ async function pret(essais = 40) {
                 "l'ancienne vitrine a disparu du plan du site — son référencement acquis serait perdu");
             verifier(/xmlns:xhtml/.test(xml) && /hreflang=/.test(xml),
                 "le plan ne déclare pas les traductions");
+
+            // ── lastmod : LA SEULE DES TROIS INDICATIONS QUE GOOGLE LIT ──
+            //
+            // Le plan ne donnait que changefreq et priority, que Google
+            // déclare ignorer. Sans lastmod, il n'a aucun moyen de savoir
+            // qu'une fiche n'a pas bougé, et recharge les trente-quatre à
+            // chaque passage.
+            //
+            // La date est CALCULÉE depuis le fichier qui porte le contenu,
+            // jamais saisie à la main — une date tenue à la main devient
+            // fausse au premier oubli, et une date fausse apprend à Google à
+            // ne plus lire ce champ du tout.
+            const blocs = xml.split("<url>").slice(1);
+            const sansDate = blocs.filter((b) => /\/metiers/.test(b) && !/<lastmod>/.test(b)).length;
+            verifier(sansDate === 0,
+                `${sansDate} entrée(s) de métier n'ont pas de lastmod — Google rechargera les ` +
+                "trente-quatre fiches à chaque passage, y compris celles qui n'ont pas bougé");
+
+            const dates = [...xml.matchAll(/<lastmod>([^<]*)<\/lastmod>/g)].map((m) => m[1]);
+            verifier(dates.length >= fiches.length + 1,
+                `seulement ${dates.length} lastmod pour ${fiches.length} fiches et leur hub`);
+            const malDatees = dates.filter((d) => !/^\d{4}-\d{2}-\d{2}$/.test(d));
+            verifier(malDatees.length === 0,
+                `date(s) au mauvais format : ${malDatees.slice(0, 3).join(", ")} — il faut AAAA-MM-JJ`);
+            // Une date future annonce un changement qui n'a pas eu lieu.
+            const demain = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+            const futures = dates.filter((d) => d > demain);
+            verifier(futures.length === 0,
+                `date(s) dans le futur : ${futures.slice(0, 3).join(", ")}`);
+
+            // Et l'ordre : le schéma décrit une séquence loc → lastmod.
+            const malPlacees = blocs.filter((b) => /<lastmod>/.test(b) &&
+                b.indexOf("<lastmod>") < b.indexOf("</loc>")).length;
+            verifier(malPlacees === 0,
+                `${malPlacees} entrée(s) placent lastmod avant la fin de <loc>`);
+        }
+
+        // ── 6. LE HUB A SA PROPRE ADRESSE CANONIQUE ──────────────────────
+        //
+        // Il n'en avait pas, alors que les trente-quatre fiches qu'il liste en
+        // ont toutes une. Mesuré : /metiers, /metiers?lang=en et
+        // /metiers?lang=ar répondaient 200 avec le même contenu et aucune
+        // canonique — trois adresses indexables pour une seule page, et c'est
+        // celle qui porte la priorité la plus haute du plan après l'accueil.
+        {
+            const html = await (await fetch(`${BASE}/metiers`)).text();
+            const canon = (html.match(/<link rel="canonical" href="([^"]*)"/) || [])[1];
+            verifier(!!canon, "le hub /metiers n'a pas d'URL canonique : ?lang= en fabrique des copies indexables");
+            verifier(/\/metiers$/.test(canon || ""),
+                `la canonique du hub est « ${canon} » — elle doit pointer sur /metiers, sans paramètre`);
+
+            // Calculée sur APP_URL comme celle des fiches, jamais sur l'en-tête
+            // Host : sinon le même contenu s'annonce sous le domaine ET sous
+            // l'adresse Render brute, et Google les met en concurrence.
+            const srcR = fs.readFileSync(path.join(RACINE, "routes/metiers.js"), "utf8");
+            verifier(/canonique:\s*`\$\{BASE\}\/metiers`/.test(srcR),
+                "la canonique du hub n'est plus calculée depuis BASE (APP_URL)");
         }
 
         // ── 7. RIEN N'EST CASSÉ ──────────────────────────────────────────

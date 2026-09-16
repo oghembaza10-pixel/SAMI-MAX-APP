@@ -20,6 +20,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title><%= L("Les métiers que SAMII connaît") %></title>
 <meta name="description" content="<%= L("Commerce, santé, beauté, restauration, artisanat : SAMII parle le vocabulaire de ton métier et connaît son rythme.") %>">
+<%# Cette page n'en avait pas, alors que les trente-quatre fiches qu'elle
+    liste en ont toutes une. Mesuré : /metiers, /metiers?lang=en et
+    /metiers?lang=ar répondaient 200 avec le même contenu et aucune canonique
+    — trois adresses indexables pour une page, et c'est celle qui porte la
+    priorité la plus haute du plan du site après l'accueil.
+
+    Elle vient de la route, calculée sur APP_URL comme celle des fiches, et
+    non de l'en-tête Host : une canonique déduite du Host ferait qu'un même
+    contenu s'annonce sous le domaine ET sous l'adresse Render brute. %>
+<link rel="canonical" href="<%= canonique %>">
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#0A0810">
 <link rel="preconnect" href="https://fonts.googleapis.com">
