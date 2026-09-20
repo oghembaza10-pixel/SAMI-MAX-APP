@@ -365,22 +365,26 @@ function marque(html) {
     // Tools, mais pas ce qu'il y a avec. Là je vois Arsenal, je vois
     // Marketplace. »
     //
-    // Cette barre (views/partials/sidebar.ejs) est incluse par DIX vues,
-    // dont /connect/tools — le seul module métier qu'on lui a laissé. Elle
-    // listait Accueil, Marketplace, Academy, Arsenal en dur. La porte
-    // empêchait d'y entrer, mais les liens restaient affichés : on clique,
-    // on rebondit, on croit que c'est cassé.
-    const VUE_BARRE = path.join(RACINE, "views", "partials", "sidebar.ejs");
+    // Cette barre est incluse par TREIZE vues, dont /connect/tools — le seul
+    // module métier qu'on lui a laissé. Elle listait Accueil, Marketplace,
+    // Academy, Arsenal en dur. La porte empêchait d'y entrer, mais les liens
+    // restaient affichés : on clique, on rebondit, on croit que c'est cassé.
+    //
+    // Elle vivait dans `views/partials/sidebar.ejs`. Depuis la fusion de la
+    // navigation elle est la variante « etroite » de `partials/nav.ejs` —
+    // même barre, même registre, un seul fichier. Le test suit le fichier :
+    // ce qu'il garde, c'est ce qui est RENDU, pas où le gabarit habite.
+    const VUE_BARRE = path.join(RACINE, "views", "partials", "nav.ejs");
     function rendreBarre(slug, viaLeService) {
         // Les deux façons dont une vue peut recevoir la communauté : passée
-        // par la route, ou seulement posée sur res.locals. Les dix vues qui
-        // incluent cette barre ne la passent pas — c'est le second cas qui
-        // compte le plus.
+        // par la route, ou seulement posée sur res.locals. Les treize vues
+        // qui incluent cette barre ne la passent pas — c'est le second cas
+        // qui compte le plus.
         const donnees = viaLeService
             ? { COM: communautes.get(slug) }
             : { communaute: communautes.get(slug) };
         return new Promise((resolve, reject) => {
-            ejs.renderFile(VUE_BARRE, { v: V_ACTIFS, ...donnees, modulesQg, userId: "u1", typeCompte: "marchand" },
+            ejs.renderFile(VUE_BARRE, { v: V_ACTIFS, ...donnees, modulesQg, userId: "u1", typeCompte: "marchand", variante: "etroite" },
                 { views: [path.join(RACINE, "views")] },
                 (err, html) => (err ? reject(err) : resolve(html)));
         });
@@ -390,6 +394,19 @@ function marque(html) {
     for (const viaLeService of [true, false]) {
         const commentPasse = viaLeService ? "posée par le service" : "passée par la route";
         const barreMaison = await rendreBarre(communautes.DEFAUT, viaLeService);
+        // ── ET C'EST BIEN LA BARRE ÉTROITE QU'ON REGARDE ─────────────────
+        //
+        // Mesuré : en retirant `variante: "etroite"` de l'appel ci-dessus,
+        // `nav.ejs` retombe sur la colonne du QG — et les 397 vérifications
+        // restaient VERTES. Les deux balisages excluent les mêmes chemins
+        // chez une partenaire, donc les assertions de liens ne distinguent
+        // pas l'un de l'autre. Un garde qui reste vert quand on lui change
+        // la page sous les yeux ne garde plus rien.
+        //
+        // Cet ancrage tient le test sur SA barre : `og-sidebar` est à elle,
+        // `qg-sidebar` est à la colonne. Si la variante saute, il crie.
+        verifier(/class="og-sidebar"/.test(barreMaison) && !/qg-sidebar/.test(barreMaison),
+            `ce n'est pas la barre étroite qui est rendue (${commentPasse}) — le test regarde une autre page que celle qu'il prétend garder`);
         for (const attendu of ["/hub", "/marketplace", "/academy", "/community", "/discussions", "/arsenal"]) {
             verifier(liensBarre(barreMaison).includes(attendu),
                 `la barre partagée de la maison a perdu « ${attendu} » (${commentPasse})`);

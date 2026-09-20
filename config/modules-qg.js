@@ -300,6 +300,38 @@ function chemineAutorise(chemin, regles) {
 // raison pour laquelle elle vient chez nous plutôt que sur un site vitrine.
 const MINIMAL = ["communaute", "discussions", "messages", "affaires", "connect", "assistant", "vitrine", "reglages"];
 
+// ── LA BARRE ÉTROITE ─────────────────────────────────────────────────────
+//
+// Treize vues (les pages « Connecter mes outils », le Hub, la création de
+// QG) n'affichent pas la colonne complète du QG mais une barre d'icônes de
+// six entrées. Cette liste vivait ÉCRITE EN DUR dans views/partials/sidebar,
+// c'est-à-dire dans un gabarit — une deuxième liste de modules, à côté du
+// registre, exactement ce que ce fichier existe pour empêcher.
+//
+// Elle avait déjà commencé à diverger : elle montrait « Arsenal » et
+// « Discussions » mais ni « Mes affaires », ni « Connecter mes outils », ni
+// l'assistant — alors que ce sont les trois entrées qu'un marchand utilise
+// tous les jours. Personne ne l'avait vu, parce qu'une liste dans un
+// gabarit ne se relit jamais.
+//
+// Elle est ici, à côté des autres, pour que le jour où on ajoute un module
+// la question « doit-il apparaître dans la barre étroite ? » se pose au même
+// endroit que « à quoi une partenaire a-t-elle droit ? ».
+//
+// L'ORDRE COMPTE : il est repris tel quel, et c'est celui qui était affiché.
+// On ne profite pas d'un déplacement de code pour changer ce que les gens
+// voient — si cette barre doit gagner des entrées, ce sera une décision
+// produit, prise seule et visible.
+const BARRE_ETROITE = ["hub", "marketplace", "academy", "communaute", "discussions", "arsenal"];
+
+// Les entrées de la barre étroite, filtrées par ce à quoi la communauté a
+// droit, dans l'ordre déclaré ci-dessus. Une entrée à laquelle elle n'a pas
+// droit disparaît — c'est la même règle que pour la colonne complète.
+function barreEtroite(COM) {
+    const permis = autorises(COM);
+    return BARRE_ETROITE.map((id) => permis.find((m) => m.id === id)).filter(Boolean);
+}
+
 // La liste blanche d'une communauté. `null` (la maison) = tout.
 function autorises(COM) {
     const permis = COM?.qg?.modules;
@@ -313,4 +345,4 @@ function lien(module, COM, ctx = {}) {
     return typeof module.href === "function" ? module.href(COM, ctx) : module.href;
 }
 
-module.exports = { MODULES, MINIMAL, SOCLE, autorises, lien, cheminsAutorises, chemineAutorise };
+module.exports = { MODULES, MINIMAL, SOCLE, BARRE_ETROITE, autorises, barreEtroite, lien, cheminsAutorises, chemineAutorise };

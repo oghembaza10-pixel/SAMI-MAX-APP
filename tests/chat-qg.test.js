@@ -56,7 +56,7 @@ function rendre(extra = {}) {
         plafondNiveau: "expert",
         ordreNiveaux: NIVEAUX.ORDRE,
         niveauParDefaut: NIVEAUX.PRESELECTION,
-        // La colonne partagée (partials/qg-nav) lit ce registre depuis
+        // La colonne partagée (partials/nav, variante « qg ») lit ce registre depuis
         // app.locals : un gabarit EJS n'a pas de `require`. On le fournit ici
         // comme index.js le fait, plutôt que de le remplacer par un faux — un
         // test qui invente ses données ne teste plus la vraie page.
