@@ -1,14 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Connecter Discord — OG Technology</title>
-  <link rel="stylesheet" href="/css/hub-premium.css">
-</head>
-<body>
-<div class="og-capital">
-  <%- include("partials/nav", { variante: "etroite" }) %>
-  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+<%- include("app", { moitie: "haut", titre: "Connecter Discord — OG Technology" }) %>
     <div style="background:#111;border:1px solid #222;border-radius:16px;padding:40px;max-width:440px;width:100%;">
 
       <div style="text-align:center;margin-bottom:30px;">
@@ -63,12 +53,4 @@
       <% } %>
 
     </div>
-  </main>
-</div>
-<script src="/js/i18n.js"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script>lucide.createIcons();</script>
-
-<%- include("partials/barre-langue") %>
-</body>
-</html>
+<%- include("app", { moitie: "bas" }) %>

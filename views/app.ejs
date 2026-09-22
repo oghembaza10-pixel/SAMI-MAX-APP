@@ -1,0 +1,99 @@
+<%#
+  ==========================================================================
+  SAMII OS — LA COQUILLE DU DOCUMENT
+
+  Le même document, écrit une fois. Doctype, en-tête, la barre étroite, le
+  <main> qui reçoit la page, les scripts de fin. Ce qui change d'une page à
+  l'autre passe en paramètre ; ce qui ne change pas vit ici.
+
+  ── POURQUOI CE FICHIER EXISTE ────────────────────────────────────────────
+
+  Neuf vues (autopost, connect-ccp, connect-discord, connect-impression,
+  connect-shopify, connect-telegram, connect-transporteur, connect-whatsapp,
+  youtube-upload) portaient chacune leur propre copie du document : même
+  doctype, même en-tête, même <div class="og-capital">, mêmes trois scripts
+  de fin. Quatorze lignes recopiées neuf fois.
+
+  Une copie ne se relit pas. Mesuré sur ces neuf vues, avant de les réunir :
+
+    1. AUCUNE n'avait de <meta name="viewport">. Mesuré au navigateur :
+       sur un écran de 320 px, la page se croit large de 980 px et se laisse
+       dézoomer à un tiers. Un commerçant qui connecte son CCP depuis son
+       téléphone lit du texte de quatre pixels. Les quatre autres vues de la
+       même famille (hub, connect-tools, connect-soon, workspace-create)
+       l'avaient — donc personne n'avait remarqué qu'il manquait ici.
+    2. Toutes écrivaient « OG Technology » dans le titre de l'onglet, y
+       compris quand elles sont servies sur le domaine d'une partenaire.
+    3. Toutes fixaient lang="fr" en dur, sans dir : en arabe, la page reste
+       annoncée française et écrite de gauche à droite.
+
+  CES TROIS DÉFAUTS SONT REPRODUITS TELS QUELS ICI, volontairement. Cette
+  phase réunit le document, elle ne le corrige pas : on prouve d'abord que
+  la coquille rend exactement ce qui était rendu avant, ensuite seulement on
+  décide quoi réparer. Le gain, dès maintenant, est qu'il n'y a plus qu'UN
+  endroit à corriger au lieu de neuf — et que les trois défauts sont écrits
+  noir sur blanc au lieu d'être invisibles.
+
+  ── CE QUI N'EST PAS ICI, ET POURQUOI ─────────────────────────────────────
+
+  Six vues gardent leur propre document : hub, connect-tools, connect-soon,
+  workspace-create, qg-template, samii. Elles ne s'y refusent pas par
+  principe — elles portent du contenu ENTRE </div> et </body> (la fenêtre
+  « Créer mon métier », la sphère SAMII, les guides de connexion, deux cents
+  lignes de dictionnaire i18n) que cette coquille ne sait pas accueillir sans
+  déplacer huit cents lignes. C'est un vrai sujet, et c'est celui de la phase
+  qui évalue les zones mixtes — pas celui-ci.
+
+  ── COMMENT ON S'EN SERT ──────────────────────────────────────────────────
+
+  Une vue l'ouvre, écrit son contenu, la referme : un include de
+  « app » avec moitie "haut", le contenu de la page inchangé, puis un
+  second include de « app » avec moitie "bas". (On ne peut pas écrire
+  l'exemple littéralement ici : une balise fermante dans un commentaire EJS
+  fermerait le commentaire, et la moitié de ce texte partirait dans la page.)
+
+  Paramètres du haut :
+    titre     le texte de l'onglet, en entier
+    padding   le rembourrage du <main> ("20px", "24px"), absent par défaut
+    actif     l'identifiant du module en cours, pour la barre ("" par défaut)
+  Paramètre du bas :
+    barreLangue  false pour ne pas afficher le sélecteur de langue
+                 (connect-shopify ne l'avait pas ; on ne lui en ajoute pas)
+
+  LES DEUX MOITIÉS SONT DANS LE MÊME FICHIER À DESSEIN. Deux gabarits
+  « haut » et « bas » auraient pu diverger sans que rien ne le signale : une
+  balise ouverte ici, fermée autrement là. Ici, on lit le document entier,
+  de <!DOCTYPE> à </html>, d'un seul coup d'œil.
+%>
+<%
+const _moitie = (typeof moitie !== "undefined" && moitie === "bas") ? "bas" : "haut";
+const _padding = (typeof padding !== "undefined" && padding) ? String(padding) : "";
+const _actif = typeof actif === "undefined" ? "" : actif;
+// Par défaut oui : huit des neuf vues l'avaient, et une page sans moyen de
+// changer de langue enferme quelqu'un dans une langue qu'il ne lit pas.
+const _barreLangue = !(typeof barreLangue !== "undefined" && barreLangue === false);
+%>
+<% if (_moitie === "haut") { %>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title><%= titre %></title>
+  <link rel="stylesheet" href="/css/hub-premium.css">
+</head>
+<body>
+<div class="og-capital">
+  <%- include("partials/nav", { variante: "etroite", actif: _actif }) %>
+  <main class="capitol-content" style="display:flex;align-items:center;justify-content:center;min-height:100vh;<% if (_padding) { %>padding:<%= _padding %>;<% } %>">
+<% } else { %>
+  </main>
+</div>
+<script src="/js/i18n.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>lucide.createIcons();</script>
+<% if (_barreLangue) { %>
+<%- include("partials/barre-langue") %>
+<% } %>
+</body>
+</html>
+<% } %>
