@@ -39,6 +39,11 @@
 // ==========================================================================
 
 const metiers = require("./metiers");
+// Le plafond d'outils d'une audience, croisé au niveau du tour. Ce fichier ne
+// recroise rien lui-même : il DEMANDE au registre. Deux calculs séparés
+// finiraient par ne plus dire la même chose, et c'est exactement ce défaut-là
+// qu'on répare ici.
+const AUDIENCES = require("../config/audiences");
 const { detect } = require("../brain/prompts/sovereign/tables");
 
 // ── NORMALISER ───────────────────────────────────────────────────────────
@@ -252,7 +257,14 @@ function arbitrer({ metier = null, message = "" } = {}) {
 //
 // Rend `null` quand il n'y a rien à dire : une clé posée à `null` dans le
 // contexte occupe quand même de la place dans le prompt et n'apprend rien.
-function pourLePrompt({ metier = null, message = "" } = {}) {
+// ── `audience` ET `niveau` NE SONT PAS DÉCORATIFS ────────────────────────
+//
+// Ils décident de `sait_faire`, la seule ligne de ce bloc qui PROMET quelque
+// chose. Sans eux, on retombe sur le côté sûr : aucun geste annoncé. C'est
+// voulu — une route qui oublie de les passer fait taire SAMII sur ce point
+// au lieu de lui faire dire une chose fausse. Voir `config/audiences.js`,
+// `outilsDuTour`.
+function pourLePrompt({ metier = null, message = "", audience = "", niveau = null } = {}) {
     const a = arbitrer({ metier, message });
     if (!a.fiche && a.domaine === "default") return null;
 
@@ -297,8 +309,55 @@ function pourLePrompt({ metier = null, message = "" } = {}) {
             regarder: (s.donnees || []).slice(0, 5),
             façon: s.expertise,
         };
-        const faisables = (s.actions || []).filter((x) => x && x.fait).map((x) => x.fait);
-        if (faisables.length) bloc.secteur.sait_faire = [...new Set(faisables)];
+        // ── CE QU'IL SAIT FAIRE **POUR CETTE PERSONNE-LÀ** ───────────────
+        //
+        // ⚠️ CETTE INTERSECTION MANQUAIT, ET ELLE A COÛTÉ CHER.
+        //
+        // `metiers.js` nomme les gestes d'un secteur par leur outil :
+        // `confirmer_commande` chez un e-commerçant, `prendre_rendez_vous`
+        // chez un dentiste. Ces noms sont justes — mais ils décrivent LE
+        // MÉTIER, pas ce que SAMII tient dans LA CONVERSATION EN COURS.
+        //
+        // Or la famille `commerce` (confirmer une commande, poser un
+        // rendez-vous) n'est accordée qu'en parlant à un CLIENT du marchand,
+        // sur Telegram ou WhatsApp. Le marchand, chez lui, ne l'a jamais —
+        // et c'est juste : il ne doit pas confirmer la commande d'un client
+        // depuis son propre chat.
+        //
+        // La projection ignorait ce plafond. Mesuré sur les 36 secteurs :
+        // 63 gestes annoncés sur 136 (46 %) ne pouvaient pas partir, dans
+        // 34 secteurs sur 36. Le prompt du marchand e-commerce disait
+        // « tu sais faire toi-même : confirmer_commande, annuler_commande… »
+        // puis, six mots plus loin, « ne promets aucun geste que tu ne peux
+        // pas exécuter ».
+        //
+        // Un assistant qui annonce et ne fait pas est pire qu'un assistant
+        // qui se tait : le premier se paie et déçoit, le second laisse la
+        // personne demander autrement.
+        const possibles = new Set(AUDIENCES.outilsDuTour(audience, niveau));
+        const faisables = (s.actions || [])
+            .filter((x) => x && x.fait && possibles.has(x.fait))
+            .map((x) => x.fait);
+        if (faisables.length) {
+            bloc.secteur.sait_faire = [...new Set(faisables)];
+            // ── L'AUDIENCE VOYAGE AVEC LA PROMESSE ───────────────────────
+            //
+            // L'audience est passée DEUX FOIS pour un même tour : ici, et au
+            // constructeur de consigne. Rien n'obligeait les deux à être la
+            // même — une route pouvait calculer la liste pour un marchand et
+            // l'imprimer dans la consigne d'un client.
+            //
+            // Ce n'est pas une crainte théorique : le garde de
+            // tests/secteurs.test.js faisait exactement ça, et c'est lui qui
+            // l'a révélé. Quand deux endroits doivent s'accorder et que rien
+            // ne les compare, ils divergent.
+            //
+            // La liste porte donc POUR QUI elle a été calculée, et
+            // brain/prompts/index.js refuse de l'imprimer si ce n'est pas la
+            // même personne. Une désynchronisation fait taire la promesse au
+            // lieu de la déplacer sur quelqu'un d'autre.
+            bloc.secteur.pourAudience = String(audience || "");
+        }
     }
 
     // La tension, quand il y en a une. C'est l'information la plus utile du

@@ -250,7 +250,12 @@ async function preparerEntree(req) {
             langue,
             nbEchanges,
             metier,
-            competence: competences.pourLePrompt({ metier, message }),
+            // La même audience qu'au-dessus, et pour la même raison : elle
+            // décide aussi de ce que le bloc métier annonce savoir faire.
+            // Le chat public ne porte AUCUN outil (config/audiences.js) — il
+            // ne doit donc annoncer aucun geste. Sans cette ligne, il
+            // promettait au visiteur de confirmer des commandes.
+            competence: competences.pourLePrompt({ metier, message, audience: "public" }),
             source: "vitrine",
         }),
     };

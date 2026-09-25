@@ -193,6 +193,43 @@ function outilsSansNiveau(id) {
         .filter((nom) => plafond.has(nom));
 }
 
+// ── CE QUI SERA RÉELLEMENT PORTÉ, POUR UN TOUR DONNÉ ─────────────────────
+//
+// Les deux axes croisés, en une seule expression : le plafond de l'audience,
+// puis le niveau quand il s'applique. C'est exactement ce que
+// `geminiService.buildToolsPayload` calcule à ses étapes 1 et 2 — et c'est
+// pour ça que cette fonction existe ici plutôt qu'ailleurs : les deux tables
+// vivent déjà dans ce fichier, et personne d'autre n'a à les recroiser.
+//
+// ── POURQUOI ELLE A ÉTÉ ÉCRITE ───────────────────────────────────────────
+//
+// `services/competences.js` annonçait au marchand, dans son prompt, les
+// gestes de son secteur — en les lisant dans `config/niveaux.js` SANS passer
+// par cette table. Mesuré sur les 36 secteurs : 63 gestes annoncés sur 136
+// (46 %) appartenaient à la famille `commerce`, que le marchand ne tient
+// JAMAIS chez lui. Trente-quatre secteurs sur trente-six promettaient un
+// geste qui ne partirait pas.
+//
+// Le défaut n'était pas dans les permissions — elles sont justes. Il était
+// dans la PHRASE : le prompt disait « tu sais faire confirmer_commande »
+// juste avant d'ajouter « ne promets aucun geste que tu ne peux pas
+// exécuter ».
+//
+// ⚠️ ELLE NE DIT PAS TOUT. Le troisième axe — le moteur, `config/moteurs.js`
+// — n'est pas croisé ici : il dépend du relais retenu au moment de l'appel,
+// que personne ne connaît à la construction du prompt. Sur Gemini les deux
+// ensembles coïncident ; sur un relais de secours, cette fonction peut donc
+// annoncer un outil de plus que ce qui partira. C'est le seul écart connu,
+// et il est du bon côté : deux axes valent mieux qu'aucun.
+function outilsDuTour(id, niveau = null) {
+    const plafond = outilsDe(id);
+    if (!niveauSApplique(id)) return plafond;
+    // `outilsSansNiveau` est déjà borné par le plafond — inutile de le
+    // reborner ici, et le reborner cacherait une erreur dans cette table.
+    const permis = new Set(niveau ? NIVEAUX.outilsDe(niveau) : outilsSansNiveau(id));
+    return plafond.filter((nom) => permis.has(nom));
+}
+
 // Pour les journaux et les pages de diagnostic : ce que chaque audience peut
 // tenir au maximum, lisible d'un coup d'œil.
 function etat() {
@@ -207,5 +244,6 @@ function etat() {
 
 module.exports = {
     AUDIENCES,
-    existe, audience, famillesDe, outilsDe, niveauSApplique, outilsSansNiveau, etat,
+    existe, audience, famillesDe, outilsDe, niveauSApplique, outilsSansNiveau,
+    outilsDuTour, etat,
 };

@@ -262,6 +262,20 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
             competence: competences.pourLePrompt({
                 metier: req.session?.metier || memoireActuelle?.profil?.metier || "",
                 message: message || "",
+                // À QUI ON PARLE, ET AVEC QUELLE PROFONDEUR PAYÉE.
+                //
+                // Les deux décident de ce que le bloc métier ANNONCE savoir
+                // faire. `audience` retire la famille commerce (elle agit sur
+                // le carnet d'un client, pas sur celui du marchand) ;
+                // `niveau` retire ce que ce tour-ci n'a pas payé — un tour
+                // « Rapide » ne porte aucun outil, il ne doit donc en
+                // promettre aucun.
+                //
+                // C'est LE MÊME `choixNiveau.niveau` que celui posé plus haut
+                // dans ce contexte : le prompt et la charge d'outils parlent
+                // donc du même tour, jamais de deux.
+                audience: "souverain",
+                niveau: choixNiveau.niveau,
             }),
             memoireUtilisateur: memoireActuelle,
             // ── L'IDENTITÉ, RECOPIÉE DE LA SESSION ──────────────────────

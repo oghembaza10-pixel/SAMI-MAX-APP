@@ -155,7 +155,16 @@ ${[
         // Ce que tu sais FAIRE ici, par opposition à ce dont tu sais parler.
         // La liste ne contient que des outils réellement disponibles :
         // annoncer un geste qu'on ne sait pas faire est pire que se taire.
+        // ⚠️ LA PROMESSE N'EST IMPRIMÉE QUE POUR CELUI À QUI ELLE A ÉTÉ
+        // CALCULÉE. `pourAudience` est estampillé par services/competences.js
+        // au moment du calcul ; si la consigne s'adresse à quelqu'un d'autre,
+        // la liste ne le concerne pas et on se tait. Un marchand ne doit pas
+        // hériter des gestes calculés pour son client, ni l'inverse.
         context.competence.secteur?.sait_faire?.length
+        // On compare à `audience` — l'audience RÉSOLUE, celle à qui la
+        // consigne parle vraiment — et non à `context.audience` brut, qui
+        // peut être absent alors que la consigne s'adresse bien au marchand.
+        && context.competence.secteur.pourAudience === audience
             ? `Dans ce métier, tu sais faire toi-même : ${context.competence.secteur.sait_faire.join(", ")}. `
               + "Pour le reste, tu aides à réfléchir — tu ne promets aucun geste que tu ne peux pas exécuter."
             : "",

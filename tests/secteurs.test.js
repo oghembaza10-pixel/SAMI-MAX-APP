@@ -528,9 +528,21 @@ const TOUS = require(path.join(RACINE, "services", "metiers.js")).METIERS.map((m
 // POUR DE VRAI et on regarde ce qu'elle contient.
 (async () => {
     const SAMII_PROMPT = require(path.join(RACINE, "brain", "prompts", "index.js"));
-    const consigne = async (id, message) => SAMII_PROMPT("test", {
-        audience: "client", metier: id,
-        competence: competences.pourLePrompt({ metier: id, message }),
+    // ⚠️ L'AUDIENCE VA AUX DEUX, ET C'EST TOUT L'ENJEU.
+    //
+    // Ce harnais passait `audience: "client"` à la consigne et RIEN à la
+    // compétence. Tant que `pourLePrompt` ignorait l'audience, ça ne se
+    // voyait pas. Le jour où elle a commencé à en tenir compte, ce test est
+    // devenu rouge — et il avait raison : il montrait qu'un appelant peut
+    // calculer la liste pour une personne et l'imprimer pour une autre.
+    //
+    // Ce n'est pas la mesure qu'on a corrigée, c'est le contrat : la liste
+    // porte désormais `pourAudience`, et brain/prompts refuse de l'imprimer
+    // quand les deux ne concordent pas. Le harnais dit donc la même chose
+    // aux deux — comme les deux vraies routes le font.
+    const consigne = async (id, message, audience = "client") => SAMII_PROMPT("test", {
+        audience, metier: id,
+        competence: competences.pourLePrompt({ metier: id, message, audience }),
     });
 
     // ⚠️ ON ISOLE LE BLOC MÉTIER, ON NE CHERCHE PAS DANS TOUTE LA CONSIGNE.
@@ -635,6 +647,98 @@ const TOUS = require(path.join(RACINE, "services", "metiers.js")).METIERS.map((m
     // du bloc qu'il ouvre.
     const blocs = (restoEntier.match(/CE QUE TU SAIS DE SON MÉTIER/g) || []).length;
     verifier(blocs === 1, `${blocs} blocs « ce que tu sais de son métier » dans la consigne au lieu d'un`);
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 9. CE QUI EST ANNONCÉ PART VRAIMENT
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // ── LE GARDE QUI MANQUAIT, ET CE QU'IL A COÛTÉ ───────────────────────
+    //
+    // Les 524 vérifications au-dessus mesuraient que la liste ARRIVE dans la
+    // consigne. Aucune ne mesurait qu'un outil de cette liste PART.
+    //
+    // Mesuré, avant correction : sur 136 gestes annoncés aux marchands des
+    // 36 secteurs, 63 — 46 %, dans 34 secteurs — appartenaient à la famille
+    // « commerce », que le marchand ne tient jamais chez lui. Le prompt d'un
+    // e-commerçant annonçait « confirmer_commande, annuler_commande » puis
+    // ajoutait, six mots plus loin, « ne promets aucun geste que tu ne peux
+    // pas exécuter ».
+    //
+    // Un garde qui mesure l'annonce et jamais l'acte laisse passer
+    // exactement ce défaut-là.
+    //
+    // ── POURQUOI ON INTERROGE LA VRAIE CHARGE ────────────────────────────
+    //
+    // On ne recalcule PAS ce que l'audience devrait permettre : ce serait
+    // écrire l'intersection une troisième fois, et trois expressions qui
+    // doivent s'accorder finissent toujours par diverger. On demande à
+    // `geminiService.buildToolsPayload` ce qu'il enverrait POUR CE TOUR-LÀ,
+    // et on vérifie que la promesse y figure. Si `config/audiences.js` et
+    // le constructeur de charge cessent un jour de dire la même chose, c'est
+    // ici que ça crie.
+    const gemini = require(path.join(RACINE, "services", "geminiService.js"));
+    const chargeDe = (audience, niveau) => {
+        // `tourDeConversation` est la marque que brain/planner.js pose en
+        // code. Sans elle la charge est `null` pour TOUT LE MONDE — et un
+        // garde qui l'oublie mesure ce mur-là, pas les permissions. (Erreur
+        // commise deux fois pendant l'écriture de ce chantier.)
+        //
+        // `useTools` est recopié de brain/planner.js, à l'identique :
+        //     context.allowActions !== false && context.audience !== "souverain"
+        // L'écrire de mémoire l'a inversé au premier essai, et les 63 gestes
+        // du client sont sortis « jamais envoyés » alors qu'ils partent bien.
+        const useTools = audience !== "souverain";
+        const p = gemini.__test_buildToolsPayload(
+            useTools, { audience, niveau, tourDeConversation: true }, "gemini");
+        return new Set(p ? (p[0].functionDeclarations || []).map((f) => f.name) : []);
+    };
+
+    let annonces = 0;
+    for (const [audience, niveau] of [
+        ["souverain", "rapide"], ["souverain", "expert"],
+        ["souverain", "pro"], ["souverain", "maitre"],
+        ["client", null], ["public", null],
+    ]) {
+        const partent = chargeDe(audience, niveau);
+        for (const id of TOUS) {
+            const bloc = competences.pourLePrompt({ metier: id, audience, niveau });
+            const promis = (bloc && bloc.secteur && bloc.secteur.sait_faire) || [];
+            annonces += promis.length;
+            for (const outil of promis) {
+                verifier(partent.has(outil),
+                    `${id} / ${audience}${niveau ? " · " + niveau : ""} : la consigne annonce « ${outil} », `
+                    + "mais cet outil n'est PAS dans la charge envoyée au modèle — "
+                    + "SAMII promet un geste qui ne partira pas");
+            }
+        }
+    }
+    // Un garde qui ne mesure rien passe. Après correction, les audiences à
+    // outils annoncent 73 gestes (marchand, Pro/Maître) et 63 (client) ;
+    // « rapide » et « public » n'en annoncent aucun, et c'est juste. Ce
+    // plancher attrape le jour où la projection se tairait partout.
+    verifier(annonces >= 100,
+        `seulement ${annonces} gestes annoncés au total sur les six tours mesurés — `
+        + "la projection s'est tue, et la boucle ci-dessus ne vérifie plus rien");
+
+    // ── LA PROMESSE NE CHANGE PAS DE DESTINATAIRE ────────────────────────
+    //
+    // La liste est calculée pour quelqu'un, puis imprimée pour quelqu'un.
+    // Rien n'obligeait les deux à être la même personne — le harnais de ce
+    // fichier faisait justement l'erreur. `pourAudience` voyage donc avec la
+    // liste, et la consigne se tait quand ça ne concorde pas.
+    const pourMarchand = competences.pourLePrompt({ metier: "ecommerce", audience: "souverain", niveau: "pro" });
+    const impriméeAuClient = await SAMII_PROMPT("test", {
+        audience: "client", metier: "ecommerce", competence: pourMarchand,
+    });
+    verifier(!/tu sais faire toi-même/.test(impriméeAuClient),
+        "une liste calculée pour le MARCHAND s'imprime dans la consigne d'un CLIENT — "
+        + "les gestes de l'un sont annoncés à l'autre");
+    const impriméeAuBon = await SAMII_PROMPT("test", {
+        audience: "souverain", metier: "ecommerce", competence: pourMarchand,
+    });
+    verifier(/tu sais faire toi-même/.test(impriméeAuBon),
+        "la liste calculée pour le marchand ne s'imprime plus dans SA PROPRE consigne — "
+        + "le contrôle de destinataire est devenu un mur");
 })().then(() => {
     if (echecs.length) {
         console.log(`\n❌ secteurs : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);
