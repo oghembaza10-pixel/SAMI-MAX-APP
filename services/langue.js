@@ -644,6 +644,14 @@ const EN = {
         "Payment isn't connected on this service yet. Come back soon.",
     "Le paiement n'a pas pu démarrer. Réessaie dans un instant.":
         "The payment couldn't start. Try again in a moment.",
+
+    // ── LES CARTES DU FIL ────────────────────────────────────────────────
+    // Les deux seuls mots qu'une carte écrit elle-même. Tout le reste de son
+    // contenu vient de ce qu'un outil a produit — un nom d'entreprise, un
+    // compteur — et ne se traduit pas : ce sont des données, pas de
+    // l'interface.
+    "Sources": "Sources",
+    "Solde": "Balance",
 };
 
 // ── L'arabe ──────────────────────────────────────────────────────────────
@@ -1047,6 +1055,10 @@ const AR = {
         "الدفع غير موصول بهذه الخدمة بعد. عد قريبًا.",
     "Le paiement n'a pas pu démarrer. Réessaie dans un instant.":
         "لم يتمكّن الدفع من البدء. أعد المحاولة بعد لحظة.",
+
+    // ── LES CARTES DU FIL ────────────────────────────────────────────────
+    "Sources": "المصادر",
+    "Solde": "الرصيد",
 };
 
 const DICTIONNAIRES = { fr: null, en: EN, ar: AR };

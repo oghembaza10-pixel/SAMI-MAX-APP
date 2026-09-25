@@ -23,6 +23,10 @@ const connectorService = require("../services/connectorService");
 const google = require("../services/google");
 const metiers = require("../services/metiers");
 const competences = require("../services/competences");
+// Ce qu'un outil a produit, en objet affichable par le fil du chat. Voir
+// services/resultats.js : il ne rend une carte que pour les outils qu'il connaît,
+// et la structure brute de l'outil ne quitte jamais ce processus.
+const resultats = require("../services/resultats");
 const evenements = require("../services/evenements");
 
 // Notes vocales du chat QG : jamais plus de ~2 minutes d'audio en usage
@@ -354,8 +358,34 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
                 ref: messageId ? `msg:${messageId}` : null,
                 motif: "SAMII (quota gratuit épuisé)",
             });
-            if (debit.ok) credits = { messages: debit.messages, montant: debit.montant, lignes: debit.lignes };
+            // `solde` est ce que le registre rend APRÈS le débit. Il était
+            // calculé puis jeté ici : la page savait combien ce tour avait
+            // coûté, jamais combien il restait. Une dépense sans solde, c'est
+            // un ticket de caisse sans total.
+            if (debit.ok) {
+                credits = { messages: debit.messages, montant: debit.montant, lignes: debit.lignes };
+                if (typeof debit.solde === "number") credits.solde = debit.solde;
+            }
         }
+
+        // ── LES CARTES ──────────────────────────────────────────────────
+        //
+        // Ce qu'un outil a produit, en objet affichable. Construites ICI,
+        // après le débit, parce qu'une carte porte le prix du geste et le
+        // solde qui reste — deux choses qui n'existent qu'une fois le débit
+        // passé.
+        //
+        // ⚠️ `result.actes` porte la structure brute de l'outil. Elle NE PART
+        // PAS : `resultats.depuisLesActes` en tire des champs choisis, et c'est
+        // ce résultat-là qui rejoint la charge. La charge ci-dessous fait
+        // `...result` — donc `actes` en ferait partie. On le remplace par sa
+        // version sans données (voir plus bas), sinon tout ce qu'un outil lit
+        // partirait au navigateur sans que personne l'ait décidé.
+        const resultatsDuTour = resultats.depuisLesActes(result.actes, {
+            audience: "souverain",
+            niveau: choixNiveau.niveau,
+            credits,
+        });
 
         // Le niveau part avec la réponse. Sans ça, impossible d'afficher
         // « SAMII réfléchit plus profondément… », impossible de vérifier un
@@ -363,6 +393,22 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
         // bon moment — `borne` dit précisément quand le plafond a mordu.
         return { charge: {
             ...result, messageId, surCredits, credits,
+            resultats: resultatsDuTour,
+            // ── `actes` REPART SANS SES DONNÉES ─────────────────────────
+            //
+            // `...result` ci-dessus emporte `actes`, et depuis ce chantier
+            // chaque acte porte ce que l'outil a lu — des aperçus de boîte
+            // mail, des prospects entiers. La page n'a besoin que du nom et
+            // de l'issue ; la carte, elle, porte déjà ce qui doit s'afficher.
+            //
+            // On recompose donc la liste au lieu de la laisser passer. Un
+            // champ qu'on n'envoie pas est un champ qu'on n'aura pas à
+            // retirer en urgence le jour où il contiendra autre chose.
+            actes: Array.isArray(result.actes)
+                ? result.actes.map((a) => (a && typeof a === "object"
+                    ? { nom: a.nom, reussi: a.reussi }
+                    : a))
+                : result.actes,
             niveau: {
                 id: choixNiveau.niveau,
                 auto: choixNiveau.auto,

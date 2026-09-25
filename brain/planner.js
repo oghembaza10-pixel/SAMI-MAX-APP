@@ -564,8 +564,29 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
                 // échec franc que les moteurs renvoient ; tout le reste (un
                 // objet de données, undefined) est une réussite. Un acte raté
                 // ne sera pas facturé — même règle qu'un message sans réponse.
+                //
+                // ── ET CE QUE L'OUTIL A RÉELLEMENT RENDU ─────────────────
+                //
+                // `donnees` porte la structure de l'outil : les huit
+                // entreprises de `rechercher_prospects`, les compteurs de
+                // `resume_journee`. Elle servait UNE fois — à faire écrire
+                // une phrase au modèle — puis elle était jetée ici même,
+                // avec tout ce qui aurait pu être affiché.
+                //
+                // ⚠️ ELLE NE VA PAS AU NAVIGATEUR. Elle reste dans ce
+                // processus ; c'est services/cartes.js qui en tire une carte,
+                // et c'est la CARTE qui part. Envoyer la structure brute
+                // aurait été le chemin court pour publier un jour à la page
+                // un champ que personne n'avait décidé d'y mettre.
+                //
+                // `facturer` (config/credits.js) ne lit que `nom` et
+                // `reussi` : ce troisième champ ne change rien au débit.
                 if (Array.isArray(journal)) {
-                    journal.push({ nom: result.name, reussi: functionResult?.success !== false });
+                    journal.push({
+                        nom: result.name,
+                        reussi: functionResult?.success !== false,
+                        donnees: functionResult,
+                    });
                 }
 
                 const finalReply = await gemini.chatWithFunctionResult({
@@ -613,8 +634,15 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
             if (result.type === "function_call") {
                 console.log(`⚙️ SAMII exécute : ${result.name}`, result.args);
                 const functionResult = await this.executeFunction(result.name, result.args, context);
+                // Même journal qu'au-dessus, `donnees` comprise : le chemin au
+                // fil et le chemin d'un bloc doivent rendre la même carte,
+                // sinon la même question donne deux écrans selon le transport.
                 if (Array.isArray(journal)) {
-                    journal.push({ nom: result.name, reussi: functionResult?.success !== false });
+                    journal.push({
+                        nom: result.name,
+                        reussi: functionResult?.success !== false,
+                        donnees: functionResult,
+                    });
                 }
 
                 // Le second appel — le même que dans `ask`. Sa réponse arrive

@@ -854,6 +854,135 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
 /* Une image envoyée par la personne s'affiche dans sa bulle. */
 .bulle__image { display: block; max-width: 220px; border-radius: var(--r-s); margin-bottom: 8px; }
 
+/* ══ LES CARTES ═══════════════════════════════════════════════════════════
+
+   Un résultat d'outil, posé dans le fil comme un tour de plus.
+
+   ── LA LARGEUR EST CELLE DU FIL, PAS CELLE DE LA CARTE ──────────────────
+   Une bulle fait `max-width: 100%` de la colonne. La carte fait pareil : au
+   téléphone elle occupe toute la largeur disponible, et elle ne dépasse
+   jamais. `min-width: 0` sur le tour est ce qui l'autorise à rétrécir — sans
+   lui, un élément de grille refuse de descendre sous son contenu minimum et
+   la page déborde. C'est exactement le défaut qu'on a mesuré sur
+   /accueil-classique.
+
+   ── TOUT EN `overflow-wrap: anywhere` ───────────────────────────────────
+   Les noms et les liens viennent d'une recherche web : une URL de 90
+   caractères sans espace existe, et elle doit se couper plutôt que pousser
+   la page. */
+.tour--resultat { min-width: 0; }
+.resultat {
+    flex: 1; min-width: 0; max-width: 100%;
+    border: 1px solid var(--ligne); border-radius: var(--r-m);
+    background: var(--panneau); overflow: hidden;
+    overflow-wrap: anywhere;
+}
+.resultat__tete { padding: 13px 15px 10px; border-bottom: 1px solid var(--ligne); }
+.resultat__titre {
+    margin: 0; font-family: var(--serif); font-weight: 600;
+    font-size: 1rem; color: var(--texte); line-height: 1.3;
+}
+.resultat__soustitre {
+    margin: 4px 0 0; font-family: var(--mono); font-size: .66rem;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--tres-doux);
+}
+
+/* ── LA LISTE ───────────────────────────────────────────────────────── */
+.resultat__liste { margin: 0; padding: 0; list-style: none; }
+.resultat__ligne { padding: 11px 15px; border-bottom: 1px solid var(--ligne); }
+.resultat__ligne:last-child { border-bottom: 0; }
+.resultat__ligneHaut { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.resultat__nom { font-weight: 600; font-size: .9rem; color: var(--texte); }
+.resultat__etiquette {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--tres-doux);
+    border: 1px solid var(--ligne-viv); border-radius: 999px; padding: 2px 7px;
+}
+.resultat__detail { margin: 5px 0 0; font-size: .82rem; color: var(--doux); line-height: 1.5; }
+.resultat__contact { margin: 4px 0 0; font-family: var(--mono); font-size: .72rem; color: var(--tres-doux); }
+.resultat__lien {
+    display: inline-block; margin-top: 5px; font-size: .74rem; color: var(--cyan);
+    text-decoration: underline; text-underline-offset: 2px;
+    text-decoration-color: var(--ligne-viv);
+}
+.resultat__lien:hover { text-decoration-color: var(--cyan); }
+
+/* ── LES CHIFFRES ───────────────────────────────────────────────────────
+
+   ⚠️ C'ÉTAIT UNE GRILLE, ET ELLE LAISSAIT UN TROU.
+
+   Première version : `grid-template-columns: repeat(auto-fit, minmax(110px,
+   1fr))`. Sur un téléphone de 390 px, ça fait trois colonnes ; un bilan à
+   cinq compteurs occupe donc deux rangées et laisse une case VIDE, bordée
+   comme les autres. Vu à la capture : on dirait un compteur qui n'a pas
+   chargé.
+
+   Une grille impose des colonnes ; ce qu'on veut ici, c'est que la dernière
+   rangée se partage la place. C'est ce que fait `flex-wrap` : `flex: 1 1
+   110px` laisse chaque tuile grandir pour remplir sa rangée, quel que soit
+   le nombre de compteurs. Deux par rangée à 320 px, trois à 390, cinq d'un
+   trait sur un bureau — et jamais de case vide.
+
+   Le `gap: 1px` sur fond `--ligne` dessine les séparateurs : ce sont les
+   tuiles qui laissent voir le fond, pas des bordures. */
+.resultat__chiffres {
+    display: flex; flex-wrap: wrap;
+    gap: 1px; background: var(--ligne);
+}
+.chiffre { flex: 1 1 110px; min-width: 0; background: var(--panneau); padding: 13px 14px; }
+.chiffre__valeur {
+    display: block; font-family: var(--mono); font-size: 1.35rem;
+    font-weight: 500; color: var(--texte); line-height: 1.1;
+}
+.chiffre__titre {
+    display: block; margin-top: 4px; font-size: .7rem; color: var(--tres-doux);
+}
+
+/* Ce qui n'a pas pu être lu. Discret mais présent : le taire ferait croire
+   à un bilan complet. */
+.resultat__manques {
+    padding: 10px 15px; border-top: 1px solid var(--ligne);
+    background: rgba(255,180,84,.05);
+}
+.resultat__manques p {
+    margin: 0 0 5px; font-size: .74rem; color: var(--ambre); line-height: 1.45;
+}
+.resultat__manques p:last-child { margin-bottom: 0; }
+
+.resultat__sources {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 9px 15px; border-top: 1px solid var(--ligne);
+}
+.resultat__sourcesTitre {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--tres-doux);
+}
+.resultat__sources a { font-size: .72rem; color: var(--doux); text-decoration: underline; text-underline-offset: 2px; }
+.resultat__sources a:hover { color: var(--cyan); }
+
+/* ── LE PRIX, ET CE QU'IL RESTE ─────────────────────────────────────────
+   Quelqu'un qui paie doit voir ce qu'il a payé et ce qui lui reste, au
+   moment où il reçoit la chose. Pas dans une page de facturation
+   ailleurs. */
+.resultat__cout {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px;
+    padding: 9px 15px; border-top: 1px solid var(--ligne);
+    background: var(--releve);
+    font-family: var(--mono); font-size: .68rem;
+}
+.resultat__prix { color: var(--doux); }
+.resultat__solde { color: var(--vert); }
+
+/* Les gestes reprennent `.chip` — même objet visuel que les amorces, parce
+   que c'est le même geste : une phrase courte qu'on envoie à SAMII.
+   `white-space: normal` parce qu'ici les libellés sont plus longs et qu'un
+   `nowrap` les ferait déborder à 320 px. */
+.resultat__gestes {
+    display: flex; flex-wrap: wrap; gap: 7px;
+    padding: 11px 15px; border-top: 1px solid var(--ligne);
+}
+.resultat__geste { white-space: normal; text-align: start; }
+
 .jauge {
     max-width: 680px; margin: 9px auto 0; text-align: center;
     font-family: var(--mono); font-size: .68rem; color: var(--tres-doux);
@@ -1415,6 +1544,17 @@ window.SAMII_T = <%- JSON.stringify({
     projetSansCompte: L("Un projet garde une conversation à part : tes produits d'un côté, tes rendez-vous de l'autre, et je ne mélange rien. Pour que je puisse en garder un, il me faut un compte — c'est gratuit et ça prend dix secondes."),
     projetNom: L("Comment veux-tu appeler ce projet ?"),
     rechargeBientot: L("La recharge arrive bientôt : tu pourras charger SAMII comme une flexy, par Chargily (CIB / EDAHABIA), et dépenser tes points comme tu veux. Pas d'abonnement obligatoire, et les points ne s'effacent pas à la fin du mois."),
+    /* Les deux seuls mots que les résultats écrivent elles-mêmes. Tout le reste
+       d'une carte vient de ce que l'outil a produit — un titre, un chiffre,
+       un nom d'entreprise — et ne se traduit donc pas ici.
+       ⚠️ COMMENTAIRE JS, PAS EJS : on est DÉJÀ à l'intérieur d'une balise
+       d'expression. Un commentaire EJS ici la fermerait et le gabarit ne
+       compilerait plus. Et on n'écrit pas non plus les deux caractères
+       d'ouverture d'une balise DANS ce commentaire : EJS lit le texte brut,
+       il ne sait pas qu'il est dans un commentaire JavaScript. Les deux
+       versions ont été essayées, gabarits.test.js a crié les deux fois. */
+    resultatSources: L("Sources"),
+    resultatSolde:   L("Solde"),
 }) %>;
 window.SAMII_LANG = "<%= lang %>";
 window.SAMII_CONNECTE = <%= loggedIn ? "true" : "false" %>;

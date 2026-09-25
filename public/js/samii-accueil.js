@@ -213,6 +213,160 @@
         })();
     }
 
+    // ══ LES CARTES ═══════════════════════════════════════════════════════
+    //
+    // Un outil rend une structure ; le serveur en fait une carte
+    // (services/resultats.js) ; cette fonction la peint DANS LE FIL, à la suite
+    // de la réponse, comme un tour de plus.
+    //
+    // ── POURQUOI PAS DU TEXTE ────────────────────────────────────────────
+    //
+    // Huit prospects racontés en paragraphe, ça se lit une fois et ça se
+    // perd. En carte, ça se parcourt, ça se clique, ça reste dans le fil, et
+    // ça porte ce qu'on peut faire ensuite. Le marchand paie un acte : il
+    // doit lui en rester quelque chose à l'écran.
+    //
+    // ── TOUT EST CONSTRUIT EN NŒUDS, JAMAIS EN innerHTML ─────────────────
+    //
+    // ⚠️ ET CE N'EST PAS UNE PRÉCAUTION THÉORIQUE. Le contenu d'une carte de
+    // prospects vient d'une recherche web : des noms et des descriptions
+    // écrits par n'importe qui sur n'importe quelle page. Un seul
+    // `innerHTML` ici, et une page publique choisit ce qui s'exécute dans le
+    // navigateur du marchand — avec sa session ouverte.
+    //
+    // `textContent` partout. Les liens sont déjà filtrés côté serveur (seuls
+    // http/https passent), et on remet `rel="noopener noreferrer"` ici :
+    // deux verrous indépendants valent mieux qu'un.
+    // ⚠️ UNE SEULE CHAÎNE POUR LA CLASSE DU BOUTON DE GESTE.
+    //
+    // Elle était écrite deux fois : une fois en la posant sur le bouton, une
+    // fois en l'écoutant dans `closest()`. Un renommage a touché l'une et pas
+    // l'autre — les boutons s'affichaient, joliment, et ne faisaient
+    // strictement rien au clic. Aucune erreur, aucun journal : le geste le
+    // plus visible de la carte était mort en silence.
+    //
+    // Les tests de source n'ont rien vu : les deux chaînes existaient, elles
+    // ne se parlaient simplement plus. C'est le navigateur qui l'a dit.
+    var CLASSE_GESTE = "resultat__geste";
+
+    function elem(balise, classe, texte) {
+        var e = document.createElement(balise);
+        if (classe) e.className = classe;
+        if (texte) e.textContent = texte;
+        return e;
+    }
+
+    function peindreResultats(liste) {
+        if (!Array.isArray(liste) || !liste.length) return;
+        liste.forEach(peindreResultat);
+    }
+
+    function peindreResultat(c) {
+        if (!c || !Array.isArray(c.elements) || !c.elements.length) return;
+        var t = bloc("tour tour--resultat");
+        var carte = elem("article", "resultat");
+        carte.setAttribute("data-source", String(c.source || ""));
+
+        var tete = elem("header", "resultat__tete");
+        if (c.titre) tete.appendChild(elem("h3", "resultat__titre", c.titre));
+        if (c.soustitre) tete.appendChild(elem("p", "resultat__soustitre", c.soustitre));
+        carte.appendChild(tete);
+
+        if (c.forme === "chiffres") {
+            var grille = elem("div", "resultat__chiffres");
+            c.elements.forEach(function (e) {
+                var tuile = elem("div", "chiffre");
+                tuile.appendChild(elem("span", "chiffre__valeur", e.valeur));
+                tuile.appendChild(elem("span", "chiffre__titre", e.titre));
+                grille.appendChild(tuile);
+            });
+            carte.appendChild(grille);
+        } else {
+            var ul = elem("ul", "resultat__liste");
+            c.elements.forEach(function (e) {
+                var li = elem("li", "resultat__ligne");
+                var haut = elem("div", "resultat__ligneHaut");
+                haut.appendChild(elem("span", "resultat__nom", e.titre));
+                if (e.valeur) haut.appendChild(elem("span", "resultat__etiquette", e.valeur));
+                li.appendChild(haut);
+                if (e.detail) li.appendChild(elem("p", "resultat__detail", e.detail));
+                if (e.contact) li.appendChild(elem("p", "resultat__contact", e.contact));
+                if (e.lien) {
+                    var a = elem("a", "resultat__lien", e.lien.replace(/^https?:\/\//, "").slice(0, 48));
+                    a.href = e.lien;
+                    a.target = "_blank";
+                    a.rel = "noopener noreferrer";
+                    li.appendChild(a);
+                }
+                ul.appendChild(li);
+            });
+            carte.appendChild(ul);
+        }
+
+        // Ce que le bilan n'a PAS pu lire. Dit à voix haute, parce que
+        // « 0 » et « pas mesuré » sonnent pareil et ne veulent pas dire la
+        // même chose (voir services/briefing.js).
+        if (Array.isArray(c.manques) && c.manques.length) {
+            var man = elem("div", "resultat__manques");
+            c.manques.forEach(function (m) { man.appendChild(elem("p", null, m)); });
+            carte.appendChild(man);
+        }
+
+        if (Array.isArray(c.liens) && c.liens.length) {
+            var src = elem("div", "resultat__sources");
+            src.appendChild(elem("span", "resultat__sourcesTitre", T.resultatSources || "Sources"));
+            c.liens.forEach(function (l) {
+                var a = elem("a", null, l.libelle);
+                a.href = l.url;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                src.appendChild(a);
+            });
+            carte.appendChild(src);
+        }
+
+        // ── LE PRIX DE CE GESTE, ET CE QU'IL RESTE ───────────────────────
+        //
+        // Affiché seulement quand ce tour a été débité. Le quota gratuit ne
+        // montre rien : il n'y a rien à montrer, et écrire « 0 » ferait
+        // croire à une remise. Le solde vient du registre, jamais d'un
+        // calcul fait ici.
+        if (c.cout && typeof c.cout.montant === "number") {
+            var pied = elem("div", "resultat__cout");
+            pied.appendChild(elem("span", "resultat__prix", (c.cout.libelle || "") + " · " + c.cout.montant.toFixed(2) + " $"));
+            if (typeof c.cout.solde === "number") {
+                pied.appendChild(elem("span", "resultat__solde",
+                    (T.resultatSolde || "Solde") + " : " + c.cout.solde.toFixed(2) + " $"));
+            }
+            carte.appendChild(pied);
+        }
+
+        // ── LES GESTES ───────────────────────────────────────────────────
+        //
+        // Le serveur a déjà retiré ceux que cette personne ne peut pas
+        // tenir (services/resultats.js). Ici on ne fait que peindre — et on
+        // réutilise exactement le mécanisme des puces d'amorce : un libellé
+        // court, une demande entière envoyée à SAMII.
+        if (Array.isArray(c.gestes) && c.gestes.length) {
+            var barre = elem("div", "resultat__gestes");
+            c.gestes.forEach(function (g) {
+                var b = elem("button", "chip " + CLASSE_GESTE, g.libelle);
+                b.type = "button";
+                b.setAttribute("data-demande", g.demande);
+                barre.appendChild(b);
+            });
+            barre.addEventListener("click", function (ev) {
+                var b = ev.target.closest("." + CLASSE_GESTE);
+                if (!b || occupe) return;
+                envoyerMessage(b.getAttribute("data-demande"));
+            });
+            carte.appendChild(barre);
+        }
+
+        t.appendChild(carte);
+        defiler();
+    }
+
     // Le compte n'est PAS un péage : on l'offre, on ne le réclame pas, et on
     // dit explicitement que la conversation peut continuer sans lui.
     function proposerMemoire() {
@@ -417,7 +571,13 @@
         .then(function (json) {
             var reponse = (json && json.reply) || (json && json.quotaExceeded ? T.quota : T.panne);
             var bulle = ouvrirBulle(cible);
-            reveler(bulle, reponse, function () { terminer(reponse, json || {}); });
+            // Les résultats arrivent APRÈS la phrase, jamais pendant. SAMII dit
+            // d'abord ce qu'il a trouvé, le résultat se pose ensuite : poser
+            // la carte au milieu du texte couperait la phrase en deux.
+            reveler(bulle, reponse, function () {
+                peindreResultats(json && json.resultats);
+                terminer(reponse, json || {});
+            });
         })
         .catch(function () {
             var bulle = ouvrirBulle(cible);
