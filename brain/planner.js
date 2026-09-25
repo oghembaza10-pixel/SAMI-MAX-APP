@@ -96,6 +96,22 @@ class SamiiPlanner {
             case "preparer_strategie":
                 return await this.lancerMissionLongue(name, args, context);
 
+            // ── LES CINQ OUTILS REPRIS DES ANCIENNES PAGES ───────────────
+            case "marche_du_moment":
+                return await this.marcheDuMoment(args, context);
+
+            case "prix_du_marche":
+                return await this.prixDuMarche(args, context);
+
+            case "trouver_fournisseur":
+                return await this.trouverFournisseur(args, context);
+
+            case "etat_de_mon_business":
+                return await this.etatDuBusiness(context);
+
+            case "historique_client":
+                return await this.historiqueClient(args, context);
+
             default:
                 return { success: false, error: `Fonction inconnue : ${name}` };
         }
@@ -455,6 +471,372 @@ Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans b
     // atteint `terminee` — toutes les étapes passées ET le résultat
     // vérifié. Facturer au lancement ferait payer une mission qui échouera
     // trois minutes plus tard.
+    // ══════════════════════════════════════════════════════════════════════
+    // LES CINQ OUTILS REPRIS DES ANCIENNES PAGES
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // Douze pages vivaient sous /samii : Top Produits, Œil Concurrentiel,
+    // Chasseur de Stock, Miroir, Mémoire Client… Chacune était un formulaire
+    // qui construisait un prompt, appelait Gemini, et affichait des cartes.
+    //
+    // ⚠️ LES PROMPTS SONT RECOPIÉS MOT POUR MOT. Ils ont été écrits, éprouvés
+    // et corrigés ; ils sortent du JSON propre. Les réécrire « plus
+    // proprement » serait refaire gratuitement un travail déjà validé, et
+    // perdre au passage les précisions qui font qu'ils marchent (« sois
+    // réaliste, pas exagéré », « ne remonte jamais les coordonnées
+    // personnelles »). Le seul changement : le formulaire disparaît, ses
+    // champs deviennent les arguments de l'outil.
+    //
+    // ⚠️ ET LA SORTIE NE CHANGE PAS NON PLUS. Même JSON, aux mêmes noms de
+    // champs. C'est ce qui permet à services/resultats.js d'en faire un bloc
+    // sans qu'aucune page existante ne bouge.
+
+    // Le même extracteur que les pages : le modèle encadre parfois son JSON
+    // de texte ou de balises markdown malgré la consigne.
+    static extraire(texte, tableau = false) {
+        try {
+            const m = String(texte || "").match(tableau ? /\[[\s\S]*\]/ : /\{[\s\S]*\}/);
+            return m ? JSON.parse(m[0]) : null;
+        } catch { return null; }
+    }
+
+    // ── « QU'EST-CE QUI SE VEND BIEN ? » ─────────────────────────────────
+    //
+    // Reprend DEUX pages, et c'est voulu :
+    //   Top Produits   sans produit déclaré → ce qui marche sur ce marché
+    //   Opportunités   avec un produit      → des pistes autour de ce qu'il
+    //                                         vend déjà
+    //
+    // Ce sont deux questions différentes, donc deux prompts — les deux
+    // existants, recopiés. Les fondre en un seul aurait voulu dire en écrire
+    // un troisième, que personne n'a éprouvé.
+    async marcheDuMoment({ pays, secteur, produit }, context = {}) {
+        // La table de devises de routes/topproduits.js, à l'identique : sans
+        // elle, un marchand algérien lit des revenus estimés en dollars.
+        const DEVISES = { DZ: "DZD", MA: "MAD", TN: "TND", FR: "EUR", BE: "EUR", CA: "CAD", SN: "XOF", CI: "XOF" };
+        const marche = String(pays || "").trim();
+        if (!marche) return { success: false, error: "Je ne sais pas de quel marché parler — dis-moi le pays." };
+        const devise = DEVISES[marche.toUpperCase()] || "USD";
+
+        let prompt;
+        let tableau = false;
+        if (produit && String(produit).trim()) {
+            // routes/opportunites.js, mode « produit ».
+            tableau = true;
+            prompt = `Tu es SAMII, le stratège commercial de OG Technology. Un marchand te demande de repérer des opportunités produits.
+
+Produit / secteur actuel : ${String(produit).trim()}
+Marché cible : ${marche}
+${secteur ? `Précisions : ${secteur}` : ""}
+
+Utilise la recherche web pour identifier des tendances actuelles. Propose entre 3 et 5 pistes concrètes et actionnables : produits ou variantes qui pourraient bien marcher sur ce marché.
+
+Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte autour, sans balises markdown, dans ce format exact :
+[
+  { "nom": "Nom court de l'opportunité", "score": 82, "explication": "Une phrase expliquant pourquoi, concrète et actionnable." }
+]
+
+Le score est un nombre entre 0 et 100 représentant le potentiel réel selon les tendances trouvées. Sois honnête : toutes les pistes ne doivent pas avoir un score élevé.`;
+        } else {
+            // routes/topproduits.js.
+            prompt = `Tu es SAMII, le stratège commercial de OG Technology. Analyse le marché e-commerce du pays suivant.
+
+Pays : ${marche}
+${secteur ? `Secteur ciblé : ${secteur}` : "Tous secteurs confondus."}
+Devise à utiliser pour les montants : ${devise}
+
+Utilise la recherche web pour identifier les tendances actuelles de ce marché. Donne :
+1. Un Top 5 des produits qui se vendent le mieux EN CE MOMENT
+2. Un Top 5 des produits qui vont probablement bien se vendre BIENTÔT (tendance montante)
+
+Pour chaque produit, estime un revenu mensuel potentiel réaliste pour un marchand moyen sur ce marché, exprimé en ${devise} (ex: "150 000 ${devise}/mois").
+
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :
+{
+  "du_moment": [
+    { "nom": "Nom du produit", "revenu_estime": "150 000 ${devise}/mois", "raison": "Une phrase expliquant pourquoi ça marche actuellement." }
+  ],
+  "a_venir": [
+    { "nom": "Nom du produit", "revenu_estime": "80 000 ${devise}/mois", "raison": "Une phrase expliquant pourquoi ça va probablement cartonner bientôt." }
+  ]
+}
+
+Exactement 5 éléments dans chaque liste. Sois réaliste et honnête dans tes estimations, pas exagéré.`;
+        }
+
+        try {
+            const r = await gemini.chatWithSearch({
+                message: prompt,
+                context: { source: "marche_du_moment", workspaceId: context.workspaceId || null },
+            });
+            const data = SamiiPlanner.extraire(r.type === "text" ? r.text : "", tableau);
+            if (!data) return { success: false, error: "Je n'ai pas pu structurer ce que j'ai trouvé. Redemande-moi." };
+            return tableau
+                ? { success: true, pistes: data, marche, sources: r.sources || [] }
+                : { success: true, ...data, marche, devise, sources: r.sources || [] };
+        } catch (err) {
+            console.error("❌ Planner.marcheDuMoment :", err.message);
+            return { success: false, error: "La recherche n'a pas abouti. Réessaie." };
+        }
+    }
+
+    // ── « À COMBIEN LES AUTRES LE VENDENT ? » ────────────────────────────
+    // routes/oeilconcurrentiel.js, mode produit, recopié.
+    async prixDuMarche({ produit, prix_actuel, marche }, context = {}) {
+        const p = String(produit || "").trim();
+        if (!p) return { success: false, error: "Dis-moi quel produit tu veux situer." };
+
+        // La consigne CHANGE selon qu'un prix est donné, exactement comme
+        // dans la page : sans prix, aucun verdict n'est rendu. Un verdict
+        // sans point de comparaison serait une opinion déguisée en mesure.
+        const prixLigne = prix_actuel
+            ? `Prix actuel du marchand : ${prix_actuel}`
+            : 'Le marchand n\'a pas encore de prix, ne fais pas de verdict de comparaison, mets "verdict": null.';
+
+        const prompt = "Tu es SAMII, spécialiste veille concurrentielle pour OG Technology. Un marchand veut analyser le positionnement prix d'un produit.\n\n"
+            + `Produit : ${p}\n`
+            + (marche ? `Marché : ${marche}\n` : "")
+            + `${prixLigne}\n\n`
+            + "Utilise la recherche web pour trouver :\n"
+            + "1. Des prix constatés pour ce produit chez d'autres vendeurs/sites (comparatif détail)\n"
+            + "2. Des fournisseurs ou grossistes potentiels (chinois type Alibaba/1688, ou européens), avec prix de gros estimés si trouvables\n\n"
+            + "Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :\n"
+            + "{\n"
+            + `  "verdict": ${prix_actuel ? '{ "statut": "bas|bien|haut", "explication": "phrase expliquant le positionnement par rapport au prix donné" }' : "null"},\n`
+            + '  "comparatif": [\n'
+            + '    { "source": "Nom du site/vendeur", "type": "Détail", "prix": "montant avec devise" }\n'
+            + "  ],\n"
+            + '  "fournisseurs": [\n'
+            + '    { "nom": "Nom du fournisseur", "origine": "Chine / Europe / etc.", "prix_gros": "montant estimé", "lien": "URL si trouvée" }\n'
+            + "  ]\n"
+            + "}\n\n"
+            + "Donne 3 à 5 éléments par liste quand c'est possible. Sois concret.";
+
+        try {
+            const r = await gemini.chatWithSearch({
+                message: prompt,
+                context: { source: "prix_du_marche", workspaceId: context.workspaceId || null },
+            });
+            const data = SamiiPlanner.extraire(r.type === "text" ? r.text : "");
+            if (!data) return { success: false, error: "Je n'ai pas pu structurer ce que j'ai trouvé. Redemande-moi." };
+            return { success: true, ...data, produit: p, sources: r.sources || [] };
+        } catch (err) {
+            console.error("❌ Planner.prixDuMarche :", err.message);
+            return { success: false, error: "La recherche n'a pas abouti. Réessaie." };
+        }
+    }
+
+    // ── « OÙ JE TROUVE ÇA ? » ────────────────────────────────────────────
+    // routes/chasseurstock.js, recopié — y compris le repli sur un vrai
+    // lien de recherche quand le modèle n'en donne pas d'exploitable.
+    async trouverFournisseur({ produit, region, quantite, budget }, context = {}) {
+        const p = String(produit || "").trim();
+        if (!p) return { success: false, error: "Dis-moi quel produit tu cherches à approvisionner." };
+
+        const LIENS = {
+            aliexpress: (q) => `https://www.aliexpress.com/wholesale?SearchText=${encodeURIComponent(q)}`,
+        };
+        const regionsLabel = {
+            chine: "des fournisseurs et grossistes chinois (AliExpress, Alibaba, 1688, DHgate)",
+            dubai: "des fournisseurs et grossistes basés à Dubaï / Émirats Arabes Unis",
+            maghreb: "des fournisseurs et grossistes basés au Maghreb (Algérie, Maroc, Tunisie)",
+        };
+        const zone = String(region || "chine").toLowerCase();
+
+        const prompt = "Tu es SAMII, expert en approvisionnement pour OG Technology. Un marchand cherche des fournisseurs.\n\n"
+            + `Produit recherché : ${p}\n`
+            + (quantite ? `Quantité souhaitée : ${quantite}\n` : "")
+            + (budget ? `Budget max par unité : ${budget}\n` : "")
+            + `Région ciblée : ${regionsLabel[zone] || regionsLabel.chine}\n\n`
+            + "Utilise la recherche web pour identifier 4 à 6 pistes concrètes de fournisseurs ou plateformes adaptées à ce produit et cette région.\n\n"
+            + "Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, sans balises markdown, dans ce format exact :\n"
+            + "{\n"
+            + '  "fournisseurs": [\n'
+            + '    { "plateforme": "Nom de la plateforme ou du fournisseur", "description": "une phrase sur ce qu\'il propose", "prix_unitaire": "fourchette de prix estimée avec devise", "moq": "quantité minimum de commande si connue, sinon vide", "lien": "URL de recherche pertinente" }\n'
+            + "  ]\n"
+            + "}\n\n"
+            + "Sois concret et réaliste dans les estimations de prix.";
+
+        try {
+            const r = await gemini.chatWithSearch({
+                message: prompt,
+                context: { source: "trouver_fournisseur", workspaceId: context.workspaceId || null },
+            });
+            const data = SamiiPlanner.extraire(r.type === "text" ? r.text : "");
+            if (!data || !Array.isArray(data.fournisseurs)) {
+                return { success: false, error: "Je n'ai pas pu structurer ce que j'ai trouvé. Redemande-moi." };
+            }
+            // Un lien qui ne mène nulle part est pire qu'une absence de lien :
+            // on clique, on tombe sur rien, on croit que c'est cassé.
+            data.fournisseurs = data.fournisseurs.map((f) => {
+                if (!f || typeof f !== "object") return f;
+                if (!f.lien || !String(f.lien).startsWith("http")) {
+                    f.lien = zone === "chine"
+                        ? LIENS.aliexpress(p)
+                        : `https://www.google.com/search?q=${encodeURIComponent((f.plateforme || "") + " " + p)}`;
+                }
+                return f;
+            });
+            return { success: true, ...data, produit: p, region: zone, sources: r.sources || [] };
+        } catch (err) {
+            console.error("❌ Planner.trouverFournisseur :", err.message);
+            return { success: false, error: "La recherche n'a pas abouti. Réessaie." };
+        }
+    }
+
+    // ── « COMMENT VA MON BUSINESS ? » ────────────────────────────────────
+    //
+    // Reprend DEUX pages : le Miroir (les chiffres et le diagnostic) et
+    // l'Oracle Financier (la projection de revenus). Elles lisaient la même
+    // table `commandes` à deux endroits, pour deux pages différentes —
+    // c'est le même bilan, coupé en deux.
+    //
+    // ⚠️ L'IDENTITÉ VIENT DU CONTEXTE, RECOPIÉE DE LA SESSION PAR
+    // routes/api.js — jamais d'un argument du modèle. Sans ça, « donne-moi
+    // le bilan du workspace X » suffirait à lire les affaires d'un autre.
+    async etatDuBusiness(context = {}) {
+        const workspaceId = context.identite?.workspaceId || context.workspaceId || null;
+        if (!workspaceId) {
+            return { success: false, error: "Je ne sais pas de quel espace de travail parler — ouvre un QG d'abord." };
+        }
+        const db = require("../services/db");
+        try {
+            // Les deux requêtes du Miroir, à l'identique.
+            const commandes = await db.query(
+                `SELECT statut, montant, date_commande FROM commandes WHERE workspace_id = $1 ORDER BY date_commande DESC LIMIT 300`,
+                [workspaceId],
+            );
+            const clients = await db.query(
+                `SELECT total_commandes FROM clients WHERE workspace_id = $1 LIMIT 200`,
+                [workspaceId],
+            );
+
+            const total_commandes = commandes.length;
+            const confirmees = commandes.filter((c) => c.statut === "confirmée").length;
+            const annulees = commandes.filter((c) => c.statut === "annulée").length;
+            const enAttente = commandes.filter((c) => c.statut === "en attente").length;
+            const total_revenus = commandes.reduce((s, c) => s + (Number(c.montant) || 0), 0);
+            const tauxConfirmation = total_commandes > 0 ? Math.round((confirmees / total_commandes) * 100) : null;
+            // « Fidèle » repose sur un vrai signal (3 commandes ou plus) :
+            // il n'y a pas de statut VIP en base, et la page le disait déjà.
+            const vip = clients.filter((c) => (c.total_commandes || 0) >= 3).length;
+
+            // ── LA PROJECTION, REPRISE DE L'ORACLE FINANCIER ─────────────
+            //
+            // ⚠️ SON SEUIL EST CONSERVÉ : cinq jours de données au minimum.
+            // En dessous, la page ne projetait RIEN — et elle avait raison.
+            // Une projection sur deux jours d'activité n'est pas une
+            // prévision, c'est une multiplication.
+            const parJour = {};
+            const ilYa30Jours = Date.now() - 30 * 24 * 60 * 60 * 1000;
+            for (const c of commandes) {
+                if (!c.date_commande) continue;
+                const t = new Date(c.date_commande).getTime();
+                if (t < ilYa30Jours) continue;
+                const jour = new Date(c.date_commande).toISOString().slice(0, 10);
+                parJour[jour] = (parJour[jour] || 0) + (Number(c.montant) || 0);
+            }
+            const joursAvecDonnees = Object.keys(parJour).length;
+            let projection = null;
+            if (joursAvecDonnees >= 5) {
+                const total30j = Object.values(parJour).reduce((s, v) => s + v, 0);
+                projection = {
+                    revenus30j: Math.round(total30j * 100) / 100,
+                    moyenneJournaliere: Math.round((total30j / 30) * 100) / 100,
+                    projection30j: Math.round((total30j / 30) * 30 * 100) / 100,
+                    joursMesures: joursAvecDonnees,
+                };
+            }
+
+            return {
+                success: true,
+                total_commandes, confirmees, annulees, enAttente,
+                total_revenus: Math.round(total_revenus * 100) / 100,
+                tauxConfirmation, clientsFideles: vip,
+                projection,
+                // Dit à voix haute, comme le fait services/briefing.js : une
+                // projection absente et une projection nulle ne veulent pas
+                // dire la même chose.
+                sansProjection: projection ? null : `Pas encore assez d'activité pour projeter : ${joursAvecDonnees} jour(s) mesuré(s) sur les 5 nécessaires.`,
+            };
+        } catch (err) {
+            console.error("❌ Planner.etatDuBusiness :", err.message);
+            return { success: false, error: "Je n'ai pas pu lire tes chiffres. Réessaie." };
+        }
+    }
+
+    // ── « QUI EST CE CLIENT ? » ──────────────────────────────────────────
+    // routes/memoireclient.js, recopié — requêtes, seuils et calculs.
+    async historiqueClient({ recherche }, context = {}) {
+        const terme = String(recherche || "").trim();
+        if (!terme) return { success: false, error: "Dis-moi le nom ou le numéro du client." };
+        const workspaceId = context.identite?.workspaceId || context.workspaceId || null;
+        if (!workspaceId) {
+            return { success: false, error: "Je ne sais pas de quel espace de travail parler — ouvre un QG d'abord." };
+        }
+        const db = require("../services/db");
+        try {
+            const like = `%${terme}%`;
+            const clients = await db.query(
+                `SELECT nom, telephone FROM clients
+                 WHERE workspace_id = $1 AND (nom ILIKE $2 OR telephone ILIKE $2)
+                 LIMIT 5`,
+                [workspaceId, like],
+            );
+            if (!clients.length) {
+                return { success: false, error: `Aucun client à ce nom ou à ce numéro : « ${terme} ».` };
+            }
+            const nom = clients[0].nom || "Client";
+            const telephone = clients[0].telephone || "";
+
+            const commandes = await db.query(
+                `SELECT produit, montant, date_commande FROM commandes
+                 WHERE workspace_id = $1 AND telephone = $2
+                 ORDER BY date_commande DESC LIMIT 50`,
+                [workspaceId, telephone],
+            );
+            const total_commandes = commandes.length;
+            const total_depense = commandes.reduce((s, c) => s + (Number(c.montant) || 0), 0);
+
+            const dates = commandes.map((c) => new Date(c.date_commande)).filter((d) => !isNaN(d)).sort((a, b) => a - b);
+            let frequence = null;
+            if (dates.length >= 2) {
+                const jours = Math.max(1, (dates[dates.length - 1] - dates[0]) / (1000 * 60 * 60 * 24));
+                frequence = `~${Math.round(jours / (dates.length - 1))} jours`;
+            }
+
+            // ⚠️ LA LISTE NOIRE REGARDE TOUT LE RÉSEAU, pas ce marchand seul :
+            // un client qui enchaîne les commandes non honorées ailleurs est
+            // un vrai risque ici aussi. C'est le choix de la page, conservé.
+            let risque = false;
+            if (telephone) {
+                const annul = await db.query(
+                    `SELECT COUNT(*)::int AS n FROM commandes WHERE telephone = $1 AND statut = 'annulée'`,
+                    [telephone],
+                );
+                risque = (annul[0]?.n || 0) >= 2;
+            }
+
+            return {
+                success: true,
+                nom, telephone,
+                total_commandes,
+                total_depense: Math.round(total_depense * 100) / 100,
+                frequence,
+                fidele: total_commandes >= 3,
+                risque,
+                historique: commandes.slice(0, 10).map((c) => ({
+                    produit: c.produit || "—",
+                    date: c.date_commande ? new Date(c.date_commande).toISOString().slice(0, 10) : "",
+                    montant: Math.round((Number(c.montant) || 0) * 100) / 100,
+                })),
+            };
+        } catch (err) {
+            console.error("❌ Planner.historiqueClient :", err.message);
+            return { success: false, error: "Je n'ai pas pu lire cet historique. Réessaie." };
+        }
+    }
+
     async lancerMissionLongue(nomOutil, args, context) {
         try {
             const mission = require("../config/agents").missionParOutil(nomOutil);

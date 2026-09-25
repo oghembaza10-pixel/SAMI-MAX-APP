@@ -105,9 +105,31 @@ function nomsRendus(useTools, context) {
     // Ce que le marchand doit garder est inchangé, et vérifié ci-dessous.
     // Ce qui change, c'est qu'on le nomme : une CONVERSATION, pas un appel
     // anonyme. La marque est posée par brain/planner.js, en code.
+    // ⚠️ CE NOMBRE ÉTAIT ÉCRIT EN DUR : « === 9 ». Il est devenu rouge le
+    // jour où cinq outils de lecture ont été ajoutés au registre — une
+    // croissance VOULUE, décidée ailleurs, et ce test la refusait au seul
+    // motif qu'il avait mémorisé un total.
+    //
+    // Un plafond chiffré sur une liste qui doit grandir se trompe deux
+    // fois : il crie quand tout va bien, et il se tait le jour où la liste
+    // change de contenu sans changer de taille. Le même défaut a déjà été
+    // corrigé dans competences.test.js au chantier des secteurs.
+    //
+    // La propriété vraie n'est pas « neuf », c'est : LA CHARGE RENDUE EST
+    // EXACTEMENT CE QUE LA TABLE DES AUDIENCES ACCORDE. Elle croît avec le
+    // registre, et elle crie si les deux cessent de s'accorder — ce que le
+    // nombre ne voyait pas.
+    const A = require(path.join(RACINE, "config", "audiences.js"));
     const marchandSansNiveau = nomsRendus(false, { audience: "souverain", tourDeConversation: true });
-    verifier(marchandSansNiveau.length === 9,
-        `le chat du marchand sans niveau reçoit ${marchandSansNiveau.length} outils au lieu de 9`);
+    const attendus = A.outilsSansNiveau("souverain");
+    const manquants = attendus.filter((n) => !marchandSansNiveau.includes(n));
+    const enTrop = marchandSansNiveau.filter((n) => !attendus.includes(n));
+    verifier(!manquants.length && !enTrop.length,
+        `le chat du marchand sans niveau ne reçoit pas ce que la table lui accorde — `
+        + `manquants : ${manquants.join(", ") || "aucun"} ; en trop : ${enTrop.join(", ") || "aucun"}`);
+    verifier(marchandSansNiveau.length > 0,
+        "le chat du marchand sans niveau ne reçoit AUCUN outil — la comparaison ci-dessus "
+        + "serait verte sur deux ensembles vides");
 
     // Et le revers, qui est la raison d'être de la correction.
     const generation = nomsRendus(false, { source: "memoire" });
@@ -202,8 +224,15 @@ function nomsRendus(useTools, context) {
             `toOpenAiTools(${JSON.stringify(vide)}) ${leve ? "lève une erreur" : "rend " + JSON.stringify(resultat)} — ` +
             "tout message d'un niveau sans outil échouerait sur les relais");
     }
-    const plein = convertir(construire(false, { audience: "souverain", tourDeConversation: true }));
-    verifier(plein.length === 9, `la conversion rend ${plein.length} outils au lieu de 9`);
+    // Même correction que plus haut : ce qui compte n'est pas « neuf », c'est
+    // que la conversion vers le format des relais ne PERDE ni n'AJOUTE rien.
+    const source = construire(false, { audience: "souverain", tourDeConversation: true });
+    const plein = convertir(source);
+    verifier(plein.length === (source[0].functionDeclarations || []).length,
+        `la conversion rend ${plein.length} outils pour ${(source[0].functionDeclarations || []).length} `
+        + "déclarés — elle en perd ou en invente en chemin");
+    verifier(plein.length > 0,
+        "la conversion ne rend aucun outil — l'égalité ci-dessus serait vraie sur deux ensembles vides");
     verifier(plein.every((o) => o.type === "function" && o.function?.name),
         "la conversion vers le format des relais a perdu sa forme");
 }

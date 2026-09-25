@@ -203,6 +203,32 @@ const GRATUITS = {
     consulter_gmail: "lire ses propres données",
     consulter_agenda: "lire ses propres données",
     lister_fichiers_drive: "lire ses propres données",
+
+    // ── LES CINQ OUTILS REPRIS DES ANCIENNES PAGES ───────────────────────
+    //
+    // ⚠️ C'EST LE TEST QUI A EXIGÉ CETTE DÉCISION, et il avait raison : un
+    // outil ajouté sans prix décidé n'est pas « gratuit », il est
+    // INDÉTERMINÉ — et le jour où quelqu'un le range par défaut dans les
+    // actes, le marchand paie un supplément que personne n'a choisi.
+    //
+    // Les cinq sont gratuits, et c'est la règle du haut de ce fichier, pas
+    // une faveur : CE QUI LIT est compris dans le message, CE QUI CRÉE OU
+    // ENVOIE se paie. Aucun des cinq ne laisse quoi que ce soit derrière
+    // lui — ni commande, ni rendez-vous, ni message parti.
+    //
+    // Les trois premiers lisent le WEB, les deux derniers lisent les
+    // données du marchand. Faire payer un supplément pour consulter ses
+    // propres chiffres serait un péage sur sa propre porte ; faire payer
+    // une recherche web reviendrait à vendre deux fois le même message,
+    // puisque c'est le message qui demande la recherche.
+    //
+    // Le jour où l'un d'eux se mettra à ÉCRIRE quelque part, il changera de
+    // famille dans config/niveaux.js et il devra changer de colonne ici.
+    marche_du_moment: "lire le marché, rien n'est créé",
+    prix_du_marche: "lire le marché, rien n'est créé",
+    trouver_fournisseur: "lire le marché, rien n'est créé",
+    etat_de_mon_business: "lire ses propres données",
+    historique_client: "lire ses propres données",
 };
 
 // Ce que coûte un acte. Zéro pour tout ce qui n'est pas au tarif — y compris

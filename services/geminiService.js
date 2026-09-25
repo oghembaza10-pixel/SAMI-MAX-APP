@@ -624,6 +624,80 @@ const TOOLS = [
                     required: ["cible", "marche"],
                 },
             },
+            // ══ LES CINQ OUTILS REPRIS DES ANCIENNES PAGES ══════════════
+            //
+            // Chacun rejoue le prompt d'une page existante, sans le
+            // réécrire, et rend le MÊME JSON. Ce qui change, c'est la porte :
+            // on ne va plus chercher une adresse, on pose une question.
+            //
+            // ⚠️ LA DESCRIPTION EST CE QUI DÉCIDE DE L'APPEL. C'est la seule
+            // chose que le modèle lit pour choisir. Trop vague, l'outil ne
+            // part jamais ; trop large, il part sur un « bonjour ».
+            {
+                name: "marche_du_moment",
+                description: "Dit ce qui se vend bien en ce moment sur un marché donné, avec une estimation de revenu. "
+                    + "Utilise-le quand on demande quoi vendre, ce qui marche, ce qui est tendance, ou quelles opportunités saisir. "
+                    + "Si le marchand précise ce qu'il vend déjà, l'outil cherche des pistes autour de son activité ; sinon il donne les produits porteurs du marché.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        pays: { type: "STRING", description: "Le pays ou marché visé (ex: \"Algérie\", \"Cameroun\"). Prends celui du marchand s'il ne le dit pas." },
+                        secteur: { type: "STRING", description: "Le secteur, si la personne le précise (ex: \"mode\", \"électronique\"). Facultatif." },
+                        produit: { type: "STRING", description: "Ce que le marchand vend DÉJÀ, s'il le dit. Change la question : on cherche alors des pistes autour de son activité. Facultatif." },
+                    },
+                    required: ["pays"],
+                },
+            },
+            {
+                name: "prix_du_marche",
+                description: "Regarde à quel prix un produit se vend ailleurs et dit si le prix du marchand est bas, bien placé ou trop haut. "
+                    + "Utilise-le pour toute question de prix, de concurrence ou de positionnement.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        produit: { type: "STRING", description: "Le produit à situer (ex: \"montre connectée\")." },
+                        prix_actuel: { type: "STRING", description: "Le prix auquel le marchand le vend, s'il le dit. Sans lui, aucun verdict n'est rendu. Facultatif." },
+                        marche: { type: "STRING", description: "Le marché où comparer. Facultatif." },
+                    },
+                    required: ["produit"],
+                },
+            },
+            {
+                name: "trouver_fournisseur",
+                description: "Cherche où s'approvisionner en un produit : plateformes, grossistes, fourchettes de prix et quantité minimum. "
+                    + "Utilise-le quand on demande où acheter, chez qui se fournir, ou comment s'approvisionner.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        produit: { type: "STRING", description: "Le produit à approvisionner." },
+                        region: { type: "STRING", description: "Où chercher : \"chine\", \"dubai\" ou \"maghreb\". Par défaut la Chine." },
+                        quantite: { type: "STRING", description: "Quantité souhaitée, si elle est dite. Facultatif." },
+                        budget: { type: "STRING", description: "Budget maximum par unité, s'il est dit. Facultatif." },
+                    },
+                    required: ["produit"],
+                },
+            },
+            {
+                name: "etat_de_mon_business",
+                description: "Donne les chiffres réels de l'espace de travail du marchand — commandes, taux de confirmation, revenus, clients fidèles — "
+                    + "et une projection de revenus quand il y a assez d'historique. "
+                    + "Utilise-le quand on demande comment va l'activité, un bilan, un diagnostic, ou combien on va faire ce mois-ci. "
+                    + "Ne donne JAMAIS de chiffre qui ne vient pas de cet outil.",
+                parameters: { type: "OBJECT", properties: {} },
+            },
+            {
+                name: "historique_client",
+                description: "Retrouve un client du marchand par son nom ou son numéro et rend son historique réel : commandes, total dépensé, fréquence, fidélité. "
+                    + "Utilise-le quand on demande qui est un client, ce qu'il a déjà acheté, ou s'il est fiable. "
+                    + "Ne donne JAMAIS de chiffre qui ne vient pas de cet outil.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        recherche: { type: "STRING", description: "Le nom ou le numéro de téléphone du client à retrouver." },
+                    },
+                    required: ["recherche"],
+                },
+            },
             {
                 name: "resume_journee",
                 // La description est le seul endroit où l'on peut interdire

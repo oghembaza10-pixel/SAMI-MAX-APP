@@ -57,6 +57,31 @@ const FAMILLES = {
         "consulter_agenda",
         "lister_fichiers_drive",
         "rechercher_prospects",
+
+        // ── LES CINQ OUTILS REPRIS DES ANCIENNES PAGES ───────────────────
+        //
+        // Douze pages vivaient sous /samii — un formulaire, un prompt, un
+        // résultat qu'on lisait puis qu'on fermait. Le marchand devait
+        // connaître douze adresses pour s'en servir. Elles deviennent des
+        // questions qu'on pose dans la conversation.
+        //
+        // ⚠️ FAMILLE « LECTURE », ET PAS AUTRE CHOSE. Ces cinq-là LISENT :
+        // le web pour les trois premiers, les propres données du marchand
+        // pour les deux derniers. Aucun ne crée ni n'envoie quoi que ce
+        // soit — rien n'existe après qui n'existait avant. C'est la règle
+        // de config/credits.js : ce qui lit est compris dans le message,
+        // ce qui crée se paie.
+        //
+        // Conséquence voulue : accordés dès le niveau Expert, et JAMAIS à
+        // un client de boutique — l'audience `client` ne porte que la
+        // famille `commerce` (config/audiences.js). Un client qui
+        // demanderait l'historique d'un autre client ne tient pas l'outil
+        // qui le lui donnerait.
+        "marche_du_moment",
+        "prix_du_marche",
+        "trouver_fournisseur",
+        "etat_de_mon_business",
+        "historique_client",
     ],
     ecriture: [
         "envoyer_email",

@@ -110,6 +110,208 @@ const ADAPTATEURS = {
         };
     },
 
+    // ══ LES CINQ OUTILS REPRIS DES ANCIENNES PAGES ══════════════════════
+    //
+    // Chacun rend le JSON de sa page d'origine, aux mêmes noms de champs.
+    // Ces adaptateurs ne font que choisir ce qui s'affiche — ils ne
+    // recalculent rien et n'ajoutent aucune valeur qui ne soit pas rendue.
+
+    // ── « QU'EST-CE QUI SE VEND BIEN ? » ─────────────────────────────────
+    //
+    // DEUX formes, parce que l'outil reprend deux pages :
+    //   Top Produits  { du_moment[], a_venir[] }
+    //   Opportunités  { pistes: [{ nom, score, explication }] }
+    marche_du_moment(d) {
+        if (!d || d.success === false) return null;
+
+        // Forme « Opportunités » : le marchand a dit ce qu'il vend déjà.
+        if (Array.isArray(d.pistes) && d.pistes.length) {
+            return {
+                forme: "liste",
+                titre: `${d.pistes.length} piste${d.pistes.length > 1 ? "s" : ""} pour toi`,
+                soustitre: texte(d.marche),
+                elements: d.pistes.slice(0, MAX_ELEMENTS).map((p) => ({
+                    titre: texte(p && p.nom),
+                    // Le score est rendu par l'outil ; on l'affiche tel quel,
+                    // sur 100, sans le retraduire en « fort / moyen » — une
+                    // étiquette inventée par nous ne viendrait de nulle part.
+                    valeur: nombre(p && p.score) !== null ? `${nombre(p.score)}/100` : "",
+                    detail: texte(p && p.explication),
+                })).filter((e) => e.titre),
+                liens: sources(d.sources),
+                gestes: [
+                    { libelle: "Où je trouve ça ?", demande: "Pour la première piste de cette liste, trouve-moi où m'approvisionner.", outil: "trouver_fournisseur" },
+                    { libelle: "À quel prix le vendre ?", demande: "Pour la première piste de cette liste, dis-moi à quel prix ça se vend ailleurs.", outil: "prix_du_marche" },
+                ],
+            };
+        }
+
+        // Forme « Top Produits » : ce qui marche sur le marché.
+        const tout = [
+            ...(Array.isArray(d.du_moment) ? d.du_moment.map((x) => ({ ...x, quand: "Maintenant" })) : []),
+            ...(Array.isArray(d.a_venir) ? d.a_venir.map((x) => ({ ...x, quand: "Bientôt" })) : []),
+        ];
+        if (!tout.length) return null;
+        return {
+            forme: "liste",
+            titre: "Ce qui se vend",
+            soustitre: [texte(d.marche), texte(d.devise)].filter(Boolean).join(" · "),
+            elements: tout.slice(0, MAX_ELEMENTS).map((p) => ({
+                titre: texte(p.nom),
+                valeur: p.quand,
+                // Le revenu estimé est une CHAÎNE rendue par l'outil
+                // (« 150 000 DZD/mois »), pas un nombre qu'on formaterait.
+                contact: texte(p.revenu_estime),
+                detail: texte(p.raison),
+            })).filter((e) => e.titre),
+            liens: sources(d.sources),
+            gestes: [
+                { libelle: "Où je trouve ça ?", demande: "Pour le premier produit de cette liste, trouve-moi où m'approvisionner.", outil: "trouver_fournisseur" },
+                { libelle: "À quel prix le vendre ?", demande: "Pour le premier produit de cette liste, dis-moi à quel prix ça se vend ailleurs.", outil: "prix_du_marche" },
+            ],
+        };
+    },
+
+    // ── « À COMBIEN LES AUTRES LE VENDENT ? » ────────────────────────────
+    prix_du_marche(d) {
+        if (!d || d.success === false) return null;
+        const elements = [];
+        // Le verdict d'abord : c'est la réponse à la question posée. Il est
+        // `null` quand le marchand n'a pas donné son prix — l'outil refuse
+        // de comparer à rien, et on ne comble pas ce vide.
+        if (d.verdict && texte(d.verdict.statut)) {
+            elements.push({
+                titre: "Ton positionnement",
+                valeur: texte(d.verdict.statut),
+                detail: texte(d.verdict.explication),
+            });
+        }
+        for (const c of Array.isArray(d.comparatif) ? d.comparatif : []) {
+            if (!c) continue;
+            elements.push({
+                titre: texte(c.source),
+                valeur: texte(c.prix),
+                detail: texte(c.type),
+            });
+        }
+        for (const f of Array.isArray(d.fournisseurs) ? d.fournisseurs : []) {
+            if (!f) continue;
+            elements.push({
+                titre: texte(f.nom),
+                valeur: texte(f.prix_gros),
+                detail: texte(f.origine),
+                lien: lien(f.lien),
+            });
+        }
+        const gardes = elements.filter((e) => e.titre).slice(0, MAX_ELEMENTS);
+        if (!gardes.length) return null;
+        return {
+            forme: "liste",
+            titre: `Les prix : ${texte(d.produit) || "ce produit"}`,
+            elements: gardes,
+            liens: sources(d.sources),
+            gestes: [
+                { libelle: "Trouve-moi un fournisseur", demande: `Trouve-moi où m'approvisionner en ${texte(d.produit) || "ce produit"}.`, outil: "trouver_fournisseur" },
+            ],
+        };
+    },
+
+    // ── « OÙ JE TROUVE ÇA ? » ────────────────────────────────────────────
+    trouver_fournisseur(d) {
+        if (!d || d.success === false || !Array.isArray(d.fournisseurs) || !d.fournisseurs.length) return null;
+        return {
+            forme: "liste",
+            titre: `Où trouver : ${texte(d.produit) || "ce produit"}`,
+            soustitre: texte(d.region),
+            elements: d.fournisseurs.slice(0, MAX_ELEMENTS).map((f) => ({
+                titre: texte(f && f.plateforme),
+                valeur: texte(f && f.prix_unitaire),
+                detail: texte(f && f.description),
+                // Le minimum de commande décide si une piste est utilisable :
+                // un MOQ de 500 pièces n'est pas la même offre qu'un MOQ de 5.
+                contact: texte(f && f.moq) ? `Minimum : ${texte(f.moq)}` : "",
+                lien: lien(f && f.lien),
+            })).filter((e) => e.titre),
+            liens: sources(d.sources),
+            gestes: [
+                { libelle: "À quel prix le revendre ?", demande: `Dis-moi à quel prix ${texte(d.produit) || "ce produit"} se vend ailleurs.`, outil: "prix_du_marche" },
+            ],
+        };
+    },
+
+    // ── « COMMENT VA MON BUSINESS ? » ────────────────────────────────────
+    //
+    // Miroir + Oracle Financier réunis. Les compteurs viennent des vraies
+    // commandes ; la projection n'apparaît que si l'outil l'a calculée, et
+    // son absence est DITE — cinq jours de données minimum, seuil de la page
+    // d'origine, conservé.
+    etat_de_mon_business(d) {
+        if (!d || d.success === false) return null;
+        const elements = [];
+        const compteur = (titre, valeur, suffixe = "") => {
+            const n = nombre(valeur);
+            if (n !== null) elements.push({ titre, valeur: `${n}${suffixe}` });
+        };
+        compteur("Commandes", d.total_commandes);
+        compteur("Confirmées", d.confirmees);
+        compteur("En attente", d.enAttente);
+        compteur("Annulées", d.annulees);
+        compteur("Taux de confirmation", d.tauxConfirmation, " %");
+        compteur("Revenus", d.total_revenus);
+        compteur("Clients fidèles", d.clientsFideles);
+        if (d.projection) {
+            compteur("Revenus 30 j", d.projection.revenus30j);
+            compteur("Par jour", d.projection.moyenneJournaliere);
+        }
+        if (!elements.length) return null;
+        return {
+            forme: "chiffres",
+            titre: "Ton activité",
+            elements,
+            // « Pas assez d'activité pour projeter » n'est pas une erreur :
+            // c'est une information, et la taire ferait croire à un bilan
+            // complet. Même règle que les sources indisponibles du briefing.
+            manques: texte(d.sansProjection) ? [texte(d.sansProjection)] : [],
+            gestes: [
+                { libelle: "Qu'est-ce que je corrige en premier ?", demande: "D'après ces chiffres, qu'est-ce que je dois corriger en priorité dans mon activité ?" },
+            ],
+        };
+    },
+
+    // ── « QUI EST CE CLIENT ? » ──────────────────────────────────────────
+    historique_client(d) {
+        if (!d || d.success === false || !texte(d.nom)) return null;
+        const elements = [];
+        const compteur = (titre, valeur) => {
+            const n = nombre(valeur);
+            if (n !== null) elements.push({ titre, valeur: String(n) });
+        };
+        compteur("Commandes", d.total_commandes);
+        compteur("Total dépensé", d.total_depense);
+        // « Fréquence », pas « En moyenne tous les » : sur une tuile, le
+        // libellé est sous le chiffre. « En moyenne tous les / ~18 jours »
+        // se lisait à l'envers.
+        if (texte(d.frequence)) elements.push({ titre: "Fréquence", valeur: texte(d.frequence) });
+        // Deux étiquettes qui changent la façon de traiter la personne. Elles
+        // reposent sur de vrais signaux comptés par l'outil — trois commandes
+        // pour la fidélité, deux annulations sur tout le réseau pour le
+        // risque — et pas sur un statut posé à la main que rien n'alimente.
+        elements.push({ titre: "Fidèle", valeur: d.fidele ? "oui" : "non" });
+        elements.push({ titre: "À surveiller", valeur: d.risque ? "oui" : "non" });
+        return {
+            forme: "chiffres",
+            titre: texte(d.nom),
+            soustitre: texte(d.telephone),
+            elements,
+            manques: d.risque
+                ? ["Ce numéro a au moins deux commandes annulées chez des marchands SAMII. À confirmer avant d'expédier."]
+                : [],
+            gestes: [
+                { libelle: "Écris-lui un message", demande: `Écris-moi un message à envoyer à ${texte(d.nom)}, adapté à son historique.` },
+            ],
+        };
+    },
+
     // ── « QU'EST-CE QUI S'EST PASSÉ ? » ──────────────────────────────────
     //
     // Sortie réelle (brain/planner.js, resumeJournee → services/briefing.js) :
