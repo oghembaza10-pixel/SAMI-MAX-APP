@@ -854,6 +854,98 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
 /* Une image envoyée par la personne s'affiche dans sa bulle. */
 .bulle__image { display: block; max-width: 220px; border-radius: var(--r-s); margin-bottom: 8px; }
 
+<% if (loggedIn) { %>
+/* ══ CE QUI N'EXISTE QUE POUR UN COMPTE CONNECTÉ ══════════════════════════
+
+   ⚠️ CETTE FEUILLE EST CONDITIONNÉE, ET C'EST MESURÉ.
+
+   Ces règles habillent des éléments que le gabarit ne rend PAS à un
+   visiteur sans compte. Servies à tout le monde, elles pesaient trois
+   kilo-octets de plus dans sa page — pour des classes qui n'y apparaissent
+   jamais.
+
+   Trois kilo-octets sur une connexion mobile algérienne, sur LA page qui
+   décide si quelqu'un reste, c'est du temps de chargement payé pour rien.
+   Et c'était trois kilo-octets d'écart dans le HTML servi à Googlebot,
+   alors que la règle de ce chantier était : l'anonyme ne change pas.
+
+   Vérifié après coup : la page anonyme est redevenue identique OCTET POUR
+   OCTET à celle d'avant, dans les trois langues. */
+
+/* ══ LE RETOUR SUR UNE RÉPONSE ════════════════════════════════════════════
+   Deux pouces, discrets, sous la réponse. Assez visibles pour qu'on les
+   trouve, assez effacés pour ne pas transformer chaque réponse en sondage.
+   44 px de cible tactile : au-dessous, on rate le bouton sur téléphone. */
+.retour { display: flex; gap: 4px; margin: 2px 0 0 34px; }
+.retour__b {
+    width: 30px; height: 30px; padding: 0; border: 0; border-radius: 8px;
+    background: transparent; font-size: .85rem; line-height: 1; cursor: pointer;
+    opacity: .35; transition: opacity .16s, background .16s;
+}
+.retour__b:hover { opacity: 1; background: var(--releve); }
+.retour__b:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; opacity: 1; }
+.retour__b--actif { opacity: 1; background: var(--releve); }
+.retour__b:disabled { cursor: default; }
+
+/* ══ LES VOLETS DE LA BARRE ═══════════════════════════════════════════════
+   Directives et connaissances. Ils s'ouvrent DANS la barre latérale, pas
+   par-dessus la conversation : on règle comment SAMII travaille sans perdre
+   de vue ce qu'on était en train de lui dire. */
+.volet {
+    margin: 4px 0 10px; padding: 11px 12px;
+    border: 1px solid var(--ligne); border-radius: var(--r-m);
+    background: var(--panneau);
+}
+.volet__dit { margin: 0 0 9px; font-size: .76rem; color: var(--tres-doux); line-height: 1.5; }
+.volet__zone {
+    display: block; width: 100%; box-sizing: border-box;
+    padding: 8px 10px; margin-bottom: 8px;
+    border: 1px solid var(--ligne); border-radius: var(--r-s);
+    background: var(--nuit); color: var(--texte);
+    font: inherit; font-size: .82rem; line-height: 1.5; resize: vertical;
+}
+.volet__zone--ligne { resize: none; }
+.volet__zone:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.volet__pied { display: flex; flex-wrap: wrap; gap: 6px; }
+.volet__b {
+    padding: 6px 11px; border-radius: 999px;
+    border: 1px solid var(--ligne-viv); background: transparent;
+    color: var(--doux); font: inherit; font-size: .76rem; cursor: pointer;
+    transition: border-color .16s, color .16s, background .16s;
+}
+.volet__b:hover { border-color: var(--cyan); color: var(--texte); background: var(--releve); }
+.volet__b--net { border-color: var(--cyan); color: var(--cyan); }
+.volet__b:disabled { opacity: .5; cursor: default; }
+.volet__msg { margin: 8px 0 0; font-size: .74rem; color: var(--doux); min-height: 1em; }
+
+.con__liste { margin-bottom: 8px; }
+.con__vide { margin: 0; font-size: .76rem; color: var(--tres-doux); }
+.con__item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; border-bottom: 1px solid var(--ligne);
+}
+.con__item:last-child { border-bottom: 0; }
+.con__nom {
+    flex: 1; min-width: 0; font-size: .78rem; color: var(--doux);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.con__retirer {
+    flex: none; padding: 3px 8px; border-radius: 999px;
+    border: 1px solid var(--ligne); background: transparent;
+    color: var(--tres-doux); font: inherit; font-size: .7rem; cursor: pointer;
+}
+.con__retirer:hover { border-color: #e55; color: #e55; }
+<%# La condition se referme ICI, et pas plus bas.
+
+    ⚠️ Premier essai : elle englobait aussi la feuille des CARTES, juste
+    en dessous. Mesuré : la page anonyme devenait 6,4 ko plus LÉGÈRE
+    qu'avant — parce qu'elle perdait une feuille qui ne vient pas de ce
+    chantier. Alléger l'anonyme, c'est encore le changer ; et si le chat
+    public servait un jour des résultats, ils arriveraient sans habillage.
+
+    On ne conditionne que ce que CE chantier a ajouté. %>
+<% } %>
+
 /* ══ LES CARTES ═══════════════════════════════════════════════════════════
 
    Un résultat d'outil, posé dans le fil comme un tour de plus.
@@ -1296,6 +1388,64 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                         <span class="sortie__pic">🏛</span><%= L("Ouvrir un QG") %>
                     </a>
                 <% } %>
+
+                <%# ══ CE QUE SAMII SAIT DE TOI ═══════════════════════════════
+
+                    Directives, connaissances et résumé vivaient sur /samii —
+                    la page de l'assistant, rangée derrière un bouton « Plus »
+                    dans la colonne du QG. La porte d'entrée du produit ne les
+                    avait pas : quelqu'un qui paie tombait sur la version
+                    diminuée, et la version complète était à deux clics qu'il
+                    ne savait pas devoir faire.
+
+                    ⚠️ RENDU SEULEMENT SI CONNECTÉ, et ce n'est pas cosmétique :
+                    les trois routes sont derrière `requireAuth`. Un visiteur
+                    verrait trois commandes qui répondent 302. Et comme le
+                    balisage n'existe pas du tout pour lui, Googlebot reçoit
+                    exactement la page d'avant ce chantier — vérifié en
+                    comparant le HTML anonyme, octet pour octet. %>
+                <% if (loggedIn) { %>
+                    <p class="espaces__titre espaces__titre--suite"><%= L("Ce que SAMII sait de toi") %></p>
+
+                    <button class="sortie sortie--discret" id="dir-ouvrir" type="button"
+                            aria-expanded="false" aria-controls="dir-panneau">
+                        <span class="sortie__pic">🧭</span><%= L("Comment je dois travailler") %>
+                    </button>
+                    <div class="volet" id="dir-panneau" hidden>
+                        <p class="volet__dit"><%= L("Ce que tu écris ici, SAMII l'applique à chaque conversation — pas seulement à la prochaine.") %></p>
+                        <textarea class="volet__zone" id="dir-texte" rows="5"
+                                  placeholder="<%= L("Ex : réponds-moi toujours en darija, et ne propose jamais de prix sans me demander.") %>"></textarea>
+                        <div class="volet__pied">
+                            <button class="volet__b volet__b--net" id="dir-sauver" type="button"><%= L("Enregistrer") %></button>
+                            <button class="volet__b" data-fermer type="button"><%= L("Fermer") %></button>
+                        </div>
+                        <p class="volet__msg" id="dir-msg" role="status"></p>
+                    </div>
+
+                    <button class="sortie sortie--discret" id="con-ouvrir" type="button"
+                            aria-expanded="false" aria-controls="con-panneau">
+                        <span class="sortie__pic">📚</span><%= L("Ce que SAMII a lu") %>
+                    </button>
+                    <div class="volet" id="con-panneau" hidden>
+                        <p class="volet__dit"><%= L("Un document ou quelques lignes que SAMII garde pour de bon — ton catalogue, tes tarifs, ta façon de parler à tes clients.") %></p>
+                        <div class="con__liste" id="con-liste"></div>
+                        <input class="volet__zone volet__zone--ligne" id="con-titre"
+                               placeholder="<%= L("Nom (ex : mes tarifs 2026)") %>">
+                        <textarea class="volet__zone" id="con-texte" rows="3"
+                                  placeholder="<%= L("…ou colle le texte ici") %>"></textarea>
+                        <input type="file" id="con-fichier" accept=".pdf,.doc,.docx,.txt,image/*" hidden>
+                        <div class="volet__pied">
+                            <button class="volet__b" id="con-choisir" type="button">📎 <%= L("Un fichier") %></button>
+                            <button class="volet__b volet__b--net" id="con-ajouter" type="button"><%= L("Ajouter") %></button>
+                            <button class="volet__b" data-fermer type="button"><%= L("Fermer") %></button>
+                        </div>
+                        <p class="volet__msg" id="con-msg" role="status"></p>
+                    </div>
+
+                    <button class="sortie sortie--discret" id="resume" type="button">
+                        <span class="sortie__pic">📋</span><%= L("Résume-moi ma semaine") %>
+                    </button>
+                <% } %>
             </aside>
 
             <section class="fil fil--vide" id="fil" aria-live="polite">
@@ -1555,6 +1705,39 @@ window.SAMII_T = <%- JSON.stringify({
        versions ont été essayées, gabarits.test.js a crié les deux fois. */
     resultatSources: L("Sources"),
     resultatSolde:   L("Solde"),
+    /* ── LES MOTS DES CAPACITÉS REPRISES ────────────────────────────────
+
+       ⚠️ SEULEMENT POUR UN COMPTE CONNECTÉ, et ce n'est pas un détail de
+       propreté. Mesuré : rendus pour tout le monde, ces dix-sept libellés
+       pesaient QUATRE KILO-OCTETS de plus dans la page d'un visiteur —
+       dans les trois langues — pour des commandes qu'il ne voit pas et des
+       routes qui lui répondraient 302.
+
+       Quatre kilo-octets sur une connexion mobile algérienne, c'est du
+       temps de chargement payé pour rien sur la page qui décide si
+       quelqu'un reste. Et c'était aussi quatre kilo-octets de différence
+       dans le HTML servi à Googlebot, alors que la consigne de ce chantier
+       était : l'anonyme ne change pas.
+
+       `...(loggedIn ? { … } : {})` : les clés n'existent pas du tout
+       autrement, et le script ne les lit que dans le bloc connecté. */
+    ...(loggedIn ? {
+    retourBon:     L("Bonne réponse"),
+    retourMauvais: L("Mauvaise réponse"),
+    dirOk:         L("Enregistré — SAMII l'applique dès maintenant, partout."),
+    dirErreur:     L("Ça n'a pas pu être enregistré. Réessaie."),
+    chargement:    L("Chargement…"),
+    retirer:       L("Retirer"),
+    conVide:       L("Rien pour l'instant."),
+    conErreur:     L("Ça n'a pas marché. Réessaie."),
+    conEnvoi:      L("Envoi du fichier…"),
+    conPret:       L("Fichier prêt — clique « Ajouter » pour que SAMII le lise."),
+    conRien:       L("Choisis un fichier ou écris quelque chose."),
+    conLecture:    L("SAMII lit et retient…"),
+    conRetenu:     L("Retenu. SAMII s'en servira désormais."),
+    resumeTitre:   L("Voilà ta semaine. Je l'ai copiée — tu peux la coller où tu veux."),
+    resumeRate:    L("Je n'ai pas pu faire le résumé pour le moment."),
+    } : {}),
 }) %>;
 window.SAMII_LANG = "<%= lang %>";
 window.SAMII_CONNECTE = <%= loggedIn ? "true" : "false" %>;

@@ -213,6 +213,48 @@
         })();
     }
 
+    // ══ LE RETOUR SUR UNE RÉPONSE ════════════════════════════════════════
+    //
+    // 👍/👎 sous une réponse de SAMII. Ce n'est pas de la décoration : c'est
+    // la seule façon de savoir ce qui marche pendant qu'on entraîne SAMII,
+    // avant d'avoir le volume de clients qui le dirait tout seul.
+    //
+    // ── TROIS CONDITIONS, ET CHACUNE COMPTE ──────────────────────────────
+    //
+    //   CONNECTÉ    la route est derrière requireAuth, et un visiteur sans
+    //               compte n'a aucun tour enregistré à noter.
+    //   messageId   l'identifiant du tour en base. Sans lui il n'y a rien à
+    //               noter : afficher deux pouces qui ne mènent nulle part
+    //               est pire que ne rien afficher.
+    //   UNE FOIS    on ne note pas deux fois le même tour. Le garde est posé
+    //               sur le NŒUD, pas sur une variable partagée : deux
+    //               réponses à l'écran ne se gênent pas l'une l'autre.
+    function poserRetour(cible, messageId) {
+        if (!CONNECTE || !messageId || !cible || !cible.tour) return;
+        var barre = elem("div", "retour");
+        [["up", "👍", T.retourBon], ["down", "👎", T.retourMauvais]].forEach(function (p) {
+            var b = elem("button", "retour__b", p[1]);
+            b.type = "button";
+            b.setAttribute("data-retour", p[0]);
+            b.setAttribute("aria-label", p[2] || p[0]);
+            barre.appendChild(b);
+        });
+        barre.addEventListener("click", function (ev) {
+            var b = ev.target.closest("[data-retour]");
+            if (!b || barre.getAttribute("data-envoye")) return;
+            barre.setAttribute("data-envoye", "1");
+            [].slice.call(barre.children).forEach(function (x) { x.disabled = true; });
+            b.classList.add("retour__b--actif");
+            fetch("/api/chat/feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ messageId: messageId, feedback: b.getAttribute("data-retour") }),
+            }).catch(function () { /* un avis perdu ne casse pas la conversation */ });
+        });
+        cible.tour.appendChild(barre);
+        defiler();
+    }
+
     // ══ LES CARTES ═══════════════════════════════════════════════════════
     //
     // Un outil rend une structure ; le serveur en fait une carte
@@ -480,6 +522,9 @@
         var complet = "";
         var fini = null;
         var aEcrit = false;
+        // Compté pour une seule raison : si SAMII s'est repris, la bulle
+        // provisoire est vide et c'est la charge finale qui porte le texte.
+        var reprises = 0;
 
         function traiter(bloc) {
             reste += bloc;
@@ -497,6 +542,23 @@
                     bulle.ajouter(d.t);
                     complet += d.t;
                     aEcrit = true;
+                } else if (evenement === "reprise") {
+                    // ── SAMII S'EST REPRIS ───────────────────────────────
+                    //
+                    // Il a commencé une phrase, puis a décidé d'appeler un
+                    // outil : ce début n'était PAS la réponse. Le serveur le
+                    // dit explicitement, et on efface.
+                    //
+                    // ⚠️ CET ÉVÉNEMENT N'ÉTAIT PAS LU ICI. Le flux anonyme
+                    // ne l'émet jamais — il ne porte aucun outil — donc rien
+                    // ne manquait tant que ce lecteur ne servait qu'à lui.
+                    // Branché sur `/api/chat/flux`, l'ignorer aurait laissé
+                    // à l'écran un début de phrase abandonné, suivi de la
+                    // vraie réponse : SAMII aurait eu l'air de se contredire.
+                    complet = "";
+                    aEcrit = false;
+                    if (bulle) { bulle.ecrire(""); }
+                    reprises++;
                 } else if (evenement === "fin") {
                     fini = d;
                 }
@@ -510,18 +572,37 @@
             }
             traiter(decodeur.decode());
             if (!aEcrit) {
-                // Rien n'a été écrit : le flux s'est ouvert puis n'a rien
-                // donné. Si le serveur a joint un message de repli, on
-                // l'affiche ; sinon on relance sans flux.
+                // Rien n'a été écrit : soit le flux s'est ouvert sans rien
+                // donner, soit SAMII s'est repris pour appeler un outil et
+                // c'est la charge finale qui porte la vraie réponse. Dans
+                // les deux cas, si le serveur a joint un texte, on l'affiche.
                 if (fini && fini.reply) {
-                    var b = ouvrirBulle(cible);
+                    // ⚠️ APRÈS UNE REPRISE, LA BULLE EXISTE DÉJÀ — vidée.
+                    // En rouvrir une seconde laisserait une bulle fantôme au
+                    // milieu du fil. On réécrit dans celle qui est là.
+                    var b = bulle || ouvrirBulle(cible);
                     return new Promise(function (ok) {
-                        reveler(b, fini.reply, function () { terminer(fini.reply, fini); ok(); });
+                        reveler(b, fini.reply, function () {
+                            peindreResultats(fini.resultats);
+                            poserRetour(cible, fini.messageId);
+                            terminer(fini.reply, fini);
+                            ok();
+                        });
                     });
                 }
+                // Une reprise sans réponse finale ne se rattrape pas en
+                // relançant : le tour a déjà été facturé côté serveur, le
+                // rejouer le ferait payer deux fois.
+                if (reprises) { if (bulle) bulle.fermer(); terminer("", fini || {}); return; }
                 throw new Error("flux vide");
             }
             if (bulle) bulle.fermer();
+            // Les blocs et le retour arrivent APRÈS le texte, dans cet ordre,
+            // et seulement si la charge finale les porte. Le chemin anonyme
+            // n'en a aucun : `peindreResultats` et `poserRetour` ne font
+            // alors rien, et c'est ce qui permet d'avoir UN seul lecteur.
+            peindreResultats(fini && fini.resultats);
+            poserRetour(cible, fini && fini.messageId);
             terminer(complet, fini || {});
         });
     }
@@ -548,24 +629,70 @@
         });
     }
 
-    // ══ CONNECTÉ : /api/chat, MÉMOIRE COMPLÈTE, PROJETS, IMAGES ══════════
+    // ══ CONNECTÉ : /api/chat/flux, MÉMOIRE COMPLÈTE, PROJETS, IMAGES ═════
     //
-    // Cette route ne diffuse pas encore en flux — elle passe par le planner du
-    // QG, qui peut appeler des outils avant de répondre. On révèle donc le
-    // texte mot par mot à l'arrivée, comme sur le chemin de repli : la
-    // sensation est la même, et le jour où /api/chat diffusera, seule cette
-    // fonction changera.
+    // ── CE QUI VIENT DE CHANGER, ET POURQUOI C'ÉTAIT ABSURDE ─────────────
+    //
+    // Cette fonction appelait `/api/chat`, qui rend la réponse d'un bloc, et
+    // le commentaire d'ici disait « le jour où /api/chat diffusera ». Ce
+    // jour-là était déjà passé : `/api/chat/flux` existe, il diffuse, il est
+    // testé, et la page de l'assistant s'en servait — à un clic de là.
+    //
+    // Donc la porte d'entrée du produit, celle que voit quelqu'un qui paie,
+    // attendait la réponse entière en silence pendant que la page rangée
+    // derrière un bouton « Plus » l'écrivait mot à mot.
+    //
+    // ── ON NE PORTE PAS UN SECOND LECTEUR ────────────────────────────────
+    //
+    // Ce fichier a DÉJÀ un lecteur de flux, `lireFlux`, écrit pour le chemin
+    // anonyme. Recopier celui de la page de l'assistant aurait fait deux
+    // lecteurs à tenir d'accord — et ils auraient divergé, comme tout ce qui
+    // est écrit deux fois dans ce projet. `lireFlux` sait maintenant lire les
+    // deux flux : ils parlent le même SSE.
+    //
+    // LE COÛT NE CHANGE PAS. Sans outil : un appel d'IA, comme avant. Avec
+    // outil : deux — décider, puis formuler — exactement comme le chemin d'un
+    // bloc le faisait déjà.
+    function corpsConnecte(texte, image) {
+        return JSON.stringify({
+            message: texte,
+            imageUrl: image || null,
+            projetId: projetActif || null,
+            // Une DEMANDE, pas une décision : la route la borne au palier.
+            niveau: niveauChoisi,
+        });
+    }
+
     function envoyerConnecte(texte, cible, image) {
+        var corps = corpsConnecte(texte, image);
+        if (!window.ReadableStream || !window.TextDecoder) return connecteSansFlux(corps, cible);
+
+        fetch("/api/chat/flux", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: corps,
+        })
+        .then(function (r) {
+            var type = r.headers.get("content-type") || "";
+            if (!r.ok || type.indexOf("text/event-stream") === -1 || !r.body) {
+                throw new Error("pas de flux");
+            }
+            return lireFlux(r.body, cible);
+        })
+        .catch(function () { connecteSansFlux(corps, cible); });
+    }
+
+    // ── LE REPLI : LA RÉPONSE D'UN BLOC ──────────────────────────────────
+    //
+    // Un proxy qui met en tampon, un navigateur sans flux lisible : on
+    // retombe sur `/api/chat`, qui rend exactement la même chose d'un seul
+    // coup. C'est le comportement d'AVANT ce chantier, gardé entier — mieux
+    // vaut une réponse d'un bloc que pas de réponse.
+    function connecteSansFlux(corps, cible) {
         fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                message: texte,
-                imageUrl: image || null,
-                projetId: projetActif || null,
-                // Une DEMANDE, pas une décision : la route la borne au palier.
-                niveau: niveauChoisi,
-            }),
+            body: corps,
         })
         .then(function (r) { return r.json(); })
         .then(function (json) {
@@ -573,9 +700,10 @@
             var bulle = ouvrirBulle(cible);
             // Les résultats arrivent APRÈS la phrase, jamais pendant. SAMII dit
             // d'abord ce qu'il a trouvé, le résultat se pose ensuite : poser
-            // la carte au milieu du texte couperait la phrase en deux.
+            // le bloc au milieu du texte couperait la phrase en deux.
             reveler(bulle, reponse, function () {
                 peindreResultats(json && json.resultats);
+                poserRetour(cible, json && json.messageId);
                 terminer(reponse, json || {});
             });
         })
@@ -597,6 +725,29 @@
     // désormais lu depuis config/cloudinary.js.
     var jointeUrl = null;
     var projetActif = null;
+
+    // ── UN SEUL ENVOI VERS CLOUDINARY ────────────────────────────────────
+    //
+    // Il était écrit en ligne dans le gestionnaire de la pièce jointe. Les
+    // fichiers de connaissance en ont besoin aussi — même préréglage, même
+    // point d'entrée, y compris pour les PDF que Cloudinary accepte sur
+    // `/image/upload`. Deux copies auraient voulu dire deux préréglages à
+    // tenir d'accord ; celui-ci est lu depuis config/cloudinary.js et ne
+    // vit qu'ici.
+    //
+    // L'envoi va du navigateur à Cloudinary sans passer par notre serveur :
+    // il n'a ni à recevoir le fichier, ni à le stocker, ni à le repayer.
+    function versCloudinary(f) {
+        var forme = new FormData();
+        forme.append("file", f);
+        forme.append("upload_preset", CLOUD.preset);
+        return fetch("https://api.cloudinary.com/v1_1/" + CLOUD.nuage + "/image/upload", { method: "POST", body: forme })
+            .then(function (r) { return r.json(); })
+            .then(function (json) {
+                if (!json || !json.secure_url) throw new Error("envoi refusé");
+                return json.secure_url;
+            });
+    }
 
     // Le niveau choisi dans la barre. Le cran de départ est LU sur le bouton
     // (`data-defaut`), que le serveur remplit depuis config/niveaux.js — on ne
@@ -640,15 +791,10 @@
             jointe.hidden = false;
             joindre.classList.add("outil--actif");
 
-            var forme = new FormData();
-            forme.append("file", f);
-            forme.append("upload_preset", CLOUD.preset);
-            fetch("https://api.cloudinary.com/v1_1/" + CLOUD.nuage + "/image/upload", { method: "POST", body: forme })
-                .then(function (r) { return r.json(); })
-                .then(function (json) {
+            versCloudinary(f)
+                .then(function (url) {
                     joindre.classList.remove("outil--actif");
-                    if (!json || !json.secure_url) throw new Error("envoi refusé");
-                    jointeUrl = json.secure_url;
+                    jointeUrl = url;
                 })
                 .catch(function () {
                     joindre.classList.remove("outil--actif");
@@ -1000,6 +1146,250 @@
         });
         document.addEventListener("keydown", function (e) {
             if (e.key === "Escape" && !voile.hidden) fermerTarifs();
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // CE QUE SAMII SAIT DE TOI — directives, connaissances, résumé, reprise
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // Ces quatre-là existaient, complètes et testées, sur /samii — la page de
+    // l'assistant, rangée en rang `avance` dans la colonne du QG, c'est-à-dire
+    // derrière un bouton « Plus ». La porte d'entrée du produit, elle, ne les
+    // avait pas. Quelqu'un qui paie tombait donc sur la version diminuée, et
+    // la version complète était à deux clics qu'il ne savait pas devoir faire.
+    //
+    // ⚠️ TOUT EST DERRIÈRE `CONNECTE`, et ce n'est pas une précaution de
+    // façade : les quatre routes sont derrière `requireAuth`. Montrer les
+    // boutons à un visiteur sans compte lui donnerait quatre commandes qui
+    // répondent 302. Le gabarit ne rend même pas le balisage — un visiteur,
+    // et Googlebot avec lui, reçoit exactement la page d'avant.
+    if (CONNECTE) {
+
+        // ── LA REPRISE ───────────────────────────────────────────────────
+        //
+        // Sans elle, fermer l'onglet effaçait la conversation À L'ÉCRAN alors
+        // qu'elle était intacte en base (samii_conversations). SAMII se
+        // souvenait, la page non : on revenait sur un écran vide en croyant
+        // avoir tout perdu.
+        //
+        // On ne rejoue PAS l'animation d'ouverture : une conversation reprise
+        // n'est pas une conversation qui commence.
+        function reprendre() {
+            var url = "/api/chat/historique" + (projetActif ? "?projetId=" + encodeURIComponent(projetActif) : "");
+            return fetch(url)
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d || !d.success || !Array.isArray(d.historique) || !d.historique.length) return;
+                    rangerOuverture();
+                    // Vidé nœud par nœud, pas en `innerHTML = ""`. La règle
+                    // de ce bloc est ABSOLUE — aucune écriture en innerHTML —
+                    // et une règle absolue se garde ; une règle « sauf pour
+                    // vider » demande un test plus fin, qui laisse passer ce
+                    // qu'il n'a pas prévu. Mesuré : le premier garde écrit
+                    // ici acceptait `= ""` et acceptait aussi le reste, par
+                    // rétro-action du motif.
+                    while (colonne.firstChild) colonne.removeChild(colonne.firstChild);
+                    historique.length = 0;
+                    d.historique.forEach(function (m) {
+                        var estMoi = m.role === "user";
+                        if (estMoi) { direMoi(m.message, null); }
+                        else {
+                            var t = bloc("tour");
+                            var p = elem("div", "pastille");
+                            var b = elem("div", "bulle", m.message);
+                            t.appendChild(p); t.appendChild(b);
+                        }
+                        historique.push({ role: estMoi ? "user" : "model", message: m.message });
+                    });
+                    defiler();
+                })
+                .catch(function () { /* une reprise ratée laisse un écran vide, pas une erreur */ });
+        }
+        reprendre();
+
+        // Changer de projet change de conversation : le fil doit suivre,
+        // sinon on écrit dans un projet en lisant les messages d'un autre.
+        document.querySelectorAll(".sortie--projet").forEach(function (b) {
+            b.addEventListener("click", function () { setTimeout(reprendre, 0); });
+        });
+
+        // ── LES PANNEAUX ─────────────────────────────────────────────────
+        //
+        // Un seul mécanisme pour les deux : un bouton ouvre, un bouton ferme,
+        // et l'ouverture charge une fois. Deux gestionnaires séparés auraient
+        // divergé à la première retouche.
+        function brancherPanneau(idBouton, idPanneau, auPremierOuvert) {
+            var b = document.getElementById(idBouton);
+            var p = document.getElementById(idPanneau);
+            if (!b || !p) return null;
+            var charge = false;
+            b.addEventListener("click", function () {
+                var ouvre = p.hidden;
+                p.hidden = !ouvre;
+                b.setAttribute("aria-expanded", ouvre ? "true" : "false");
+                if (ouvre && !charge && auPremierOuvert) { charge = true; auPremierOuvert(); }
+            });
+            var f = p.querySelector("[data-fermer]");
+            if (f) f.addEventListener("click", function () {
+                p.hidden = true;
+                b.setAttribute("aria-expanded", "false");
+            });
+            return p;
+        }
+
+        // ── DIRECTIVES PERMANENTES ───────────────────────────────────────
+        //
+        // Un réglage FIABLE, pas une supposition de l'IA : ce qui est écrit
+        // là s'applique à chaque conversation, partout sur la plateforme
+        // (voir brain/prompts/index.js). C'est la différence entre « je lui
+        // ai dit une fois » et « il le sait ».
+        var dirTexte = document.getElementById("dir-texte");
+        var dirMsg = document.getElementById("dir-msg");
+        brancherPanneau("dir-ouvrir", "dir-panneau", function () {
+            fetch("/api/directives")
+                .then(function (r) { return r.json(); })
+                .then(function (d) { if (dirTexte) dirTexte.value = (d && d.directives) || ""; })
+                .catch(function () { if (dirMsg) dirMsg.textContent = T.dirErreur || ""; });
+        });
+        var dirSauver = document.getElementById("dir-sauver");
+        if (dirSauver) dirSauver.addEventListener("click", function () {
+            dirSauver.disabled = true;
+            if (dirMsg) dirMsg.textContent = "";
+            fetch("/api/directives", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ directives: dirTexte ? dirTexte.value : "" }),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (d) { if (dirMsg) dirMsg.textContent = (d && d.success) ? (T.dirOk || "") : (T.dirErreur || ""); })
+            .catch(function () { if (dirMsg) dirMsg.textContent = T.dirErreur || ""; })
+            .then(function () { dirSauver.disabled = false; });
+        });
+
+        // ── CE QUE SAMII A LU ────────────────────────────────────────────
+        //
+        // Des fichiers ou du texte que SAMII retient pour de bon. Le fichier
+        // part directement vers Cloudinary (voir `versCloudinary`), et seule
+        // l'adresse rejoint notre serveur.
+        var conListe = document.getElementById("con-liste");
+        var conTitre = document.getElementById("con-titre");
+        var conTexte = document.getElementById("con-texte");
+        var conMsg = document.getElementById("con-msg");
+        var conFichier = document.getElementById("con-fichier");
+        var fichierUrl = null;
+        var fichierNom = null;
+
+        function listerConnaissances() {
+            if (!conListe) return;
+            conListe.textContent = T.chargement || "…";
+            fetch("/api/connaissances")
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    var items = (d && d.connaissances) || [];
+                    conListe.textContent = "";
+                    if (!items.length) { conListe.appendChild(elem("p", "con__vide", T.conVide || "")); return; }
+                    items.forEach(function (it) {
+                        var ligne = elem("div", "con__item");
+                        // ⚠️ textContent, jamais innerHTML : ce titre vient
+                        // d'un nom de fichier choisi par la personne, et un
+                        // nom de fichier peut contenir du balisage.
+                        ligne.appendChild(elem("span", "con__nom", it.titre || ""));
+                        var x = elem("button", "con__retirer", T.retirer || "✕");
+                        x.type = "button";
+                        x.addEventListener("click", function () {
+                            ligne.remove();
+                            fetch("/api/connaissances/" + encodeURIComponent(it.id), { method: "DELETE" })
+                                .catch(function () { /* la ligne est déjà partie de l'écran */ });
+                        });
+                        ligne.appendChild(x);
+                        conListe.appendChild(ligne);
+                    });
+                })
+                .catch(function () { conListe.textContent = T.conErreur || ""; });
+        }
+        brancherPanneau("con-ouvrir", "con-panneau", listerConnaissances);
+
+        var conChoisir = document.getElementById("con-choisir");
+        if (conChoisir && conFichier) {
+            conChoisir.addEventListener("click", function () { conFichier.click(); });
+            conFichier.addEventListener("change", function () {
+                var f = conFichier.files && conFichier.files[0];
+                if (!f) return;
+                if (f.size > 10 * 1024 * 1024) { if (conMsg) conMsg.textContent = T.tropLourd || ""; conFichier.value = ""; return; }
+                if (conMsg) conMsg.textContent = T.conEnvoi || "";
+                versCloudinary(f)
+                    .then(function (url) {
+                        fichierUrl = url;
+                        fichierNom = f.name;
+                        if (conTitre && !conTitre.value) conTitre.value = f.name;
+                        if (conMsg) conMsg.textContent = T.conPret || "";
+                    })
+                    .catch(function () { if (conMsg) conMsg.textContent = T.envoiRate || ""; })
+                    .then(function () { conFichier.value = ""; });
+            });
+        }
+
+        var conAjouter = document.getElementById("con-ajouter");
+        if (conAjouter) conAjouter.addEventListener("click", function () {
+            var texte = conTexte ? conTexte.value.trim() : "";
+            if (!fichierUrl && !texte) { if (conMsg) conMsg.textContent = T.conRien || ""; return; }
+            conAjouter.disabled = true;
+            if (conMsg) conMsg.textContent = T.conLecture || "";
+            fetch("/api/connaissances", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    titre: conTitre ? conTitre.value.trim() : "",
+                    fichierUrl: fichierUrl,
+                    fichierNom: fichierNom,
+                    texte: fichierUrl ? null : texte,
+                }),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d && d.success) {
+                    if (conMsg) conMsg.textContent = T.conRetenu || "";
+                    if (conTexte) conTexte.value = "";
+                    if (conTitre) conTitre.value = "";
+                    fichierUrl = null; fichierNom = null;
+                    listerConnaissances();
+                } else if (conMsg) {
+                    conMsg.textContent = (d && d.error) || T.conErreur || "";
+                }
+            })
+            .catch(function () { if (conMsg) conMsg.textContent = T.conErreur || ""; })
+            .then(function () { conAjouter.disabled = false; });
+        });
+
+        // ── LE RÉSUMÉ ────────────────────────────────────────────────────
+        //
+        // Un condensé de la semaine, posé dans le fil ET copié. Il sert à
+        // repartir d'où l'on s'est arrêté plutôt que de tout réexpliquer.
+        var resume = document.getElementById("resume");
+        if (resume) resume.addEventListener("click", function () {
+            if (occupe) return;
+            resume.disabled = true;
+            if (cote) cote.classList.remove("ouverte");
+            rangerOuverture();
+            var cible = attendre();
+            fetch("/api/samii-resume", { method: "POST" })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    var texte = (d && d.success && d.resume)
+                        ? (T.resumeTitre || "") + "\n\n" + d.resume
+                        : ((d && d.message) || T.resumeRate || "");
+                    var b = ouvrirBulle(cible);
+                    reveler(b, texte, function () { terminer("", {}); });
+                    if (d && d.resume && navigator.clipboard) {
+                        navigator.clipboard.writeText(d.resume).catch(function () { /* copie refusée : le texte est dans le fil */ });
+                    }
+                })
+                .catch(function () {
+                    var b = ouvrirBulle(cible);
+                    reveler(b, T.resumeRate || "", function () { terminer("", {}); });
+                })
+                .then(function () { resume.disabled = false; });
         });
     }
 })();

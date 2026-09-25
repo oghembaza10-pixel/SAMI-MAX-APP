@@ -652,6 +652,42 @@ const EN = {
     // l'interface.
     "Sources": "Sources",
     "Solde": "Balance",
+
+    // ── CE QUE SAMII SAIT DE TOI ─────────────────────────────────────────
+    // Directives, connaissances et résumé, repris de la page de l'assistant.
+    "Ce que SAMII sait de toi": "What SAMII knows about you",
+    "Comment je dois travailler": "How I should work",
+    "Ce que tu écris ici, SAMII l'applique à chaque conversation — pas seulement à la prochaine.":
+        "What you write here, SAMII applies to every conversation — not just the next one.",
+    "Ex : réponds-moi toujours en darija, et ne propose jamais de prix sans me demander.":
+        "E.g. always answer me in Darija, and never quote a price without asking me first.",
+    "Enregistrer": "Save",
+    "Ce que SAMII a lu": "What SAMII has read",
+    "Un document ou quelques lignes que SAMII garde pour de bon — ton catalogue, tes tarifs, ta façon de parler à tes clients.":
+        "A document or a few lines SAMII keeps for good — your catalogue, your prices, the way you talk to your customers.",
+    "Nom (ex : mes tarifs 2026)": "Name (e.g. my 2026 prices)",
+    "…ou colle le texte ici": "…or paste the text here",
+    "Un fichier": "A file",
+    "Ajouter": "Add",
+    "Résume-moi ma semaine": "Sum up my week",
+    "Bonne réponse": "Good answer",
+    "Mauvaise réponse": "Poor answer",
+    "Enregistré — SAMII l'applique dès maintenant, partout.":
+        "Saved — SAMII applies it from now on, everywhere.",
+    "Ça n'a pas pu être enregistré. Réessaie.": "That couldn't be saved. Try again.",
+    "Chargement…": "Loading…",
+    "Retirer": "Remove",
+    "Rien pour l'instant.": "Nothing yet.",
+    "Ça n'a pas marché. Réessaie.": "That didn't work. Try again.",
+    "Envoi du fichier…": "Sending the file…",
+    "Fichier prêt — clique « Ajouter » pour que SAMII le lise.":
+        "File ready — tap “Add” so SAMII reads it.",
+    "Choisis un fichier ou écris quelque chose.": "Pick a file or write something.",
+    "SAMII lit et retient…": "SAMII is reading and remembering…",
+    "Retenu. SAMII s'en servira désormais.": "Kept. SAMII will use it from now on.",
+    "Voilà ta semaine. Je l'ai copiée — tu peux la coller où tu veux.":
+        "Here's your week. I've copied it — paste it wherever you like.",
+    "Je n'ai pas pu faire le résumé pour le moment.": "I couldn't put the summary together right now.",
 };
 
 // ── L'arabe ──────────────────────────────────────────────────────────────
@@ -1059,6 +1095,41 @@ const AR = {
     // ── LES CARTES DU FIL ────────────────────────────────────────────────
     "Sources": "المصادر",
     "Solde": "الرصيد",
+
+    // ── CE QUE SAMII SAIT DE TOI ─────────────────────────────────────────
+    "Ce que SAMII sait de toi": "ما يعرفه سامي عنك",
+    "Comment je dois travailler": "كيف يجب أن أعمل",
+    "Ce que tu écris ici, SAMII l'applique à chaque conversation — pas seulement à la prochaine.":
+        "ما تكتبه هنا يطبّقه سامي في كل محادثة — لا في المحادثة القادمة فقط.",
+    "Ex : réponds-moi toujours en darija, et ne propose jamais de prix sans me demander.":
+        "مثال: جاوبني دائمًا بالدارجة، ولا تقترح أي سعر دون أن تسألني.",
+    "Enregistrer": "حفظ",
+    "Ce que SAMII a lu": "ما قرأه سامي",
+    "Un document ou quelques lignes que SAMII garde pour de bon — ton catalogue, tes tarifs, ta façon de parler à tes clients.":
+        "مستند أو بضعة أسطر يحتفظ بها سامي نهائيًا — كتالوجك، أسعارك، طريقتك في مخاطبة زبائنك.",
+    "Nom (ex : mes tarifs 2026)": "الاسم (مثال: أسعاري 2026)",
+    "…ou colle le texte ici": "…أو الصق النص هنا",
+    "Un fichier": "ملف",
+    "Ajouter": "إضافة",
+    "Résume-moi ma semaine": "لخّص لي أسبوعي",
+    "Bonne réponse": "إجابة جيدة",
+    "Mauvaise réponse": "إجابة سيئة",
+    "Enregistré — SAMII l'applique dès maintenant, partout.":
+        "تم الحفظ — يطبّقه سامي من الآن، في كل مكان.",
+    "Ça n'a pas pu être enregistré. Réessaie.": "تعذّر الحفظ. أعد المحاولة.",
+    "Chargement…": "جارٍ التحميل…",
+    "Retirer": "إزالة",
+    "Rien pour l'instant.": "لا شيء حتى الآن.",
+    "Ça n'a pas marché. Réessaie.": "لم ينجح ذلك. أعد المحاولة.",
+    "Envoi du fichier…": "جارٍ إرسال الملف…",
+    "Fichier prêt — clique « Ajouter » pour que SAMII le lise.":
+        "الملف جاهز — اضغط «إضافة» ليقرأه سامي.",
+    "Choisis un fichier ou écris quelque chose.": "اختر ملفًا أو اكتب شيئًا.",
+    "SAMII lit et retient…": "سامي يقرأ ويحفظ…",
+    "Retenu. SAMII s'en servira désormais.": "تم الحفظ. سيستعمله سامي من الآن.",
+    "Voilà ta semaine. Je l'ai copiée — tu peux la coller où tu veux.":
+        "هذا أسبوعك. نسختُه — يمكنك لصقه حيث تشاء.",
+    "Je n'ai pas pu faire le résumé pour le moment.": "لم أتمكّن من إعداد الملخّص الآن.",
 };
 
 const DICTIONNAIRES = { fr: null, en: EN, ar: AR };
