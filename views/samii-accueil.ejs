@@ -872,6 +872,35 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
    Vérifié après coup : la page anonyme est redevenue identique OCTET POUR
    OCTET à celle d'avant, dans les trois langues. */
 
+/* ══ UNE AMORCE QUI NE TIENT PAS SUR UNE LIGNE ════════════════════════════
+
+   `.chip` est en `white-space: nowrap`, et c'était juste : quatre libellés
+   courts, une ligne chacun, à 390 px.
+
+   Les amorces d'un marchand viennent du registre des secteurs et font de 34
+   à 78 caractères — « les premiers rendez-vous sans dossier sérieux qui
+   occupent les créneaux utiles ». En `nowrap`, elles sortaient de l'écran.
+
+   ⚠️ ON N'A PAS TRONQUÉ LE TEXTE. « Les commandes non confirmées expédiées
+   quand même » coupé à trente caractères devient « les commandes non
+   confirmées », qui ne dit plus la même chose — et ce texte est la seule
+   chose qui rend cette puce vraie pour CE métier. C'est donc la puce qui
+   s'adapte : deux lignes, largeur bornée, et rien de perdu.
+
+   La classe est posée sur TOUTES les amorces, sans seuil de longueur : une
+   phrase courte tient sur une ligne d'elle-même. Le seuil qu'on avait écrit
+   d'abord mesurait la phrase française pendant que la puce affichait la
+   traduite — faux dès qu'il y a deux textes, invisible en arabe.
+
+   Et elle ne touche QUE les amorces : les quatre puces de l'anonyme gardent
+   `nowrap`, elles n'ont aucune raison de changer. Mesuré — sa page est
+   restée identique octet pour octet dans les trois langues. */
+.chip--amorce {
+    white-space: normal;
+    max-width: min(100%, 30ch);
+    text-align: left;
+}
+
 /* ══ LE RETOUR SUR UNE RÉPONSE ════════════════════════════════════════════
    Deux pouces, discrets, sous la réponse. Assez visibles pour qu'on les
    trouve, assez effacés pour ne pas transformer chaque réponse en sondage.
@@ -1517,6 +1546,61 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                             Une puce doit tenir sur une ligne à 390 px ; ce qui
                             part à SAMII, lui, doit être une vraie phrase —
                             sinon il répond à un mot-clé au lieu d'une personne. %>
+                        <%_ if (typeof amorces !== "undefined" && amorces && amorces.length) { -%>
+                            <%# ══ LES AMORCES D'UN MARCHAND QU'ON CONNAÎT ═══════════
+
+                                Elles remplacent les quatre génériques ci-dessous —
+                                jamais pour un visiteur anonyme, qui n'a ni métier ni
+                                QG : `services/amorces.js` lui rend une liste vide, et
+                                c'est l'autre branche qui sert. La page de l'anonyme
+                                ne bouge pas d'un octet, comme au chantier B.
+
+                                ── `data-niveau` N'EST PAS DÉCORATIF ─────────────────
+
+                                Mesuré : la barre présélectionne « Rapide »
+                                (config/niveaux.js, PRESELECTION), et Rapide ne porte
+                                AUCUN outil — `buildToolsPayload` rend `null`. Une
+                                puce qui promet « je vais lire tes chiffres », cliquée
+                                telle quelle, partait sur un tour sans outil : SAMII
+                                répondait de mémoire, avec aplomb, des chiffres qu'il
+                                n'avait pas lus.
+
+                                La puce porte donc le niveau MINIMAL de son outil, lu
+                                dans la table, et le navigateur monte la barre à ce
+                                cran au clic — visiblement, jamais en silence, et
+                                jamais au-dessus du besoin. Les puces de conversation
+                                (une douleur du métier) n'ont pas d'outil, donc pas de
+                                `data-niveau` : elles ne font monter personne.
+
+                                ── LE LIBELLÉ PEUT TENIR SUR DEUX LIGNES ─────────────
+
+                                Une douleur de métier est la phrase du registre,
+                                verbatim : de 34 à 78 caractères. La tronquer pour
+                                tenir sur une ligne changerait ce qu'elle dit. C'est
+                                donc la puce qui s'adapte — `.chip--amorce`, plus bas
+                                dans la feuille conditionnée.
+
+                                ⚠️ LA CLASSE EST POSÉE SUR TOUTES, SANS SEUIL.
+
+                                Première version : `libelle.length > 30 ? …`. Le
+                                navigateur l'a prise en faute tout de suite — le seuil
+                                mesurait la phrase FRANÇAISE alors que la puce affiche
+                                la traduite. « Mes prix sont-ils bien placés ? » (31)
+                                passait pour longue, « Are my prices right? » (20) la
+                                portait quand même, et en arabe personne n'aurait su.
+                                Un seuil sur une longueur de texte est faux dès qu'il
+                                y a deux textes.
+
+                                Sans seuil, il n'y a plus rien à se tromper : une
+                                phrase courte tient sur une ligne toute seule, une
+                                longue passe à deux. Le retour à la ligne est déjà la
+                                mesure — elle est faite par le navigateur, qui est le
+                                seul à connaître la vraie largeur. %>
+                            <%_ amorces.forEach(function (a) { -%>
+                                <button class="chip chip--amorce" type="button"
+                                        data-demande="<%= L(a.demande) %>"<% if (a.niveau) { %> data-niveau="<%= a.niveau %>" data-suffit="<%= a.suffit.join(" ") %>"<% } %>><%= L(a.libelle) %></button>
+                            <%_ }); -%>
+                        <%_ } else { -%>
                         <button class="chip" type="button"
                                 data-demande="<%= L("Je vends des vêtements sur Instagram, aide-moi à développer ça") %>"><%= L("Développer mon activité") %></button>
                         <button class="chip" type="button"
@@ -1525,6 +1609,7 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                                 data-demande="<%= L("Aide-moi à écrire un message difficile") %>"><%= L("Trouver les bons mots") %></button>
                         <button class="chip" type="button"
                                 data-demande="<%= L("Juste parler, j'ai eu une longue journée") %>"><%= L("Juste parler") %></button>
+                        <%_ } -%>
                     </div>
                 </div>
 

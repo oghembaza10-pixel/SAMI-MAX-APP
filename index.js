@@ -951,6 +951,33 @@ app.get("/", async (req, res) => {
         ...seoAccueil(req),
         workspaceId: req.session?.workspaceId || "",
         cloudinary: require("./config/cloudinary"),
+
+        // ── PAR OÙ COMMENCER, QUAND ON SAIT DÉJÀ QUI EST LÀ ──────────────
+        //
+        // Les quatre amorces de la page étaient les mêmes pour tout le
+        // monde. Pour un marchand connecté dont on connaît le métier et le
+        // QG, elles ne disaient rien qu'il ne savait déjà.
+        //
+        // AUCUNE LECTURE EN BASE AJOUTÉE. `services/amorces.js` ne travaille
+        // que sur ce que la session porte déjà et sur les registres
+        // (config/niveaux.js, config/audiences.js, services/metiers.js).
+        // Une page d'accueil qui attendrait une requête de plus pour
+        // proposer des puces paierait ça sur une connexion mobile, à
+        // l'endroit exact où quelqu'un décide de rester ou pas.
+        //
+        // `req.session.metier` est LA MÊME source que celle du prompt
+        // (routes/api.js) : les puces et SAMII parlent du même métier, ou
+        // d'aucun. Deux sources auraient fini par se contredire.
+        //
+        // Rend `[]` pour un visiteur anonyme comme pour un compte sans
+        // métier ni QG — le gabarit garde alors ses quatre amorces
+        // génériques, inchangées.
+        amorces: req.session?.loggedIn
+            ? require("./services/amorces").pour({
+                metier: req.session?.metier || "",
+                aUnQG: !!req.session?.workspaceId,
+            })
+            : [],
     });
 });
 

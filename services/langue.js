@@ -41,6 +41,35 @@ const EN = {
     "Juste parler": "Just talk",
     "Aide-moi à organiser ma journée de travail": "Help me plan my working day",
 
+    // ── CHANTIER AMORCES VIVANTES : LES QUATRE GESTES DU MARCHAND ────────
+    //
+    // Les phrases de `services/amorces.js` (GESTES). Elles remplacent les
+    // quatre puces génériques pour un marchand connecté.
+    //
+    // ⚠️ `views/samii-accueil.ejs` les traduit par `L(a.libelle)`, avec une
+    // VARIABLE. `tests/langues.test.js` ne lit que les `L("littéral")` — il ne
+    // peut donc pas les voir, et il le dit lui-même (« prétendre le vérifier
+    // serait se mentir »). C'est `tests/amorces.test.js` qui garde celles-ci,
+    // en comparant aux valeurs réelles du module.
+    //
+    // Les phrases de DOULEUR, elles, ne sont pas ici : elles viennent du
+    // registre des secteurs (`services/metiers.js`), qui est français d'un
+    // bout à l'autre — comme le bloc de secteur injecté dans le prompt. Les
+    // traduire voudrait dire traduire le registre, ce qui est un chantier à
+    // lui seul et pas celui-ci.
+    "Où en est mon activité ?": "How is my business doing?",
+    "Fais le point sur mon activité : mes chiffres réels, ce qui monte, ce qui bloque.":
+        "Give me the state of my business: my real figures, what is growing, what is stuck.",
+    "Ce qui s'est passé aujourd'hui": "What happened today",
+    "Qu'est-ce qui s'est passé dans mon activité ces dernières 24 heures ?":
+        "What happened in my business over the last 24 hours?",
+    "Mes prix sont-ils bien placés ?": "Are my prices right?",
+    "Compare mes prix à ceux pratiqués ailleurs : est-ce que je suis bas, bien placé ou trop haut ?":
+        "Compare my prices with what others charge: am I low, well placed or too high?",
+    "Ce qui marche en ce moment": "What is selling right now",
+    "Qu'est-ce qui se vend bien en ce moment dans mon secteur, et qu'est-ce que je pourrais saisir ?":
+        "What is selling well in my sector right now, and what could I go after?",
+
     // ── CHANTIER CHAT DU QG : LE COMPOSER ────────────────────────────────
     "Plus d'outils": "More tools",
     "Résumé de ma semaine": "My week in brief",
@@ -707,6 +736,22 @@ const AR = {
     "Trouver les bons mots": "إيجاد الكلمات المناسبة",
     "Juste parler": "مجرّد حديث",
     "Aide-moi à organiser ma journée de travail": "ساعدني في تنظيم يوم عملي",
+
+    // ── CHANTIER AMORCES VIVANTES : LES QUATRE GESTES DU MARCHAND ────────
+    // Voir la note du dictionnaire anglais : gardées par tests/amorces.test.js,
+    // parce que le gabarit les traduit par une variable.
+    "Où en est mon activité ?": "كيف يسير نشاطي؟",
+    "Fais le point sur mon activité : mes chiffres réels, ce qui monte, ce qui bloque.":
+        "أعطني حصيلة نشاطي: أرقامي الحقيقية، ما ينمو وما يتعطّل.",
+    "Ce qui s'est passé aujourd'hui": "ما حدث اليوم",
+    "Qu'est-ce qui s'est passé dans mon activité ces dernières 24 heures ?":
+        "ما الذي حدث في نشاطي خلال الـ 24 ساعة الأخيرة؟",
+    "Mes prix sont-ils bien placés ?": "هل أسعاري مناسبة؟",
+    "Compare mes prix à ceux pratiqués ailleurs : est-ce que je suis bas, bien placé ou trop haut ?":
+        "قارن أسعاري بأسعار الآخرين: هل أنا منخفض، مناسب أم مرتفع جدًا؟",
+    "Ce qui marche en ce moment": "ما يُطلب في هذه الفترة",
+    "Qu'est-ce qui se vend bien en ce moment dans mon secteur, et qu'est-ce que je pourrais saisir ?":
+        "ما الذي يُباع جيّدًا في قطاعي حاليًا، وما الفرصة التي يمكنني اغتنامها؟",
 
     // ── CHANTIER CHAT DU QG : LE COMPOSER ────────────────────────────────
     "Plus d'outils": "أدوات أخرى",

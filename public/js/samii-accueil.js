@@ -763,6 +763,15 @@
         var n = document.getElementById("cerveau-nom");
         return (n && n.getAttribute("data-defaut")) || "rapide";
     })();
+
+    // Monter la barre à un cran donné, depuis ailleurs que le menu — une puce
+    // de démarrage qui promet un outil (voir plus bas). Posé ici en NO-OP :
+    // le vrai est branché avec le menu, et si le menu n'existe pas dans le
+    // DOM, cliquer une puce ne doit pas lever une exception qui emporterait
+    // l'envoi du message. Une puce qui n'arrive pas à monter le niveau part
+    // quand même — SAMII répondra avec ce qu'il a, ce qui est moins grave
+    // qu'un bouton mort.
+    var monterNiveau = function () {};
     var joindre = document.getElementById("joindre");
     var fichier = document.getElementById("fichier");
     var jointe = document.getElementById("jointe");
@@ -946,10 +955,53 @@
     // Une puce porte un libellé COURT et une demande ENTIÈRE. On envoie la
     // demande : envoyer « Juste parler » ferait répondre SAMII à deux mots au
     // lieu d'une personne qui a eu une longue journée.
+    //
+    // ══ ET UNE PUCE QUI PROMET UN OUTIL PORTE LE CRAN QU'IL LUI FAUT ══════
+    //
+    // ⚠️ MESURÉ, ET C'ÉTAIT UNE PROMESSE CREUSE.
+    //
+    // La barre présélectionne « Rapide » (config/niveaux.js, PRESELECTION), et
+    // Rapide ne porte AUCUN outil : `buildToolsPayload` rend `null`. Une puce
+    // « Où en est mon activité ? » cliquée à la première visite partait donc
+    // sur un tour SANS OUTIL — SAMII répondait des chiffres de mémoire, avec
+    // aplomb, sans avoir rien lu. C'est mot pour mot la panne que
+    // `config/niveaux.js` décrit pour les questions de prix.
+    //
+    // ── ON NE COMPARE PAS DEUX NIVEAUX ICI, ET C'EST VOULU ────────────────
+    //
+    // Le serveur a déjà listé les crans qui SUFFISENT (`data-suffit`). Ce
+    // code ne fait qu'une appartenance. Les deux autres façons de s'y prendre
+    // étaient des pièges :
+    //
+    //   • recopier l'ordre des niveaux ici → une cinquième échelle, qui
+    //     divergera de `config/niveaux.js` au premier changement ;
+    //   • lire l'ordre sur le menu du DOM → « Auto » y est EN PREMIER, donc
+    //     il paraît le plus faible alors qu'il monte jusqu'à Maître. On
+    //     aurait remplacé Auto par Expert, c'est-à-dire abaissé le plafond de
+    //     quelqu'un en croyant l'aider.
+    //
+    // ── ON MONTE, ON NE DESCEND JAMAIS ────────────────────────────────────
+    //
+    // Si le cran en place suffit, on n'y touche pas. Quelqu'un qui travaille
+    // en Maître ne doit pas retomber en Expert parce qu'il a cliqué une puce.
+    //
+    // Et on monte par `poserNiveau`, le MÊME chemin que le menu : la pastille,
+    // le nom, la coche et `localStorage` suivent tous. Un second chemin qui
+    // n'en mettrait à jour que la moitié laisserait la barre afficher un
+    // niveau pendant qu'on en envoie un autre — exactement ce que le
+    // commentaire de `niveauChoisi` dit d'éviter.
     if (demarrer) {
         demarrer.addEventListener("click", function (e) {
             var b = e.target.closest(".chip");
-            if (b) envoyerMessage((b.getAttribute("data-demande") || b.textContent).trim());
+            if (!b) return;
+
+            var vise = b.getAttribute("data-niveau");
+            if (vise && vise !== niveauChoisi) {
+                var suffisants = (b.getAttribute("data-suffit") || "").split(" ");
+                if (suffisants.indexOf(niveauChoisi) === -1) monterNiveau(vise);
+            }
+
+            envoyerMessage((b.getAttribute("data-demande") || b.textContent).trim());
         });
     }
 
@@ -1054,6 +1106,16 @@
             });
             try { localStorage.setItem("samii.niveau", niveauChoisi); } catch (e) {}
         }
+
+        // Le même chemin que le menu, appelable d'ailleurs. On cherche le
+        // bouton du menu plutôt que d'écrire le niveau à la main : la pastille,
+        // le nom et la coche viennent de SES attributs, que le serveur a
+        // remplis depuis config/niveaux.js. Un cran absent du menu (palier qui
+        // ne le propose pas) ne fait donc rien du tout, ce qui est le bon repli.
+        monterNiveau = function (id) {
+            var b = menuCerveau.querySelector('.choix[data-niveau="' + id + '"]');
+            if (b) poserNiveau(b);
+        };
 
         cerveau.addEventListener("click", function () {
             var ouvert = !menuCerveau.hidden;
