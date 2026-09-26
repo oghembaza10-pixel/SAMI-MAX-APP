@@ -102,7 +102,19 @@ class CommerceEngine {
                  parseFloat(order.total_price || 0), order.created_at || new Date().toISOString()]
             );
 
-            await automationEngine.run("order.created", { shop, payload: order });
+            // ── LE QG PART AVEC L'ÉVÉNEMENT ──────────────────────────────
+            //
+            // `shop` est le domaine Shopify, `workspaceId` est le QG : deux
+            // choses différentes, reliées par `getWorkspaceIdForShop()` deux
+            // lignes plus haut. Les automatisations écrivent dans le journal,
+            // qui est indexé par QG — leur passer `shop` revenait à écrire des
+            // lignes qu'aucune page filtrant par QG ne retrouverait.
+            //
+            // On le passe ici parce qu'il est DÉJÀ calculé pour l'insertion de
+            // la commande. `automationEngine.run()` sait le résoudre seul
+            // quand l'appelant ne l'a pas ; le lui donner évite une seconde
+            // lecture de la base pour la même réponse.
+            await automationEngine.run("order.created", { shop, workspaceId, payload: order });
             evenements.publier(workspaceId, "commande.creee", {
                 id: orderId, nomClient: client, telephone: phone,
                 produit: order.line_items?.map(i => i.title).join(", ") || "",
