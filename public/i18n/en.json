@@ -132,7 +132,8 @@
       "billing": "Subscription",
       "discussions": "Chats",
       "messages": "My messages",
-      "jarvis": "SAMII Jarvis"
+      "jarvis": "SAMII Jarvis",
+      "activite": "Activity Center"
     },
     "hero": {
       "eyebrow": "Command Center",

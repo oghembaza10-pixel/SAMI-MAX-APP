@@ -70,6 +70,28 @@ const MODULES = [
     // chemineAutorise), donc rien à déclarer à la porte — et surtout rien
     // qu'on puisse lui fermer par erreur chez une partenaire.
     { id: "chat",        libelle: "Chat SAMII",          cle: "qg.nav.chat",         icone: "message-circle",  href: "/",               rang: "core", chemins: [] },
+
+    // ── CE QUE SAMII FAIT POUR VOUS ──────────────────────────────────────
+    //
+    // Deuxième, juste après le chat, et pour la même raison : on parle à
+    // SAMII, puis on va voir ce qu'il en a fait. C'est la différence entre
+    // un assistant et un employé — un employé rend compte.
+    //
+    // Mesuré avant de l'écrire : `/api/missions` existait depuis des mois,
+    // avec ses trois routes et ses garde-fous, et AUCUNE page ne l'appelait.
+    // Une mission partait, tournait, se reprenait après une panne, se
+    // terminait — sans que personne puisse jamais le voir.
+    //
+    // ── CE QUE CETTE ENTRÉE NE FAIT PAS ──────────────────────────────────
+    //
+    // Elle n'ouvre rien chez une partenaire. `autorises()` filtre MODULES
+    // par la liste blanche d'identifiants de la communauté (`qg.modules`) ;
+    // « activite » n'est dans aucune, donc l'entrée n'apparaît pas chez
+    // elle et `cheminsAutorises` garde /activite fermé. C'est exactement le
+    // sens de la liste blanche décrite en tête de fichier : un module neuf
+    // reste chez nous par défaut, et l'oubli va du côté sûr.
+    { id: "activite",    libelle: "Centre d'activité",   cle: "qg.nav.activite",     icone: "activity",        href: "/activite",       rang: "core", chemins: ["/activite"] },
+
     { id: "hub",         libelle: "Hub",                 cle: "qg.nav.hub",          icone: "layout-grid",     href: "/hub",            rang: "avance", chemins: ["/hub"] },
     { id: "marketplace", libelle: "Marketplace",         cle: "qg.nav.marketplace",  icone: "store",           href: "/marketplace",    rang: "core", chemins: ["/marketplace"] },
     // Sa communauté vit sous /c ; la nôtre sous /community. Une partenaire

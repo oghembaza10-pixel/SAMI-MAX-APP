@@ -696,6 +696,15 @@ function marque(html) {
         "/recharge": true, "/recharge/checkout": true, "/recharge/solde": true,
         "/qg": true, "/qg/:metier": true, "/qg/:metier/connecter": true,
         "/workspace": true, "/connect": true,
+        // ── LE CENTRE D'ACTIVITÉ : À NOUS ────────────────────────────────
+        //
+        // `false` : il est déclaré comme module dans config/modules-qg.js, et
+        // aucune communauté partenaire ne l'a dans sa liste blanche. La porte
+        // le ferme donc chez elle, et c'est voulu — il montre le journal, les
+        // missions et les publications de NOS marchands, avec nos moteurs
+        // derrière. Le jour où on décide de le donner à une partenaire, on
+        // ajoute « activite » à ses `qg.modules` et il s'ouvre tout seul.
+        "/activite": false,
         // Le choix du QG quand on en a plusieurs : une étape du parcours de
         // connexion. Fermée chez elle, ses marchands à deux boutiques
         // tomberaient sur une 404 juste après s'être connectés.

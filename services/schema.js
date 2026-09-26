@@ -295,6 +295,25 @@ const BLOCS = [
                 created_at TIMESTAMP DEFAULT NOW()
             )`,
 
+            // ── LA QUESTION QUE POSE LE CENTRE D'ACTIVITÉ ────────────────
+            //
+            // « Qu'est-ce qui s'est passé chez MOI, le plus récent d'abord ».
+            //
+            // Mesuré avant de l'écrire : cette table n'avait AUCUN index en
+            // dehors de sa clé primaire, alors que `missions_longues` et
+            // `social_publications` ont chacune le leur. Elle grossit d'une
+            // ligne à chaque commande, chaque paiement, chaque message —
+            // indéfiniment, puisque rien ne la purge. Sans cet index, la page
+            // la balaie en entier à chaque ouverture, et le ralentissement
+            // arrive sans que rien ne le signale : la requête ne casse pas,
+            // elle prend seulement de plus en plus de temps.
+            //
+            // `created_at DESC` dans l'index et pas seulement `workspace_id` :
+            // la page trie toujours du plus récent au plus ancien, et sans
+            // l'ordre dans l'index, Postgres retrouve vite les lignes du QG
+            // puis les trie toutes quand même.
+            `CREATE INDEX IF NOT EXISTS idx_journal_ws ON journal (workspace_id, created_at DESC)`,
+
             // ── LES COLONNES QUE PERSONNE N'AJOUTAIT ─────────────────────
             //
             // TREIZE COLONNES DE `workspaces` QUE LE CODE LIT ET QU'AUCUN

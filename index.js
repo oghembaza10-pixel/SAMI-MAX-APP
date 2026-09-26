@@ -642,6 +642,18 @@ app.use("/samii/radar-prospects", require("./routes/radarprospects"));
 app.use("/samii/memoire-client", require("./routes/memoireclient"));
 app.use("/automatisations", requireAuth, require("./routes/automatisations"));
 app.use("/missions", requireAuth, require("./routes/missions"));
+
+// ── LE CENTRE D'ACTIVITÉ ────────────────────────────────
+//
+// Ce que SAMII fait pour vous, et qui ne se voyait nulle part. Une page de
+// LECTURE : elle n'écrit rien, ne crée aucun journal, et lit trois sources
+// qui existent déjà (`journal`, `missions_longues`, `social_publications`).
+//
+// ⚠️ À NE PAS CONFONDRE AVEC « /missions » juste au-dessus. Celle-là est une
+// liste de TÂCHES pour le marchand, calculée à la volée sur ses commandes en
+// attente. Deux mots identiques, deux choses différentes : l'une lui dit ce
+// qu'IL a à faire, l'autre ce que SAMII a fait.
+app.use("/activite", require("./routes/activite"));
 app.use("/samii/miroir", requireAuth, require("./routes/miroir"));
 app.use("/samii/messager-eclair", requireAuth, require("./routes/messagereclair"));
 app.use("/samii/oracle-financier", requireAuth, require("./routes/oraclefinancier"));

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="<%= typeof lang !== "undefined" ? lang : "fr" %>" dir="<%= typeof dir !== "undefined" ? dir : "ltr" %>">
+<head>
+    <meta charset="UTF-8">
+    <%# `viewport` DÈS LA PREMIÈRE VERSION. Mesuré sur les neuf vues réunies
+        au chantier de la coquille : aucune ne l'avait, et sur un écran de
+        320 px la page se croit large de 980 px. On ne recommence pas. %>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= L("Centre d'activité") %> · SAMII</title>
+    <meta name="theme-color" content="#070809">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<%= v("/css/qg-style.css") %>">
+<style>
+/* ══ LE CENTRE D'ACTIVITÉ ═══════════════════════════════════════════════
+
+   Une LISTE, et rien d'autre. C'est le format le plus simple qui soit, et
+   c'est celui qui tient sur un téléphone sans arbitrage.
+
+   Pas de tableau : à 320 px, un tableau à quatre colonnes se lit à la
+   loupe ou déborde. Une ligne par événement, deux niveaux de texte. */
+
+.act-page { padding: 18px 16px 60px; max-width: 900px; }
+.act-titre { font-size: 1.15rem; font-weight: 600; margin: 0 0 3px; }
+.act-sous  { margin: 0 0 22px; font-size: .84rem; color: rgba(255,255,255,.45); line-height: 1.5; }
+
+.act-bloc { margin-bottom: 26px; }
+.act-bloc__titre {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .74rem; letter-spacing: .08em; text-transform: uppercase;
+    color: rgba(255,255,255,.4); margin: 0 0 10px;
+}
+/* Le compteur est DANS le titre : « Échec 0 » est une information, et un
+   titre sans chiffre laisse croire qu'on n'a pas regardé. */
+.act-bloc__n {
+    font-variant-numeric: tabular-nums;
+    background: rgba(255,255,255,.07); border-radius: 999px;
+    padding: 1px 7px; font-size: .72rem; letter-spacing: 0;
+}
+
+.act-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.act-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 12px; border-radius: 10px;
+    background: rgba(255,255,255,.028);
+    border: 1px solid rgba(255,255,255,.055);
+}
+.act-item__pastille {
+    width: 7px; height: 7px; border-radius: 50%; flex: none; margin-top: 6px;
+    background: rgba(255,255,255,.28);
+}
+.act-item--en_cours .act-item__pastille { background: #00d9ff; }
+.act-item--termine  .act-item__pastille { background: #3ddc84; }
+.act-item--echec    .act-item__pastille { background: #e5657a; }
+
+.act-item__corps { flex: 1; min-width: 0; }
+.act-item__titre { font-size: .875rem; font-weight: 500; line-height: 1.35; }
+/* `overflow-wrap` et pas `nowrap` : un détail vient du journal, écrit par un
+   moteur, et sa longueur n'est pas décidée ici. Il doit se replier, jamais
+   pousser la page hors de l'écran. */
+.act-item__detail {
+    font-size: .79rem; color: rgba(255,255,255,.5); line-height: 1.45;
+    margin-top: 2px; overflow-wrap: anywhere;
+}
+.act-item__erreur { color: #e5657a; }
+.act-item__quand {
+    flex: none; font-size: .72rem; color: rgba(255,255,255,.32);
+    font-variant-numeric: tabular-nums; white-space: nowrap; margin-top: 2px;
+}
+.act-item__etape {
+    display: inline-block; margin-left: 6px; font-size: .72rem;
+    color: rgba(255,255,255,.4); font-variant-numeric: tabular-nums;
+}
+
+.act-rien {
+    padding: 14px 12px; border-radius: 10px;
+    border: 1px dashed rgba(255,255,255,.09);
+    font-size: .8rem; color: rgba(255,255,255,.35);
+}
+
+.act-vide { padding: 40px 6px; text-align: center; }
+.act-vide__t { font-size: .95rem; margin: 0 0 6px; }
+.act-vide__p { font-size: .84rem; color: rgba(255,255,255,.42); line-height: 1.6; margin: 0 auto; max-width: 440px; }
+
+@media (max-width: 520px) {
+    .act-page { padding: 14px 12px 50px; }
+    /* L'heure passe sous le texte : à 320 px, une colonne de date à droite
+       vole un tiers de la largeur au texte qui, lui, porte l'information. */
+    .act-item { flex-wrap: wrap; }
+    .act-item__quand { width: 100%; margin: 4px 0 0 17px; }
+}
+</style>
+</head>
+<body data-theme="og">
+<div class="qg-shell">
+    <%- include("partials/nav", { variante: "qg", actif: "activite" }) %>
+    <div class="qg-nav-overlay" id="qg-nav-overlay"></div>
+    <main class="qg-main">
+        <header class="qg-topbar">
+            <div class="qg-topbar__breadcrumb">
+                <span class="qg-mono">SAMII</span>
+                <i data-lucide="chevron-right"></i>
+                <span class="qg-topbar__metier"><%= L("Centre d'activité") %></span>
+            </div>
+        </header>
+
+        <section class="act-page">
+            <h1 class="act-titre"><%= L("Ce que SAMII fait pour toi") %></h1>
+            <p class="act-sous"><%= L("Les missions, les publications programmées, et ce qui se passe dans ton activité.") %></p>
+
+            <% if (vide) { %>
+                <%# UNE PAGE VIDE LE DIT, ET DIT POURQUOI.
+                    Cinq titres au-dessus de cinq blancs, c'est une page qui a
+                    l'air cassée. Ici on nomme ce qui viendra s'y inscrire —
+                    sans rien promettre qui n'existe pas. %>
+                <div class="act-vide">
+                    <p class="act-vide__t"><%= L("Rien pour l'instant.") %></p>
+                    <p class="act-vide__p"><%= L("Dès que SAMII travaille pour toi — une mission, une publication programmée, une commande qui arrive — tout s'inscrit ici.") %></p>
+                </div>
+            <% } else { %>
+                <%
+                // Une seule boucle, une seule façon de peindre. Trois rendus
+                // pour trois sources, c'est trois endroits où l'un d'eux
+                // oublie d'échapper un texte (leçon du chantier des blocs).
+                const blocs = [
+                    { titre: L("En cours"),         items: enCours },
+                    { titre: L("Terminé"),          items: termine },
+                    { titre: L("Échec"),            items: echec },
+                    { titre: L("Travail de SAMII"), items: samii },
+                    { titre: L("Activité récente"), items: recent },
+                ];
+                %>
+                <% blocs.forEach(function (b) { %>
+                    <div class="act-bloc">
+                        <h2 class="act-bloc__titre">
+                            <%= b.titre %><span class="act-bloc__n"><%= b.items.length %></span>
+                        </h2>
+                        <% if (!b.items.length) { %>
+                            <p class="act-rien"><%= L("Rien pour l'instant.") %></p>
+                        <% } else { %>
+                            <ul class="act-liste">
+                                <% b.items.forEach(function (a) { %>
+                                    <li class="act-item act-item--<%= a.etat %>">
+                                        <span class="act-item__pastille" aria-hidden="true"></span>
+                                        <div class="act-item__corps">
+                                            <div class="act-item__titre">
+                                                <%= a.titre %>
+                                                <% if (a.progression && a.progression.total) { %>
+                                                    <span class="act-item__etape"><%= a.progression.etape %>/<%= a.progression.total %></span>
+                                                <% } %>
+                                            </div>
+                                            <% if (a.detail) { %>
+                                                <div class="act-item__detail"><%= a.detail %></div>
+                                            <% } %>
+                                            <% if (a.erreur) { %>
+                                                <div class="act-item__detail act-item__erreur"><%= a.erreur %></div>
+                                            <% } %>
+                                        </div>
+                                        <% if (a.quand) { %>
+                                            <%# L'heure est rendue par le NAVIGATEUR, dans le fuseau
+                                                de la personne. Le serveur tourne en UTC : écrire
+                                                l'heure ici afficherait « 09:00 » à un marchand
+                                                d'Alger pour un événement de 10:00. %>
+                                            <time class="act-item__quand" datetime="<%= a.quand %>"><%= a.quand.slice(11, 16) %></time>
+                                        <% } %>
+                                    </li>
+                                <% }); %>
+                            </ul>
+                        <% } %>
+                    </div>
+                <% }); %>
+            <% } %>
+        </section>
+    </main>
+</div>
+
+<script src="/js/i18n.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+
+    // L'HEURE DANS LE FUSEAU DE LA PERSONNE, PAS DANS CELUI DU SERVEUR.
+    //
+    // Le serveur tourne en UTC. Un événement de 10 h à Alger s'écrirait
+    // « 09:00 » dans le HTML. On rend donc une heure de repli côté serveur —
+    // pour que la page reste lisible sans JavaScript — et le navigateur la
+    // corrige avec le seul fuseau qui compte : le sien.
+    document.querySelectorAll("time[datetime]").forEach(function (t) {
+        var d = new Date(t.getAttribute("datetime"));
+        if (isNaN(d)) return;
+        var hier = new Date(); hier.setDate(hier.getDate() - 1);
+        t.textContent = d > hier
+            ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : d.toLocaleDateString([], { day: "numeric", month: "short" });
+    });
+</script>
+<%- include("partials/barre-langue") %>
+</body>
+</html>

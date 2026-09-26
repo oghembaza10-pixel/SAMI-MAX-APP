@@ -41,6 +41,20 @@ const EN = {
     "Juste parler": "Just talk",
     "Aide-moi à organiser ma journée de travail": "Help me plan my working day",
 
+    // ── CHANTIER CENTRE D'ACTIVITÉ : CE QUE SAMII FAIT POUR VOUS ─────────
+    "Centre d'activité": "Activity Center",
+    "Ce que SAMII fait pour toi": "What SAMII does for you",
+    "Les missions, les publications programmées, et ce qui se passe dans ton activité.":
+        "Missions, scheduled posts, and what is happening in your business.",
+    "En cours": "In progress",
+    "Terminé": "Done",
+    "Échec": "Failed",
+    "Travail de SAMII": "SAMII's work",
+    "Activité récente": "Recent activity",
+    "Rien pour l'instant.": "Nothing yet.",
+    "Dès que SAMII travaille pour toi — une mission, une publication programmée, une commande qui arrive — tout s'inscrit ici.":
+        "As soon as SAMII works for you — a mission, a scheduled post, an incoming order — it all shows up here.",
+
     // ── CHANTIER AMORCES VIVANTES : LES QUATRE GESTES DU MARCHAND ────────
     //
     // Les phrases de `services/amorces.js` (GESTES). Elles remplacent les
@@ -736,6 +750,20 @@ const AR = {
     "Trouver les bons mots": "إيجاد الكلمات المناسبة",
     "Juste parler": "مجرّد حديث",
     "Aide-moi à organiser ma journée de travail": "ساعدني في تنظيم يوم عملي",
+
+    // ── CHANTIER CENTRE D'ACTIVITÉ : CE QUE SAMII FAIT POUR VOUS ─────────
+    "Centre d'activité": "مركز النشاط",
+    "Ce que SAMII fait pour toi": "ما يقوم به SAMII من أجلك",
+    "Les missions, les publications programmées, et ce qui se passe dans ton activité.":
+        "المهام، المنشورات المجدولة، وما يجري في نشاطك.",
+    "En cours": "قيد التنفيذ",
+    "Terminé": "منجز",
+    "Échec": "فشل",
+    "Travail de SAMII": "عمل SAMII",
+    "Activité récente": "النشاط الأخير",
+    "Rien pour l'instant.": "لا شيء بعد.",
+    "Dès que SAMII travaille pour toi — une mission, une publication programmée, une commande qui arrive — tout s'inscrit ici.":
+        "بمجرد أن يعمل SAMII من أجلك — مهمة، منشور مجدول، طلب وارد — يُسجَّل كل ذلك هنا.",
 
     // ── CHANTIER AMORCES VIVANTES : LES QUATRE GESTES DU MARCHAND ────────
     // Voir la note du dictionnaire anglais : gardées par tests/amorces.test.js,
