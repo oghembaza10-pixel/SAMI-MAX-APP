@@ -1003,7 +1003,7 @@ Exactement 5 éléments dans chaque liste. Sois réaliste et honnête dans tes e
     // les aurait tous cassés d'un coup, pour un besoin qui ne concerne que la
     // facturation. Le tableau se remplit sur place ; qui ne le passe pas ne
     // voit aucune différence.
-    async ask(message, context = {}, history = [], journal = null) {
+    async ask(message, context = {}, history = [], journal = null, bilan = null) {
         // ── LE TOUR EST OUVERT ICI, ET NULLE PART AILLEURS ───────────────
         //
         // Un « tour », économiquement, c'est UN message de quelqu'un et tout
@@ -1022,7 +1022,7 @@ Exactement 5 éléments dans chaque liste. Sois réaliste et honnête dans tes e
             piecesJointes: context.piece ? 1 : 0,
         }, async (sac) => {
             try {
-                return await this.__ask(message, context, history, journal);
+                return await this.__ask(message, context, history, journal, bilan);
             } finally {
                 // Jamais attendu : le bilan ne doit pas retarder la réponse
                 // d'une seule milliseconde.
@@ -1031,7 +1031,7 @@ Exactement 5 éléments dans chaque liste. Sois réaliste et honnête dans tes e
         });
     }
 
-    async __ask(message, context = {}, history = [], journal = null) {
+    async __ask(message, context = {}, history = [], journal = null, bilan = null) {
         try {
             // Les outils disponibles (confirmer/annuler une commande, prendre
             // RDV, passer commande) concernent exclusivement une conversation
@@ -1042,6 +1042,10 @@ Exactement 5 éléments dans chaque liste. Sois réaliste et honnête dans tes e
             // ces outils hors contexte, avec des valeurs inventées.
             const useTools = context.allowActions !== false && context.audience !== "souverain";
             const result = await gemini.chat({ message, context: tourDeConversation(context), useTools, history });
+            // Qui a répondu, et avec quelles capacités. Posé AVANT toute
+            // branche : un tour servi par un relais privé de ses outils doit
+            // se voir, qu'il finisse en texte ou en appel d'outil.
+            if (bilan) Object.assign(bilan, this.__bilan(result));
 
             if (result.type === "function_call") {
                 console.log(`⚙️ SAMII exécute : ${result.name}`, result.args);
@@ -1113,10 +1117,14 @@ Exactement 5 éléments dans chaque liste. Sois réaliste et honnête dans tes e
     // ignore si un outil va être appelé, rien n'est émis : afficher un début
     // de phrase puis le remplacer donnerait l'impression que SAMII se
     // contredit.
-    async askFlux(message, context = {}, history = [], journal = null, onMorceau = null, onReprise = null) {
+    async askFlux(message, context = {}, history = [], journal = null, onMorceau = null, onReprise = null, bilan = null) {
         try {
             const useTools = context.allowActions !== false && context.audience !== "souverain";
             const result = await gemini.chatFlux({ message, context: tourDeConversation(context), useTools, history }, onMorceau, onReprise);
+            // Même relevé qu'au chemin d'un bloc, pour la même raison : les
+            // deux transports doivent rendre le même bilan, sinon la même
+            // panne se voit sur un écran et pas sur l'autre.
+            if (bilan) Object.assign(bilan, this.__bilan(result));
 
             if (result.type === "function_call") {
                 console.log(`⚙️ SAMII exécute : ${result.name}`, result.args);
@@ -1154,11 +1162,34 @@ Exactement 5 éléments dans chaque liste. Sois réaliste et honnête dans tes e
         }
     }
 
+    // ── LE BILAN D'UN TOUR — QUI A RÉPONDU, ET AVEC QUOI ─────────────────
+    //
+    // `actes` dit ce que SAMII a FAIT. Il ne dit pas QUI a répondu ni avec
+    // quelles capacités. Or un tour servi par un moteur de secours privé de
+    // ses outils ressemble trait pour trait à un tour normal — même forme,
+    // même prix, aucune trace.
+    //
+    // ⚠️ SÉPARÉ DE `actes`, ET JAMAIS MÉLANGÉ. `actes` est la liste que
+    // `config/credits.factureDuTour()` facture. Y glisser un renseignement qui
+    // n'est pas un acte, c'est risquer de facturer une information. Deux
+    // canaux, deux rôles.
+    __bilan(result) {
+        return {
+            moteur: result?.provider || null,
+            // Vrai seulement quand le niveau du tour PORTAIT des outils et que
+            // le moteur qui a répondu n'en a reçu aucun. Voir
+            // `chatViaOpenAiCompatible` : le relais en est averti, et ne doit
+            // plus prétendre avoir agi.
+            sansOutils: result?.sansOutils === true,
+        };
+    }
+
     async buildFlux(objective = {}, context = {}, history = [], onMorceau = null, onReprise = null) {
         if (!objective.goal) return { success: false, reply: "Objectif manquant.", actes: [] };
         const actes = [];
-        const reply = await this.askFlux(objective.goal, context, history, actes, onMorceau, onReprise);
-        return { success: true, reply, actes };
+        const bilan = {};
+        const reply = await this.askFlux(objective.goal, context, history, actes, onMorceau, onReprise, bilan);
+        return { success: true, reply, actes, ...bilan };
     }
 
     async build(objective = {}, context = {}, history = []) {
@@ -1168,8 +1199,9 @@ Exactement 5 éléments dans chaque liste. Sois réaliste et honnête dans tes e
             // « bonjour » coûtaient exactement pareil : le seul renseignement
             // qui distingue les deux était jeté ici même.
             const actes = [];
-            const reply = await this.ask(objective.goal, context, history, actes);
-            return { success: true, reply, actes };
+            const bilan = {};
+            const reply = await this.ask(objective.goal, context, history, actes, bilan);
+            return { success: true, reply, actes, ...bilan };
         }
         return { success: false, reply: "Objectif manquant.", actes: [] };
     }

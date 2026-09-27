@@ -445,18 +445,36 @@ function classeDeLActe(nom) {
 // Le choix Auto lui-même est GRATUIT : `services/niveauAuto.choisir()` est un
 // classement local par mots-clés, zéro appel d'IA, zéro token. Vérifié.
 //
-// Et `niveauAuto.doitMonter()` — la fonction qui ferait remonter Auto d'un
-// cran après une réponse ratée — N'EST APPELÉE NULLE PART. Auto ne
-// ré-essaie donc jamais à un niveau supérieur aujourd'hui. Le pire cas
-// d'Auto est donc, à ce jour, le pire cas du niveau qu'il a retenu.
+// ── L'ESCALADE EST BRANCHÉE DEPUIS LE CHANTIER G ─────────────────────────
 //
-// `prixOrchestration` reste à zéro tant que cette fonction morte le reste :
-// facturer une orchestration qui n'orchestre rien serait une taxe sur un nom.
+// `niveauAuto.doitMonter()` était écrite, exportée, testée — et appelée NULLE
+// PART. Cette table le disait (`escaladeActive: false`), et le garde de
+// `tests/economie.test.js` vérifiait dans les deux sens que la table et le
+// code disaient la même chose. Elle est maintenant appelée par
+// `routes/api.js`, et cette ligne suit.
+//
+// CE QUE ÇA COÛTE, ET QUI PAIE. Une escalade est un SECOND tour complet : deux
+// à quatre appels de plus chez le fournisseur. Elle n'arrive que sur un aveu
+// d'insuffisance du modèle (« je n'ai pas accès à… »), une seule fois par
+// message, jamais depuis un niveau choisi à la main, jamais quand le plafond a
+// déjà mordu.
+//
+// ⚠️ `prixOrchestrationUSD` RESTE À ZÉRO, ET CE N'EST PLUS « parce que rien
+// n'orchestre » — c'est une DÉCISION. Le premier tour a rendu une réponse
+// inutile : la facturer serait faire payer une panne qui est chez nous, ce que
+// ce fichier interdit partout ailleurs. `routes/api.js` remplace donc `result`
+// par celui du second essai, et seul ce dernier traverse `debiterTour`. Le
+// marchand paie UN message, comme s'il n'y avait eu qu'un tour. Le surcoût est
+// à notre charge, et c'est le prix de s'être trompé vers le bas.
+//
+// Ce qu'il faudra surveiller à la passe tarifaire : la FRÉQUENCE. Tant que
+// l'escalade est rare, elle est un filet ; si elle devient courante, c'est la
+// pesée qu'il faut corriger, pas le prix qu'il faut monter.
 const AUTO = {
     estUnNiveau: false,
     choixCouteUnAppelIA: false,
-    escaladeActive: false,        // `doitMonter` existe mais n'est jamais appelée
-    prixOrchestrationUSD: 0,
+    escaladeActive: true,         // `doitMonter` est appelée par routes/api.js
+    prixOrchestrationUSD: 0,      // le tour raté n'est jamais facturé — voir ci-dessus
     // Ce qu'Auto peut réellement déclencher, du moins cher au plus cher.
     // Sert au rapport : le client doit voir l'étendue, pas un prix unique.
     etendue: [
@@ -467,6 +485,17 @@ const AUTO = {
         { cas: "chaîne d'agents", appels: 7 },
         { cas: "recherche/grounding", appels: 2, horsTokens: ["grounding"] },
         { cas: "pièce jointe", appels: 2, note: "aucun outil sur ce tour, par construction" },
+        // ── LE PIRE CAS A DOUBLÉ, ET IL FAUT L'ÉCRIRE ─────────────────────
+        //
+        // Depuis que l'escalade est branchée, un tour peut être joué DEUX fois :
+        // le premier a rendu un aveu d'insuffisance, le second répond au cran
+        // au-dessus. Laisser cette table dire « 7 appels au pire » serait
+        // exactement ce que ce fichier reproche aux prix recopiés — une valeur
+        // juste hier, fausse aujourd'hui, et personne ne le voit.
+        //
+        // Le marchand n'en paie toujours qu'un (`prixOrchestrationUSD: 0`).
+        { cas: "escalade après un aveu d'insuffisance", appels: 14,
+          note: "deux tours : le premier n'est jamais facturé, une seule montée par message" },
     ],
     applique: false,
 };

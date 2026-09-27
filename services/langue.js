@@ -597,6 +597,18 @@ const EN = {
         "SAMII is taking longer than usual. Try again in a minute.",
     "Connexion perdue. Vérifie ton réseau et réessaie.":
         "Connection lost. Check your network and try again.",
+    // ── LES NOTES DU MOTEUR (chantier G) ─────────────────────────────────
+    // « Rien n'a été exécuté » doit rester explicite dans les trois langues :
+    // c'est la phrase qui empêche de lire « je m'en occupe » comme « c'est
+    // fait ». `{a}` et `{b}` ne se traduisent pas — le script y met le nom du
+    // cran.
+    "recommandé": "recommended",
+    "SAMII a répondu sans ses outils : son moteur principal ne répond pas. Rien n'a été exécuté.":
+        "SAMII answered without its tools: its main engine is not responding. Nothing was carried out.",
+    "SAMII est monté en {a} : il lui manquait de quoi répondre.":
+        "SAMII moved up to {a}: it was missing what it needed to answer.",
+    "Cette demande voulait le niveau {a} — ton offre s'arrête à {b}.":
+        "This request needed level {a} — your plan stops at {b}.",
     "messages avant de créer un compte": "messages before you need an account",
     "Tes messages reviennent dans 5 heures — ou crée ton compte pour continuer.":
         "Your messages come back in 5 hours — or create an account to keep going.",
@@ -1101,6 +1113,15 @@ const AR = {
         "‏SAMII يأخذ وقتًا أطول من المعتاد. أعد المحاولة بعد دقيقة.",
     "Connexion perdue. Vérifie ton réseau et réessaie.":
         "انقطع الاتصال. تحقّق من شبكتك وأعد المحاولة.",
+    // Les notes du moteur (chantier G). Même règle qu'en anglais : « rien n'a
+    // été exécuté » reste explicite, et `{a}` / `{b}` ne se traduisent pas.
+    "recommandé": "موصى به",
+    "SAMII a répondu sans ses outils : son moteur principal ne répond pas. Rien n'a été exécuté.":
+        "‏أجاب SAMII بدون أدواته: محرّكه الأساسي لا يستجيب. لم يُنفّذ أي شيء.",
+    "SAMII est monté en {a} : il lui manquait de quoi répondre.":
+        "‏انتقل SAMII إلى {a}: كان يفتقد ما يلزمه للإجابة.",
+    "Cette demande voulait le niveau {a} — ton offre s'arrête à {b}.":
+        "هذا الطلب يحتاج المستوى {a} — واشتراكك يتوقّف عند {b}.",
     "messages avant de créer un compte": "رسائل قبل إنشاء حساب",
     "Tes messages reviennent dans 5 heures — ou crée ton compte pour continuer.":
         "ستعود رسائلك بعد ٥ ساعات — أو أنشئ حسابًا للمتابعة.",

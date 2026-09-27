@@ -129,8 +129,15 @@ const AUDIENCE = "souverain";
 // quelle famille ; le cran le plus bas qui contient l'outil est donc une
 // LECTURE, pas une déclaration. Le jour où `marche_du_moment` passe de
 // `lecture` à `ecriture`, l'amorce demande Pro toute seule.
+//
+// ⚠️ LE CALCUL A DÉMÉNAGÉ DANS LE REGISTRE, ET C'EST TOUT CE QUI A CHANGÉ.
+// Le chantier G a besoin du même cran minimal pour savoir jusqu'où Auto doit
+// monter. Deux copies de cette lecture auraient divergé au premier changement
+// de famille. Elle vit donc avec la table qu'elle lit
+// (`NIVEAUX.niveauMinimalPour`), et cette fonction-ci n'est plus qu'un nom
+// local — gardé parce que trois appelants de ce fichier s'en servent.
 function niveauMinimal(outil) {
-    return NIVEAUX.ORDRE.find((id) => NIVEAUX.outilsDe(id).includes(outil)) || null;
+    return NIVEAUX.niveauMinimalPour(outil);
 }
 
 // ── LE PLAFOND LE PLUS BAS DE TOUS LES PALIERS ───────────────────────────

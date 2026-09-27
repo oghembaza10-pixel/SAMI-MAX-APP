@@ -11,6 +11,9 @@ const journalService = require("../services/journalService");
 const samiiQuota = require("../services/samiiQuota");
 const creditsSamii = require("../services/creditsSamii");
 const niveauAuto = require("../services/niveauAuto");
+// Le registre des niveaux, pour l'escalade (`monter`). Le niveau lui-même
+// vient toujours de `niveauAuto.choisir()` — on ne décide rien ici.
+const NIVEAUX = require("../config/niveaux");
 const CREDITS = require("../config/credits");
 const confirmationsQuota = require("../services/confirmationsQuota");
 const samiiMemoire = require("../services/samiiMemoire");
@@ -341,9 +344,63 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
 
         // LA SEULE DIFFÉRENCE ENTRE LES DEUX CHEMINS. Même contexte, mêmes
         // outils, même profondeur, même nombre d'appels d'IA.
-        const result = onMorceau
-            ? await planner.buildFlux({ goal }, context, history, onMorceau, onReprise)
-            : await planner.build({ goal }, context, history);
+        const conduire = () => (onMorceau
+            ? planner.buildFlux({ goal }, context, history, onMorceau, onReprise)
+            : planner.build({ goal }, context, history));
+
+        let result = await conduire();
+
+        // ══════════════════════════════════════════════════════════════════
+        // L'ESCALADE — SAMII MONTE D'UN CRAN, UNE FOIS, ET LE DIT
+        // ══════════════════════════════════════════════════════════════════
+        //
+        // `niveauAuto.doitMonter()` existait, exportée, testée — et n'était
+        // APPELÉE NULLE PART. `config/economie.js` le déclarait franchement
+        // (`escaladeActive: false`) et un garde de `tests/economie.test.js`
+        // vérifiait que la table et le code disaient la même chose. Elle est
+        // branchée ici, et la table est mise à jour avec elle.
+        //
+        // CE QUE ÇA RÉPARE. La pesée se trompe parfois vers le bas — c'est
+        // voulu, « en cas de doute on descend ». Sans escalade, cette erreur
+        // était définitive : SAMII répondait « il me faudrait accès à… » et le
+        // tour s'arrêtait là, facturé, sans réponse utile.
+        //
+        // LES QUATRE VERROUS, tous dans `doitMonter` et aucun ici :
+        //   • une seule fois — une escalade qui se répète est une facture qui
+        //     s'emballe, et c'est le pire mode de panne d'un agent ;
+        //   • seulement depuis un choix AUTOMATIQUE — qui a demandé « Rapide »
+        //     veut du rapide, pas qu'on décide à sa place de dépenser plus ;
+        //   • jamais quand le plafond a déjà mordu — il n'y a rien au-dessus
+        //     à quoi ce compte ait droit ;
+        //   • seulement sur un AVEU du modèle (« je n'ai pas accès à… »), pas
+        //     sur une réponse courte : une réponse brève peut être la bonne.
+        //
+        // ── LE TOUR RATÉ N'EST PAS FACTURÉ, ET C'EST STRUCTUREL ───────────
+        //
+        // Le débit est plus bas, une seule fois, sur `result`. En remplaçant
+        // `result` par celui du second essai, le premier ne traverse jamais la
+        // facturation — ni le message, ni ses actes. On ne fait pas payer une
+        // réponse qu'on a nous-mêmes jugée insuffisante. Aucune ligne de
+        // facturation n'est ajoutée : c'est le même `debiterTour` qu'avant.
+        //
+        // ── ET L'ÉCRAN NE GARDE PAS LA PREMIÈRE PHRASE ────────────────────
+        //
+        // En flux, l'aveu a déjà été écrit à l'écran. `onReprise()` est le
+        // mécanisme qui existe déjà pour ça (le préambule effacé quand un
+        // outil arrive) : la page vide la bulle, et la vraie réponse s'écrit
+        // par-dessus. Sans cet appel, le marchand lirait « je n'ai pas accès »
+        // suivi de la bonne réponse, et croirait SAMII en train de se
+        // contredire.
+        let escalade = null;
+        if (niveauAuto.doitMonter({ choix: choixNiveau, reponse: result?.reply, palier })) {
+            const monte = NIVEAUX.monter(choixNiveau.niveau, palier);
+            escalade = { de: choixNiveau.niveau, vers: monte.id };
+            console.log(`⬆️  Escalade ${escalade.de} → ${escalade.vers} (aveu d'insuffisance)`);
+            context.niveau = monte.id;
+            choixNiveau.niveau = monte.id;
+            if (typeof onReprise === "function") onReprise();
+            result = await conduire();
+        }
 
         let messageId = null;
         if (userId) {
@@ -434,6 +491,14 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
                 auto: choixNiveau.auto,
                 borne: choixNiveau.borne,
                 raisons: choixNiveau.raisons,
+                // Le cran que la demande EXIGEAIT, avant le plafond du palier.
+                // Quand `borne` est vrai, c'est lui qui manquait : le dire
+                // vaut mieux qu'un « passe à un abonnement » sans motif.
+                exige: choixNiveau.exige || choixNiveau.niveau,
+                // Renseigné seulement quand SAMII a monté d'un cran en cours
+                // de tour. La page l'affiche ; sans ça, une montée serait
+                // invisible et le niveau annoncé au départ deviendrait faux.
+                escalade,
             },
         } };
     } catch (err) {

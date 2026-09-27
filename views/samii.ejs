@@ -313,8 +313,13 @@
                                 n'existe pas, alors que c'est l'abonnement qui
                                 l'ouvre. %>
                             <% var auDela = n.id !== "auto" && _ordre.indexOf(n.id) > _ordre.indexOf(_plafond); %>
+                            <%# « recommandé » suit la même idiome que « abonnement » juste
+                                à côté : un suffixe après un point médian, dans le libellé,
+                                parce qu'un <option> ne porte pas de pastille. Le registre
+                                désigne l'entrée (`n.recommande`, calculé sur PRESELECTION) —
+                                on ne compare pas à « auto » écrit ici. %>
                             <option value="<%= n.id %>"<%= n.id === _depart ? " selected" : "" %><%= auDela ? " disabled" : "" %>>
-                                <%= n.icone %> <%= L(n.libelle) %><%= auDela ? " · abonnement" : "" %>
+                                <%= n.icone %> <%= L(n.libelle) %><%= auDela ? " · abonnement" : (n.recommande ? " · " + L("recommandé") : "") %>
                             </option>
                         <% }); %>
                     </select>

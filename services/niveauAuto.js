@@ -167,6 +167,104 @@ function peser(message, { piece = null, domaine = null } = {}) {
     return { score, raisons, domaine: dom, gesteSimple: null };
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// LE SECOND AXE : DE QUELLE CAPACITÉ LA DEMANDE A-T-ELLE BESOIN ?
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ MESURÉ, ET C'EST LE DÉFAUT CENTRAL D'AUTO AVANT CE CHANTIER.
+//
+// La pesée ci-dessus mesure l'EFFORT. Elle ne demande jamais ce que la
+// personne veut que SAMII FASSE. Conséquence, relevée au point de fabrication
+// du payload, au palier le plus élevé (plafond Maître) :
+//
+//   « Envoie une facture de 7500 DA à Aminata »  → expert · envoyer_facture        ABSENT
+//   « Crée un événement demain 15h »             → expert · creer_evenement_agenda ABSENT
+//   « Envoie un e-mail à mon fournisseur »       → expert · envoyer_email          ABSENT
+//   « Prépare une publication Instagram »        → expert · preparer_publication    ABSENT
+//
+// Expert ne porte que la famille `lecture`. Les quatre demandes ci-dessus
+// exigent `ecriture` ou `agents`, portées à partir de Pro. Auto n'y arrivait
+// JAMAIS : la pesée compte des verbes de travail et des montants, et « envoie
+// une facture » n'en marque que trois — sous le seuil Pro, qui est à cinq.
+//
+// Sept outils sur dix-sept étaient donc inatteignables par Auto, à tous les
+// paliers. SAMII disait « je ne peux pas » ou décrivait l'e-mail au lieu de
+// l'envoyer.
+//
+// ── POURQUOI CE N'EST PAS UNE CINQUIÈME ÉCHELLE ──────────────────────────
+//
+// Ce n'est pas une seconde façon de noter la lourdeur : c'est une AUTRE
+// QUESTION. « Combien d'effort » et « quelle capacité » sont deux axes
+// indépendants — une demande peut être triviale à formuler et exiger d'envoyer
+// quelque chose (« facture Aminata, 7500 »), ou longue et n'exiger que de
+// lire. Les fondre dans un score unique, c'était accepter que l'un masque
+// l'autre, ce qui est exactement ce qui se passait.
+//
+// ── ET LE CRAN N'EST PAS ÉCRIT ICI ───────────────────────────────────────
+//
+// Chaque intention nomme une FAMILLE, pas un niveau. Le cran vient de
+// `config/niveaux.niveauMinimalDeFamille()`, qui le LIT dans la table. Le jour
+// où `ecriture` descend à Expert, ce fichier n'a pas à le savoir.
+//
+// ── LE VERBE SEUL NE SUFFIT PAS, ET C'EST VOULU ──────────────────────────
+//
+// « Envoie » tout seul ferait monter « envoie-moi un résumé », qui ne
+// demande rien d'autre que du texte. Chaque motif exige donc un VERBE ET SON
+// OBJET, à courte distance. Se tromper vers le bas coûte une escalade (voir
+// `doitMonter`, branchée depuis ce chantier) ; se tromper vers le haut fait
+// porter des outils que personne n'a demandés.
+const INTENTIONS = [
+    // ── ECRITURE : quelque chose part, ou existe après ───────────────────
+    { famille: "ecriture", quoi: "envoyer un message",
+      motif: /\b(envoy?[ez]r?|envoie|ecris|ecrire|redige|redig[ez]r?|relance|relanc[ez]r?)\b[^.?!]{0,40}\b(e-?mails?|mails?|courriels?|messages?)\b/ },
+    { famille: "ecriture", quoi: "envoyer une facture",
+      motif: /\bfactur(e|es|er|ez)\b/ },
+    { famille: "ecriture", quoi: "poser quelque chose dans l'agenda",
+      motif: /\b(cree?|creer|cre[ez]|ajoute|ajout[ez]r?|pose|pos[ez]r?|bloque|bloqu[ez]r?|programme|programm[ez]r?|planifie)\b[^.?!]{0,30}\b(evenement|reunion|agenda|creneau)\b/ },
+    { famille: "ecriture", quoi: "créer un rapport",
+      motif: /\b(cree?|creer|cre[ez]|fais|genere|gener[ez]r?|sors|export[ez]r?)\b[^.?!]{0,30}\b(rapport|tableur|feuille de calcul|google ?sheets?|classeur)\b/ },
+
+    // ── AGENTS : une chaîne de spécialistes, pas un geste ────────────────
+    { famille: "agents", quoi: "préparer une publication",
+      motif: /\b(prepare|prepar[ez]r?|cree?|creer|cre[ez]|redige|redig[ez]r?|fais|publie|publi[ez]r?|poste|post[ez]r?)\b[^.?!]{0,40}\b(publication|publications|post|posts|story|stories|carrousel|legende|instagram|facebook|tiktok|linkedin)\b/ },
+    { famille: "agents", quoi: "monter une stratégie complète",
+      motif: /\b(strategie|plan)\s+(complet|complete|complets|completes|global|globale|entier|entiere|detaille|detaillee)\b/ },
+
+    // ── CODE : la capacité la plus dangereuse du projet ──────────────────
+    { famille: "code", quoi: "exécuter du code",
+      motif: /\b(execute|execut[ez]r?|lance|lanc[ez]r?|fais tourner|ecris)\b[^.?!]{0,30}\b(code|script|programme|python)\b/ },
+];
+
+// ── LE PLANCHER D'UNE DEMANDE ────────────────────────────────────────────
+//
+// Rend le cran le PLUS HAUT exigé par les intentions reconnues, et la raison
+// qui l'exige. `null` quand rien n'est reconnu : le plancher ne s'invente pas,
+// et une demande qu'on ne comprend pas ne fait monter personne.
+//
+// Aucun plafond n'est appliqué ici. Ce n'est pas l'affaire de cette fonction :
+// `choisir()` borne au palier juste après, une seule fois, comme avant.
+function plancherDOutil(message) {
+    const texte = normaliser(message);
+    if (!texte) return { niveau: null, raison: null, famille: null };
+
+    let haut = null;
+    let raison = null;
+    let familleRetenue = null;
+    for (const intention of INTENTIONS) {
+        if (!intention.motif.test(texte)) continue;
+        const cran = NIVEAUX.niveauMinimalDeFamille(intention.famille);
+        // Une famille absente de la table ne fait monter personne — elle a pu
+        // être renommée, et deviner serait pire que ne rien faire.
+        if (!cran) continue;
+        if (!haut || NIVEAUX.comparer(cran, haut) > 0) {
+            haut = cran;
+            raison = intention.quoi;
+            familleRetenue = intention.famille;
+        }
+    }
+    return { niveau: haut, raison, famille: familleRetenue };
+}
+
 // ── DU SCORE AU NIVEAU ───────────────────────────────────────────────────
 //
 // ── POURQUOI AUTO NE DESCEND À « RAPIDE » QUE SUR UN GESTE RECONNU ───────
@@ -215,7 +313,24 @@ function choisir({ message, demande = null, palier = "free", piece = null } = {}
     }
 
     const { score, raisons, domaine, gesteSimple } = peser(message, { piece });
-    const vise = niveauDuScore(score, { gesteSimple });
+    const parLEffort = niveauDuScore(score, { gesteSimple });
+
+    // ── LE PLANCHER PASSE APRÈS LA PESÉE, ET LE PLUS HAUT GAGNE ──────────
+    //
+    // Deux axes, un maximum, jamais une moyenne. Et le plancher s'applique
+    // MÊME sur un geste simple : « traduis cette facture et envoie-la à
+    // Aminata » commence par « traduis », donc `peser` rend zéro et sortirait
+    // sur Rapide — alors que la deuxième moitié demande d'envoyer. C'est
+    // précisément le cas que la pesée seule ne peut pas voir, et c'est pour ça
+    // que le plancher est calculé ici et pas dedans.
+    const plancher = plancherDOutil(message);
+    const vise = plancher.niveau && NIVEAUX.comparer(plancher.niveau, parLEffort) > 0
+        ? plancher.niveau
+        : parLEffort;
+    if (plancher.niveau && vise === plancher.niveau && vise !== parLEffort) {
+        raisons.push(`la demande veut ${plancher.raison}`);
+    }
+
     const retenu = NIVEAUX.borner(vise, palier);
 
     return {
@@ -227,6 +342,12 @@ function choisir({ message, demande = null, palier = "free", piece = null } = {}
         score,
         domaine,
         raisons,
+        // Ce que la demande exigeait, avant le plafond. Sert au rapport et à
+        // l'écran : quand `borne` est vrai, c'est CE cran-là qui manquait, et
+        // le dire vaut mieux que « passe à un abonnement » sans motif.
+        exige: vise,
+        plancher: plancher.niveau || null,
+        plancherPour: plancher.raison || null,
     };
 }
 
@@ -243,11 +364,33 @@ function choisir({ message, demande = null, palier = "free", piece = null } = {}
 // On ne monte que depuis un choix AUTOMATIQUE : quelqu'un qui a explicitement
 // demandé « Rapide » veut une réponse rapide, pas qu'on décide à sa place de
 // dépenser plus.
-function doitMonter({ choix, reponse, dejaMonte = false }) {
+function doitMonter({ choix, reponse, dejaMonte = false, palier = null }) {
     if (dejaMonte) return false;
     if (!choix?.auto) return false;
     if (choix.borne) return false;              // le plafond a déjà mordu
     if (NIVEAUX.comparer(choix.niveau, "maitre") >= 0) return false;
+
+    // ── ET IL DOIT Y AVOIR UN CRAN AU-DESSUS, POUR DE VRAI ───────────────
+    //
+    // ⚠️ TROUVÉ EN LANÇANT LE VRAI SERVEUR, PAS EN RELISANT.
+    //
+    // Les quatre verrous ci-dessus ne suffisaient pas. Sur un compte gratuit,
+    // le plafond est « expert » : `NIVEAUX.monter("expert", "free")` vise
+    // « pro », se fait borner, et rend… « expert ». L'escalade relançait donc
+    // un TOUR ENTIER pour retomber exactement au même niveau, avec les mêmes
+    // outils, et la même réponse creuse. Mesuré en HTTP :
+    //
+    //     escalade (aveu) | AUTO | expert | 10 outils | 3 appels | expert→expert
+    //
+    // `choix.borne` ne l'attrapait pas : il dit que le plafond a mordu sur le
+    // choix INITIAL. Ici le choix initial était juste — c'est la MONTÉE qui
+    // n'avait nulle part où aller.
+    //
+    // On demande donc au registre si monter change vraiment quelque chose. Sans
+    // `palier`, on ne peut pas le savoir : l'appelant le passe, et son absence
+    // fait refuser la montée plutôt que la deviner.
+    if (!palier) return false;
+    if (NIVEAUX.comparer(NIVEAUX.monter(choix.niveau, palier).id, choix.niveau) <= 0) return false;
 
     const texte = normaliser(reponse);
     if (!texte) return false;
@@ -264,6 +407,7 @@ function doitMonter({ choix, reponse, dejaMonte = false }) {
 
 module.exports = {
     choisir, peser, niveauDuScore, doitMonter, normaliser,
+    plancherDOutil, INTENTIONS,
     SEUIL_EXPERT, SEUIL_PRO, SEUIL_MAITRE,
     VERBES_DE_TRAVAIL, GESTES_SIMPLES, DOMAINES_LOURDS,
 };

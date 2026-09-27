@@ -251,13 +251,56 @@ const DEFAUT = "expert";
 // Les mélanger changerait la facturation en croyant changer un libellé.
 // Ils sont donc déclarés séparément et n'ont pas à être égaux.
 //
-// « Rapide » plutôt qu'« Auto » : Auto laisse SAMII monter d'un cran quand
-// il juge la demande lourde, et ce cran coûte plus cher — décidé par la
-// machine, pas par la personne. En préselection, on préfère le cran le plus
-// léger : il répond tout de suite, il ne surprend personne sur son solde, et
-// celui qui veut plus le demande d'un clic. Auto reste proposé dans le menu,
-// inchangé et intact — c'est seulement le point de départ qui bouge.
-const PRESELECTION = "rapide";
+// ══════════════════════════════════════════════════════════════════════════
+// ⚠️ CE CRAN A VALU « RAPIDE », ET C'ÉTAIT UNE ERREUR. VOICI LAQUELLE.
+// ══════════════════════════════════════════════════════════════════════════
+//
+// La raison écrite ici avant disait : « Auto laisse SAMII monter d'un cran
+// quand il juge la demande lourde, et ce cran coûte plus cher — décidé par la
+// machine, pas par la personne. En présélection on préfère le cran le plus
+// léger. » Le raisonnement se tenait. Il reposait sur deux faits qui se sont
+// tous les deux révélés faux à la mesure.
+//
+// PREMIER FAIT SUPPOSÉ : « le cran supérieur coûte plus cher ». Mesuré : tous
+// les niveaux portent le MÊME prix de vente (`prixUSD` ci-dessus vaut
+// PRIX_PROVISOIRE partout), et la facture d'un tour est « un message + les
+// actes réussis » (config/credits.js, `factureDuTour`). Le niveau n'entre
+// nulle part dans le prix. Monter d'un cran ne change donc RIEN sur le solde
+// du marchand — seul un acte le change, et un acte est précisément ce qu'il a
+// demandé.
+//
+// SECOND FAIT SUPPOSÉ : « Rapide répond tout de suite ». C'est vrai. Ce qui
+// n'avait pas été mesuré, c'est ce que Rapide ne fait PAS : il porte ZÉRO
+// outil (`familles: []`). Le navigateur envoyant ce cran explicitement,
+// `niveauAuto.choisir()` y lisait un choix de la personne — ce qui coupait
+// AUSSI la pesée du message et l'escalade. Résultat, sur quatre vraies
+// questions de marchand mesurées au point de fabrication du payload :
+//
+//     « Fais le point sur mon activité »          → 0 outil
+//     « Envoie une facture de 7500 DA à Aminata » → 0 outil
+//     « Trouve-moi des fournisseurs de sacs »     → 0 outil
+//     « Compare mes prix à ceux d'ailleurs »      → 0 outil
+//
+// SAMII répondait donc de mémoire, avec aplomb, sans avoir rien lu. Pour un
+// prix de livraison ou un chiffre de ventes, c'est exactement la panne que
+// `services/niveauAuto.js` décrit déjà — sauf qu'elle était devenue le
+// comportement NORMAL du produit, pour tout le monde, à chaque message.
+//
+// Le cran le plus léger n'était pas le plus prudent : c'était le seul qui
+// garantissait une réponse inventée.
+//
+// ── CE QU'« AUTO » EST, ET CE QU'IL N'EST PAS ────────────────────────────
+//
+// Auto n'est PAS « le niveau maximal en permanence ». C'est une SÉLECTION :
+// `niveauAuto.choisir()` pèse le message en local, sans un seul appel d'IA,
+// et ne retient que le cran nécessaire — Rapide sur « bonjour » ou
+// « traduis », Expert pour lire, Pro pour créer ou envoyer, Maître pour du
+// code. Le plafond du palier borne le tout par-dessus.
+//
+// Celui qui veut choisir lui-même garde les quatre crans dans le menu, et son
+// choix est respecté tel quel : `choisir()` ne pèse rien quand on lui nomme
+// un niveau.
+const PRESELECTION = AUTO;
 
 // ── LIRE UN NIVEAU ───────────────────────────────────────────────────────
 //
@@ -333,20 +376,57 @@ function porteDesOutils(id) {
     return outilsDe(id).length > 0;
 }
 
+// ── LE CRAN LE PLUS BAS QUI PORTE UN OUTIL DONNÉ ─────────────────────────
+//
+// Une LECTURE de la table, jamais une déclaration. `FAMILLES` dit déjà quel
+// outil est dans quelle famille et `NIVEAUX` quel niveau porte quelle
+// famille : le cran minimal s'en déduit. Le jour où `marche_du_moment` passe
+// de `lecture` à `ecriture`, ce qui l'exige demande Pro tout seul.
+//
+// Rend `null` pour un nom inconnu — jamais un niveau de repli. Un outil qui
+// n'existe pas ne doit pas faire monter qui que ce soit : fermé par défaut,
+// comme le reste du projet.
+//
+// ⚠️ CETTE FONCTION VIVAIT DANS `services/amorces.js`, sous le nom
+// `niveauMinimal`. Elle y était juste — mais le chantier G en a besoin AUSSI,
+// pour savoir jusqu'où Auto doit monter. Deux copies auraient divergé au
+// premier changement de famille, et c'est la règle 4 de la maison. Elle est
+// donc ici, avec la table qu'elle lit, et `amorces.js` la lit désormais.
+function niveauMinimalPour(outil) {
+    const nom = String(outil || "");
+    if (!nom) return null;
+    return ORDRE.find((id) => outilsDe(id).includes(nom)) || null;
+}
+
+// Le cran le plus bas qui porte une FAMILLE entière. Même lecture, un cran
+// plus haut dans la table — c'est ce dont `niveauAuto` a besoin : une demande
+// annonce une capacité (« envoie… »), pas un nom d'outil.
+function niveauMinimalDeFamille(famille) {
+    const f = String(famille || "");
+    if (!Object.prototype.hasOwnProperty.call(FAMILLES, f)) return null;
+    return ORDRE.find((id) => niveau(id).familles.includes(f)) || null;
+}
+
 // La liste pour une page ou un sélecteur, dans l'ordre, « Auto » en tête
 // parce que c'est le défaut et le bon choix pour presque tout le monde.
+//
+// `recommande` est CALCULÉ sur `PRESELECTION`, jamais écrit : c'est la même
+// décision, et deux endroits pour la dire, c'est un endroit qui finira par
+// mentir. Le gabarit pose donc sa pastille « recommandé » sur l'entrée que le
+// registre désigne — le jour où le défaut change, la pastille suit.
 function pourAffichage() {
     return [
-        { id: AUTO, libelle: "Auto", icone: "⚙️", pourQuoi: "SAMII choisit le niveau qu'il faut" },
+        { id: AUTO, libelle: "Auto", icone: "⚙️", pourQuoi: "SAMII choisit pour toi ce qu'il faut" },
         ...ORDRE.map((id) => {
             const n = NIVEAUX[id];
             return { id: n.id, libelle: n.libelle, icone: n.icone, pourQuoi: n.pourQuoi };
         }),
-    ];
+    ].map((n) => ({ ...n, recommande: n.id === PRESELECTION }));
 }
 
 module.exports = {
     NIVEAUX, FAMILLES, ORDRE, AUTO, DEFAUT, PRESELECTION, PLAFOND_PAR_PALIER,
     niveau, existe, comparer, plafond, borner, monter,
     outilsDe, porteDesOutils, pourAffichage,
+    niveauMinimalPour, niveauMinimalDeFamille,
 };

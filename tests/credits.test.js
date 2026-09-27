@@ -457,9 +457,97 @@ const CONFIG = require(path.join(RACINE, "config.js"));
         // (e) LE PLANNER DOIT DIRE CE QU'IL A FAIT. Sans ça, rien de tout ce
         // qui précède n'est atteignable : routes/api.js ne sait pas
         // distinguer une commande enregistrée d'un bonjour.
-        verifier(/journal\.push\(/.test(planner) && /return \{ success: true, reply, actes \}/.test(planner),
-            "brain/planner.js ne rapporte plus les actes exécutés : la facturation " +
-            "retombe au prix d'un message quoi que SAMII fasse");
+        //
+        // ⚠️ CETTE MESURE LISAIT LA SOURCE, ET ELLE A CRIÉ À TORT.
+        //
+        // Elle cherchait la chaîne exacte `return { success: true, reply, actes }`.
+        // Le chantier G ajoute un BILAN au retour (quel moteur a répondu,
+        // portait-il ses outils) : `{ success: true, reply, actes, ...bilan }`.
+        // Les actes sont toujours là, la facturation les lit toujours — mais le
+        // motif ne correspondait plus, et le test a arrêté la construction pour
+        // un changement qui ne cassait rien.
+        //
+        // C'est la règle 1 d'AGENTS.md, mot pour mot : « un test qui lit la
+        // source crie à tort, puis se tait quand ça compte ». Il se serait tu
+        // le jour où quelqu'un aurait écrit `return { success: true, reply,
+        // actes: [] }` — la même chaîne, et plus aucun acte facturé.
+        //
+        // On mesure donc le COMPORTEMENT : on fait tourner le planner contre
+        // une doublure de moteur qui appelle un outil, et on regarde ce qui
+        // ressort. Assouplir le motif aurait rendu la mesure plus faible ;
+        // celle-ci est plus forte que l'ancienne.
+        {
+            const chemin = require.resolve(path.join(RACINE, "services", "geminiService.js"));
+            const vrai = require.cache[chemin];
+            require.cache[chemin] = {
+                id: chemin, filename: chemin, loaded: true,
+                exports: {
+                    // SAMII demande un outil, puis reformule. C'est la vraie
+                    // séquence d'un tour avec outil.
+                    chat: async () => ({ type: "function_call", provider: "gemini", name: "prendre_rendez_vous", args: {} }),
+                    // ⚠️ INSTRUMENT. Première version : cette doublure rendait
+                    // un OBJET `{ type, provider, text }`. La vraie fonction rend
+                    // une CHAÎNE (geminiService, « C'est fait ✅ »), et le planner
+                    // la pose telle quelle dans `reply` — le test criait donc
+                    // « reply n'est plus une chaîne » sur du code parfaitement
+                    // juste. Une doublure qui ne rend pas la forme de l'original
+                    // ne mesure pas l'original.
+                    chatWithFunctionResult: async () => "C'est noté.",
+                },
+            };
+            // Le planner est rechargé pour qu'il capte la doublure.
+            const cheminPlanner = require.resolve(path.join(RACINE, "brain", "planner.js"));
+            const vraiPlanner = require.cache[cheminPlanner];
+            delete require.cache[cheminPlanner];
+            let sortie = null;
+            let leve = null;
+            try {
+                const p = require(cheminPlanner);
+                sortie = await p.build({ goal: "Prends-moi un rendez-vous demain" },
+                    { audience: "souverain", niveau: "pro", allowActions: true }, []);
+            } catch (err) {
+                leve = err.message;
+            } finally {
+                if (vrai) require.cache[chemin] = vrai; else delete require.cache[chemin];
+                if (vraiPlanner) require.cache[cheminPlanner] = vraiPlanner; else delete require.cache[cheminPlanner];
+            }
+
+            verifier(!leve, `le planner a levé au lieu de rendre un tour : ${leve}`);
+            verifier(Array.isArray(sortie?.actes),
+                "brain/planner.js ne rapporte plus les actes exécutés : la facturation " +
+                "retombe au prix d'un message quoi que SAMII fasse");
+            verifier(typeof sortie?.reply === "string",
+                "brain/planner.js ne rend plus une réponse en chaîne");
+            // Et l'acte doit PORTER SON NOM : `factureDuTour` tarife par nom.
+            // Une liste non vide de choses anonymes ne facture rien du tout.
+            const actes = sortie?.actes || [];
+            const noms = actes.map((a) => (typeof a === "string" ? a : a?.nom));
+            verifier(noms.includes("prendre_rendez_vous"),
+                `les actes rapportés ne nomment pas l'outil exécuté (${JSON.stringify(noms)}) — ` +
+                "config/credits.factureDuTour tarife par nom, donc rien ne serait facturé");
+
+            // ── LE COUPLAGE PLANNER → FACTURE, DANS LES DEUX SENS ─────────
+            //
+            // On ne force PAS l'outil à réussir : ici il échoue pour de vrai
+            // (« Impossible d'identifier le workspace de ce client »), et c'est
+            // une bonne chose — ça prouve que le planner rapporte l'échec.
+            //
+            // On mesure alors les deux polarités sur la forme QU'IL A RENDUE,
+            // en ne changeant que `reussi`. C'est ce qui vérifie que sa forme
+            // est bien celle que le tarificateur sait lire : un `nom` ailleurs,
+            // ou un booléen nommé autrement, et les deux montants deviendraient
+            // égaux sans qu'aucune autre mesure ne bronche.
+            verifier(actes.every((a) => a && typeof a === "object" && "reussi" in a),
+                `un acte rapporté ne dit pas s'il a réussi (${JSON.stringify(actes)}) — ` +
+                "sans ça, un rendez-vous raté se facture comme un rendez-vous pris");
+            const commeRate = actes.map((a) => ({ ...a, reussi: false }));
+            const commeReussi = actes.map((a) => ({ ...a, reussi: true }));
+            verifier(CREDITS.factureDuTour(commeRate).montant === CREDITS.PRIX_MESSAGE_USD,
+                "un acte RATÉ rapporté par le planner est quand même facturé");
+            verifier(CREDITS.factureDuTour(commeReussi).montant > CREDITS.PRIX_MESSAGE_USD,
+                "un acte RÉUSSI rapporté par le planner est facturé au prix d'un bonjour — " +
+                "sa forme n'est plus celle que config/credits.factureDuTour sait lire");
+        }
 
         // Et il doit rapporter l'ÉCHEC honnêtement. Un `reussi: true` écrit
         // en dur passerait tous les tests de tarif ci-dessus — ils calculent
@@ -472,9 +560,51 @@ const CONFIG = require(path.join(RACINE, "config.js"));
         // Et la signature de `ask` doit rester compatible : huit appelants
         // attendent une CHAÎNE. Les casser pour facturer serait un très
         // mauvais échange.
-        verifier(/async ask\(message, context = \{\}, history = \[\], journal = null\)/.test(planner),
-            "la signature de planner.ask a changé de forme — vérifie que Telegram, " +
-            "WhatsApp, Meta, discussions et communauté reçoivent toujours une chaîne");
+        //
+        // ⚠️ MÊME CORRECTION QUE CI-DESSUS, ET POUR LA MÊME RAISON. Cette
+        // mesure lisait la signature CARACTÈRE PAR CARACTÈRE. Le chantier G
+        // ajoute un cinquième paramètre OPTIONNEL (`bilan = null`), que les huit
+        // appelants ne passent pas et n'ont pas à connaître — rien n'est cassé,
+        // et le test a quand même arrêté la construction.
+        //
+        // Et il ne mesurait pas ce qu'il prétendait : une signature identique
+        // dont le corps rendrait un objet au lieu d'une chaîne l'aurait laissé
+        // passer sans un mot. C'est exactement l'inverse de ce qui compte pour
+        // Telegram, WhatsApp et Meta, qui concatènent ce retour dans un message.
+        //
+        // On appelle donc `ask` COMME ILS L'APPELLENT — trois arguments, puis
+        // quatre — et on vérifie qu'une chaîne revient.
+        {
+            const chemin = require.resolve(path.join(RACINE, "services", "geminiService.js"));
+            const vrai = require.cache[chemin];
+            require.cache[chemin] = {
+                id: chemin, filename: chemin, loaded: true,
+                exports: { chat: async () => ({ type: "text", provider: "gemini", text: "Bonjour à toi." }) },
+            };
+            const cheminPlanner = require.resolve(path.join(RACINE, "brain", "planner.js"));
+            const vraiPlanner = require.cache[cheminPlanner];
+            delete require.cache[cheminPlanner];
+            const rendus = [];
+            let leve = null;
+            try {
+                const p = require(cheminPlanner);
+                // routes/discussions.js et services/telegramCommunity.js : trois
+                // arguments. routes/telegram.js, auth-meta.js, webhook-whatsapp.js :
+                // quatre. Les deux formes doivent rendre une chaîne.
+                rendus.push(await p.ask("Bonjour", { audience: "souverain" }, []));
+                rendus.push(await p.ask("Bonjour", { audience: "souverain" }, [], null));
+                rendus.push(await p.ask("Bonjour", { audience: "souverain" }, [], []));
+            } catch (err) {
+                leve = err.message;
+            } finally {
+                if (vrai) require.cache[chemin] = vrai; else delete require.cache[chemin];
+                if (vraiPlanner) require.cache[cheminPlanner] = vraiPlanner; else delete require.cache[cheminPlanner];
+            }
+            verifier(!leve, `planner.ask a levé sur une des formes d'appel existantes : ${leve}`);
+            verifier(rendus.length === 3 && rendus.every((r) => typeof r === "string"),
+                "planner.ask ne rend plus une CHAÎNE à tous ses appelants — Telegram, " +
+                `WhatsApp, Meta, discussions et communauté la concatènent (${JSON.stringify(rendus.map((r) => typeof r))})`);
+        }
     }
 
     // ── 10. LE CLIENT D'UN MARCHAND N'EST JAMAIS COUPÉ ───────────────────

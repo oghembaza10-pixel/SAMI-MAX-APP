@@ -190,34 +190,56 @@ const choisir = (message, opts = {}) => A.choisir({ message, palier: "pro", ...o
 }
 
 // ── 9. L'ESCALADE : UNE FOIS, ET JAMAIS DANS LE DOS DE LA PERSONNE ───────
+//
+// ⚠️ `palier` EST DEVENU OBLIGATOIRE, ET C'EST UNE CORRECTION, PAS UN CAPRICE.
+//
+// Ces mesures appelaient `doitMonter` sans palier, et le chantier G en a fait
+// un paramètre requis. La raison est un défaut trouvé en lançant le VRAI
+// serveur : sur un compte gratuit, le plafond est « expert », donc
+// `monter("expert", "free")` vise « pro », se fait borner, et rend « expert ».
+// L'escalade relançait un tour entier pour retomber au même cran.
+//
+// Sans le palier, la fonction ne PEUT PAS savoir si monter change quelque
+// chose. Elle refuse donc plutôt que de deviner — et les appels d'ici passent
+// le palier, comme `routes/api.js` le fait.
+//
+// `choisir()` au palier « pro » retient « expert » pour ces phrases : la montée
+// vers « pro » est donc réellement possible, et c'est ce que ce bloc éprouve.
 {
+    const PALIER = "pro";
     const auto = choisir("Mes ventes ont baissé");
     const aveu = "Je n'ai pas accès à tes chiffres de vente pour le moment.";
+    const monte = (opts) => A.doitMonter({ palier: PALIER, ...opts });
 
-    verifier(A.doitMonter({ choix: auto, reponse: aveu }) === true,
+    verifier(monte({ choix: auto, reponse: aveu }) === true,
         "SAMII avoue qu'il lui manque un accès et on ne monte pas d'un cran : la réponse reste creuse");
 
-    verifier(A.doitMonter({ choix: auto, reponse: aveu, dejaMonte: true }) === false,
+    verifier(monte({ choix: auto, reponse: aveu, dejaMonte: true }) === false,
         "l'escalade peut se répéter : une facture qui peut s'emballer, et le mode de panne le " +
         "plus coûteux d'un agent est la boucle qui se rappelle elle-même");
 
-    const explicite = A.choisir({ message: "Mes ventes ont baissé", demande: "rapide", palier: "pro" });
-    verifier(A.doitMonter({ choix: explicite, reponse: aveu }) === false,
+    const explicite = A.choisir({ message: "Mes ventes ont baissé", demande: "rapide", palier: PALIER });
+    verifier(monte({ choix: explicite, reponse: aveu }) === false,
         "on monte alors que la personne avait choisi Rapide : c'est dépenser son argent sans le lui demander");
 
     const plafonne = A.choisir({ message: "Fais-moi un plan complet chiffré avec un prévisionnel", palier: "free" });
-    verifier(A.doitMonter({ choix: plafonne, reponse: aveu }) === false,
+    verifier(A.doitMonter({ choix: plafonne, reponse: aveu, palier: "free" }) === false,
         "l'escalade franchit le plafond d'un compte gratuit : ce serait une porte dérobée");
 
     const auSommet = A.choisir({ message: "Compare, analyse, calcule, planifie, dis-moi quoi faire", palier: "societe" });
     if (auSommet.niveau === "maitre") {
-        verifier(A.doitMonter({ choix: auSommet, reponse: aveu }) === false,
+        verifier(A.doitMonter({ choix: auSommet, reponse: aveu, palier: "societe" }) === false,
             "on essaie de monter au-dessus de Maître");
     }
 
-    verifier(A.doitMonter({ choix: auto, reponse: "Voici tes chiffres : 42 ventes ce mois." }) === false,
+    verifier(monte({ choix: auto, reponse: "Voici tes chiffres : 42 ventes ce mois." }) === false,
         "on monte d'un cran alors que SAMII a répondu correctement — chaque tour coûterait double");
-    verifier(A.doitMonter({ choix: auto, reponse: "" }) === false, "on monte sur une réponse vide");
+    verifier(monte({ choix: auto, reponse: "" }) === false, "on monte sur une réponse vide");
+
+    // Et le palier n'est pas décoratif : sans lui, on refuse. Une escalade
+    // décidée sur une supposition est une dépense décidée sur une supposition.
+    verifier(A.doitMonter({ choix: auto, reponse: aveu }) === false,
+        "on monte sans connaître le palier : la montée est décidée sur une supposition");
 }
 
 // ── 10. LE DOMAINE VIENT DU ROUTEUR EXISTANT ─────────────────────────────

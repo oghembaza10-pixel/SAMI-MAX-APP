@@ -796,6 +796,17 @@ html[dir="rtl"] .tour--moi .bulle { border-radius: var(--r-m) var(--r-m) var(--r
 .choix__coche { flex: none; color: var(--cyan); opacity: 0; font-size: .8rem; }
 .choix[aria-pressed="true"] .choix__coche { opacity: 1; }
 .choix[aria-pressed="true"] .choix__txt b { color: var(--cyan); }
+/* « recommandé » — une pastille, pas un badge. Le registre désigne l'entrée
+   (config/niveaux.js, PRESELECTION) ; ici on dit seulement à quoi ça
+   ressemble. Poids et taille en dessous du libellé qu'elle accompagne : elle
+   informe, elle ne réclame pas l'attention avant le nom du niveau. */
+.choix__reco {
+    display: inline-block; margin-inline-start: 6px;
+    font-size: .6rem; font-weight: 500; letter-spacing: .02em;
+    color: var(--cyan); background: rgba(0, 217, 255, .1);
+    border: 1px solid rgba(0, 217, 255, .28);
+    border-radius: 999px; padding: 1px 6px; vertical-align: middle;
+}
 
 /* La POSTURE est un autre axe, et le menu doit le dire visuellement.
    L'intelligence est une profondeur de raisonnement ; l'autonomie est un
@@ -1003,6 +1014,29 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
    caractères sans espace existe, et elle doit se couper plutôt que pousser
    la page. */
 .tour--resultat { min-width: 0; }
+
+/* ── LA NOTE DU MOTEUR ─────────────────────────────────────────────────────
+   Trois faits qui changent la lecture de la réponse : un moteur de secours
+   sans outils, une montée d'un cran, un plafond qui a mordu. Une PHRASE, pas
+   un bandeau — elle explique, elle n'interrompt pas. Alignée sur le texte de
+   la réponse (même retrait que la bulle) pour qu'on la lise comme une suite
+   et non comme une alerte système. */
+.tour--note { min-width: 0; }
+.note {
+    flex: 1; min-width: 0;
+    font-size: .74rem; line-height: 1.45; color: var(--tres-doux);
+    padding: 7px 10px; border-radius: var(--r-s, 8px);
+    border-inline-start: 2px solid var(--ligne);
+    background: color-mix(in srgb, var(--panneau) 70%, transparent);
+}
+/* Le seul des trois qui dit « rien n'a été fait » se distingue : c'est celui
+   qu'il ne faut pas rater. Les deux autres sont de l'information. */
+.note--secours {
+    color: var(--doux, var(--tres-doux));
+    border-inline-start-color: rgba(255, 176, 32, .55);
+}
+.note--montee { border-inline-start-color: rgba(0, 217, 255, .4); }
+
 .resultat {
     flex: 1; min-width: 0; max-width: 100%;
     border: 1px solid var(--ligne); border-radius: var(--r-m);
@@ -1688,13 +1722,19 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
                             La leçon a été payée au chantier précédent — même
                             trois suites, même ligne. %>
                         <% (locals.niveaux || []).forEach(function (n) { %>
+                            <%# ⚠️ `aria-pressed` LISAIT « auto » ÉCRIT EN DUR ICI.
+                                Tant que le cran de départ valait « Rapide », le bouton
+                                affichait donc Rapide pendant que le menu cochait Auto :
+                                deux vérités sur le même écran, et c'est exactement le
+                                piège que le commentaire du bouton juste au-dessus décrit.
+                                Les deux lisent maintenant la même valeur. %>
                             <button class="choix" type="button" role="menuitemradio"
                                     data-niveau="<%= n.id %>" data-pic="<%= n.icone %>"
                                     data-nom="<%= L(n.libelle) %>"
-                                    aria-pressed="<%= n.id === 'auto' ? 'true' : 'false' %>">
+                                    aria-pressed="<%= n.id === nParDefaut.id ? 'true' : 'false' %>">
                                 <span class="choix__pic" aria-hidden="true"><%= n.icone %></span>
                                 <span class="choix__txt">
-                                    <b><%= L(n.libelle) %></b>
+                                    <b><%= L(n.libelle) %><% if (n.recommande) { %><span class="choix__reco"><%= L("recommandé") %></span><% } %></b>
                                     <span><%= L(n.pourQuoi) %></span>
                                 </span>
                                 <span class="choix__coche" aria-hidden="true">✓</span>
@@ -1774,6 +1814,14 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
 window.SAMII_T = <%- JSON.stringify({
     panne:      L("SAMII réfléchit un peu plus longtemps que prévu. Réessaie dans une minute."),
     reseau:     L("Connexion perdue. Vérifie ton réseau et réessaie."),
+    // ── LES TROIS NOTES DU MOTEUR (voir peindreNote) ─────────────────────
+    // `sansOutils` dit « rien n'a été exécuté » explicitement : c'est la seule
+    // phrase du produit qui empêche de lire « je m'en occupe » comme
+    // « c'est fait ». `{a}` et `{b}` sont remplacés côté script par le nom du
+    // cran — jamais par du texte traduit ailleurs.
+    sansOutils: L("SAMII a répondu sans ses outils : son moteur principal ne répond pas. Rien n'a été exécuté."),
+    monte:      L("SAMII est monté en {a} : il lui manquait de quoi répondre."),
+    borne:      L("Cette demande voulait le niveau {a} — ton offre s'arrête à {b}."),
     restants:   L("messages avant de créer un compte"),
     epuise:     L("Tes messages reviennent dans 5 heures — ou crée ton compte pour continuer."),
     memTitre:   L("Je peux continuer — mais je ne te connais pas encore."),

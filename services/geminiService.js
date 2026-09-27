@@ -521,6 +521,61 @@ async function chatViaOpenAiCompatible({ provider, model, poster, message, conte
     const outils = toOpenAiTools(buildToolsPayload(useTools, context, provider));
     if (outils.length) body.tools = outils;
 
+    // ══════════════════════════════════════════════════════════════════════
+    // UN RELAIS SANS LES OUTILS DOIT LE DIRE, PAS FAIRE SEMBLANT
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // MESURÉ. Pour l'audience marchande, les trois relais portent ZÉRO outil :
+    // `config/moteurs.js` ne leur concède que la famille `commerce`, qui n'est
+    // pas dans le plafond de cette audience. L'intersection est donc vide à
+    // TOUS les niveaux — gemini-flash porte 17 outils, groq/openrouter/deepseek
+    // en portent 0.
+    //
+    // Le mécanisme est déjà sûr : sans champ `tools`, le relais ne PEUT pas
+    // émettre d'appel d'outil. C'est le chantier 7, et il tient.
+    //
+    // Ce qui ne tenait pas, c'est la PHRASE. Rien n'empêchait le relais
+    // d'écrire « c'est envoyé » ou « j'ai posé le rendez-vous » : il répond en
+    // texte libre, aucun outil n'a tourné, et rien dans la réponse ne le
+    // contredisait. Une fausse réussite est pire qu'un échec annoncé — le
+    // marchand attend une facture qui ne partira jamais.
+    //
+    // On le dit donc au modèle, dans un message `system` propre à ce tour. Pas
+    // dans le prompt partagé : cette consigne n'est vraie QUE pour un relais
+    // privé de ses outils, et une consigne inutile répétée partout finit par
+    // être ignorée là où elle compte.
+    //
+    // ⚠️ AUCUN FAUX OUTIL N'EST FABRIQUÉ ICI. On ne donne pas au relais une
+    // imitation d'outil qui « ferait comme si » : on lui retire le droit de
+    // prétendre. C'est la seule réponse honnête quand la capacité est absente.
+    // ── LA COMPARAISON SE FAIT SUR LES DEUX VRAIS PAYLOADS ───────────────
+    //
+    // ⚠️ PREMIÈRE VERSION FAUSSE, ATTRAPÉE AVANT D'ÊTRE ÉCRITE : elle
+    // demandait `NIVEAUX.porteDesOutils(context.niveau)`. Or le chat public
+    // n'a PAS de niveau, et `niveau(undefined)` retombe sur `DEFAUT`
+    // (« expert »), qui porte des outils. Tout tour public servi par un relais
+    // aurait donc été marqué « dégradé » — alors que le chat public n'a jamais
+    // eu d'outil, par construction (`audience: "public"`, zéro outil).
+    //
+    // La seule question honnête est : « ce tour aurait-il porté des outils chez
+    // Gemini ? » On la pose à la fonction qui sait y répondre, avec le même
+    // contexte. Pas de déduction, pas de repli implicite.
+    const outilsChezGemini = buildToolsPayload(useTools, context, "gemini");
+    const auraitEuDesOutils = Array.isArray(outilsChezGemini)
+        && (outilsChezGemini[0]?.functionDeclarations || []).length > 0;
+    const sansOutils = auraitEuDesOutils && outils.length === 0;
+    if (sansOutils) {
+        body.messages.unshift({
+            role: "system",
+            content: "Tu réponds depuis un moteur de secours, sans accès à tes outils "
+                + "(agenda, messagerie, fichiers, données du commerçant, envoi de facture, "
+                + "publication). Tu ne peux donc RIEN exécuter pendant ce tour. "
+                + "Ne dis jamais qu'une action est faite, envoyée, enregistrée ou programmée. "
+                + "Dis clairement que tes outils ne répondent pas en ce moment, réponds avec "
+                + "ce que tu sais, et propose de réessayer dans un instant.",
+        });
+    }
+
     const response = await poster(body);
     // Les relais parlent le dialecte OpenAI (`usage.prompt_tokens`), Gemini
     // le sien. Deux lectures, un seul compteur : sans ça, une bascule sur
@@ -544,7 +599,10 @@ async function chatViaOpenAiCompatible({ provider, model, poster, message, conte
         };
     }
     if (!choice?.message?.content) return sansReponse(provider, `${provider} a répondu sans texte`);
-    return { type: "text", provider, text: choice.message.content };
+    // `sansOutils` remonte avec la réponse : la page doit pouvoir le dire, et
+    // le rapport doit pouvoir le compter. Un repli silencieux ressemble trait
+    // pour trait à un tour normal.
+    return { type: "text", provider, text: choice.message.content, sansOutils };
 }
 
 // `modeleDe()` et pas une constante : le modèle en service peut avoir changé
@@ -2007,6 +2065,44 @@ function marquerLeRamene(nomOutil, resultat) {
     };
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// LA PHRASE DE REPLI NE DOIT PAS ANNONCER UNE RÉUSSITE QUI N'A PAS EU LIEU
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ IL Y AVAIT QUATRE « C'est fait ✅ » CODÉS EN DUR DANS LA FONCTION
+// CI-DESSOUS, ET ILS PARTAIENT SANS REGARDER LE RÉSULTAT DE L'OUTIL.
+//
+// `chatWithFunctionResult` ne fait qu'une chose : mettre en phrase ce que
+// l'outil a rendu. Quand le modèle ne rend pas de texte — ou quand l'appel de
+// reformulation échoue (réseau, quota, relais coupé) — on retombait sur
+// « C'est fait ✅ ». Y compris lorsque `functionResult` valait
+// `{ success: false, error: "…" }`.
+//
+// Mesuré en HTTP réel pendant le chantier G, sur `creer_evenement_agenda` :
+// l'acte a échoué (table `connecteurs` absente), il a été correctement
+// rapporté `reussi: false` — donc NON FACTURÉ — et la phrase rendue était
+// quand même « C'est posé dans ton agenda ✅ ». Le marchand attend un
+// rendez-vous qui n'existe pas.
+//
+// Une fausse réussite est pire qu'un échec annoncé : l'échec se réessaie, le
+// mensonge se découvre chez le client. On lit donc l'issue avant de parler.
+//
+// LA RÈGLE DE LECTURE est celle de `config/credits.factureDuTour` — mot pour
+// mot, pour que la phrase et la facture ne puissent pas se contredire :
+// `success === false` est le seul échec franc ; tout le reste (un objet de
+// données, `undefined`) est une réussite. Une seconde règle ici aurait
+// divergé, et le marchand aurait été facturé pour un geste dont on lui dit
+// qu'il a raté, ou l'inverse.
+function phraseDeRepli(functionResult) {
+    if (functionResult && typeof functionResult === "object" && functionResult.success === false) {
+        const raison = String(functionResult.error || "").trim();
+        return raison
+            ? `Je n'ai pas réussi à le faire : ${raison}`
+            : "Je n'ai pas réussi à le faire. Réessaie dans un instant.";
+    }
+    return "C'est fait ✅";
+}
+
 async function chatWithFunctionResult({ message, context = {}, functionName, functionArgs, functionResult, thoughtSignature, provider = "gemini", toolCallId, assistantMessage, history = [] }) {
     // LE DROIT DE RECEVOIR CETTE DONNÉE EST DÉCLARÉ, PLUS DEVINÉ.
     //
@@ -2037,10 +2133,10 @@ async function chatWithFunctionResult({ message, context = {}, functionName, fun
             ];
             const response = await poster({ model, messages });
             const text = response.data.choices?.[0]?.message?.content;
-            return text || "C'est fait ✅";
+            return text || phraseDeRepli(functionResult);
         } catch (err) {
             console.error(`❌ ${provider} (function result) :`, err.response?.data || err.message);
-            return "C'est fait ✅";
+            return phraseDeRepli(functionResult);
         }
     }
     try {
@@ -2088,10 +2184,10 @@ async function chatWithFunctionResult({ message, context = {}, functionName, fun
         const response = await postWithRotation(body);
         const parts = response.data.candidates?.[0]?.content?.parts || [];
         const textPart = parts.find(p => p.text);
-        return textPart?.text || "C'est fait ✅";
+        return textPart?.text || phraseDeRepli(functionResult);
     } catch (err) {
         console.error("❌ Gemini (function result) :", err.response?.data || err.message);
-        return "C'est fait ✅";
+        return phraseDeRepli(functionResult);
     }
 }
 
@@ -2270,4 +2366,18 @@ module.exports = {
     __test_buildToolsPayload: buildToolsPayload,
     __test_toOpenAiTools: toOpenAiTools,
     __test_configDeGeneration: configDeGeneration,
+    // ── LES DEUX FONCTIONS D'HONNÊTETÉ DU CHANTIER G ─────────────────────
+    //
+    // Même raison que les précédentes, et elle a été payée : la campagne de
+    // mutations a montré que QUATRE gardes écrites sur le TEXTE de ce fichier
+    // restaient vertes alors que le comportement était détruit. Un garde qui
+    // lit `/sansOutils/` dans une tranche de source reste satisfait quand
+    // `const sansOutils = false;` remplace le calcul.
+    //
+    // `chatViaOpenAiCompatible` prend son `poster` en paramètre : on peut donc
+    // l'appeler pour de vrai, avec une doublure de réseau, et REGARDER le corps
+    // qui part et l'objet qui revient. C'est la seule façon de prouver qu'un
+    // relais privé de ses outils reçoit l'interdiction de prétendre.
+    __test_chatViaOpenAiCompatible: chatViaOpenAiCompatible,
+    __test_phraseDeRepli: phraseDeRepli,
 };

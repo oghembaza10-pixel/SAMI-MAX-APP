@@ -469,32 +469,91 @@ try {
 
 // ── VERDICT ──────────────────────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════
-// 6 ter. LE CRAN DE DÉPART DE LA BARRE : « RAPIDE », PAS « AUTO »
+// 6 ter. LE CRAN DE DÉPART DE LA BARRE : « AUTO »
 // ══════════════════════════════════════════════════════════════════════════
 //
-// Auto laisse SAMII monter d'un cran quand il juge la demande lourde, et ce
-// cran coûte plus cher — décidé par la machine, pas par la personne. En
-// préselection on veut le cran le plus léger : il répond tout de suite et il
-// ne surprend personne sur son solde.
+// ⚠️ CE BLOC GARDAIT LA DÉCISION INVERSE, ET IL AVAIT RAISON DE LE FAIRE.
 //
-// LE PIÈGE : ce cran est écrit à DEUX endroits — le gabarit l'affiche, le
-// script l'envoie. Recopié, il finit par différer, et la barre annonce un
-// niveau pendant que le navigateur en envoie un autre. On vérifie donc qu'il
-// n'est écrit NULLE PART : les deux le LISENT du registre.
+// Il affirmait `PRESELECTION === "rapide"`, sur ce raisonnement : « Auto laisse
+// SAMII monter d'un cran quand il juge la demande lourde, et ce cran coûte plus
+// cher — décidé par la machine, pas par la personne. » Le test n'était pas
+// faux : il gardait fidèlement un choix de produit.
+//
+// Ce choix reposait sur deux faits que la mesure a démentis :
+//
+//   1. « le cran supérieur coûte plus cher » — non. Tous les niveaux portent le
+//      même prix de vente, et `factureDuTour` ne facture qu'un message plus les
+//      actes réussis. Le niveau n'entre nulle part dans le prix.
+//
+//   2. « le cran le plus léger est le plus prudent » — non. Rapide porte ZÉRO
+//      outil. Et parce que le navigateur envoyait ce cran EXPLICITEMENT,
+//      `niveauAuto.choisir()` y lisait un choix de la personne, ce qui coupait
+//      aussi la pesée et l'escalade. Mesuré sur « fais le point sur mon
+//      activité », « envoie une facture à Aminata », « trouve-moi des
+//      fournisseurs » : zéro outil à chaque fois. SAMII répondait de mémoire.
+//
+// Le propriétaire a tranché l'inverse (chantier G). Le bloc n'est donc pas
+// supprimé : il garde la NOUVELLE décision, avec la même force, et il crie
+// toujours si quelqu'un remet un cran en dur dans le gabarit ou le script.
+//
+// LE PIÈGE QU'IL GARDAIT DÉJÀ, ET QUI N'A PAS CHANGÉ : ce cran est écrit à DEUX
+// endroits — le gabarit l'affiche, le script l'envoie. Recopié, il finit par
+// différer, et la barre annonce un niveau pendant que le navigateur en envoie
+// un autre. On vérifie donc qu'il n'est écrit NULLE PART : les deux le LISENT
+// du registre.
 {
     const NIV = require("../config/niveaux");
+    const AUTOMATIQUE = require("../services/niveauAuto");
 
     // Le registre déclare le cran de départ, et il est distinct de DEFAUT —
     // qui est le filet de niveau(), côté serveur. Les confondre changerait
     // la facturation en croyant changer un libellé.
-    verifier(NIV.PRESELECTION === "rapide",
-        `le cran de départ vaut « ${NIV.PRESELECTION} » au lieu de « rapide »`);
-    verifier(NIV.existe(NIV.PRESELECTION),
-        "le cran de départ n'est pas un niveau connu du registre");
-    verifier(NIV.PRESELECTION !== NIV.AUTO,
-        "le cran de départ est redevenu « auto »");
+    verifier(NIV.PRESELECTION === NIV.AUTO,
+        `le cran de départ vaut « ${NIV.PRESELECTION} » au lieu de « ${NIV.AUTO} » : ` +
+        "un cran explicite coupe la pesée ET l'escalade, et Rapide ne porte aucun outil");
+    // « auto » n'est PAS une entrée de la table des niveaux — c'est une façon
+    // de choisir. `existe()` répond donc non, et c'est correct : on accepte
+    // l'une OU l'autre forme, jamais une chaîne inventée.
+    verifier(NIV.existe(NIV.PRESELECTION) || NIV.PRESELECTION === NIV.AUTO,
+        "le cran de départ n'est ni un niveau connu du registre, ni « auto »");
     verifier(Object.prototype.hasOwnProperty.call(NIV, "DEFAUT"),
         "DEFAUT a disparu du registre : niveau() n'a plus de filet");
+
+    // ── AUTO N'EST PAS « LE MAXIMUM EN PERMANENCE » ──────────────────────
+    //
+    // C'est la contrepartie de la décision, et elle se mesure. Un bonjour et
+    // une traduction doivent RESTER sur le cran le plus léger : sinon on n'a
+    // pas donné ses mains à SAMII, on a juste ouvert le robinet.
+    for (const trivial of ["Bonjour", "Traduis-moi « merci » en anglais", "Salut, ça va ?"]) {
+        const c = AUTOMATIQUE.choisir({ message: trivial, demande: NIV.AUTO, palier: "pro" });
+        verifier(c.niveau === "rapide",
+            `Auto choisit « ${c.niveau} » pour « ${trivial} » — Auto doit sélectionner, ` +
+            "pas monter au maximum en permanence");
+    }
+
+    // Et il DOIT atteindre le cran de l'outil demandé, sinon la décision ne
+    // sert à rien : c'est tout l'objet du chantier.
+    const facture = AUTOMATIQUE.choisir({
+        message: "Envoie une facture de 7500 DA à Aminata", demande: NIV.AUTO, palier: "pro",
+    });
+    verifier(NIV.outilsDe(facture.niveau).includes("envoyer_facture"),
+        `Auto retient « ${facture.niveau} », qui ne porte pas envoyer_facture — ` +
+        "la demande nomme un outil que le niveau choisi n'a pas");
+
+    // ── LE CHOIX MANUEL RESTE RESPECTÉ ───────────────────────────────────
+    //
+    // Quelqu'un qui demande Rapide veut du rapide. Le chantier G change le
+    // DÉPART, pas le droit de choisir.
+    const manuel = AUTOMATIQUE.choisir({ message: "Fais-moi un plan complet", demande: "rapide", palier: "pro" });
+    verifier(manuel.niveau === "rapide" && manuel.auto === false,
+        `un « Rapide » demandé à la main donne « ${manuel.niveau} » (auto=${manuel.auto}) : ` +
+        "on décide à la place de la personne");
+
+    // ── UNE SEULE ENTRÉE PORTE « RECOMMANDÉ », ET C'EST LE DÉPART ────────
+    const reco = NIV.pourAffichage().filter((n) => n.recommande);
+    verifier(reco.length === 1 && reco[0].id === NIV.PRESELECTION,
+        `${reco.length} entrée(s) marquée(s) « recommandé » : la pastille doit désigner ` +
+        "exactement le cran de départ, calculé sur PRESELECTION et jamais écrit à côté");
 
     // La page rendue affiche CE cran, lu du registre.
     const attendu = NIV.pourAffichage().find((n) => n.id === NIV.PRESELECTION);
@@ -516,17 +575,27 @@ try {
         `le bouton n'affiche pas « ${attendu.libelle} »`);
     verifier(bouton.includes(attendu.icone),
         `l'icône du cran de départ (${attendu.icone}) n'est pas rendue`);
-    verifier(!bouton.includes("Auto"),
-        "le bouton affiche encore « Auto » au départ");
-
-    // ── ET AUTO RESTE PROPOSÉ ────────────────────────────────────────────
+    // ── LES QUATRE CRANS RESTENT PROPOSÉS ────────────────────────────────
     //
-    // On change le point de départ, PAS l'offre. Auto reste dans le menu,
-    // intact : quelqu'un qui le veut le choisit d'un clic.
+    // On change le point de départ, PAS l'offre. Rapide, Expert, Pro et Maître
+    // restent dans le menu : quelqu'un qui veut décider lui-même le fait d'un
+    // clic, et son choix est respecté (mesuré plus haut).
+    for (const id of NIV.ORDRE) {
+        verifier(page2.includes(`data-niveau="${id}"`),
+            `« ${id} » a disparu du menu — on devait déplacer le départ, pas retirer le choix`);
+    }
     verifier(page2.includes('data-niveau="auto"'),
-        "« Auto » a disparu du menu — on devait déplacer le départ, pas retirer le choix");
+        "« Auto » a disparu du menu alors que c'est le cran de départ");
     verifier(NIV.pourAffichage().length === 5,
         "le menu ne propose plus les cinq crans");
+
+    // Et le menu COCHE le cran que le bouton affiche. Les deux lisaient deux
+    // valeurs différentes avant ce chantier : `aria-pressed` comparait à « auto »
+    // écrit en dur dans le gabarit pendant que le bouton affichait Rapide.
+    const coche = page2.match(/data-niveau="([a-z]+)"[^>]*aria-pressed="true"/);
+    verifier(coche && coche[1] === attendu.id,
+        `le menu coche « ${coche ? coche[1] : "rien"} » alors que le bouton affiche ` +
+        `« ${attendu.id} » : deux vérités sur le même écran`);
 
     // Le script ne doit PAS porter le cran en dur.
     const js2 = fs.readFileSync(path.join(RACINE, "public/js/samii-accueil.js"), "utf8")

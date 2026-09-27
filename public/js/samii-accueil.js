@@ -307,6 +307,60 @@
         liste.forEach(peindreResultat);
     }
 
+    // ══ CE QUI S'EST PASSÉ DANS LE MOTEUR, QUAND ÇA CHANGE LA RÉPONSE ════
+    //
+    // Trois faits, et un seul peut être vrai à la fois dans l'ordre ci-dessous.
+    // Aucun n'est un bouton : on ne crée pas d'action morte (chantier F bis).
+    // Ce sont des phrases, sous la réponse, en petit.
+    //
+    //   1. SANS SES OUTILS. Un moteur de secours a répondu et ne portait aucun
+    //      outil. Le marchand DOIT le savoir : sinon « je m'en occupe » se lit
+    //      comme « c'est fait », et rien n'est parti. Mesuré : les trois relais
+    //      portent zéro outil pour l'audience marchande.
+    //
+    //   2. MONTÉ D'UN CRAN. SAMII a démarré léger, s'est aperçu qu'il lui
+    //      manquait quelque chose, et a relancé plus haut. Sans cette ligne, le
+    //      niveau annoncé au départ devient faux en silence.
+    //
+    //   3. LE PLAFOND A MORDU. La demande exigeait un cran que ce compte n'a
+    //      pas. On nomme le cran manquant — « passe à un abonnement » sans motif
+    //      n'apprend rien et ressemble à une vente.
+    //
+    // ── POURQUOI ICI ET PAS DANS LE GABARIT ──────────────────────────────
+    //
+    // `terminer()` est le SEUL entonnoir des deux chemins (anonyme et
+    // connecté). Écrire ces phrases à deux endroits, c'est garantir qu'un jour
+    // l'un des deux se taira. Et tout est facultatif : le chemin anonyme ne
+    // porte ni `niveau` ni `sansOutils`, donc rien ne s'affiche — c'est ce qui
+    // permet de garder un seul lecteur.
+    var MOTS_NIVEAU = { rapide: "Rapide", expert: "Expert", pro: "Pro", maitre: "Maître" };
+    function nomNiveau(id) { return MOTS_NIVEAU[String(id || "")] || String(id || ""); }
+
+    function peindreNote(json) {
+        if (!json) return;
+        var n = json.niveau || null;
+        var phrase = null;
+        var genre = null;
+
+        if (json.sansOutils === true) {
+            genre = "secours";
+            phrase = T.sansOutils
+                || "SAMII a répondu sans ses outils : son moteur principal ne répond pas. Rien n'a été exécuté.";
+        } else if (n && n.escalade && n.escalade.vers) {
+            genre = "montee";
+            phrase = (T.monte || "SAMII est monté en {a} : il lui manquait de quoi répondre.")
+                .replace("{a}", nomNiveau(n.escalade.vers));
+        } else if (n && n.borne && n.exige && n.exige !== n.id) {
+            genre = "borne";
+            phrase = (T.borne || "Cette demande voulait le niveau {a} — ton offre s'arrête à {b}.")
+                .replace("{a}", nomNiveau(n.exige)).replace("{b}", nomNiveau(n.id));
+        }
+
+        if (!phrase) return;
+        var t = bloc("tour tour--note");
+        t.appendChild(elem("p", "note note--" + genre, phrase));
+    }
+
     function peindreResultat(c) {
         if (!c || !Array.isArray(c.elements) || !c.elements.length) return;
         var t = bloc("tour tour--resultat");
@@ -588,6 +642,7 @@
                     return new Promise(function (ok) {
                         reveler(b, fini.reply, function () {
                             peindreResultats(fini.resultats);
+                            peindreNote(fini);
                             poserRetour(cible, fini.messageId);
                             terminer(fini.reply, fini);
                             ok();
@@ -606,6 +661,7 @@
             // n'en a aucun : `peindreResultats` et `poserRetour` ne font
             // alors rien, et c'est ce qui permet d'avoir UN seul lecteur.
             peindreResultats(fini && fini.resultats);
+            peindreNote(fini);
             poserRetour(cible, fini && fini.messageId);
             terminer(complet, fini || {});
         });
@@ -707,6 +763,7 @@
             // le bloc au milieu du texte couperait la phrase en deux.
             reveler(bulle, reponse, function () {
                 peindreResultats(json && json.resultats);
+                peindreNote(json);
                 poserRetour(cible, json && json.messageId);
                 terminer(reponse, json || {});
             });
