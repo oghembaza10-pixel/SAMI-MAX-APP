@@ -597,6 +597,32 @@ try {
         `le menu coche « ${coche ? coche[1] : "rien"} » alors que le bouton affiche ` +
         `« ${attendu.id} » : deux vérités sur le même écran`);
 
+    // ── ET LA COCHE SUIT LE DÉPART, ELLE NE LE CONNAÎT PAS ───────────────
+    //
+    // ⚠️ GARDE CREUX, TROUVÉ PAR LA CAMPAGNE DE MUTATIONS.
+    //
+    // L'assertion ci-dessus compare la coche à `attendu.id`. Tant que le départ
+    // EST « auto », un gabarit qui écrit `aria-pressed="… === 'auto' …"` en dur
+    // donne exactement le même rendu : la mutation passait inaperçue. Or c'est
+    // précisément ce que le gabarit faisait AVANT ce chantier, et c'est ce qui
+    // affichait « Rapide » sur le bouton pendant que le menu cochait « Auto ».
+    //
+    // On rend donc la page avec un départ DIFFÉRENT et on regarde si la coche
+    // suit. C'est le couplage qu'on veut garder, pas la valeur du jour.
+    for (const autreId of NIV.ORDRE) {
+        const autre = NIV.pourAffichage().find((n) => n.id === autreId);
+        const page3 = rendre({ niveaux: NIV.pourAffichage(), niveauParDefaut: autre });
+        const suit = page3.match(/data-niveau="([a-z]+)"[^>]*aria-pressed="true"/);
+        verifier(suit && suit[1] === autreId,
+            `avec « ${autreId} » comme départ, le menu coche « ${suit ? suit[1] : "rien"} » : ` +
+            "le gabarit porte un cran en dur et divergera du registre");
+        // Et le bouton affiche le même : c'est la panne d'origine, dans l'autre sens.
+        const debut3 = page3.indexOf('id="cerveau-pic"');
+        const bouton3 = page3.slice(debut3, page3.indexOf("cerveau__fleche", debut3));
+        verifier(bouton3.includes(echapper(autre.libelle)),
+            `avec « ${autreId} » comme départ, le bouton n'affiche pas « ${autre.libelle} »`);
+    }
+
     // Le script ne doit PAS porter le cran en dur.
     const js2 = fs.readFileSync(path.join(RACINE, "public/js/samii-accueil.js"), "utf8")
         .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");

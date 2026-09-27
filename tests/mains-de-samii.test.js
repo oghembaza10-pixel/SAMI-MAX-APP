@@ -652,6 +652,123 @@ async function eprouverLeRepli() {
     }
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// 15. LA NOTE DU MOTEUR — CE QUE L'ÉCRAN DIT QUAND ÇA NE S'EST PAS BIEN PASSÉ
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ CE BLOC EXISTE PARCE QUE LA CAMPAGNE DE MUTATIONS A MONTRÉ QUE RIEN NE
+// GARDAIT `peindreNote`. La mutation « la note du moteur n'est plus peinte »
+// (`if (true) return;` en tête de la fonction) laissait TOUTE la suite verte.
+//
+// Or c'est la seule chose qui, à l'écran, distingue « SAMII s'en occupe » de
+// « rien n'a été exécuté ». Un marchand qui ne voit pas cette phrase attend une
+// facture qui ne partira jamais.
+//
+// ── POURQUOI ON EXTRAIT LA FONCTION AU LIEU DE L'IMPORTER ────────────────
+//
+// `public/js/samii-accueil.js` tourne dans un navigateur, à l'intérieur d'une
+// IIFE : il n'exporte rien, et on ne peut pas l'importer ici. L'alternative
+// aurait été de n'en garder qu'un test Playwright — mais Playwright ne tourne
+// pas dans `npm test`, donc la panne ne serait vue qu'à la main.
+//
+// On extrait donc le TEXTE de la fonction et on l'exécute avec un faux DOM
+// minimal. Ce n'est pas l'idéal — c'est une copie — mais la copie est le code
+// réel, et ça attrape ce qui compte : un `return` précoce, une branche perdue,
+// une phrase qui ne dit plus « rien n'a été exécuté ». Un garde de plus vérifie
+// que les trois appels existent bien dans les trois chemins.
+{
+    const fs = require("fs");
+    const js = fs.readFileSync(path.join(RACINE, "public/js/samii-accueil.js"), "utf8");
+
+    // Les trois entonnoirs. Un seul oublié, et la note se tait sur ce chemin-là.
+    const appels = (js.match(/\bpeindreNote\(/g) || []).length;
+    verifier(appels === 4,
+        `peindreNote est nommée ${appels} fois (1 déclaration + 3 appels attendus) : ` +
+        "un des trois chemins — flux avec outil, flux sans outil, sans flux — ne peint plus rien");
+
+    // On découpe la fonction entre sa déclaration et la suivante.
+    // ⚠️ LA TRANCHE PART DE `MOTS_NIVEAU`, PAS DE LA FONCTION.
+    // `peindreNote` s'appuie sur `nomNiveau()` et sa table, déclarées juste
+    // au-dessus. Une tranche qui commence à la fonction lève
+    // « nomNiveau is not defined » — et une tranche plus large est un garde plus
+    // large : muter un libellé de cran se voit aussi.
+    const debut = js.indexOf("    var MOTS_NIVEAU = {");
+    const fin = js.indexOf("    function peindreResultat(c) {");
+    verifier(debut > 0 && fin > debut,
+        "l'instrument ne trouve plus peindreNote — il ne mesure rien");
+
+    if (debut > 0 && fin > debut) {
+        const corps = js.slice(debut, fin);
+
+        // LE FAUX DOM, RÉDUIT À CE QUE LA FONCTION UTILISE VRAIMENT :
+        //   var t = bloc("tour tour--note");
+        //   t.appendChild(elem("p", "note note--" + genre, phrase));
+        // Deux fabriques, un `appendChild` qui ne fait rien. Rien de plus — un
+        // faux DOM plus riche que nécessaire est un faux DOM qu'on croit juste.
+        const peints = [];
+        // eslint-disable-next-line no-new-func
+        const peindreNote = new Function("bloc", "elem", "T", `${corps}\nreturn peindreNote;`)(
+            (classe) => ({ classe, appendChild() {} }),
+            (balise, classe, texte) => { const e = { balise, classe, texte }; peints.push(e); return e; },
+            {},   // aucun libellé traduit : on éprouve les phrases de repli
+        );
+
+        const rendre = (json) => {
+            peints.length = 0;
+            peindreNote(json);
+            return { note: peints[peints.length - 1] || null };
+        };
+
+        // 1. RIEN À DIRE → RIEN N'EST PEINT. Un bandeau à chaque message
+        //    deviendrait du bruit qu'on n'ouvre plus.
+        for (const rien of [null, undefined, {}, { niveau: { id: "expert", auto: true } }]) {
+            const r = rendre(rien);
+            verifier(!r.note,
+                `une note est peinte pour ${JSON.stringify(rien)} : un bandeau à chaque message ` +
+                "devient du bruit qu'on cesse de lire");
+        }
+
+        // 2. LE REPLI SANS OUTILS — la phrase la plus importante du produit.
+        {
+            const r = rendre({ sansOutils: true, niveau: { id: "pro", auto: true } });
+            verifier(r.note && /note--secours/.test(r.note.classe),
+                `le repli sans outils ne peint pas sa note (${JSON.stringify(r.note)})`);
+            verifier(r.note && /rien n'a été exécuté/i.test(r.note.texte),
+                `la note du repli ne dit pas que rien n'a été exécuté (« ${r.note?.texte} ») — ` +
+                "c'est la seule phrase qui empêche de lire « je m'en occupe » comme « c'est fait »");
+        }
+
+        // 3. LA MONTÉE — sinon le niveau annoncé au départ devient faux en silence.
+        {
+            const r = rendre({ niveau: { id: "pro", auto: true, escalade: { de: "expert", vers: "pro" } } });
+            verifier(r.note && /note--montee/.test(r.note.classe),
+                `une escalade ne peint pas sa note (${JSON.stringify(r.note)})`);
+            verifier(r.note && /Pro/.test(r.note.texte),
+                `la note de montée ne nomme pas le cran atteint (« ${r.note?.texte} »)`);
+        }
+
+        // 4. LE PLAFOND — on nomme le cran qui manquait.
+        {
+            const r = rendre({ niveau: { id: "expert", auto: true, borne: true, exige: "pro" } });
+            verifier(r.note && /note--borne/.test(r.note.classe),
+                `un plafond qui a mordu ne peint pas sa note (${JSON.stringify(r.note)})`);
+            verifier(r.note && /Pro/.test(r.note.texte) && /Expert/.test(r.note.texte),
+                `la note du plafond ne nomme pas les deux crans (« ${r.note?.texte} »)`);
+        }
+
+        // 5. L'ORDRE COMPTE : « rien n'a été exécuté » passe AVANT tout le reste.
+        //    Un tour à la fois dégradé ET monté doit dire le plus grave.
+        {
+            const r = rendre({
+                sansOutils: true,
+                niveau: { id: "pro", auto: true, borne: true, exige: "maitre", escalade: { de: "expert", vers: "pro" } },
+            });
+            verifier(r.note && /note--secours/.test(r.note.classe),
+                `un tour dégradé ET monté annonce « ${r.note?.classe} » : le plus grave doit primer`);
+        }
+    }
+}
+
 // ── VERDICT ──────────────────────────────────────────────────────────────
 //
 // `eprouverLeRepli()` est la seule partie asynchrone : elle appelle le vrai
