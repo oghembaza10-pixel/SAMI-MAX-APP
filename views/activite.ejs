@@ -15,118 +15,228 @@
 <style>
 /* ══ LE POSTE DE TRAVAIL ════════════════════════════════════════════════
 
-   UNE timeline, des filtres. Pas cinq listes : mesuré sur un vrai QG,
-   cinq listes peignaient 20 lignes pour 11 éléments — 45 % de doublons.
-   Avec une seule liste, la duplication est impossible par construction. */
+   ── CE QUI A ÉTÉ MESURÉ AVANT DE REDESSINER ─────────────────────────────
 
-.act-page { padding: 18px 16px 60px; max-width: 900px; }
-.act-titre { font-size: 1.15rem; font-weight: 600; margin: 0 0 3px; }
-.act-sous  { margin: 0 0 18px; font-size: .84rem; color: rgba(255,255,255,.45); line-height: 1.5; }
+   Au navigateur, à 390 px sur un écran de 844 :
 
-/* ── LES FILTRES ──────────────────────────────────────────────────────
-   Une rangée de puces, la même grammaire que les amorces du chat. Elles
-   remplacent les titres de sections : on POSE SA QUESTION au lieu de faire
-   défiler cinq en-têtes. */
+     • 161 px — 19 % de l'écran — consommés AVANT la première information.
+       Les filtres à eux seuls : 66 px, parce que cinq puces ne tiennent pas
+       sur une ligne et passent à deux rangées.
+     • L'heure occupait 338 px de large pour afficher « 03:27 » : sous 520 px
+       elle passait à la ligne et volait une rangée par événement.
+     • Le détail n'était pas borné : 179 px pour une ligne portant un message
+       d'erreur un peu long.
+     • Résultat : 5 lignes lisibles sur 13, 87 px de médiane par ligne.
+
+   ── LE PRINCIPE RETENU : LE TEMPS EST L'AXE ─────────────────────────────
+
+   Dans une timeline, l'heure n'est pas une colonne de plus à droite : c'est
+   le rail. Mise à GAUCHE, en largeur fixe et en chiffres tabulaires, elle
+   s'aligne d'une ligne à l'autre, se lit en diagonale, et cesse de voler une
+   rangée sur téléphone. Tout le reste s'accroche à ce rail.
+
+   Rien n'a été ajouté à cette page. Ce qui existait a été resserré. */
+
+:root {
+    /* Une seule échelle, un seul rayon, une seule couleur d'accent : sans
+       ça, chaque bloc invente ses propres valeurs et la page se met à
+       bruire. */
+    --act-rail: 46px;
+    --act-r: 9px;
+    --act-samii: #00d9ff;
+    --act-ok: #3ddc84;
+    --act-ko: #e5657a;
+    --act-txt: rgba(255,255,255,.88);
+    --act-doux: rgba(255,255,255,.46);
+    --act-tres-doux: rgba(255,255,255,.3);
+    --act-ligne: rgba(255,255,255,.07);
+}
+
+.act-page { padding: 14px 16px 56px; max-width: 760px; }
+
+/* ── LE TITRE, UNE SEULE LIGNE ────────────────────────────────────────
+   Le sous-titre disait la même chose que le titre, en plus long. Deux
+   lignes pour une idée, sur l'écran le plus étroit du produit. */
+.act-titre {
+    font-size: .95rem; font-weight: 600; margin: 0 0 12px;
+    color: var(--act-txt); letter-spacing: -.01em;
+}
+
+/* ── LES FILTRES : UNE RANGÉE, JAMAIS DEUX ────────────────────────────
+   Elles défilent horizontalement au pouce plutôt que de passer à la
+   ligne. On récupère 33 px, et la rangée reste à la même place quel que
+   soit le nombre de filtres — y compris ceux qu'on ajoutera. */
 .act-filtres {
-    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;
-    padding-bottom: 2px;
+    display: flex; gap: 5px; margin-bottom: 14px;
+    overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    padding-bottom: 1px;
+}
+.act-filtres::-webkit-scrollbar { display: none; }
+/* ── LE DÉFILEMENT SE SIGNALE, ET SEULEMENT QUAND IL EXISTE ───────────
+   Mesuré : la rangée demande 377 px. Elle tient à partir de 390 px et
+   défile en dessous — de 20 px à 375, de 81 px à 320. Une puce coupée net
+   au bord ressemble à un défaut ; un fondu dit « ça continue ».
+   La classe est posée par le navigateur APRÈS mesure : sur un écran large,
+   où rien n'est caché, il n'y a pas de fondu à expliquer. */
+.act-filtres--deborde {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
 }
 .act-f {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 12px; border-radius: 999px; cursor: pointer;
-    border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.03);
-    color: rgba(255,255,255,.62); font-size: .78rem; line-height: 1.2;
-    font-family: inherit;
-    transition: border-color .16s, background .16s, color .16s;
+    flex: none; display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 9px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--act-ligne); background: transparent;
+    color: var(--act-doux); font-size: .76rem; line-height: 1.25;
+    font-family: inherit; white-space: nowrap;
+    transition: color .14s, border-color .14s, background .14s;
 }
-.act-f:hover { color: #fff; border-color: rgba(255,255,255,.2); }
-.act-f:focus-visible { outline: 2px solid #00d9ff; outline-offset: 2px; }
+.act-f:hover { color: var(--act-txt); border-color: rgba(255,255,255,.16); }
+.act-f:focus-visible { outline: 2px solid var(--act-samii); outline-offset: 2px; }
 .act-f[aria-pressed="true"] {
-    background: rgba(0,217,255,.12); border-color: rgba(0,217,255,.4); color: #7fe7ff;
+    background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.18);
+    color: var(--act-txt);
 }
-.act-f__n { font-variant-numeric: tabular-nums; opacity: .65; font-size: .74rem; }
+.act-f__n { font-variant-numeric: tabular-nums; color: var(--act-tres-doux); font-size: .72rem; }
+.act-f[aria-pressed="true"] .act-f__n { color: var(--act-doux); }
 
-/* ── CE QUI TOURNE MAINTENANT, ÉPINGLÉ ────────────────────────────────
-   Ce n'est PAS une seconde liste : ce sont les mêmes éléments, sortis du
-   fil et montrés en haut. Le fil ne les repeint pas. */
-.act-epingle {
-    margin-bottom: 20px; padding: 12px; border-radius: 12px;
-    border: 1px solid rgba(0,217,255,.22); background: rgba(0,217,255,.045);
+/* ── CE QUI TOURNE MAINTENANT ─────────────────────────────────────────
+   Nom, progression, état, action. Rien d'autre — pas de détail, pas
+   d'heure : un travail en cours n'a pas encore d'histoire à raconter.
+
+   Ce n'est PAS une seconde liste : ce sont les mêmes éléments que le fil,
+   sortis en tête. Le fil ne les repeint pas. */
+.act-encours { margin: 0 0 16px; }
+.act-encours__t {
+    font-size: .68rem; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--act-tres-doux); margin: 0 0 7px;
 }
-.act-epingle__t {
-    font-size: .72rem; letter-spacing: .08em; text-transform: uppercase;
-    color: #7fe7ff; margin: 0 0 9px;
+.act-actif {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 11px; border-radius: var(--act-r);
+    border: 1px solid rgba(0,217,255,.2); background: rgba(0,217,255,.05);
+    margin-bottom: 6px;
 }
+.act-actif__nom { flex: 1; min-width: 0; font-size: .82rem; color: var(--act-txt);
+                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.act-actif__n { flex: none; font-size: .72rem; color: var(--act-samii); font-variant-numeric: tabular-nums; }
+/* La progression, en deux pixels de haut. Un anneau ou une barre épaisse
+   attirerait l'œil plus que le nom du travail. */
+.act-jauge { flex: none; width: 46px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
+.act-jauge__p { display: block; height: 100%; background: var(--act-samii); }
 
-.act-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-
-/* ── UNE LIGNE ────────────────────────────────────────────────────────
-   Le marqueur SAMII est un LISERÉ, pas le mot « SAMII » répété devant
-   chaque ligne. On lit d'un coup d'œil ce qui est à lui sans que son nom
-   occupe quarante fois la largeur de l'écran. */
+/* ── LE FIL ───────────────────────────────────────────────────────────
+   Une grille de deux colonnes : le rail du temps, puis l'événement. Le
+   marqueur de SAMII est le point et le liseré du rail — jamais son nom
+   répété devant chaque ligne. */
+.act-liste { list-style: none; margin: 0; padding: 0; }
 .act-item {
-    display: flex; gap: 10px; align-items: flex-start;
-    padding: 10px 12px; border-radius: 10px;
-    background: rgba(255,255,255,.028);
-    border: 1px solid rgba(255,255,255,.055);
-    border-left: 3px solid transparent;
+    display: grid; grid-template-columns: var(--act-rail) 1fr;
+    gap: 10px; padding: 9px 0 9px 0;
+    border-top: 1px solid var(--act-ligne);
 }
-.act-item[data-acteur="samii"] {
-    border-left-color: #00d9ff;
-    background: rgba(0,217,255,.045);
-}
+.act-item:first-child { border-top: 0; }
 .act-item[hidden] { display: none; }
 
-.act-item__pastille { width: 7px; height: 7px; border-radius: 50%; flex: none; margin-top: 6px; background: rgba(255,255,255,.28); }
-.act-item[data-etat="en_cours"] .act-item__pastille { background: #00d9ff; }
-.act-item[data-etat="reussi"]   .act-item__pastille { background: #3ddc84; }
-.act-item[data-etat="echec"]    .act-item__pastille { background: #e5657a; }
+.act-item__quand {
+    grid-column: 1; text-align: right; padding-top: 1px;
+    font-size: .7rem; color: var(--act-tres-doux);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.act-item__corps {
+    grid-column: 2; min-width: 0;
+    border-left: 2px solid transparent; padding-left: 11px; position: relative;
+}
+/* ⚠️ LE MARQUEUR DE SAMII. Un liseré et un point, pas un mot. On lit d'un
+   coup d'œil ce qui est à lui sans que son nom occupe quarante fois la
+   largeur de l'écran. */
+.act-item[data-acteur="samii"] .act-item__corps { border-left-color: rgba(0,217,255,.45); }
+.act-item__corps::before {
+    content: ""; position: absolute; left: -5px; top: 6px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,.22); box-shadow: 0 0 0 3px #0a0c0e;
+}
+.act-item[data-acteur="samii"] .act-item__corps::before { background: var(--act-samii); }
+.act-item[data-etat="reussi"][data-acteur="business"] .act-item__corps::before { background: rgba(255,255,255,.22); }
+.act-item[data-etat="echec"] .act-item__corps::before { background: var(--act-ko); }
+.act-item[data-etat="en_cours"] .act-item__corps::before { background: var(--act-samii); }
 
-.act-item__corps { flex: 1; min-width: 0; }
-.act-item__titre { font-size: .875rem; font-weight: 500; line-height: 1.35; }
-/* Le verbe, discret : c'est lui qui distingue « il a regardé » de « il a
-   envoyé ». Sans lui, toutes les lignes de SAMII se ressemblent. */
+.act-item__titre {
+    font-size: .83rem; font-weight: 500; line-height: 1.35; color: var(--act-txt);
+}
+/* Le verbe : petit, sans fond, sans capitales. Un badge coloré par ligne
+   aurait fait treize taches de couleur sur un écran.
+
+   ⚠️ PAS DE `text-transform: uppercase`, et c'est mesuré. Le DOM porte bien
+   « exécuté » et « repéré », mais le rendu en capitales PERDAIT LES ACCENTS
+   — « EXECUTE », « REPERE » — sur la page d'un produit francophone. Le
+   comportement dépend de la police et du moteur : c'est un pari
+   typographique, et on ne parie pas. En minuscules, la question ne se pose
+   plus, et la ligne est plus calme. */
 .act-item__verbe {
-    display: inline-block; margin-left: 7px; padding: 1px 6px; border-radius: 4px;
-    font-size: .66rem; letter-spacing: .04em; text-transform: uppercase;
-    background: rgba(255,255,255,.06); color: rgba(255,255,255,.45);
-    vertical-align: 1px;
+    font-size: .7rem; letter-spacing: .01em;
+    color: var(--act-tres-doux); font-weight: 400;
 }
-.act-item[data-acteur="samii"] .act-item__verbe { background: rgba(0,217,255,.14); color: #7fe7ff; }
-/* Un détail vient du journal, écrit par un moteur : sa longueur n'est pas
-   décidée ici. Il se replie, il ne pousse jamais la page hors de l'écran. */
-.act-item__detail { font-size: .79rem; color: rgba(255,255,255,.5); line-height: 1.45; margin-top: 2px; overflow-wrap: anywhere; }
-.act-item__erreur { color: #e5657a; }
-.act-item__etape { display: inline-block; margin-left: 6px; font-size: .72rem; color: rgba(255,255,255,.4); font-variant-numeric: tabular-nums; }
-.act-item__quand { flex: none; font-size: .72rem; color: rgba(255,255,255,.32); font-variant-numeric: tabular-nums; white-space: nowrap; margin-top: 2px; }
+.act-item[data-acteur="samii"] .act-item__verbe { color: rgba(0,217,255,.62); }
+.act-item__sep { color: rgba(255,255,255,.16); margin: 0 5px; }
+.act-item__etape { font-size: .72rem; color: var(--act-doux); font-variant-numeric: tabular-nums; margin-left: 5px; }
 
-/* ── LE GESTE SUIVANT ─────────────────────────────────────────────────
-   Seulement ceux qui ont une route derrière. « Reprendre » et « relancer »
-   n'en ont aucune : les afficher aurait donné des boutons morts sur la page
-   qui existe justement pour rendre le travail visible. */
-.act-gestes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+/* ── LE DÉTAIL, BORNÉ À DEUX LIGNES ───────────────────────────────────
+   Mesuré : un message d'erreur non borné faisait monter une ligne à
+   179 px. Deux lignes suffisent à savoir de quoi il s'agit ; le reste
+   s'ouvre d'un clic, pour qui en a besoin. */
+.act-item__detail {
+    font-size: .765rem; color: var(--act-doux); line-height: 1.45; margin-top: 2px;
+    overflow-wrap: anywhere;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.act-item__detail--ouvert { -webkit-line-clamp: unset; overflow: visible; }
+.act-item__detail--long { cursor: pointer; }
+.act-item__erreur { color: rgba(229,101,122,.88); }
+
+/* ── LES ACTIONS ──────────────────────────────────────────────────────
+   Du texte, pas des boutons : une rangée de rectangles bordés sous chaque
+   ligne ferait treize appels à l'action sur un écran, et plus aucun ne
+   serait un appel. Elles n'apparaissent que si la route existe. */
+.act-gestes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 5px; }
 .act-g {
-    padding: 4px 10px; border-radius: 7px; cursor: pointer;
-    border: 1px solid rgba(255,255,255,.12); background: transparent;
-    color: rgba(255,255,255,.66); font-size: .73rem; font-family: inherit;
-    text-decoration: none; display: inline-block;
+    padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit;
+    font-size: .745rem; color: var(--act-doux); text-decoration: none;
+    border-bottom: 1px solid rgba(255,255,255,.14); line-height: 1.5;
+    transition: color .14s, border-color .14s;
 }
-.act-g:hover { color: #fff; border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.05); }
-.act-g:focus-visible { outline: 2px solid #00d9ff; outline-offset: 2px; }
-.act-g[disabled] { opacity: .4; cursor: default; }
+.act-g:hover { color: var(--act-txt); border-bottom-color: rgba(255,255,255,.4); }
+.act-g:focus-visible { outline: 2px solid var(--act-samii); outline-offset: 3px; }
+.act-g[disabled] { opacity: .45; cursor: default; }
+.act-g--fort { color: var(--act-samii); border-bottom-color: rgba(0,217,255,.35); }
+.act-g--fort:hover { color: #7fe7ff; border-bottom-color: var(--act-samii); }
 
-.act-rien, .act-vide__p { font-size: .84rem; color: rgba(255,255,255,.4); line-height: 1.6; }
-.act-rien { padding: 16px 12px; border-radius: 10px; border: 1px dashed rgba(255,255,255,.09); }
-.act-vide { padding: 40px 6px; text-align: center; }
-.act-vide__t { font-size: .95rem; margin: 0 0 6px; }
-.act-vide__p { margin: 0 auto; max-width: 440px; }
+/* Le résultat d'une mission, une fois ouvert. */
+.act-resultat {
+    margin-top: 6px; padding: 8px 10px; border-radius: 7px;
+    background: rgba(255,255,255,.035); border: 1px solid var(--act-ligne);
+    font-size: .745rem; color: var(--act-doux); line-height: 1.5;
+    white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow: auto;
+}
 
-@media (max-width: 520px) {
-    .act-page { padding: 14px 12px 50px; }
-    /* L'heure passe sous le texte : à 320 px, une colonne de date à droite
-       vole un tiers de la largeur au texte, qui porte l'information. */
-    .act-item { flex-wrap: wrap; }
-    .act-item__quand { width: 100%; margin: 4px 0 0 17px; }
+.act-rien { padding: 18px 2px; font-size: .78rem; color: var(--act-tres-doux); }
+.act-vide { padding: 52px 6px; text-align: center; }
+.act-vide__t { font-size: .88rem; margin: 0 0 5px; color: var(--act-txt); }
+.act-vide__p { margin: 0 auto; max-width: 400px; font-size: .78rem; color: var(--act-doux); line-height: 1.6; }
+
+/* ── LES PETITS ÉCRANS ────────────────────────────────────────────────
+   Le rail rétrécit, il ne disparaît pas : c'est lui qui tient l'alignement.
+   Rien ne passe à la ligne — c'est tout l'intérêt d'avoir sorti l'heure du
+   flux du texte. */
+@media (max-width: 400px) {
+    :root { --act-rail: 40px; }
+    .act-page { padding: 12px 12px 48px; }
+    .act-item { gap: 8px; }
+    .act-item__corps { padding-left: 9px; }
+}
+@media (min-width: 900px) {
+    /* Sur un grand écran, on ne fait pas grandir la colonne : une ligne de
+       texte trop large se lit mal. On laisse respirer autour. */
+    .act-page { padding: 22px 24px 64px; }
 }
 </style>
 </head>
@@ -144,8 +254,7 @@
         </header>
 
         <section class="act-page">
-            <h1 class="act-titre"><%= L("Ce que SAMII fait pour toi") %></h1>
-            <p class="act-sous"><%= L("Ce qui se passe dans ton activité, et ce que SAMII en fait.") %></p>
+            <h1 class="act-titre"><%= L("Activité") %></h1>
 
             <% if (vide) { %>
                 <div class="act-vide">
@@ -153,71 +262,6 @@
                     <p class="act-vide__p"><%= L("Dès que SAMII travaille pour toi — une recherche, une publication, une mission — tout s'inscrit ici.") %></p>
                 </div>
             <% } else { %>
-                <%
-                // ══ UN SEUL PEINTRE ══════════════════════════════════════
-                //
-                // Le même balisage sert le bandeau épinglé et le fil. Deux
-                // rendus, c'est deux endroits où l'un des deux oublie
-                // d'échapper un texte — la leçon des blocs du chantier C.
-                //
-                // Tout est rendu par une balise ÉCHAPPÉE. Les détails viennent
-                // du journal, où des routes écrivent des messages reçus
-                // (`whatsapp.message`, `facebook.comment`) : ce sont des
-                // textes d'inconnus affichés à un marchand.
-                const ligne = function (a, epinglee) {
-                %>
-                    <li class="act-item" data-acteur="<%= a.acteur %>" data-etat="<%= a.etat %>" data-verbe="<%= a.verbe %>">
-                        <span class="act-item__pastille" aria-hidden="true"></span>
-                        <div class="act-item__corps">
-                            <div class="act-item__titre">
-                                <%= a.titre %>
-                                <% if (a.progression && a.progression.total) { %>
-                                    <span class="act-item__etape"><%= a.progression.etape %>/<%= a.progression.total %></span>
-                                <% } %>
-                                <span class="act-item__verbe"><%= L(a.verbeLisible) %></span>
-                            </div>
-                            <% if (a.detail) { %>
-                                <div class="act-item__detail"><%= a.detail %></div>
-                            <% } %>
-                            <% if (a.erreur) { %>
-                                <div class="act-item__detail act-item__erreur"><%= a.erreur %></div>
-                            <% } %>
-                            <% if (a.gestes && a.gestes.length) { %>
-                                <div class="act-gestes">
-                                    <% a.gestes.forEach(function (g) { %>
-                                        <% if (g.type === "chat" || g.type === "lien") { %>
-                                            <% if (g.type === "lien") { %>
-                                                <a class="act-g" href="<%= g.cible %>" target="_blank" rel="noopener noreferrer"><%= L(g.libelle) %></a>
-                                            <% } else { %>
-                                                <a class="act-g" href="<%= g.cible %>"><%= L(g.libelle) %></a>
-                                            <% } %>
-                                        <% } else { %>
-                                            <button class="act-g" type="button" data-geste="<%= g.type %>" data-cible="<%= g.cible %>"><%= L(g.libelle) %></button>
-                                        <% } %>
-                                    <% }); %>
-                                </div>
-                            <% } %>
-                        </div>
-                        <% if (a.quand) { %>
-                            <%# L'heure est rendue par le NAVIGATEUR, dans le fuseau du
-                                lecteur : le serveur tourne en UTC, et un marchand
-                                d'Alger lirait 09:00 pour un événement de 10:00. %>
-                            <time class="act-item__quand" datetime="<%= a.quand %>"><%= a.quand.slice(11, 16) %></time>
-                        <% } %>
-                    </li>
-                <%
-                };
-                %>
-
-                <% if (enCours.length) { %>
-                    <div class="act-epingle">
-                        <p class="act-epingle__t"><%= L("En cours") %></p>
-                        <ul class="act-liste">
-                            <% enCours.forEach(function (a) { ligne(a, true); }); %>
-                        </ul>
-                    </div>
-                <% } %>
-
                 <div class="act-filtres" role="group" aria-label="<%= L("Filtrer l'activité") %>">
                     <button class="act-f" type="button" data-filtre="tout" aria-pressed="true"><%= L("Tout") %><span class="act-f__n"><%= compteurs.tout %></span></button>
                     <button class="act-f" type="button" data-filtre="samii" aria-pressed="false"><%= L("SAMII") %><span class="act-f__n"><%= compteurs.samii %></span></button>
@@ -226,8 +270,75 @@
                     <button class="act-f" type="button" data-filtre="echec" aria-pressed="false"><%= L("Échecs") %><span class="act-f__n"><%= compteurs.echecs %></span></button>
                 </div>
 
+                <%# ══ CE QUI TOURNE MAINTENANT ════════════════════════════════
+
+                    Nom, progression, état, action. Pas de détail, pas d'heure :
+                    un travail en cours n'a pas encore d'histoire à raconter, et
+                    chaque mot de plus ici repousse le fil vers le bas.
+
+                    Ce ne sont PAS de nouveaux éléments : ce sont ceux du fil,
+                    sortis en tête. Le fil ne les repeint pas. %>
+                <% if (enCours.length) { %>
+                    <div class="act-encours">
+                        <p class="act-encours__t"><%= L("En cours") %></p>
+                        <% enCours.forEach(function (a) { %>
+                            <div class="act-actif">
+                                <span class="act-actif__nom"><%= a.titre %></span>
+                                <% if (a.progression && a.progression.total) { %>
+                                    <span class="act-jauge" aria-hidden="true"><span class="act-jauge__p" style="width:<%= Math.round(100 * a.progression.etape / a.progression.total) %>%"></span></span>
+                                    <span class="act-actif__n"><%= a.progression.etape %>/<%= a.progression.total %></span>
+                                <% } %>
+                                <% var stop = (a.gestes || []).filter(function (g) { return g.type === "annuler"; })[0]; %>
+                                <% if (stop) { %>
+                                    <button class="act-g" type="button" data-geste="annuler" data-cible="<%= stop.cible %>"><%= L(stop.libelle) %></button>
+                                <% } %>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } %>
+
+                <%# ══ LE FIL ══════════════════════════════════════════════════
+
+                    Une grille : le rail du temps à gauche, l'événement à droite.
+                    Tout est rendu par une balise ÉCHAPPÉE — les détails viennent
+                    du journal, où des routes journalisent des messages reçus
+                    (`whatsapp.message`, `facebook.comment`). Ce sont des textes
+                    d'inconnus affichés à un marchand. %>
                 <ul class="act-liste" id="act-fil">
-                    <% fil.forEach(function (a) { ligne(a, false); }); %>
+                    <% fil.forEach(function (a) { %>
+                        <li class="act-item" data-acteur="<%= a.acteur %>" data-etat="<%= a.etat %>" data-verbe="<%= a.verbe %>">
+                            <% if (a.quand) { %>
+                                <%# L'heure de repli est rendue par le serveur pour que la
+                                    page reste lisible sans JavaScript ; le navigateur la
+                                    corrige avec son propre fuseau, le seul qui compte. %>
+                                <time class="act-item__quand" datetime="<%= a.quand %>"><%= a.quand.slice(11, 16) %></time>
+                            <% } else { %>
+                                <span class="act-item__quand" aria-hidden="true">·</span>
+                            <% } %>
+                            <div class="act-item__corps">
+                                <div class="act-item__titre"><%= a.titre %><% if (a.progression && a.progression.total) { %><span class="act-item__etape"><%= a.progression.etape %>/<%= a.progression.total %></span><% } %><span class="act-item__sep">·</span><span class="act-item__verbe"><%= L(a.verbeLisible) %></span></div>
+                                <% if (a.detail) { %>
+                                    <div class="act-item__detail"><%= a.detail %></div>
+                                <% } %>
+                                <% if (a.erreur) { %>
+                                    <div class="act-item__detail act-item__erreur"><%= a.erreur %></div>
+                                <% } %>
+                                <% if (a.gestes && a.gestes.length) { %>
+                                    <div class="act-gestes">
+                                        <% a.gestes.forEach(function (g) { %>
+                                            <% if (g.type === "lien") { %>
+                                                <a class="act-g act-g--fort" href="<%= g.cible %>" target="_blank" rel="noopener noreferrer"><%= L(g.libelle) %></a>
+                                            <% } else if (g.type === "chat") { %>
+                                                <a class="act-g" href="<%= g.cible %>"><%= L(g.libelle) %></a>
+                                            <% } else { %>
+                                                <button class="act-g<%= g.type === "resultat" ? " act-g--fort" : "" %>" type="button" data-geste="<%= g.type %>" data-cible="<%= g.cible %>"><%= L(g.libelle) %></button>
+                                            <% } %>
+                                        <% }); %>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </li>
+                    <% }); %>
                 </ul>
                 <p class="act-rien" id="act-aucun" hidden><%= L("Rien dans ce filtre.") %></p>
             <% } %>
@@ -258,25 +369,52 @@
     // Le serveur tourne en UTC. Le HTML porte une heure de repli pour que la
     // page reste lisible sans JavaScript ; le navigateur la corrige avec le
     // seul fuseau qui compte : le sien.
+    //
+    // Aujourd'hui : l'heure. Plus vieux : le jour et le mois. Le rail est
+    // étroit, et « 24 sept. » y tient là où une date complète déborderait.
     document.querySelectorAll("time[datetime]").forEach(function (t) {
         var d = new Date(t.getAttribute("datetime"));
         if (isNaN(d)) return;
-        var hier = new Date(); hier.setDate(hier.getDate() - 1);
-        t.textContent = d > hier
+        var minuit = new Date(); minuit.setHours(0, 0, 0, 0);
+        t.textContent = d >= minuit
             ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
             : d.toLocaleDateString([], { day: "numeric", month: "short" });
+    });
+
+    // ── LA RANGÉE DE FILTRES DIT QUAND ELLE CONTINUE ─────────────────────
+    (function () {
+        var r = document.querySelector(".act-filtres");
+        if (!r) return;
+        var jauger = function () {
+            r.classList.toggle("act-filtres--deborde", r.scrollWidth > r.clientWidth + 1);
+        };
+        jauger();
+        window.addEventListener("resize", jauger);
+    })();
+
+    // ── LE DÉTAIL S'OUVRE SEULEMENT S'IL EST COUPÉ ───────────────────────
+    //
+    // Il est borné à deux lignes (mesuré : un message d'erreur non borné
+    // faisait monter une ligne à 179 px). Mais on ne met le curseur « on peut
+    // cliquer » QUE sur ceux qui sont réellement coupés : proposer d'ouvrir
+    // ce qui est déjà entier est une promesse vide, et elle se voit.
+    document.querySelectorAll(".act-item__detail").forEach(function (d) {
+        if (d.scrollHeight > d.clientHeight + 1) d.classList.add("act-item__detail--long");
+    });
+    document.addEventListener("click", function (e) {
+        var d = e.target.closest(".act-item__detail--long");
+        if (d) d.classList.toggle("act-item__detail--ouvert");
     });
 
     // ── LES FILTRES ──────────────────────────────────────────────────────
     //
     // Ils CACHENT, ils ne rechargent pas : tout est déjà rendu par le
-    // serveur. Une page qui repart chercher ses données à chaque clic de
-    // filtre coûte un aller-retour sur une connexion mobile, pour montrer
-    // des lignes qu'elle avait déjà.
+    // serveur. Repartir chercher les données à chaque clic coûterait un
+    // aller-retour sur une connexion mobile pour montrer des lignes qu'on a
+    // déjà.
     //
-    // Un seul filtre actif à la fois : deux filtres combinés («  SAMII ET
-    // échecs ») se lisent mal sur une rangée de puces, et personne ne sait
-    // plus ce qu'il regarde.
+    // Un seul filtre à la fois : deux filtres combinés se lisent mal sur une
+    // rangée de puces, et on ne sait plus ce qu'on regarde.
     (function () {
         var fil = document.getElementById("act-fil");
         var aucun = document.getElementById("act-aucun");
@@ -337,24 +475,26 @@
         }
 
         if (type === "resultat") {
+            var corps = b.closest(".act-item__corps");
+            var deja = corps && corps.querySelector(".act-resultat");
+            // Deuxième clic : on referme. Un bouton qui ne sait qu'ouvrir
+            // oblige à recharger la page pour retrouver la liste.
+            if (deja) { deja.remove(); return; }
             b.disabled = true;
             fetch(cible)
                 .then(function (r) { return r.json(); })
                 .then(function (j) {
                     b.disabled = false;
                     var m = j && j.mission;
-                    if (!m || !m.resultat) return;
-                    var vue = b.parentNode.parentNode.querySelector(".act-item__detail--resultat");
-                    if (!vue) {
-                        vue = document.createElement("div");
-                        vue.className = "act-item__detail act-item__detail--resultat";
-                        b.parentNode.parentNode.appendChild(vue);
-                    }
+                    if (!m || !m.resultat || !corps) return;
+                    var vue = document.createElement("div");
+                    vue.className = "act-resultat";
                     // textContent, jamais innerHTML : ce texte vient d'un
                     // modèle, donc du dehors.
                     vue.textContent = typeof m.resultat === "string"
                         ? m.resultat
                         : JSON.stringify(m.resultat, null, 1);
+                    corps.appendChild(vue);
                 })
                 .catch(function () { b.disabled = false; });
         }

@@ -88,6 +88,10 @@ const MISSIONS = require(path.join(RACINE, "services", "missionsLongues"));
             mot !== def.verbe,
             `le verbe « ${def.verbe} » s'affiche tel quel — un identifiant n'est pas un mot français`
         );
+        // ⚠️ ET IL S'AFFICHE SANS CAPITALES. Mesuré au navigateur : le DOM
+        // portait « exécuté », le rendu en capitales affichait « EXECUTE ».
+        // Perdre les accents d'un produit francophone à cause d'une règle de
+        // style est un pari sur la police ; on ne parie pas.
         for (const [nom, dico] of [["EN", require(path.join(RACINE, "services", "langue")).EN],
                                    ["AR", require(path.join(RACINE, "services", "langue")).AR]]) {
             verifier(mot in dico, `services/langue.js (${nom}) ne traduit pas le verbe « ${mot} »`);
@@ -359,10 +363,34 @@ const MISSIONS = require(path.join(RACINE, "services", "missionsLongues"));
     // Mesuré en mutation — retirer la règle qui PORTE le marqueur n'a rien
     // fait crier, parce que le même sélecteur sert aussi à colorer le verbe
     // deux lignes plus bas. Le sélecteur existait ; le marqueur, non.
+    // ⚠️ ON MESURE LE MARQUEUR, PAS LE SÉLECTEUR QUI LE PORTE.
+    //
+    // Deux fois cette garde a dû être réécrite. D'abord parce qu'elle
+    // cherchait la présence du sélecteur `[data-acteur="samii"]`, qui servait
+    // AUSSI à colorer le verbe : retirer la règle du marqueur ne faisait rien
+    // crier. Puis parce que le polish a déplacé le liseré de la ligne vers
+    // son corps — le marqueur était intact, la garde criait quand même.
+    //
+    // Elle vérifie donc la DÉCLARATION, où qu'elle vive : une règle visant
+    // les lignes de SAMII qui pose un liseré, et un point de couleur. Les
+    // deux ensemble font la signature ; l'un sans l'autre ne se voit pas.
     verifier(
-        /\.act-item\[data-acteur="samii"\]\s*\{[^}]*border-left-color/.test(vue),
+        /\[data-acteur="samii"\][^{]*\{[^}]*border-left-color/.test(vue),
         "les lignes de SAMII n'ont plus leur liseré — rien ne les distingue à l'œil nu"
     );
+    verifier(
+        /\[data-acteur="samii"\][^{]*::before\s*\{[^}]*background/.test(vue),
+        "le point qui marque les lignes de SAMII a disparu"
+    );
+    // Le verbe ne doit pas être mis en capitales : le rendu y perd les
+    // accents français. Mesuré — « exécuté » s'affichait « EXECUTE ».
+    {
+        const regle = (vue.match(/\.act-item__verbe\s*\{[^}]*\}/) || [""])[0];
+        verifier(
+            !!regle && !/text-transform:\s*uppercase/.test(regle),
+            "le verbe est rendu en capitales — les accents disparaissent selon la police"
+        );
+    }
     verifier(
         !/>\s*SAMII a /.test(vue),
         "views/activite.ejs écrit « SAMII a … » devant les lignes — le marqueur doit être visuel"
@@ -388,6 +416,30 @@ const MISSIONS = require(path.join(RACINE, "services", "missionsLongues"));
         !/innerHTML/.test(vueSansProse),
         "views/activite.ejs écrit en innerHTML — le résultat d'une mission vient d'un modèle, donc du dehors"
     );
+
+    // ── LES DEUX DÉCISIONS DE DENSITÉ, MESURÉES AU NAVIGATEUR ───────────
+    //
+    // Elles ne se voient pas dans le code : sans garde, elles reviendront
+    // en arrière à la première retouche, et personne ne saura pourquoi la
+    // page a regrossi.
+    //
+    //   • Le détail borné à DEUX lignes. Mesuré : non borné, une ligne
+    //     portant un message d'erreur montait à 179 px. Bornée, 74 px.
+    //   • La rangée de filtres sur UNE ligne, qui défile. Mesuré : en
+    //     `flex-wrap`, cinq puces passaient à deux rangées — 66 px contre
+    //     28 px, soit 38 px volés en haut de chaque écran.
+    {
+        const detail = (vue.match(/\.act-item__detail\s*\{[^}]*\}/) || [""])[0];
+        verifier(
+            /-webkit-line-clamp:\s*2/.test(detail),
+            "le détail d'un événement n'est plus borné à deux lignes — une erreur un peu longue reprendra 179 px"
+        );
+        const filtres = (vue.match(/\.act-filtres\s*\{[^}]*\}/) || [""])[0];
+        verifier(
+            /overflow-x:\s*auto/.test(filtres) && !/flex-wrap:\s*wrap/.test(filtres),
+            "la rangée de filtres repasse à la ligne — elle reprendra 38 px en haut de chaque écran"
+        );
+    }
 
     verifier(/<meta name="viewport"/.test(vue), "views/activite.ejs n'a pas de meta viewport");
     verifier(

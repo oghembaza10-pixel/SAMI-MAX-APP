@@ -46,6 +46,7 @@ const EN = {
         "What happens in your business, and what SAMII does about it.",
     "Dès que SAMII travaille pour toi — une recherche, une publication, une mission — tout s'inscrit ici.":
         "As soon as SAMII works for you — a search, a post, a mission — it all shows up here.",
+    "Activité": "Activity",
     "Filtrer l'activité": "Filter activity",
     "Rien dans ce filtre.": "Nothing under this filter.",
     "Tout": "All",
@@ -779,6 +780,7 @@ const AR = {
         "ما يجري في نشاطك، وما يفعله SAMII حياله.",
     "Dès que SAMII travaille pour toi — une recherche, une publication, une mission — tout s'inscrit ici.":
         "بمجرد أن يعمل SAMII من أجلك — بحث، منشور، مهمة — يُسجَّل كل ذلك هنا.",
+    "Activité": "النشاط",
     "Filtrer l'activité": "تصفية النشاط",
     "Rien dans ce filtre.": "لا شيء ضمن هذه التصفية.",
     "Tout": "الكل",
