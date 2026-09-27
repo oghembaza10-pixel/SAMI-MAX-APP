@@ -17,14 +17,19 @@ async function getHistorique(userId, projetId = null) {
     if (!userId) return [];
     try {
         const rows = projetId
+            // `tour_id` remonte avec le message : c'est lui qui permet au
+            // Chat de retrouver l'échange d'où un travail est parti, quand on
+            // arrive depuis le Centre d'activité (« ouvrir dans le Chat »).
+            // Sans lui, le lien ouvrirait la conversation sans savoir où
+            // regarder — une promesse à moitié tenue.
             ? await db.query(
-                `SELECT role, contenu AS message FROM samii_conversations
+                `SELECT role, contenu AS message, tour_id FROM samii_conversations
                  WHERE user_id = $1 AND projet_id = $2
                  ORDER BY created_at DESC LIMIT 150`,
                 [userId, projetId]
               )
             : await db.query(
-                `SELECT role, contenu AS message FROM samii_conversations
+                `SELECT role, contenu AS message, tour_id FROM samii_conversations
                  WHERE user_id = $1 AND projet_id IS NULL
                  ORDER BY created_at DESC LIMIT 150`,
                 [userId]
@@ -38,12 +43,22 @@ async function getHistorique(userId, projetId = null) {
 
 // Renvoie l'id de la ligne 'model' insérée (jamais celui de 'user') — sert
 // à attacher un feedback 👍/👎 à cette réponse précise (voir setFeedback).
-async function enregistrerTour(userId, message, reply, source = "web", projetId = null) {
+// `tourId` — LE FIL QUI RAMÈNE AU CHAT.
+//
+// Posé par `routes/api.js` au début du tour, et écrit à l'identique dans le
+// journal et sur la mission. C'est lui qui permet au Centre d'activité de
+// proposer « ouvrir dans le Chat », et au Chat de retrouver l'échange d'où
+// un travail est parti.
+//
+// Facultatif : les chemins qui n'en posent pas (vitrine, canaux) écrivent
+// `null`, et rien ne change pour eux.
+async function enregistrerTour(userId, message, reply, source = "web", projetId = null, tourId = null) {
     if (!userId) return null;
     try {
         const rows = await db.query(
-            `INSERT INTO samii_conversations (user_id, role, contenu, source, projet_id) VALUES ($1,'user',$2,$4,$5), ($1,'model',$3,$4,$5) RETURNING id, role`,
-            [userId, message, reply || "", source, projetId]
+            `INSERT INTO samii_conversations (user_id, role, contenu, source, projet_id, tour_id)
+             VALUES ($1,'user',$2,$4,$5,$6), ($1,'model',$3,$4,$5,$6) RETURNING id, role`,
+            [userId, message, reply || "", source, projetId, tourId]
         );
         return rows.find(r => r.role === "model")?.id || null;
     } catch (err) {

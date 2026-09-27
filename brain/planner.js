@@ -42,8 +42,113 @@ function tourDeConversation(context = {}) {
     return { ...context, tourDeConversation: true };
 }
 
+// ── LA RÉFÉRENCE D'UN GESTE — SEULEMENT QUAND ELLE EXISTE VRAIMENT ───────
+//
+// « Ne remplis pas ref_id artificiellement. Commence à l'utiliser seulement
+// lorsqu'une référence réelle existe. »
+//
+// On la prend dans le RÉSULTAT de l'outil, jamais dans ses arguments : un
+// argument est ce que le modèle a demandé, un résultat est ce qui existe
+// maintenant. Deux outils seulement en rendent une aujourd'hui — ceux qui
+// créent un objet durable — et c'est très bien ainsi : une référence
+// fabriquée rendrait faux le regroupement par dossier le jour où on le
+// construira, et personne ne saurait pourquoi.
+//
+// Le préfixe (`mission:`, `post:`) dit de quoi on parle. Sans lui, deux
+// identifiants numériques de deux tables différentes se ressembleraient.
+function args_reference(resultat) {
+    if (!resultat || typeof resultat !== "object") return null;
+    if (resultat.missionId) return `mission:${resultat.missionId}`;
+    if (resultat.postId) return `post:${resultat.postId}`;
+    return null;
+}
+
 class SamiiPlanner {
+    // ══════════════════════════════════════════════════════════════════════
+    // LE POINT UNIQUE — ET DONC LE SEUL ENDROIT OÙ TRACER
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // Mesuré au chantier F : les vingt-deux outils passaient tous par ici et
+    // n'écrivaient RIEN nulle part. Une mission, une facture, une recherche
+    // de prospects — rien n'en restait une fois la réponse partie. Le Centre
+    // d'activité ne pouvait donc pas montrer le travail de SAMII : personne
+    // ne l'écrivait.
+    //
+    // La trace est posée ICI et pas dans `routes/api.js` parce que ce n'est
+    // pas le seul chemin : WhatsApp, Telegram, Instagram et la vitrine
+    // appellent la même méthode. Tracer chez l'appelant aurait voulu dire le
+    // faire cinq fois, et en oublier un.
+    //
+    // ── TROIS RÈGLES TENUES ICI ──────────────────────────────────────────
+    //
+    // 1. LA TRACE NE DOIT JAMAIS FAIRE TOMBER LE TRAVAIL QU'ELLE TRACE.
+    //    Même règle que `journalService` et que `socialStore.tracerAgent` :
+    //    on attrape tout, on n'attend rien, le résultat de l'outil repart
+    //    intact quoi qu'il arrive à l'écriture.
+    //
+    // 2. AUCUNE FAUSSE ACTION MÉTIER. L'action écrite est toujours préfixée
+    //    `samii.` (config/traces.js). Écrire `order.paid` parce que SAMII a
+    //    regardé un paiement inventerait un fait qui n'a pas eu lieu.
+    //
+    // 3. AUCUN DOUBLON. Quatre outils ne sont pas tracés ici — leur geste
+    //    produit DÉJÀ une ligne de journal en aval, qui dit elle-même que
+    //    c'est SAMII qui a agi (`order.created.chat`, `rdv.created.chat`, et
+    //    les deux gestes Telegram qui portent leur canal dans leur nom).
+    //    En écrire une seconde ferait apparaître le même fait deux fois dans
+    //    la timeline.
     async executeFunction(name, args, context = {}) {
+        const resultat = await this.executerOutil(name, args, context);
+        this.tracerGeste(name, resultat, context);
+        return resultat;
+    }
+
+    // ── CE QU'ON ÉCRIT, ET CE QU'ON N'ÉCRIT SURTOUT PAS ──────────────────
+    //
+    // ⚠️ LES ARGUMENTS NE SONT JAMAIS RECOPIÉS DANS LE JOURNAL.
+    //
+    // La tentation était d'ajouter un bout de contexte — « a envoyé un
+    // e-mail : <objet> ». Mais `envoyer_email` porte le CORPS du message dans
+    // ses arguments, `historique_client` le nom et le téléphone d'un client,
+    // `executer_code` le programme. Les recopier ferait entrer, dans une page
+    // qu'on ouvre devant n'importe qui, des choses que personne n'a décidé d'y
+    // mettre. Le libellé du registre suffit à dire ce qui s'est passé.
+    //
+    // Ce qu'on écrit vient donc de NOUS : le libellé, et le message d'erreur
+    // quand il y en a un — nos propres phrases, déjà écrites pour être lues.
+    tracerGeste(nom, resultat, context) {
+        try {
+            const traces = require("../config/traces");
+            if (!traces.aTracer(nom)) return;
+
+            const reussi = resultat?.success !== false;
+            const action = traces.nomAction(nom, reussi);
+            if (!action) return;
+
+            const details = reussi
+                ? traces.OUTILS[nom].libelle
+                : `${traces.OUTILS[nom].libelle} — ${String(resultat?.error || "sans succès")}`;
+
+            // `refId` UNIQUEMENT quand une vraie référence existe. La
+            // consigne du chantier est explicite : ne pas remplir ref_id
+            // artificiellement. Un identifiant inventé rendrait le
+            // regroupement par dossier faux le jour où on le construira.
+            const refId = args_reference(resultat);
+
+            require("../services/journalService").log({
+                action,
+                details,
+                workspaceId: context?.workspaceId || null,
+                userId: context?.identite?.userId || context?.userId || null,
+                conversationId: context?.conversationId || null,
+                refId,
+            }).catch(() => {});
+        } catch (err) {
+            // Une trace qui échoue est une trace perdue, pas un tour perdu.
+            console.warn("⚠️ trace du geste :", err.message);
+        }
+    }
+
+    async executerOutil(name, args, context = {}) {
         switch (name) {
             case "confirmer_commande":
                 return await commerceEngine.confirmTelegramOrder({ payload: { orderId: args.orderId } });

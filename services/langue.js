@@ -42,6 +42,29 @@ const EN = {
     "Aide-moi à organiser ma journée de travail": "Help me plan my working day",
 
     // ── CHANTIER CENTRE D'ACTIVITÉ : CE QUE SAMII FAIT POUR VOUS ─────────
+    "Ce qui se passe dans ton activité, et ce que SAMII en fait.":
+        "What happens in your business, and what SAMII does about it.",
+    "Dès que SAMII travaille pour toi — une recherche, une publication, une mission — tout s'inscrit ici.":
+        "As soon as SAMII works for you — a search, a post, a mission — it all shows up here.",
+    "Filtrer l'activité": "Filter activity",
+    "Rien dans ce filtre.": "Nothing under this filter.",
+    "Tout": "All",
+    "SAMII": "SAMII",
+    "Business": "Business",
+    "Échecs": "Failed",
+    // Les sept verbes du registre (config/traces.js). Ils s'affichent sur
+    // chaque ligne : sans eux, tous les gestes de SAMII se ressemblent.
+    "observé": "watched",
+    "repéré": "spotted",
+    "analysé": "analysed",
+    "conseillé": "advised",
+    "préparé": "prepared",
+    "fait": "acted",
+    "exécuté": "ran",
+    "Arrêter": "Stop",
+    "Voir le résultat": "See the result",
+    "Voir la publication": "See the post",
+    "Ouvrir dans le Chat": "Open in Chat",
     "Centre d'activité": "Activity Center",
     "Ce que SAMII fait pour toi": "What SAMII does for you",
     "Les missions, les publications programmées, et ce qui se passe dans ton activité.":
@@ -752,6 +775,27 @@ const AR = {
     "Aide-moi à organiser ma journée de travail": "ساعدني في تنظيم يوم عملي",
 
     // ── CHANTIER CENTRE D'ACTIVITÉ : CE QUE SAMII FAIT POUR VOUS ─────────
+    "Ce qui se passe dans ton activité, et ce que SAMII en fait.":
+        "ما يجري في نشاطك، وما يفعله SAMII حياله.",
+    "Dès que SAMII travaille pour toi — une recherche, une publication, une mission — tout s'inscrit ici.":
+        "بمجرد أن يعمل SAMII من أجلك — بحث، منشور، مهمة — يُسجَّل كل ذلك هنا.",
+    "Filtrer l'activité": "تصفية النشاط",
+    "Rien dans ce filtre.": "لا شيء ضمن هذه التصفية.",
+    "Tout": "الكل",
+    "SAMII": "SAMII",
+    "Business": "النشاط",
+    "Échecs": "إخفاقات",
+    "observé": "اطّلع",
+    "repéré": "رصد",
+    "analysé": "حلّل",
+    "conseillé": "أوصى",
+    "préparé": "جهّز",
+    "fait": "نفّذ",
+    "exécuté": "شغّل",
+    "Arrêter": "إيقاف",
+    "Voir le résultat": "عرض النتيجة",
+    "Voir la publication": "عرض المنشور",
+    "Ouvrir dans le Chat": "فتح في المحادثة",
     "Centre d'activité": "مركز النشاط",
     "Ce que SAMII fait pour toi": "ما يقوم به SAMII من أجلك",
     "Les missions, les publications programmées, et ce qui se passe dans ton activité.":

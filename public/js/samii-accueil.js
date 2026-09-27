@@ -102,6 +102,10 @@
         if (texte) b.appendChild(document.createTextNode(texte));
         t.appendChild(b);
         defiler();
+        // Rendu pour que la reprise d'historique puisse marquer l'échange
+        // avec l'identifiant de son tour — le repère de « ouvrir dans le
+        // Chat ». Les autres appelants l'ignorent, et rien ne change pour eux.
+        return t;
     }
 
     // Les trois points d'attente, remplacés par la réponse dès qu'elle arrive.
@@ -1255,19 +1259,54 @@
                     historique.length = 0;
                     d.historique.forEach(function (m) {
                         var estMoi = m.role === "user";
-                        if (estMoi) { direMoi(m.message, null); }
+                        var noeud;
+                        if (estMoi) { noeud = direMoi(m.message, null); }
                         else {
                             var t = bloc("tour");
                             var p = elem("div", "pastille");
                             var b = elem("div", "bulle", m.message);
                             t.appendChild(p); t.appendChild(b);
+                            noeud = t;
+                        }
+                        // ── LE FIL QUI VIENT DU CENTRE D'ACTIVITÉ ────────
+                        //
+                        // Chaque échange porte l'identifiant de son tour. Il
+                        // ne sert à rien tant qu'on lit la conversation
+                        // normalement — et il sert de repère quand on arrive
+                        // par « ouvrir dans le Chat », depuis un travail que
+                        // SAMII a fait il y a trois jours.
+                        if (noeud && noeud.setAttribute && m.tour_id) {
+                            noeud.setAttribute("data-tour", m.tour_id);
                         }
                         historique.push({ role: estMoi ? "user" : "model", message: m.message });
                     });
                     defiler();
+                    allerAuTour();
                 })
                 .catch(function () { /* une reprise ratée laisse un écran vide, pas une erreur */ });
         }
+        // ── ARRIVER DEPUIS LE CENTRE D'ACTIVITÉ ──────────────────────────
+        //
+        // « /?tour=<id> » : on vient de cliquer « ouvrir dans le Chat » sur un
+        // travail. On remonte à l'échange qui l'a lancé et on le met en
+        // évidence un instant — assez pour le trouver des yeux, pas assez
+        // pour rester en travers de la lecture.
+        //
+        // Si le tour n'est pas dans l'historique chargé (il est plus vieux
+        // que les 150 derniers messages), il ne se passe rien de plus que
+        // d'ouvrir le Chat. Une conversation ouverte au mauvais endroit vaut
+        // mieux qu'une erreur, et le lien n'a rien promis d'autre.
+        function allerAuTour() {
+            var voulu;
+            try { voulu = new URLSearchParams(window.location.search).get("tour"); } catch (e) { return; }
+            if (!voulu) return;
+            var cible = colonne.querySelector('[data-tour="' + (window.CSS && CSS.escape ? CSS.escape(voulu) : voulu) + '"]');
+            if (!cible) return;
+            cible.scrollIntoView({ block: "center" });
+            cible.classList.add("tour--vise");
+            setTimeout(function () { cible.classList.remove("tour--vise"); }, 2600);
+        }
+
         reprendre();
 
         // Changer de projet change de conversation : le fil doit suivre,

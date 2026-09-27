@@ -2,9 +2,9 @@
 <html lang="<%= typeof lang !== "undefined" ? lang : "fr" %>" dir="<%= typeof dir !== "undefined" ? dir : "ltr" %>">
 <head>
     <meta charset="UTF-8">
-    <%# `viewport` DÈS LA PREMIÈRE VERSION. Mesuré sur les neuf vues réunies
-        au chantier de la coquille : aucune ne l'avait, et sur un écran de
-        320 px la page se croit large de 980 px. On ne recommence pas. %>
+    <%# `viewport` dès la première version. Mesuré au chantier de la coquille :
+        sur les neuf vues réunies, aucune ne l'avait, et à 320 px la page se
+        croit large de 980 px. On ne recommence pas. %>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= L("Centre d'activité") %> · SAMII</title>
     <meta name="theme-color" content="#070809">
@@ -13,80 +13,118 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<%= v("/css/qg-style.css") %>">
 <style>
-/* ══ LE CENTRE D'ACTIVITÉ ═══════════════════════════════════════════════
+/* ══ LE POSTE DE TRAVAIL ════════════════════════════════════════════════
 
-   Une LISTE, et rien d'autre. C'est le format le plus simple qui soit, et
-   c'est celui qui tient sur un téléphone sans arbitrage.
-
-   Pas de tableau : à 320 px, un tableau à quatre colonnes se lit à la
-   loupe ou déborde. Une ligne par événement, deux niveaux de texte. */
+   UNE timeline, des filtres. Pas cinq listes : mesuré sur un vrai QG,
+   cinq listes peignaient 20 lignes pour 11 éléments — 45 % de doublons.
+   Avec une seule liste, la duplication est impossible par construction. */
 
 .act-page { padding: 18px 16px 60px; max-width: 900px; }
 .act-titre { font-size: 1.15rem; font-weight: 600; margin: 0 0 3px; }
-.act-sous  { margin: 0 0 22px; font-size: .84rem; color: rgba(255,255,255,.45); line-height: 1.5; }
+.act-sous  { margin: 0 0 18px; font-size: .84rem; color: rgba(255,255,255,.45); line-height: 1.5; }
 
-.act-bloc { margin-bottom: 26px; }
-.act-bloc__titre {
-    display: flex; align-items: center; gap: 8px;
-    font-size: .74rem; letter-spacing: .08em; text-transform: uppercase;
-    color: rgba(255,255,255,.4); margin: 0 0 10px;
+/* ── LES FILTRES ──────────────────────────────────────────────────────
+   Une rangée de puces, la même grammaire que les amorces du chat. Elles
+   remplacent les titres de sections : on POSE SA QUESTION au lieu de faire
+   défiler cinq en-têtes. */
+.act-filtres {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px;
+    padding-bottom: 2px;
 }
-/* Le compteur est DANS le titre : « Échec 0 » est une information, et un
-   titre sans chiffre laisse croire qu'on n'a pas regardé. */
-.act-bloc__n {
-    font-variant-numeric: tabular-nums;
-    background: rgba(255,255,255,.07); border-radius: 999px;
-    padding: 1px 7px; font-size: .72rem; letter-spacing: 0;
+.act-f {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer;
+    border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.03);
+    color: rgba(255,255,255,.62); font-size: .78rem; line-height: 1.2;
+    font-family: inherit;
+    transition: border-color .16s, background .16s, color .16s;
+}
+.act-f:hover { color: #fff; border-color: rgba(255,255,255,.2); }
+.act-f:focus-visible { outline: 2px solid #00d9ff; outline-offset: 2px; }
+.act-f[aria-pressed="true"] {
+    background: rgba(0,217,255,.12); border-color: rgba(0,217,255,.4); color: #7fe7ff;
+}
+.act-f__n { font-variant-numeric: tabular-nums; opacity: .65; font-size: .74rem; }
+
+/* ── CE QUI TOURNE MAINTENANT, ÉPINGLÉ ────────────────────────────────
+   Ce n'est PAS une seconde liste : ce sont les mêmes éléments, sortis du
+   fil et montrés en haut. Le fil ne les repeint pas. */
+.act-epingle {
+    margin-bottom: 20px; padding: 12px; border-radius: 12px;
+    border: 1px solid rgba(0,217,255,.22); background: rgba(0,217,255,.045);
+}
+.act-epingle__t {
+    font-size: .72rem; letter-spacing: .08em; text-transform: uppercase;
+    color: #7fe7ff; margin: 0 0 9px;
 }
 
 .act-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+
+/* ── UNE LIGNE ────────────────────────────────────────────────────────
+   Le marqueur SAMII est un LISERÉ, pas le mot « SAMII » répété devant
+   chaque ligne. On lit d'un coup d'œil ce qui est à lui sans que son nom
+   occupe quarante fois la largeur de l'écran. */
 .act-item {
     display: flex; gap: 10px; align-items: flex-start;
     padding: 10px 12px; border-radius: 10px;
     background: rgba(255,255,255,.028);
     border: 1px solid rgba(255,255,255,.055);
+    border-left: 3px solid transparent;
 }
-.act-item__pastille {
-    width: 7px; height: 7px; border-radius: 50%; flex: none; margin-top: 6px;
-    background: rgba(255,255,255,.28);
+.act-item[data-acteur="samii"] {
+    border-left-color: #00d9ff;
+    background: rgba(0,217,255,.045);
 }
-.act-item--en_cours .act-item__pastille { background: #00d9ff; }
-.act-item--termine  .act-item__pastille { background: #3ddc84; }
-.act-item--echec    .act-item__pastille { background: #e5657a; }
+.act-item[hidden] { display: none; }
+
+.act-item__pastille { width: 7px; height: 7px; border-radius: 50%; flex: none; margin-top: 6px; background: rgba(255,255,255,.28); }
+.act-item[data-etat="en_cours"] .act-item__pastille { background: #00d9ff; }
+.act-item[data-etat="reussi"]   .act-item__pastille { background: #3ddc84; }
+.act-item[data-etat="echec"]    .act-item__pastille { background: #e5657a; }
 
 .act-item__corps { flex: 1; min-width: 0; }
 .act-item__titre { font-size: .875rem; font-weight: 500; line-height: 1.35; }
-/* `overflow-wrap` et pas `nowrap` : un détail vient du journal, écrit par un
-   moteur, et sa longueur n'est pas décidée ici. Il doit se replier, jamais
-   pousser la page hors de l'écran. */
-.act-item__detail {
-    font-size: .79rem; color: rgba(255,255,255,.5); line-height: 1.45;
-    margin-top: 2px; overflow-wrap: anywhere;
+/* Le verbe, discret : c'est lui qui distingue « il a regardé » de « il a
+   envoyé ». Sans lui, toutes les lignes de SAMII se ressemblent. */
+.act-item__verbe {
+    display: inline-block; margin-left: 7px; padding: 1px 6px; border-radius: 4px;
+    font-size: .66rem; letter-spacing: .04em; text-transform: uppercase;
+    background: rgba(255,255,255,.06); color: rgba(255,255,255,.45);
+    vertical-align: 1px;
 }
+.act-item[data-acteur="samii"] .act-item__verbe { background: rgba(0,217,255,.14); color: #7fe7ff; }
+/* Un détail vient du journal, écrit par un moteur : sa longueur n'est pas
+   décidée ici. Il se replie, il ne pousse jamais la page hors de l'écran. */
+.act-item__detail { font-size: .79rem; color: rgba(255,255,255,.5); line-height: 1.45; margin-top: 2px; overflow-wrap: anywhere; }
 .act-item__erreur { color: #e5657a; }
-.act-item__quand {
-    flex: none; font-size: .72rem; color: rgba(255,255,255,.32);
-    font-variant-numeric: tabular-nums; white-space: nowrap; margin-top: 2px;
-}
-.act-item__etape {
-    display: inline-block; margin-left: 6px; font-size: .72rem;
-    color: rgba(255,255,255,.4); font-variant-numeric: tabular-nums;
-}
+.act-item__etape { display: inline-block; margin-left: 6px; font-size: .72rem; color: rgba(255,255,255,.4); font-variant-numeric: tabular-nums; }
+.act-item__quand { flex: none; font-size: .72rem; color: rgba(255,255,255,.32); font-variant-numeric: tabular-nums; white-space: nowrap; margin-top: 2px; }
 
-.act-rien {
-    padding: 14px 12px; border-radius: 10px;
-    border: 1px dashed rgba(255,255,255,.09);
-    font-size: .8rem; color: rgba(255,255,255,.35);
+/* ── LE GESTE SUIVANT ─────────────────────────────────────────────────
+   Seulement ceux qui ont une route derrière. « Reprendre » et « relancer »
+   n'en ont aucune : les afficher aurait donné des boutons morts sur la page
+   qui existe justement pour rendre le travail visible. */
+.act-gestes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.act-g {
+    padding: 4px 10px; border-radius: 7px; cursor: pointer;
+    border: 1px solid rgba(255,255,255,.12); background: transparent;
+    color: rgba(255,255,255,.66); font-size: .73rem; font-family: inherit;
+    text-decoration: none; display: inline-block;
 }
+.act-g:hover { color: #fff; border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.05); }
+.act-g:focus-visible { outline: 2px solid #00d9ff; outline-offset: 2px; }
+.act-g[disabled] { opacity: .4; cursor: default; }
 
+.act-rien, .act-vide__p { font-size: .84rem; color: rgba(255,255,255,.4); line-height: 1.6; }
+.act-rien { padding: 16px 12px; border-radius: 10px; border: 1px dashed rgba(255,255,255,.09); }
 .act-vide { padding: 40px 6px; text-align: center; }
 .act-vide__t { font-size: .95rem; margin: 0 0 6px; }
-.act-vide__p { font-size: .84rem; color: rgba(255,255,255,.42); line-height: 1.6; margin: 0 auto; max-width: 440px; }
+.act-vide__p { margin: 0 auto; max-width: 440px; }
 
 @media (max-width: 520px) {
     .act-page { padding: 14px 12px 50px; }
     /* L'heure passe sous le texte : à 320 px, une colonne de date à droite
-       vole un tiers de la largeur au texte qui, lui, porte l'information. */
+       vole un tiers de la largeur au texte, qui porte l'information. */
     .act-item { flex-wrap: wrap; }
     .act-item__quand { width: 100%; margin: 4px 0 0 17px; }
 }
@@ -107,69 +145,91 @@
 
         <section class="act-page">
             <h1 class="act-titre"><%= L("Ce que SAMII fait pour toi") %></h1>
-            <p class="act-sous"><%= L("Les missions, les publications programmées, et ce qui se passe dans ton activité.") %></p>
+            <p class="act-sous"><%= L("Ce qui se passe dans ton activité, et ce que SAMII en fait.") %></p>
 
             <% if (vide) { %>
-                <%# UNE PAGE VIDE LE DIT, ET DIT POURQUOI.
-                    Cinq titres au-dessus de cinq blancs, c'est une page qui a
-                    l'air cassée. Ici on nomme ce qui viendra s'y inscrire —
-                    sans rien promettre qui n'existe pas. %>
                 <div class="act-vide">
                     <p class="act-vide__t"><%= L("Rien pour l'instant.") %></p>
-                    <p class="act-vide__p"><%= L("Dès que SAMII travaille pour toi — une mission, une publication programmée, une commande qui arrive — tout s'inscrit ici.") %></p>
+                    <p class="act-vide__p"><%= L("Dès que SAMII travaille pour toi — une recherche, une publication, une mission — tout s'inscrit ici.") %></p>
                 </div>
             <% } else { %>
                 <%
-                // Une seule boucle, une seule façon de peindre. Trois rendus
-                // pour trois sources, c'est trois endroits où l'un d'eux
-                // oublie d'échapper un texte (leçon du chantier des blocs).
-                const blocs = [
-                    { titre: L("En cours"),         items: enCours },
-                    { titre: L("Terminé"),          items: termine },
-                    { titre: L("Échec"),            items: echec },
-                    { titre: L("Travail de SAMII"), items: samii },
-                    { titre: L("Activité récente"), items: recent },
-                ];
+                // ══ UN SEUL PEINTRE ══════════════════════════════════════
+                //
+                // Le même balisage sert le bandeau épinglé et le fil. Deux
+                // rendus, c'est deux endroits où l'un des deux oublie
+                // d'échapper un texte — la leçon des blocs du chantier C.
+                //
+                // Tout est rendu par une balise ÉCHAPPÉE. Les détails viennent
+                // du journal, où des routes écrivent des messages reçus
+                // (`whatsapp.message`, `facebook.comment`) : ce sont des
+                // textes d'inconnus affichés à un marchand.
+                const ligne = function (a, epinglee) {
                 %>
-                <% blocs.forEach(function (b) { %>
-                    <div class="act-bloc">
-                        <h2 class="act-bloc__titre">
-                            <%= b.titre %><span class="act-bloc__n"><%= b.items.length %></span>
-                        </h2>
-                        <% if (!b.items.length) { %>
-                            <p class="act-rien"><%= L("Rien pour l'instant.") %></p>
-                        <% } else { %>
-                            <ul class="act-liste">
-                                <% b.items.forEach(function (a) { %>
-                                    <li class="act-item act-item--<%= a.etat %>">
-                                        <span class="act-item__pastille" aria-hidden="true"></span>
-                                        <div class="act-item__corps">
-                                            <div class="act-item__titre">
-                                                <%= a.titre %>
-                                                <% if (a.progression && a.progression.total) { %>
-                                                    <span class="act-item__etape"><%= a.progression.etape %>/<%= a.progression.total %></span>
-                                                <% } %>
-                                            </div>
-                                            <% if (a.detail) { %>
-                                                <div class="act-item__detail"><%= a.detail %></div>
+                    <li class="act-item" data-acteur="<%= a.acteur %>" data-etat="<%= a.etat %>" data-verbe="<%= a.verbe %>">
+                        <span class="act-item__pastille" aria-hidden="true"></span>
+                        <div class="act-item__corps">
+                            <div class="act-item__titre">
+                                <%= a.titre %>
+                                <% if (a.progression && a.progression.total) { %>
+                                    <span class="act-item__etape"><%= a.progression.etape %>/<%= a.progression.total %></span>
+                                <% } %>
+                                <span class="act-item__verbe"><%= L(a.verbeLisible) %></span>
+                            </div>
+                            <% if (a.detail) { %>
+                                <div class="act-item__detail"><%= a.detail %></div>
+                            <% } %>
+                            <% if (a.erreur) { %>
+                                <div class="act-item__detail act-item__erreur"><%= a.erreur %></div>
+                            <% } %>
+                            <% if (a.gestes && a.gestes.length) { %>
+                                <div class="act-gestes">
+                                    <% a.gestes.forEach(function (g) { %>
+                                        <% if (g.type === "chat" || g.type === "lien") { %>
+                                            <% if (g.type === "lien") { %>
+                                                <a class="act-g" href="<%= g.cible %>" target="_blank" rel="noopener noreferrer"><%= L(g.libelle) %></a>
+                                            <% } else { %>
+                                                <a class="act-g" href="<%= g.cible %>"><%= L(g.libelle) %></a>
                                             <% } %>
-                                            <% if (a.erreur) { %>
-                                                <div class="act-item__detail act-item__erreur"><%= a.erreur %></div>
-                                            <% } %>
-                                        </div>
-                                        <% if (a.quand) { %>
-                                            <%# L'heure est rendue par le NAVIGATEUR, dans le fuseau
-                                                de la personne. Le serveur tourne en UTC : écrire
-                                                l'heure ici afficherait « 09:00 » à un marchand
-                                                d'Alger pour un événement de 10:00. %>
-                                            <time class="act-item__quand" datetime="<%= a.quand %>"><%= a.quand.slice(11, 16) %></time>
+                                        <% } else { %>
+                                            <button class="act-g" type="button" data-geste="<%= g.type %>" data-cible="<%= g.cible %>"><%= L(g.libelle) %></button>
                                         <% } %>
-                                    </li>
-                                <% }); %>
-                            </ul>
+                                    <% }); %>
+                                </div>
+                            <% } %>
+                        </div>
+                        <% if (a.quand) { %>
+                            <%# L'heure est rendue par le NAVIGATEUR, dans le fuseau du
+                                lecteur : le serveur tourne en UTC, et un marchand
+                                d'Alger lirait 09:00 pour un événement de 10:00. %>
+                            <time class="act-item__quand" datetime="<%= a.quand %>"><%= a.quand.slice(11, 16) %></time>
                         <% } %>
+                    </li>
+                <%
+                };
+                %>
+
+                <% if (enCours.length) { %>
+                    <div class="act-epingle">
+                        <p class="act-epingle__t"><%= L("En cours") %></p>
+                        <ul class="act-liste">
+                            <% enCours.forEach(function (a) { ligne(a, true); }); %>
+                        </ul>
                     </div>
-                <% }); %>
+                <% } %>
+
+                <div class="act-filtres" role="group" aria-label="<%= L("Filtrer l'activité") %>">
+                    <button class="act-f" type="button" data-filtre="tout" aria-pressed="true"><%= L("Tout") %><span class="act-f__n"><%= compteurs.tout %></span></button>
+                    <button class="act-f" type="button" data-filtre="samii" aria-pressed="false"><%= L("SAMII") %><span class="act-f__n"><%= compteurs.samii %></span></button>
+                    <button class="act-f" type="button" data-filtre="business" aria-pressed="false"><%= L("Business") %><span class="act-f__n"><%= compteurs.business %></span></button>
+                    <button class="act-f" type="button" data-filtre="en_cours" aria-pressed="false"><%= L("En cours") %><span class="act-f__n"><%= compteurs.enCours %></span></button>
+                    <button class="act-f" type="button" data-filtre="echec" aria-pressed="false"><%= L("Échecs") %><span class="act-f__n"><%= compteurs.echecs %></span></button>
+                </div>
+
+                <ul class="act-liste" id="act-fil">
+                    <% fil.forEach(function (a) { ligne(a, false); }); %>
+                </ul>
+                <p class="act-rien" id="act-aucun" hidden><%= L("Rien dans ce filtre.") %></p>
             <% } %>
         </section>
     </main>
@@ -178,14 +238,26 @@
 <script src="/js/i18n.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
-    lucide.createIcons();
-
-    // L'HEURE DANS LE FUSEAU DE LA PERSONNE, PAS DANS CELUI DU SERVEUR.
+    // ⚠️ LES ICÔNES VIENNENT D'UN CDN, LES BOUTONS NON.
     //
-    // Le serveur tourne en UTC. Un événement de 10 h à Alger s'écrirait
-    // « 09:00 » dans le HTML. On rend donc une heure de repli côté serveur —
-    // pour que la page reste lisible sans JavaScript — et le navigateur la
-    // corrige avec le seul fuseau qui compte : le sien.
+    // Trouvé au navigateur, et ça a coûté tous les filtres : quand unpkg est
+    // injoignable — proxy d'entreprise, connexion mobile qui coupe, CDN
+    // bloqué — `lucide` n'existe pas, l'appel LÈVE, et tout ce qui suit dans
+    // le MÊME bloc <script> ne s'exécute jamais. La page s'affichait, et
+    // aucune puce de filtre ne répondait.
+    //
+    // Deux corrections, et les deux comptent : on garde l'appel derrière une
+    // condition, ET la logique de la page vit dans son propre bloc. Une page
+    // dont les boutons dépendent d'un serveur tiers est une page qui cesse de
+    // marcher quand ce serveur tousse.
+    if (window.lucide) lucide.createIcons();
+</script>
+<script>
+    // ── L'HEURE DANS LE FUSEAU DU LECTEUR ────────────────────────────────
+    //
+    // Le serveur tourne en UTC. Le HTML porte une heure de repli pour que la
+    // page reste lisible sans JavaScript ; le navigateur la corrige avec le
+    // seul fuseau qui compte : le sien.
     document.querySelectorAll("time[datetime]").forEach(function (t) {
         var d = new Date(t.getAttribute("datetime"));
         if (isNaN(d)) return;
@@ -193,6 +265,99 @@
         t.textContent = d > hier
             ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
             : d.toLocaleDateString([], { day: "numeric", month: "short" });
+    });
+
+    // ── LES FILTRES ──────────────────────────────────────────────────────
+    //
+    // Ils CACHENT, ils ne rechargent pas : tout est déjà rendu par le
+    // serveur. Une page qui repart chercher ses données à chaque clic de
+    // filtre coûte un aller-retour sur une connexion mobile, pour montrer
+    // des lignes qu'elle avait déjà.
+    //
+    // Un seul filtre actif à la fois : deux filtres combinés («  SAMII ET
+    // échecs ») se lisent mal sur une rangée de puces, et personne ne sait
+    // plus ce qu'il regarde.
+    (function () {
+        var fil = document.getElementById("act-fil");
+        var aucun = document.getElementById("act-aucun");
+        var puces = [].slice.call(document.querySelectorAll(".act-f"));
+        if (!fil || !puces.length) return;
+
+        function garder(el, filtre) {
+            if (filtre === "tout") return true;
+            if (filtre === "samii" || filtre === "business") return el.getAttribute("data-acteur") === filtre;
+            return el.getAttribute("data-etat") === filtre;
+        }
+
+        function appliquer(filtre) {
+            var visibles = 0;
+            [].forEach.call(fil.children, function (el) {
+                var ok = garder(el, filtre);
+                el.hidden = !ok;
+                if (ok) visibles++;
+            });
+            if (aucun) aucun.hidden = visibles > 0;
+            puces.forEach(function (p) {
+                p.setAttribute("aria-pressed", p.getAttribute("data-filtre") === filtre ? "true" : "false");
+            });
+        }
+
+        puces.forEach(function (p) {
+            p.addEventListener("click", function () { appliquer(p.getAttribute("data-filtre")); });
+        });
+    })();
+
+    // ── LE GESTE SUIVANT ─────────────────────────────────────────────────
+    //
+    // Seuls « arrêter » et « voir le résultat » passent par ici : les deux
+    // autres sont de vrais liens, et un lien n'a pas besoin de JavaScript.
+    //
+    // ⚠️ L'adresse vient de `data-cible`, que le SERVEUR a écrite à partir
+    // d'un identifiant qu'il a lui-même lu en base. Elle n'est jamais
+    // composée ici à partir de quoi que ce soit venu de la page.
+    document.addEventListener("click", function (e) {
+        var b = e.target.closest(".act-g[data-geste]");
+        if (!b) return;
+        var type = b.getAttribute("data-geste");
+        var cible = b.getAttribute("data-cible");
+        if (!cible) return;
+
+        if (type === "annuler") {
+            b.disabled = true;
+            fetch(cible, { method: "POST", headers: { "Content-Type": "application/json" } })
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                    // On recharge plutôt que de bricoler la ligne : l'état
+                    // vient du serveur, et lui seul sait ce qu'il a accepté.
+                    if (j && j.success) location.reload();
+                    else b.disabled = false;
+                })
+                .catch(function () { b.disabled = false; });
+            return;
+        }
+
+        if (type === "resultat") {
+            b.disabled = true;
+            fetch(cible)
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                    b.disabled = false;
+                    var m = j && j.mission;
+                    if (!m || !m.resultat) return;
+                    var vue = b.parentNode.parentNode.querySelector(".act-item__detail--resultat");
+                    if (!vue) {
+                        vue = document.createElement("div");
+                        vue.className = "act-item__detail act-item__detail--resultat";
+                        b.parentNode.parentNode.appendChild(vue);
+                    }
+                    // textContent, jamais innerHTML : ce texte vient d'un
+                    // modèle, donc du dehors.
+                    vue.textContent = typeof m.resultat === "string"
+                        ? m.resultat
+                        : JSON.stringify(m.resultat, null, 1);
+                })
+                .catch(function () { b.disabled = false; });
+        }
     });
 </script>
 <%- include("partials/barre-langue") %>

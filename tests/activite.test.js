@@ -1,30 +1,28 @@
 // ==========================================================================
-// SAMII OS — LE CENTRE D'ACTIVITÉ MONTRE-T-IL CE QUI EST, ET RIEN DE PLUS ?
+// SAMII OS — LE POSTE DE TRAVAIL DIT-IL LA VÉRITÉ, UNE SEULE FOIS ?
 // ==========================================================================
 //
-// POURQUOI CETTE SUITE EXISTE. Cette page réunit trois sources dans un seul
-// écran. Trois façons de se tromper, et elles ne se ressemblent pas :
+// POURQUOI CETTE SUITE EXISTE. Cette page réunit trois sources dans une seule
+// timeline et marque, sur chaque ligne, QUI a agi et QUEL geste c'était.
+// Quatre façons de se tromper, et aucune ne se voit à l'écran :
 //
 //   1. MONTRER CE QUI N'EST PAS À SOI. Une table sans filtre est globale par
-//      défaut ; cette fuite est revenue CINQ fois dans ce projet (le fil, les
-//      discussions, le classement, la marketplace, les vitrines). Ici elle
-//      montrerait les commandes et les paiements d'un autre marchand.
+//      défaut ; cette fuite est revenue CINQ fois dans ce projet.
 //
-//   2. RANGER AU HASARD. Un état inconnu qui tomberait dans « Terminé » ferait
-//      croire à un travail fait. Une action inconnue qui tomberait dans
-//      « Travail de SAMII » ferait porter à SAMII le crédit d'un geste que le
-//      marchand a fait lui-même.
+//   2. ATTRIBUER À SAMII UN GESTE DU MARCHAND. Le registre est fermé par
+//      défaut, et il doit le rester : une action inconnue reste côté business.
 //
-//   3. ÉCRIRE. C'est une page de LECTURE. Un `INSERT` glissé ici créerait un
-//      second journal à côté du seul qui existe — exactement ce que la
-//      consigne du chantier interdit.
+//   3. MONTRER DEUX FOIS LE MÊME FAIT. C'est le défaut que ce chantier
+//      corrige : 20 lignes peintes pour 11 éléments distincts, mesuré.
 //
-// CE QU'ON VÉRIFIE ICI : le registre, les états, le cloisonnement au niveau
-// de la requête, la dé-duplication des libellés, la vue, et la porte.
+//   4. INVENTER UN VERBE. Le verbe n'est pas choisi : il est DÉDUIT de
+//      `config/credits.js` — la table qui facture — et de la description de
+//      l'outil. Un verbe qui s'en écarterait dirait au marchand autre chose
+//      que ce qu'on lui facture.
 //
 // Ce qu'on NE peut PAS vérifier ici : qu'un marchand ne voit pas les lignes
 // d'un autre EN BASE. Une doublure n'exécute pas de SQL (règle 3 d'AGENTS.md).
-// C'est `tests/activite-reel.test.js`, contre un vrai Postgres.
+// C'est `tests/activite-reel.test.js`.
 //
 // Lancer :  npm test
 // ==========================================================================
@@ -45,25 +43,179 @@ function remplacer(chemin, exports) {
     require.cache[r] = { id: r, filename: r, loaded: true, exports };
 }
 
-// La doublure enregistre CE QU'ON DEMANDE à la base. Elle ne répond rien :
-// ce test-ci porte sur la question posée, pas sur la réponse.
 const requetes = [];
 remplacer("services/db", {
     query: async (sql, params) => { requetes.push({ sql, params }); return []; },
 });
 
 const activite = require(path.join(RACINE, "services", "activite"));
-const NIVEAUX_MISSIONS = require(path.join(RACINE, "services", "missionsLongues"));
+const TRACES = require(path.join(RACINE, "config", "traces"));
+const CREDITS = require(path.join(RACINE, "config", "credits"));
+const MISSIONS = require(path.join(RACINE, "services", "missionsLongues"));
 
 (async () => {
 
 // ══════════════════════════════════════════════════════════════════════════
-// A. SANS QG, ON NE DEMANDE RIEN — ET SURTOUT PAS « TOUT »
+// A. LE REGISTRE DES TRACES COUVRE EXACTEMENT LES OUTILS QUI EXISTENT
 // ══════════════════════════════════════════════════════════════════════════
 //
-// Le piège n'est pas de rendre une liste vide : c'est de lancer la requête
-// SANS la clause `WHERE workspace_id`, qui rendrait alors le journal de tout
-// le monde. On vérifie donc qu'AUCUNE requête ne part.
+// La liste de référence n'est pas écrite ici : c'est celle de la table qui
+// FACTURE. Un outil ajouté demain sans verbe fera crier cette garde — et il
+// le doit, sinon son geste serait invisible dans la timeline.
+{
+    const factures = new Set([...Object.keys(CREDITS.GRATUITS), ...Object.keys(CREDITS.ACTES)]);
+    verifier(factures.size > 15, `la table de facturation ne couvre que ${factures.size} outils — cette garde ne mesure plus rien`);
+
+    for (const outil of factures) {
+        verifier(
+            !!TRACES.OUTILS[outil],
+            `config/traces.js ne dit pas quel geste est « ${outil} » — il est facturé mais son travail serait invisible`
+        );
+    }
+    for (const outil of Object.keys(TRACES.OUTILS)) {
+        verifier(
+            factures.has(outil),
+            `config/traces.js déclare « ${outil} », que la facturation ne connaît pas — outil inventé ou renommé`
+        );
+    }
+    for (const [outil, def] of Object.entries(TRACES.OUTILS)) {
+        verifier(TRACES.VERBES.includes(def.verbe), `« ${outil} » porte le verbe « ${def.verbe} », hors vocabulaire`);
+        // ⚠️ CE QU'ON AFFICHE N'EST PAS L'IDENTIFIANT. Trouvé à l'écran : la
+        // page d'un produit francophone écrivait « EXECUTE » et « DETECTE »,
+        // sans accent, parce qu'elle montrait la clé du registre.
+        const mot = TRACES.libelleVerbe(def.verbe);
+        verifier(
+            mot !== def.verbe,
+            `le verbe « ${def.verbe} » s'affiche tel quel — un identifiant n'est pas un mot français`
+        );
+        for (const [nom, dico] of [["EN", require(path.join(RACINE, "services", "langue")).EN],
+                                   ["AR", require(path.join(RACINE, "services", "langue")).AR]]) {
+            verifier(mot in dico, `services/langue.js (${nom}) ne traduit pas le verbe « ${mot} »`);
+        }
+        verifier(!!String(def.libelle || "").trim(), `« ${outil} » n'a pas de libellé lisible`);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// B. UNE TRACE N'EST JAMAIS CONFONDUE AVEC UNE ACTION MÉTIER
+// ══════════════════════════════════════════════════════════════════════════
+//
+// « Un appel d'outil ne doit pas créer artificiellement une fausse action
+// métier. » Le préfixe est ce qui le garantit : écrire `order.paid` parce que
+// SAMII a regardé un paiement inventerait un fait qui n'a pas eu lieu.
+{
+    for (const outil of Object.keys(TRACES.OUTILS)) {
+        for (const reussi of [true, false]) {
+            const nom = TRACES.nomAction(outil, reussi);
+            // ⚠️ LA VALEUR EST ÉCRITE EN DUR ICI, ET C'EST VOULU.
+            //
+            // Première version : `nom.startsWith(TRACES.PREFIXE)`. Mesuré en
+            // mutation — vider `PREFIXE` n'a RIEN fait crier, parce que tout
+            // commence par la chaîne vide. La garde relisait la constante
+            // qu'elle était censée vérifier.
+            //
+            // Une garde qui contrôle une valeur ne peut pas la demander à ce
+            // qu'elle contrôle. « samii. » est donc répété ici : c'est le
+            // seul endroit du projet où une duplication est la mesure.
+            verifier(
+                nom.startsWith("samii."),
+                `l'action de « ${outil} » (« ${nom} ») ne porte pas le préfixe « samii. » — elle pourrait passer pour une action métier`
+            );
+            // Aller-retour : ce qu'on écrit doit se relire à l'identique.
+            const relu = TRACES.lireAction(nom);
+            verifier(!!relu, `« ${nom} » ne se relit pas`);
+            verifier(relu?.outil === outil, `« ${nom} » se relit comme « ${relu?.outil} »`);
+            verifier(relu?.acteur === "samii", `« ${nom} » ne se relit pas comme un geste de SAMII`);
+            verifier(
+                relu?.etat === (reussi ? "reussi" : "echec"),
+                `« ${nom} » se relit avec l'état « ${relu?.etat} »`
+            );
+        }
+    }
+    // Et le vocabulaire métier passe à travers sans être touché.
+    for (const metier of ["order.paid", "stock.low", "abonnement.expire", "", null]) {
+        verifier(
+            TRACES.lireAction(metier) === null,
+            `« ${metier} » est lu comme une trace de SAMII — le vocabulaire métier serait réécrit`
+        );
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// C. LES OUTILS NON TRACÉS LE SONT DÉJÀ EN AVAL — ET ON LE VÉRIFIE
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Quatre outils n'écrivent pas de trace : leur geste produit DÉJÀ une ligne
+// de journal, qui dit elle-même que SAMII a agi. En écrire une seconde
+// ferait apparaître le même fait deux fois.
+//
+// Une garde qui se contenterait de lire `tracer: false` ne vérifierait rien.
+// On vérifie donc que la ligne aval EXISTE VRAIMENT : que le code l'écrit, et
+// que `services/activite.js` sait la ranger du côté de SAMII.
+{
+    const sansTrace = Object.entries(TRACES.OUTILS).filter(([, d]) => d.tracer === false);
+    verifier(sansTrace.length > 0, "plus aucun outil n'est marqué « déjà tracé en aval » — cette garde ne mesure plus rien");
+
+    const sources = ["services", "engines", "routes"]
+        .flatMap((d) => fs.readdirSync(path.join(RACINE, d))
+            .filter((f) => f.endsWith(".js"))
+            .map((f) => fs.readFileSync(path.join(RACINE, d, f), "utf8")))
+        .join("\n");
+
+    for (const [outil, def] of sansTrace) {
+        const avale = String(def.pourquoi || "").split(" ")[0];
+        verifier(
+            !!avale,
+            `« ${outil} » n'est pas tracé et ne dit pas quelle ligne le dit déjà`
+        );
+        verifier(
+            sources.includes(`"${avale}"`) || sources.includes(`\`${avale}`) || !!activite.parCanal(avale),
+            `« ${outil} » compte sur la ligne « ${avale} », qu'aucun fichier n'écrit — son geste serait invisible`
+        );
+        // Et cette ligne doit être attribuée à SAMII, sinon son travail
+        // tomberait du côté business.
+        const lu = activite.lire(avale);
+        verifier(
+            lu.acteur === "samii",
+            `la ligne « ${avale} », qui remplace la trace de « ${outil} », est rangée côté ${lu.acteur}`
+        );
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// D. LE CANAL DIT QUI A AGI
+// ══════════════════════════════════════════════════════════════════════════
+{
+    for (const canal of activite.CANAUX_DE_SAMII) {
+        const lu = activite.lire(`order.created.${canal}`);
+        verifier(lu.acteur === "samii", `une commande passée par « ${canal} » est rangée côté ${lu.acteur}`);
+        verifier(lu.verbe === "agit", `une commande passée par « ${canal} » porte le verbe « ${lu.verbe} »`);
+    }
+    for (const canal of ["shopify", "boutique"]) {
+        const lu = activite.lire(`order.created.${canal}`);
+        verifier(lu.acteur === "business", `une commande venue de « ${canal} » est attribuée à SAMII`);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// E. FERMÉ PAR DÉFAUT
+// ══════════════════════════════════════════════════════════════════════════
+{
+    const inconnue = activite.lire("action.qui.nexiste.pas");
+    verifier(inconnue.acteur === "business", "une action inconnue est attribuée à SAMII");
+    verifier(inconnue.verbe === "observe", `une action inconnue reçoit le verbe « ${inconnue.verbe} »`);
+    verifier(inconnue.libelle === "action.qui.nexiste.pas", "une action inconnue reçoit un libellé inventé");
+
+    // ⚠️ L'EXEMPLE QUI A DÉCIDÉ DU MODÈLE. Le stock qui baisse appartient au
+    // business ; le fait de l'avoir REPÉRÉ appartient à SAMII.
+    const stock = activite.lire("stock.low");
+    verifier(stock.acteur === "samii", "« stock bas repéré » est rangé côté business — la détection est pourtant le travail d'un moteur");
+    verifier(stock.verbe === "detecte", `« stock.low » porte le verbe « ${stock.verbe} » au lieu de « detecte »`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// F. SANS QG, ON NE DEMANDE RIEN — ET SURTOUT PAS « TOUT »
+// ══════════════════════════════════════════════════════════════════════════
 {
     requetes.length = 0;
     const r = await activite.lireJournal(null, 40);
@@ -74,281 +226,283 @@ const NIVEAUX_MISSIONS = require(path.join(RACINE, "services", "missionsLongues"
     );
 
     requetes.length = 0;
-    const vide = await activite.pour({});
-    verifier(vide.vide === true, "activite.pour sans rien ne se déclare pas vide");
-    for (const section of ["enCours", "termine", "echec", "recent", "samii"]) {
-        verifier(Array.isArray(vide[section]) && vide[section].length === 0,
-            `activite.pour sans QG rend des éléments dans « ${section} »`);
-    }
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-// B. LA REQUÊTE DU JOURNAL PORTE LE QG, ET LE QG VIENT DE L'APPELANT
-// ══════════════════════════════════════════════════════════════════════════
-{
-    requetes.length = 0;
     await activite.lireJournal("qg-abc", 40);
-    verifier(requetes.length === 1, `lireJournal a lancé ${requetes.length} requête(s) au lieu d'une`);
     const q = requetes[0] || {};
-    verifier(/FROM\s+journal/i.test(q.sql || ""), "lireJournal ne lit pas la table journal");
     verifier(
         /WHERE\s+workspace_id\s*=\s*\$1/i.test(q.sql || ""),
         `la requête du journal n'est pas filtrée par workspace_id : ${(q.sql || "").replace(/\s+/g, " ").slice(0, 120)}`
     );
     verifier(q.params?.[0] === "qg-abc", `le QG passé au SQL est ${JSON.stringify(q.params?.[0])}`);
-    verifier(
-        /ORDER BY\s+created_at\s+DESC/i.test(q.sql || ""),
-        "la requête ne trie pas du plus récent au plus ancien"
-    );
-    // La limite est un paramètre, pas une chaîne interpolée.
-    verifier(/LIMIT\s+\$2/i.test(q.sql || ""), "la limite du journal n'est pas un paramètre SQL");
+    verifier(/ORDER BY\s+created_at\s+DESC/i.test(q.sql || ""), "la requête ne trie pas du plus récent au plus ancien");
+    verifier(/LIMIT\s+\$2/i.test(q.sql || ""), "la limite n'est pas un paramètre SQL");
+    verifier(/conversation_id/i.test(q.sql || ""), "la requête ne remonte pas le lien vers le Chat");
+
+    const vide = await activite.pour({});
+    verifier(vide.vide === true, "activite.pour sans rien ne se déclare pas vide");
+    verifier(vide.fil.length === 0, "activite.pour sans QG rend des éléments");
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// C. LA PAGE NE PEUT PAS ÉCRIRE
+// G. LA PAGE NE PEUT PAS ÉCRIRE
 // ══════════════════════════════════════════════════════════════════════════
-//
-// « Ne crée pas un deuxième système de journal. » La façon la plus sûre de
-// tenir cette consigne est de rendre l'écriture impossible : ce service ne
-// contient aucun verbe d'écriture. On lit la source — c'est le seul endroit
-// où une doublure ne suffirait pas, puisqu'un INSERT jamais appelé pendant
-// le test passerait inaperçu.
 {
     const src = fs.readFileSync(path.join(RACINE, "services", "activite.js"), "utf8");
-    // Les commentaires du fichier PARLENT d'écriture ; on ne mesure que le
-    // code. Sans ça, la garde crierait sur sa propre documentation — le piège
-    // qui a déjà coûté un faux positif au chantier des blocs.
-    const code = src
-        .replace(/\/\*[\s\S]*?\*\//g, "")
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, "")
         .split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n");
     for (const verbe of ["INSERT INTO", "UPDATE ", "DELETE FROM"]) {
-        verifier(
-            !new RegExp(verbe, "i").test(code),
-            `services/activite.js contient « ${verbe} » — cette page doit LIRE, pas écrire`
-        );
+        verifier(!new RegExp(verbe, "i").test(code), `services/activite.js contient « ${verbe} » — cette page doit LIRE`);
     }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// D. LE REGISTRE DES ACTIONS EST FERMÉ PAR DÉFAUT
+// H. LES ÉTATS SONT TRADUITS DEPUIS LEUR PROPRE REGISTRE
 // ══════════════════════════════════════════════════════════════════════════
 {
-    verifier(
-        activite.estTravailDeSamii("action.qui.nexiste.pas") === false,
-        "une action inconnue est comptée comme travail de SAMII — elle lui ferait porter le crédit d'un geste du marchand"
-    );
-    verifier(
-        activite.estTravailDeSamii("") === false && activite.estTravailDeSamii(null) === false,
-        "une action vide est comptée comme travail de SAMII"
-    );
-    // Un libellé inconnu rend l'identifiant brut : honnête, et lisible.
-    verifier(
-        activite.libelleAction("action.qui.nexiste.pas") === "action.qui.nexiste.pas",
-        "une action inconnue reçoit un libellé inventé au lieu de son identifiant"
-    );
-
-    // ── AUCUNE ACTION DU REGISTRE N'EST INVENTÉE ─────────────────────────
-    //
-    // Un registre peut mentir dans les deux sens. Celui-ci ne doit pas
-    // accorder « travail de SAMII » à une action que PERSONNE n'écrit : ce
-    // serait une promesse sans source.
-    //
-    // ⚠️ `activite.js` EST EXCLU DE LA LECTURE, ET C'EST TOUT LE SUJET.
-    //
-    // Première version : on lisait tout `services/`, y compris le fichier qui
-    // PORTE le registre. La mutation qui y ajoute une action inventée avec
-    // `samii: true` est passée SANS FAIRE CRIER : la chaîne se trouvait bien
-    // dans les sources… dans sa propre déclaration. La garde se regardait
-    // elle-même. C'est le même piège que le contrôle d'échappement qui
-    // s'attrapait sur son propre commentaire, au chantier des blocs.
-    const sources = ["services", "engines", "routes"]
-        .flatMap((d) => fs.readdirSync(path.join(RACINE, d))
-            .filter((f) => f.endsWith(".js"))
-            .filter((f) => !(d === "services" && f === "activite.js"))
-            .map((f) => fs.readFileSync(path.join(RACINE, d, f), "utf8")))
-        .join("\n");
-    for (const [id, def] of Object.entries(activite.ACTIONS)) {
-        if (!def.samii) continue;
-        verifier(
-            sources.includes(`"${id}"`),
-            `activite.ACTIONS accorde « travail de SAMII » à « ${id} », qu'aucun fichier n'écrit — promesse sans source`
-        );
-    }
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-// E. LES ÉTATS SONT TRADUITS DEPUIS LEUR PROPRE REGISTRE
-// ══════════════════════════════════════════════════════════════════════════
-//
-// `missions_longues` déclare ses états chez elle. Si l'un d'eux n'est pas
-// traduit ici, la mission disparaît de la page sans que rien ne le dise.
-{
-    const etats = NIVEAUX_MISSIONS.ETATS || [];
-    verifier(etats.length > 0, "missionsLongues n'exporte plus ses ÉTATS — cette garde ne mesure plus rien");
+    const etats = MISSIONS.ETATS || [];
+    verifier(etats.length > 0, "missionsLongues n'exporte plus ses ÉTATS");
     for (const e of etats) {
         verifier(
             Object.prototype.hasOwnProperty.call(activite.ETAT_MISSION, e),
-            `l'état de mission « ${e} » n'est traduit nulle part : la mission n'apparaîtrait dans aucune section`
+            `l'état de mission « ${e} » n'est traduit nulle part : la mission n'apparaîtrait pas`
         );
     }
-    // Les trois colonnes existent toutes, et aucune valeur ne sort du lot.
-    for (const [etat, colonne] of Object.entries(activite.ETAT_MISSION)) {
-        verifier(
-            ["en_cours", "termine", "echec"].includes(colonne),
-            `l'état « ${etat} » est rangé dans « ${colonne} », qui n'est pas une section de la page`
-        );
+    for (const [etat, col] of Object.entries(activite.ETAT_MISSION)) {
+        verifier(TRACES.ETATS.includes(col), `l'état « ${etat} » est rangé dans « ${col} », hors vocabulaire`);
     }
-    for (const [statut, colonne] of Object.entries(activite.ETAT_PUBLICATION)) {
-        verifier(
-            ["en_cours", "termine", "echec"].includes(colonne),
-            `le statut de publication « ${statut} » est rangé dans « ${colonne} »`
-        );
+    for (const [statut, col] of Object.entries(activite.ETAT_PUBLICATION)) {
+        verifier(TRACES.ETATS.includes(col), `le statut « ${statut} » est rangé dans « ${col} », hors vocabulaire`);
     }
-    // Un état inconnu ne doit se ranger nulle part — surtout pas dans
-    // « Terminé », qui ferait croire à un travail fait.
+    verifier(activite.ETAT_MISSION["etat.inconnu"] === undefined, "un état inconnu reçoit une section");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// I. LE GESTE SUIVANT N'EST PROPOSÉ QUE S'IL EXISTE
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Six gestes ont été demandés ; trois seulement ont une route. Poser les
+// trois autres aurait donné des boutons morts sur la page qui existe
+// justement pour rendre le travail visible.
+{
+    const enCours = activite.gestesDe({ source: "mission", etat: "en_cours", id: 7 });
+    verifier(enCours.some((g) => g.type === "annuler"), "une mission en cours ne peut pas être arrêtée");
     verifier(
-        activite.ETAT_MISSION["etat.inconnu"] === undefined,
-        "un état inconnu reçoit une section"
+        enCours.every((g) => g.cible && g.cible.startsWith("/api/missions/7")),
+        "le geste d'arrêt ne vise pas la bonne mission"
+    );
+
+    const finie = activite.gestesDe({ source: "mission", etat: "reussi", id: 7, resultat: true });
+    verifier(finie.some((g) => g.type === "resultat"), "une mission terminée ne montre pas son résultat");
+    verifier(!finie.some((g) => g.type === "annuler"), "une mission terminée propose de l'arrêter — elle est faite");
+
+    // Sans résultat, pas de bouton : il ouvrirait sur du vide.
+    verifier(
+        !activite.gestesDe({ source: "mission", etat: "reussi", id: 7, resultat: false }).some((g) => g.type === "resultat"),
+        "une mission sans résultat propose quand même de le voir"
+    );
+    // Sans lien, pas de bouton non plus.
+    verifier(
+        !activite.gestesDe({ source: "publication", etat: "reussi", lien: null }).some((g) => g.type === "lien"),
+        "une publication sans adresse propose quand même de l'ouvrir"
+    );
+    // Le retour au Chat n'apparaît que s'il y a un tour où retourner.
+    verifier(
+        activite.gestesDe({ source: "journal", conversationId: "t-1" }).some((g) => g.type === "chat"),
+        "un élément né d'une conversation ne propose pas d'y retourner"
+    );
+    verifier(
+        activite.gestesDe({ source: "journal", conversationId: null }).length === 0,
+        "un élément sans conversation propose quand même d'ouvrir le Chat"
+    );
+    // ⚠️ Et l'identifiant est ÉCHAPPÉ dans l'adresse : il vient de la base,
+    // mais une valeur qui traverse une URL sans être encodée finit par casser
+    // le jour où elle contient un « & ».
+    const bizarre = activite.gestesDe({ source: "journal", conversationId: "a&b c" })[0];
+    verifier(
+        bizarre && !bizarre.cible.includes("a&b c"),
+        `l'identifiant de tour part brut dans l'adresse : ${bizarre?.cible}`
     );
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// F. LE LIBELLÉ NE RÉPÈTE PAS LE DÉTAIL — ET NE LE TRONQUE JAMAIS
+// J. LE LIBELLÉ NE RÉPÈTE PAS LE DÉTAIL — ET NE LE TRONQUE JAMAIS
 // ══════════════════════════════════════════════════════════════════════════
 {
-    verifier(
-        activite.sansRedite("Commande confirmée sur Telegram", "Commande confirmée sur Telegram : CMD-119") === "CMD-119",
-        "la répétition du libellé n'est pas retirée du détail"
-    );
-    verifier(
-        activite.sansRedite("Commande reçue", "Commande reçue — CMD-7") === "CMD-7",
-        "le tiret cadratin n'est pas reconnu comme séparateur"
-    );
-    // ⚠️ LE CAS QUI COMPTE LE PLUS : quand la phrase ne commence PAS par le
-    // libellé, elle doit passer INTACTE. Une troncature approximative ferait
-    // disparaître l'information qu'on est venu lire.
+    verifier(activite.sansRedite("Commande reçue", "Commande reçue — CMD-7") === "CMD-7", "la répétition n'est pas retirée");
     const intact = "Commande payée : CMD-118";
     verifier(
         activite.sansRedite("Paiement reçu", intact) === intact,
         `une phrase qui ne commence pas par le libellé a été modifiée : ${JSON.stringify(activite.sansRedite("Paiement reçu", intact))}`
     );
-    verifier(
-        activite.sansRedite("Stock bas repéré", "Stock bas : Chemise bleue") === "Stock bas : Chemise bleue",
-        "un libellé qui ressemble au détail sans l'égaler a quand même coupé"
-    );
-    // Rien après le libellé : pas de détail, plutôt que le libellé deux fois.
-    verifier(
-        activite.sansRedite("Publication automatique", "Publication automatique") === "",
-        "un détail identique au libellé est affiché deux fois"
-    );
+    verifier(activite.sansRedite("Publication", "Publication") === "", "un détail identique au libellé est affiché deux fois");
     verifier(activite.sansRedite("", "n'importe quoi") === "n'importe quoi", "sansRedite mange le détail sans libellé");
-    verifier(activite.sansRedite("Titre", "") === "", "sansRedite invente un détail");
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// G. LA VUE
+// K. LA VUE
 // ══════════════════════════════════════════════════════════════════════════
 {
     const vue = fs.readFileSync(path.join(RACINE, "views", "activite.ejs"), "utf8");
 
-    for (const titre of ["En cours", "Terminé", "Échec", "Activité récente", "Travail de SAMII"]) {
-        verifier(vue.includes(`L("${titre}")`), `views/activite.ejs n'affiche plus la section « ${titre} »`);
+    // ── Les cinq filtres demandés ────────────────────────────────────────
+    for (const f of ["tout", "samii", "business", "en_cours", "echec"]) {
+        verifier(vue.includes(`data-filtre="${f}"`), `views/activite.ejs n'offre plus le filtre « ${f} »`);
     }
+    // ── UNE seule liste : c'est ce qui rend la duplication impossible ────
+    verifier(
+        (vue.match(/id="act-fil"/g) || []).length === 1,
+        "views/activite.ejs ne rend plus exactement une liste — la duplication redevient possible"
+    );
+    // ── Le marqueur SAMII est visuel, pas le mot répété ──────────────────
+    // ⚠️ ON VÉRIFIE LA DÉCLARATION, PAS LE SÉLECTEUR.
+    //
+    // Première version : la présence de `.act-item[data-acteur="samii"]`.
+    // Mesuré en mutation — retirer la règle qui PORTE le marqueur n'a rien
+    // fait crier, parce que le même sélecteur sert aussi à colorer le verbe
+    // deux lignes plus bas. Le sélecteur existait ; le marqueur, non.
+    verifier(
+        /\.act-item\[data-acteur="samii"\]\s*\{[^}]*border-left-color/.test(vue),
+        "les lignes de SAMII n'ont plus leur liseré — rien ne les distingue à l'œil nu"
+    );
+    verifier(
+        !/>\s*SAMII a /.test(vue),
+        "views/activite.ejs écrit « SAMII a … » devant les lignes — le marqueur doit être visuel"
+    );
 
     // ── TOUT EST ÉCHAPPÉ ─────────────────────────────────────────────────
     //
-    // Les détails viennent du journal, écrit par des moteurs — mais AUSSI
-    // par des routes qui journalisent des messages reçus (`whatsapp.message`,
-    // `facebook.comment`). Ce sont des textes d'inconnus affichés à un
-    // marchand : un seul `<%-` ici et la page exécute ce qu'on lui envoie.
+    // Les détails viennent du journal, où des routes journalisent des messages
+    // reçus (`whatsapp.message`, `facebook.comment`). Ce sont des textes
+    // d'inconnus affichés à un marchand : un seul `<%-` et la page exécute ce
+    // qu'on lui envoie.
     const sansCommentaires = vue.replace(/<%#[\s\S]*?%>/g, "");
-    const brutes = (sansCommentaires.match(/<%-[^%]*%>/g) || [])
-        .filter((b) => !/include\(/.test(b));
+    const brutes = (sansCommentaires.match(/<%-[^%]*%>/g) || []).filter((b) => !/include\(/.test(b));
+    verifier(brutes.length === 0, `views/activite.ejs rend ${brutes.length} expression(s) NON échappée(s) : ${brutes.join(" ")}`);
+    // ⚠️ ON MESURE LE CODE, PAS LA PROSE. Première version : la garde criait
+    // sur le COMMENTAIRE qui explique justement pourquoi on n'écrit pas en
+    // innerHTML. C'est le piège qu'AGENTS.md dit être arrivé quatre fois —
+    // un contrôle qui s'attrape sur sa propre documentation.
+    const vueSansProse = sansCommentaires
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n");
     verifier(
-        brutes.length === 0,
-        `views/activite.ejs rend ${brutes.length} expression(s) NON échappée(s) hors include : ${brutes.join(" ")}`
+        !/innerHTML/.test(vueSansProse),
+        "views/activite.ejs écrit en innerHTML — le résultat d'une mission vient d'un modèle, donc du dehors"
     );
 
-    verifier(
-        /<meta name="viewport"/.test(vue),
-        "views/activite.ejs n'a pas de meta viewport — la page se croirait large de 980 px sur un téléphone"
-    );
+    verifier(/<meta name="viewport"/.test(vue), "views/activite.ejs n'a pas de meta viewport");
     verifier(
         /include\("partials\/nav",\s*\{\s*variante:\s*"qg",\s*actif:\s*"activite"\s*\}\)/.test(vue),
-        "views/activite.ejs ne marque pas « activite » comme entrée active dans la colonne"
+        "views/activite.ejs ne marque pas « activite » comme entrée active"
     );
-    // L'heure est corrigée par le navigateur : le serveur tourne en UTC.
+    verifier(/toLocaleTimeString/.test(vue), "views/activite.ejs n'ajuste pas l'heure au fuseau du lecteur");
+
+    // ── ⚠️ LES BOUTONS NE DÉPENDENT PAS D'UN CDN ────────────────────────
+    //
+    // Trouvé au navigateur, et ça avait tué TOUS les filtres : `lucide` vient
+    // d'unpkg. Injoignable, l'appel lève, et tout ce qui suit dans le même
+    // bloc <script> ne s'exécute jamais. La page s'affichait et aucune puce
+    // ne répondait.
     verifier(
-        /toLocaleTimeString/.test(vue),
-        "views/activite.ejs n'ajuste pas l'heure au fuseau du lecteur — un marchand d'Alger lirait 09:00 pour 10:00"
+        /if \(window\.lucide\) lucide\.createIcons\(\)/.test(vue),
+        "views/activite.ejs appelle lucide sans garde — un CDN injoignable emporterait toute la logique de la page"
     );
+    {
+        const bloc = vue.split("<script>").find((b) => b.includes("lucide.createIcons"));
+        verifier(
+            bloc !== undefined && !/act-f|data-filtre|appliquer\(/.test(bloc),
+            "la logique des filtres partage son bloc <script> avec l'appel au CDN — une panne du CDN la tuerait"
+        );
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// G bis. L'INDEX EST DÉCLARÉ DANS LE SCHÉMA
+// K bis. L'INDEX EST DÉCLARÉ DANS LE SCHÉMA
 // ══════════════════════════════════════════════════════════════════════════
 //
-// ⚠️ POURQUOI ICI ET PAS SEULEMENT CONTRE LA BASE.
+// ⚠️ DEUX MOITIÉS, ET IL FAUT LES DEUX.
 //
-// `tests/activite-reel.test.js` vérifie que le plan de la requête utilise
-// bien `idx_journal_ws`. C'est la bonne question… et elle ne voit pas la
-// mauvaise réponse : mesuré en mutation, retirer la ligne de
-// `services/schema.js` n'a RIEN fait crier — l'index existait déjà dans la
-// base d'essai, créé par une exécution précédente. La garde prouvait qu'un
-// index présent sert la requête, pas qu'il serait créé un jour.
+// `activite-reel.test.js` vérifie que le PLAN de la requête utilise
+// `idx_journal_ws`. Mesuré en mutation : retirer la ligne de
+// `services/schema.js` ne faisait rien crier — l'index existait déjà dans la
+// base d'essai, créé par une exécution précédente. Cette garde prouvait qu'un
+// index présent sert la requête, jamais qu'il serait créé.
 //
-// Les deux moitiés sont donc nécessaires : ici, qu'il sera créé sur une base
-// neuve ; là-bas, qu'il sert réellement la requête de la page.
+// Ici : qu'il sera créé sur une base neuve. Là-bas : qu'il sert la requête.
 {
     const schema = fs.readFileSync(path.join(RACINE, "services", "schema.js"), "utf8");
     verifier(
         /CREATE INDEX IF NOT EXISTS\s+idx_journal_ws\s+ON\s+journal\s*\(\s*workspace_id\s*,\s*created_at DESC\s*\)/i.test(schema),
-        "services/schema.js ne crée plus idx_journal_ws — sur une base neuve, la page balaierait tout le journal à chaque ouverture"
+        "services/schema.js ne crée plus idx_journal_ws — sur une base neuve, la page balaierait tout le journal"
     );
+    // Les trois colonnes du fil, même raison : une base neuve doit les avoir.
+    for (const [table, colonne] of [["journal", "conversation_id"],
+                                    ["missions_longues", "conversation_id"],
+                                    ["samii_conversations", "tour_id"]]) {
+        verifier(
+            new RegExp(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${colonne}`, "i").test(schema),
+            `services/schema.js ne crée plus ${table}.${colonne} — le lien avec le Chat serait mort sur une base neuve`
+        );
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// H. LA PORTE — LA PAGE EST CHEZ NOUS, ET FERMÉE CHEZ UNE PARTENAIRE
+// L. LA PORTE — CHEZ NOUS, FERMÉE CHEZ UNE PARTENAIRE
 // ══════════════════════════════════════════════════════════════════════════
-//
-// Règle 2 du projet : une route neuve est fermée par défaut chez les
-// partenaires, et il faut la déclarer pour l'ouvrir. On mesure les deux
-// sens — parce qu'une garde qui ne vérifie que « fermé chez elle » resterait
-// verte si la page disparaissait aussi de chez nous.
 {
     const modules = require(path.join(RACINE, "config", "modules-qg"));
     const communautes = require(path.join(RACINE, "config", "communautes"));
-
     const maison = communautes.get("samii");
     const partenaire = communautes.get("coindudigital");
-    verifier(!!maison && !!partenaire, "les deux communautés de référence n'existent plus");
 
-    const idsMaison = modules.autorises(maison).map((m) => m.id);
-    const idsPartenaire = modules.autorises(partenaire).map((m) => m.id);
-
-    verifier(idsMaison.includes("activite"), "le Centre d'activité a disparu de la navigation de la maison");
+    verifier(modules.autorises(maison).some((m) => m.id === "activite"), "le Centre d'activité a disparu de chez nous");
     verifier(
-        !idsPartenaire.includes("activite"),
-        "le Centre d'activité apparaît dans la navigation d'une partenaire — ce sont nos données et nos modules"
+        !modules.autorises(partenaire).some((m) => m.id === "activite"),
+        "le Centre d'activité apparaît chez une partenaire — ce sont nos données"
     );
-    verifier(
-        modules.chemineAutorise("/activite", modules.cheminsAutorises(maison)),
-        "/activite est fermé chez nous"
-    );
+    verifier(modules.chemineAutorise("/activite", modules.cheminsAutorises(maison)), "/activite est fermé chez nous");
     verifier(
         !modules.chemineAutorise("/activite", modules.cheminsAutorises(partenaire)),
-        "/activite est OUVERT chez une partenaire — ses membres verraient nos pages en tapant l'adresse"
+        "/activite est OUVERT chez une partenaire"
     );
-
-    // Le rang décide de la place dans la colonne : « core » et juste après le
-    // chat. C'est un choix de produit, et il se perd silencieusement si
-    // quelqu'un réordonne la liste.
-    const entree = modules.MODULES.find((m) => m.id === "activite");
-    verifier(entree?.rang === "core", `le Centre d'activité est au rang « ${entree?.rang} » au lieu de « core »`);
     const core = modules.MODULES.filter((m) => m.rang === "core").map((m) => m.id);
+    verifier(core.indexOf("activite") === 1, `le Centre d'activité est en position ${core.indexOf("activite") + 1} des entrées « core »`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// M. LE FIL DU TOUR EST POSÉ EN CODE, JAMAIS LU DEPUIS LA PAGE
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Un identifiant de tour accepté depuis le corps de la requête permettrait de
+// coudre ses propres lignes au fil de quelqu'un d'autre. C'est la règle 5 du
+// projet, qui a coûté quatre pannes ici.
+{
+    const api = fs.readFileSync(path.join(RACINE, "routes", "api.js"), "utf8");
     verifier(
-        core.indexOf("activite") === 1,
-        `le Centre d'activité est en position ${core.indexOf("activite") + 1} des entrées « core » — il doit venir juste après le chat`
+        /const tourId = require\("crypto"\)\.randomUUID\(\)/.test(api),
+        "routes/api.js ne génère plus l'identifiant du tour"
+    );
+    verifier(
+        !/tourId\s*=\s*req\.(body|query|params)/.test(api),
+        "routes/api.js accepte un identifiant de tour venu de la page"
+    );
+    const ml = fs.readFileSync(path.join(RACINE, "services", "missionsLongues.js"), "utf8");
+    verifier(
+        /context\.conversationId/.test(ml),
+        "missionsLongues ne garde plus le tour d'où la mission a été lancée"
+    );
+    const planner = fs.readFileSync(path.join(RACINE, "brain", "planner.js"), "utf8");
+    verifier(
+        /conversationId: context\?\.conversationId/.test(planner),
+        "la trace d'un outil ne porte plus le tour dont elle vient"
+    );
+    // ⚠️ Les arguments d'un outil ne sont JAMAIS recopiés dans le journal :
+    // `envoyer_email` porte le corps du message, `historique_client` le nom et
+    // le téléphone d'un client, `executer_code` le programme.
+    const trace = planner.split("tracerGeste(nom, resultat, context)")[1] || "";
+    const corps = trace.split("\n    async executerOutil")[0];
+    verifier(
+        !/\bargs\b/.test(corps),
+        "la trace d'un outil recopie ses arguments — le corps d'un e-mail entrerait dans une page qu'on ouvre devant n'importe qui"
     );
 }
 
@@ -358,7 +512,7 @@ if (echecs.length) {
     for (const e of echecs) console.error("   • " + e);
     process.exit(1);
 }
-console.log(`✅ activité : ${verifs} vérifications passées`);
+console.log(`✅ activité : ${verifs} vérifications passées (${Object.keys(TRACES.OUTILS).length} outils au registre)`);
 })().catch((err) => {
     console.error("❌ activité : la suite a levé —", err.message);
     process.exit(1);

@@ -901,6 +901,17 @@ html[dir="rtl"] .envoyer { transform: scaleX(-1); }
     text-align: left;
 }
 
+/* ══ ARRIVER DEPUIS LE CENTRE D'ACTIVITÉ ══════════════════════════════════
+   « Ouvrir dans le Chat » remonte à l'échange qui a lancé un travail. Le
+   repère s'allume deux secondes et demie puis s'efface : assez pour le
+   trouver des yeux, pas assez pour rester en travers de la lecture. */
+.tour--vise { animation: viser 2.6s ease-out 1; border-radius: 12px; }
+@keyframes viser {
+    0%, 70% { background: rgba(0,217,255,.11); box-shadow: 0 0 0 6px rgba(0,217,255,.07); }
+    100%    { background: transparent; box-shadow: 0 0 0 6px transparent; }
+}
+@media (prefers-reduced-motion: reduce) { .tour--vise { animation: none; background: rgba(0,217,255,.11); } }
+
 /* ══ LE RETOUR SUR UNE RÉPONSE ════════════════════════════════════════════
    Deux pouces, discrets, sous la réponse. Assez visibles pour qu'on les
    trouve, assez effacés pour ne pas transformer chaque réponse en sondage.

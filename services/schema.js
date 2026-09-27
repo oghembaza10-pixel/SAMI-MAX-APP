@@ -314,6 +314,38 @@ const BLOCS = [
             // puis les trie toutes quand même.
             `CREATE INDEX IF NOT EXISTS idx_journal_ws ON journal (workspace_id, created_at DESC)`,
 
+            // ── LE FIL QUI RELIE LE CHAT AU TRAVAIL ──────────────────────
+            //
+            // « Chat → mission → activité → résultat → retour au Chat. »
+            //
+            // Ce retour n'existait pas : `missionsLongues.creer()` recevait le
+            // contexte du tour et n'en gardait que le niveau, le palier et
+            // l'audience. Une mission lancée depuis une conversation ne savait
+            // plus de laquelle elle venait, et le Centre d'activité ne pouvait
+            // donc pas proposer « ouvrir dans le Chat ».
+            //
+            // ── POURQUOI TROIS COLONNES ET PAS UNE ───────────────────────
+            //
+            // Le lien doit tenir aux TROIS bouts, sinon il se casse au premier
+            // maillon manquant : la conversation doit savoir quel tour elle
+            // porte, le journal doit savoir de quel tour vient sa ligne, et la
+            // mission doit savoir d'où elle a été lancée. Une seule des trois
+            // permettrait d'aller dans un sens et pas dans l'autre.
+            //
+            // La valeur est la MÊME partout : l'identifiant du tour, posé une
+            // fois par `routes/api.js` au début du tour et transporté dans le
+            // contexte. Pas de jointure à inventer, pas de table de liaison.
+            //
+            // Additif et rejouable, comme les treize colonnes de `workspaces`
+            // au-dessus : `ADD COLUMN IF NOT EXISTS` sur une base qui tourne,
+            // aucune donnée touchée, aucune colonne renommée.
+            `ALTER TABLE journal ADD COLUMN IF NOT EXISTS conversation_id TEXT`,
+            `ALTER TABLE missions_longues ADD COLUMN IF NOT EXISTS conversation_id TEXT`,
+            `ALTER TABLE samii_conversations ADD COLUMN IF NOT EXISTS tour_id TEXT`,
+            // Retrouver toutes les traces d'un tour — c'est la requête du
+            // bouton « ouvrir dans le Chat », dans l'autre sens.
+            `CREATE INDEX IF NOT EXISTS idx_journal_tour ON journal (conversation_id) WHERE conversation_id IS NOT NULL`,
+
             // ── LES COLONNES QUE PERSONNE N'AJOUTAIT ─────────────────────
             //
             // TREIZE COLONNES DE `workspaces` QUE LE CODE LIT ET QU'AUCUN

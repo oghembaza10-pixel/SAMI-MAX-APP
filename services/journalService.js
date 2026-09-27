@@ -80,12 +80,21 @@ function log(entree, ...positionnels) {
 
 // action, details, workspaceId : toujours écrits. montant/refId/userId :
 // optionnels, écrits seulement si les colonnes existent (repli auto sinon).
-async function ecrire({ action, details = "", workspaceId = null, userId = null, montant = null, refId = null }) {
+// `conversationId` — LE TOUR DE CHAT D'OÙ VIENT CETTE LIGNE.
+//
+// Posé au chantier F ter, pour que le Centre d'activité puisse proposer
+// « ouvrir dans le Chat ». Facultatif, et il le restera : la très grande
+// majorité des lignes du journal ne viennent d'aucune conversation (une
+// commande Shopify, un renouvellement d'abonnement). Une ligne sans tour est
+// normale, pas incomplète.
+async function ecrire({ action, details = "", workspaceId = null, userId = null,
+                        montant = null, refId = null, conversationId = null }) {
     if (colonnesEtenduesDisponibles) {
         try {
             await db.query(
-                `INSERT INTO journal (action, details, workspace_id, user_id, montant, ref_id) VALUES ($1, $2, $3, $4, $5, $6)`,
-                [action, details, workspaceId, userId, montant, refId]
+                `INSERT INTO journal (action, details, workspace_id, user_id, montant, ref_id, conversation_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [action, details, workspaceId, userId, montant, refId, conversationId]
             );
             return true;
         } catch (err) {

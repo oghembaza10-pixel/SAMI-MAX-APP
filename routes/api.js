@@ -205,9 +205,29 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
             ["client", "commande", "page", "lastAction"],
             { source: "envoyé par la page" },
         );
+        // ── L'IDENTIFIANT DE CE TOUR ─────────────────────────────────────
+        //
+        // Posé ICI, avant que quoi que ce soit ne parte, et transporté par le
+        // contexte. C'est le fil qui relie, plus tard :
+        //
+        //     le Chat  →  la mission  →  l'activité  →  le résultat  →  le Chat
+        //
+        // Il ne peut pas être `messageId` : celui-là n'existe qu'APRÈS la
+        // réponse (`enregistrerTour` plus bas), alors que les outils, eux,
+        // s'exécutent AVANT. Un identifiant qui n'existe pas encore ne relie
+        // rien. On en pose donc un au début, et les trois bouts écrivent la
+        // MÊME valeur : `journal.conversation_id`,
+        // `missions_longues.conversation_id`, `samii_conversations.tour_id`.
+        //
+        // Aléatoire et jamais deviné depuis le corps de la requête : un
+        // identifiant de tour accepté depuis la page permettrait de coudre ses
+        // propres lignes au fil de quelqu'un d'autre.
+        const tourId = require("crypto").randomUUID();
+
         const context = {
             user: { lang: req.body.lang || "" },
             workspaceId: req.session?.workspaceId || req.body.workspaceId || "",
+            conversationId: tourId,
             ...duNavigateur,
             grade: grade.actuel,
             prenom: grade.prenom,
@@ -327,7 +347,7 @@ async function conduireLeTour(req, res, onMorceau = null, onReprise = null) {
 
         let messageId = null;
         if (userId) {
-            messageId = await samiiMemoire.enregistrerTour(userId, pieceLabel + goal, result.reply, "web", projetId);
+            messageId = await samiiMemoire.enregistrerTour(userId, pieceLabel + goal, result.reply, "web", projetId, tourId);
             if (projetId) await projetsService.toucher(projetId);
             // Fire-and-forget : n'attend jamais la réponse, ne casse jamais
             // le chat si ça échoue (voir memoireUtilisateur.js).

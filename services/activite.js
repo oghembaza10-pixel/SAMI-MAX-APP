@@ -1,141 +1,202 @@
 // ==========================================================================
-// SAMII OS — CE QUE SAMII FAIT POUR VOUS, ET QUI NE SE VOYAIT NULLE PART
+// SAMII OS — LE POSTE DE TRAVAIL : UNE SEULE TIMELINE, DEUX AXES
 // ==========================================================================
 //
-// ── LE PROBLÈME, EN UNE PHRASE ───────────────────────────────────────────
+// ── CE QUI A ÉTÉ MESURÉ, ET POURQUOI LE MODÈLE A CHANGÉ ──────────────────
 //
-// Demander un travail long à SAMII était un acte SANS ÉCHO. La mission part,
-// tourne, se reprend après une panne, se termine — et personne ne le voit
-// jamais. C'est la différence entre un assistant et un employé : un employé
-// rend compte.
+// La première version rendait cinq listes. Mesuré sur un vrai QG : 20 lignes
+// peintes pour 11 éléments distincts — 45 % de doublons. La cause n'était pas
+// un filtre mal réglé : les cinq sections mélangeaient DEUX QUESTIONS.
 //
-// Mesuré : `/api/missions` existe depuis des mois, avec ses trois routes et
-// ses garde-fous. AUCUNE page ne l'appelle. Zéro consommateur dans `public/`
-// et dans `views/`. L'API a été écrite, testée, et jamais branchée.
+//     « Activité récente » / « Travail de SAMII »  →  QUI a agi
+//     « En cours » / « Terminé » / « Échec »       →  OÙ EN EST-CE
 //
-// ── CE FICHIER NE CRÉE AUCUN JOURNAL ─────────────────────────────────────
+// Mises au même niveau, elles montraient forcément deux fois le même fait.
 //
-// C'est la consigne, et c'est aussi la bonne architecture : il LIT trois
-// sources qui existent déjà et qui sont écrites ailleurs. Rien ici n'insère,
-// ne met à jour, ne supprime. Une page de lecture.
+// ── LE MODÈLE ────────────────────────────────────────────────────────────
 //
-//   `journal`              la source principale — écrite par 20 fichiers via
-//                          l'unique `services/journalService.js`
-//   `missions_longues`     les missions de SAMII, lues par missionsLongues
-//   `social_publications`  les publications programmées, lues par socialStore
+// UNE seule liste chronologique. La duplication devient impossible par
+// construction : il n'y a qu'un endroit où une ligne peut se trouver.
+// Les questions deviennent des FILTRES, pas des sections.
 //
-// ── LE CLOISONNEMENT, ET POURQUOI IL EST PLUS STRICT QU'AILLEURS ─────────
+//     ACTEUR   business | samii
+//     VERBE    observe · detecte · analyse · recommande · prepare · agit · execute
+//     ÉTAT     en_cours | reussi | echec
 //
-// Tout part de `workspace_id`, pris DANS LA SESSION et nulle part ailleurs.
-// La règle 5 du projet — « l'identité vient de la session, jamais du corps de
-// la requête » — a coûté quatre pannes ici ; on ne la rejoue pas.
+// Trois axes, pas un booléen. « Il a regardé l'agenda » et « il a envoyé une
+// facture » ne sont pas le même geste, et une seule des deux coûte de
+// l'argent.
 //
-// `journal` n'a pas de colonne `communaute`. Ce n'est pas un trou : un QG
-// appartient à UNE communauté, donc filtrer par QG est plus fin que filtrer
-// par communauté, pas plus lâche. Deux marchands de communautés différentes
-// ont forcément deux QG différents.
+// ── L'EXEMPLE QUI A DÉCIDÉ DU MODÈLE ─────────────────────────────────────
 //
-// ── UNE SOURCE EN PANNE NE DOIT PAS EMPORTER LA PAGE ─────────────────────
+// « stock.low peut être un événement business, mais la détection, l'analyse
+// et la recommandation de SAMII doivent pouvoir apparaître comme travail de
+// SAMII. »
 //
-// Les trois lectures sont indépendantes et chacune retombe sur une liste
-// vide. Une table indisponible retire une section ; elle ne retire pas la
-// page. C'est le même choix que `espacesDe()` dans index.js : on perd la
-// liste, pas la conversation.
+// Ce ne sont pas deux fois la même ligne, ce sont deux faits différents :
+// le stock qui baisse appartient au business, LE FAIT DE L'AVOIR REPÉRÉ
+// appartient à SAMII. Ici, `stock.low` porte donc `acteur: samii,
+// verbe: detecte` — c'est un moteur qui l'a vu, personne ne le lui a demandé.
+// Le jour où une analyse et une recommandation suivront, elles seront deux
+// lignes de plus, reliées par la même `ref_id`. Rien à dédupliquer : il n'y a
+// jamais eu de doublon, seulement deux listes qui montraient la même ligne.
+//
+// ── TROIS SOURCES, AUCUN SECOND JOURNAL ──────────────────────────────────
+//
+//   `journal`              écrit par 20 fichiers via l'unique journalService
+//   `missions_longues`     lu par missionsLongues.lister(), qui filtre déjà
+//   `social_publications`  lu par socialStore.listerPublications()
+//
+// Rien ici n'insère, ne met à jour, ne supprime.
+//
+// ── LE CLOISONNEMENT ─────────────────────────────────────────────────────
+//
+// Tout part de `workspace_id`, pris DANS LA SESSION. Sans QG, AUCUNE requête
+// ne part : le piège n'est pas de rendre une liste vide, c'est de lancer la
+// requête sans sa clause `WHERE`, qui rendrait le journal de tout le monde.
+// Cette fuite est revenue cinq fois dans ce projet.
 // ==========================================================================
 
 const db = require("./db");
+const TRACES = require("../config/traces");
 
 // ══════════════════════════════════════════════════════════════════════════
-// LE REGISTRE DES ACTIONS — DÉCLARÉ UNE FOIS, FERMÉ PAR DÉFAUT
+// LE VOCABULAIRE MÉTIER — QUI A AGI, ET QUEL GESTE
 // ══════════════════════════════════════════════════════════════════════════
 //
-// Les actions du journal sont des identifiants techniques (`order.paid`,
-// `autopost.publication`). Ce registre leur donne un nom lisible, et dit
-// lesquelles sont du TRAVAIL DE SAMII.
+// Les traces de SAMII se lisent toutes seules : `config/traces.js` les a
+// écrites et sait les relire. Ce registre-ci ne couvre donc QUE le
+// vocabulaire métier, celui qui existait avant ce chantier.
 //
-// ── POURQUOI UN REGISTRE ET PAS UN `if` DANS LA VUE ──────────────────────
+// ── `acteur: "samii"` NE SE DEVINE PAS ───────────────────────────────────
 //
-// Règle 4 du projet : les données plutôt que la duplication. Le jour où une
-// action change de nom, il y a UN endroit à corriger. Et un registre se
-// teste : la suite vérifie que chaque action réellement écrite quelque part
-// dans le code y figure.
-//
-// ── `samii: true` NE SE DEVINE PAS ───────────────────────────────────────
-//
-// Une action absente de ce registre est affichée telle quelle dans
-// « Activité récente », et n'entre JAMAIS dans « Travail de SAMII ». Fermé
-// par défaut, comme `config/audiences.js` : oublier d'accorder se voit tout
-// de suite, oublier d'interdire ne se voit jamais.
-//
-// La ligne de partage, mesurée sur qui écrit quoi : `samii: true` quand
-// SAMII a agi PENDANT QUE LE MARCHAND NE REGARDAIT PAS — il a publié,
-// surveillé un stock, traité la confirmation d'un client, prévenu d'une
-// échéance. `samii: false` quand la ligne n'est que la trace d'un geste que
-// le marchand a fait lui-même : acheter une carte, demander un abonnement,
-// coller un numéro de suivi. Les deux méritent d'être visibles ; une seule
-// mérite d'être présentée comme du travail fait pour lui.
+// Une action absente de ce registre est affichée avec son identifiant brut,
+// rangée côté `business`, et n'entre JAMAIS dans le filtre SAMII. Fermé par
+// défaut, comme `config/audiences.js` : oublier d'accorder se voit tout de
+// suite, oublier d'interdire ne se voit jamais.
 const ACTIONS = {
-    // ── Ce que SAMII a fait, seul ────────────────────────────────────────
-    "order.created":            { libelle: "Commande reçue", samii: true },
-    "order.updated":            { libelle: "Commande mise à jour", samii: true },
-    "order.paid":               { libelle: "Paiement reçu", samii: true },
-    "order.fulfilled":          { libelle: "Commande expédiée", samii: true },
-    "order.delivered":          { libelle: "Commande livrée", samii: true },
-    "order.confirmed":          { libelle: "Commande confirmée par le client", samii: true },
-    "order.cancelled":          { libelle: "Commande annulée", samii: true },
-    "order.confirmed.telegram": { libelle: "Commande confirmée sur Telegram", samii: true },
-    "order.cancelled.telegram": { libelle: "Commande annulée sur Telegram", samii: true },
-    "order.paid.chargily":      { libelle: "Paiement encaissé", samii: true },
-    "stock.low":                { libelle: "Stock bas repéré", samii: true },
-    "stock.empty":              { libelle: "Rupture de stock repérée", samii: true },
-    "autopost.publication":     { libelle: "Publication automatique", samii: true },
-    "autopost.impossible":      { libelle: "Publication automatique impossible", samii: true },
-    "abonnement.expire":        { libelle: "Abonnement arrivé à échéance", samii: true },
+    // ── CE QUE LE BUSINESS FAIT, SANS SAMII ──────────────────────────────
+    "order.created":          { libelle: "Commande reçue", acteur: "business", verbe: "observe" },
+    "order.updated":          { libelle: "Commande mise à jour", acteur: "business", verbe: "observe" },
+    "order.paid":             { libelle: "Paiement reçu", acteur: "business", verbe: "observe" },
+    "order.paid.chargily":    { libelle: "Paiement encaissé", acteur: "business", verbe: "observe" },
+    "order.fulfilled":        { libelle: "Commande expédiée", acteur: "business", verbe: "observe" },
+    "order.delivered":        { libelle: "Commande livrée", acteur: "business", verbe: "observe" },
+    "order.confirmed":        { libelle: "Commande confirmée", acteur: "business", verbe: "observe" },
+    "order.cancelled":        { libelle: "Commande annulée", acteur: "business", verbe: "observe" },
+    "commande.creee.boutique": { libelle: "Commande passée en boutique", acteur: "business", verbe: "observe" },
+    "shop.connected":         { libelle: "Boutique connectée", acteur: "business", verbe: "observe" },
+    "shop.uninstalled":       { libelle: "Boutique déconnectée", acteur: "business", verbe: "observe" },
+    "carte.activated":        { libelle: "Carte activée", acteur: "business", verbe: "observe" },
+    "carte.achetee":          { libelle: "Carte achetée", acteur: "business", verbe: "observe" },
+    "abonnement.upgraded":    { libelle: "Abonnement changé", acteur: "business", verbe: "observe" },
+    "abonnement.cancelled":   { libelle: "Abonnement annulé", acteur: "business", verbe: "observe" },
+    "abonnement.paye":        { libelle: "Abonnement payé", acteur: "business", verbe: "observe" },
+    "abonnement.demande.ccp": { libelle: "Demande d'abonnement (CCP)", acteur: "business", verbe: "observe" },
+    "abonnement.demande.societe": { libelle: "Demande d'abonnement (société)", acteur: "business", verbe: "observe" },
+    "premium.ccp.demande":    { libelle: "Demande premium (CCP)", acteur: "business", verbe: "observe" },
+    "recharge.samii":         { libelle: "Recharge de crédits", acteur: "business", verbe: "observe" },
+    "recharge.samii.echec":   { libelle: "Recharge échouée", acteur: "business", verbe: "observe", etat: "echec" },
+    "tracking.activated":     { libelle: "Suivi de colis activé", acteur: "business", verbe: "observe" },
+    "grade.points":           { libelle: "Points de grade", acteur: "business", verbe: "observe" },
+    "feedback":               { libelle: "Avis donné sur une réponse", acteur: "business", verbe: "observe" },
+    "youtube.publication":    { libelle: "Publication YouTube", acteur: "business", verbe: "observe" },
+    // Les treize actions qui s'affichaient avec leur identifiant technique,
+    // relevées en balayant le code. Toutes côté business : ce sont des gestes
+    // que quelqu'un a faits, pas du travail que SAMII a produit.
+    "academie.besoin.publie":   { libelle: "Besoin publié à l'Academy", acteur: "business", verbe: "observe" },
+    "academie.besoin.reponse":  { libelle: "Réponse à un besoin", acteur: "business", verbe: "observe" },
+    "academie.contrat.accepte": { libelle: "Contrat Academy accepté", acteur: "business", verbe: "observe" },
+    "agence.client.cree":       { libelle: "Client d'agence créé", acteur: "business", verbe: "observe" },
+    "app.installee":            { libelle: "Application installée", acteur: "business", verbe: "observe" },
+    "app.revoquee":             { libelle: "Application révoquée", acteur: "business", verbe: "observe" },
+    "facebook.comment":         { libelle: "Commentaire Facebook", acteur: "business", verbe: "observe" },
+    "facebook.review":          { libelle: "Avis Facebook", acteur: "business", verbe: "observe" },
+    "instagram.comment":        { libelle: "Commentaire Instagram", acteur: "business", verbe: "observe" },
+    "whatsapp.message":         { libelle: "Message WhatsApp", acteur: "business", verbe: "observe" },
+    "error.whatsapp.message":   { libelle: "Message WhatsApp en échec", acteur: "business", verbe: "observe", etat: "echec" },
+    "google.permission_manquante": { libelle: "Permission Google manquante", acteur: "business", verbe: "observe", etat: "echec" },
+    "meta.permission_manquante":   { libelle: "Permission Meta manquante", acteur: "business", verbe: "observe", etat: "echec" },
 
-    // ── Ce que le marchand a fait lui-même ───────────────────────────────
-    "shop.connected":           { libelle: "Boutique connectée", samii: false },
-    "shop.uninstalled":         { libelle: "Boutique déconnectée", samii: false },
-    "carte.activated":          { libelle: "Carte activée", samii: false },
-    "carte.achetee":            { libelle: "Carte achetée", samii: false },
-    "abonnement.upgraded":      { libelle: "Abonnement changé", samii: false },
-    "abonnement.cancelled":     { libelle: "Abonnement annulé", samii: false },
-    "abonnement.paye":          { libelle: "Abonnement payé", samii: false },
-    "abonnement.demande.ccp":   { libelle: "Demande d'abonnement (CCP)", samii: false },
-    "abonnement.demande.societe": { libelle: "Demande d'abonnement (société)", samii: false },
-    "premium.ccp.demande":      { libelle: "Demande premium (CCP)", samii: false },
-    "recharge.samii":           { libelle: "Recharge de crédits", samii: false },
-    "recharge.samii.echec":     { libelle: "Recharge échouée", samii: false },
-    "tracking.activated":       { libelle: "Suivi de colis activé", samii: false },
-    "commande.creee.boutique":  { libelle: "Commande passée en boutique", samii: false },
-    "youtube.publication":      { libelle: "Publication YouTube", samii: false },
-    "grade.points":             { libelle: "Points de grade", samii: false },
-    "feedback":                 { libelle: "Avis donné sur une réponse", samii: false },
+    // ── CE QUE SAMII A PRODUIT, HORS OUTILS DU CHAT ──────────────────────
+    //
+    // ⚠️ `stock.low` ET `stock.empty` SONT LE CŒUR DU MODÈLE.
+    //
+    // Le stock qui baisse appartient au business. Mais cette ligne n'est pas
+    // le stock : c'est le FAIT DE L'AVOIR REPÉRÉ, par un moteur qui tourne
+    // sans qu'on le lui demande. C'est une détection, et elle est à SAMII.
+    "stock.low":            { libelle: "Stock bas repéré", acteur: "samii", verbe: "detecte" },
+    "stock.empty":          { libelle: "Rupture de stock repérée", acteur: "samii", verbe: "detecte" },
+    "autopost.publication": { libelle: "Publication automatique partie", acteur: "samii", verbe: "agit" },
+    "autopost.impossible":  { libelle: "Publication automatique impossible", acteur: "samii", verbe: "agit", etat: "echec" },
+    "abonnement.expire":    { libelle: "Échéance d'abonnement repérée", acteur: "samii", verbe: "detecte" },
 };
 
-function libelleAction(action) {
-    const id = String(action || "");
-    return ACTIONS[id]?.libelle || id || "Action inconnue";
+// ── LE CANAL DIT QUI A AGI ───────────────────────────────────────────────
+//
+// Le bus écrit `order.created.${source}` et `rdv.created.${source}`. La
+// source est DANS LE NOM : `shopify` et `boutique` sont le business, `chat`
+// et `telegram` sont SAMII — c'est lui qui a tenu la conversation.
+//
+// C'est ce qui permet de NE PAS écrire une seconde ligne pour les quatre
+// outils de commerce (voir `config/traces.js`, `tracer: false`) : la ligne
+// métier dit déjà que SAMII a agi. Une trace de plus aurait fait apparaître
+// le même fait deux fois.
+const CANAUX_DE_SAMII = ["chat", "telegram", "whatsapp", "instagram", "messenger"];
+
+const RACINES_A_CANAL = ["order.created", "order.confirmed", "order.cancelled",
+                         "rdv.created", "rdv.confirmed", "rdv.cancelled"];
+
+function parCanal(action) {
+    const brut = String(action || "");
+    for (const racine of RACINES_A_CANAL) {
+        if (!brut.startsWith(racine + ".")) continue;
+        const canal = brut.slice(racine.length + 1);
+        const base = ACTIONS[racine];
+        return {
+            libelle: base ? `${base.libelle} (${canal})` : brut,
+            acteur: CANAUX_DE_SAMII.includes(canal) ? "samii" : "business",
+            verbe: CANAUX_DE_SAMII.includes(canal) ? "agit" : "observe",
+        };
+    }
+    return null;
 }
 
-function estTravailDeSamii(action) {
-    return ACTIONS[String(action || "")]?.samii === true;
+// ── LIRE UNE ACTION, D'OÙ QU'ELLE VIENNE ─────────────────────────────────
+//
+// Trois chemins, dans cet ordre : une trace de SAMII (préfixe `samii.`), une
+// action métier connue, une action à canal. Tout le reste retombe côté
+// business avec son identifiant brut — honnête, et jamais attribué à SAMII.
+function lire(action) {
+    const trace = TRACES.lireAction(action);
+    if (trace) return trace;
+
+    const connue = ACTIONS[String(action || "")];
+    if (connue) {
+        return {
+            acteur: connue.acteur, verbe: connue.verbe,
+            etat: connue.etat || "reussi", libelle: connue.libelle, outil: null,
+        };
+    }
+
+    const canal = parCanal(action);
+    if (canal) return { ...canal, etat: "reussi", outil: null };
+
+    return {
+        acteur: "business", verbe: "observe", etat: "reussi",
+        libelle: String(action || "Action inconnue"), outil: null,
+    };
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// LES ÉTATS — TRADUITS DEPUIS LEURS PROPRES REGISTRES, JAMAIS RECOPIÉS
-// ══════════════════════════════════════════════════════════════════════════
+// ── LES ÉTATS DES DEUX AUTRES SOURCES ────────────────────────────────────
 //
-// `missions_longues` et `social_publications` ont chacune son vocabulaire,
-// déclaré chez elles. On ne recopie pas les listes : on dit seulement, pour
-// chaque valeur, dans laquelle des trois colonnes elle tombe.
-//
-// Un état inconnu tombe dans `null` — donc dans aucune des trois sections.
-// Il resterait invisible plutôt que de se ranger au hasard dans « Terminé »,
-// ce qui ferait croire à un travail fait.
+// Un état inconnu rend `null` — l'élément n'est alors pas montré du tout,
+// plutôt que rangé au hasard dans « réussi », ce qui ferait croire à un
+// travail fait.
 const ETAT_MISSION = {
     attente:  "en_cours",
     en_cours: "en_cours",
-    terminee: "termine",
+    terminee: "reussi",
     echouee:  "echec",
     annulee:  "echec",
 };
@@ -143,139 +204,123 @@ const ETAT_MISSION = {
 const ETAT_PUBLICATION = {
     scheduled:  "en_cours",
     publishing: "en_cours",
-    published:  "termine",
+    published:  "reussi",
     failed:     "echec",
     cancelled:  "echec",
-    // draft, review, approved : pas encore programmées, donc pas encore une
-    // activité. Elles se travaillent ailleurs ; les montrer ici ferait croire
-    // que quelque chose tourne.
+    // draft / review / approved : pas encore programmées. Les montrer ferait
+    // croire que quelque chose tourne.
 };
 
-// ══════════════════════════════════════════════════════════════════════════
-// UNE SEULE FORME POUR TOUT CE QUI S'AFFICHE
-// ══════════════════════════════════════════════════════════════════════════
+// ── LE LIBELLÉ NE RÉPÈTE PAS LE DÉTAIL ───────────────────────────────────
 //
-// Trois sources, une forme. La vue a UN peintre, pas trois — c'est la leçon
-// du chantier C : trois rendus pour trois formes, c'est trois endroits où
-// l'un d'eux oublie d'échapper un texte.
+// Trouvé en ouvrant la page : le registre nomme l'action (« Commande
+// confirmée sur Telegram ») et le journal porte la phrase du moteur
+// (« Commande confirmée sur Telegram : CMD-119 »). La seule information neuve
+// était « CMD-119 », noyée dans une répétition.
 //
-//   source       d'où ça vient, pour le diagnostic
-//   titre        ce qu'on lit en gras
-//   detail       la phrase, telle que la source l'a écrite
-//   quand        ISO, ou null
-//   etat         "en_cours" | "termine" | "echec" | "note"
-//   progression  { etape, total } pour une mission, sinon null
-//   erreur       le motif d'un échec, sinon null
-//   parSamii     true si c'est du travail fait sans que le marchand agisse
-// ── LE LIBELLÉ NE DOIT PAS RÉPÉTER LE DÉTAIL ─────────────────────────────
-//
-// ⚠️ TROUVÉ EN OUVRANT LA PAGE, PAS EN LISANT LE CODE.
-//
-// Le registre nomme l'action (« Commande confirmée sur Telegram ») et le
-// journal porte la phrase écrite par le moteur (« Commande confirmée sur
-// Telegram : CMD-119 »). Les deux sont justes, et côte à côte ils donnent :
-//
-//     Commande confirmée sur Telegram
-//     Commande confirmée sur Telegram : CMD-119
-//
-// La seule information neuve est « CMD-119 », noyée dans une répétition.
-//
-// On ne retire donc QUE ce qui est littéralement le libellé, en tête, suivi
-// d'un séparateur. Pas de troncature, pas de résumé : si la phrase ne
-// commence pas exactement par le libellé, elle est affichée telle quelle.
-// Deviner serait pire que répéter — une ligne de journal se lit pour savoir
-// ce qui s'est passé.
+// On ne retire QUE le libellé exact, en tête, suivi d'un séparateur. Une
+// phrase qui ne commence pas par lui passe intacte : deviner serait pire que
+// répéter, parce qu'une ligne de journal se lit pour savoir ce qui s'est
+// passé.
 function sansRedite(titre, detail) {
     const t = String(titre || "").trim();
     const d = String(detail || "").trim();
     if (!t || !d) return d;
     if (d.toLowerCase().indexOf(t.toLowerCase()) !== 0) return d;
-    // Ce qui reste, débarrassé du séparateur qui suivait le libellé.
-    const reste = d.slice(t.length).replace(/^[\s:—–-]+/, "").trim();
-    // Rien après le libellé : la phrase ne disait que lui, il n'y a pas de
-    // détail à montrer. Rendre la phrase entière la ferait afficher deux fois.
-    return reste;
+    return d.slice(t.length).replace(/^[\s:—–-]+/, "").trim();
 }
 
-function element({ source, titre, detail = "", quand = null, etat = "note",
-                   progression = null, erreur = null, parSamii = false }) {
+// ══════════════════════════════════════════════════════════════════════════
+// UNE SEULE FORME POUR TOUT CE QUI S'AFFICHE
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Trois sources, une forme, un peintre. Trois rendus pour trois formes, c'est
+// trois endroits où l'un d'eux oublie d'échapper un texte.
+function element({ source, acteur = "business", verbe = "observe", etat = "reussi",
+                   titre, detail = "", quand = null, progression = null,
+                   erreur = null, refId = null, conversationId = null, gestes = [] }) {
     return {
-        source,
+        source, acteur, verbe, etat,
+        // Le mot qu'on AFFICHE, distinct de l'identifiant qu'on filtre : le
+        // gabarit ne doit pas avoir à savoir comment s'accentue un verbe.
+        verbeLisible: TRACES.libelleVerbe(verbe),
         titre: String(titre || ""),
         detail: sansRedite(titre, detail),
         quand: quand ? new Date(quand).toISOString() : null,
-        etat,
         progression,
         erreur: erreur ? String(erreur) : null,
-        parSamii: parSamii === true,
+        refId: refId ? String(refId) : null,
+        conversationId: conversationId ? String(conversationId) : null,
+        gestes,
     };
+}
+
+// ── LE GESTE SUIVANT — SEULEMENT CEUX QUI EXISTENT VRAIMENT ──────────────
+//
+// « voir · reprendre · annuler · relancer · voir résultat · ouvrir dans le
+// Chat. » Mesuré, de ces six, trois seulement ont une route derrière :
+//
+//   annuler        POST /api/missions/:id/annuler   ✅ existe, jamais branché
+//   voir résultat  GET  /api/missions/:id           ✅ rend `resultat` si terminée
+//   ouvrir le Chat /?tour=<id>                      ✅ depuis ce chantier
+//
+// « reprendre » et « relancer » n'ont AUCUNE route. Poser les boutons quand
+// même aurait donné trois boutons morts sur une page qui existe justement
+// pour rendre le travail visible. On ne les met pas ; le jour où la route
+// existera, une ligne ici les fera apparaître.
+function gestesDe({ source, etat, id, resultat, lien, conversationId }) {
+    const g = [];
+    if (source === "mission" && etat === "en_cours" && id) {
+        g.push({ libelle: "Arrêter", type: "annuler", cible: `/api/missions/${id}/annuler` });
+    }
+    if (source === "mission" && etat === "reussi" && resultat && id) {
+        g.push({ libelle: "Voir le résultat", type: "resultat", cible: `/api/missions/${id}` });
+    }
+    if (source === "publication" && lien) {
+        g.push({ libelle: "Voir la publication", type: "lien", cible: lien });
+    }
+    if (conversationId) {
+        g.push({ libelle: "Ouvrir dans le Chat", type: "chat", cible: `/?tour=${encodeURIComponent(conversationId)}` });
+    }
+    return g;
 }
 
 // ── LE JOURNAL DU QG ─────────────────────────────────────────────────────
 //
-// ⚠️ LE FILTRE N'EST PAS OPTIONNEL. Sans `workspaceId`, cette fonction rend
-// une liste VIDE — elle ne lit pas « tout le journal ». Une table sans filtre
-// est globale par défaut, et cette fuite est revenue cinq fois dans ce projet
-// (le fil, les discussions, le classement, la marketplace, les vitrines).
-// Ici, il n'y a pas de requête à faire sans QG : il n'y a rien à montrer.
+// ⚠️ LE FILTRE N'EST PAS OPTIONNEL. Sans `workspaceId`, on ne lance AUCUNE
+// requête — on ne lit pas « tout le journal ». Une table sans filtre est
+// globale par défaut.
 async function lireJournal(workspaceId, limite) {
     if (!workspaceId) return [];
     try {
         const lignes = await db.query(
-            `SELECT action, details, montant, created_at
+            `SELECT action, details, montant, created_at, ref_id, conversation_id
                FROM journal
               WHERE workspace_id = $1
               ORDER BY created_at DESC, id DESC
               LIMIT $2`,
             [String(workspaceId), limite]
         );
-        return lignes.map((l) => element({
-            source: "journal",
-            titre: libelleAction(l.action),
-            detail: l.details || "",
-            quand: l.created_at,
-            etat: "note",
-            parSamii: estTravailDeSamii(l.action),
-        }));
+        return lignes.map((l) => {
+            const q = lire(l.action);
+            return element({
+                source: "journal",
+                acteur: q.acteur, verbe: q.verbe, etat: q.etat,
+                titre: q.libelle,
+                detail: l.details || "",
+                quand: l.created_at,
+                refId: l.ref_id,
+                conversationId: l.conversation_id,
+                gestes: gestesDe({ source: "journal", conversationId: l.conversation_id }),
+            });
+        });
     } catch (err) {
         console.error("❌ activite.lireJournal :", err.message);
         return [];
     }
 }
 
-// ── LES MISSIONS LONGUES ─────────────────────────────────────────────────
-//
-// On passe par `missionsLongues.lister()`, qui filtre DÉJÀ sur `user_id` ET
-// `workspace_id`. Réécrire la requête ici en aurait fait une deuxième, qui
-// aurait divergé le jour où l'une des deux change.
-async function lireMissions({ userId, workspaceId }, limite) {
-    if (!userId && !workspaceId) return [];
-    try {
-        const longues = require("./missionsLongues");
-        const lignes = await longues.lister({ userId, workspaceId, limite });
-        return lignes.map((m) => {
-            const etat = ETAT_MISSION[String(m.etat || "")] || null;
-            if (!etat) return null;
-            return element({
-                source: "mission",
-                titre: libelleMission(m.mission),
-                detail: "",
-                quand: m.fin_le || m.debut_le || m.created_at,
-                etat,
-                progression: { etape: Number(m.etape) || 0, total: Number(m.etapes_total) || 0 },
-                erreur: m.erreur || null,
-                parSamii: true,
-            });
-        }).filter(Boolean);
-    } catch (err) {
-        console.error("❌ activite.lireMissions :", err.message);
-        return [];
-    }
-}
-
 // Le nom lisible d'une mission vient de `config/agents.js`, qui la déclare.
-// On ne recopie pas les libellés : un titre écrit ici aurait divergé du jour
-// où la mission est renommée.
 function libelleMission(id) {
     try {
         return require("../config/agents").mission(id)?.libelle || String(id || "Mission");
@@ -284,23 +329,57 @@ function libelleMission(id) {
     }
 }
 
+// ── LES MISSIONS LONGUES ─────────────────────────────────────────────────
+//
+// On passe par `missionsLongues.lister()`, qui filtre DÉJÀ sur `user_id` ET
+// `workspace_id`. Réécrire la requête ici en aurait fait une seconde, qui
+// aurait divergé le jour où l'une des deux change.
+async function lireMissions({ userId, workspaceId }, limite) {
+    if (!userId && !workspaceId) return [];
+    try {
+        const lignes = await require("./missionsLongues").lister({ userId, workspaceId, limite });
+        return lignes.map((m) => {
+            const etat = ETAT_MISSION[String(m.etat || "")] || null;
+            if (!etat) return null;
+            return element({
+                source: "mission",
+                acteur: "samii", verbe: "execute", etat,
+                titre: libelleMission(m.mission),
+                quand: m.fin_le || m.debut_le || m.created_at,
+                progression: { etape: Number(m.etape) || 0, total: Number(m.etapes_total) || 0 },
+                erreur: m.erreur || null,
+                conversationId: m.conversation_id || null,
+                gestes: gestesDe({
+                    source: "mission", etat, id: m.id,
+                    resultat: etat === "reussi",
+                    conversationId: m.conversation_id,
+                }),
+            });
+        }).filter(Boolean);
+    } catch (err) {
+        console.error("❌ activite.lireMissions :", err.message);
+        return [];
+    }
+}
+
 // ── LES PUBLICATIONS PROGRAMMÉES ─────────────────────────────────────────
 async function lirePublications(workspaceId, limite) {
     if (!workspaceId) return [];
     try {
-        const store = require("./socialStore");
-        const lignes = await store.listerPublications({ workspaceId, limite });
+        const lignes = await require("./socialStore").listerPublications({ workspaceId, limite });
         return lignes.map((p) => {
             const etat = ETAT_PUBLICATION[String(p.statut || "")] || null;
             if (!etat) return null;
             return element({
                 source: "publication",
+                acteur: "samii",
+                verbe: etat === "en_cours" ? "prepare" : "agit",
+                etat,
                 titre: p.titre || "Publication",
                 detail: p.plateforme || p.v_plateforme || "",
                 quand: p.publiee_le || p.programmee_le || p.created_at,
-                etat,
                 erreur: p.erreur || null,
-                parSamii: true,
+                gestes: gestesDe({ source: "publication", etat, lien: p.externe_url || null }),
             });
         }).filter(Boolean);
     } catch (err) {
@@ -315,10 +394,14 @@ const recent = (a, b) => new Date(b.quand || 0) - new Date(a.quand || 0);
 // CE QUE LA PAGE LIT
 // ══════════════════════════════════════════════════════════════════════════
 //
-// Les trois lectures partent ENSEMBLE. Séquentielles, la page attendrait la
-// somme des trois latences pour afficher une liste.
-async function pour({ workspaceId = null, userId = null, limite = 40 } = {}) {
-    const n = Math.min(Math.max(Number(limite) || 40, 1), 200);
+// UNE liste, `fil`. Chaque élément y figure UNE SEULE FOIS — c'est vrai par
+// construction, puisqu'il n'y a qu'une liste où le mettre.
+//
+// `enCours` n'est PAS une seconde liste : c'est une VUE des éléments du fil
+// qui tournent encore, épinglée en haut pour qu'on ne la cherche pas. Le
+// gabarit les marque comme déjà vus et ne les repeint pas dans le fil.
+async function pour({ workspaceId = null, userId = null, limite = 60 } = {}) {
+    const n = Math.min(Math.max(Number(limite) || 60, 1), 200);
 
     const [journal, missions, publications] = await Promise.all([
         lireJournal(workspaceId, n),
@@ -326,36 +409,25 @@ async function pour({ workspaceId = null, userId = null, limite = 40 } = {}) {
         lirePublications(workspaceId, n),
     ]);
 
-    const travaux = [...missions, ...publications];
+    const fil = [...journal, ...missions, ...publications].sort(recent).slice(0, n);
+    const enCours = fil.filter((e) => e.etat === "en_cours");
 
-    // « Travail de SAMII » réunit les missions, les publications, et les
-    // lignes du journal que le registre reconnaît comme siennes. C'est la
-    // seule section qui mélange les trois sources, et c'est voulu : la
-    // question du marchand n'est pas « quelle table », c'est « qu'est-ce
-    // qu'il a fait pour moi ».
-    const samii = [...travaux, ...journal.filter((l) => l.parSamii)].sort(recent).slice(0, n);
-
-    const sections = {
-        enCours: travaux.filter((t) => t.etat === "en_cours").sort(recent),
-        termine: travaux.filter((t) => t.etat === "termine").sort(recent),
-        echec:   travaux.filter((t) => t.etat === "echec").sort(recent),
-        recent:  journal,
-        samii,
+    // Les compteurs des filtres sont calculés ICI, sur la liste réellement
+    // rendue. Les compter dans le gabarit aurait voulu dire les recompter à
+    // chaque rendu, et se tromper d'un le jour où la liste est tronquée.
+    const compteurs = {
+        tout:     fil.length,
+        samii:    fil.filter((e) => e.acteur === "samii").length,
+        business: fil.filter((e) => e.acteur === "business").length,
+        enCours:  enCours.length,
+        echecs:   fil.filter((e) => e.etat === "echec").length,
     };
 
-    return {
-        ...sections,
-        // Une page vide doit pouvoir le DIRE, plutôt que d'afficher cinq
-        // titres au-dessus de cinq blancs. Calculé ici : la vue n'a pas à
-        // savoir combien de sections existent.
-        vide: Object.values(sections).every((l) => l.length === 0),
-    };
+    return { fil, enCours, compteurs, vide: fil.length === 0 };
 }
 
 module.exports = {
-    pour, ACTIONS, ETAT_MISSION, ETAT_PUBLICATION,
-    libelleAction, estTravailDeSamii, libelleMission, element, sansRedite,
-    // Exportées pour que la suite éprouve chaque lecture séparément —
-    // notamment qu'aucune ne lit sans QG.
+    pour, ACTIONS, ETAT_MISSION, ETAT_PUBLICATION, CANAUX_DE_SAMII,
+    lire, sansRedite, element, gestesDe, libelleMission, parCanal,
     lireJournal, lireMissions, lirePublications,
 };

@@ -117,10 +117,20 @@ async function creer({ missionId, entree = {}, context = {} } = {}) {
 
     try {
         const rows = await db.query(
+            // `conversation_id` — D'OÙ CETTE MISSION A ÉTÉ LANCÉE.
+            //
+            // Le contexte du tour le portait déjà ; on n'en gardait que le
+            // niveau, le palier et l'audience. Une mission ne savait donc
+            // plus de quelle conversation elle venait, et le Centre
+            // d'activité ne pouvait pas ramener au Chat qui l'a demandée.
+            //
+            // Il vient du CONTEXTE, posé en code par `routes/api.js` — jamais
+            // d'un corps de requête. Accepté depuis la page, il permettrait
+            // de raccrocher sa mission au fil d'un autre.
             `INSERT INTO missions_longues
                 (user_id, workspace_id, mission, entree, niveau, palier, audience,
-                 etat, etapes_total, expire_le)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,'attente',$8, NOW() + ($9 || ' milliseconds')::interval)
+                 etat, etapes_total, expire_le, conversation_id)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,'attente',$8, NOW() + ($9 || ' milliseconds')::interval, $10)
              RETURNING *`,
             [
                 context.identite?.userId || context.userId || null,
@@ -132,6 +142,7 @@ async function creer({ missionId, entree = {}, context = {} } = {}) {
                 context.audience || null,
                 m.agents.length,
                 String(DUREE_MAX_MS),
+                context.conversationId || null,
             ],
         );
         return { ok: true, mission: rows[0] };
@@ -199,7 +210,7 @@ async function lister({ userId, workspaceId, limite = 20 } = {}) {
     try {
         return await db.query(
             `SELECT id, mission, etat, etape, etapes_total, essais, erreur,
-                    created_at, debut_le, fin_le
+                    created_at, debut_le, fin_le, conversation_id
                FROM missions_longues
               WHERE ${clauses.join(" AND ")}
               ORDER BY created_at DESC LIMIT $${params.length}`, params);
