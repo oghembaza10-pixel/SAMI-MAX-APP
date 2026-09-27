@@ -22,6 +22,9 @@
 //   C. Une boutique inconnue donne `workspace_id = NULL`, jamais le domaine.
 //   D. Aucune fuite : les événements d'un marchand ne se lisent pas chez
 //      l'autre, en relisant exactement comme le fera le Centre d'activité.
+//   E. Les deux gestes Telegram — confirmation et annulation — rattachent leur
+//      ligne au QG DE LA COMMANDE, et cette ligne se voit dans le Centre
+//      d'activité du bon marchand, jamais dans celui de l'autre.
 //
 // ── CE QU'ON REMPLACE, ET POURQUOI SEULEMENT ÇA ──────────────────────────
 //
@@ -64,6 +67,8 @@ remplacer("engines/sovereignEngine", { initialize: async () => {}, activate: asy
 const db = require(path.join(RACINE, "services", "db"));
 const journal = require(path.join(RACINE, "services", "journalService"));
 const engine = require(path.join(RACINE, "engines", "automationEngine"));
+const commerce = require(path.join(RACINE, "engines", "commerceEngine"));
+const activite = require(path.join(RACINE, "services", "activite"));
 
 let verifs = 0;
 const echecs = [];
@@ -94,6 +99,23 @@ const VIVANTS = [
     ["abonnement.cancelled", {}],
 ];
 
+// Les deux gestes Telegram ne passent PAS par `automationEngine.run()` : ils
+// sont appelés par `brain/orchestrator.js` (depuis `routes/telegram.js`) et par
+// `brain/planner.js` (l'outil du Chat). Ils écrivent donc leurs propres
+// actions, avec leur propre chemin de résolution du QG.
+const TELEGRAM = ["order.confirmed.telegram", "order.cancelled.telegram"];
+
+// Tout ce que cette suite écrit dans `journal`, déclaré UNE fois. Le balayage
+// d'entrée s'appuie dessus (voir la note sur la troisième écriture, plus bas) :
+// énumérer à la main ce qu'on croit avoir écrit est l'erreur exacte qu'on a
+// déjà commise deux fois ici.
+const ACTIONS_ECRITES = [...VIVANTS.map(([t]) => t), ...TELEGRAM];
+
+// Les commandes d'essai du test E. Elles portent une clé étrangère vers
+// `workspaces` : elles doivent partir AVANT les QG, sinon le DELETE des QG
+// échoue et la suite laisse sa vaisselle.
+const COMMANDES = ["CMD-TG-A", "CMD-TG-B", "CMD-TG-FANTOME"];
+
 // ══════════════════════════════════════════════════════════════════════════
 // LE NETTOYAGE — ÉCRIT TROIS FOIS, ET LES DEUX PREMIÈRES ÉTAIENT FAUSSES
 // ══════════════════════════════════════════════════════════════════════════
@@ -116,6 +138,7 @@ let depart = 0;
 
 async function nettoyer() {
     if (depart) await db.query(`DELETE FROM journal WHERE id > $1`, [depart]);
+    await db.query(`DELETE FROM commandes WHERE id = ANY($1)`, [COMMANDES]);
     await db.query(`DELETE FROM workspaces WHERE id IN ($1,$2)`, [QG_A, QG_B]);
 }
 
@@ -134,7 +157,8 @@ async function nettoyer() {
 // que ce test écrit. Elles sont déclarées une fois, dans `VIVANTS`, et il n'y
 // a plus rien à oublier.
 async function balayerLesRestes() {
-    await db.query(`DELETE FROM journal WHERE action = ANY($1)`, [VIVANTS.map(([t]) => t)]);
+    await db.query(`DELETE FROM journal WHERE action = ANY($1)`, [ACTIONS_ECRITES]);
+    await db.query(`DELETE FROM commandes WHERE id = ANY($1)`, [COMMANDES]);
     await db.query(`DELETE FROM workspaces WHERE id IN ($1,$2)`, [QG_A, QG_B]);
 }
 
@@ -264,6 +288,124 @@ async function balayerLesRestes() {
         );
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // E. LES DEUX GESTES TELEGRAM — LE QG VIENT DE LA COMMANDE
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // Le défaut : `confirmTelegramOrder` et `cancelTelegramOrder` écrivaient
+    // leur ligne SANS `workspaceId`. Elle partait avec `workspace_id = NULL`
+    // et n'apparaissait dans AUCUN Centre d'activité — le marchand confirmait
+    // depuis Telegram, et sa page restait muette.
+    //
+    // Pourquoi ces deux-là ne pouvaient pas être réparés comme les autres :
+    // sur ce chemin, l'événement n'a PAS de boutique. `routes/telegram.js`
+    // passe `shop: ""`, et l'outil du Chat (`brain/planner.js`) ne passe qu'un
+    // `payload`. Il n'y a donc rien à résoudre par le domaine Shopify — la
+    // seule source vraie est la ligne de commande elle-même.
+    {
+        for (const [id, qg, produit] of [[COMMANDES[0], QG_A, "Chemise bleue"],
+                                         [COMMANDES[1], QG_B, "Sac en cuir"]]) {
+            await db.query(
+                `INSERT INTO commandes (id, workspace_id, nom_client, produit, montant, statut, source)
+                 VALUES ($1,$2,'Client essai',$3,1500,'en attente','telegram')`,
+                [id, qg, produit]
+            );
+        }
+
+        const rConfirm = await commerce.confirmTelegramOrder({ payload: { orderId: COMMANDES[0] } });
+        const rAnnule  = await commerce.cancelTelegramOrder({ payload: { orderId: COMMANDES[1] } });
+
+        // ── E.1 AUCUNE RÉGRESSION DU GESTE LUI-MÊME ────────────────────────
+        // La correction ne devait toucher que le rattachement. Si la valeur
+        // de retour ou le statut en base changent, c'est le métier qui a
+        // bougé — et le Chat comme Telegram s'appuient dessus.
+        verifier(rConfirm?.success === true && rConfirm.orderId === COMMANDES[0],
+            `confirmTelegramOrder ne rend plus { success: true, orderId } mais ${JSON.stringify(rConfirm)}`);
+        verifier(rAnnule?.success === true && rAnnule.orderId === COMMANDES[1],
+            `cancelTelegramOrder ne rend plus { success: true, orderId } mais ${JSON.stringify(rAnnule)}`);
+
+        const cmdA = (await db.query(`SELECT statut, confirme_le FROM commandes WHERE id = $1`, [COMMANDES[0]]))[0];
+        const cmdB = (await db.query(`SELECT statut FROM commandes WHERE id = $1`, [COMMANDES[1]]))[0];
+        verifier(cmdA?.statut === "confirmée", `la commande confirmée est en statut ${JSON.stringify(cmdA?.statut)}`);
+        verifier(!!cmdA?.confirme_le, "la confirmation n'a plus posé `confirme_le` — le quota de confirmations le compte");
+        verifier(cmdB?.statut === "annulée", `la commande annulée est en statut ${JSON.stringify(cmdB?.statut)}`);
+
+        // ── E.2 LA LIGNE EST RATTACHÉE AU QG DE LA COMMANDE ────────────────
+        const traces = await db.query(
+            `SELECT action, details, workspace_id, ref_id FROM journal WHERE action = ANY($1) AND id > $2`,
+            [TELEGRAM, depart]
+        );
+        for (const [action, attendu, ref] of [["order.confirmed.telegram", QG_A, COMMANDES[0]],
+                                              ["order.cancelled.telegram", QG_B, COMMANDES[1]]]) {
+            const ligne = traces.find((l) => l.action === action);
+            verifier(!!ligne, `« ${action} » n'a écrit AUCUNE ligne de journal`);
+            if (!ligne) continue;
+            verifier(ligne.workspace_id === attendu,
+                `« ${action} » est rattaché à ${JSON.stringify(ligne.workspace_id)} au lieu de ${attendu} — ` +
+                `c'est le défaut : la ligne existe mais aucune page filtrant par QG ne la trouve`);
+            verifier(String(ligne.ref_id || "") === ref,
+                `« ${action} » a perdu sa référence de commande (${JSON.stringify(ligne.ref_id)})`);
+            verifier(!!String(ligne.details || "").trim(), `« ${action} » a écrit une ligne sans détails`);
+        }
+
+        // ── E.3 JAMAIS UN DOMAINE SHOPIFY, JAMAIS UN QG INVENTÉ ────────────
+        // Le premier réflexe aurait été `getWorkspaceIdForShop(event.shop)`.
+        // Ce helper a un repli « shop tel quel » : avec `shop: ""` il aurait
+        // rangé la ligne sous la chaîne vide, et avec un domaine il aurait
+        // rangé le domaine. Les deux se lisent comme un vrai QG.
+        const faux = await db.query(
+            `SELECT COUNT(*)::int AS n FROM journal
+              WHERE action = ANY($1) AND id > $2
+                AND (workspace_id = ANY($3) OR workspace_id = '')`,
+            [TELEGRAM, depart, [BOUTIQUE_A, BOUTIQUE_B]]
+        );
+        verifier(faux[0].n === 0,
+            `${faux[0].n} ligne(s) Telegram rattachées à un domaine Shopify ou à une chaîne vide`);
+
+        // Une commande qui n'existe pas : le geste ne doit inventer aucun QG.
+        // `NULL` est honnête — une valeur de repli se lirait comme un vrai QG.
+        await commerce.confirmTelegramOrder({ payload: { orderId: COMMANDES[2] } });
+        const fantome = await db.query(
+            `SELECT workspace_id FROM journal
+              WHERE action = 'order.confirmed.telegram' AND details LIKE $1 AND id > $2`,
+            [`%${COMMANDES[2]}%`, depart]
+        );
+        verifier(fantome.length === 1, `la ligne d'une commande inconnue n'a pas été écrite (${fantome.length})`);
+        verifier(fantome[0]?.workspace_id === null,
+            `une commande inconnue a été rattachée à ${JSON.stringify(fantome[0]?.workspace_id)}`);
+
+        // ── E.4 VISIBLE DANS LE CENTRE D'ACTIVITÉ DU BON MARCHAND ──────────
+        // Relu par `services/activite.pour()` — exactement ce que la page
+        // appelle. C'était toute la question : la ligne existait déjà avant
+        // la correction, elle n'était simplement lisible par personne.
+        const vueA = await activite.pour({ workspaceId: QG_A, limite: 200 });
+        const vueB = await activite.pour({ workspaceId: QG_B, limite: 200 });
+
+        const chercher = (vue, ref) => vue.fil.find((e) => e.refId === ref);
+        const chezMoiA = chercher(vueA, COMMANDES[0]);
+        const chezMoiB = chercher(vueB, COMMANDES[1]);
+
+        verifier(!!chezMoiA, `la confirmation Telegram n'apparaît pas dans le Centre d'activité de ${QG_A}`);
+        verifier(!!chezMoiB, `l'annulation Telegram n'apparaît pas dans le Centre d'activité de ${QG_B}`);
+
+        // Et du bon côté des deux axes : c'est SAMII qui a tenu la
+        // conversation Telegram, donc c'est SAMII qui a agi. Sans ça, la
+        // ligne s'afficherait comme un geste du marchand.
+        verifier(chezMoiA?.acteur === "samii" && chezMoiA?.verbe === "agit",
+            `la confirmation Telegram est classée ${chezMoiA?.acteur}/${chezMoiA?.verbe} au lieu de samii/agit`);
+        verifier(chezMoiA?.etat === "reussi", `la confirmation Telegram est en état ${chezMoiA?.etat}`);
+        verifier(chezMoiB?.acteur === "samii" && chezMoiB?.verbe === "agit",
+            `l'annulation Telegram est classée ${chezMoiB?.acteur}/${chezMoiB?.verbe} au lieu de samii/agit`);
+
+        // ── E.5 INVISIBLE POUR L'AUTRE MARCHAND ────────────────────────────
+        verifier(!chercher(vueB, COMMANDES[0]),
+            `la confirmation du marchand A apparaît dans le Centre d'activité de ${QG_B} — fuite entre marchands`);
+        verifier(!chercher(vueA, COMMANDES[1]),
+            `l'annulation du marchand B apparaît dans le Centre d'activité de ${QG_A} — fuite entre marchands`);
+        verifier(!chercher(vueA, COMMANDES[2]) && !chercher(vueB, COMMANDES[2]),
+            "la ligne sans QG apparaît chez un marchand — une ligne orpheline n'appartient à personne");
+    }
+
     await nettoyer();
 
     if (echecs.length) {
@@ -271,7 +413,7 @@ async function balayerLesRestes() {
         for (const e of echecs) console.error("   • " + e);
         process.exit(1);
     }
-    console.log(`✅ journal réel : ${verifs} vérifications passées (${VIVANTS.length} déclencheurs vivants, vraie base)`);
+    console.log(`✅ journal réel : ${verifs} vérifications passées (${VIVANTS.length} déclencheurs vivants + ${TELEGRAM.length} gestes Telegram, vraie base)`);
     process.exit(0);
 })().catch((err) => {
     console.error("❌ journal réel : la suite a levé —", err.message);

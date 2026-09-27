@@ -370,12 +370,27 @@ class CommerceEngine {
    // =========================================================
     // TELEGRAM — CONFIRMATION (canal indépendant, PostgreSQL)
     // =========================================================
+    //
+    // ⚠️ LE QG VIENT DE LA LIGNE DE COMMANDE, PAS DE L'ÉVÉNEMENT.
+    //
+    // Sur ce chemin, l'événement n'a PAS de boutique : `routes/telegram.js`
+    // et `brain/planner.js` appellent tous deux avec `shop: ""` ou sans shop
+    // du tout. `getWorkspaceIdForShop` rendrait donc la chaîne vide — et le
+    // helper a un repli « shop tel quel », ce qui aurait rangé la ligne sous
+    // un faux identifiant au lieu de la laisser vide.
+    //
+    // La seule source vraie est la commande elle-même : le `RETURNING` de
+    // l'UPDATE, déjà là pour le quota de confirmations. Sans ce `workspaceId`
+    // la ligne partait avec `workspace_id = NULL` et n'apparaissait dans
+    // AUCUN Centre d'activité — le marchand confirmait par Telegram et ne
+    // voyait rien. Relevé en ouvrant la page.
     async confirmTelegramOrder(event) {
         try {
             const { orderId } = event.payload;
             const rows = await db.query(`UPDATE commandes SET statut = 'confirmée', confirme_le = now() WHERE id = $1 RETURNING workspace_id`, [orderId]);
-            if (rows[0]?.workspace_id) confirmationsQuota.enregistrerSiDepassement(rows[0].workspace_id, orderId).catch(() => {});
-            await journalService.log({ action: "order.confirmed.telegram", details: `#${orderId} confirmée via Telegram`, refId: orderId });
+            const workspaceId = rows[0]?.workspace_id || null;
+            if (workspaceId) confirmationsQuota.enregistrerSiDepassement(workspaceId, orderId).catch(() => {});
+            await journalService.log({ action: "order.confirmed.telegram", details: `#${orderId} confirmée via Telegram`, refId: orderId, workspaceId });
             return { success: true, orderId };
         } catch (err) {
             console.error("❌ CommerceEngine.confirmTelegramOrder :", err.message);
@@ -386,11 +401,15 @@ class CommerceEngine {
     // =========================================================
     // TELEGRAM — ANNULATION (canal indépendant, PostgreSQL)
     // =========================================================
+    // Même raison que pour la confirmation ci-dessus : le QG vient de la
+    // commande. Le `RETURNING workspace_id` est ajouté ici pour ça — l'UPDATE
+    // ne rendait rien, et la ligne de journal n'avait donc aucun QG à porter.
     async cancelTelegramOrder(event) {
         try {
             const { orderId } = event.payload;
-            await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1`, [orderId]);
-            await journalService.log({ action: "order.cancelled.telegram", details: `#${orderId} annulée via Telegram`, refId: orderId });
+            const rows = await db.query(`UPDATE commandes SET statut = 'annulée' WHERE id = $1 RETURNING workspace_id`, [orderId]);
+            const workspaceId = rows[0]?.workspace_id || null;
+            await journalService.log({ action: "order.cancelled.telegram", details: `#${orderId} annulée via Telegram`, refId: orderId, workspaceId });
             return { success: true, orderId };
         } catch (err) {
             console.error("❌ CommerceEngine.cancelTelegramOrder :", err.message);
