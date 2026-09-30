@@ -340,7 +340,15 @@ const BLOCS = [
             // au-dessus : `ADD COLUMN IF NOT EXISTS` sur une base qui tourne,
             // aucune donnée touchée, aucune colonne renommée.
             `ALTER TABLE journal ADD COLUMN IF NOT EXISTS conversation_id TEXT`,
-            `ALTER TABLE missions_longues ADD COLUMN IF NOT EXISTS conversation_id TEXT`,
+            // ⚠️ LE TROISIÈME DE CE GROUPE N'EST PAS ICI, ET C'EST EXPRÈS.
+            // `missions_longues` est créée par le bloc SUIVANT : son
+            // `ADD COLUMN` vit donc là-bas, juste après son CREATE. Posé ici,
+            // il s'exécutait AVANT la naissance de la table — sans effet sur
+            // une base qui tourne (la colonne y était déjà), mais sur une base
+            // neuve il échouait et la colonne manquait POUR TOUJOURS.
+            // Mesuré le 2026-09-30 : c'était le seul échec du démarrage sur
+            // une base vierge, et `services/missionsLongues.js` INSÈRE dans
+            // cette colonne — toute mission lancée échouait.
             `ALTER TABLE samii_conversations ADD COLUMN IF NOT EXISTS tour_id TEXT`,
             // Retrouver toutes les traces d'un tour — c'est la requête du
             // bouton « ouvrir dans le Chat », dans l'autre sens.
@@ -489,6 +497,23 @@ const BLOCS = [
                 WHERE etat IN ('attente', 'en_cours')`,
             `CREATE INDEX IF NOT EXISTS idx_ml_proprietaire
                 ON missions_longues (user_id, created_at DESC)`,
+            // ── D'OÙ CETTE MISSION A ÉTÉ LANCÉE ──────────────────────────
+            //
+            // L'identifiant du tour de conversation. Il complète le trio
+            // `journal.conversation_id` / `samii_conversations.tour_id`, dont
+            // les deux autres membres sont posés dans le bloc des fondations,
+            // avec l'explication du maillon.
+            //
+            // IL EST ICI, ET PAS LÀ-BAS, POUR UNE RAISON MESURÉE. Placé dans
+            // les fondations, il s'exécutait avant le CREATE ci-dessus : sur
+            // une base neuve, l'ALTER échouait et la colonne n'arrivait
+            // jamais. `services/missionsLongues.js` l'écrit et la relit, donc
+            // chaque lancement de mission échouait — et seulement sur une base
+            // recréée, jamais sur celle qui tourne.
+            //
+            // Il reste un ALTER plutôt qu'une colonne du CREATE : c'est ce qui
+            // l'ajoute aux bases qui existent déjà, où le CREATE ne fait rien.
+            `ALTER TABLE missions_longues ADD COLUMN IF NOT EXISTS conversation_id TEXT`,
         ],
     },
 
