@@ -1577,6 +1577,107 @@ const A_VERROUILLER = [
     // la plus silencieuse possible, et elle tient à un mot.
     "clients", "commandes", "discussion_messages", "messages_prives",
     "paiements", "workspaces",
+
+    // ══════════════════════════════════════════════════════════════════════
+    // LES QUINZE DERNIÈRES — ET CE QUE LA PRODUCTION A DIT
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // ⚠️ LA LISTE AU-DESSUS ÉTAIT INCOMPLÈTE, ET PERSONNE NE POUVAIT LE SAVOIR
+    // EN LISANT CE FICHIER. Il fallait regarder la production.
+    //
+    // Relevé le 2026-09-27 sur la vraie base : 107 tables, dont **12 sans RLS**.
+    // Sous le rôle `anon` — la clé PUBLIABLE — on lisait :
+    //
+    //     recharges_samii     3 lignes   user_id, checkout_id, montant_usd
+    //     consommation_ia    10 lignes   cout_google_usd, cout_technique_usd
+    //     social_agent_runs  3302 lignes
+    //
+    // Et les droits d'`anon` sur ces tables comprenaient INSERT, UPDATE,
+    // DELETE et TRUNCATE — pas seulement SELECT. Ce n'était pas « une table
+    // oubliée » : c'était l'argent qui entre, notre structure de coûts, et des
+    // numéros de téléphone.
+    //
+    // ── POURQUOI ELLES MANQUAIENT ─────────────────────────────────────────
+    //
+    // La protection de la production venait de TROIS sources : cette liste
+    // (19 tables, au démarrage), `scripts/securiser-rls.js` (10 tables, à la
+    // main, une fois), et l'historique. Une protection qui dépend d'un script
+    // lancé à la main a le même défaut qu'une table créée par un script : elle
+    // ne revient pas sur une base recréée.
+    //
+    // Les trois marquées « ex-script » ci-dessous étaient dans ce cas : RLS
+    // actif en production, mais par `securiser-rls.js` uniquement. Elles
+    // rejoignent le démarrage pour que ce ne soit plus un coup de chance.
+    //
+    // ── LA MESURE, AVANT ET APRÈS, SUR LA PRODUCTION ──────────────────────
+    //
+    //                          serveur (postgres)   clé publiable (anon)
+    //     avant  recharges             3                    3
+    //     après  recharges             3                    0     ✅
+    //     après  social_agent_runs  3302                    0     ✅
+    //
+    // Et l'écriture : un INSERT sous `anon` rend désormais
+    // « 42501: new row violates row-level security policy ». Le serveur, lui,
+    // écrit toujours — vérifié par un INSERT réel dans une transaction annulée.
+    //
+    // ⚠️ CE QUE RLS NE COUVRE PAS, ET QU'IL FAUT SAVOIR : **TRUNCATE**.
+    // PostgreSQL ne fait pas passer TRUNCATE par les politiques — c'est le
+    // GRANT qui décide. Mesuré : sous `anon`, `TRUNCATE` réussit malgré RLS.
+    // Ce n'est pas atteignable par l'API REST aujourd'hui (PostgREST n'expose
+    // pas ce verbe, et AUCUNE fonction du schéma `public` n'est exécutable par
+    // `anon` — vérifié, zéro). Le jour où une fonction appelable arrive, il
+    // faudra un `REVOKE TRUNCATE`. C'est une décision du propriétaire, pas de
+    // ce fichier.
+    "recharges_samii", "consommation_ia", "prospects_vitrine", "whatsapp_contacts",
+    "social_posts", "social_post_variants", "social_publications",
+    "social_analytics", "social_agent_runs",
+    "abonnements_membres", "publications_enregistrees", "missions_longues",
+    // ex-script : protégées en production par `scripts/securiser-rls.js`, donc
+    // par un geste manuel. Elles sont créées au démarrage, elles y sont
+    // verrouillées maintenant.
+    "memoire_sessions", "projets_samii", "samii_connaissances",
+
+    // ── CE QUI N'EST PAS DANS CETTE LISTE, ET POURQUOI ────────────────────
+    //
+    // Six tables ont RLS actif en production et ne sont PAS ici : ce fichier
+    // ne les CRÉE pas encore. Voir `A_VERROUILLER_SI_PRESENTE` juste dessous.
+    //
+    // `tests/schema-neuf.test.js` refuse — à raison — qu'on inscrive ICI une
+    // table que le démarrage ne fabrique pas : la protection ne s'appliquerait
+    // jamais, et la liste aurait l'air complète en ne protégeant rien.
+];
+
+// ══════════════════════════════════════════════════════════════════════════
+// LES TABLES QUI EXISTENT SANS ÊTRE CRÉÉES ICI
+// ══════════════════════════════════════════════════════════════════════════
+//
+// Ces six-là vivent en production, le code s'en sert tous les jours, et
+// AUCUNE ligne de ce fichier ne les fabrique. Relevé le 2026-09-30 sur la
+// vraie base : les six ont `rowsecurity = true`, `forcerowsecurity = false`,
+// propriétaire `postgres`, et zéro politique. C'est l'état de référence.
+//
+// ── D'OÙ VENAIT CETTE PROTECTION, ET POURQUOI ÇA NE SUFFISAIT PAS ─────────
+//
+//     livraisons, livreurs      `scripts/securiser-rls.js`, lancé à la main
+//     cartes_achats             un geste manuel, non retracé
+//     push_subscriptions        idem
+//     stories, stories_vues     idem
+//
+// Une protection qui tient à un script lancé une fois ne revient pas sur une
+// base recréée. Le verrou ci-dessous la rend reproductible AU DÉMARRAGE,
+// sans créer aucune table : la boucle de `preparer()` les traite avec les
+// autres, et l'absence d'une table y est déjà silencieuse.
+//
+// ⚠️ CE N'EST PAS UNE DEUXIÈME LOGIQUE DE SÉCURITÉ. C'est la même boucle, le
+// même `ENABLE ROW LEVEL SECURITY`, la même absence de politique. Seule la
+// liste diffère, parce que la promesse diffère : au-dessus, « nous la créons
+// donc nous la verrouillons » ; ici, « si elle est là, elle est verrouillée ».
+//
+// Le jour où leur DDL arrive dans `BLOCS`, elles montent dans
+// `A_VERROUILLER` et cette liste se vide. C'est le but.
+const A_VERROUILLER_SI_PRESENTE = [
+    "cartes_achats", "push_subscriptions", "livraisons", "livreurs",
+    "stories", "stories_vues",
 ];
 
 async function preparer() {
@@ -1625,7 +1726,27 @@ async function preparer() {
         } catch { /* base momentanément injoignable : déjà signalé plus haut */ }
     }
 
-    for (const table of A_VERROUILLER) {
+    // On demande d'abord LESQUELLES existent, au lieu de lancer l'ALTER et de
+    // laisser l'erreur tomber : `services/db.js` journalise tout échec, et une
+    // base neuve affichait cinq « ❌ relation does not exist » parfaitement
+    // normaux au démarrage. Un ❌ qui ne veut rien dire apprend à ignorer les
+    // vrais. Même geste que `scripts/securiser-rls.js`, qui interroge la base
+    // avant d'agir.
+    let siPresentes = [];
+    try {
+        const trouvees = await db.query(
+            `SELECT relname FROM pg_class
+              WHERE relnamespace = 'public'::regnamespace AND relkind = 'r'
+                AND relname = ANY($1)`,
+            [A_VERROUILLER_SI_PRESENTE],
+        );
+        siPresentes = trouvees.map((r) => r.relname);
+    } catch { /* base injoignable : déjà signalé plus haut */ }
+
+    // Une seule boucle pour les deux listes : même ALTER, même absence de
+    // politique. Seule la promesse diffère — au-dessus « nous la créons donc
+    // nous la verrouillons », ici « si elle est là, elle est verrouillée ».
+    for (const table of [...A_VERROUILLER, ...siPresentes]) {
         try {
             await db.query(`ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY`);
         } catch (err) {
@@ -1643,4 +1764,6 @@ async function preparer() {
     return { creees, echecs };
 }
 
-module.exports = { preparer, BLOCS, A_VERROUILLER, ELARGISSEMENTS, ATTENDUS };
+module.exports = {
+    preparer, BLOCS, A_VERROUILLER, A_VERROUILLER_SI_PRESENTE, ELARGISSEMENTS, ATTENDUS,
+};
