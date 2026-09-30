@@ -7,6 +7,7 @@ const express = require("express");
 const multer = require("multer");
 const router = express.Router();
 const db = require("../services/db");
+const communautes = require("../config/communautes");
 
 const CLOUDINARY_CLOUD_NAME = "ojwx5hft";
 const CLOUDINARY_UPLOAD_PRESET = "MARKETPLACE OG";
@@ -288,8 +289,42 @@ router.get("/:userId", requireAuth, async (req, res) => {
     const userId = req.params.userId;
     let user, stories = [];
 
+    // ── LA COMMUNAUTÉ DE L'AUTEUR FAIT FOI ───────────────────────────────
+    //
+    // Cette route rendait les stories de N'IMPORTE QUEL profil, sans regarder
+    // à quelle communauté il appartient. `stories` n'a pas de colonne
+    // `communaute` : sans filtre, la table est donc GLOBALE par défaut — la
+    // fuite qui est revenue cinq fois dans ce projet (le fil, les
+    // discussions, le classement, la marketplace, les vitrines).
+    //
+    // ON FILTRE L'AUTEUR, PAS LA STORY, et c'est la même décision que
+    // `routes/community.js` a prise pour la barre des stories : ça vaut aussi
+    // pour les stories DÉJÀ publiées, sans migration ni rattrapage. Une
+    // colonne sur `stories` aurait laissé les anciennes lignes sans réponse.
+    //
+    // Le filtre est posé sur la recherche du PROFIL, pas sur les stories :
+    // un auteur d'une autre communauté devient « introuvable », donc la
+    // requête suivante ne part pas et aucune vue n'est enregistrée. Un 404,
+    // pas une page vide — on ne dit pas « ce membre existe mais n'a rien ».
+    //
+    // La communauté vient de `res.locals.COM`, donc du SERVICE. Jamais du
+    // compte connecté, jamais d'un paramètre d'URL : sinon il suffirait de
+    // changer l'adresse pour voir ce qui n'est pas à soi.
+    //
+    // ⚠️ AUJOURD'HUI RIEN NE SE VOIT, ET CE N'EST PAS UNE RAISON. La porte
+    // d'`index.js` ferme `/stories` chez les partenaires, donc leurs membres
+    // n'atteignent pas cette route. Mais chez NOUS elle répondait pour un
+    // auteur partenaire, et le jour où on ouvre le module à une partenaire,
+    // ce sont nos membres qui apparaîtraient chez elle. Une fuite qui attend
+    // d'être affichée reste une fuite.
+    const COM = res.locals?.COM || communautes.get(communautes.DEFAUT);
+
     try {
-        const uRows = await db.query(`SELECT id, prenom, nom FROM utilisateurs WHERE id = $1`, [userId]);
+        const uRows = await db.query(
+            `SELECT id, prenom, nom FROM utilisateurs
+              WHERE id = $1 AND COALESCE(communaute, $3) = $2`,
+            [userId, COM.slug, communautes.DEFAUT]
+        );
         user = uRows[0];
         if (!user) return res.status(404).send("Profil introuvable.");
 
