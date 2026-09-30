@@ -7,15 +7,18 @@
 // sur une table absente ?
 //
 // Ce n'est pas théorique. Relevé le 2026-09-30 : le code interroge 70 tables,
-// le démarrage en crée 45. Vingt-cinq manquaient à l'appel :
+// le démarrage en créait 45. Vingt-cinq manquaient à l'appel :
 //
 //     18  créées par un `scripts/init-*.js`, lancé à la main, une fois. Elles
 //         existent en production par l'histoire, pas par le code.
-//      6  créées NULLE PART dans le dépôt — ce sont exactement les six de
-//         `A_VERROUILLER_SI_PRESENTE`, dont schema.js dit lui-même qu'elles
-//         doivent rejoindre le démarrage.
+//      6  créées NULLE PART dans le dépôt — exactement les six de
+//         `A_VERROUILLER_SI_PRESENTE`. ✅ MIGRÉES le même jour : leur DDL est
+//         entré dans `BLOCS`, et ce garde a lui-même réclamé le retrait de
+//         leurs six lignes du registre ci-dessous.
 //      1  `shipments` : interrogée par services/tracking/yalidine.js et
 //         inexistante même en production.
+//
+// Il reste donc dix-neuf manques déclarés, et le démarrage crée 51 tables.
 //
 // C'est la même leçon que les trois « ex-script » du verrou RLS, et que le
 // REVOKE TRUNCATE : une protection — ou une table — qui dépend d'un geste
@@ -65,17 +68,17 @@ const verifier = (ok, message) => { verifs++; if (!ok) echecs.push(message); };
 // encore au démarrage. Ce ne sont pas des absolutions : c'est la liste du
 // travail qui reste, écrite pour qu'on la voie.
 const MANQUES_CONNUS = [
-    // ── Les six que schema.js attend déjà ─────────────────────────────────
-    // `A_VERROUILLER_SI_PRESENTE` les verrouille « si elles sont là », et le
-    // commentaire de schema.js annonce : dès que le démarrage les crée, elles
-    // rejoignent A_VERROUILLER et cette liste se vide. Elles ne naissent
-    // NULLE PART dans le dépôt — ni schema.js, ni un script.
-    { table: "cartes_achats", ne: "nulle part", pourquoi: "conditionnelle : à migrer dans schema.js" },
-    { table: "push_subscriptions", ne: "nulle part", pourquoi: "conditionnelle : à migrer dans schema.js" },
-    { table: "livraisons", ne: "nulle part", pourquoi: "conditionnelle : à migrer dans schema.js" },
-    { table: "livreurs", ne: "nulle part", pourquoi: "conditionnelle : à migrer dans schema.js" },
-    { table: "stories", ne: "nulle part", pourquoi: "conditionnelle : à migrer dans schema.js" },
-    { table: "stories_vues", ne: "nulle part", pourquoi: "conditionnelle : à migrer dans schema.js" },
+    // ── ✅ SIX LIGNES ONT DISPARU D'ICI LE 2026-09-30 ──────────────────────
+    //
+    // `cartes_achats`, `push_subscriptions`, `livraisons`, `livreurs`,
+    // `stories` et `stories_vues` étaient déclarées ici : créées nulle part
+    // dans le dépôt, présentes en production par l'histoire. Leur DDL est
+    // maintenant dans `BLOCS`, relevé colonne par colonne sur la production.
+    //
+    // C'est ce garde qui a signalé qu'il fallait retirer les six lignes : la
+    // migration faite, il a crié « est maintenant créée au démarrage, retire-la
+    // de MANQUES_CONNUS ». La liste se vide donc comme prévu, et pas parce que
+    // quelqu'un a pensé à le faire.
 
     // ── Les dix-huit nées d'un script lancé à la main ──────────────────────
     // Elles existent en production. Sur une base recréée, elles n'existent

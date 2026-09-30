@@ -1491,6 +1491,153 @@ const BLOCS = [
             `CREATE INDEX IF NOT EXISTS idx_sar_post ON social_agent_runs (post_id)`,
         ],
     },
+    {
+        // ══════════════════════════════════════════════════════════════════
+        // LES SIX QUI N'EXISTAIENT QUE PAR L'HISTOIRE
+        // ══════════════════════════════════════════════════════════════════
+        //
+        // Ces six tables vivaient en production sans être créées NULLE PART
+        // dans le dépôt : ni ici, ni dans un `scripts/init-*.js`. Elles
+        // existaient parce qu'un jour quelqu'un les a créées à la main ou par
+        // migration. Sur une base recréée, elles n'existaient pas — et les
+        // routes qui les interrogent tombaient sur « relation does not
+        // exist ».
+        //
+        // C'est ce que `A_VERROUILLER_SI_PRESENTE` disait : « si elle est là,
+        // elle est verrouillée », faute de pouvoir promettre mieux. Cette
+        // liste-là peut maintenant se vider : elles sont créées ici, donc
+        // elles passent dans `A_VERROUILLER`, dont la promesse est plus forte
+        // — « nous la créons donc nous la verrouillons ».
+        //
+        // LA STRUCTURE EST RELEVÉE SUR LA PRODUCTION, colonne par colonne, le
+        // 2026-09-30. Ça compte plus qu'il n'y paraît : `CREATE TABLE IF NOT
+        // EXISTS` ne MODIFIE pas une table existante. Une définition qui
+        // diverge de la production ne se verrait donc jamais en production —
+        // seulement sur une base neuve, où l'application trouverait des
+        // colonnes qui ne sont pas celles qu'elle attend. L'erreur serait
+        // invisible là où on regarde, et présente là où on ne regarde pas.
+        //
+        // L'ORDRE DES BLOCS COMPTE. `livraisons` référence `livreurs`, et
+        // `stories_vues` référence `stories` : sur une base neuve, une clé
+        // étrangère vers une table pas encore créée fait échouer le CREATE.
+        // D'où cet ordre, et non l'alphabétique.
+        nom: "les six tables sans acte de naissance",
+        sql: [
+            // ── Les notifications du navigateur ──────────────────────────
+            `CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id         SERIAL PRIMARY KEY,
+                user_id    TEXT NOT NULL REFERENCES utilisateurs(id),
+                endpoint   TEXT NOT NULL UNIQUE,
+                p256dh     TEXT NOT NULL,
+                auth       TEXT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT now())`,
+            `CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions (user_id)`,
+
+            // ── Les cartes achetées dans l'arsenal ───────────────────────
+            //
+            // `achete_le` et `expire_le` sont des TIMESTAMP SANS fuseau en
+            // production, là où presque tout le reste du schéma est en
+            // TIMESTAMPTZ. On reproduit ce qui EST, pas ce qu'on aurait
+            // écrit : changer le type ici ne toucherait pas la production
+            // (la table existe) et créerait un écart entre les deux.
+            `CREATE TABLE IF NOT EXISTS cartes_achats (
+                id                   SERIAL PRIMARY KEY,
+                workspace_id         TEXT NOT NULL,
+                carte_id             TEXT NOT NULL,
+                prix_paye            NUMERIC,
+                devise               TEXT DEFAULT 'USD',
+                chargily_checkout_id TEXT,
+                statut               TEXT DEFAULT 'en attente',
+                achete_le            TIMESTAMP DEFAULT now(),
+                expire_le            TIMESTAMP,
+                UNIQUE (workspace_id, carte_id))`,
+
+            // ── Les livreurs, puis leurs courses ─────────────────────────
+            //
+            // Un livreur EST un utilisateur : sa clé primaire est celle de
+            // `utilisateurs`, pas un identifiant à lui. Le ON DELETE CASCADE
+            // vient de la production.
+            `CREATE TABLE IF NOT EXISTS livreurs (
+                id              TEXT PRIMARY KEY REFERENCES utilisateurs(id) ON DELETE CASCADE,
+                vehicule        TEXT DEFAULT 'moto',
+                ville           TEXT DEFAULT '',
+                en_ligne        BOOLEAN NOT NULL DEFAULT false,
+                latitude        DOUBLE PRECISION,
+                longitude       DOUBLE PRECISION,
+                position_maj_le TIMESTAMPTZ,
+                nb_livraisons   INTEGER NOT NULL DEFAULT 0,
+                note_moyenne    NUMERIC,
+                actif           BOOLEAN NOT NULL DEFAULT true,
+                created_at      TIMESTAMPTZ NOT NULL DEFAULT now())`,
+
+            `CREATE TABLE IF NOT EXISTS livraisons (
+                id                   SERIAL PRIMARY KEY,
+                workspace_id         TEXT NOT NULL REFERENCES workspaces(id),
+                commande_id          TEXT REFERENCES commandes(id),
+                livreur_id           TEXT REFERENCES livreurs(id),
+                statut               TEXT NOT NULL DEFAULT 'en_attente',
+                adresse_recuperation TEXT NOT NULL,
+                adresse_livraison    TEXT NOT NULL,
+                lat_recuperation     DOUBLE PRECISION,
+                lng_recuperation     DOUBLE PRECISION,
+                client_nom           TEXT DEFAULT '',
+                client_telephone     TEXT DEFAULT '',
+                note                 TEXT DEFAULT '',
+                created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+                assignee_le          TIMESTAMPTZ,
+                recuperee_le         TIMESTAMPTZ,
+                livree_le            TIMESTAMPTZ,
+                lat_livraison        DOUBLE PRECISION,
+                lng_livraison        DOUBLE PRECISION,
+                distance_km          NUMERIC,
+                prix_livraison       NUMERIC,
+                devise               TEXT NOT NULL DEFAULT 'DZD',
+                paiement_statut      TEXT NOT NULL DEFAULT 'a_collecter')`,
+            `CREATE INDEX IF NOT EXISTS livraisons_workspace_idx ON livraisons (workspace_id)`,
+            `CREATE INDEX IF NOT EXISTS livraisons_livreur_idx ON livraisons (livreur_id)`,
+            `CREATE INDEX IF NOT EXISTS livraisons_statut_idx ON livraisons (statut)`,
+
+            // ── Les stories, puis qui les a vues ─────────────────────────
+            //
+            // ⚠️ UNE CLÉ ÉTRANGÈRE DE LA PRODUCTION N'EST PAS REPRISE ICI.
+            // En production, `stories.media_id` référence `medias(id)`. Or
+            // `medias` n'est créée NULLE PART dans le dépôt — ni ici, ni dans
+            // un script — et AUCUNE requête du code ne la touche. Reprendre
+            // cette clé rendrait `stories` impossible à créer sur une base
+            // neuve : le CREATE échouerait sur une table absente, et les
+            // stories ne marcheraient nulle part sauf en production.
+            //
+            // La colonne est gardée, et son index avec, pour que les deux
+            // bases aient les mêmes colonnes. Mesuré avant de décider : le
+            // code lit `media_url` (sept fois) et JAMAIS `media_id`, et en
+            // production zéro story sur deux porte un `media_id`. La
+            // contrainte ne protégeait donc rien qui existe.
+            //
+            // Le jour où `medias` entre au démarrage, cette clé peut revenir.
+            `CREATE TABLE IF NOT EXISTS stories (
+                id         BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                auteur_id  TEXT NOT NULL REFERENCES utilisateurs(id),
+                contenu    TEXT,
+                media_id   BIGINT,
+                media_url  TEXT,
+                type       TEXT NOT NULL DEFAULT 'image',
+                expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + INTERVAL '24 hours'),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                actif      BOOLEAN NOT NULL DEFAULT true)`,
+            `CREATE INDEX IF NOT EXISTS idx_stories_auteur_expires ON stories (auteur_id, expires_at)`,
+            `CREATE INDEX IF NOT EXISTS idx_stories_media_id ON stories (media_id)`,
+
+            // Une vue par personne et par story : c'est l'UNIQUE qui empêche
+            // qu'un rechargement de page compte deux fois.
+            `CREATE TABLE IF NOT EXISTS stories_vues (
+                id        BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                story_id  BIGINT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+                user_id   TEXT NOT NULL REFERENCES utilisateurs(id),
+                viewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                UNIQUE (story_id, user_id))`,
+            `CREATE INDEX IF NOT EXISTS idx_story_views_user ON stories_vues (user_id)`,
+        ],
+    },
 ];
 
 // ── Les élargissements de type ───────────────────────────────────────────
@@ -1642,48 +1789,57 @@ const A_VERROUILLER = [
     // verrouillées maintenant.
     "memoire_sessions", "projets_samii", "samii_connaissances",
 
+    // ex-conditionnelles : elles vivaient en production sans acte de naissance
+    // dans le dépôt. Le bloc « les six tables sans acte de naissance » les
+    // crée maintenant au démarrage, donc elles quittent
+    // `A_VERROUILLER_SI_PRESENTE` pour la promesse forte de cette liste.
+    "cartes_achats", "push_subscriptions", "livraisons", "livreurs",
+    "stories", "stories_vues",
+
     // ── CE QUI N'EST PAS DANS CETTE LISTE, ET POURQUOI ────────────────────
-    //
-    // Six tables ont RLS actif en production et ne sont PAS ici : ce fichier
-    // ne les CRÉE pas encore. Voir `A_VERROUILLER_SI_PRESENTE` juste dessous.
     //
     // `tests/schema-neuf.test.js` refuse — à raison — qu'on inscrive ICI une
     // table que le démarrage ne fabrique pas : la protection ne s'appliquerait
     // jamais, et la liste aurait l'air complète en ne protégeant rien.
+    //
+    // C'est la règle qui décide où va une table : créée au démarrage → ici ;
+    // présente sans être créée → `A_VERROUILLER_SI_PRESENTE`.
 ];
 
 // ══════════════════════════════════════════════════════════════════════════
-// LES TABLES QUI EXISTENT SANS ÊTRE CRÉÉES ICI
+// LES TABLES QUI EXISTERAIENT SANS ÊTRE CRÉÉES ICI — AUJOURD'HUI, AUCUNE
 // ══════════════════════════════════════════════════════════════════════════
 //
-// Ces six-là vivent en production, le code s'en sert tous les jours, et
-// AUCUNE ligne de ce fichier ne les fabrique. Relevé le 2026-09-30 sur la
-// vraie base : les six ont `rowsecurity = true`, `forcerowsecurity = false`,
-// propriétaire `postgres`, et zéro politique. C'est l'état de référence.
+// ✅ CETTE LISTE EST VIDE, ET C'ÉTAIT LE BUT ANNONCÉ.
 //
-// ── D'OÙ VENAIT CETTE PROTECTION, ET POURQUOI ÇA NE SUFFISAIT PAS ─────────
+// Elle a porté six tables — `cartes_achats`, `push_subscriptions`,
+// `livraisons`, `livreurs`, `stories`, `stories_vues` — qui vivaient en
+// production sans qu'AUCUNE ligne du dépôt ne les fabrique. Leur protection
+// tenait à `scripts/securiser-rls.js` ou à un geste manuel non retracé : donc
+// à rien, sur une base recréée.
 //
-//     livraisons, livreurs      `scripts/securiser-rls.js`, lancé à la main
-//     cartes_achats             un geste manuel, non retracé
-//     push_subscriptions        idem
-//     stories, stories_vues     idem
+// Le 2026-09-30, leur DDL est entré dans `BLOCS` (bloc « les six tables sans
+// acte de naissance », structure relevée sur la production colonne par
+// colonne). Elles sont donc passées dans `A_VERROUILLER`, dont la promesse
+// est plus forte : « nous la créons DONC nous la verrouillons ».
 //
-// Une protection qui tient à un script lancé une fois ne revient pas sur une
-// base recréée. Le verrou ci-dessous la rend reproductible AU DÉMARRAGE,
-// sans créer aucune table : la boucle de `preparer()` les traite avec les
-// autres, et l'absence d'une table y est déjà silencieuse.
+// ── POURQUOI ON GARDE LE MÉCANISME MALGRÉ TOUT ────────────────────────────
+//
+// Une liste vide n'est pas un mécanisme mort. Le jour où une table apparaît
+// en production sans acte de naissance — une migration passée à la main, une
+// table créée dans Studio — elle a sa place ici LE TEMPS qu'on écrive son
+// DDL. Sans cette liste, le choix serait entre « pas protégée » et « inscrite
+// dans A_VERROUILLER où la protection ne s'appliquerait jamais ».
 //
 // ⚠️ CE N'EST PAS UNE DEUXIÈME LOGIQUE DE SÉCURITÉ. C'est la même boucle, le
 // même `ENABLE ROW LEVEL SECURITY`, la même absence de politique. Seule la
-// liste diffère, parce que la promesse diffère : au-dessus, « nous la créons
-// donc nous la verrouillons » ; ici, « si elle est là, elle est verrouillée ».
+// promesse diffère : au-dessus « nous la créons donc nous la verrouillons » ;
+// ici « si elle est là, elle est verrouillée ».
 //
-// Le jour où leur DDL arrive dans `BLOCS`, elles montent dans
-// `A_VERROUILLER` et cette liste se vide. C'est le but.
-const A_VERROUILLER_SI_PRESENTE = [
-    "cartes_achats", "push_subscriptions", "livraisons", "livreurs",
-    "stories", "stories_vues",
-];
+// LA RÈGLE, en une phrase : créée au démarrage → `A_VERROUILLER` ; présente
+// sans être créée → ici. `tests/schema-couverture.test.js` refuse qu'une
+// table créée au démarrage reste dans cette liste.
+const A_VERROUILLER_SI_PRESENTE = [];
 
 // Les rôles qui ne doivent PAS pouvoir vider une table. Ce sont les deux rôles
 // que Supabase expose : `anon` porte la clé publiable, `authenticated` un

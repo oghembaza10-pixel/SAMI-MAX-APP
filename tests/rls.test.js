@@ -152,18 +152,59 @@ verifier(new Set(declarees).size === declarees.length,
 //
 // ⚠️ Et elles ne doivent PAS être dans `A_VERROUILLER` : `schema-neuf` refuse
 // — à raison — d'y voir une table que le démarrage ne crée pas.
+// ⚠️ CETTE SECTION A ÉTÉ RÉÉCRITE LE 2026-09-30, ET IL FAUT DIRE POURQUOI.
+//
+// Elle affirmait : ces six tables sont dans `A_VERROUILLER_SI_PRESENTE` et
+// PAS dans `A_VERROUILLER`. C'était juste — tant que le dépôt ne les créait
+// pas. Leur DDL est maintenant dans `BLOCS`, donc les deux affirmations sont
+// devenues fausses, et le test serait rouge pour une raison qui n'est pas un
+// défaut.
+//
+// Ce n'était pas un test faux : c'était un test qui figeait l'ÉTAT au lieu de
+// l'INVARIANT. Il aurait fallu le réécrire le jour de la migration — c'est ce
+// jour-là. On garde donc ce qui compte vraiment, et qui ne bougera plus :
+//
+//   a) ces six-là sont protégées, par l'UNE OU L'AUTRE liste. C'est la
+//      promesse au propriétaire, et elle survit à toute migration future ;
+//   b) chaque table est dans LA BONNE liste, et c'est `BLOCS` qui tranche —
+//      créée au démarrage → `A_VERROUILLER` ; présente sans être créée →
+//      `A_VERROUILLER_SI_PRESENTE`. Plus aucune liste codée en dur ici, donc
+//      plus de section à réécrire à la prochaine migration.
 const blocSi = (src.match(/const A_VERROUILLER_SI_PRESENTE\s*=\s*\[([\s\S]*?)\]/) || [])[1] || "";
 const conditionnelles = [...blocSi.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]);
-const NON_CREEES = ["cartes_achats", "push_subscriptions", "livraisons", "livreurs",
-    "stories", "stories_vues"];
-for (const t of NON_CREEES) {
-    verifier(conditionnelles.includes(t),
-        `« ${t} » a quitté A_VERROUILLER_SI_PRESENTE. Elle existe en production avec RLS ` +
-        "actif, et ce fichier ne la crée pas : sans cette entrée, sa protection ne repose " +
-        "plus que sur un script lancé à la main un jour, et disparaît sur une base recréée");
-    verifier(!declarees.includes(t),
-        `« ${t} » est passée dans A_VERROUILLER alors que le démarrage ne la crée pas : ` +
-        "la liste aurait l'air complète en ne protégeant rien (c'est le refus de schema-neuf)");
+
+// Les six que le propriétaire a nommées : de l'argent, des adresses, des
+// numéros de téléphone et des photos de gens.
+const SANS_ACTE_DE_NAISSANCE = ["cartes_achats", "push_subscriptions", "livraisons",
+    "livreurs", "stories", "stories_vues"];
+for (const t of SANS_ACTE_DE_NAISSANCE) {
+    verifier(declarees.includes(t) || conditionnelles.includes(t),
+        `« ${t} » n'est dans AUCUNE des deux listes : elle a RLS actif en production par un ` +
+        "geste manuel, et plus rien ne le rendrait au démarrage. Sur une base recréée, elle " +
+        "serait lisible par tout rôle qui atteint la base autrement que par le serveur");
+}
+
+// (b) Et chacune dans la bonne liste — c'est le DDL du démarrage qui décide,
+// pas une liste écrite ici.
+//
+// ⚠️ ON LIT LE TEXTE, ET PAS `require("services/schema.js").BLOCS`, ET CE
+// N'EST PAS UN DÉTAIL DE STYLE. Ce fichier ne pose `DATABASE_URL` qu'à
+// l'intérieur du bloc asynchrone, plus bas. Or `services/schema.js` charge
+// `services/db.js` en tête, qui fabrique son pool à ce moment-là : un
+// `require` ici, au niveau module, l'initialise AVANT que l'URL existe, et
+// toute la suite échoue sur « no PostgreSQL user name specified in startup
+// packet ». Mesuré — cette section a été écrite comme ça, et les 153
+// instructions du démarrage ont échoué d'un coup.
+const creeesAuDemarrage = new Set(
+    [...srcBrut.matchAll(/CREATE TABLE(?:\s+IF NOT EXISTS)?\s+(?:public\.)?"?([a-z0-9_]+)"?/gi)]
+        .map((m) => m[1]),
+);
+for (const t of conditionnelles) {
+    verifier(!creeesAuDemarrage.has(t),
+        `« ${t} » est créée au démarrage et reste dans A_VERROUILLER_SI_PRESENTE : elle doit ` +
+        "passer dans A_VERROUILLER, dont la promesse est plus forte (« nous la créons donc " +
+        "nous la verrouillons »). Une protection conditionnelle là où elle peut être certaine " +
+        "laisse croire qu'un doute subsiste");
 }
 verifier(new Set(conditionnelles).size === conditionnelles.length,
     "A_VERROUILLER_SI_PRESENTE contient un doublon");
@@ -259,21 +300,29 @@ verifier(!/CREATE POLICY/i.test(src),
             "lignes, et il répondrait 200 sans une erreur");
     }
 
-    // ── LE VERROU CONDITIONNEL FERME-T-IL VRAIMENT ? ─────────────────────
+    // ── LE VERROU FERME-T-IL UNE TABLE QUI EXISTAIT DÉJÀ ? ───────────────
     //
-    // `A_VERROUILLER_SI_PRESENTE` promet : « si elle est là, elle est
-    // verrouillée ». Lire la liste ne le prouve pas. On fabrique donc la
-    // table que le démarrage ne crée pas, on relance le démarrage, et on
-    // regarde ce que la base dit.
+    // Le démarrage lance `CREATE TABLE IF NOT EXISTS` : sur une base où la
+    // table est DÉJÀ là, il ne fait rien. Est-ce que RLS est posée quand
+    // même ? Lire la liste ne le prouve pas — seule la base répond.
     //
-    // `cartes_achats` est prise comme témoin parce que c'est celle que le
-    // propriétaire a nommée : elle porte `workspace_id` et un identifiant de
-    // paiement Chargily.
-    await db.query(`DROP TABLE IF EXISTS cartes_achats`);
-    await db.query(`CREATE TABLE cartes_achats (id serial PRIMARY KEY, workspace_id text)`);
+    // `cartes_achats` reste le témoin : c'est celle que le propriétaire a
+    // nommée, elle porte `workspace_id` et un identifiant de paiement
+    // Chargily. On la fabrique NUE, sans RLS et dans une forme volontairement
+    // réduite, pour être sûr que le CREATE du démarrage ne fait rien : ce qui
+    // suit ne peut donc venir que de la boucle de verrouillage.
+    //
+    // ⚠️ CE TÉMOIN A CHANGÉ DE SENS LE 2026-09-30. Avant, `cartes_achats`
+    // n'était créée nulle part et cette mesure éprouvait la liste
+    // CONDITIONNELLE. Son DDL est maintenant dans `BLOCS`, donc elle éprouve
+    // `A_VERROUILLER`. La mesure est la même, la promesse est plus forte.
+    const temoin = conditionnelles[0] || "cartes_achats";
+    const viaListe = conditionnelles[0] ? "A_VERROUILLER_SI_PRESENTE" : "A_VERROUILLER";
+    await db.query(`DROP TABLE IF EXISTS ${temoin} CASCADE`);
+    await db.query(`CREATE TABLE ${temoin} (id serial PRIMARY KEY, workspace_id text)`);
     const avantVerrou = await db.query(
         `SELECT relrowsecurity AS rls FROM pg_class
-         WHERE relnamespace = 'public'::regnamespace AND relname = 'cartes_achats'`);
+         WHERE relnamespace = 'public'::regnamespace AND relname = $1`, [temoin]);
     verifier(avantVerrou[0]?.rls === false,
         "montage : la table témoin devait naître SANS RLS, sinon le verrou n'a rien à fermer");
 
@@ -281,25 +330,29 @@ verifier(!/CREATE POLICY/i.test(src),
 
     const apresVerrou = await db.query(
         `SELECT relrowsecurity AS rls, relforcerowsecurity AS forcee FROM pg_class
-         WHERE relnamespace = 'public'::regnamespace AND relname = 'cartes_achats'`);
+         WHERE relnamespace = 'public'::regnamespace AND relname = $1`, [temoin]);
     verifier(apresVerrou[0]?.rls === true,
-        "« cartes_achats » existe et le démarrage ne l'a PAS verrouillée : la liste conditionnelle " +
-        "est déclarée mais n'agit pas. Sa protection en production ne serait toujours qu'un geste " +
+        `« ${temoin} » existait déjà et le démarrage ne l'a PAS verrouillée : ${viaListe} est ` +
+        "déclarée mais n'agit pas. Sa protection en production ne serait toujours qu'un geste " +
         "manuel, perdu à la première base recréée");
     verifier(apresVerrou[0]?.forcee === false,
-        "« cartes_achats » a RLS FORCÉE après le démarrage : le serveur ne verrait plus une seule " +
-        "carte achetée, et il répondrait 200 sans une erreur");
+        `« ${temoin} » a RLS FORCÉE après le démarrage : le serveur ne verrait plus une seule ` +
+        "de ses lignes, et il répondrait 200 sans une erreur");
 
     // Et le serveur, lui, écrit et relit — RLS sans politique ne l'empêche de
     // rien, parce qu'il possède la table.
-    await db.query(`INSERT INTO cartes_achats (workspace_id) VALUES ('temoin-rls')`);
+    await db.query(`INSERT INTO ${temoin} (workspace_id) VALUES ('temoin-rls')`);
     const luParLeServeur = await db.query(
-        `SELECT count(*)::int AS n FROM cartes_achats WHERE workspace_id = 'temoin-rls'`);
+        `SELECT count(*)::int AS n FROM ${temoin} WHERE workspace_id = 'temoin-rls'`);
     verifier(luParLeServeur[0]?.n === 1,
         "le serveur ne relit pas ce qu'il vient d'écrire dans une table verrouillée : la posture " +
         "« RLS sans politique » ne tient plus");
 
-    await db.query(`DROP TABLE IF EXISTS cartes_achats`);
+    // On la laisse dans sa forme réduite : le prochain `preparer()` ne la
+    // recréera pas (IF NOT EXISTS). On la retire donc pour que la base d'essai
+    // retrouve la vraie structure au démarrage suivant.
+    await db.query(`DROP TABLE IF EXISTS ${temoin} CASCADE`);
+    await schema.preparer();
 
     // ── CE QUI FAIT VRAIMENT TENIR LE MONTAGE : LA PROPRIÉTÉ ─────────────
     //
