@@ -466,6 +466,125 @@ verifier(!/CREATE POLICY/i.test(src),
             } catch { /* déjà parti */ }
         }
     }
+    // ══════════════════════════════════════════════════════════════════════
+    // 8. TRUNCATE — LE VERBE QUE RLS NE FILTRE PAS
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // PostgreSQL ne fait pas passer TRUNCATE par les politiques : c'est le
+    // GRANT qui décide. Une table peut donc avoir RLS active, ne rien laisser
+    // LIRE à un rôle... et se laisser VIDER par lui. Mesuré en production le
+    // 2026-09-30 : `anon` et `authenticated` détenaient TRUNCATE sur les 107
+    // tables, RLS active partout.
+    //
+    // ── POURQUOI ON FABRIQUE LES RÔLES, ET LE DÉFAUT AVEC ─────────────────
+    //
+    // `anon` et `authenticated` sont des rôles Supabase : absents d'un
+    // Postgres local. Sans eux, le REVOKE du démarrage échoue sur « does not
+    // exist », le démarrage l'avale (à raison — sinon il crierait à chaque
+    // lancement en développement), et ce test ne mesurerait RIEN.
+    //
+    // Même piège, plus sournois, pour la seconde moitié : en local il n'existe
+    // AUCUN privilège par défaut accordé à `anon`. Une table neuve n'aurait
+    // donc pas TRUNCATE de toute façon, et la vérification passerait à vide.
+    // On reproduit donc le défaut de Supabase (`GRANT ALL ON TABLES`) avant de
+    // mesurer, et on VÉRIFIE ce montage : si la table témoin ne naît pas avec
+    // TRUNCATE, le test le dit au lieu de conclure au succès.
+    //
+    // DEUX MOITIÉS, et la seconde est celle qu'on oublie :
+    //   (a) les tables qui existent DÉJÀ  → c'est le REVOKE qui les ferme ;
+    //   (b) celles créées APRÈS           → c'est `pg_default_acl`.
+    // Fermer (a) sans (b) : la prochaine table ajoutée à schema.js rouvre la
+    // porte, et le REVOKE d'hier n'y change rien.
+    {
+        const dejaLa = `trunc_avant_${process.pid}`;
+        const apresCoup = `trunc_apres_${process.pid}`;
+        // La liste DÉCLARÉE, pas une copie : un rôle ajouté demain dans
+        // schema.js est éprouvé sans que personne touche à ce fichier.
+        const ROLES = schema.SANS_TRUNCATE;
+        let defautPose = false;
+        try {
+            for (const r of ROLES) {
+                const [{ n }] = await db.query(
+                    `SELECT count(*)::int AS n FROM pg_roles WHERE rolname = $1`, [r]);
+                if (n === 0) await db.query(`CREATE ROLE ${r} NOLOGIN NOINHERIT`);
+            }
+
+            // Le défaut de Supabase, reproduit — c'est lui qui donnait le
+            // « D » aux tables futures.
+            await db.query(`ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${ROLES.join(", ")}`);
+            defautPose = true;
+
+            // (a) Une table née AVANT le démarrage, TRUNCATE ouvert.
+            await db.query(`DROP TABLE IF EXISTS ${dejaLa}`);
+            await db.query(`CREATE TABLE ${dejaLa} (id int)`);
+
+            // LE MONTAGE D'ABORD. Si TRUNCATE n'est pas là au départ, son
+            // absence ensuite ne prouve rien du tout.
+            const [montage] = await db.query(
+                `SELECT has_table_privilege($1, $2, 'TRUNCATE') AS t`, [ROLES[0], dejaLa]);
+            verifier(montage?.t === true,
+                `montage : la table témoin devait naître AVEC TRUNCATE ouvert à « ${ROLES[0]} » — sans ça, ` +
+                "le REVOKE du démarrage n'a rien à retirer et cette section ne mesure rien");
+
+            await schema.preparer();
+
+            for (const r of ROLES) {
+                const [apres] = await db.query(
+                    `SELECT has_table_privilege($1, $2, 'TRUNCATE') AS truncate_,
+                            has_table_privilege($1, $2, 'SELECT')   AS select_,
+                            has_table_privilege($1, $2, 'INSERT')   AS insert_`,
+                    [r, dejaLa]);
+                verifier(apres?.truncate_ === false,
+                    `« ${r} » garde TRUNCATE sur une table qui existait avant le démarrage : RLS ne ` +
+                    "filtre pas ce verbe, et la clé publiable pourrait VIDER la table sans en lire " +
+                    "une seule ligne");
+                // Et pas plus que TRUNCATE : un REVOKE trop large couperait
+                // l'API REST du projet sans lever la moindre erreur.
+                verifier(apres?.select_ === true && apres?.insert_ === true,
+                    `le démarrage a retiré à « ${r} » plus que TRUNCATE (SELECT ou INSERT est parti) : ` +
+                    "un REVOKE trop large casse l'API REST du projet, en silence");
+            }
+
+            // (b) Une table née APRÈS le démarrage. Ici le REVOKE ne peut rien :
+            // c'est le privilège par défaut qui décide.
+            await db.query(`DROP TABLE IF EXISTS ${apresCoup}`);
+            await db.query(`CREATE TABLE ${apresCoup} (id int)`);
+            for (const r of ROLES) {
+                const [neuve] = await db.query(
+                    `SELECT has_table_privilege($1, $2, 'TRUNCATE') AS truncate_,
+                            has_table_privilege($1, $2, 'SELECT')   AS select_`,
+                    [r, apresCoup]);
+                verifier(neuve?.truncate_ === false,
+                    `une table créée APRÈS le démarrage arrive avec TRUNCATE ouvert à « ${r} » : les ` +
+                    "privilèges par défaut n'ont pas été refermés, donc la prochaine table ajoutée à " +
+                    "schema.js rouvrirait la porte que le REVOKE venait de fermer");
+                // Le témoin de cette moitié : le défaut doit encore accorder
+                // le RESTE. S'il ne donne plus rien, le zéro ci-dessus vient
+                // d'un défaut vidé, pas d'un TRUNCATE retiré.
+                verifier(neuve?.select_ === true,
+                    `le défaut n'accorde plus SELECT à « ${r} » sur une table neuve : le démarrage a ` +
+                    "vidé les privilèges par défaut au lieu d'en retirer TRUNCATE, et l'absence de " +
+                    "TRUNCATE ne prouve donc rien");
+            }
+        } catch (err) {
+            verifier(false,
+                `la mesure TRUNCATE n'a pas pu être faite (${err.message}) — sans elle, rien ne ` +
+                "garde le REVOKE du démarrage, et RLS laisserait ce verbe passer");
+        } finally {
+            try {
+                await db.query(`DROP TABLE IF EXISTS ${dejaLa}, ${apresCoup}`);
+                // On retire le défaut qu'on a posé pour la mesure, sinon les
+                // tables créées ensuite sur cette base le porteraient.
+                if (defautPose) {
+                    await db.query(
+                        `ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM ${ROLES.join(", ")}`);
+                }
+                // Les rôles ne sont PAS supprimés : sur une base qui les avait
+                // déjà (Supabase), ce serait destructeur. En local, deux rôles
+                // NOLOGIN sans droits ne gênent personne.
+            } catch { /* déjà parti */ }
+        }
+    }
 })().then(() => {
     if (echecs.length) {
         console.log(`\n❌ RLS : ${echecs.length} problème(s) sur ${verifs} vérifications\n`);

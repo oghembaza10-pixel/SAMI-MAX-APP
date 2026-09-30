@@ -1622,12 +1622,17 @@ const A_VERROUILLER = [
     //
     // ⚠️ CE QUE RLS NE COUVRE PAS, ET QU'IL FAUT SAVOIR : **TRUNCATE**.
     // PostgreSQL ne fait pas passer TRUNCATE par les politiques — c'est le
-    // GRANT qui décide. Mesuré : sous `anon`, `TRUNCATE` réussit malgré RLS.
-    // Ce n'est pas atteignable par l'API REST aujourd'hui (PostgREST n'expose
-    // pas ce verbe, et AUCUNE fonction du schéma `public` n'est exécutable par
-    // `anon` — vérifié, zéro). Le jour où une fonction appelable arrive, il
-    // faudra un `REVOKE TRUNCATE`. C'est une décision du propriétaire, pas de
-    // ce fichier.
+    // GRANT qui décide. Mesuré le 2026-09-27 : sous `anon`, TRUNCATE
+    // réussissait malgré RLS. Ce n'était pas atteignable par l'API REST
+    // (PostgREST n'expose pas ce verbe, et aucune fonction du schéma `public`
+    // n'est exécutable par `anon` — vérifié, zéro), mais la porte était
+    // ouverte derrière.
+    //
+    // ✅ REFERMÉ LE 2026-09-30, sur décision du propriétaire : `anon` et
+    // `authenticated` n'ont plus TRUNCATE sur aucune des 107 tables, ni sur
+    // celles que ce fichier créera. Le geste est en bas de `preparer()`, avec
+    // la mesure et ce qu'il ne couvre pas. Vérifié par `tests/rls.test.js`
+    // contre un vrai Postgres.
     "recharges_samii", "consommation_ia", "prospects_vitrine", "whatsapp_contacts",
     "social_posts", "social_post_variants", "social_publications",
     "social_analytics", "social_agent_runs",
@@ -1679,6 +1684,16 @@ const A_VERROUILLER_SI_PRESENTE = [
     "cartes_achats", "push_subscriptions", "livraisons", "livreurs",
     "stories", "stories_vues",
 ];
+
+// Les rôles qui ne doivent PAS pouvoir vider une table. Ce sont les deux rôles
+// que Supabase expose : `anon` porte la clé publiable, `authenticated` un
+// utilisateur connecté via leur authentification. Le geste est en bas de
+// `preparer()`, avec la mesure et ce qu'il ne couvre pas.
+//
+// Déclarés ici, et non écrits dans la requête, pour que `tests/rls.test.js`
+// éprouve LA LISTE et non une copie : un rôle ajouté demain est couvert sans
+// que personne pense à toucher au test.
+const SANS_TRUNCATE = ["anon", "authenticated"];
 
 async function preparer() {
     let creees = 0;
@@ -1758,6 +1773,61 @@ async function preparer() {
         }
     }
 
+    // ── TRUNCATE : LE VERROU QUE RLS NE POSE PAS ──────────────────────────
+    //
+    // PostgreSQL ne fait pas passer TRUNCATE par les politiques : c'est le
+    // GRANT qui décide. Une table peut donc avoir RLS active, ne rien laisser
+    // lire à `anon`... et se laisser VIDER par lui. Mesuré le 2026-09-30 :
+    // `anon` et `authenticated` détenaient TRUNCATE sur les 107 tables.
+    //
+    // DEUX GESTES, PARCE QU'UN SEUL NE TIENT PAS :
+    //   1. les tables qui existent maintenant ;
+    //   2. celles que ce fichier créera demain. `pg_default_acl` accordait
+    //      « arwdDxtm » — le D est TRUNCATE — à toute table future. Sans le
+    //      second ordre, la prochaine table ajoutée ici serait arrivée avec
+    //      TRUNCATE ouvert à la clé publiable, et le premier n'y aurait rien
+    //      changé.
+    //
+    // Appliqué en production par migration le 2026-09-30 ; répété ici parce
+    // qu'une protection qui ne vit que dans une migration passée ne revient
+    // PAS sur une base recréée. C'est la leçon des trois « ex-script »
+    // ci-dessus, payée une fois.
+    //
+    // `anon` et `authenticated` sont des rôles Supabase : ils n'existent pas
+    // sur un Postgres local. On DEMANDE donc lesquels sont là avant d'agir,
+    // au lieu de lancer le REVOKE et de laisser l'erreur tomber — même geste,
+    // et même raison, que le verrou conditionnel juste au-dessus :
+    // `services/db.js` journalise TOUT échec, et un Postgres local affichait
+    // deux « ❌ role "anon" does not exist » parfaitement normaux à chaque
+    // démarrage. Un ❌ qui ne veut rien dire apprend à ignorer les vrais.
+    //
+    // ⚠️ CE QUE CECI NE FERME PAS : `pg_default_acl` porte aussi une entrée
+    // posée par `supabase_admin`, qui vaut pour les tables créées PAR lui —
+    // le tableau de bord Supabase. Notre connexion est `postgres`, ni
+    // superutilisateur ni membre de supabase_admin : elle ne peut pas la
+    // modifier. Une table créée à la main dans Studio arrive donc encore avec
+    // TRUNCATE ouvert. Le serveur, lui, crée tout en `postgres`.
+    //
+    // Les noms de rôles sont interpolés parce qu'un GRANT/REVOKE n'accepte pas
+    // de paramètre à cette place. Ils ne viennent PAS de l'extérieur : ce sont
+    // ceux que `pg_roles` a confirmés parmi `SANS_TRUNCATE`, une constante de
+    // ce fichier. Ils ne peuvent valoir que « anon » ou « authenticated ».
+    try {
+        const presents = (await db.query(
+            `SELECT rolname FROM pg_roles WHERE rolname = ANY($1)`,
+            [SANS_TRUNCATE],
+        )).map((r) => r.rolname);
+
+        if (presents.length) {
+            const roles = presents.join(", ");
+            await db.query(`REVOKE TRUNCATE ON ALL TABLES IN SCHEMA public FROM ${roles}`);
+            await db.query(
+                `ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE TRUNCATE ON TABLES FROM ${roles}`);
+        }
+    } catch (err) {
+        console.warn(`⚠️ TRUNCATE (${SANS_TRUNCATE.join(", ")}) : ${err.message}`);
+    }
+
     console.log(echecs === 0
         ? `✅ Schéma vérifié (${creees} instructions, ${A_VERROUILLER.length} tables protégées).`
         : `⚠️ Schéma vérifié avec ${echecs} échec(s) — voir ci-dessus.`);
@@ -1765,5 +1835,6 @@ async function preparer() {
 }
 
 module.exports = {
-    preparer, BLOCS, A_VERROUILLER, A_VERROUILLER_SI_PRESENTE, ELARGISSEMENTS, ATTENDUS,
+    preparer, BLOCS, A_VERROUILLER, A_VERROUILLER_SI_PRESENTE, SANS_TRUNCATE,
+    ELARGISSEMENTS, ATTENDUS,
 };
