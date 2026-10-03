@@ -21,6 +21,7 @@ const samii = require("../services/whatsappSamii");
 const transcription  = require("../services/transcription");
 const produitsService = require("../services/produitsService");
 const fournisseurs   = require("../services/whatsappFournisseurs");
+const signature      = require("../services/signatureWebhook");
 
 const router = express.Router();
 
@@ -237,6 +238,30 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", async (req, res) => {
+    // ── D'ABORD : QUI APPELLE ? ──────────────────────────────────────────
+    //
+    // Cette URL est publique. Jusqu'au 2026-10-03 elle traitait n'importe
+    // quelle charge utile comme un vrai message Meta — mesuré, journal à
+    // l'appui. L'expéditeur du message décide à qui part la réponse
+    // (`samii.ecrire({ to: ... })` plus bas), donc un inconnu pouvait faire
+    // écrire le numéro officiel à un numéro de son choix, et pousser du texte
+    // dans le moteur de conversation.
+    //
+    // LE REFUS EST AVANT L'ACCUSÉ DE RÉCEPTION. Le `res.sendStatus(200)`
+    // ci-dessous est volontairement immédiat (Meta réessaie si le 200 tarde,
+    // et répondre demande plusieurs secondes de modèle). Mais un 200 est
+    // aussi une réponse : accuser réception d'abord et vérifier ensuite, ce
+    // serait traiter l'appel quand même. L'ordre fait tout.
+    //
+    // `whatsappAutorise` accepte une signature Meta OU un jeton partagé, sans
+    // lire le corps : voir services/signatureWebhook.js pour pourquoi le
+    // choix ne doit PAS dépendre de la forme du message.
+    const preuve = signature.whatsappAutorise(req);
+    if (!preuve.ok) {
+        console.warn(`⛔ Webhook WhatsApp rejeté — ${preuve.raison}`);
+        return res.sendStatus(401);
+    }
+
     res.sendStatus(200);
     try {
         // Monté sous /webhook, où express.raw() laisse le body en Buffer brut.
